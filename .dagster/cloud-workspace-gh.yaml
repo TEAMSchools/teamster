@@ -1,0 +1,18 @@
+locations:
+  :
+    build: ../
+    registry: -docker.pkg.dev///
+    working_directory: /root/app
+    package_name: teamster.local
+    container_context:
+      k8s:
+        env_secrets:
+          - 
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: -ssh-keys
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: "/etc/secret-volume"

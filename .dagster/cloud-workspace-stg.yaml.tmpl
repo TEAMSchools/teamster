@@ -1,0 +1,34 @@
+locations:
+  - location_name: ${INSTANCE_NAME}-stg
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${IMAGE_NAME}/${IMAGE_NAME}:latest
+    working_directory: /root/app
+    code_source:
+      package_name: teamster.local
+    container_context:
+      docker:
+        container_kwargs:
+          volumes:
+            # modified from template
+            ${PWD}/teamster:
+              bind: /root/app/teamster
+              mode: rw
+            ${PWD}/secrets:
+              bind: /root/app/secrets
+        env_vars:
+          - INSTANCE_NAME
+          - IMAGE_NAME
+          - GCP_PROJECT_ID
+          - GOOGLE_APPLICATION_CREDENTIALS
+          - POWERSCHOOL_HOST
+          - POWERSCHOOL_CLIENT_ID
+          - POWERSCHOOL_CLIENT_SECRET
+          - POWERSCHOOL_YEAR_ID
+          - LOCAL_TIME_ZONE
+          - MSSQL_USERNAME
+          - MSSQL_PASSWORD
+          - MSSQL_HOST
+          - MSSQL_PORT
+          - MSSQL_DATABASE
+          - PYTHONANYWHERE_SFTP_HOST
+          - PYTHONANYWHERE_SFTP_USERNAME
+          - PYTHONANYWHERE_SFTP_PASSWORD

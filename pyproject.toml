@@ -1,0 +1,48 @@
+[project]
+name = ""
+version = ""
+description = ""
+authors = [
+    {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
+]
+dependencies = [
+    "dagster>=1.0.1",
+    "dagster-cloud>=1.0.1",
+    "dagster-gcp>=0.16.1",
+    "dagster-ssh>=0.16.1",
+    "powerschool>=3.6.0",
+    "sqlalchemy>=1.4.40",
+    "pyodbc>=4.0.34",
+    "gspread>=5.4.0",
+]
+requires-python = ">=3.9"
+license = {text = "MIT"}
+[project.optional-dependencies]
+
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "dagster-docker>=0.16.1",
+]
+
+[tool.pdm.scripts]
+_.env_file = "./env/core/prod.env"
+env-setup.env_file = "./env/core/.env"
+dagster-docker.env_file = "./env/core/stg.env"
+teamster-init.shell = "bash ./teamster-init.sh"
+gcloud-init.shell = "bash ./.google/gcloud-init.sh"
+env-setup.shell = "bash ./env/envsubst-file.sh"
+k8s-secret.shell = "bash ./.google/k8s-secret.sh"
+docker-build.shell = "docker-compose build"
+docker-bash.shell = "docker-compose run --rm dagster bash"
+docker-run.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
+docker-push.shell = "docker push ${IMAGE_URI}"
+pre_dagster-docker.shell = "pdm run env-setup stg"
+dagster-docker.shell = 'dagster-cloud agent run --deployment stg --agent-token ${DAGSTER_CLOUD_AGENT_TOKEN} --user-code-launcher "dagster_cloud.workspace.docker.DockerUserCodeLauncher"'
+dagster-local.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
+dagster-sync.shell = "bash ./.dagster/dagster-cloud-workspace-sync.sh"

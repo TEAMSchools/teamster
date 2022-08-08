@@ -1,0 +1,10 @@
+locations:
+  - location_name: ${INSTANCE_NAME}
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${IMAGE_NAME}/${IMAGE_NAME}:latest
+    working_directory: /root/app
+    code_source:
+      package_name: teamster.local
+    container_context:
+      k8s:
+        env_secrets: 
+          - ${INSTANCE_NAME}

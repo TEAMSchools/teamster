@@ -1,0 +1,6 @@
+services:
+  dagster:
+    build: .
+    image: "${IMAGE_URI}"
+    environment:
+      - DAGSTER_CLOUD_AGENT_TOKEN=${DAGSTER_CLOUD_AGENT_TOKEN}
