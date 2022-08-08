@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# update prod.env
-pdm run env-setup prod
-
 # create GitHub Workload Identity Service Account role
 GH_WORKLOAD_IDENTITY_POOL_ID=$(
 	gcloud iam workload-identity-pools describe github-pool \

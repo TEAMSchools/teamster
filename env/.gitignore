@@ -1,6 +1,4 @@
 *
 !.gitignore
-!.env.tmpl
-!envsubst-file.sh
-!prod.env.tmpl
-!stg.env.tmpl
+!common.env.tmpl
+!local.env.tmpl

@@ -172,6 +172,3 @@ cloud-workspace-stg.yaml
 
 # custom inclusions
 !env/
-
-# core exclusions
-teamster/local/

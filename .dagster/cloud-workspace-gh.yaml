@@ -1,17 +1,17 @@
 locations:
-  :
+  core:
     build: ../
-    registry: -docker.pkg.dev///
+    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core
     working_directory: /root/app
     package_name: teamster.local
     container_context:
       k8s:
         env_secrets:
-          - 
+          - core
         volumes:
           - name: secret-volume
             secret:
-              secretName: -ssh-keys
+              secretName: core-ssh-keys
         volume_mounts:
           - name: secret-volume
             readOnly: true

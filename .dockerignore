@@ -46,7 +46,7 @@ docs/_build/
 
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
+# pdm.lock
 #   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
 #   in version control.
 #   https://pdm.fming.dev/#use-with-ide
@@ -66,15 +66,18 @@ venv.bak/
 
 # teamster additions
 .dagster/
-.docker/
 .git/
+.docker/
 .github/
 .google/
+.teamster/
 .vscode/
 history/
 schedules/
 secrets/
-.gitignore
 
-# core additions
-teamster/local/
+# core
+teamster/kippcamden/
+teamster/kippmiami/
+teamster/kippnewark/
+teamster/kipptaf/

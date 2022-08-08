@@ -32,17 +32,16 @@ dev = [
 
 [tool.pdm.scripts]
 _.env_file = "./env/core/prod.env"
-env-setup.env_file = "./env/core/.env"
+local-init.env_file = "./env/common.env"
 dagster-docker.env_file = "./env/core/stg.env"
-teamster-init.shell = "bash ./teamster-init.sh"
+common-init.shell = "bash ./.teamster/common-init.sh"
+local-init.shell = "bash ./.teamster/local-init.sh"
 gcloud-init.shell = "bash ./.google/gcloud-init.sh"
-env-setup.shell = "bash ./env/envsubst-file.sh"
 k8s-secret.shell = "bash ./.google/k8s-secret.sh"
 docker-build.shell = "docker-compose build"
 docker-bash.shell = "docker-compose run --rm dagster bash"
 docker-run.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
 docker-push.shell = "docker push ${IMAGE_URI}"
-pre_dagster-docker.shell = "pdm run env-setup stg"
 dagster-docker.shell = 'dagster-cloud agent run --deployment stg --agent-token ${DAGSTER_CLOUD_AGENT_TOKEN} --user-code-launcher "dagster_cloud.workspace.docker.DockerUserCodeLauncher"'
 dagster-local.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
 dagster-sync.shell = "bash ./.dagster/dagster-cloud-workspace-sync.sh"
