@@ -66,8 +66,8 @@ venv.bak/
 
 # teamster additions
 .dagster/
-.git/
 .docker/
+.git/
 .github/
 .google/
 .teamster/
@@ -75,9 +75,3 @@ venv.bak/
 history/
 schedules/
 secrets/
-
-# core
-teamster/kippcamden/
-teamster/kippmiami/
-teamster/kippnewark/
-teamster/kipptaf/

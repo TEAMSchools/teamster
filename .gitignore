@@ -160,15 +160,7 @@ cython_debug/
 #.idea/
 
 # custom exclusions
-.docker/
 history/
 secrets/
-deployment-old.yaml
-deployment-new.yaml
-deployment-patch.yaml
 cloud-workspace-prod.yaml
 cloud-workspace-stg.yaml
-*.env
-
-# custom inclusions
-!env/
