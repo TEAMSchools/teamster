@@ -1,0 +1,32 @@
+execution:
+  config:
+    multiprocess:
+      max_concurrent: 2
+resources:
+  destination:
+    config:
+      remote_host:
+        env: CPN_SFTP_HOST
+      username:
+        env: CPN_SFTP_USERNAME
+      password:
+        env: CPN_SFTP_PASSWORD
+destination:
+  name: cpn
+  type: sftp
+  path: /Data
+queries:
+  - sql:
+      schema:
+        table: gabby.extracts.cpn_attendance
+        where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+    file:
+      stem: cpn_attendance
+      suffix: csv
+  - sql:
+      schema:
+        table: gabby.extracts.cpn_demographic
+        where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+    file:
+      stem: cpn_demographic
+      suffix: csv

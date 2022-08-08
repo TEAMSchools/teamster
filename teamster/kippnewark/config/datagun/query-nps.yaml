@@ -1,0 +1,19 @@
+resources:
+  destination:
+    config:
+      remote_host:
+        env: NPS_SFTP_HOST
+      username:
+        env: NPS_SFTP_USERNAME
+      password:
+        env: NPS_SFTP_PASSWORD
+destination:
+  name: nps
+  type: sftp
+queries:
+  - sql:
+      schema:
+        table: gabby.extracts.nps_student_info
+    file:
+      stem: kipp-newark-student-data
+      suffix: txt
