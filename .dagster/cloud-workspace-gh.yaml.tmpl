@@ -3,7 +3,7 @@ locations:
     build: ../
     registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${IMAGE_NAME}/${IMAGE_NAME}
     working_directory: /root/app
-    package_name: teamster.local
+    package_name: teamster.${INSTANCE_NAME}
     container_context:
       k8s:
         env_secrets:

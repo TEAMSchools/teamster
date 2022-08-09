@@ -29,13 +29,14 @@ build-backend = "pdm.pep517.api"
 dev = ["dagster-docker>=0.16.1"]
 
 [tool.pdm.scripts]
-_.env_file = "./env/kippnewark/prod.env"  # update per branch
-dagster-docker.env_file = "./env/kippnewark/stg.env"  # update per branch
+_.env_file = "./env/kippnewark/prod.env"
+dagster-docker.env_file = "./env/kippnewark/stg.env"
 local-init.env_file = "./env/common.env"
 common-init.shell = "bash ./.teamster/common-init.sh"
 local-init.shell = "bash ./.teamster/local-init.sh"
 env-update.shell = "bash ./.teamster/env-update.sh"
-gcloud-init.shell = "bash ./.google/gcloud-init.sh"
+gcloud-common.shell = "bash ./.google/gcloud-common-init.sh"
+gcloud-local.shell = "bash ./.google/gcloud-local-init.sh"
 k8s-secret.shell = "bash ./.google/k8s-secret.sh"
 docker-build.shell = "docker compose build"
 docker-bash.shell = "docker compose run --rm dagster bash"
