@@ -21,6 +21,18 @@ else
 	# create prod and stg .env
 	pdm run env-update "${INSTANCE_NAME}"
 
+	# create GH worfklow files
+	envsubst \
+		< ./.dagster/cloud-workspace-gh.yaml.tmpl \
+		> ./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml
+	envsubst \
+		< ./.github/workflows/dagster-cloud-cicd.yaml.tmpl \
+		> .github/workflows/${INSTANCE_NAME}-dagster-cloud-cicd.yaml
+	git add \
+		./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml \
+		.github/workflows/${INSTANCE_NAME}-dagster-cloud-cicd.yaml
+	git commit -m "Add ${INSTANCE_NAME} cloud workspace config"
+
 	# create local branch
 	git switch -c "${INSTANCE_NAME}"
 

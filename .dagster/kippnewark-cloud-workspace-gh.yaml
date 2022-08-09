@@ -1,17 +1,17 @@
 locations:
-  ${INSTANCE_NAME}:
+  kippnewark:
     build: ../
-    registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
+    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippnewark/teamster-kippnewark
     working_directory: /root/app
-    package_name: teamster.${INSTANCE_NAME}
+    package_name: teamster.kippnewark
     container_context:
       k8s:
         env_secrets:
-          - ${INSTANCE_NAME}
+          - kippnewark
         volumes:
           - name: secret-volume
             secret:
-              secretName: ${INSTANCE_NAME}-ssh-keys
+              secretName: kippnewark-ssh-keys
         volume_mounts:
           - name: secret-volume
             readOnly: true
