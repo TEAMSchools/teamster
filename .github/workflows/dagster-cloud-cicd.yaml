@@ -2,7 +2,7 @@ name: Dagster Cloud CI/CD
 on:
   workflow_dispatch:
   push:
-    branches:
+    branches-ignore:
       - main
     paths:
       - "teamster/**"
