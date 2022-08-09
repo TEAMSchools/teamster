@@ -12,7 +12,7 @@ full_tables = ScheduleDefinition(
     cron_schedule="0 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/local/config/powerschool/query-full.yaml"]
+        ["./teamster/kippnewark/config/powerschool/query-full.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -29,7 +29,7 @@ filtered_tables = ScheduleDefinition(
     cron_schedule="5 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/local/config/powerschool/query-filtered.yaml"]
+        ["./teamster/kippnewark/config/powerschool/query-filtered.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -46,7 +46,7 @@ custom_tables = ScheduleDefinition(
     cron_schedule="10 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/local/config/powerschool/query-custom.yaml"]
+        ["./teamster/kippnewark/config/powerschool/query-custom.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -63,7 +63,7 @@ contacts_tables = ScheduleDefinition(
     cron_schedule="15 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/local/config/powerschool/query-contacts.yaml"]
+        ["./teamster/kippnewark/config/powerschool/query-contacts.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -80,7 +80,7 @@ attendance_tables = ScheduleDefinition(
     cron_schedule="0 13 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/local/config/powerschool/query-attendance.yaml"]
+        ["./teamster/kippnewark/config/powerschool/query-attendance.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -97,7 +97,7 @@ assignment_tables = ScheduleDefinition(
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/local/config/powerschool/query-assignments.yaml"]
+        ["./teamster/kippnewark/config/powerschool/query-assignments.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -114,7 +114,7 @@ assignmentscore = ScheduleDefinition(
     cron_schedule="5 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/local/config/powerschool/query-assignmentscore.yaml"]
+        ["./teamster/kippnewark/config/powerschool/query-assignmentscore.yaml"]
     ),
     tags={
         "dagster-k8s/config": {

@@ -19,4 +19,4 @@ ops:
             stem: "whetstone_users"
             suffix: "json"
           sql:
-            file: "./teamster/local/config/datagun/sql/whetstone-users.sql"
+            file: "./teamster/kipptaf/config/datagun/sql/whetstone-users.sql"

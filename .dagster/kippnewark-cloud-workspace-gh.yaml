@@ -8,11 +8,11 @@ locations:
       k8s:
         env_secrets:
           - kippnewark
-        volumes:
-          - name: secret-volume
-            secret:
-              secretName: kippnewark-ssh-keys
-        volume_mounts:
-          - name: secret-volume
-            readOnly: true
-            mountPath: "/etc/secret-volume"
+        # volumes:
+        #   - name: secret-volume
+        #     secret:
+        #       secretName: kippnewark-ssh-keys
+        # volume_mounts:
+        #   - name: secret-volume
+        #     readOnly: true
+        #     mountPath: "/etc/secret-volume"
