@@ -1,7 +1,7 @@
 locations:
   asdf:
     build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318//
+    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-asdf/teamster-asdf
     working_directory: /root/app
     package_name: teamster.asdf
     container_context:
