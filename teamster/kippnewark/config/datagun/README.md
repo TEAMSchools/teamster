@@ -8,7 +8,7 @@ destination:
 queries:
   - sql: (choose exactly one)
       text: String
-      file: String ("./teamster/local/config/datagun/sql/*.sql")
+      file: String ("./teamster/kippnewark/config/datagun/sql/*.sql")
       schema:
         table: String
         columns: String*
