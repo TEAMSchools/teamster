@@ -3,7 +3,7 @@ locations:
     build: ../
     registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
     working_directory: /root/app
-    package_name: teamster.local
+    package_name: teamster.kippmiami
     container_context:
       k8s:
         env_secrets:
