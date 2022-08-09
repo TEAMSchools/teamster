@@ -13,7 +13,7 @@ resources:
         env: CLEVER_SFTP_PASSWORD
 ops:
   compose_queries:
-    config:        
+    config:
       destination:
         name: clever
         type: sftp

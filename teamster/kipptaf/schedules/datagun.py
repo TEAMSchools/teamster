@@ -2,7 +2,7 @@ import os
 
 from dagster import ScheduleDefinition, config_from_files
 
-from teamster.kipptaf.jobs.datagun import datagun_etl_sftp, datagun_etl_gsheets
+from teamster.kipptaf.jobs.datagun import datagun_etl_gsheets, datagun_etl_sftp
 
 LOCAL_TIME_ZONE = os.getenv("LOCAL_TIME_ZONE")
 

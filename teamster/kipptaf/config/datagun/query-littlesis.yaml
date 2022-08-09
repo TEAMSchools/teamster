@@ -9,7 +9,7 @@ resources:
         env: LITTLESIS_SFTP_PASSWORD
 ops:
   compose_queries:
-    config:        
+    config:
       destination:
         name: littlesis
         type: sftp

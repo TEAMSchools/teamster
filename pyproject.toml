@@ -3,20 +3,20 @@ name = ""
 version = ""
 description = ""
 authors = [
-    {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
+  { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 dependencies = [
-    "dagster>=1.0.1",
-    "dagster-cloud>=1.0.1",
-    "dagster-gcp>=0.16.1",
-    "dagster-ssh>=0.16.1",
-    "powerschool>=3.6.0",
-    "sqlalchemy>=1.4.40",
-    "pyodbc>=4.0.34",
-    "gspread>=5.4.0",
+  "dagster>=1.0.1",
+  "dagster-cloud>=1.0.1",
+  "dagster-gcp>=0.16.1",
+  "dagster-ssh>=0.16.1",
+  "powerschool>=3.6.0",
+  "sqlalchemy>=1.4.40",
+  "pyodbc>=4.0.34",
+  "gspread>=5.4.0",
 ]
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = { text = "MIT" }
 [project.optional-dependencies]
 
 [build-system]
@@ -26,9 +26,7 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = [
-    "dagster-docker>=0.16.1",
-]
+dev = ["dagster-docker>=0.16.1"]
 
 [tool.pdm.scripts]
 _.env_file = "./env/core/prod.env"

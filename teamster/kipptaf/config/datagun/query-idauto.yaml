@@ -18,7 +18,7 @@ ops:
             stem: "AD"
             suffix: "csv"
             format:
-              quoting: 1  # csv.QUOTE_ALL
+              quoting: 1 # csv.QUOTE_ALL
               encoding: "latin1"
           sql:
             schema:

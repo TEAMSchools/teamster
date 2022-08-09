@@ -1,7 +1,7 @@
 #!/bin/bash
 
 envsubst \
-	< ./.dagster/cloud-workspace-"$1".yaml.tmpl \
+	<./.dagster/cloud-workspace-"$1".yaml.tmpl \
 	>./.dagster/cloud-workspace-"$1".yaml
 
 if [[ $1 == prod ]]; then

@@ -9,7 +9,7 @@ resources:
         env: COUPA_SFTP_PASSWORD
 ops:
   compose_queries:
-    config:        
+    config:
       destination:
         name: coupa
         type: sftp

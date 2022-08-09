@@ -18,7 +18,7 @@ from dagster import (
 )
 
 from teamster.common.config.datagun import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import CustomJSONEncoder, TODAY
+from teamster.common.utils import TODAY, CustomJSONEncoder
 
 
 @op(
