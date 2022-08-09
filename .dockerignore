@@ -83,3 +83,4 @@ Dockerfile
 teamster/*
 !teamster/common/
 !teamster/kipptaf/
+!teamster/asdf/
