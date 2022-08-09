@@ -1,17 +1,17 @@
 locations:
-  asdf:
+  kippnewark:
     build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-asdf/teamster-asdf
+    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippnewark/teamster-kippnewark
     working_directory: /root/app
-    package_name: teamster.asdf
+    package_name: teamster.kippnewark
     container_context:
       k8s:
         env_secrets:
-          - asdf
+          - kippnewark
         volumes:
           - name: secret-volume
             secret:
-              secretName: asdf-ssh-keys
+              secretName: kippnewark-ssh-keys
         volume_mounts:
           - name: secret-volume
             readOnly: true

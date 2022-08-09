@@ -2,12 +2,12 @@ name: Dagster Cloud CI/CD
 on:
   workflow_dispatch:
   push:
-    branches-ignore:
-      - main
+    branches:
+      - ${INSTANCE_NAME}
     paths:
       - "teamster/**"
-      - ".github/workflows/dagster-cloud-cicd.yaml"
-      - ".dagster/cloud-workspace-gh.yaml"
+      - ".github/workflows/${INSTANCE_NAME}-dagster-cloud-cicd.yaml"
+      - ".dagster/${INSTANCE_NAME}-cloud-workspace-gh.yaml"
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
@@ -48,7 +48,7 @@ jobs:
       - name: Run Dagster Cloud CI/CD action
         uses: dagster-io/dagster-cloud-cicd-action/deploy@v0.2.5
         with:
-          location-file: ./.dagster/cloud-workspace-gh.yaml
+          location-file: ./.dagster/${INSTANCE_NAME}-cloud-workspace-gh.yaml
           image-tag: latest
           dagit-url: https://${{ secrets.DAGSTER_CLOUD_ORGANIZATION }}.dagster.cloud/prod
           api-token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}

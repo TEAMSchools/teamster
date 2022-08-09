@@ -1,7 +1,7 @@
 locations:
   ${INSTANCE_NAME}:
     build: ../
-    registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${IMAGE_NAME}/${IMAGE_NAME}
+    registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
     working_directory: /root/app
     package_name: teamster.${INSTANCE_NAME}
     container_context:
