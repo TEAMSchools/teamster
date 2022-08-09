@@ -1,17 +1,17 @@
 locations:
-  ${INSTANCE_NAME}:
+  kipptaf:
     build: ../
-    registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
+    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
     working_directory: /root/app
-    package_name: teamster.${INSTANCE_NAME}
+    package_name: teamster.kipptaf
     container_context:
       k8s:
         env_secrets:
-          - ${INSTANCE_NAME}
+          - kipptaf
         volumes:
           - name: secret-volume
             secret:
-              secretName: ${INSTANCE_NAME}-ssh-keys
+              secretName: kipptaf-ssh-keys
         volume_mounts:
           - name: secret-volume
             readOnly: true
