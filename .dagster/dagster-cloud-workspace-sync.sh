@@ -1,8 +1,8 @@
 #!/bin/bash
 
 envsubst \
-	< ./.dagster/cloud-workspace-"$1".yaml.tmpl \
-	> ./.dagster/cloud-workspace-"$1".yaml
+	<./.dagster/cloud-workspace-"$1".yaml.tmpl \
+	>./.dagster/cloud-workspace-"$1".yaml
 
 if [[ $1 == prod ]]; then
 	pdm run k8s-secret
