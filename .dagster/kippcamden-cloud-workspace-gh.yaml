@@ -1,17 +1,17 @@
 locations:
-  ${INSTANCE_NAME}:
+  kippcamden:
     build: ../
-    registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
+    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
     working_directory: /root/app
-    package_name: teamster.${INSTANCE_NAME}
+    package_name: teamster.kippcamden
     container_context:
       k8s:
         env_secrets:
-          - ${INSTANCE_NAME}
+          - kippcamden
         volumes:
           - name: secret-volume
             secret:
-              secretName: ${INSTANCE_NAME}-ssh-keys
+              secretName: kippcamden-ssh-keys
         volume_mounts:
           - name: secret-volume
             readOnly: true
