@@ -16,7 +16,7 @@ else
 	cat ./env/common.env \
 		./env/local.env.tmpl \
 		>"${tmpfile}"
-	envsubst <"${tmpfile}" >./env/"${INSTANCE_NAME}"/local.env
+	envsubst < "${tmpfile}" > ./env/"${INSTANCE_NAME}"/local.env
 
 	# create prod and stg .env
 	pdm run env-update "${INSTANCE_NAME}"
