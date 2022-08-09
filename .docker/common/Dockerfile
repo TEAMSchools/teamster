@@ -33,8 +33,8 @@ WORKDIR $HOME/app
 COPY . $HOME/app
 
 # # install project dependencies
-RUN pdm config python.use_venv False
-RUN pdm install --prod --no-lock --no-editable
+RUN pdm config python.use_venv False \
+    && pdm install --prod --no-lock --no-editable
 
 # add pdm directories to PATH envars
 ARG IMAGE_PYTHON_VERSION
