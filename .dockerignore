@@ -66,7 +66,6 @@ venv.bak/
 
 # teamster additions
 .dagster/
-.docker/
 .git/
 .github/
 .google/
@@ -75,3 +74,12 @@ venv.bak/
 history/
 schedules/
 secrets/
+
+# Common
+compose.yaml
+Dockerfile
+
+# local exclusions
+teamster/*
+!teamster/common/
+!teamster/kippcamden/

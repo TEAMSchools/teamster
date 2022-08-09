@@ -1,17 +1,17 @@
 locations:
-  core:
+  kippcamden:
     build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core
+    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
     working_directory: /root/app
     package_name: teamster.local
     container_context:
       k8s:
         env_secrets:
-          - core
+          - kippcamden
         volumes:
           - name: secret-volume
             secret:
-              secretName: core-ssh-keys
+              secretName: kippcamden-ssh-keys
         volume_mounts:
           - name: secret-volume
             readOnly: true
