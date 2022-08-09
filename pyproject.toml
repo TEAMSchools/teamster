@@ -29,8 +29,8 @@ build-backend = "pdm.pep517.api"
 dev = ["dagster-docker>=0.16.1"]
 
 [tool.pdm.scripts]
-_.env_file = "./env/core/prod.env"  # update per branch
-dagster-docker.env_file = "./env/core/stg.env"  # update per branch
+_.env_file = "./env/kippmiami/prod.env"  # update per branch
+dagster-docker.env_file = "./env/kippmiami/stg.env"  # update per branch
 local-init.env_file = "./env/common.env"
 common-init.shell = "bash ./.teamster/common-init.sh"
 local-init.shell = "bash ./.teamster/local-init.sh"
