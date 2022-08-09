@@ -15,7 +15,7 @@ ops:
         path: "/global/50323/USERS"
       queries:
         - sql:
-            file: "./teamster/local/config/datagun/sql/egencia-users.sql"
+            file: "./teamster/kipptaf/config/datagun/sql/egencia-users.sql"
           file:
             stem: "users_{}"
             suffix: csv

@@ -15,7 +15,7 @@ deanslist_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-deanslist.yaml",
+            "./teamster/kipptaf/config/datagun/query-deanslist.yaml",
         ]
     ),
     tags={
@@ -36,7 +36,7 @@ illuminate_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-illuminate.yaml",
+            "./teamster/kipptaf/config/datagun/query-illuminate.yaml",
         ]
     ),
     tags={
@@ -57,7 +57,7 @@ gsheets_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-gsheets.yaml",
+            "./teamster/kipptaf/config/datagun/query-gsheets.yaml",
         ]
     ),
     tags={
@@ -78,7 +78,7 @@ clever_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-clever.yaml",
+            "./teamster/kipptaf/config/datagun/query-clever.yaml",
         ]
     ),
     tags={
@@ -99,7 +99,7 @@ razkids_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-razkids.yaml",
+            "./teamster/kipptaf/config/datagun/query-razkids.yaml",
         ]
     ),
 )
@@ -113,7 +113,7 @@ read180_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-read180.yaml",
+            "./teamster/kipptaf/config/datagun/query-read180.yaml",
         ]
     ),
 )
@@ -127,7 +127,7 @@ littlesis_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-littlesis.yaml",
+            "./teamster/kipptaf/config/datagun/query-littlesis.yaml",
         ]
     ),
 )
@@ -141,7 +141,7 @@ gam_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-gam.yaml",
+            "./teamster/kipptaf/config/datagun/query-gam.yaml",
         ]
     ),
 )
@@ -155,7 +155,7 @@ blissbook_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-blissbook.yaml",
+            "./teamster/kipptaf/config/datagun/query-blissbook.yaml",
         ]
     ),
 )
@@ -169,7 +169,7 @@ coupa_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-coupa.yaml",
+            "./teamster/kipptaf/config/datagun/query-coupa.yaml",
         ]
     ),
 )
@@ -183,7 +183,7 @@ egencia_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-egencia.yaml",
+            "./teamster/kipptaf/config/datagun/query-egencia.yaml",
         ]
     ),
 )
@@ -197,7 +197,7 @@ adp_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-adp.yaml",
+            "./teamster/kipptaf/config/datagun/query-adp.yaml",
         ]
     ),
 )
@@ -211,7 +211,7 @@ fpodms_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-fpodms.yaml",
+            "./teamster/kipptaf/config/datagun/query-fpodms.yaml",
         ]
     ),
 )
@@ -225,7 +225,7 @@ njdoe_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-njdoe.yaml",
+            "./teamster/kipptaf/config/datagun/query-njdoe.yaml",
         ]
     ),
 )
@@ -239,7 +239,7 @@ whetstone_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-whetstone.yaml",
+            "./teamster/kipptaf/config/datagun/query-whetstone.yaml",
         ]
     ),
 )
@@ -253,7 +253,7 @@ idauto_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-idauto.yaml",
+            "./teamster/kipptaf/config/datagun/query-idauto.yaml",
         ]
     ),
 )

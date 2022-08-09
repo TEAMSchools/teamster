@@ -15,7 +15,7 @@ powerschool_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-powerschool.yaml",
+            "./teamster/kippmiami/config/datagun/query-powerschool.yaml",
         ]
     ),
 )
