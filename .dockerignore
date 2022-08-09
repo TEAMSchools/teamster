@@ -82,4 +82,3 @@ Dockerfile
 # local exclusions
 teamster/*
 !teamster/common/
-!teamster/kippcamden/
