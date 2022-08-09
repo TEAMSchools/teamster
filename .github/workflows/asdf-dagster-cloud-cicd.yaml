@@ -6,8 +6,8 @@ on:
       - asdf
     paths:
       - "teamster/**"
-      - ".github/workflows/dagster-cloud-cicd.yaml"
-      - ".dagster/cloud-workspace-gh.yaml"
+      - ".github/workflows/asdf-dagster-cloud-cicd.yaml"
+      - ".dagster/asdf-cloud-workspace-gh.yaml"
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
