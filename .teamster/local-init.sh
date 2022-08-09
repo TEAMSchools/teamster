@@ -8,7 +8,7 @@ if [[ -z ${instance_name} ]]; then
 else
 	export INSTANCE_NAME=${instance_name}
 
-	# create local.env dir
+	# create local env dir
 	mkdir -p ./env/"${INSTANCE_NAME}"
 
 	# create local.env
@@ -20,4 +20,18 @@ else
 
 	# create prod and stg .env
 	pdm run env-update "${INSTANCE_NAME}"
+
+	# create local branch
+	git switch -c "${INSTANCE_NAME}"
+
+	# configure local branch
+	sed -i -e "s/core/${INSTANCE_NAME}/g" ./pyproject.toml
+	echo "!teamster/${INSTANCE_NAME}/" >> ./.dockerignore
+
+	# commit to branch
+	git add ./pyproject.toml ./.dockerignore
+	git commit -m "Create local branch"
+
+	# return to main
+	git switch main
 fi
