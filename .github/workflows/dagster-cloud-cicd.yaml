@@ -2,7 +2,7 @@ name: Dagster Cloud CI/CD
 on:
   workflow_dispatch:
   push:
-    branches:
+    branches-ignore:
       - main
     paths:
       - "teamster/**"
@@ -46,7 +46,7 @@ jobs:
 
       # https://github.com/dagster-io/dagster-cloud-cicd-action
       - name: Run Dagster Cloud CI/CD action
-        uses: dagster-io/dagster-cloud-cicd-action/deploy@v0.2.4
+        uses: dagster-io/dagster-cloud-cicd-action/deploy@v0.2.5
         with:
           location-file: ./.dagster/cloud-workspace-gh.yaml
           image-tag: latest
