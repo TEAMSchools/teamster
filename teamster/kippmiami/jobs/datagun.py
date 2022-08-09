@@ -20,7 +20,7 @@ datagun_etl_sftp = run_queries.to_job(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/template-query-sftp.yaml",
+            "./teamster/kippmiami/config/datagun/template-query-sftp.yaml",
         ]
     ),
 )
@@ -38,7 +38,7 @@ datagun_etl_gsheets = run_queries.to_job(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/template-query-gsheets.yaml",
+            "./teamster/kippmiami/config/datagun/template-query-gsheets.yaml",
         ]
     ),
 )

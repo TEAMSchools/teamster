@@ -15,7 +15,7 @@ powerschool_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-powerschool.yaml",
+            "./teamster/kippnewark/config/datagun/query-powerschool.yaml",
         ]
     ),
     tags={
@@ -36,7 +36,7 @@ nps_datagun = ScheduleDefinition(
         [
             "./teamster/common/config/datagun/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/datagun/query-nps.yaml",
+            "./teamster/kippnewark/config/datagun/query-nps.yaml",
         ]
     ),
 )

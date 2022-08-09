@@ -18,7 +18,7 @@ powerschool_extract = run_queries.to_job(
         [
             "./teamster/common/config/powerschool/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/powerschool/query-default.yaml",
+            "./teamster/kippnewark/config/powerschool/query-default.yaml",
         ]
     ),
 )
@@ -35,7 +35,7 @@ powerschool_resync = run_queries.to_job(
         [
             "./teamster/common/config/powerschool/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/powerschool/query-resync.yaml",
+            "./teamster/kippnewark/config/powerschool/query-resync.yaml",
         ]
     ),
     tags={
@@ -65,7 +65,7 @@ powerschool_resync_assignmentscore = run_queries.to_job(
         [
             "./teamster/common/config/powerschool/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/local/config/powerschool/query-resync-assignmentscore.yaml",
+            "./teamster/kippnewark/config/powerschool/query-resync-assignmentscore.yaml",
         ]
     ),
     tags={
