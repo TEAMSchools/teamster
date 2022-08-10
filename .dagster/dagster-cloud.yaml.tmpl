@@ -1,9 +1,11 @@
 locations:
-  ${INSTANCE_NAME}:
-    build: ../
-    registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
+  - location_name: ${INSTANCE_NAME}:
+    code_source:
+      package_name: teamster.${INSTANCE_NAME}
+    build:
+      directory: ../
+      registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
     working_directory: /root/app
-    package_name: teamster.${INSTANCE_NAME}
     container_context:
       k8s:
         env_secrets:
