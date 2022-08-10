@@ -21,13 +21,17 @@ else
 	# create prod and stg .env
 	pdm run env-update "${INSTANCE_NAME}"
 
-	# create GH worfklow files
+	# create DC location file
 	envsubst \
 		<./.dagster/cloud-workspace-gh.yaml.tmpl \
 		>./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml
+
+	# create GH workflow file
 	envsubst \
 		<./.github/workflows/dagster-cloud-cicd.yaml.tmpl \
 		>.github/workflows/"${INSTANCE_NAME}"-dagster-cloud-cicd.yaml
+
+	# commit to git
 	git add \
 		./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml \
 		.github/workflows/"${INSTANCE_NAME}"-dagster-cloud-cicd.yaml
@@ -37,13 +41,13 @@ else
 	git switch -c "${INSTANCE_NAME}"
 
 	# configure local branch
-	sed -i -e "s/core/${INSTANCE_NAME}/g" ./pyproject.toml
+	sed -i -e "s/dev/${INSTANCE_NAME}/g" ./pyproject.toml
 	echo "!teamster/${INSTANCE_NAME}/" >>./.dockerignore
 
 	# commit to branch
 	git add ./pyproject.toml ./.dockerignore
 	git commit -m "Create local branch"
 
-	# return to main
-	git switch main
+	# return to dev
+	git switch dev
 fi
