@@ -6,8 +6,8 @@ on:
       - dev
     paths:
       - "teamster/**"
-      - ".github/workflows/dev-dagster-cloud-cicd.yaml"
-      - ".dagster/dev-cloud-workspace-gh.yaml"
+      - ".github/workflows/dev-deploy.yaml"
+      - ".dagster/dev-dagster-cloud.yaml"
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
