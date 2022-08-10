@@ -16,9 +16,8 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 env:
-  REGISTRY: ${{ secrets.TEAMSTER_GCP_REGION }}-docker.pkg.dev
-  SERVICE_ACCOUNT: ${{ secrets.TEAMSTER_GCP_SA_NAME }}@${{ secrets.TEAMSTER_GCP_PROJECT_ID }}.iam.gserviceaccount.com
-  DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
+  REGISTRY: us-central1-docker.pkg.dev
+  SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
 
 jobs:
@@ -59,7 +58,7 @@ jobs:
         uses: google-github-actions/auth@v0
         with:
           token_format: "access_token"
-          workload_identity_provider: ${{ secrets.TEAMSTER_GH_GCP_WI_PROVIDER}}
+          workload_identity_provider: projects/624231820004/locations/global/workloadIdentityPools/github-pool
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
       # https://github.com/docker/login-action
