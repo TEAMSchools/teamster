@@ -3,7 +3,7 @@ locations:
     code_source:
       package_name: teamster.dev
     build:
-      directory: ../
+      directory: /
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-dev/teamster-dev
     working_directory: /root/app
     container_context:
