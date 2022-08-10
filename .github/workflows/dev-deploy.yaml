@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build_info: ${{ steps.parse-workspace.outputs.build_info }}
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout repo
@@ -45,6 +46,10 @@ jobs:
       fail-fast: false
       matrix:
         location: ${{ fromJSON(needs.parse_workspace.outputs.build_info) }}
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
