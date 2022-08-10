@@ -1,9 +1,11 @@
 locations:
-  dev:
-    build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-dev/teamster-dev
+  - location_name: dev
+    code_source:
+      package_name: teamster.dev
+    build:
+      directory: ../
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-dev/teamster-dev
     working_directory: /root/app
-    package_name: teamster.dev
     container_context:
       k8s:
         env_secrets:
