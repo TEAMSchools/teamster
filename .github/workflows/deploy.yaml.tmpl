@@ -58,7 +58,7 @@ jobs:
         uses: google-github-actions/auth@v0
         with:
           token_format: "access_token"
-          workload_identity_provider: ${GH_WORKLOAD_IDENTITY_POOL_ID}/providers/github-provider
+          workload_identity_provider: ${GH_WORKLOAD_IDENTITY_POOL_PROVIDER}
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
       # https://github.com/docker/login-action

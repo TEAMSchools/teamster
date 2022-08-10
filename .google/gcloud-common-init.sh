@@ -37,11 +37,12 @@ gcloud iam workload-identity-pools create "github-pool" \
 gcloud iam workload-identity-pools providers create-oidc "github-provider" \
 	--project="${GCP_PROJECT_ID}" \
 	--location="global" \
-	--workload-identity-pool="github-pool" \
 	--display-name="GitHub Provider" \
-	--attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
-	--issuer-uri="https://token.actions.githubusercontent.com"
+	--workload-identity-pool="github-pool" \
+	--issuer-uri="https://token.actions.githubusercontent.com" \
+	--attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository"
 
+# save WI pool id to env
 GH_WORKLOAD_IDENTITY_POOL_ID=gcloud iam workload-identity-pools describe "github-pool" \
   --project="${GCP_PROJECT_ID}" \
   --location="global" \
@@ -49,7 +50,9 @@ GH_WORKLOAD_IDENTITY_POOL_ID=gcloud iam workload-identity-pools describe "github
 
 export GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}
 echo "GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}" >> ./env/common.env
+echo "GH_WORKLOAD_IDENTITY_POOL_PROVIDER=${GH_WORKLOAD_IDENTITY_POOL_ID}/providers/github-provider" >> ./env/common.env
 
+# bind service account to WI pool
 gcloud iam service-accounts \
 	add-iam-policy-binding "${GCP_SERVICE_ACCOUNT}" \
 	--project="${GCP_PROJECT_ID}" \
