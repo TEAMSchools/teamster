@@ -1,0 +1,10 @@
+alert_policies:
+  - name: slack-alert-failures
+    description: An alert policy to send a Slack notification on job failure.
+    event_types:
+      - JOB_FAILURE
+    notification_service:
+      slack:
+        slack_workspace_name: KIPP New Jersey + Miami
+        slack_channel_name: data-alerts
+    enabled: true

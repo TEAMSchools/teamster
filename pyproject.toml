@@ -47,3 +47,8 @@ docker-push.shell = "docker push ${IMAGE_URI}"
 dagster-docker.shell = 'dagster-cloud agent run --deployment stg --agent-token ${DAGSTER_CLOUD_AGENT_TOKEN} --user-code-launcher "dagster_cloud.workspace.docker.DockerUserCodeLauncher"'
 dagster-local.shell = "docker compose run --rm dagster dagster-cloud agent run ."
 dagster-sync.shell = "bash ./.dagster/dagster-cloud-workspace-sync.sh"
+k8s-init.shell = "bash ./.google/k8s-init.sh"
+helm-install.shell = "bash .helm/helm-install.sh"
+wi-federation-gh.shell = "bash ./.google/wi-federation-gh.sh"
+tf-export.shell = "gcloud beta resource-config bulk-export --path=./.google/terraform --project=${GCP_PROJECT_ID} --resource-format=terraform"
+dagster-deployment.shell = "bash ./.dagster/dagster-deployment.sh"
