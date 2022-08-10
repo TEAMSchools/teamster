@@ -1,7 +1,7 @@
 import json
 
 from dagster import Field, IntSource, StringSource, resource
-from dagster.utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts
 from sqlalchemy import text
 from sqlalchemy.engine import URL, create_engine
 
