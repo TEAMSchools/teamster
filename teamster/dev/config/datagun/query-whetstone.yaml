@@ -1,0 +1,22 @@
+resources:
+  destination:
+    config:
+      remote_host:
+        env: PYTHONANYWHERE_SFTP_HOST
+      username:
+        env: PYTHONANYWHERE_SFTP_USERNAME
+      password:
+        env: PYTHONANYWHERE_SFTP_PASSWORD
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: "whetstone"
+        type: "sftp"
+        path: "./sftp/whetstone"
+      queries:
+        - file:
+            stem: "whetstone_users"
+            suffix: "json"
+          sql:
+            file: "./teamster/dev/config/datagun/sql/whetstone-users.sql"

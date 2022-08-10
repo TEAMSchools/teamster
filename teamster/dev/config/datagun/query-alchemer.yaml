@@ -1,0 +1,23 @@
+resources:
+  destination:
+    config:
+      remote_host:
+        env: PYTHONANYWHERE_SFTP_HOST
+      username:
+        env: PYTHONANYWHERE_SFTP_USERNAME
+      password:
+        env: PYTHONANYWHERE_SFTP_PASSWORD
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: "alchemer"
+        type: "sftp"
+        path: "./sftp/alchemer"
+      queries:
+        - file:
+            stem: "alchemer_contacts"
+            suffix: "json"
+          sql:
+            schema:
+              table: gabby.extracts.surveygizmo_contacts

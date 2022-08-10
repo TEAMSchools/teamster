@@ -1,0 +1,33 @@
+execution:
+  config:
+    multiprocess:
+      max_concurrent: 2
+resources:
+  destination:
+    config:
+      remote_host:
+        env: READ180_SFTP_HOST
+      username:
+        env: READ180_SFTP_USERNAME
+      password:
+        env: READ180_SFTP_PASSWORD
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: read180
+        type: sftp
+        path: "/uploads"
+      queries:
+        - sql:
+            schema:
+              table: gabby.extracts.read180_teachers
+          file:
+            stem: teachers
+            suffix: csv
+        - sql:
+            schema:
+              table: gabby.extracts.read180_students
+          file:
+            stem: students
+            suffix: csv

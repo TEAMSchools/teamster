@@ -1,0 +1,23 @@
+resources:
+  destination:
+    config:
+      remote_host:
+        env: PYTHONANYWHERE_SFTP_HOST
+      username:
+        env: PYTHONANYWHERE_SFTP_USERNAME
+      password:
+        env: PYTHONANYWHERE_SFTP_PASSWORD
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: "adp"
+        type: "sftp"
+        path: "./sftp/adp"
+      queries:
+        - file:
+            stem: "adp_workers"
+            suffix: "json"
+          sql:
+            schema:
+              table: "gabby.extracts.adp_workers"
