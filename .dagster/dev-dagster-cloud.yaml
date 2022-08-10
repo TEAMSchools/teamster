@@ -10,11 +10,3 @@ locations:
       k8s:
         env_secrets:
           - dev
-        # volumes:
-        #   - name: secret-volume
-        #     secret:
-        #       secretName: dev-ssh-keys
-        # volume_mounts:
-        #   - name: secret-volume
-        #     readOnly: true
-        #     mountPath: "/etc/secret-volume"
