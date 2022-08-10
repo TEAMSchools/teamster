@@ -10,7 +10,7 @@ from sshtunnel import SSHTunnelForwarder
 
 from teamster.common.utils import CustomJSONEncoder
 
-sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb
+sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
 
 
 class SqlAlchemyEngine(object):
