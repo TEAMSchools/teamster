@@ -23,18 +23,18 @@ else
 
 	# create DC location file
 	envsubst \
-		<./.dagster/cloud-workspace-gh.yaml.tmpl \
-		>./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml
+		<./.dagster/dagster-cloud.yaml.tmpl \
+		>./.dagster/dagster-cloud-"${INSTANCE_NAME}".yaml
 
 	# create GH workflow file
 	envsubst \
-		<./.github/workflows/dagster-cloud-cicd.yaml.tmpl \
-		>.github/workflows/"${INSTANCE_NAME}"-dagster-cloud-cicd.yaml
+		<./.github/workflows/deploy.yaml.tmpl \
+		>./.github/workflows/deploy-"${INSTANCE_NAME}".yaml
 
 	# commit to git
 	git add \
-		./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml \
-		.github/workflows/"${INSTANCE_NAME}"-dagster-cloud-cicd.yaml
+		./.dagster/dagster-cloud-"${INSTANCE_NAME}".yaml \
+		./.github/workflows/deploy-"${INSTANCE_NAME}".yaml
 	git commit -m "Add ${INSTANCE_NAME} cloud workspace config"
 
 	# create local branch
