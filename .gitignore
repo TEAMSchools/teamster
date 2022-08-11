@@ -161,6 +161,3 @@ cython_debug/
 
 # custom exclusions
 history/
-secrets/
-cloud-workspace-prod.yaml
-cloud-workspace-stg.yaml

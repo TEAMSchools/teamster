@@ -14,6 +14,8 @@ dependencies = [
   "sqlalchemy>=1.4.40",
   "pyodbc>=4.0.34",
   "gspread>=5.4.0",
+  "oracledb>=1.0.3",
+  "sshtunnel>=0.4.0",
 ]
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -29,8 +31,8 @@ build-backend = "pdm.pep517.api"
 dev = ["dagster-docker>=0.16.1"]
 
 [tool.pdm.scripts]
-_.env_file = "./env/core/prod.env"
-dagster-docker.env_file = "./env/core/stg.env"
+_.env_file = "./env/dev/prod.env"
+dagster-docker.env_file = "./env/dev/stg.env"
 local-init.env_file = "./env/common.env"
 common-init.shell = "bash ./.teamster/common-init.sh"
 local-init.shell = "bash ./.teamster/local-init.sh"
@@ -45,3 +47,6 @@ docker-push.shell = "docker push ${IMAGE_URI}"
 dagster-docker.shell = 'dagster-cloud agent run --deployment stg --agent-token ${DAGSTER_CLOUD_AGENT_TOKEN} --user-code-launcher "dagster_cloud.workspace.docker.DockerUserCodeLauncher"'
 dagster-local.shell = "docker compose run --rm dagster dagster-cloud agent run ."
 dagster-sync.shell = "bash ./.dagster/dagster-cloud-workspace-sync.sh"
+k8s-init.shell = "bash ./.google/k8s-init.sh"
+helm-install.shell = "bash .helm/helm-install.sh"
+tf-export.shell = "gcloud beta resource-config bulk-export --path=./.google/terraform --project=${GCP_PROJECT_ID} --resource-format=terraform"
