@@ -1,17 +1,10 @@
-name: ${INSTANCE_NAME} - Hybrid Prod Deployment
+name: ${INSTANCE_NAME} - Hybrid Branch Deployments
 
 on:
-  workflow_dispatch:
-  push:
+  pull_request:
     branches:
       - ${INSTANCE_NAME}
-    paths:
-      - "teamster/**"
-      - ".github/workflows/deploy-${INSTANCE_NAME}.yaml"
-      - ".dagster/dagster-cloud-${INSTANCE_NAME}.yaml"
-      - "Dockerfile"
-      - ".dockerignore"
-      - "pdm.lock"
+    types: [opened, synchronize, reopened, closed]
 
 concurrency:
   # Cancel in-progress runs on same branch
@@ -73,7 +66,7 @@ jobs:
 
       # https://github.com/dagster-io/dagster-cloud-action
       - name: Build and deploy to Dagster Cloud hybrid
-        uses: dagster-io/dagster-cloud-action/actions/hybrid_prod_deploy@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/hybrid_branch_deploy@v0.1
         with:
           organization_id: ${DAGSTER_ORGANIZATION_ID}
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
