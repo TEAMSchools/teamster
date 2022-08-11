@@ -1,5 +1,5 @@
 locations:
-  - location_name: kippnewark
+  - location_name: kippnewark:
     code_source:
       package_name: teamster.kippnewark
     build:
