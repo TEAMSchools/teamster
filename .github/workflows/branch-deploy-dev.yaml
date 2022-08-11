@@ -1,17 +1,10 @@
-name: ${INSTANCE_NAME} - Hybrid Prod Deployment
+name: dev - Hybrid Branch Deployments
 
 on:
-  workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - ${INSTANCE_NAME}
-    paths:
-      - "teamster/**"
-      - ".github/workflows/deploy-${INSTANCE_NAME}.yaml"
-      - ".dagster/dagster-cloud-${INSTANCE_NAME}.yaml"
-      - "Dockerfile"
-      - ".dockerignore"
-      - "pdm.lock"
+      - dev
+    types: [opened, synchronize, reopened, closed]
 
 concurrency:
   # Cancel in-progress runs on same branch
@@ -19,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY: ${GCP_REGION}-docker.pkg.dev
-  SERVICE_ACCOUNT: ${GCP_SERVICE_ACCOUNT_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com
+  REGISTRY: us-central1-docker.pkg.dev
+  SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
 
 jobs:
   parse_workspace:
@@ -37,7 +30,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: ./.dagster/dagster-cloud-${INSTANCE_NAME}.yaml
+          dagster_cloud_file: ./.dagster/dagster-cloud-dev.yaml
 
   dagster_cloud_build_push:
     runs-on: ubuntu-latest
@@ -60,7 +53,7 @@ jobs:
         uses: google-github-actions/auth@v0
         with:
           token_format: "access_token"
-          workload_identity_provider: ${GH_WORKLOAD_IDENTITY_POOL_PROVIDER}
+          workload_identity_provider: projects/624231820004/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
       # https://github.com/docker/login-action
@@ -73,9 +66,9 @@ jobs:
 
       # https://github.com/dagster-io/dagster-cloud-action
       - name: Build and deploy to Dagster Cloud hybrid
-        uses: dagster-io/dagster-cloud-action/actions/hybrid_prod_deploy@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/hybrid_branch_deploy@v0.1
         with:
-          organization_id: ${DAGSTER_ORGANIZATION_ID}
+          organization_id: kipptaf
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
           location: ${{ toJson(matrix.location) }}
         env:

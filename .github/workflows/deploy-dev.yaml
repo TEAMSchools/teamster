@@ -1,4 +1,5 @@
 name: dev - Hybrid Prod Deployment
+
 on:
   workflow_dispatch:
   push:
@@ -11,14 +12,15 @@ on:
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
+
 concurrency:
   # Cancel in-progress deploys to main branch
   group: ${{ github.ref }}
   cancel-in-progress: true
+
 env:
   REGISTRY: us-central1-docker.pkg.dev
   SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
-  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
 
 jobs:
   parse_workspace:
@@ -47,8 +49,8 @@ jobs:
       matrix:
         location: ${{ fromJSON(needs.parse_workspace.outputs.build_info) }}
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       # https://github.com/actions/checkout

@@ -68,16 +68,24 @@ venv.bak/
 Dockerfile
 compose.yaml
 
-; # Teamster exclusions
+; # dev exclusions
 .dagster/
 .git/
 .github/
 .google/
+.helm/
 .teamster/
+.trunk/
 .vscode/
 history/
 schedules/
 secrets/
+.flake8
+.gitignore
+.hadolint.yaml
+.isort.cfg
+.markdownlint.yaml
+.shellcheckrc
 
 ; # local exclusions
 teamster/

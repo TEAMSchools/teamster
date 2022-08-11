@@ -26,15 +26,20 @@ else
 		<./.dagster/dagster-cloud.yaml.tmpl \
 		>./.dagster/dagster-cloud-"${INSTANCE_NAME}".yaml
 
-	# create GH workflow file
+	# create GH workflow files
 	envsubst \
 		<./.github/workflows/deploy.yaml.tmpl \
 		>./.github/workflows/deploy-"${INSTANCE_NAME}".yaml
 
+	envsubst \
+		<./.github/workflows/branch-deploy.yaml.tmpl \
+		>./.github/workflows/branch-deploy-"${INSTANCE_NAME}".yaml
+
 	# commit to git
 	git add \
 		./.dagster/dagster-cloud-"${INSTANCE_NAME}".yaml \
-		./.github/workflows/deploy-"${INSTANCE_NAME}".yaml
+		./.github/workflows/deploy-"${INSTANCE_NAME}".yaml \
+		./.github/workflows/branch-deploy-"${INSTANCE_NAME}".yaml \
 	git commit -m "Add ${INSTANCE_NAME} cloud workspace config"
 
 	# create local branch
@@ -47,7 +52,5 @@ else
 	# commit to branch
 	git add ./pyproject.toml ./.dockerignore
 	git commit -m "Create local branch"
-
-	# return to dev
-	git switch dev
+	git status
 fi
