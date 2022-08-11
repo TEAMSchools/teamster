@@ -18,8 +18,10 @@ env:
 jobs:
   parse_workspace:
     runs-on: ubuntu-latest
+
     outputs:
       build_info: ${{ steps.parse-workspace.outputs.build_info }}
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout repo
@@ -33,13 +35,19 @@ jobs:
           dagster_cloud_file: ./.dagster/dagster-cloud-${INSTANCE_NAME}.yaml
 
   dagster_cloud_build_push:
+    name: Dagster Hybrid Deploy
     runs-on: ubuntu-latest
     needs: parse_workspace
-    name: Dagster Hybrid Deploy
+
     strategy:
       fail-fast: false
       matrix:
         location: ${{ fromJSON(needs.parse_workspace.outputs.build_info) }}
+
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
