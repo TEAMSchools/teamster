@@ -1,17 +1,19 @@
 locations:
-  kippmiami:
-    build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
+  - location_name: kippcamden
+    code_source:
+      package_name: teamster.kippcamden
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
     working_directory: /root/app
-    package_name: teamster.kippmiami
     container_context:
       k8s:
         env_secrets:
-          - kippmiami
+          - kippcamden
         # volumes:
         #   - name: secret-volume
         #     secret:
-        #       secretName: kippmiami-ssh-keys
+        #       secretName: kippcamden-ssh-keys
         # volume_mounts:
         #   - name: secret-volume
         #     readOnly: true

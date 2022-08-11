@@ -1,0 +1,20 @@
+locations:
+  - location_name: ${INSTANCE_NAME}
+    code_source:
+      package_name: teamster.${INSTANCE_NAME}
+    build:
+      directory: ./
+      registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - ${INSTANCE_NAME}
+        # volumes:
+        #   - name: secret-volume
+        #     secret:
+        #       secretName: ${INSTANCE_NAME}-ssh-keys
+        # volume_mounts:
+        #   - name: secret-volume
+        #     readOnly: true
+        #     mountPath: "/etc/secret-volume"
