@@ -78,6 +78,7 @@ jobs:
       - name: Build and deploy to Dagster Cloud hybrid
         uses: dagster-io/dagster-cloud-action/actions/hybrid_prod_deploy@v0.1
         with:
+          organization_id: kipptaf
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
           location: ${{ toJson(matrix.location) }}
         env:
