@@ -8,42 +8,51 @@ if [[ -z ${instance_name} ]]; then
 else
 	export INSTANCE_NAME=${instance_name}
 
-	# create local env dir
-	mkdir -p ./env/"${INSTANCE_NAME}"
-
-	# create local.env
-	tmpfile=$(mktemp)
-	cat ./env/common.env \
-		./env/local.env.tmpl \
-		>"${tmpfile}"
-	envsubst <"${tmpfile}" >./env/"${INSTANCE_NAME}"/local.env
-
-	# create prod and stg .env
-	pdm run env-update "${INSTANCE_NAME}"
-
-	# create GH worfklow files
+	# create DC location file
 	envsubst \
-		<./.dagster/cloud-workspace-gh.yaml.tmpl \
-		>./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml
+		<./.dagster/dagster-cloud.yaml.tmpl \
+		>./.dagster/dagster-cloud-"${INSTANCE_NAME}".yaml
+
+	# create GH workflow files
 	envsubst \
-		<./.github/workflows/dagster-cloud-cicd.yaml.tmpl \
-		>.github/workflows/"${INSTANCE_NAME}"-dagster-cloud-cicd.yaml
+		<./.github/workflows/deploy.yaml.tmpl \
+		>./.github/workflows/deploy-"${INSTANCE_NAME}".yaml
+
+	envsubst \
+		<./.github/workflows/branch-deploy.yaml.tmpl \
+		>./.github/workflows/branch-deploy-"${INSTANCE_NAME}".yaml
+
+	# commit to git
 	git add \
-		./.dagster/"${INSTANCE_NAME}"-cloud-workspace-gh.yaml \
-		.github/workflows/"${INSTANCE_NAME}"-dagster-cloud-cicd.yaml
+		./.dagster/dagster-cloud-"${INSTANCE_NAME}".yaml \
+		./.github/workflows/deploy-"${INSTANCE_NAME}".yaml \
+		./.github/workflows/branch-deploy-"${INSTANCE_NAME}".yaml
 	git commit -m "Add ${INSTANCE_NAME} cloud workspace config"
 
-	# create local branch
-	git switch -c "${INSTANCE_NAME}"
+	if [[ ! -d ./env/"${INSTANCE_NAME}" ]]; then
+		# create local env dir
+		mkdir -p ./env/"${INSTANCE_NAME}"
 
-	# configure local branch
-	sed -i -e "s/core/${INSTANCE_NAME}/g" ./pyproject.toml
-	echo "!teamster/${INSTANCE_NAME}/" >>./.dockerignore
+		# create local.env
+		tmpfile=$(mktemp)
+		cat ./env/common.env \
+			./env/local.env.tmpl \
+			>"${tmpfile}"
+		envsubst <"${tmpfile}" >./env/"${INSTANCE_NAME}"/local.env
 
-	# commit to branch
-	git add ./pyproject.toml ./.dockerignore
-	git commit -m "Create local branch"
+		# create prod and stg .env
+		pdm run env-update "${INSTANCE_NAME}"
 
-	# return to main
-	git switch main
+		# create local branch
+		git switch -c "${INSTANCE_NAME}"
+
+		# configure local branch
+		sed -i -e "s/dev/${INSTANCE_NAME}/g" ./pyproject.toml
+		echo "!teamster/${INSTANCE_NAME}/" >>./.dockerignore
+
+		# commit to branch
+		git add ./pyproject.toml ./.dockerignore
+		git commit -m "Create local branch"
+		git status
+	fi
 fi

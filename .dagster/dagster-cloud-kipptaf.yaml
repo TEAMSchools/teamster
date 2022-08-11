@@ -1,9 +1,11 @@
 locations:
-  kipptaf:
-    build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
+  - location_name: kipptaf
+    code_source:
+      package_name: teamster.kipptaf
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
     working_directory: /root/app
-    package_name: teamster.kipptaf
     container_context:
       k8s:
         env_secrets:

@@ -4,6 +4,7 @@ ARG IMAGE_PYTHON_VERSION="3.10"
 FROM python:${IMAGE_PYTHON_VERSION}-slim
 
 # install system deps
+# trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl gnupg build-essential \
     && apt-get clean \
@@ -18,6 +19,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 RUN curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list
 
+# trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 unixodbc-dev \
     && apt-get clean \
