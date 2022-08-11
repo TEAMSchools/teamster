@@ -36,10 +36,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: parse_workspace
     name: Dagster Hybrid Deploy
+
     strategy:
       fail-fast: false
       matrix:
         location: ${{ fromJSON(needs.parse_workspace.outputs.build_info) }}
+
+    permissions:
+      contents: "read"
+      id-token: "write"
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
