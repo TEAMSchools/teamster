@@ -1,9 +1,11 @@
 locations:
-  kippcamden:
-    build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
+  - location_name: kippcamden
+    code_source:
+      package_name: teamster.kippcamden
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
     working_directory: /root/app
-    package_name: teamster.kippcamden
     container_context:
       k8s:
         env_secrets:
