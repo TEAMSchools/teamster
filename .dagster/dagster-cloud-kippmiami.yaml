@@ -1,5 +1,5 @@
 locations:
-  - location_name: kippmiami
+  - location_name: kippmiami:
     code_source:
       package_name: teamster.kippmiami
     build:
