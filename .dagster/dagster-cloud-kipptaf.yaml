@@ -1,5 +1,5 @@
 locations:
-  - location_name: kipptaf:
+  - location_name: kipptaf
     code_source:
       package_name: teamster.kipptaf
     build:
