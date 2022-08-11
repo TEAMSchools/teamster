@@ -77,9 +77,8 @@ secrets/
 
 # Common
 compose.yaml
-Dockerfile
 
 # local exclusions
-teamster/teamster/
-!teamster/teamster/common/
-!teamster/teamster/dev/
+teamster/
+!teamster/common/
+!teamster/dev/
