@@ -80,6 +80,6 @@ compose.yaml
 Dockerfile
 
 # local exclusions
-teamster/
-!teamster/common/
-!teamster/dev/
+teamster/teamster/
+!teamster/teamster/common/
+!teamster/teamster/dev/
