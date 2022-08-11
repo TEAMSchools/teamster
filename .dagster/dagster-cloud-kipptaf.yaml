@@ -10,11 +10,11 @@ locations:
       k8s:
         env_secrets:
           - kipptaf
-        # volumes:
-        #   - name: secret-volume
-        #     secret:
-        #       secretName: kipptaf-ssh-keys
-        # volume_mounts:
-        #   - name: secret-volume
-        #     readOnly: true
-        #     mountPath: "/etc/secret-volume"
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: kipptaf-ssh-keys
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: "/etc/secret-volume"
