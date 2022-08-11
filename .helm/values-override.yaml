@@ -2,6 +2,7 @@ dagsterCloud:
   deployment: prod
 
 dagsterCloudAgent:
+  branchDeployments: true
   resources:
     limits:
       cpu: "250m"
@@ -13,6 +14,9 @@ dagsterCloudAgent:
       ephemeral-storage: "1Gi"
 
 workspace:
+  serverTTL:
+    enabled: true
+    ttlSeconds: 7200
   resources:
     limits:
       cpu: "250m"
