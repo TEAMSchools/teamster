@@ -44,13 +44,13 @@ gcloud iam workload-identity-pools providers create-oidc "github-provider" \
 
 # save WI pool id to env
 GH_WORKLOAD_IDENTITY_POOL_ID=gcloud iam workload-identity-pools describe "github-pool" \
-  --project="${GCP_PROJECT_ID}" \
-  --location="global" \
-  --format="value(name)"
+	--project="${GCP_PROJECT_ID}" \
+	--location="global" \
+	--format="value(name)"
 
 export GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}
-echo "GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}" >> ./env/common.env
-echo "GH_WORKLOAD_IDENTITY_POOL_PROVIDER=${GH_WORKLOAD_IDENTITY_POOL_ID}/providers/github-provider" >> ./env/common.env
+echo "GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}" >>./env/common.env
+echo "GH_WORKLOAD_IDENTITY_POOL_PROVIDER=${GH_WORKLOAD_IDENTITY_POOL_ID}/providers/github-provider" >>./env/common.env
 
 # bind service account to WI pool
 gcloud iam service-accounts \
