@@ -173,7 +173,6 @@ workspace:
   #     memory: 128Mi
   resources: {}
 
-
   # Specifies the timeout when creating a new Kubernetes deployment for a code server.
   #
   # If not set, defaults to 5 minutes.
@@ -191,7 +190,6 @@ workspace:
   #
   # If not set, defaults to 60 seconds.
   serverProcessStartupTimeout: ~
-
 
 ####################################################################################################
 # Compute Logs: (Optional) settings for compute logging
