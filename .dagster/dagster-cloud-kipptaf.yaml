@@ -1,17 +1,19 @@
 locations:
-  kippnewark:
-    build: ../
-    registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippnewark/teamster-kippnewark
+  - location_name: kipptaf
+    code_source:
+      package_name: teamster.kipptaf
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
     working_directory: /root/app
-    package_name: teamster.kippnewark
     container_context:
       k8s:
         env_secrets:
-          - kippnewark
+          - kipptaf
         volumes:
           - name: secret-volume
             secret:
-              secretName: kippnewark-ssh-keys
+              secretName: kipptaf-ssh-keys
         volume_mounts:
           - name: secret-volume
             readOnly: true
