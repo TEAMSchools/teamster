@@ -6,8 +6,8 @@ on:
       - kipptaf
     paths:
       - "teamster/**"
-      - ".github/workflows/kipptaf-deploy.yaml"
-      - ".dagster/kipptaf-dagster-cloud.yaml"
+      - ".github/workflows/deploy-kipptaf.yaml"
+      - ".dagster/dagster-cloud-kipptaf.yaml"
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
@@ -36,7 +36,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: ./.dagster/kipptaf-dagster-cloud.yaml
+          dagster_cloud_file: ./.dagster/dagster-cloud-kipptaf.yaml
 
   dagster_cloud_build_push:
     runs-on: ubuntu-latest

@@ -6,8 +6,8 @@ on:
       - kippmiami
     paths:
       - "teamster/**"
-      - ".github/workflows/kippmiami-deploy.yaml"
-      - ".dagster/kippmiami-dagster-cloud.yaml"
+      - ".github/workflows/deploy-kippmiami.yaml"
+      - ".dagster/dagster-cloud-kippmiami.yaml"
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
@@ -36,7 +36,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: ./.dagster/kippmiami-dagster-cloud.yaml
+          dagster_cloud_file: ./.dagster/dagster-cloud-kippmiami.yaml
 
   dagster_cloud_build_push:
     runs-on: ubuntu-latest

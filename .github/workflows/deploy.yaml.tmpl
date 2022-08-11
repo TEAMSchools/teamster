@@ -6,8 +6,8 @@ on:
       - ${INSTANCE_NAME}
     paths:
       - "teamster/**"
-      - ".github/workflows/${INSTANCE_NAME}-dagster-cloud-cicd.yaml"
-      - ".dagster/${INSTANCE_NAME}-cloud-workspace-gh.yaml"
+      - ".github/workflows/deploy-${INSTANCE_NAME}.yaml"
+      - ".dagster/dagster-cloud-${INSTANCE_NAME}.yaml"
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
