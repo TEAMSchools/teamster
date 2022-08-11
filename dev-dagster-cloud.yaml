@@ -3,10 +3,18 @@ locations:
     code_source:
       package_name: teamster.dev
     build:
-      directory: ../
+      directory: .
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-dev/teamster-dev
     working_directory: /root/app
     container_context:
       k8s:
         env_secrets:
           - dev
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: dev-ssh-keys
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: "/etc/secret-volume"
