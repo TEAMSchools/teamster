@@ -1,12 +1,12 @@
-# Byte-compiled / optimized / DLL files
+; # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+; # C extensions
 *.so
 
-# Distribution / packaging
+; # Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -26,7 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Unit test / coverage reports
+; # Unit test / coverage reports
 htmlcov/
 .tox/
 .nox/
@@ -41,21 +41,21 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Sphinx documentation
+; # Sphinx documentation
 docs/_build/
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-# pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
+; # pdm
+; #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+; # pdm.lock
+; #   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+; #   in version control.
+; #   https://pdm.fming.dev/#use-with-ide
 .pdm.toml
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+; # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
 
-# Environments
+; # Environments
 .env
 .venv
 env/
@@ -64,22 +64,30 @@ ENV/
 env.bak/
 venv.bak/
 
-# teamster additions
+; # Docker Common
+Dockerfile
+compose.yaml
+
+; # dev exclusions
 .dagster/
 .git/
 .github/
 .google/
+.helm/
 .teamster/
+.trunk/
 .vscode/
 history/
 schedules/
 secrets/
+.flake8
+.gitignore
+.hadolint.yaml
+.isort.cfg
+.markdownlint.yaml
+.shellcheckrc
 
-# Common
-compose.yaml
-Dockerfile
-
-# local exclusions
-teamster/*
+; # local exclusions
+teamster/
 !teamster/common/
 !teamster/kipptaf/
