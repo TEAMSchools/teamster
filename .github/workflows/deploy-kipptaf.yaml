@@ -1,13 +1,13 @@
-name: ${INSTANCE_NAME} - Hybrid Prod Deployment
+name: kipptaf - Hybrid Prod Deployment
 on:
   workflow_dispatch:
   push:
     branches:
-      - ${INSTANCE_NAME}
+      - kipptaf
     paths:
       - "teamster/**"
-      - ".github/workflows/${INSTANCE_NAME}-dagster-cloud-cicd.yaml"
-      - ".dagster/${INSTANCE_NAME}-cloud-workspace-gh.yaml"
+      - ".github/workflows/kipptaf-deploy.yaml"
+      - ".dagster/kipptaf-dagster-cloud.yaml"
       - "Dockerfile"
       - ".dockerignore"
       - "pdm.lock"
@@ -16,8 +16,8 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 env:
-  REGISTRY: ${GCP_REGION}-docker.pkg.dev
-  SERVICE_ACCOUNT: ${GCP_SERVICE_ACCOUNT_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com
+  REGISTRY: us-central1-docker.pkg.dev
+  SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
 
 jobs:
@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build_info: ${{ steps.parse-workspace.outputs.build_info }}
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout repo
@@ -35,7 +36,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: ./.dagster/dagster-cloud-${INSTANCE_NAME}.yaml
+          dagster_cloud_file: ./.dagster/kipptaf-dagster-cloud.yaml
 
   dagster_cloud_build_push:
     runs-on: ubuntu-latest
@@ -45,6 +46,10 @@ jobs:
       fail-fast: false
       matrix:
         location: ${{ fromJSON(needs.parse_workspace.outputs.build_info) }}
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
@@ -58,7 +63,7 @@ jobs:
         uses: google-github-actions/auth@v0
         with:
           token_format: "access_token"
-          workload_identity_provider: ${GH_WORKLOAD_IDENTITY_POOL_PROVIDER}
+          workload_identity_provider: projects/624231820004/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
       # https://github.com/docker/login-action
