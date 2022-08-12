@@ -5,7 +5,7 @@ resources:
       driver: cx_oracle
       username: PSNAVIGATOR
       host: localhost
-      port: 1521
+      port: 1234
       database: PSPRODDB
       password:
         env: PS_DB_PASSWORD

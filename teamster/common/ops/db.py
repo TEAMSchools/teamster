@@ -88,8 +88,8 @@ def extract(context, dynamic_query):
 
     data = context.resources.db.execute_text_query(query)
 
-    # if context.resources.db.ssh_tunnel:
-    #     context.resources.db.ssh_tunnel.stop()
+    if context.resources.db.ssh_tunnel:
+        context.resources.db.ssh_tunnel.stop()
 
     if data:
         yield Output(value=data, output_name="data")
