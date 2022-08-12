@@ -39,8 +39,10 @@ class SqlAlchemyEngine(object):
         self.log.info(f"Executing query:\n{query}")
 
         if self.ssh_tunnel:
-            if not self.ssh_tunnel.is_active:
+            try:
                 self.ssh_tunnel.start()
+            except Exception as xc:
+                self.log.debug(f"SSH tunnel failed to start: {xc}")
 
         with self.engine.connect() as conn:
             result = conn.execute(statement=text(query))
