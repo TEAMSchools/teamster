@@ -4,7 +4,18 @@ import pathlib
 import re
 
 import pandas as pd
-from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
+from dagster import (
+    Any,
+    Dict,
+    DynamicOut,
+    DynamicOutput,
+    In,
+    List,
+    Out,
+    Output,
+    Tuple,
+    op,
+)
 
 from teamster.common.config.db import QUERY_CONFIG
 from teamster.common.utils import TODAY, CustomJSONEncoder
@@ -68,6 +79,27 @@ def compose_queries(context):
 
 
 @op(
+    required_resource_keys={"db"},
+    out={"ssh_tunnel": Out(dagster_type=Any, is_required=False)},
+    tags={"dagster/priority": 1},
+)
+def start_ssh_tunnel(context):
+    if context.resources.db.ssh_tunnel:
+        context.log.info("Starting SSH tunnel.")
+        context.resources.db.ssh_tunnel.start()
+        yield Output(value=context.resources.db.ssh_tunnel, output_name="ssh_tunnel")
+
+
+@op(
+    ins={"ssh_tunnel": In(dagster_type=Any)},
+    tags={"dagster/priority": 99},
+)
+def stop_ssh_tunnel(context, ssh_tunnel):
+    context.log.info("Stopping SSH tunnel.")
+    ssh_tunnel.stop()
+
+
+@op(
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
         "data": Out(dagster_type=List[Dict], is_required=False),
@@ -80,7 +112,14 @@ def compose_queries(context):
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
+    if context.resources.db.ssh_tunnel:
+        context.resources.db.ssh_tunnel.start()
+
     data = context.resources.db.execute_text_query(query)
+
+    if context.resources.db.ssh_tunnel:
+        context.resources.db.ssh_tunnel.stop()
+
     if data:
         yield Output(value=data, output_name="data")
         yield Output(value=file_config, output_name="file_config")
