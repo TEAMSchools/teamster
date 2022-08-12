@@ -56,10 +56,12 @@ def compose_queries(context):
             value=(query, file_config, dest_config),
             output_name="dynamic_query",
             mapping_key="_".join(
-                f"{query_type}",
-                f"{re.sub(r'[^A-Za-z0-9_]+', '', file_stem)}",
-                f"{file_suffix}",
-                f"{i}",
+                [
+                    f"{query_type}",
+                    f"{re.sub(r'[^A-Za-z0-9_]+', '', file_stem)}",
+                    f"{file_suffix}",
+                    f"{i}",
+                ]
             ),
         )
 
