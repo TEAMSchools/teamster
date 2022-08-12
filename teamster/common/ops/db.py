@@ -6,12 +6,12 @@ import re
 import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
 
-from teamster.common.config.datagun import DB_QUERY_CONFIG
+from teamster.common.config.db import QUERY_CONFIG
 from teamster.common.utils import TODAY, CustomJSONEncoder
 
 
 @op(
-    config_schema=DB_QUERY_CONFIG,
+    config_schema=QUERY_CONFIG,
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
     tags={"dagster/priority": 1},
 )
@@ -46,6 +46,7 @@ def compose_queries(context):
                 r"[^a-zA-Z0-9=;]", "", where.replace(" AND ", ";").replace(" OR ", ",")
             )
         file_config["stem"] = file_stem.format(TODAY.date().isoformat())
+        file_config["table_name"] = table_name
 
         file_suffix = file_config.get("suffix")
         if not file_suffix:
@@ -97,14 +98,15 @@ def extract(context, dynamic_query):
     tags={"dagster/priority": 3},
 )
 def transform(context, data, file_config, dest_config):
+    table_name = file_config["table_name"]
     file_stem = file_config["stem"]
     file_suffix = file_config["suffix"]
     file_format = file_config.get("format", {})
 
     file_encoding = file_format.get("encoding", "utf-8")
 
-    dest_name = dest_config["name"]
     dest_type = dest_config["type"]
+    dest_name = dest_config.get("name", table_name)
     dest_path = dest_config.get("path")
 
     context.log.info(f"Transforming data to {file_suffix}")
@@ -128,7 +130,7 @@ def transform(context, data, file_config, dest_config):
     elif dest_type in ["gcs", "sftp"]:
         file_handle = context.resources.file_manager.upload_from_string(
             obj=data_bytes,
-            file_key=f"{dest_name}/{file_stem}.{file_suffix}",
+            file_key=(f"{dest_name}/{file_stem}.{file_suffix}"),
         )
         context.log.info(f"Saved to {file_handle.path_desc}.")
 
