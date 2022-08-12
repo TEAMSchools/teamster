@@ -25,7 +25,7 @@ resources:
         remote_bind_host:
           env: PS_SSH_REMOTE_BIND_HOST
         remote_bind_port:
-          env: PS_SSH_REMOTE_BIND_PORT        
+          env: PS_SSH_REMOTE_BIND_PORT
       version:
         env: PS_DB_VERSION
       prefetch_rows:
