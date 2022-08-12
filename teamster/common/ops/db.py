@@ -28,7 +28,7 @@ def compose_queries(context):
                 query = f.read()
         elif query_type == "schema":
             table_name = value["table"]
-            where = value.get("where")
+            where = value.get("where", "")
             query = " ".join(
                 [
                     f"SELECT {value['columns']}",
