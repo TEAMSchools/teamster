@@ -24,7 +24,7 @@ class SqlAlchemyEngine(object):
                 ssh_config.pop("remote_bind_host"),
                 ssh_config.pop("remote_bind_port"),
             )
-            ssh_config["local_bind_port"] = (kwargs["host"], kwargs["port"])
+            ssh_config["local_bind_address"] = (kwargs["host"], kwargs["port"])
         self.ssh_config = ssh_config
 
     def execute_text_query(self, query, output="dict"):
