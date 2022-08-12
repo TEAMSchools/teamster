@@ -3,16 +3,12 @@ resources:
     config:
       dialect: oracle
       driver: cx_oracle
-      username:
-        env: PS_DB_USERNAME
+      username: PSNAVIGATOR
       password:
         env: PS_DB_PASSWORD
-      host:
-        env: PS_DB_HOST
-      port:
-        env: PS_DB_PORT
-      database:
-        env: PS_DB_DATABASE
+      host: localhost
+      port: 1521
+      database: PSPRODDB
       ssh_config:
         ssh_address_or_host:
           env: PS_SSH_HOST
@@ -24,12 +20,9 @@ resources:
           env: PS_SSH_PASSWORD
         remote_bind_host:
           env: PS_SSH_REMOTE_BIND_HOST
-        remote_bind_port:
-          env: PS_SSH_REMOTE_BIND_PORT
+        remote_bind_port: 1521
       version:
         env: PS_DB_VERSION
-      prefetchrows:
-        env: PS_DB_PREFETCHROWS
   file_manager:
     config:
       gcs_prefix: powerschool

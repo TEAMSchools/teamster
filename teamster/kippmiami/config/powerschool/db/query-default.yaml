@@ -2,6 +2,10 @@ execution:
   config:
     multiprocess:
       max_concurrent: 2
+resources:
+  db:
+    config:
+      prefetch_rows: 100000
 ops:
   compose_queries:
     config:
