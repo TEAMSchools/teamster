@@ -173,6 +173,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dagster-k8s"
+version = "0.16.3"
+summary = "A Dagster integration for k8s"
+dependencies = [
+    "dagster==1.0.3",
+    "kubernetes",
+]
+
+[[package]]
 name = "dagster-pandas"
 version = "0.16.3"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
@@ -425,6 +434,24 @@ requires_python = ">=3.7"
 summary = "A very fast and expressive template engine."
 dependencies = [
     "MarkupSafe>=2.0",
+]
+
+[[package]]
+name = "kubernetes"
+version = "24.2.0"
+requires_python = ">=3.6"
+summary = "Kubernetes python client"
+dependencies = [
+    "certifi>=14.05.14",
+    "google-auth>=1.0.1",
+    "python-dateutil>=2.5.3",
+    "pyyaml>=5.4.1",
+    "requests",
+    "requests-oauthlib",
+    "setuptools>=21.0.0",
+    "six>=1.9.0",
+    "urllib3>=1.24.2",
+    "websocket-client!=0.40.0,!=0.41.*,!=0.42.*,>=0.32.0",
 ]
 
 [[package]]
@@ -830,7 +857,7 @@ summary = "WebSocket client for Python with low level API options"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:f79125a74ab30b194febfb8d23ae31b43498310f5a7f68f38d87a5256c1ed810"
+content_hash = "sha256:a9ff201f9dc4b63ae96270baf982c07a77005f18c66cf1b12f63e34629bcfe5d"
 
 [metadata.files]
 "alembic 1.6.5" = [
@@ -991,6 +1018,10 @@ content_hash = "sha256:f79125a74ab30b194febfb8d23ae31b43498310f5a7f68f38d87a5256
 "dagster-gcp 0.16.3" = [
     {url = "https://files.pythonhosted.org/packages/25/12/81dd0f4dfbdfdc1c272232e01c3b495bc83ee8555d2d0ee24c05aab4f69c/dagster_gcp-0.16.3-py3-none-any.whl", hash = "sha256:b5591451a73e6784380d6eefc1134c7ebc76121948c978d09b1c901b78061eb2"},
     {url = "https://files.pythonhosted.org/packages/e3/cc/6f48e9cea82f906b7ae0a661d21e426f329ae5028abbeb9beacd69d78090/dagster-gcp-0.16.3.tar.gz", hash = "sha256:ee2bd32216adeb8c9fa1c69e77430eaf1903eed35c18ccc949cc1ae77a57da57"},
+]
+"dagster-k8s 0.16.3" = [
+    {url = "https://files.pythonhosted.org/packages/27/55/1cca5c7704c358715ba21ea2091e28b16b687783925cd19a513933681873/dagster_k8s-0.16.3-py3-none-any.whl", hash = "sha256:7073511fc0443c133fcb3f073dbfa403e56b2d90e6c07276d9d9be075bf81f94"},
+    {url = "https://files.pythonhosted.org/packages/85/f0/13d3d9debbfbad0267b8a9e919bd67b38b79fb87555744b461fe1b702dc8/dagster-k8s-0.16.3.tar.gz", hash = "sha256:aca6a617e56195c4a4e84bbbee608d33ac52a6420a930a29d7c6428f21417072"},
 ]
 "dagster-pandas 0.16.3" = [
     {url = "https://files.pythonhosted.org/packages/2e/d0/99b9d0a00cdece5685cdf648df6eee15cf08879780cd47545125484d4fce/dagster-pandas-0.16.3.tar.gz", hash = "sha256:f66eef6780bfd765570bf794d5e98fb15a53c9c995ad6d4ca43dd3ee819ca223"},
@@ -1228,6 +1259,10 @@ content_hash = "sha256:f79125a74ab30b194febfb8d23ae31b43498310f5a7f68f38d87a5256
 "jinja2 3.1.2" = [
     {url = "https://files.pythonhosted.org/packages/7a/ff/75c28576a1d900e87eb6335b063fab47a8ef3c8b4d88524c4bf78f670cce/Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
     {url = "https://files.pythonhosted.org/packages/bc/c3/f068337a370801f372f2f8f6bad74a5c140f6fda3d9de154052708dd3c65/Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
+]
+"kubernetes 24.2.0" = [
+    {url = "https://files.pythonhosted.org/packages/22/eb/6b2385fb2e2b8da2f329a2832cd29b3ca39e462f9719d550c7d55e502a73/kubernetes-24.2.0.tar.gz", hash = "sha256:9900f12ae92007533247167d14cdee949cd8c7721f88b4a7da5f5351da3834cd"},
+    {url = "https://files.pythonhosted.org/packages/47/55/edb4a69d03af4bc59fc6696946907aff516fe8e36aa9659b536a9506a558/kubernetes-24.2.0-py2.py3-none-any.whl", hash = "sha256:da19d58865cf903a8c7b9c3691a2e6315d583a98f0659964656dfdf645bf7e49"},
 ]
 "mako 1.2.1" = [
     {url = "https://files.pythonhosted.org/packages/ad/dd/34201dae727bb183ca14fd8417e61f936fa068d6f503991f09ee3cac6697/Mako-1.2.1.tar.gz", hash = "sha256:f054a5ff4743492f1aa9ecc47172cb33b42b9d993cffcc146c9de17e717b0307"},
