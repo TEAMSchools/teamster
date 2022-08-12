@@ -14,18 +14,22 @@ sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracled
 
 
 class SqlAlchemyEngine(object):
-    def __init__(self, dialect, driver, logger, ssh_config=None, **kwargs):
+    def __init__(self, dialect, driver, logger, ssh_config={}, **kwargs):
         self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **kwargs)
         self.engine = create_engine(url=self.connection_url)
 
         if ssh_config:
-            ssh_config["remote_bind_address"] = (
-                ssh_config.pop("remote_bind_host"),
-                ssh_config.pop("remote_bind_port"),
+            for k, v in ssh_config.items():
+                if k not in ["remote_bind_host", "remote_bind_port"]:
+                    self.ssh_config[k] = v
+
+            self.ssh_config["remote_bind_address"] = (
+                ssh_config.get("remote_bind_host"),
+                ssh_config.get("remote_bind_port"),
             )
-            ssh_config["local_bind_address"] = (kwargs["host"], kwargs["port"])
-        self.ssh_config = ssh_config
+
+            self.ssh_config["local_bind_address"] = (kwargs["host"], kwargs["port"])
 
     def execute_text_query(self, query, output="dict"):
         self.log.info(f"Executing query:\n{query}")
