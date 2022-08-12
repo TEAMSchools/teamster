@@ -112,7 +112,14 @@ def stop_ssh_tunnel(context, ssh_tunnel):
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
+    if context.resources.db.ssh_tunnel:
+        context.resources.db.ssh_tunnel.start()
+
     data = context.resources.db.execute_text_query(query)
+
+    if context.resources.db.ssh_tunnel:
+        context.resources.db.ssh_tunnel.stop()
+
     if data:
         yield Output(value=data, output_name="data")
         yield Output(value=file_config, output_name="file_config")

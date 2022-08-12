@@ -1,12 +1,6 @@
 from dagster import graph
 
-from teamster.common.ops.db import (
-    compose_queries,
-    extract,
-    start_ssh_tunnel,
-    stop_ssh_tunnel,
-    transform,
-)
+from teamster.common.ops.db import compose_queries, extract, transform
 
 
 @graph
@@ -21,9 +15,5 @@ def run_queries():
     # parse queries from run config file
     dynamic_query = compose_queries()
 
-    ssh_tunnel = start_ssh_tunnel()
-
     # execute composed queries and transform to configured file type
     dynamic_query.map(execute_query)
-
-    stop_ssh_tunnel(ssh_tunnel=ssh_tunnel)
