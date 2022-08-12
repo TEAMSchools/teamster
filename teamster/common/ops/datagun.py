@@ -17,43 +17,61 @@ from dagster import (
     op,
 )
 
-from teamster.common.config.datagun import COMPOSE_QUERIES_CONFIG
+from teamster.common.config.datagun import DB_QUERY_CONFIG
 from teamster.common.utils import TODAY, CustomJSONEncoder
 
 
 @op(
-    config_schema=COMPOSE_QUERIES_CONFIG,
+    config_schema=DB_QUERY_CONFIG,
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
     tags={"dagster/priority": 1},
 )
 def compose_queries(context):
     dest_config = context.op_config["destination"]
+
     queries = context.op_config["queries"]
-
     for i, q in enumerate(queries):
-        file_config = q["file"]
-        file_stem = re.sub(r"[^A-Za-z0-9_]+", "", file_config["stem"])
         [(query_type, value)] = q["sql"].items()
-
         if query_type == "text":
             query = value
         elif query_type == "file":
             with pathlib.Path(value).absolute().open() as f:
                 query = f.read()
         elif query_type == "schema":
+            table_name = value["table"]
             where = value.get("where")
             query = " ".join(
                 [
                     f"SELECT {value['columns']}",
-                    f"FROM {value['table']}",
+                    f"FROM {table_name}",
                     f"WHERE {where};" if where else ";",
                 ]
             )
 
+        file_config = q.get("file", {})
+
+        file_stem = file_config.get("stem")
+        if not file_stem:
+            context.log.info("No file stem specified, using default: table + where")
+            file_stem = table_name + re.sub(
+                r"[^a-zA-Z0-9=;]", "", where.replace(" AND ", ";").replace(" OR ", ",")
+            )
+        file_config["stem"] = file_stem.format(TODAY.date().isoformat())
+
+        file_suffix = file_config.get("suffix")
+        if not file_suffix:
+            context.log.info("No file suffix specified, using default: json.gz")
+            file_config["suffix"] = "json.gz"
+
         yield DynamicOutput(
             value=(query, file_config, dest_config),
             output_name="dynamic_query",
-            mapping_key=(f"{query_type}_{file_stem}_{file_config['suffix']}_{i}"),
+            mapping_key="_".join(
+                f"{query_type}",
+                f"{re.sub(r'[^A-Za-z0-9_]+', '', file_stem)}",
+                f"{file_suffix}",
+                f"{i}",
+            ),
         )
 
 
@@ -88,9 +106,10 @@ def extract(context, dynamic_query):
     tags={"dagster/priority": 3},
 )
 def transform(context, data, file_config, dest_config):
-    file_stem = file_config["stem"].format(TODAY.date().isoformat())
+    file_stem = file_config["stem"]
     file_suffix = file_config["suffix"]
     file_format = file_config.get("format", {})
+
     file_encoding = file_format.get("encoding", "utf-8")
 
     dest_name = dest_config["name"]
@@ -98,33 +117,34 @@ def transform(context, data, file_config, dest_config):
     dest_path = dest_config.get("path")
 
     context.log.info(f"Transforming data to {file_suffix}")
-    if file_suffix == "gsheet":
-        df = pd.DataFrame(data=data)
-        df_json = df.to_json(orient="split", date_format="iso", index=False)
-        df_dict = json.loads(df_json)
-        df_dict["shape"] = df.shape
+    if file_suffix == "json":
+        data_bytes = json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
     elif file_suffix == "json.gz":
         data_bytes = gzip.compress(
             json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
-    elif file_suffix == "json":
-        data_bytes = json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
+    elif file_suffix == "gsheet":
+        df = pd.DataFrame(data=data)
+        df_json = df.to_json(orient="split", date_format="iso", index=False)
+        df_dict = json.loads(df_json)
+        df_dict["shape"] = df.shape
     elif file_suffix in ["csv", "txt", "tsv"]:
         df = pd.DataFrame(data=data)
         data_bytes = df.to_csv(index=False, **file_format).encode(file_encoding)
 
     if dest_type == "gsheet":
         yield Output(value=(dest_type, (df_dict, file_stem)), output_name="transformed")
-    elif dest_type == "sftp":
+    elif dest_type in ["gcs", "sftp"]:
         file_handle = context.resources.file_manager.upload_from_string(
             obj=data_bytes,
             file_key=f"{dest_name}/{file_stem}.{file_suffix}",
         )
         context.log.info(f"Saved to {file_handle.path_desc}.")
 
-        yield Output(
-            value=(dest_type, (file_handle, dest_path)), output_name="transformed"
-        )
+        if dest_type == "sftp":
+            yield Output(
+                value=(dest_type, (file_handle, dest_path)), output_name="transformed"
+            )
 
 
 @op(
