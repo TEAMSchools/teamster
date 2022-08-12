@@ -9,7 +9,7 @@ from teamster.common.resources.google import gcs_file_manager
 powerschool_db_extract = run_queries.to_job(
     name="powerschool_extract",
     resource_defs={
-        "powerschool": oracle,
+        "db": oracle,
         "file_manager": gcs_file_manager,
         "io_manager": gcs_pickle_io_manager,
         "gcs": gcs_resource,
