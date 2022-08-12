@@ -1,9 +1,13 @@
 from dagster import Array, Field, Permissive, Selector, Shape, String
 
-DB_QUERY_CONFIG = Shape(
+QUERY_CONFIG = Shape(
     {
         "destination": Shape(
-            {"name": String, "type": String, "path": Field(String, is_required=False)}
+            {
+                "type": String,
+                "name": Field(String, is_required=False),
+                "path": Field(String, is_required=False),
+            }
         ),
         "queries": Array(
             Shape(
