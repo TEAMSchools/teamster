@@ -14,27 +14,26 @@ sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracled
 
 
 class SqlAlchemyEngine(object):
-    def __init__(self, dialect, driver, logger, **kwargs):
-        self.ssh_config = {}
+    def __init__(self, dialect, driver, logger, ssh_config=None, **kwargs):
+        self._ssh_config = {}
         self.ssh_tunnel = None
         self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **kwargs)
         self.engine = create_engine(url=self.connection_url)
 
-        ssh_config = kwargs.get("ssh_config")
         if ssh_config:
             for k, v in ssh_config.items():
                 if k not in ["remote_bind_host", "remote_bind_port"]:
-                    self.ssh_config[k] = v
+                    self._ssh_config[k] = v
 
-            self.ssh_config["remote_bind_address"] = (
+            self._ssh_config["remote_bind_address"] = (
                 ssh_config.get("remote_bind_host"),
                 ssh_config.get("remote_bind_port"),
             )
 
-            self.ssh_config["local_bind_address"] = (kwargs["host"], kwargs["port"])
+            self._ssh_config["local_bind_address"] = (kwargs["host"], kwargs["port"])
 
-            self.ssh_tunnel = SSHTunnelForwarder(**self.ssh_config)
+            self.ssh_tunnel = SSHTunnelForwarder(**self._ssh_config)
 
     def execute_text_query(self, query, output="dict"):
         self.log.info(f"Executing query:\n{query}")
@@ -51,7 +50,7 @@ class SqlAlchemyEngine(object):
             else:
                 output_obj = [row for row in result]
 
-        # if self.ssh_config:
+        # if self._ssh_config:
         #     tunnel.stop()
 
         self.log.info(f"Retrieved {len(output_obj)} rows.")
