@@ -38,12 +38,6 @@ class SqlAlchemyEngine(object):
     def execute_text_query(self, query, output="dict"):
         self.log.info(f"Executing query:\n{query}")
 
-        if self.ssh_tunnel:
-            try:
-                self.ssh_tunnel.start()
-            except Exception as xc:
-                self.log.debug(f"SSH tunnel failed to start: {xc}")
-
         with self.engine.connect() as conn:
             result = conn.execute(statement=text(query))
 
@@ -51,9 +45,6 @@ class SqlAlchemyEngine(object):
                 output_obj = [dict(row) for row in result.mappings()]
             else:
                 output_obj = [row for row in result]
-
-        # if self._ssh_config:
-        #     tunnel.stop()
 
         self.log.info(f"Retrieved {len(output_obj)} rows.")
         if output == "json":

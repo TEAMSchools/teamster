@@ -80,7 +80,17 @@ def compose_queries(context):
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
+    if context.resources.db.ssh_tunnel:
+        try:
+            context.resources.db.ssh_tunnel.start()
+        except Exception as xc:
+            context.log.debug(f"SSH tunnel failed to start: {xc}")
+
     data = context.resources.db.execute_text_query(query)
+
+    if context.resources.db.ssh_tunnel:
+        context.resources.db.ssh_tunnel.stop()
+
     if data:
         yield Output(value=data, output_name="data")
         yield Output(value=file_config, output_name="file_config")
