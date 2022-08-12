@@ -32,7 +32,7 @@ dev = ["dagster-docker>=0.16.1"]
 
 [tool.pdm.scripts]
 _.env_file = "./env/dev/prod.env"
-dagster-docker.env_file = "./env/dev/stg.env"
+dagster-docker.env_file = "./env/dev/docker.env"
 local-init.env_file = "./env/common.env"
 common-init.shell = "bash ./.teamster/common-init.sh"
 local-init.shell = "bash ./.teamster/local-init.sh"

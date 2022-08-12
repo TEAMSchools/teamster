@@ -33,7 +33,7 @@ from powerschool.utils import (
 )
 from requests.exceptions import HTTPError
 
-from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
+from teamster.common.config.powerschool import COMPOSE_API_QUERIES_CONFIG
 from teamster.common.utils import TODAY, get_last_schedule_run, time_limit
 
 
@@ -167,7 +167,7 @@ def filter_queries(context, table_queries):
 
 
 @op(
-    config_schema=COMPOSE_QUERIES_CONFIG,
+    config_schema=COMPOSE_API_QUERIES_CONFIG,
     out={
         "dynamic_tables": DynamicOut(dagster_type=Tuple, is_required=False),
         "table_queries": Out(dagster_type=List[Tuple], is_required=False),
