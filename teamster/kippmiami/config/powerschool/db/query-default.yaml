@@ -5,7 +5,7 @@ execution:
 resources:
   db:
     config:
-      prefetch_rows: 100000
+      prefetchrows: 100000
 ops:
   compose_queries:
     config:
