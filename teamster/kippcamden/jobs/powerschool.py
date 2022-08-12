@@ -65,7 +65,8 @@ powerschool_resync_assignmentscore = run_queries.to_job(
         [
             "./teamster/common/config/powerschool/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/kippcamden/config/powerschool/query-resync-assignmentscore.yaml",
+            # trunk-ignore(flake8/E501)
+            "./teamster/kippcamden/config/powerschool/api/query-resync-assignmentscore.yaml",
         ]
     ),
     tags={
