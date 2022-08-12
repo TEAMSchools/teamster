@@ -1,0 +1,18 @@
+execution:
+  config:
+    multiprocess:
+      max_concurrent: 2
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: powerschool
+        type: gcs
+      queries:
+        - sql:
+            schema:
+              table: students
+        - sql:
+            schema:
+              columns: dcid
+              table: storedgrades

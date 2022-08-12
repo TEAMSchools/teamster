@@ -2,13 +2,13 @@ import os
 
 from dagster import ScheduleDefinition, config_from_files
 
-from teamster.kippmiami.jobs.powerschool import powerschool_extract
+from teamster.kippmiami.jobs.powerschool.api import powerschool_api_extract
 
 LOCAL_TIME_ZONE = os.getenv("LOCAL_TIME_ZONE")
 
 full_tables = ScheduleDefinition(
     name="full_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="0 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
@@ -25,7 +25,7 @@ full_tables = ScheduleDefinition(
 
 filtered_tables = ScheduleDefinition(
     name="filtered_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="5 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
@@ -42,7 +42,7 @@ filtered_tables = ScheduleDefinition(
 
 custom_tables = ScheduleDefinition(
     name="custom_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="10 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
@@ -59,7 +59,7 @@ custom_tables = ScheduleDefinition(
 
 contacts_tables = ScheduleDefinition(
     name="contacts_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="15 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
@@ -76,7 +76,7 @@ contacts_tables = ScheduleDefinition(
 
 attendance_tables = ScheduleDefinition(
     name="attendance_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="0 13 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
@@ -93,7 +93,7 @@ attendance_tables = ScheduleDefinition(
 
 assignment_tables = ScheduleDefinition(
     name="assignment_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
@@ -110,7 +110,7 @@ assignment_tables = ScheduleDefinition(
 
 assignmentscore = ScheduleDefinition(
     name="assignmentscore",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="5 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
