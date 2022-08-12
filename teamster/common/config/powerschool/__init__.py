@@ -2,7 +2,7 @@ import os
 
 from dagster import Any, Array, Field, IntSource, ScalarUnion, Shape, String
 
-COMPOSE_QUERIES_CONFIG = Shape(
+COMPOSE_API_QUERIES_CONFIG = Shape(
     {
         "tables": Field(
             Array(
