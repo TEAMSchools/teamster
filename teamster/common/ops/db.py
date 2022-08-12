@@ -33,7 +33,7 @@ def compose_queries(context):
                 [
                     f"SELECT {value['columns']}",
                     f"FROM {table_name}",
-                    f"WHERE {where};" if where else ";",
+                    f"WHERE {where}" if where else "",
                 ]
             )
 
