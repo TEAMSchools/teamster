@@ -80,7 +80,7 @@ def compose_queries(context):
 
 @op(
     required_resource_keys={"db"},
-    out={"ssh_tunnel": Out(dagster_type=Any)},
+    out={"ssh_tunnel": Out(dagster_type=Any, is_required=False)},
     tags={"dagster/priority": 1},
 )
 def start_ssh_tunnel(context):
@@ -91,7 +91,7 @@ def start_ssh_tunnel(context):
 
 
 @op(
-    ins={"ssh_tunnel": In(dagster_type=Any, is_required=False)},
+    ins={"ssh_tunnel": In(dagster_type=Any)},
     tags={"dagster/priority": 99},
 )
 def stop_ssh_tunnel(context, ssh_tunnel):
