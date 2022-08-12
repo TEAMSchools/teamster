@@ -10,7 +10,6 @@ ops:
   compose_queries:
     config:
       destination:
-        name: powerschool
         type: gcs
       queries:
         - sql:
