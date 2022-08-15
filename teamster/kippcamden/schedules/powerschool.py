@@ -2,17 +2,17 @@ import os
 
 from dagster import ScheduleDefinition, config_from_files
 
-from teamster.kippcamden.jobs.powerschool import powerschool_extract
+from teamster.kippmiami.jobs.powerschool.api import powerschool_api_extract
 
 LOCAL_TIME_ZONE = os.getenv("LOCAL_TIME_ZONE")
 
 full_tables = ScheduleDefinition(
     name="full_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="0 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/kippcamden/config/powerschool/query-full.yaml"]
+        ["./teamster/kippmiami/config/powerschool/api/query-full.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -25,11 +25,11 @@ full_tables = ScheduleDefinition(
 
 filtered_tables = ScheduleDefinition(
     name="filtered_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="5 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/kippcamden/config/powerschool/query-filtered.yaml"]
+        ["./teamster/kippmiami/config/powerschool/api/query-filtered.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -42,11 +42,11 @@ filtered_tables = ScheduleDefinition(
 
 custom_tables = ScheduleDefinition(
     name="custom_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="10 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/kippcamden/config/powerschool/query-custom.yaml"]
+        ["./teamster/kippmiami/config/powerschool/api/query-custom.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -59,11 +59,11 @@ custom_tables = ScheduleDefinition(
 
 contacts_tables = ScheduleDefinition(
     name="contacts_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="15 * * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/kippcamden/config/powerschool/query-contacts.yaml"]
+        ["./teamster/kippmiami/config/powerschool/api/query-contacts.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -76,11 +76,11 @@ contacts_tables = ScheduleDefinition(
 
 attendance_tables = ScheduleDefinition(
     name="attendance_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="0 13 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/kippcamden/config/powerschool/query-attendance.yaml"]
+        ["./teamster/kippmiami/config/powerschool/api/query-attendance.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -93,11 +93,11 @@ attendance_tables = ScheduleDefinition(
 
 assignment_tables = ScheduleDefinition(
     name="assignment_tables",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/kippcamden/config/powerschool/query-assignments.yaml"]
+        ["./teamster/kippmiami/config/powerschool/api/query-assignments.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
@@ -110,11 +110,11 @@ assignment_tables = ScheduleDefinition(
 
 assignmentscore = ScheduleDefinition(
     name="assignmentscore",
-    job=powerschool_extract,
+    job=powerschool_api_extract,
     cron_schedule="5 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
-        ["./teamster/kippcamden/config/powerschool/query-assignmentscore.yaml"]
+        ["./teamster/kippmiami/config/powerschool/api/query-assignmentscore.yaml"]
     ),
     tags={
         "dagster-k8s/config": {
