@@ -9,7 +9,7 @@ from powerschool import PowerSchool
         "client_secret": StringSource,
     }
 )
-def powerschool(init_context):
+def powerschool_api(init_context):
     credentials = (
         init_context.resource_config["client_id"],
         init_context.resource_config["client_secret"],

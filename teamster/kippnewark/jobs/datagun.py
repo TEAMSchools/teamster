@@ -4,8 +4,8 @@ from dagster_gcp.gcs.resources import gcs_resource
 from dagster_ssh import ssh_resource
 
 from teamster.common.graphs.datagun import run_queries
+from teamster.common.resources.db import mssql
 from teamster.common.resources.google import gcs_file_manager, google_sheets
-from teamster.common.resources.sql import mssql
 
 datagun_etl_sftp = run_queries.to_job(
     name="datagun_etl_sftp",
