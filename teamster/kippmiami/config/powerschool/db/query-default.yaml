@@ -1,0 +1,21 @@
+# execution:
+#   config:
+#     multiprocess:
+#       max_concurrent: 2
+resources:
+  db:
+    config:
+      prefetchrows: 100000
+ops:
+  compose_queries:
+    config:
+      destination:
+        type: gcs
+      queries:
+        - sql:
+            schema:
+              table: students
+        - sql:
+            schema:
+              columns: dcid
+              table: storedgrades
