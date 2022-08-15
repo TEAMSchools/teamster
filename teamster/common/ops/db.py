@@ -4,18 +4,7 @@ import pathlib
 import re
 
 import pandas as pd
-from dagster import (
-    Any,
-    Dict,
-    DynamicOut,
-    DynamicOutput,
-    In,
-    List,
-    Out,
-    Output,
-    Tuple,
-    op,
-)
+from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
 
 from teamster.common.config.db import QUERY_CONFIG
 from teamster.common.utils import TODAY, CustomJSONEncoder
@@ -31,6 +20,8 @@ def compose_queries(context):
 
     queries = context.op_config["queries"]
     for i, q in enumerate(queries):
+        file_config = q.get("file", {})
+
         [(query_type, value)] = q["sql"].items()
         if query_type == "text":
             query = value
@@ -47,17 +38,10 @@ def compose_queries(context):
                     f"WHERE {where}" if where else "",
                 ]
             )
-
-        file_config = q.get("file", {})
-
-        file_stem = file_config.get("stem")
-        if not file_stem:
-            context.log.info("No file stem specified, using default: table + where")
-            file_stem = table_name + re.sub(
+            file_config["table_name"] = table_name
+            file_config["query_where"] = re.sub(
                 r"[^a-zA-Z0-9=;]", "", where.replace(" AND ", ";").replace(" OR ", ",")
             )
-        file_config["stem"] = file_stem.format(TODAY.date().isoformat())
-        file_config["table_name"] = table_name
 
         file_suffix = file_config.get("suffix")
         if not file_suffix:
@@ -70,33 +54,12 @@ def compose_queries(context):
             mapping_key="_".join(
                 [
                     f"{query_type}",
-                    f"{re.sub(r'[^A-Za-z0-9_]+', '', file_stem)}",
+                    f"{re.sub(r'[^A-Za-z0-9_]+', '', file_config.get('stem'))}",
                     f"{file_suffix}",
                     f"{i}",
                 ]
             ),
         )
-
-
-@op(
-    required_resource_keys={"db"},
-    out={"ssh_tunnel": Out(dagster_type=Any, is_required=False)},
-    tags={"dagster/priority": 1},
-)
-def start_ssh_tunnel(context):
-    if context.resources.db.ssh_tunnel:
-        context.log.info("Starting SSH tunnel.")
-        context.resources.db.ssh_tunnel.start()
-        yield Output(value=context.resources.db.ssh_tunnel, output_name="ssh_tunnel")
-
-
-@op(
-    ins={"ssh_tunnel": In(dagster_type=Any)},
-    tags={"dagster/priority": 99},
-)
-def stop_ssh_tunnel(context, ssh_tunnel):
-    context.log.info("Stopping SSH tunnel.")
-    ssh_tunnel.stop()
 
 
 @op(
@@ -137,16 +100,26 @@ def extract(context, dynamic_query):
     tags={"dagster/priority": 3},
 )
 def transform(context, data, file_config, dest_config):
-    table_name = file_config["table_name"]
-    file_stem = file_config["stem"]
     file_suffix = file_config["suffix"]
     file_format = file_config.get("format", {})
-
+    table_name = file_config.get("table_name")
+    query_where = file_config["query_where"]
+    file_stem = file_config.get("stem").format(TODAY.date().isoformat()) or (
+        table_name + query_where if query_where else ""
+    )
     file_encoding = file_format.get("encoding", "utf-8")
 
     dest_type = dest_config["type"]
-    dest_name = dest_config.get("name", table_name)
-    dest_path = dest_config.get("path")
+    dest_name = dest_config.get("name")
+
+    if dest_name:
+        gcs_folder = dest_name
+    elif table_name:
+        gcs_folder = table_name
+    else:
+        gcs_folder = "data"
+
+    gcs_key = f"{gcs_folder}/{file_stem}.{file_suffix}"
 
     context.log.info(f"Transforming data to {file_suffix}")
     if file_suffix == "json":
@@ -158,6 +131,7 @@ def transform(context, data, file_config, dest_config):
     elif file_suffix == "gsheet":
         df = pd.DataFrame(data=data)
         df_json = df.to_json(orient="split", date_format="iso", index=False)
+
         df_dict = json.loads(df_json)
         df_dict["shape"] = df.shape
     elif file_suffix in ["csv", "txt", "tsv"]:
@@ -165,15 +139,12 @@ def transform(context, data, file_config, dest_config):
         data_bytes = df.to_csv(index=False, **file_format).encode(file_encoding)
 
     if dest_type == "gsheet":
-        yield Output(value=(dest_type, (df_dict, file_stem)), output_name="transformed")
+        yield Output(value=(dest_config, file_stem, df_dict), output_name="transformed")
     elif dest_type in ["gcs", "sftp"]:
         file_handle = context.resources.file_manager.upload_from_string(
-            obj=data_bytes,
-            file_key=(f"{dest_name}/{file_stem}.{file_suffix}"),
+            obj=data_bytes, file_key=gcs_key
         )
         context.log.info(f"Saved to {file_handle.path_desc}.")
 
         if dest_type == "sftp":
-            yield Output(
-                value=(dest_type, (file_handle, dest_path)), output_name="transformed"
-            )
+            yield Output(value=(dest_config, file_handle), output_name="transformed")

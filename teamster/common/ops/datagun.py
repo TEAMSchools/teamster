@@ -10,15 +10,15 @@ from dagster import In, RetryPolicy, Tuple, op
     retry_policy=RetryPolicy(max_retries=2),
 )
 def load_destination(context, transformed):
-    dest_type, transformed_ins = transformed
-
+    dest_type = transformed[0]["type"]
     if dest_type == "gsheet":
-        data, file_stem = transformed_ins
+        file_stem, df_dict = transformed[1:]
         context.resources.destination.update_named_range(
-            data=data, spreadsheet_name=file_stem, range_name=file_stem
+            data=df_dict, spreadsheet_name=file_stem, range_name=file_stem
         )
     elif dest_type == "sftp":
-        file_handle, dest_path = transformed_ins
+        file_handle = transformed[1]
+        dest_path = dest_type.get("path")
 
         sftp_conn = context.resources.destination.get_connection()
         file_name = pathlib.Path(file_handle.gcs_key).name
