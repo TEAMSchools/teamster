@@ -1,9 +1,13 @@
 from dagster import Array, Field, Permissive, Selector, Shape, String
 
-COMPOSE_QUERIES_CONFIG = Shape(
+QUERY_CONFIG = Shape(
     {
         "destination": Shape(
-            {"name": String, "type": String, "path": Field(String, is_required=False)}
+            {
+                "type": String,
+                "name": Field(String, is_required=False),
+                "path": Field(String, is_required=False),
+            }
         ),
         "queries": Array(
             Shape(
@@ -25,12 +29,15 @@ COMPOSE_QUERIES_CONFIG = Shape(
                             ),
                         }
                     ),
-                    "file": Shape(
-                        {
-                            "stem": String,
-                            "suffix": String,
-                            "format": Field(Permissive({}), is_required=False),
-                        }
+                    "file": Field(
+                        Shape(
+                            {
+                                "stem": Field(String, is_required=False),
+                                "suffix": Field(String, is_required=False),
+                                "format": Field(Permissive({}), is_required=False),
+                            }
+                        ),
+                        is_required=False,
                     ),
                 }
             )
