@@ -1,0 +1,72 @@
+execution:
+  config:
+    multiprocess:
+      max_concurrent: 26
+ops:
+  execute_query_2:
+    ops:
+      get_count:
+        config:
+          query_timeout: 300
+      get_data:
+        config:
+          query_timeout: 300
+  compose_tables:
+    config:
+      tables:
+        - name: "assignmentscore"
+          projection: "assignmentscoreid,yearid,assignmentsectionid,studentsdcid,islate,iscollected,isexempt,ismissing,isabsent,isincomplete,actualscoreentered,actualscorekind,actualscoregradescaledcid,scorepercent,scorepoints,scorelettergrade,scorenumericgrade,scoreentrydate,scoregradescaledcid,altnumericgrade,altalphagrade,altscoregradescaledcid,hasretake,authoredbyuc"
+          queries:
+            - q: scoreentrydate=ge=2021-07-01;scoreentrydate=le=2021-07-03
+            - q: scoreentrydate=ge=2021-07-04;scoreentrydate=le=2021-07-10
+            - q: scoreentrydate=ge=2021-07-11;scoreentrydate=le=2021-07-17
+            - q: scoreentrydate=ge=2021-07-18;scoreentrydate=le=2021-07-24
+            - q: scoreentrydate=ge=2021-07-25;scoreentrydate=le=2021-07-31
+            - q: scoreentrydate=ge=2021-08-01;scoreentrydate=le=2021-08-07
+            - q: scoreentrydate=ge=2021-08-08;scoreentrydate=le=2021-08-14
+            - q: scoreentrydate=ge=2021-08-15;scoreentrydate=le=2021-08-21
+            - q: scoreentrydate=ge=2021-08-22;scoreentrydate=le=2021-08-28
+            - q: scoreentrydate=ge=2021-08-29;scoreentrydate=le=2021-09-04
+            - q: scoreentrydate=ge=2021-09-05;scoreentrydate=le=2021-09-11
+            - q: scoreentrydate=ge=2021-09-12;scoreentrydate=le=2021-09-18
+            - q: scoreentrydate=ge=2021-09-19;scoreentrydate=le=2021-09-25
+            - q: scoreentrydate=ge=2021-09-26;scoreentrydate=le=2021-10-02
+            - q: scoreentrydate=ge=2021-10-03;scoreentrydate=le=2021-10-09
+            - q: scoreentrydate=ge=2021-10-10;scoreentrydate=le=2021-10-16
+            - q: scoreentrydate=ge=2021-10-17;scoreentrydate=le=2021-10-23
+            - q: scoreentrydate=ge=2021-10-24;scoreentrydate=le=2021-10-30
+            - q: scoreentrydate=ge=2021-10-31;scoreentrydate=le=2021-11-06
+            - q: scoreentrydate=ge=2021-11-07;scoreentrydate=le=2021-11-13
+            - q: scoreentrydate=ge=2021-11-14;scoreentrydate=le=2021-11-20
+            - q: scoreentrydate=ge=2021-11-21;scoreentrydate=le=2021-11-27
+            - q: scoreentrydate=ge=2021-11-28;scoreentrydate=le=2021-12-04
+            - q: scoreentrydate=ge=2021-12-05;scoreentrydate=le=2021-12-11
+            - q: scoreentrydate=ge=2021-12-12;scoreentrydate=le=2021-12-18
+            - q: scoreentrydate=ge=2021-12-19;scoreentrydate=le=2021-12-25
+            - q: scoreentrydate=ge=2021-12-26;scoreentrydate=le=2022-01-01
+            - q: scoreentrydate=ge=2022-01-02;scoreentrydate=le=2022-01-08
+            - q: scoreentrydate=ge=2022-01-09;scoreentrydate=le=2022-01-15
+            - q: scoreentrydate=ge=2022-01-16;scoreentrydate=le=2022-01-22
+            - q: scoreentrydate=ge=2022-01-23;scoreentrydate=le=2022-01-29
+            - q: scoreentrydate=ge=2022-01-30;scoreentrydate=le=2022-02-05
+            - q: scoreentrydate=ge=2022-02-06;scoreentrydate=le=2022-02-12
+            - q: scoreentrydate=ge=2022-02-13;scoreentrydate=le=2022-02-19
+            - q: scoreentrydate=ge=2022-02-20;scoreentrydate=le=2022-02-26
+            - q: scoreentrydate=ge=2022-02-27;scoreentrydate=le=2022-03-05
+            - q: scoreentrydate=ge=2022-03-06;scoreentrydate=le=2022-03-12
+            - q: scoreentrydate=ge=2022-03-13;scoreentrydate=le=2022-03-19
+            - q: scoreentrydate=ge=2022-03-20;scoreentrydate=le=2022-03-26
+            - q: scoreentrydate=ge=2022-03-27;scoreentrydate=le=2022-04-02
+            - q: scoreentrydate=ge=2022-04-03;scoreentrydate=le=2022-04-09
+            - q: scoreentrydate=ge=2022-04-10;scoreentrydate=le=2022-04-16
+            - q: scoreentrydate=ge=2022-04-17;scoreentrydate=le=2022-04-23
+            - q: scoreentrydate=ge=2022-04-24;scoreentrydate=le=2022-04-30
+            - q: scoreentrydate=ge=2022-05-01;scoreentrydate=le=2022-05-07
+            - q: scoreentrydate=ge=2022-05-08;scoreentrydate=le=2022-05-14
+            - q: scoreentrydate=ge=2022-05-15;scoreentrydate=le=2022-05-21
+            - q: scoreentrydate=ge=2022-05-22;scoreentrydate=le=2022-05-28
+            - q: scoreentrydate=ge=2022-05-29;scoreentrydate=le=2022-06-04
+            - q: scoreentrydate=ge=2022-06-05;scoreentrydate=le=2022-06-11
+            - q: scoreentrydate=ge=2022-06-12;scoreentrydate=le=2022-06-18
+            - q: scoreentrydate=ge=2022-06-19;scoreentrydate=le=2022-06-25
+            - q: scoreentrydate=ge=2022-06-26;scoreentrydate=le=2022-06-30

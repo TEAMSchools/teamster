@@ -1,0 +1,13 @@
+ops:
+  compose_tables:
+    config:
+      tables:
+        - name: "s_nj_ren_x"
+        - name: "s_nj_crs_x"
+        - name: "s_nj_usr_x"
+        - name: "u_clg_et_stu"
+        - name: "u_clg_et_stu_alt"
+        - name: "u_def_ext_students"
+        - name: "u_studentsuserfields"
+        - name: "s_nj_stu_x"
+          projection: "studentsdcid,lepbegindate,lependdate,cityofbirth,stateofbirth,countryofbirth,districtcoderesident,countycoderesident,countycodeattending,districtcodeattending,schoolcodeattending,referral_date,schoolcoderesident,lep_completion_date_refused,residentmunicipalcode,military_connected_indicator,state_assessment_name,math_state_assessment_name,asmt_exclude_ela,asmt_exclude_math,parcc_test_format,parental_consent_eval_date,eligibility_determ_date,initial_iep_meeting_date,parent_consent_intial_iep_date,annual_iep_review_meeting_date,reevaluation_date,programtypecode,early_intervention_yn,speech_lang_theapy_services_yn,occupational_therapy_serv_yn,counseling_services_yn,physical_therapy_services_yn,other_related_services_yn,parent_consent_obtain_code,special_education_placement,determined_ineligible_yn,initial_process_delay_reason,time_in_regular_program,assessmt_ms_accomm_resp,birthplace_refusal,caresactfunds,ctewblearning,deviceowner,devicetype,firsthsmathassessment_yn,internetconnectivity,learningenvironment,remotedaysmembership,remotedayspresent,remotelearninghelpline_yn,speassessmentparticipant_yn,speassignmentsubmissions_yn,specoachingorcheckin_yn,speechtotextwordprediction,speelectroniccomm_yn,speonlinelearningplatforms,speother_yn,spesynchonlineclass_yn,studentslearningmodel,withdrawal_date,parcc_ell_paper_accom,alternate_access,access_test_format_override,asmt_frequent_breaks,asmt_alternate_location,asmt_small_group,asmt_special_equip,asmt_specified_area,asmt_time_of_day,asmt_answer_masking,asmt_read_aloud,asmt_asl_video,asmt_non_screen_reader,asmt_closed_caption_ela,asmt_refresh_braille_ela,asmt_alt_rep_paper,parcc_large_print_paper,asmt_human_signer,asmt_answers_recorded_paper,calculation_device_math_tools,parcc_constructed_response_ela,asmt_selected_response_ela,asmt_math_response,asmt_monitor_response,asmt_word_prediction,asmt_directions_clarified,asmt_directions_aloud,asmt_math_response_el,parcc_translation_math_paper,asmt_dictionary,parcc_text_to_speech,parcc_text_to_speech_math,asmt_humanreader_signer,asmt_unique_accommodation,asmt_extended_time,asmt_extended_time_math,IEPGraduationAttendance,IEPGradCourseRequirement,FederalHSMathTestingReq,Bridge_Year,LIEP_Type,InDistrictPlacement,Gifted_And_Talented,home_language"

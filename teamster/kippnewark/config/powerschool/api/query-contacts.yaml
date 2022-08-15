@@ -1,0 +1,14 @@
+ops:
+  compose_tables:
+    config:
+      tables:
+        - name: "originalcontactmap"
+        - name: "person"
+        - name: "personaddress"
+        - name: "personaddressassoc"
+        - name: "personemailaddressassoc"
+        - name: "personphonenumberassoc"
+        - name: "emailaddress"
+        - name: "phonenumber"
+        - name: "studentcontactassoc"
+        - name: "studentcontactdetail"
