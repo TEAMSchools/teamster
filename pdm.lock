@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "dagster"
-version = "1.0.2"
+version = "1.0.3"
 summary = "The data orchestration platform built for productivity."
 dependencies = [
     "Jinja2",
@@ -127,11 +127,11 @@ dependencies = [
 
 [[package]]
 name = "dagster-cloud"
-version = "1.0.2"
+version = "1.0.3"
 summary = "UNKNOWN"
 dependencies = [
-    "dagster-cloud-cli==1.0.2",
-    "dagster==1.0.2",
+    "dagster-cloud-cli==1.0.3",
+    "dagster==1.0.3",
     "questionary",
     "requests",
     "typer[all]",
@@ -139,7 +139,7 @@ dependencies = [
 
 [[package]]
 name = "dagster-cloud-cli"
-version = "1.0.2"
+version = "1.0.3"
 summary = "UNKNOWN"
 dependencies = [
     "PyYAML>=5.1",
@@ -151,21 +151,21 @@ dependencies = [
 
 [[package]]
 name = "dagster-docker"
-version = "0.16.2"
+version = "0.16.3"
 summary = "A Dagster integration for docker"
 dependencies = [
-    "dagster==1.0.2",
+    "dagster==1.0.3",
     "docker",
     "docker-image-py",
 ]
 
 [[package]]
 name = "dagster-gcp"
-version = "0.16.2"
+version = "0.16.3"
 summary = "Package for GCP-specific Dagster framework op and resource components."
 dependencies = [
-    "dagster-pandas==0.16.2",
-    "dagster==1.0.2",
+    "dagster-pandas==0.16.3",
+    "dagster==1.0.3",
     "google-api-python-client<2.0.0",
     "google-cloud-bigquery<3,>=1.19.*",
     "google-cloud-storage",
@@ -173,20 +173,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "dagster-k8s"
+version = "0.16.3"
+summary = "A Dagster integration for k8s"
+dependencies = [
+    "dagster==1.0.3",
+    "kubernetes",
+]
+
+[[package]]
 name = "dagster-pandas"
-version = "0.16.2"
+version = "0.16.3"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 dependencies = [
-    "dagster==1.0.2",
+    "dagster==1.0.3",
     "pandas",
 ]
 
 [[package]]
 name = "dagster-ssh"
-version = "0.16.2"
+version = "0.16.3"
 summary = "Package for ssh Dagster framework components."
 dependencies = [
-    "dagster==1.0.2",
+    "dagster==1.0.3",
     "paramiko",
     "sshtunnel",
 ]
@@ -425,6 +434,24 @@ requires_python = ">=3.7"
 summary = "A very fast and expressive template engine."
 dependencies = [
     "MarkupSafe>=2.0",
+]
+
+[[package]]
+name = "kubernetes"
+version = "24.2.0"
+requires_python = ">=3.6"
+summary = "Kubernetes python client"
+dependencies = [
+    "certifi>=14.05.14",
+    "google-auth>=1.0.1",
+    "python-dateutil>=2.5.3",
+    "pyyaml>=5.4.1",
+    "requests",
+    "requests-oauthlib",
+    "setuptools>=21.0.0",
+    "six>=1.9.0",
+    "urllib3>=1.24.2",
+    "websocket-client!=0.40.0,!=0.41.*,!=0.42.*,>=0.32.0",
 ]
 
 [[package]]
@@ -830,7 +857,7 @@ summary = "WebSocket client for Python with low level API options"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:f79125a74ab30b194febfb8d23ae31b43498310f5a7f68f38d87a5256c1ed810"
+content_hash = "sha256:a9ff201f9dc4b63ae96270baf982c07a77005f18c66cf1b12f63e34629bcfe5d"
 
 [metadata.files]
 "alembic 1.6.5" = [
@@ -972,33 +999,37 @@ content_hash = "sha256:f79125a74ab30b194febfb8d23ae31b43498310f5a7f68f38d87a5256
     {url = "https://files.pythonhosted.org/packages/f1/a2/691402d66e95b8e85e2a96c670038ce2d9fc934e5a40152ac68d3c7fe486/cryptography-37.0.4-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7bc997818309f56c0038a33b8da5c0bfbb3f1f067f315f9abd6fc07ad359398d"},
     {url = "https://files.pythonhosted.org/packages/fd/5a/f47456f062b0c5bd828198992fca1f78bcc7aeadd216d9ce6c3348188b92/cryptography-37.0.4-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:80f49023dd13ba35f7c34072fa17f604d2f19bf0989f292cedf7ab5770b87a0b"},
 ]
-"dagster 1.0.2" = [
-    {url = "https://files.pythonhosted.org/packages/43/f8/d45cc82df8007f8152de1be49d22bb14fd1f6f2a26cbd7d26c63df0bde68/dagster-1.0.2.tar.gz", hash = "sha256:863909a2e227b6c033eefe76d1575cf55d8b16f3ea2bc4b2e25244b5d9bb52bb"},
-    {url = "https://files.pythonhosted.org/packages/53/e6/6960dd6ee9f9ce58d66dc5653e61a18f4e7c4b737f1e7770861a16786df6/dagster-1.0.2-py3-none-any.whl", hash = "sha256:dd141b580f5778ad216aa288412b1e26a7d7f88ce9383f60ba5fdc1fde555848"},
+"dagster 1.0.3" = [
+    {url = "https://files.pythonhosted.org/packages/00/a5/fc67003fed5def0cdf6ce884b34a51143445be6f8bc5fa3d924edb14ed22/dagster-1.0.3.tar.gz", hash = "sha256:2a9ca7e4caf2540041c1d7f61d4bae0da46259c05e95ed51fb49d8e8bfbf947d"},
+    {url = "https://files.pythonhosted.org/packages/de/38/d8b5602147eed49ca8304327ba1210c53c6f675bcdcd406fc3cfbb643108/dagster-1.0.3-py3-none-any.whl", hash = "sha256:68eb2696206b62f2fca17690ebc5b4f661d416890e5d93679b0f3cb333b07968"},
 ]
-"dagster-cloud 1.0.2" = [
-    {url = "https://files.pythonhosted.org/packages/58/07/835d5978963d38ae783c2160e6124305b29f77c38184233ed6b1a2689126/dagster_cloud-1.0.2-py3-none-any.whl", hash = "sha256:1751bd8323bf6cd2094fb7a958a339742192f60cc11736ad14eec4c9f052c8c3"},
-    {url = "https://files.pythonhosted.org/packages/dd/a0/5c69e9de30022302731c7b12be2fb24975e5da7b147d060f82e7007695b9/dagster_cloud-1.0.2.tar.gz", hash = "sha256:04eb8403a2fb73b3bf8306c581b3d86ba41ccbff907dd5ca8264adc8d488ce6c"},
+"dagster-cloud 1.0.3" = [
+    {url = "https://files.pythonhosted.org/packages/31/3f/7ad150dd6e5a8e18e17fee05732523a35b3897aed75408e5c2ea179bfa37/dagster_cloud-1.0.3.tar.gz", hash = "sha256:ee17d3da37b71ae51a49fc649dbe9734a4d08170c256bc520bd80feadcb7859f"},
+    {url = "https://files.pythonhosted.org/packages/9c/a5/d105b2241d2ecdbfb6f700584c565a803071708bdb5366d34b0503402ec0/dagster_cloud-1.0.3-py3-none-any.whl", hash = "sha256:850091b875b419ba09a1a67d16828c569efb128e3da2ae80bf0c70214f287dd7"},
 ]
-"dagster-cloud-cli 1.0.2" = [
-    {url = "https://files.pythonhosted.org/packages/2f/3b/9a933c482b81292a5d239935d2256624789acaace1cd1476ddb3d916e48d/dagster_cloud_cli-1.0.2-py3-none-any.whl", hash = "sha256:5007a072b468b5cbcf9c40c9863ec85f6e5de2d11f8ed505c14140aa0d93ad17"},
-    {url = "https://files.pythonhosted.org/packages/ce/71/7d47c65876819e1dac07f4c4fbfc33657f4afcbfa433db0e5dfd05b61455/dagster_cloud_cli-1.0.2.tar.gz", hash = "sha256:edf8f89a448912c0e0d85436086804d733e909bc7146ab69fa97af5c2179c717"},
+"dagster-cloud-cli 1.0.3" = [
+    {url = "https://files.pythonhosted.org/packages/4e/7e/0d8291b61cc1fedf5ad36fc5a0aa10767c0f2642d20a9aa6f32bf1992fe1/dagster_cloud_cli-1.0.3.tar.gz", hash = "sha256:4e77812041e0d46c87fe9cf4c62267fb7b9c840dbbfaadb234a7722a957f3930"},
+    {url = "https://files.pythonhosted.org/packages/6a/b2/1282dee8379824d11c12fbc5e277a7f72d7a846f7813df8914083a091ef4/dagster_cloud_cli-1.0.3-py3-none-any.whl", hash = "sha256:c92b6c59aa8d9229d525c9a4a10630556d711ef0e59a92baff5571d07fd1c5ae"},
 ]
-"dagster-docker 0.16.2" = [
-    {url = "https://files.pythonhosted.org/packages/0f/03/4af0352f5fea3d7c2127e9f6627d9454651d380c5be96f3341d4dd8beac9/dagster-docker-0.16.2.tar.gz", hash = "sha256:3cf0534c5cb094a0458e0678a25e0940a68dbf883fc20da82023aff4af780a19"},
-    {url = "https://files.pythonhosted.org/packages/de/f0/066f710d018850ab59f6a94b4505c3a8af7eebfc3f92a646f938e3cfa8fd/dagster_docker-0.16.2-py3-none-any.whl", hash = "sha256:43c899488a1e05f0bf35283e474dec84670a53049b8e4a1f9d877814876d4f29"},
+"dagster-docker 0.16.3" = [
+    {url = "https://files.pythonhosted.org/packages/75/fc/637b5df96c52e7dd1d5e06ff3ee56996b1b2e83e87505dc86d5a0030003d/dagster-docker-0.16.3.tar.gz", hash = "sha256:900addccc3c3d3deffee322c3abfeccbe973985da4627521d0c1e270404b87b7"},
+    {url = "https://files.pythonhosted.org/packages/ce/6b/ec13810a97dc2227f2062c9ceb18a918f0f22ba24e7b2ba272a23a097108/dagster_docker-0.16.3-py3-none-any.whl", hash = "sha256:2fb0061cb8dd6a3b8c385a443dbf6db527fd1297f1ba63b4fa5370ffd44b098d"},
 ]
-"dagster-gcp 0.16.2" = [
-    {url = "https://files.pythonhosted.org/packages/80/db/c94365c93d8aa51be8435c24f22a62f3ee91bea319a51dadfffe1647f0e2/dagster-gcp-0.16.2.tar.gz", hash = "sha256:5d93f8145b931a1b37f16dd43ed3666cd9ccfaba266bae26e46da81b3b74dd81"},
-    {url = "https://files.pythonhosted.org/packages/da/ba/bf81d75715d494bed2abe9e0fde395f265965eaf54eb73faf08e28eb5f22/dagster_gcp-0.16.2-py3-none-any.whl", hash = "sha256:3d460656c5c55f3fee932b63aba45793b026d7dc4e3db0c26a616f45b0d21428"},
+"dagster-gcp 0.16.3" = [
+    {url = "https://files.pythonhosted.org/packages/25/12/81dd0f4dfbdfdc1c272232e01c3b495bc83ee8555d2d0ee24c05aab4f69c/dagster_gcp-0.16.3-py3-none-any.whl", hash = "sha256:b5591451a73e6784380d6eefc1134c7ebc76121948c978d09b1c901b78061eb2"},
+    {url = "https://files.pythonhosted.org/packages/e3/cc/6f48e9cea82f906b7ae0a661d21e426f329ae5028abbeb9beacd69d78090/dagster-gcp-0.16.3.tar.gz", hash = "sha256:ee2bd32216adeb8c9fa1c69e77430eaf1903eed35c18ccc949cc1ae77a57da57"},
 ]
-"dagster-pandas 0.16.2" = [
-    {url = "https://files.pythonhosted.org/packages/d6/f4/20d2c8ef093fc29f3c7ae25d340493479d5fa7506b5289e68cb6f47ef81c/dagster-pandas-0.16.2.tar.gz", hash = "sha256:934ad69622748e9b8d99370aefa2463e2eb106b01fcd839a7705a8b4a548f3f5"},
-    {url = "https://files.pythonhosted.org/packages/f9/c0/36323f0a12ca38f83b6ef0fc030a4bef1b8f26e23f29dad797c980e7bd13/dagster_pandas-0.16.2-py3-none-any.whl", hash = "sha256:f6e49e56a690070dc7bbb77c16abf129edf3e9b2298e43c31b838ca2afb4b115"},
+"dagster-k8s 0.16.3" = [
+    {url = "https://files.pythonhosted.org/packages/27/55/1cca5c7704c358715ba21ea2091e28b16b687783925cd19a513933681873/dagster_k8s-0.16.3-py3-none-any.whl", hash = "sha256:7073511fc0443c133fcb3f073dbfa403e56b2d90e6c07276d9d9be075bf81f94"},
+    {url = "https://files.pythonhosted.org/packages/85/f0/13d3d9debbfbad0267b8a9e919bd67b38b79fb87555744b461fe1b702dc8/dagster-k8s-0.16.3.tar.gz", hash = "sha256:aca6a617e56195c4a4e84bbbee608d33ac52a6420a930a29d7c6428f21417072"},
 ]
-"dagster-ssh 0.16.2" = [
-    {url = "https://files.pythonhosted.org/packages/9f/49/944efa53f5b4b10c4404a4a9df3e6745e4a69124c9697b141985d2972749/dagster_ssh-0.16.2-py3-none-any.whl", hash = "sha256:e9a1d339626f85cd94a7b06d5d38ffaadf7367a3d2cde87fcbff09ed5810d618"},
-    {url = "https://files.pythonhosted.org/packages/c2/59/a627288ad96001f119f50555066855907ca10598f35a6e714c8366496a0f/dagster-ssh-0.16.2.tar.gz", hash = "sha256:02a24dda049c0106988c3ab47a24a96d439d7c35d13d62cfa91d6840f2c9b4eb"},
+"dagster-pandas 0.16.3" = [
+    {url = "https://files.pythonhosted.org/packages/2e/d0/99b9d0a00cdece5685cdf648df6eee15cf08879780cd47545125484d4fce/dagster-pandas-0.16.3.tar.gz", hash = "sha256:f66eef6780bfd765570bf794d5e98fb15a53c9c995ad6d4ca43dd3ee819ca223"},
+    {url = "https://files.pythonhosted.org/packages/95/37/da067b92481b94f9b70258c28f3a5f91ba1eba17749d2a5d9f964e8c8b30/dagster_pandas-0.16.3-py3-none-any.whl", hash = "sha256:18cda2c781b8e13a7c0c7fb871d496dba967443921e2bac38004bde91b1ecc64"},
+]
+"dagster-ssh 0.16.3" = [
+    {url = "https://files.pythonhosted.org/packages/23/1e/962aa1622313158bf562c7241acce1df2de5292e10de8b810aa625ed527b/dagster_ssh-0.16.3-py3-none-any.whl", hash = "sha256:3b5bc33aa8f3886d41e8f235658d398c5bf4dfca489ac228a23adc2588cac6e0"},
+    {url = "https://files.pythonhosted.org/packages/e9/36/2a57fe03d2183249c8e5fb13034f96fb38b3a9e8c64f10df38435bf50528/dagster-ssh-0.16.3.tar.gz", hash = "sha256:764ad9b39f8ca8c1c7ed3cbdc6fb37273590e4623fc95ea26a76450206638da4"},
 ]
 "docker 5.0.3" = [
     {url = "https://files.pythonhosted.org/packages/54/f3/7af47ead249fbb798d64a0438bad5c26f17ef6ac5cd324d802038eb10d90/docker-5.0.3-py2.py3-none-any.whl", hash = "sha256:7a79bb439e3df59d0a72621775d600bc8bc8b422d285824cb37103eab91d1ce0"},
@@ -1228,6 +1259,10 @@ content_hash = "sha256:f79125a74ab30b194febfb8d23ae31b43498310f5a7f68f38d87a5256
 "jinja2 3.1.2" = [
     {url = "https://files.pythonhosted.org/packages/7a/ff/75c28576a1d900e87eb6335b063fab47a8ef3c8b4d88524c4bf78f670cce/Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
     {url = "https://files.pythonhosted.org/packages/bc/c3/f068337a370801f372f2f8f6bad74a5c140f6fda3d9de154052708dd3c65/Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
+]
+"kubernetes 24.2.0" = [
+    {url = "https://files.pythonhosted.org/packages/22/eb/6b2385fb2e2b8da2f329a2832cd29b3ca39e462f9719d550c7d55e502a73/kubernetes-24.2.0.tar.gz", hash = "sha256:9900f12ae92007533247167d14cdee949cd8c7721f88b4a7da5f5351da3834cd"},
+    {url = "https://files.pythonhosted.org/packages/47/55/edb4a69d03af4bc59fc6696946907aff516fe8e36aa9659b536a9506a558/kubernetes-24.2.0-py2.py3-none-any.whl", hash = "sha256:da19d58865cf903a8c7b9c3691a2e6315d583a98f0659964656dfdf645bf7e49"},
 ]
 "mako 1.2.1" = [
     {url = "https://files.pythonhosted.org/packages/ad/dd/34201dae727bb183ca14fd8417e61f936fa068d6f503991f09ee3cac6697/Mako-1.2.1.tar.gz", hash = "sha256:f054a5ff4743492f1aa9ecc47172cb33b42b9d993cffcc146c9de17e717b0307"},
