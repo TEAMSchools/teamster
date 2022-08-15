@@ -20,7 +20,7 @@ def compose_queries(context):
 
     queries = context.op_config["queries"]
     for i, q in enumerate(queries):
-        file_config = q.get("file", {})
+        file_config = {**q.get("file", {})}
 
         [(query_type, value)] = q["sql"].items()
         if query_type == "text":
