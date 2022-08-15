@@ -1,8 +1,8 @@
 from dagster import repository
 
-from teamster.kippmiami.jobs import datagun as datagun_jobs
-from teamster.kippmiami.jobs.powerschool import db as ps_db_jobs
-from teamster.kippmiami.schedules import datagun as datagun_schedules
+from teamster.kippcamden.jobs import datagun as datagun_jobs
+from teamster.kippcamden.jobs.powerschool import db as ps_db_jobs
+from teamster.kippcamden.schedules import datagun as datagun_schedules
 
 
 @repository

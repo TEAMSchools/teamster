@@ -18,7 +18,7 @@ powerschool_api_extract = run_queries.to_job(
         [
             "./teamster/common/config/powerschool/api/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/kippmiami/config/powerschool/api/query-default.yaml",
+            "./teamster/kippcamden/config/powerschool/api/query-default.yaml",
         ]
     ),
 )
@@ -35,7 +35,7 @@ powerschool_api_resync = run_queries.to_job(
         [
             "./teamster/common/config/powerschool/api/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
-            "./teamster/kippmiami/config/powerschool/api/query-resync.yaml",
+            "./teamster/kippcamden/config/powerschool/api/query-resync.yaml",
         ]
     ),
 )
@@ -53,7 +53,7 @@ powerschool_api_resync_assignmentscore = run_queries.to_job(
             "./teamster/common/config/powerschool/api/resource.yaml",
             "./teamster/common/config/google/resource.yaml",
             # trunk-ignore(flake8/E501)
-            "./teamster/kippmiami/config/powerschool/api/query-resync-assignmentscore.yaml",
+            "./teamster/kippcamden/config/powerschool/api/query-resync-assignmentscore.yaml",
         ]
     ),
 )
