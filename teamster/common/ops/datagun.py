@@ -11,6 +11,7 @@ from dagster import In, RetryPolicy, Tuple, op
 )
 def load_destination(context, transformed):
     dest_config = transformed[0]
+
     dest_type = dest_config["type"]
     if dest_type == "gsheet":
         file_stem, df_dict = transformed[1:]
