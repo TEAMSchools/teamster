@@ -13,8 +13,8 @@ powerschool_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippmiami/config/datagun/query-powerschool.yaml",
         ]
     ),

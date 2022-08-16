@@ -49,8 +49,8 @@ GH_WORKLOAD_IDENTITY_POOL_ID=gcloud iam workload-identity-pools describe "github
 	--format="value(name)"
 
 export GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}
-echo "GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}" >>./env/common.env
-echo "GH_WORKLOAD_IDENTITY_POOL_PROVIDER=${GH_WORKLOAD_IDENTITY_POOL_ID}/providers/github-provider" >>./env/common.env
+echo "GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}" >>./env/core.env
+echo "GH_WORKLOAD_IDENTITY_POOL_PROVIDER=${GH_WORKLOAD_IDENTITY_POOL_ID}/providers/github-provider" >>./env/core.env
 
 # bind service account to WI pool
 gcloud iam service-accounts \

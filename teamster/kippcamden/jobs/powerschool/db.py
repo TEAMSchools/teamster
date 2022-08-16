@@ -3,9 +3,9 @@ from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_k8s import k8s_job_executor
 
-from teamster.common.graphs.powerschool.db import run_queries
-from teamster.common.resources.db import oracle
-from teamster.common.resources.google import gcs_file_manager
+from teamster.core.graphs.powerschool.db import run_queries
+from teamster.core.resources.db import oracle
+from teamster.core.resources.google import gcs_file_manager
 
 powerschool_db_extract = run_queries.to_job(
     name="powerschool_extract",
@@ -18,8 +18,8 @@ powerschool_db_extract = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/common/config/powerschool/db/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/powerschool/db/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippcamden/config/powerschool/db/query-default.yaml",
         ]
     ),

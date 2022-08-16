@@ -6,8 +6,8 @@ import re
 import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
 
-from teamster.common.config.db import QUERY_CONFIG
-from teamster.common.utils import TODAY, CustomJSONEncoder
+from teamster.core.config.db import QUERY_CONFIG
+from teamster.core.utils import TODAY, CustomJSONEncoder
 
 
 @op(
