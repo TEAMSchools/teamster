@@ -1,5 +1,0 @@
-ops:
-  compose_tables:
-    config:
-      tables:
-        - name: schools

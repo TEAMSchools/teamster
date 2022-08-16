@@ -35,7 +35,7 @@ else
 
 		# create local.env
 		tmpfile=$(mktemp)
-		cat ./env/common.env \
+		cat ./env/core.env \
 			./env/local.env.tmpl \
 			>"${tmpfile}"
 		envsubst <"${tmpfile}" >./env/"${INSTANCE_NAME}"/local.env
