@@ -21,7 +21,7 @@ powerschool_datagun = ScheduleDefinition(
     tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"limits": {"cpu": "500m", "memory": "512Mi"}}
+                "resources": {"limits": {"cpu": "500m", "memory": "1024Mi"}}
             }
         }
     },
