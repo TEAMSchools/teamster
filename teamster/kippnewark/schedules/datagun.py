@@ -13,15 +13,15 @@ powerschool_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippnewark/config/datagun/query-powerschool.yaml",
         ]
     ),
     tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"limits": {"cpu": "500m", "memory": "512Mi"}}
+                "resources": {"limits": {"cpu": "500m", "memory": "1024Mi"}}
             }
         }
     },
@@ -34,8 +34,8 @@ nps_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippnewark/config/datagun/query-nps.yaml",
         ]
     ),

@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import URL, create_engine
 from sshtunnel import SSHTunnelForwarder
 
-from teamster.common.utils import CustomJSONEncoder
+from teamster.core.utils import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
 
