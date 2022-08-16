@@ -1,7 +1,7 @@
 locations:
   - location_name: ${INSTANCE_NAME}
     code_source:
-      package_name: teamster.${INSTANCE_NAME}
+      package_name: teamster.local
     build:
       directory: ./
       registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}

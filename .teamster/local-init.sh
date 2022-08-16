@@ -48,11 +48,10 @@ else
 
 		# configure local branch
 		sed -i -e "s/dev/${INSTANCE_NAME}/g" ./pyproject.toml
-		echo "!teamster/${INSTANCE_NAME}/" >>./.dockerignore
 
 		# commit to branch
-		git add ./pyproject.toml ./.dockerignore
-		git commit -m "Create local branch"
+		git add ./pyproject.toml
+		git commit -m "Create ${INSTANCE_NAME} branch"
 		git status
 	fi
 fi
