@@ -3,7 +3,7 @@ locations:
     image: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami:latest
     working_directory: /root/app
     code_source:
-      package_name: teamster.kippmiami
+      package_name: teamster.local
     container_context:
       docker:
         container_kwargs:
