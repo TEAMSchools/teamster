@@ -90,4 +90,3 @@ secrets/
 ; # local exclusions
 teamster/
 !teamster/common/
-!teamster/dev/
