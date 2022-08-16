@@ -1,10 +1,9 @@
 #!/bin/bash
 
+git switch dev
+
 for BRANCH in ./teamster/kipp*/; do
 	branch_name=$(basename -- "${BRANCH}")
 
-	git switch "${branch_name}"
-	git merge dev
+	git checkout origin/"${branch_name}" ./teamster/"${branch_name}"
 done
-
-git switch dev

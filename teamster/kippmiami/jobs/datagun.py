@@ -3,9 +3,9 @@ from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_ssh import ssh_resource
 
-from teamster.common.graphs.datagun import run_queries
-from teamster.common.resources.db import mssql
-from teamster.common.resources.google import gcs_file_manager, google_sheets
+from teamster.core.graphs.datagun import run_queries
+from teamster.core.resources.db import mssql
+from teamster.core.resources.google import gcs_file_manager, google_sheets
 
 datagun_etl_sftp = run_queries.to_job(
     name="datagun_etl_sftp",
@@ -18,8 +18,8 @@ datagun_etl_sftp = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippmiami/config/datagun/template-query-sftp.yaml",
         ]
     ),
@@ -36,8 +36,8 @@ datagun_etl_gsheets = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippmiami/config/datagun/template-query-gsheets.yaml",
         ]
     ),
