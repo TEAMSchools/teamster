@@ -2,9 +2,9 @@ from dagster import config_from_files
 from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 
-from teamster.common.graphs.powerschool.api import run_queries
-from teamster.common.resources.google import gcs_file_manager
-from teamster.common.resources.powerschool import powerschool_api
+from teamster.core.graphs.powerschool.api import run_queries
+from teamster.core.resources.google import gcs_file_manager
+from teamster.core.resources.powerschool import powerschool_api
 
 powerschool_api_extract = run_queries.to_job(
     name="powerschool_extract",
@@ -16,8 +16,8 @@ powerschool_api_extract = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/common/config/powerschool/api/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/powerschool/api/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippcamden/config/powerschool/api/query-default.yaml",
         ]
     ),
@@ -33,8 +33,8 @@ powerschool_api_resync = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/common/config/powerschool/api/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/powerschool/api/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kippcamden/config/powerschool/api/query-resync.yaml",
         ]
     ),
@@ -50,8 +50,8 @@ powerschool_api_resync_assignmentscore = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/common/config/powerschool/api/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/powerschool/api/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             # trunk-ignore(flake8/E501)
             "./teamster/kippcamden/config/powerschool/api/query-resync-assignmentscore.yaml",
         ]

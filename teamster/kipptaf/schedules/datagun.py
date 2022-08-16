@@ -13,8 +13,8 @@ deanslist_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-deanslist.yaml",
         ]
     ),
@@ -34,8 +34,8 @@ illuminate_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-illuminate.yaml",
         ]
     ),
@@ -55,8 +55,8 @@ gsheets_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-gsheets.yaml",
         ]
     ),
@@ -76,8 +76,8 @@ clever_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-clever.yaml",
         ]
     ),
@@ -97,8 +97,8 @@ razkids_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-razkids.yaml",
         ]
     ),
@@ -111,8 +111,8 @@ read180_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-read180.yaml",
         ]
     ),
@@ -125,8 +125,8 @@ littlesis_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-littlesis.yaml",
         ]
     ),
@@ -139,8 +139,8 @@ gam_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-gam.yaml",
         ]
     ),
@@ -153,8 +153,8 @@ blissbook_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-blissbook.yaml",
         ]
     ),
@@ -167,8 +167,8 @@ coupa_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-coupa.yaml",
         ]
     ),
@@ -181,8 +181,8 @@ egencia_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-egencia.yaml",
         ]
     ),
@@ -195,8 +195,8 @@ adp_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-adp.yaml",
         ]
     ),
@@ -209,8 +209,8 @@ fpodms_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-fpodms.yaml",
         ]
     ),
@@ -223,8 +223,8 @@ njdoe_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-njdoe.yaml",
         ]
     ),
@@ -237,8 +237,8 @@ whetstone_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-whetstone.yaml",
         ]
     ),
@@ -251,8 +251,8 @@ idauto_datagun = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE,
     run_config=config_from_files(
         [
-            "./teamster/common/config/datagun/resource.yaml",
-            "./teamster/common/config/google/resource.yaml",
+            "./teamster/core/config/datagun/resource.yaml",
+            "./teamster/core/config/google/resource.yaml",
             "./teamster/kipptaf/config/datagun/query-idauto.yaml",
         ]
     ),

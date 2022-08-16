@@ -10,4 +10,4 @@ GH_WORKLOAD_IDENTITY_POOL_ID=$(
 export GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}
 
 # create base .env file
-envsubst <./env/common.env.tmpl >./env/common.env
+envsubst <./env/core.env.tmpl >./env/core.env
