@@ -86,8 +86,3 @@ secrets/
 .isort.cfg
 .markdownlint.yaml
 .shellcheckrc
-
-; # local exclusions
-teamster/
-!teamster/core/
-!teamster/kippcamden/
