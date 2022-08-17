@@ -1,7 +1,3 @@
-# execution:
-#   config:
-#     multiprocess:
-#       max_concurrent: 2
 resources:
   db:
     config:
@@ -19,3 +15,11 @@ ops:
             schema:
               columns: dcid
               table: storedgrades
+  execute_query:
+    extract:
+      remote_port:
+        env: PS_SSH_REMOTE_BIND_PORT
+      remote_host:
+        env: PS_SSH_REMOTE_BIND_HOST
+      local_port:
+        env: PS_DB_PORT

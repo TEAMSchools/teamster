@@ -2,6 +2,7 @@ from dagster import config_from_files
 from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_k8s import k8s_job_executor
+from dagster_ssh import ssh_resource
 
 from teamster.core.graphs.powerschool.db import run_queries
 from teamster.core.resources.db import oracle
@@ -12,6 +13,7 @@ powerschool_db_extract = run_queries.to_job(
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
+        "ssh": ssh_resource,
         "file_manager": gcs_file_manager,
         "io_manager": gcs_pickle_io_manager,
         "gcs": gcs_resource,
