@@ -80,7 +80,7 @@ def compose_queries(context):
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
-    if context.resources.ssh is not None:
+    if hasattr(context.resources.ssh, "get_tunnel"):
         context.log.info("Starting SSH tunnel.")
         ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config)
         ssh_tunnel.start()
