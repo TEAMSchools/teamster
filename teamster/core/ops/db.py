@@ -60,7 +60,7 @@ def compose_queries(context):
                         file_config.get("stem", file_config.get("table_name", "")),
                     ),
                     file_config["suffix"],
-                    i,
+                    str(i),
                 ]
             ),
         )
