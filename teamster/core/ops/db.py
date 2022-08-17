@@ -6,7 +6,7 @@ import re
 import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
 
-from teamster.core.config.db import QUERY_CONFIG
+from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
 from teamster.core.utils import TODAY, CustomJSONEncoder
 
 
@@ -44,7 +44,7 @@ def compose_queries(context):
             )
 
         file_suffix = file_config.get("suffix")
-        if not file_suffix:
+        if file_suffix is None:
             context.log.info("No file suffix specified, using default: json.gz")
             file_config["suffix"] = "json.gz"
 
@@ -53,35 +53,45 @@ def compose_queries(context):
             output_name="dynamic_query",
             mapping_key="_".join(
                 [
-                    f"{query_type}",
-                    f"{re.sub(r'[^A-Za-z0-9_]+', '', file_config.get('stem'))}",
-                    f"{file_suffix}",
-                    f"{i}",
+                    query_type,
+                    re.sub(
+                        r"[^A-Za-z0-9_]+",
+                        "",
+                        file_config.get("stem", file_config.get("table_name", "")),
+                    ),
+                    file_config["suffix"].replace(".", ""),
+                    str(i),
                 ]
             ),
         )
 
 
 @op(
+    config_schema=SSH_TUNNEL_CONFIG,
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
         "data": Out(dagster_type=List[Dict], is_required=False),
         "file_config": Out(dagster_type=Dict, is_required=False),
         "dest_config": Out(dagster_type=Dict, is_required=False),
     },
-    required_resource_keys={"db"},
+    required_resource_keys={"db", "ssh"},
     tags={"dagster/priority": 2},
 )
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
-    if context.resources.db.ssh_tunnel:
-        context.resources.db.ssh_tunnel.start()
+    if hasattr(context.resources.ssh, "get_tunnel"):
+        context.log.info("Starting SSH tunnel.")
+        ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config)
+        ssh_tunnel.start()
+    else:
+        ssh_tunnel = None
 
     data = context.resources.db.execute_text_query(query)
 
-    if context.resources.db.ssh_tunnel:
-        context.resources.db.ssh_tunnel.stop()
+    if ssh_tunnel is not None:
+        context.log.info("Stopping SSH tunnel.")
+        ssh_tunnel.stop()
 
     if data:
         yield Output(value=data, output_name="data")
@@ -104,10 +114,10 @@ def transform(context, data, file_config, dest_config):
     file_format = file_config.get("format", {})
     table_name = file_config.get("table_name")
     query_where = file_config.get("query_where")
-    file_stem = file_config.get("stem").format(TODAY.date().isoformat()) or (
-        table_name + query_where if query_where else ""
-    )
     file_encoding = file_format.get("encoding", "utf-8")
+    file_stem = file_config.get(
+        "stem", table_name + (query_where if query_where else "")
+    ).format(TODAY.date().isoformat())
 
     dest_type = dest_config["type"]
     dest_name = dest_config.get("name")
