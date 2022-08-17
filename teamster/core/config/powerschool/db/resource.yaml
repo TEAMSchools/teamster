@@ -11,7 +11,7 @@ resources:
         env: PS_DB_PASSWORD
       version:
         env: PS_DB_VERSION
-  ssh_tunnel:
+  ssh:
     remote_host:
       env: PS_SSH_HOST
     remote_port:
