@@ -15,6 +15,7 @@ datagun_etl_sftp = run_queries.to_job(
         "io_manager": gcs_pickle_io_manager,
         "gcs": gcs_resource,
         "destination": ssh_resource,
+        "ssh": None,
     },
     config=config_from_files(
         [
@@ -33,6 +34,7 @@ datagun_etl_gsheets = run_queries.to_job(
         "io_manager": gcs_pickle_io_manager,
         "gcs": gcs_resource,
         "destination": google_sheets,
+        "ssh": None,
     },
     config=config_from_files(
         [
