@@ -16,10 +16,11 @@ ops:
               columns: dcid
               table: storedgrades
   execute_query:
-    extract:
-      remote_port:
-        env: PS_SSH_REMOTE_BIND_PORT
-      remote_host:
-        env: PS_SSH_REMOTE_BIND_HOST
-      local_port:
-        env: PS_DB_PORT
+    ops:
+      extract:
+        remote_port:
+          env: PS_SSH_REMOTE_BIND_PORT
+        remote_host:
+          env: PS_SSH_REMOTE_BIND_HOST
+        local_port:
+          env: PS_DB_PORT
