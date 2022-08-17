@@ -1,4 +1,4 @@
-from dagster import Array, Field, Permissive, Selector, Shape, String
+from dagster import Array, Field, Int, Permissive, Selector, Shape, String
 
 QUERY_CONFIG = Shape(
     {
@@ -43,4 +43,15 @@ QUERY_CONFIG = Shape(
             )
         ),
     }
+)
+
+SSH_TUNNEL_CONFIG = Field(
+    Shape(
+        {
+            "remote_port": Int,
+            "remote_host": Field(String, is_required=False),
+            "local_port": Field(Int, is_required=False),
+        }
+    ),
+    is_required=False,
 )
