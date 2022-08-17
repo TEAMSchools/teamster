@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pdm run env-update "${INSTANCE_NAME}"
+
 # trunk-ignore(shellcheck/SC2312)
 kubectl create secret generic "${INSTANCE_NAME}" \
 	--save-config \

@@ -59,7 +59,7 @@ def compose_queries(context):
                         "",
                         file_config.get("stem", file_config.get("table_name", "")),
                     ),
-                    file_config["suffix"],
+                    file_config["suffix"].replace(".", ""),
                     str(i),
                 ]
             ),
@@ -74,13 +74,13 @@ def compose_queries(context):
         "file_config": Out(dagster_type=Dict, is_required=False),
         "dest_config": Out(dagster_type=Dict, is_required=False),
     },
-    required_resource_keys={"db"},
+    required_resource_keys={"db", "ssh"},
     tags={"dagster/priority": 2},
 )
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
-    if hasattr(context.resources, "ssh"):
+    if context.resources.ssh is not None:
         context.log.info("Starting SSH tunnel.")
         ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config)
         ssh_tunnel.start()
