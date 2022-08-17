@@ -116,7 +116,7 @@ def transform(context, data, file_config, dest_config):
     query_where = file_config.get("query_where")
     file_encoding = file_format.get("encoding", "utf-8")
     file_stem = file_config.get(
-        "stem", (table_name + query_where if query_where else "")
+        "stem", table_name + (query_where if query_where else "")
     ).format(TODAY.date().isoformat())
 
     dest_type = dest_config["type"]
