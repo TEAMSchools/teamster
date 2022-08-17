@@ -5,8 +5,8 @@ from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.graphs.powerschool.db import run_queries
-from teamster.core.resources.db import oracle
 from teamster.core.resources.google import gcs_file_manager
+from teamster.core.resources.sqlalchemy import oracle
 
 powerschool_db_extract = run_queries.to_job(
     name="powerschool_extract",
