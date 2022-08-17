@@ -59,7 +59,7 @@ def compose_queries(context):
                         "",
                         file_config.get("stem", file_config.get("table_name", "")),
                     ),
-                    file_config["suffix"],
+                    file_config["suffix"].replace(".", ""),
                     str(i),
                 ]
             ),
