@@ -44,7 +44,7 @@ def compose_queries(context):
             )
 
         file_suffix = file_config.get("suffix")
-        if not file_suffix:
+        if file_suffix is None:
             context.log.info("No file suffix specified, using default: json.gz")
             file_config["suffix"] = "json.gz"
 
@@ -53,10 +53,14 @@ def compose_queries(context):
             output_name="dynamic_query",
             mapping_key="_".join(
                 [
-                    f"{query_type}",
-                    f"{re.sub(r'[^A-Za-z0-9_]+', '', file_config.get('stem'))}",
-                    f"{file_suffix}",
-                    f"{i}",
+                    query_type,
+                    re.sub(
+                        r"[^A-Za-z0-9_]+",
+                        "",
+                        file_config.get("stem", file_config.get("table_name", "")),
+                    ),
+                    file_config["suffix"],
+                    i,
                 ]
             ),
         )
@@ -77,6 +81,7 @@ def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
     if hasattr(context.resources, "ssh"):
+        context.log.info("Starting SSH tunnel.")
         ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config)
         ssh_tunnel.start()
     else:
@@ -85,6 +90,7 @@ def extract(context, dynamic_query):
     data = context.resources.db.execute_text_query(query)
 
     if ssh_tunnel is not None:
+        context.log.info("Stopping SSH tunnel.")
         ssh_tunnel.stop()
 
     if data:
