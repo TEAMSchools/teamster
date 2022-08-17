@@ -6,7 +6,7 @@ import re
 import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
 
-from teamster.core.config.db import QUERY_CONFIG
+from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
 from teamster.core.utils import TODAY, CustomJSONEncoder
 
 
@@ -63,6 +63,7 @@ def compose_queries(context):
 
 
 @op(
+    config_schema=SSH_TUNNEL_CONFIG,
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
         "data": Out(dagster_type=List[Dict], is_required=False),
@@ -75,13 +76,16 @@ def compose_queries(context):
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
-    if context.resources.db.ssh_tunnel:
-        context.resources.db.ssh_tunnel.start()
+    if hasattr(context.resources, "ssh"):
+        ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config)
+        ssh_tunnel.start()
+    else:
+        ssh_tunnel = None
 
     data = context.resources.db.execute_text_query(query)
 
-    if context.resources.db.ssh_tunnel:
-        context.resources.db.ssh_tunnel.stop()
+    if ssh_tunnel is not None:
+        ssh_tunnel.stop()
 
     if data:
         yield Output(value=data, output_name="data")
