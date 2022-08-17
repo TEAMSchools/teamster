@@ -5,8 +5,9 @@ resources:
       driver: cx_oracle
       username: PSNAVIGATOR
       host: localhost
-      port: 1234
       database: PSPRODDB
+      port:
+        env: PS_DB_PORT
       password:
         env: PS_DB_PASSWORD
       version:
@@ -15,8 +16,6 @@ resources:
     config:
       remote_host:
         env: PS_SSH_HOST
-      # remote_port:
-      #   env: PS_SSH_PORT
       username:
         env: PS_SSH_USERNAME
       password:
