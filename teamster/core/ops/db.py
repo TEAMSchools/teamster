@@ -32,18 +32,23 @@ def compose_queries(context):
         elif query_type == "schema":
             where_clause = value.get("where", "")
 
+            query_table = table(**value["table"])
+            for col in value.get("columns", []):
+                query_table.append_column(column(col))
+
+            if query_table.columns.items():
+                query_select = select(query_table)
+            else:
+                query_select = select("*", query_table)
+
+            query = query_select.where(text(where_clause))
+
             file_config["table_name"] = value["table"]["name"]
             file_config["query_where"] = re.sub(
                 r"[^a-zA-Z0-9=;,]",
                 "",
                 where_clause.replace("AND", ";").replace(" OR ", ","),
             )
-
-            query_table = table(**value["table"])
-            for col in value.get("columns", []):
-                query_table.append_column(column(col))
-
-            query = select(query_table).where(text(where_clause))
 
         file_suffix = file_config.get("suffix")
         if file_suffix is None:
