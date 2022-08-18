@@ -39,9 +39,9 @@ def compose_queries(context):
 
             file_config["table_name"] = table_name
             file_config["query_where"] = re.sub(
-                r"[^a-zA-Z0-9=;]",
+                r"[^a-zA-Z0-9=;,]",
                 "",
-                column_names.replace(" AND ", ";").replace(" OR ", ","),
+                where_clause.replace("AND", ";").replace(" OR ", ","),
             )
 
         file_suffix = file_config.get("suffix")
