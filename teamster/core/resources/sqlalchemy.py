@@ -4,7 +4,6 @@ import sys
 import oracledb
 from dagster import Field, IntSource, StringSource, resource
 from dagster._utils import merge_dicts
-from sqlalchemy import text
 from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils import CustomJSONEncoder
@@ -18,11 +17,11 @@ class SqlAlchemyEngine(object):
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **kwargs)
         self.engine = create_engine(url=self.connection_url)
 
-    def execute_text_query(self, query, output="dict"):
+    def execute_query(self, query, output="dict"):
         self.log.info(f"Executing query:\n{query}")
 
         with self.engine.connect() as conn:
-            result = conn.execute(statement=text(query))
+            result = conn.execute(statement=query)
 
             if output in ["dict", "json"]:
                 output_obj = [dict(row) for row in result.mappings()]

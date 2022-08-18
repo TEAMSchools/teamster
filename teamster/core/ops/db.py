@@ -5,6 +5,7 @@ import re
 
 import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
+from sqlalchemy import column, select, table, text
 
 from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
 from teamster.core.utils import TODAY, CustomJSONEncoder
@@ -24,23 +25,23 @@ def compose_queries(context):
 
         [(query_type, value)] = q["sql"].items()
         if query_type == "text":
-            query = value
+            query = text(value)
         elif query_type == "file":
             with pathlib.Path(value).absolute().open() as f:
-                query = f.read()
+                query = text(f.read())
         elif query_type == "schema":
             table_name = value["table"]
-            where = value.get("where", "")
-            query = " ".join(
-                [
-                    f"SELECT {value['columns']}",
-                    f"FROM {table_name}",
-                    f"WHERE {where}" if where else "",
-                ]
-            )
+            column_names = value.get("columns", ["*"])
+            where_clause = value.get("where", "")
+
+            query_table = table(table_name, *[column(c) for c in column_names])
+            query = select(query_table).where(text(where_clause))
+
             file_config["table_name"] = table_name
             file_config["query_where"] = re.sub(
-                r"[^a-zA-Z0-9=;]", "", where.replace(" AND ", ";").replace(" OR ", ",")
+                r"[^a-zA-Z0-9=;]",
+                "",
+                column_names.replace(" AND ", ";").replace(" OR ", ","),
             )
 
         file_suffix = file_config.get("suffix")
