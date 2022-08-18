@@ -17,7 +17,9 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.blissbook_employee_list
+              table:
+                name: "blissbook_employee_list"
+                schema: "gabby.extracts"
           file:
             stem: members
             suffix: csv

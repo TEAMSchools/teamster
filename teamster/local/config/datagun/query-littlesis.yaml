@@ -16,7 +16,9 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.littlesis_enrollments
+              table:
+                name: "littlesis_enrollments"
+                schema: "gabby.extracts"
           file:
             stem: littlesis_extract
             suffix: csv

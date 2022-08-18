@@ -15,61 +15,81 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.gsheets_next_year_status
+              table:
+                name: "gsheets_next_year_status"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_next_year_status
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_dlm_roster
+              table:
+                name: "gsheets_dlm_roster"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_dlm_roster
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_ar_reading_log
+              table:
+                name: "gsheets_ar_reading_log"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_ar_reading_log
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_staff_roster
+              table:
+                name: "gsheets_staff_roster"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_staff_roster
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_student_roster
+              table:
+                name: "gsheets_student_roster"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_student_roster
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_student_contact_info
+              table:
+                name: "gsheets_student_contact_info"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_student_contact_info
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_survey_completion
+              table:
+                name: "gsheets_survey_completion"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_survey_completion
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_student_logins
+              table:
+                name: "gsheets_student_logins"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_student_logins
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_ktc_undermatch_analyis
+              table:
+                name: "gsheets_ktc_undermatch_analyis"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_ktc_undermatch_analyis
             suffix: gsheet
         - sql:
             schema:
-              table: gabby.extracts.gsheets_pm_assignment_roster
+              table:
+                name: "gsheets_pm_assignment_roster"
+                schema: "gabby.extracts"
           file:
             stem: gsheets_pm_assignment_roster
             suffix: gsheet
