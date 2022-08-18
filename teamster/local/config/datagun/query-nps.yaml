@@ -13,7 +13,9 @@ destination:
 queries:
   - sql:
       schema:
-        table: gabby.extracts.nps_student_info
+        table:
+          name: nps_student_info
+          schema: gabby.extracts
     file:
       stem: kipp-newark-student-data
       suffix: txt

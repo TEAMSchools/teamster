@@ -10,11 +10,14 @@ ops:
       queries:
         - sql:
             schema:
-              table: students
+              table:
+                name: students
         - sql:
             schema:
-              columns: dcid
-              table: storedgrades
+              select:
+                - dcid
+              table:
+                name: storedgrades
   execute_query:
     ops:
       extract:
