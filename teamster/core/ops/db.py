@@ -31,7 +31,7 @@ def compose_queries(context):
                 query = text(f.read())
         elif query_type == "schema":
             table_name = value["table"]
-            column_names = value.get("columns", ["*"])
+            column_names = value["columns"]
             where_clause = value.get("where", "")
 
             query_table = table(table_name, *[column(c) for c in column_names])

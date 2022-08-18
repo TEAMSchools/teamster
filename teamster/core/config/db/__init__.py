@@ -29,9 +29,9 @@ QUERY_CONFIG = Shape(
                                 {
                                     "table": String,
                                     "columns": Field(
-                                        String,
+                                        Array(String),
+                                        default_value=["*"],
                                         is_required=False,
-                                        default_value="*",
                                     ),
                                     "where": Field(String, is_required=False),
                                 }
