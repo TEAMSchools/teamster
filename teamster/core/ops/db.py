@@ -88,7 +88,7 @@ def extract(context, dynamic_query):
     else:
         ssh_tunnel = None
 
-    data = context.resources.db.execute_text_query(query)
+    data = context.resources.db.execute_query(query)
 
     if ssh_tunnel is not None:
         context.log.info("Stopping SSH tunnel.")
