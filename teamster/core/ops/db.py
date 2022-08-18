@@ -40,7 +40,7 @@ def compose_queries(context):
             )
 
             query_table = table(**value["table"])
-            for col in value.get("columns"):
+            for col in value.get("columns", []):
                 query_table.append_column(column(col))
 
             query = select(query_table).where(text(where_clause))
