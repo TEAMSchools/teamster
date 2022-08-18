@@ -30,20 +30,20 @@ def compose_queries(context):
             with pathlib.Path(value).absolute().open() as f:
                 query = text(f.read())
         elif query_type == "schema":
-            where_clause = value.get("where", "")
-
             query = (
                 select(*[literal_column(c) for c in value["columns"]])
                 .select_from(table(**value["table"]))
-                .where(text(where_clause))
+                .where(text(value.get("where", "")))
             )
 
-            file_config["table_name"] = value["table"]["name"]
-            file_config["query_where"] = re.sub(
-                r"[^a-zA-Z0-9=;,]",
-                "",
-                where_clause.replace("AND", ";").replace(" OR ", ","),
+            query_where = re.sub(
+                r"\s+AND\s+", ";", value.get("where", ""), flags=re.IGNORECASE
             )
+            query_where = re.sub(r"\s+OR\s+", ",", query_where, flags=re.IGNORECASE)
+            query_where = re.sub(r"\s+", "_", query_where)
+
+            file_config["query_where"] = re.sub(r"[^a-zA-Z0-9_=;,]", "", query_where)
+            file_config["table_name"] = value["table"]["name"]
 
         file_suffix = file_config.get("suffix")
         if file_suffix is None:
