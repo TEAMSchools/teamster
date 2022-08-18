@@ -22,4 +22,6 @@ ops:
               encoding: "latin1"
           sql:
             schema:
-              table: "gabby.extracts.idauto_staff_roster"
+              table:
+                name: "idauto_staff_roster"
+                schema: "gabby.extracts"

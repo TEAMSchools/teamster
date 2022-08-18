@@ -21,13 +21,17 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.gapps_users_students
+              table:
+                name: "gapps_users_students"
+                schema: "gabby.extracts"
           file:
             stem: gapps_users_students
             suffix: json
         - sql:
             schema:
-              table: gabby.extracts.gapps_users_admins
+              table:
+                name: "gapps_users_admins"
+                schema: "gabby.extracts"
           file:
             stem: gapps_users_admins
             suffix: json

@@ -5,7 +5,7 @@ import re
 
 import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
-from sqlalchemy import column, select, table, text
+from sqlalchemy import Table, column, select, text
 
 from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
 from teamster.core.utils import TODAY, CustomJSONEncoder
@@ -30,14 +30,14 @@ def compose_queries(context):
             with pathlib.Path(value).absolute().open() as f:
                 query = text(f.read())
         elif query_type == "schema":
-            table_name = value["table"]
+            table_params = value["table"]
             column_names = value["columns"]
             where_clause = value.get("where", "")
 
-            query_table = table(table_name, *[column(c) for c in column_names])
+            query_table = Table(*[column(c) for c in column_names], **table_params)
             query = select(query_table).where(text(where_clause))
 
-            file_config["table_name"] = table_name
+            file_config["table_name"] = table_params["name"]
             file_config["query_where"] = re.sub(
                 r"[^a-zA-Z0-9=;,]",
                 "",

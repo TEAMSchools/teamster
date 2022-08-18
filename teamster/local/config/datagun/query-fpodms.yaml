@@ -20,4 +20,6 @@ ops:
             suffix: "json"
           sql:
             schema:
-              table: "gabby.extracts.fpodms_students"
+              table:
+                name: "fpodms_students"
+                schema: "gabby.extracts"

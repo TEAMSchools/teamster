@@ -20,5 +20,7 @@ ops:
             suffix: "json"
           sql:
             schema:
-              table: "gabby.extracts.njdoe_bgcheck_audit"
+              table:
+                name: "njdoe_bgcheck_audit"
+                schema: "gabby.extracts"
               where: "(is_approved = 0 OR is_approved_district = 0)"

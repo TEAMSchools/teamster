@@ -9,49 +9,63 @@ from dagster import (
     StringSource,
 )
 
-QUERY_CONFIG = Shape(
-    {
-        "destination": Shape(
-            {
-                "type": String,
-                "name": Field(String, is_required=False),
-                "path": Field(String, is_required=False),
-            }
-        ),
-        "queries": Array(
-            Shape(
-                {
-                    "sql": Selector(
-                        {
-                            "text": String,
-                            "file": String,
-                            "schema": Shape(
+QUERY_DESTINATION_CONFIG = Field(
+    Shape(
+        {
+            "type": Field(String),
+            "name": Field(String, is_required=False),
+            "path": Field(String, is_required=False),
+        }
+    )
+)
+
+QUERY_SQL_CONFIG = Field(
+    Selector(
+        {
+            "text": Field(String),
+            "file": Field(String),
+            "schema": Field(
+                Shape(
+                    {
+                        "table": Field(
+                            Shape(
                                 {
-                                    "table": String,
-                                    "columns": Field(
-                                        Array(String),
-                                        default_value=["*"],
-                                        is_required=False,
-                                    ),
-                                    "where": Field(String, is_required=False),
+                                    "name": Field(String),
+                                    "schema": Field(String, is_required=False),
                                 }
-                            ),
-                        }
-                    ),
-                    "file": Field(
-                        Shape(
-                            {
-                                "stem": Field(String, is_required=False),
-                                "suffix": Field(String, is_required=False),
-                                "format": Field(Permissive({}), is_required=False),
-                            }
+                            )
                         ),
-                        is_required=False,
-                    ),
-                }
-            )
-        ),
-    }
+                        "columns": Field(
+                            Array(String), default_value=["*"], is_required=False
+                        ),
+                        "where": Field(String, is_required=False),
+                    }
+                )
+            ),
+        }
+    )
+)
+
+QUERY_FILE_CONFIG = Field(
+    Shape(
+        {
+            "stem": Field(String),
+            "suffix": Field(String),
+            "format": Field(Permissive({}), is_required=False),
+        }
+    ),
+    is_required=False,
+)
+
+QUERY_CONFIG = Field(
+    Shape(
+        {
+            "destination": QUERY_DESTINATION_CONFIG,
+            "queries": Field(
+                Array(Shape({"sql": QUERY_SQL_CONFIG, "file": QUERY_FILE_CONFIG}))
+            ),
+        }
+    )
 )
 
 SSH_TUNNEL_CONFIG = Field(

@@ -20,7 +20,9 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.illuminate_courses
+              table:
+                name: "illuminate_courses"
+                schema: "gabby.extracts"
           file:
             stem: courses
             suffix: txt
@@ -28,7 +30,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_enrollment
+              table:
+                name: "illuminate_enrollment"
+                schema: "gabby.extracts"
           file:
             stem: enrollment
             suffix: txt
@@ -36,7 +40,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_mastschd
+              table:
+                name: "illuminate_mastschd"
+                schema: "gabby.extracts"
           file:
             stem: mastschd
             suffix: txt
@@ -44,7 +50,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_roles
+              table:
+                name: "illuminate_roles"
+                schema: "gabby.extracts"
           file:
             stem: roles
             suffix: txt
@@ -52,7 +60,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_roster
+              table:
+                name: "illuminate_roster"
+                schema: "gabby.extracts"
           file:
             stem: roster
             suffix: txt
@@ -60,7 +70,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_users
+              table:
+                name: "illuminate_users"
+                schema: "gabby.extracts"
           file:
             stem: users
             suffix: txt
@@ -68,7 +80,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_terms
+              table:
+                name: "illuminate_terms"
+                schema: "gabby.extracts"
           file:
             stem: terms
             suffix: txt
@@ -76,7 +90,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_student_portal_accounts
+              table:
+                name: "illuminate_student_portal_accounts"
+                schema: "gabby.extracts"
           file:
             stem: student_portal_accounts
             suffix: txt
@@ -84,7 +100,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_studemo
+              table:
+                name: "illuminate_studemo"
+                schema: "gabby.extracts"
           file:
             stem: studemo
             suffix: txt
@@ -92,7 +110,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.illuminate_sites
+              table:
+                name: "illuminate_sites"
+                schema: "gabby.extracts"
           file:
             stem: sites
             suffix: txt
