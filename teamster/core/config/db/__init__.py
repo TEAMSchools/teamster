@@ -35,9 +35,7 @@ QUERY_SQL_CONFIG = Field(
                                 }
                             )
                         ),
-                        "columns": Field(
-                            Array(String), default_value=["*"], is_required=False
-                        ),
+                        "columns": Field(Array(String), is_required=False),
                         "where": Field(String, is_required=False),
                     }
                 )
