@@ -18,14 +18,18 @@ destination:
 queries:
   - sql:
       schema:
-        table: gabby.extracts.cpn_attendance
+        table:
+          name: cpn_attendance
+          schema: gabby.extracts
         where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
     file:
       stem: cpn_attendance
       suffix: csv
   - sql:
       schema:
-        table: gabby.extracts.cpn_demographic
+        table:
+          name: cpn_demographic
+          schema: gabby.extracts
         where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
     file:
       stem: cpn_demographic

@@ -21,7 +21,9 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.powerschool_autocomm_students_accessaccounts
+              table:
+                name: powerschool_autocomm_students_accessaccounts
+                schema: gabby.extracts
               where: "db_name = 'kippcamden'"
           file:
             stem: powerschool_autocomm_students_accessaccounts
@@ -31,7 +33,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.powerschool_autocomm_teachers_accounts
+              table:
+                name: powerschool_autocomm_teachers_accounts
+                schema: gabby.extracts
               where: "legal_entity_name = 'KIPP Cooper Norcross Academy'"
           file:
             stem: powerschool_autocomm_teachers_accounts
@@ -41,7 +45,9 @@ ops:
               sep: "\t"
         - sql:
             schema:
-              table: gabby.extracts.powerschool_autocomm_students_easyiep
+              table:
+                name: powerschool_autocomm_students_easyiep
+                schema: gabby.extracts
               where: "db_name = 'kippcamden'"
           file:
             stem: powerschool_autocomm_students_easyiep
