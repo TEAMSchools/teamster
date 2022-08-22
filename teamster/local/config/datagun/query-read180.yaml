@@ -21,13 +21,17 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.read180_teachers
+              table:
+                name: "read180_teachers"
+                schema: "gabby.extracts"
           file:
             stem: teachers
             suffix: csv
         - sql:
             schema:
-              table: gabby.extracts.read180_students
+              table:
+                name: "read180_students"
+                schema: "gabby.extracts"
           file:
             stem: students
             suffix: csv

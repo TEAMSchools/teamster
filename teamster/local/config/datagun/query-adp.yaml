@@ -20,4 +20,6 @@ ops:
             suffix: "json"
           sql:
             schema:
-              table: "gabby.extracts.adp_workers"
+              table:
+                name: "adp_workers"
+                schema: "gabby.extracts"

@@ -17,7 +17,9 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.coupa_users
+              table:
+                name: "coupa_users"
+                schema: "gabby.extracts"
           file:
             stem: users_{}
             suffix: csv

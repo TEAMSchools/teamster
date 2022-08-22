@@ -20,37 +20,49 @@ ops:
       queries:
         - sql:
             schema:
-              table: gabby.extracts.clever_enrollments
+              table:
+                name: "clever_enrollments"
+                schema: "gabby.extracts"
           file:
             stem: enrollments
             suffix: csv
         - sql:
             schema:
-              table: gabby.extracts.clever_teachers
+              table:
+                name: "clever_teachers"
+                schema: "gabby.extracts"
           file:
             stem: teachers
             suffix: csv
         - sql:
             schema:
-              table: gabby.extracts.clever_students
+              table:
+                name: "clever_students"
+                schema: "gabby.extracts"
           file:
             stem: students
             suffix: csv
         - sql:
             schema:
-              table: gabby.extracts.clever_staff
+              table:
+                name: "clever_staff"
+                schema: "gabby.extracts"
           file:
             stem: staff
             suffix: csv
         - sql:
             schema:
-              table: gabby.extracts.clever_sections
+              table:
+                name: "clever_sections"
+                schema: "gabby.extracts"
           file:
             stem: sections
             suffix: csv
         - sql:
             schema:
-              table: gabby.extracts.clever_schools
+              table:
+                name: "clever_schools"
+                schema: "gabby.extracts"
           file:
             stem: schools
             suffix: csv
