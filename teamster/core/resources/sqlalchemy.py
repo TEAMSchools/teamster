@@ -4,9 +4,7 @@ import sys
 import oracledb
 from dagster import Field, IntSource, StringSource, resource
 from dagster._utils import merge_dicts
-from sqlalchemy import text
 from sqlalchemy.engine import URL, create_engine
-from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.utils import CustomJSONEncoder
 
@@ -14,44 +12,21 @@ sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracled
 
 
 class SqlAlchemyEngine(object):
-    def __init__(self, dialect, driver, logger, ssh_config=None, **kwargs):
-        self._ssh_config = {}
-        self.ssh_tunnel = None
+    def __init__(self, dialect, driver, logger, **kwargs):
         self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **kwargs)
         self.engine = create_engine(url=self.connection_url)
 
-        if ssh_config:
-            for k, v in ssh_config.items():
-                if k not in ["remote_bind_host", "remote_bind_port"]:
-                    self._ssh_config[k] = v
-
-            self._ssh_config["remote_bind_address"] = (
-                ssh_config.get("remote_bind_host"),
-                ssh_config.get("remote_bind_port"),
-            )
-
-            self._ssh_config["local_bind_address"] = (kwargs["host"], kwargs["port"])
-
-            self.ssh_tunnel = SSHTunnelForwarder(**self._ssh_config)
-
-    def execute_text_query(self, query, output="dict"):
+    def execute_query(self, query, output="dict"):
         self.log.info(f"Executing query:\n{query}")
 
-        if self.ssh_tunnel:
-            if not self.ssh_tunnel.is_active:
-                self.ssh_tunnel.start()
-
         with self.engine.connect() as conn:
-            result = conn.execute(statement=text(query))
+            result = conn.execute(statement=query)
 
             if output in ["dict", "json"]:
                 output_obj = [dict(row) for row in result.mappings()]
             else:
                 output_obj = [row for row in result]
-
-        # if self._ssh_config:
-        #     tunnel.stop()
 
         self.log.info(f"Retrieved {len(output_obj)} rows.")
         if output == "json":
@@ -60,7 +35,7 @@ class SqlAlchemyEngine(object):
             return output_obj
 
 
-class MssqlEngine(SqlAlchemyEngine):
+class MSSQLEngine(SqlAlchemyEngine):
     def __init__(self, dialect, driver, logger, mssql_driver, **kwargs):
         super().__init__(
             dialect, driver, logger, query={"driver": mssql_driver}, **kwargs
@@ -90,7 +65,6 @@ SQLALCHEMY_ENGINE_CONFIG = {
     "host": Field(StringSource, is_required=False),
     "port": Field(IntSource, is_required=False),
     "database": Field(StringSource, is_required=False),
-    "ssh_config": Field(dict, is_required=False),  # TODO: add ssh_config shape
 }
 
 
@@ -101,7 +75,7 @@ SQLALCHEMY_ENGINE_CONFIG = {
     )
 )
 def mssql(context):
-    return MssqlEngine(logger=context.log, **context.resource_config)
+    return MSSQLEngine(logger=context.log, **context.resource_config)
 
 
 @resource(
