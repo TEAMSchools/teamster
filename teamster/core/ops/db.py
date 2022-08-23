@@ -8,7 +8,7 @@ from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tupl
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
-from teamster.core.utils import TODAY, CustomJSONEncoder, get_last_schedule_run
+from teamster.core.utils import NOW, TODAY, CustomJSONEncoder, get_last_schedule_run
 
 
 @op(
@@ -116,11 +116,10 @@ def transform(context, data, file_config, dest_config):
     file_suffix = file_config["suffix"]
     file_format = file_config.get("format", {})
     table_name = file_config.get("table_name")
-    query_where = file_config.get("query_where")
     file_encoding = file_format.get("encoding", "utf-8")
-    file_stem = file_config.get(
-        "stem", table_name + (query_where if query_where else "")
-    ).format(TODAY=TODAY.date().isoformat())
+    file_stem = file_config.get("stem", f"{table_name}_{NOW.timestamp()}").format(
+        TODAY=TODAY.date().isoformat()
+    )
 
     dest_type = dest_config["type"]
     dest_name = dest_config.get("name")
