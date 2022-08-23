@@ -16,7 +16,7 @@ YESTERDAY = TODAY - datetime.timedelta(days=1)
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
-        if isinstance(o, (datetime.timedelta, decimal.Decimal)):
+        if isinstance(o, (datetime.timedelta, decimal.Decimal, bytes)):
             return str(o)
         elif isinstance(o, (datetime.datetime, datetime.date)):
             return o.isoformat()
