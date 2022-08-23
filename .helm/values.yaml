@@ -173,6 +173,7 @@ workspace:
   #     memory: 128Mi
   resources: {}
 
+
   # Specifies the timeout when creating a new Kubernetes deployment for a code server.
   #
   # If not set, defaults to 5 minutes.
@@ -190,6 +191,22 @@ workspace:
   #
   # If not set, defaults to 60 seconds.
   serverProcessStartupTimeout: ~
+
+  # Specify TTL for user code servers.
+  # By default full deployment servers do not have a TTL.
+  # Branch deployments servers have a default TTL of 24 hours
+  # The max code servers defaults to 25, and only applies to servers with TTL.
+  #
+  # Example:
+  # serverTTL:
+  #   fullDeployments:
+  #     enabled: true
+  #     ttlSeconds: 7200 # 2 hours
+  #   branchDeployments:
+  #     ttlSeconds: 3600 # 1 hours
+  #   maxServers: 10
+  serverTTL: ~
+
 
 ####################################################################################################
 # Compute Logs: (Optional) settings for compute logging

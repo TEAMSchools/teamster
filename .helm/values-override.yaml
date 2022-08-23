@@ -15,8 +15,11 @@ dagsterCloudAgent:
 
 workspace:
   serverTTL:
-    enabled: true
-    ttlSeconds: 7200
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 1800 # 30 min
+    branchDeployments:
+      ttlSeconds: 1800 # 30 min
   resources:
     limits:
       cpu: "250m"
