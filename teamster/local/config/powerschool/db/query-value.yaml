@@ -1,0 +1,24 @@
+resources:
+  db:
+    config:
+      prefetchrows: 100000
+ops:
+  compose_queries:
+    config:
+      destination:
+        type: gcs
+      queries:
+        - sql:
+            schema:
+              table:
+                name: LOG
+  execute_query:
+    ops:
+      extract:
+        config:
+          remote_port:
+            env: PS_SSH_REMOTE_BIND_PORT
+          remote_host:
+            env: PS_SSH_REMOTE_BIND_HOST
+          local_port:
+            env: PS_DB_PORT
