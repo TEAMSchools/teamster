@@ -11,13 +11,17 @@ ops:
         - sql:
             schema:
               table:
-                name: students
+                name: STUDENTS
+              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
-              select:
-                - dcid
               table:
-                name: storedgrades
+                name: PERSON
+              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+        - sql:
+            schema:
+              table:
+                name: REENROLLMENTS
   execute_query:
     ops:
       extract:
