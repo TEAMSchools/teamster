@@ -1,7 +1,3 @@
-# execution:
-#   config:
-#     multiprocess:
-#       max_concurrent: 2
 resources:
   db:
     config:
@@ -14,8 +10,21 @@ ops:
       queries:
         - sql:
             schema:
-              table: students
+              table:
+                name: students
         - sql:
             schema:
-              columns: dcid
-              table: storedgrades
+              select:
+                - dcid
+              table:
+                name: storedgrades
+  execute_query:
+    ops:
+      extract:
+        config:
+          remote_port:
+            env: PS_SSH_REMOTE_BIND_PORT
+          remote_host:
+            env: PS_SSH_REMOTE_BIND_HOST
+          local_port:
+            env: PS_DB_PORT
