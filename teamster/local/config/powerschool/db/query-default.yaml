@@ -11,6 +11,15 @@ ops:
         - sql:
             schema:
               table:
+                name: GEN
+        - sql:
+            schema:
+              table:
+                name: SECTIONS
+              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+        - sql:
+            schema:
+              table:
                 name: ATTENDANCE_CODE
         - sql:
             schema:
