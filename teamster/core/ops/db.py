@@ -8,7 +8,7 @@ from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tupl
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
-from teamster.core.utils import TODAY, CustomJSONEncoder
+from teamster.core.utils import TODAY, CustomJSONEncoder, get_last_schedule_run
 
 
 @op(
@@ -30,15 +30,16 @@ def compose_queries(context):
             with pathlib.Path(value).absolute().open() as f:
                 query = text(f.read())
         elif query_type == "schema":
+            where_fmt = value.get("where", "").format(
+                TODAY=TODAY, LAST_RUN=get_last_schedule_run(context=context)
+            )
             query = (
                 select(*[literal_column(col) for col in value["select"]])
                 .select_from(table(**value["table"]))
-                .where(text(value.get("where", "")))
+                .where(text(where_fmt))
             )
 
-            query_where = re.sub(
-                r"\s+AND\s+", ";", value.get("where", ""), flags=re.IGNORECASE
-            )
+            query_where = re.sub(r"\s+AND\s+", ";", where_fmt, flags=re.IGNORECASE)
             query_where = re.sub(r"\s+OR\s+", ",", query_where, flags=re.IGNORECASE)
             query_where = re.sub(r"\s+", "_", query_where)
 
@@ -119,7 +120,7 @@ def transform(context, data, file_config, dest_config):
     file_encoding = file_format.get("encoding", "utf-8")
     file_stem = file_config.get(
         "stem", table_name + (query_where if query_where else "")
-    ).format(TODAY.date().isoformat())
+    ).format(TODAY=TODAY.date().isoformat())
 
     dest_type = dest_config["type"]
     dest_name = dest_config.get("name")
