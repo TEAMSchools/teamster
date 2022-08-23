@@ -5,6 +5,7 @@ import re
 
 import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
+from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
 from teamster.core.utils import TODAY, CustomJSONEncoder
@@ -24,24 +25,25 @@ def compose_queries(context):
 
         [(query_type, value)] = q["sql"].items()
         if query_type == "text":
-            query = value
+            query = text(value)
         elif query_type == "file":
             with pathlib.Path(value).absolute().open() as f:
-                query = f.read()
+                query = text(f.read())
         elif query_type == "schema":
-            table_name = value["table"]
-            where = value.get("where", "")
-            query = " ".join(
-                [
-                    f"SELECT {value['columns']}",
-                    f"FROM {table_name}",
-                    f"WHERE {where}" if where else "",
-                ]
+            query = (
+                select(*[literal_column(col) for col in value["select"]])
+                .select_from(table(**value["table"]))
+                .where(text(value.get("where", "")))
             )
-            file_config["table_name"] = table_name
-            file_config["query_where"] = re.sub(
-                r"[^a-zA-Z0-9=;]", "", where.replace(" AND ", ";").replace(" OR ", ",")
+
+            query_where = re.sub(
+                r"\s+AND\s+", ";", value.get("where", ""), flags=re.IGNORECASE
             )
+            query_where = re.sub(r"\s+OR\s+", ",", query_where, flags=re.IGNORECASE)
+            query_where = re.sub(r"\s+", "_", query_where)
+
+            file_config["query_where"] = re.sub(r"[^a-zA-Z0-9_=;,]", "", query_where)
+            file_config["table_name"] = value["table"]["name"]
 
         file_suffix = file_config.get("suffix")
         if file_suffix is None:
@@ -87,7 +89,7 @@ def extract(context, dynamic_query):
     else:
         ssh_tunnel = None
 
-    data = context.resources.db.execute_text_query(query)
+    data = context.resources.db.execute_query(query)
 
     if ssh_tunnel is not None:
         context.log.info("Stopping SSH tunnel.")
