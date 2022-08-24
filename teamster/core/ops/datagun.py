@@ -59,9 +59,6 @@ def load_destination(context, transformed):
 
             with sftp.file(file_name, "w") as f:
                 f.write(
-                    # context.resources.file_manager.download_as_bytes(
-                    #     file_handle=file_handle
-                    # )
                     context.resources.file_manager.read_data(
                         file_handle=file_handle
                     )

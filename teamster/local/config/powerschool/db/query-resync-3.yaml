@@ -3,7 +3,7 @@ execution:
     resources:
       limits:
         cpu: 500m
-        memory: 5120Mi
+        memory: 20Gi
 resources:
   db:
     config:
