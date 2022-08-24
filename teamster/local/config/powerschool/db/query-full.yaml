@@ -1,0 +1,69 @@
+resources:
+  db:
+    config:
+      prefetchrows: 100000
+      arraysize: 100000
+ops:
+  compose_queries:
+    config:
+      destination:
+        type: gcs
+      queries:
+        - sql:
+            schema:
+              table:
+                name: BELL_SCHEDULE
+        - sql:
+            schema:
+              table:
+                name: CALENDAR_DAY
+        - sql:
+            schema:
+              table:
+                name: CYCLE_DAY
+        - sql:
+            schema:
+              table:
+                name: PERIOD
+        - sql:
+            schema:
+              table:
+                name: GEN
+        - sql:
+            schema:
+              table:
+                name: ATTENDANCE_CODE
+        - sql:
+            schema:
+              table:
+                name: ATTENDANCE_CONVERSION_ITEMS
+        - sql:
+            schema:
+              table:
+                name: FTE
+        - sql:
+            schema:
+              table:
+                name: REENROLLMENTS
+        - sql:
+            schema:
+              table:
+                name: SPENROLLMENTS
+        - sql:
+            schema:
+              table:
+                name: TEST
+        - sql:
+            schema:
+              table:
+                name: TESTSCORE
+  execute_query:
+    ops:
+      extract:
+        config:
+          remote_port:
+            env: PS_SSH_REMOTE_BIND_PORT
+          remote_host:
+            env: PS_SSH_REMOTE_BIND_HOST
+          local_port:
+            env: PS_DB_PORT

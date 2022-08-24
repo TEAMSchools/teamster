@@ -1,3 +1,9 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 2560Mi
 resources:
   db:
     config:
@@ -33,22 +39,18 @@ ops:
             schema:
               table:
                 name: ASSIGNMENTCATEGORYASSOC
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: ASSIGNMENTSCORE
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: ASSIGNMENTSECTION
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: TEACHERCATEGORY
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
@@ -57,7 +59,6 @@ ops:
             schema:
               table:
                 name: SECTIONS
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
@@ -90,222 +91,178 @@ ops:
             schema:
               table:
                 name: CODESET
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: EMAILADDRESS
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADECALCFORMULAWEIGHT
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADECALCSCHOOLASSOC
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADECALCULATIONTYPE
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADEFORMULASET
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADESCALEITEM
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADESCHOOLCONFIG
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADESCHOOLFORMULAASSOC
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: GRADESECTIONCONFIG
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: ORIGINALCONTACTMAP
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PERSON
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PERSONADDRESS
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PERSONADDRESSASSOC
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PERSONEMAILADDRESSASSOC
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PERSONPHONENUMBERASSOC
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PHONENUMBER
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: ROLEDEF
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: S_NJ_CRS_X
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: S_NJ_REN_X
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: S_NJ_STU_X
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: S_NJ_USR_X
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: STUDENTCONTACTASSOC
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: STUDENTCONTACTDETAIL
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: STUDENTCOREFIELDS
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: STUDENTRACE
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: U_CLG_ET_STU
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: U_CLG_ET_STU_ALT
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: U_DEF_EXT_STUDENTS
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: U_STUDENTSUSERFIELDS
-              where: "WHENMODIFIED >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: DISTRICTTEACHERCATEGORY
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: SCHOOLSTAFF
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: SECTIONTEACHER
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: USERS
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: ATTENDANCE
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: CC
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: COURSES
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PGFINALGRADES
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: PREFS
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: SCHOOLS
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: STOREDGRADES
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: STUDENTS
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: TERMBINS
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
             schema:
               table:
                 name: TERMS
-              where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
   execute_query:
     ops:
       extract:

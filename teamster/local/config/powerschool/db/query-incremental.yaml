@@ -12,26 +12,6 @@ ops:
         - sql:
             schema:
               table:
-                name: LOG
-        - sql:
-            schema:
-              table:
-                name: BELL_SCHEDULE
-        - sql:
-            schema:
-              table:
-                name: CALENDAR_DAY
-        - sql:
-            schema:
-              table:
-                name: CYCLE_DAY
-        - sql:
-            schema:
-              table:
-                name: PERIOD
-        - sql:
-            schema:
-              table:
                 name: ASSIGNMENTCATEGORYASSOC
               where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
         - sql:
@@ -52,40 +32,8 @@ ops:
         - sql:
             schema:
               table:
-                name: GEN
-        - sql:
-            schema:
-              table:
                 name: SECTIONS
               where: "TRANSACTION_DATE >= TO_TIMESTAMP_TZ('{TODAY}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: ATTENDANCE_CODE
-        - sql:
-            schema:
-              table:
-                name: ATTENDANCE_CONVERSION_ITEMS
-        - sql:
-            schema:
-              table:
-                name: FTE
-        - sql:
-            schema:
-              table:
-                name: REENROLLMENTS
-        - sql:
-            schema:
-              table:
-                name: SPENROLLMENTS
-        - sql:
-            schema:
-              table:
-                name: TEST
-        - sql:
-            schema:
-              table:
-                name: TESTSCORE
         - sql:
             schema:
               table:
