@@ -1,9 +1,3 @@
-execution:
-  config:
-    resources:
-      limits:
-        cpu: 500m
-        memory: 2560Mi
 resources:
   db:
     config:
@@ -15,10 +9,6 @@ ops:
       destination:
         type: gcs
       queries:
-        - sql:
-            schema:
-              table:
-                name: LOG
         - sql:
             schema:
               table:
@@ -39,10 +29,6 @@ ops:
             schema:
               table:
                 name: ASSIGNMENTCATEGORYASSOC
-        - sql:
-            schema:
-              table:
-                name: ASSIGNMENTSCORE
         - sql:
             schema:
               table:
@@ -226,10 +212,6 @@ ops:
         - sql:
             schema:
               table:
-                name: ATTENDANCE
-        - sql:
-            schema:
-              table:
                 name: CC
         - sql:
             schema:
@@ -238,19 +220,11 @@ ops:
         - sql:
             schema:
               table:
-                name: PGFINALGRADES
-        - sql:
-            schema:
-              table:
                 name: PREFS
         - sql:
             schema:
               table:
                 name: SCHOOLS
-        - sql:
-            schema:
-              table:
-                name: STOREDGRADES
         - sql:
             schema:
               table:

@@ -1,10 +1,11 @@
 from dagster import config_from_files, resource
-from dagster_gcp.gcs import gcs_pickle_io_manager
-from dagster_gcp.gcs.resources import gcs_resource
+from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_file_manager, gcs_resource
+# from dagster_gcp.gcs.resources import gcs_resource
 from dagster_ssh import ssh_resource
 
 from teamster.core.graphs.datagun import run_queries
-from teamster.core.resources.google import gcs_file_manager, google_sheets
+# from teamster.core.resources.google import gcs_file_manager, google_sheets
+from teamster.core.resources.google import google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 
 

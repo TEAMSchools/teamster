@@ -153,8 +153,11 @@ def transform(context, data, file_config, dest_config):
     if dest_type == "gsheet":
         yield Output(value=(dest_config, file_stem, df_dict), output_name="transformed")
     elif dest_type in ["gcs", "sftp"]:
-        file_handle = context.resources.file_manager.upload_from_string(
-            obj=data_bytes, file_key=gcs_key
+        # file_handle = context.resources.file_manager.upload_from_string(
+        #     obj=data_bytes, file_key=gcs_key
+        # )
+        file_handle = context.resources.file_manager.write_data(
+            data=data_bytes, key=f"{gcs_folder}/{file_stem}", ext=file_suffix
         )
         context.log.info(f"Saved to {file_handle.path_desc}.")
 
