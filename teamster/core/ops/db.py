@@ -43,7 +43,7 @@ def compose_queries(context):
             mapping_key=re.sub(
                 r"[^A-Za-z0-9_]+",
                 "",
-                f"{(q['file'].get('stem') or value['table']['name'])}_{i}",
+                f"{(q.get('file', {}).get('stem') or value['table']['name'])}_{i}",
             ),
         )
 
@@ -96,7 +96,9 @@ def transform(context, data, file_config, dest_config):
     table_name = mapping_key[: mapping_key.rfind("_")]
 
     if file_config:
-        file_stem = file_config["stem"].format(TODAY=TODAY.date().isoformat())
+        file_stem = file_config["stem"].format(
+            TODAY=TODAY.date().isoformat(), NOW=NOW.timestamp()
+        )
         file_suffix = file_config["suffix"]
         file_format = file_config.get("format", {})
 
