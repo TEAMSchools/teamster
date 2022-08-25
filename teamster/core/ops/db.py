@@ -115,7 +115,7 @@ def extract(context, dynamic_query):
 def transform(context, data, file_config, dest_config):
     file_suffix = file_config["suffix"]
     file_format = file_config.get("format", {})
-    table_name = file_config.get("table_name")
+    table_name = file_config.get("table_name", "")
     file_encoding = file_format.get("encoding", "utf-8")
     file_stem = file_config.get("stem", f"{table_name}_{NOW.timestamp()}").format(
         TODAY=TODAY.date().isoformat()
