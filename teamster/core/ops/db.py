@@ -131,8 +131,6 @@ def transform(context, data, file_config, dest_config):
     else:
         gcs_folder = "data"
 
-    gcs_key = f"{gcs_folder}/{file_stem}.{file_suffix}"
-
     context.log.info(f"Transforming data to {file_suffix}")
     if file_suffix == "json":
         data_bytes = json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
