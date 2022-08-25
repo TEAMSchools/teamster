@@ -38,7 +38,7 @@ def compose_queries(context):
             )
 
         yield DynamicOutput(
-            value=(query, q["file"], dest_config),
+            value=(query, q.get("file", {}), dest_config),
             output_name="dynamic_query",
             mapping_key=re.sub(
                 r"[^A-Za-z0-9_]+",
@@ -95,15 +95,17 @@ def transform(context, data, file_config, dest_config):
     mapping_key = context.get_mapping_key()
     table_name = mapping_key[: mapping_key.rfind("_")]
 
-    file_suffix = file_config["suffix"]
-    file_format = file_config.get("format", {})
+    if file_config:
+        file_stem = file_config["stem"].format(TODAY=TODAY.date().isoformat())
+        file_suffix = file_config["suffix"]
+        file_format = file_config.get("format", {})
 
-    file_encoding = file_format.get("encoding", "utf-8")
-
-    file_stem = (
-        file_config["stem"].format(TODAY=TODAY.date().isoformat())
-        or f"{table_name}_{NOW.timestamp()}"
-    )
+        file_encoding = file_format.get("encoding", "utf-8")
+    else:
+        file_stem = f"{table_name}_{NOW.timestamp()}"
+        file_suffix = "json.gz"
+        file_format = {}
+        file_encoding = "utf-8"
 
     dest_type = dest_config["type"]
 
