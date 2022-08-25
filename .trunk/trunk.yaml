@@ -23,7 +23,7 @@ lint:
           success_codes:
             - 0
           formatter: true
-          run: sql-formatter --config .sql-formatter ${target}
+          run: sql-formatter --config .sql-formatter.json ${target}
           stdin: true
       files:
         - sql

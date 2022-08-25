@@ -1,0 +1,16 @@
+resources:
+  destination:
+    config:
+      folder_id: ""
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: ""
+        type: ""
+      queries:
+        - file:
+            stem: ""
+            suffix: ""
+          sql:
+            text: ""
