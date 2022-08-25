@@ -1,4 +1,4 @@
 {
-    "language": "tsql",
-    "keywordCase": "upper"
+  "language": "tsql",
+  "keywordCase": "upper"
 }
