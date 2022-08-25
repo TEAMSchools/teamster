@@ -28,14 +28,10 @@ ops:
               encoding: "latin1"
               sep: "\t"
           sql:
-            schema: ""
+            schema:
               table:
                 name: row_generator_smallint
                 schema: gabby.utilities
               select:
-                - n
-                - n
-                - n
-                - n
                 - n
               where: "n <= 5"
