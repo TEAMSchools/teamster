@@ -7,6 +7,7 @@ for BRANCH in ./.git/refs/remotes/origin/kipp*; do
 
 	git checkout -b merge-dev-"${branch_name}" "${branch_name}"
 	git merge dev
+	git push
 done
 
 git switch dev
