@@ -8,7 +8,7 @@ from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tupl
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
-from teamster.core.utils import TODAY, CustomJSONEncoder
+from teamster.core.utils import NOW, TODAY, CustomJSONEncoder, get_last_schedule_run
 
 
 @op(
@@ -30,15 +30,16 @@ def compose_queries(context):
             with pathlib.Path(value).absolute().open() as f:
                 query = text(f.read())
         elif query_type == "schema":
+            where_fmt = value.get("where", "").format(
+                TODAY=TODAY, LAST_RUN=get_last_schedule_run(context=context)
+            )
             query = (
                 select(*[literal_column(col) for col in value["select"]])
                 .select_from(table(**value["table"]))
-                .where(text(value.get("where", "")))
+                .where(text(where_fmt))
             )
 
-            query_where = re.sub(
-                r"\s+AND\s+", ";", value.get("where", ""), flags=re.IGNORECASE
-            )
+            query_where = re.sub(r"\s+AND\s+", ";", where_fmt, flags=re.IGNORECASE)
             query_where = re.sub(r"\s+OR\s+", ",", query_where, flags=re.IGNORECASE)
             query_where = re.sub(r"\s+", "_", query_where)
 
@@ -115,11 +116,10 @@ def transform(context, data, file_config, dest_config):
     file_suffix = file_config["suffix"]
     file_format = file_config.get("format", {})
     table_name = file_config.get("table_name")
-    query_where = file_config.get("query_where")
     file_encoding = file_format.get("encoding", "utf-8")
-    file_stem = file_config.get(
-        "stem", table_name + (query_where if query_where else "")
-    ).format(TODAY.date().isoformat())
+    file_stem = file_config.get("stem", f"{table_name}_{NOW.timestamp()}").format(
+        TODAY=TODAY.date().isoformat()
+    )
 
     dest_type = dest_config["type"]
     dest_name = dest_config.get("name")
@@ -130,8 +130,6 @@ def transform(context, data, file_config, dest_config):
         gcs_folder = table_name
     else:
         gcs_folder = "data"
-
-    gcs_key = f"{gcs_folder}/{file_stem}.{file_suffix}"
 
     context.log.info(f"Transforming data to {file_suffix}")
     if file_suffix == "json":
@@ -153,8 +151,8 @@ def transform(context, data, file_config, dest_config):
     if dest_type == "gsheet":
         yield Output(value=(dest_config, file_stem, df_dict), output_name="transformed")
     elif dest_type in ["gcs", "sftp"]:
-        file_handle = context.resources.file_manager.upload_from_string(
-            obj=data_bytes, file_key=gcs_key
+        file_handle = context.resources.file_manager.write_data(
+            data=data_bytes, key=f"{gcs_folder}/{file_stem}", ext=file_suffix
         )
         context.log.info(f"Saved to {file_handle.path_desc}.")
 
