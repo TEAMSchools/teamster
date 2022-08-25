@@ -16,7 +16,7 @@ DESTINATION_CONFIG = Shape(
         "type": Field(
             Enum(
                 name="DestinationType",
-                enum_values=[EnumValue("sftp"), EnumValue("gsheet")],
+                enum_values=[EnumValue("sftp"), EnumValue("gsheet"), EnumValue("gcs")],
             )
         ),
         "name": Field(String, is_required=False),
@@ -66,9 +66,7 @@ QUERY_CONFIG = Field(
                     Shape(
                         {
                             "sql": Field(SQL_CONFIG),
-                            "file": Field(
-                                DATA_FILE_CONFIG, is_required=False, default_value={}
-                            ),
+                            "file": Field(DATA_FILE_CONFIG, is_required=False),
                         }
                     )
                 )
