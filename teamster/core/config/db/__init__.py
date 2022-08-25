@@ -1,5 +1,7 @@
 from dagster import (
     Array,
+    Enum,
+    EnumValue,
     Field,
     IntSource,
     Permissive,
@@ -12,7 +14,12 @@ from dagster import (
 QUERY_DESTINATION_CONFIG = Field(
     Shape(
         {
-            "type": Field(String),
+            "type": Field(
+                Enum(
+                    name="DestinationType",
+                    enum_values=[EnumValue("sftp"), EnumValue("gsheet")],
+                )
+            ),
             "name": Field(String, is_required=False),
             "path": Field(String, is_required=False),
         }
@@ -51,7 +58,7 @@ QUERY_FILE_CONFIG = Field(
         {
             "stem": Field(String),
             "suffix": Field(String),
-            "format": Field(Permissive({}), is_required=False),
+            "format": Field(Permissive(), is_required=False),
         }
     ),
     is_required=False,
