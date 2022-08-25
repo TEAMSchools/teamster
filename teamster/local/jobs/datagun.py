@@ -1,5 +1,5 @@
 from dagster import config_from_files, resource
-from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_file_manager, gcs_resource
+from dagster_gcp.gcs import gcs_file_manager, gcs_pickle_io_manager, gcs_resource
 from dagster_ssh import ssh_resource
 
 from teamster.core.graphs.datagun import run_queries
