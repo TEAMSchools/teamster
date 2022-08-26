@@ -13,7 +13,7 @@ ops:
       destination:
         type: "sftp"
         name: "test"
-        path: "test-path"
+        path: "sftp/test-path"
       queries:
         - file:
             stem: "json-test-{NOW}"
