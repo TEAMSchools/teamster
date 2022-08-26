@@ -34,8 +34,8 @@ ops:
                 schema: gabby.utilities
               select:
                 - n
-                - "n + 1"
-                - "n + 2"
-                - "n + 3"
-                - "n + 4"
+                - "n + 1 AS n2"
+                - "n + 2 AS n3"
+                - "n + 3 AS n4"
+                - "n + 4 AS n5"
               where: "n <= 5"
