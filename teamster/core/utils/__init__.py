@@ -6,16 +6,17 @@ import signal
 from contextlib import contextmanager
 from zoneinfo import ZoneInfo
 
-from dagster.core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 LOCAL_TIME_ZONE = ZoneInfo(os.getenv("LOCAL_TIME_ZONE"))
-TODAY = datetime.datetime.now(tz=LOCAL_TIME_ZONE)
+NOW = datetime.datetime.now(tz=LOCAL_TIME_ZONE)
+TODAY = TODAY = NOW.replace(hour=0, minute=0, second=0, microsecond=0)
 YESTERDAY = TODAY - datetime.timedelta(days=1)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
-        if isinstance(o, (datetime.timedelta, decimal.Decimal)):
+        if isinstance(o, (datetime.timedelta, decimal.Decimal, bytes)):
             return str(o)
         elif isinstance(o, (datetime.datetime, datetime.date)):
             return o.isoformat()
@@ -61,16 +62,12 @@ def get_last_schedule_run(context):
 
         last_run = runs[0] if runs else None
         last_resync = resyncs[0] if resyncs else None
-        if last_run:
+        if last_run is not None:
             return last_run.create_timestamp.astimezone(tz=LOCAL_TIME_ZONE)
-        elif last_resync:
+        elif last_resync is not None:
             return last_resync.create_timestamp.astimezone(tz=LOCAL_TIME_ZONE)
         else:
             return None
-            # # return UNIX Epoch if schedule or resync never ran
-            # return datetime(1970, 1, 1, tzinfo=timezone.utc).astimezone(
-            #     tz=LOCAL_TIME_ZONE
-            # )
     else:
         # pass if ad hoc query
         return None

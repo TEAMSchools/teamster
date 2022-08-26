@@ -13,9 +13,13 @@ sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracled
 
 class SqlAlchemyEngine(object):
     def __init__(self, dialect, driver, logger, **kwargs):
+        engine_keys = ["arraysize"]
+        engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
+        url_kwargs = {k: v for k, v in kwargs.items() if k not in engine_keys}
+
         self.log = logger
-        self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **kwargs)
-        self.engine = create_engine(url=self.connection_url)
+        self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
+        self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
     def execute_query(self, query, output="dict"):
         self.log.info(f"Executing query:\n{query}")
@@ -84,6 +88,7 @@ def mssql(context):
         {
             "version": Field(StringSource, is_required=True),
             "prefetchrows": Field(IntSource, is_required=False),
+            "arraysize": Field(IntSource, is_required=False),
         },
     )
 )
