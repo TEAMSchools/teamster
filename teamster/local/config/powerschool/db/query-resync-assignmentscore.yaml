@@ -1,4 +1,14 @@
 ops:
+  execute_query_6:
+    ops:
+      extract:
+        config:
+          remote_port:
+            env: PS_SSH_REMOTE_BIND_PORT
+          remote_host:
+            env: PS_SSH_REMOTE_BIND_HOST
+          local_port:
+            env: PS_DB_PORT
   compose_queries_6:
     config:
       destination:
