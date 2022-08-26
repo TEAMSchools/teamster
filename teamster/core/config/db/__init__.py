@@ -11,65 +11,65 @@ from dagster import (
     StringSource,
 )
 
-QUERY_DESTINATION_CONFIG = Field(
-    Shape(
-        {
-            "type": Field(
-                Enum(
-                    name="DestinationType",
-                    enum_values=[EnumValue("sftp"), EnumValue("gsheet")],
-                )
-            ),
-            "name": Field(String, is_required=False),
-            "path": Field(String, is_required=False),
-        }
-    )
+DESTINATION_CONFIG = Shape(
+    {
+        "type": Field(
+            Enum(
+                name="DestinationType",
+                enum_values=[EnumValue("sftp"), EnumValue("gsheet"), EnumValue("gcs")],
+            )
+        ),
+        "name": Field(String, is_required=False),
+        "path": Field(String, is_required=False),
+    }
 )
 
-QUERY_SQL_CONFIG = Field(
-    Selector(
-        {
-            "text": Field(String),
-            "file": Field(String),
-            "schema": Field(
-                Shape(
-                    {
-                        "table": Field(
-                            Shape(
-                                {
-                                    "name": Field(String),
-                                    "schema": Field(String, is_required=False),
-                                }
-                            )
-                        ),
-                        "select": Field(
-                            Array(String), default_value=["*"], is_required=False
-                        ),
-                        "where": Field(String, is_required=False),
-                    }
-                )
-            ),
-        }
-    )
+SQL_CONFIG = Selector(
+    {
+        "text": Field(String),
+        "file": Field(String),
+        "schema": Field(
+            Shape(
+                {
+                    "table": Field(
+                        Shape(
+                            {
+                                "name": Field(String),
+                                "schema": Field(String, is_required=False),
+                            }
+                        )
+                    ),
+                    "select": Field(
+                        Array(String), default_value=["*"], is_required=False
+                    ),
+                    "where": Field(String, is_required=False),
+                }
+            )
+        ),
+    }
 )
 
-QUERY_FILE_CONFIG = Field(
-    Shape(
-        {
-            "stem": Field(String),
-            "suffix": Field(String),
-            "format": Field(Permissive(), is_required=False),
-        }
-    ),
-    is_required=False,
+DATA_FILE_CONFIG = Shape(
+    {
+        "stem": Field(String),
+        "suffix": Field(String),
+        "format": Field(Permissive(), is_required=False),
+    }
 )
 
 QUERY_CONFIG = Field(
     Shape(
         {
-            "destination": QUERY_DESTINATION_CONFIG,
+            "destination": Field(DESTINATION_CONFIG),
             "queries": Field(
-                Array(Shape({"sql": QUERY_SQL_CONFIG, "file": QUERY_FILE_CONFIG}))
+                Array(
+                    Shape(
+                        {
+                            "sql": Field(SQL_CONFIG),
+                            "file": Field(DATA_FILE_CONFIG, is_required=False),
+                        }
+                    )
+                )
             ),
         }
     )
