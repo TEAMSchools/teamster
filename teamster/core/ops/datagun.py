@@ -57,7 +57,10 @@ def load_destination(context, transformed):
                 )
             )
 
-            data = context.resources.file_manager.read(file_handle=file_handle)
-            context.log.debug(data)
-            with sftp.file(file_name, "w") as f:
-                f.write(data)
+            with context.resources.file_manager.read(
+                file_handle=file_handle
+            ) as file_obj:
+                data = file_obj.read()
+                context.log.debug(data)
+                with sftp.file(file_name, "w") as f:
+                    f.write(data)
