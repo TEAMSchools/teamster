@@ -13,7 +13,7 @@ ops:
       destination:
         type: "sftp"
         name: "test"
-        path: "test-path"
+        path: "sftp/test-path"
       queries:
         - file:
             stem: "json-test-{NOW}"
@@ -34,4 +34,8 @@ ops:
                 schema: gabby.utilities
               select:
                 - n
+                - "n + 1 AS n2"
+                - "n + 2 AS n3"
+                - "n + 3 AS n4"
+                - "n + 4 AS n5"
               where: "n <= 5"
