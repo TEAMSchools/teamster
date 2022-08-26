@@ -1,13 +1,13 @@
 from dagster import repository
 
-from teamster.local.jobs import datagun as datagun_jobs
-from teamster.local.jobs.powerschool import db as ps_db_jobs
+from teamster.core.jobs import datagun as datagun_jobs_core
+from teamster.core.jobs.powerschool import db as psdb_jobs_core
 from teamster.local.schedules import datagun as datagun_schedules
 
 
 @repository
 def powerschool():
-    jobs = [v for k, v in vars(ps_db_jobs).items() if k in ps_db_jobs.__all__]
+    jobs = [v for k, v in vars(psdb_jobs_core).items() if k in psdb_jobs_core.__all__]
     schedules = []
     sensors = []
 
@@ -16,7 +16,9 @@ def powerschool():
 
 @repository
 def datagun():
-    jobs = [v for k, v in vars(datagun_jobs).items() if k in datagun_jobs.__all__]
+    jobs = [
+        v for k, v in vars(datagun_jobs_core).items() if k in datagun_jobs_core.__all__
+    ]
     schedules = [
         v for k, v in vars(datagun_schedules).items() if k in datagun_schedules.__all__
     ]
