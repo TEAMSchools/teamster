@@ -23,11 +23,15 @@ def compose_queries(context):
     for i, q in enumerate(queries):
         [(query_type, value)] = q["sql"].items()
         if query_type == "text":
+            table_name = "query"
             query = text(value)
         elif query_type == "file":
-            with pathlib.Path(value).absolute().open() as f:
+            query_file = pathlib.Path(value).absolute()
+            table_name = query_file.stem
+            with query_file.open(mode="r") as f:
                 query = text(f.read())
         elif query_type == "schema":
+            table_name = value["table"]["name"]
             where_fmt = value.get("where", "").format(
                 TODAY=TODAY, LAST_RUN=get_last_schedule_run(context=context)
             )
@@ -43,7 +47,7 @@ def compose_queries(context):
             mapping_key=re.sub(
                 r"[^A-Za-z0-9_]+",
                 "",
-                f"{(q.get('file', {}).get('stem') or value['table']['name'])}_{i}",
+                f"{(q.get('file', {}).get('stem') or table_name)}_{i}",
             ),
         )
 
