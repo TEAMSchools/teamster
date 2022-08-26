@@ -2,6 +2,7 @@ resources:
   db:
     config:
       prefetchrows: 100000
+      arraysize: 100000
 ops:
   compose_queries:
     config:
@@ -11,13 +12,7 @@ ops:
         - sql:
             schema:
               table:
-                name: students
-        - sql:
-            schema:
-              select:
-                - dcid
-              table:
-                name: storedgrades
+                name: dual
   execute_query:
     ops:
       extract:

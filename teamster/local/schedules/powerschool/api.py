@@ -2,7 +2,7 @@ import os
 
 from dagster import ScheduleDefinition, config_from_files
 
-from teamster.local.jobs.powerschool.api import powerschool_api_extract
+from teamster.core.jobs.powerschool.api import powerschool_api_extract
 
 LOCAL_TIME_ZONE = os.getenv("LOCAL_TIME_ZONE")
 

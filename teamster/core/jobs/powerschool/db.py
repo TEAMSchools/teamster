@@ -20,10 +20,10 @@ powerschool_db_extract = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/config/powerschool/db/resource.yaml",
             "./teamster/core/config/google/resource.yaml",
+            "./teamster/core/config/powerschool/db/resource.yaml",
+            "./teamster/core/config/powerschool/db/query-test.yaml",
             "./teamster/local/config/powerschool/db/resource.yaml",
-            "./teamster/local/config/powerschool/db/query-default.yaml",
         ]
     ),
 )
