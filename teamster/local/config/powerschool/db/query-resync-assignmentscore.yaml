@@ -1,16 +1,5 @@
-execution:
-  config:
-    resources:
-      limits:
-        cpu: 750m
-        memory: 3.0Gi
-resources:
-  db:
-    config:
-      prefetchrows: 100000
-      arraysize: 100000
 ops:
-  compose_queries:
+  compose_queries_6:
     config:
       destination:
         type: gcs
@@ -155,13 +144,3 @@ ops:
               table:
                 name: ASSIGNMENTSCORE
               where: "WHENMODIFIED BETWEEN TO_TIMESTAMP_TZ('2023-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2023-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-  execute_query:
-    ops:
-      extract:
-        config:
-          remote_port:
-            env: PS_SSH_REMOTE_BIND_PORT
-          remote_host:
-            env: PS_SSH_REMOTE_BIND_HOST
-          local_port:
-            env: PS_DB_PORT

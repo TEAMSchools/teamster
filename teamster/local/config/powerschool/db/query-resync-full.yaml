@@ -1,0 +1,234 @@
+ops:
+  compose_queries:
+    config:
+      destination:
+        type: gcs
+      queries:
+        - sql:
+            schema:
+              table:
+                name: BELL_SCHEDULE
+        - sql:
+            schema:
+              table:
+                name: CALENDAR_DAY
+        - sql:
+            schema:
+              table:
+                name: CYCLE_DAY
+        - sql:
+            schema:
+              table:
+                name: PERIOD
+        - sql:
+            schema:
+              table:
+                name: ASSIGNMENTCATEGORYASSOC
+        - sql:
+            schema:
+              table:
+                name: ASSIGNMENTSECTION
+        - sql:
+            schema:
+              table:
+                name: TEACHERCATEGORY
+        - sql:
+            schema:
+              table:
+                name: GEN
+        - sql:
+            schema:
+              table:
+                name: SECTIONS
+        - sql:
+            schema:
+              table:
+                name: ATTENDANCE_CODE
+        - sql:
+            schema:
+              table:
+                name: ATTENDANCE_CONVERSION_ITEMS
+        - sql:
+            schema:
+              table:
+                name: FTE
+        - sql:
+            schema:
+              table:
+                name: REENROLLMENTS
+        - sql:
+            schema:
+              table:
+                name: SPENROLLMENTS
+        - sql:
+            schema:
+              table:
+                name: TEST
+        - sql:
+            schema:
+              table:
+                name: TESTSCORE
+        - sql:
+            schema:
+              table:
+                name: CODESET
+        - sql:
+            schema:
+              table:
+                name: EMAILADDRESS
+        - sql:
+            schema:
+              table:
+                name: GRADECALCFORMULAWEIGHT
+        - sql:
+            schema:
+              table:
+                name: GRADECALCSCHOOLASSOC
+        - sql:
+            schema:
+              table:
+                name: GRADECALCULATIONTYPE
+        - sql:
+            schema:
+              table:
+                name: GRADEFORMULASET
+        - sql:
+            schema:
+              table:
+                name: GRADESCALEITEM
+        - sql:
+            schema:
+              table:
+                name: GRADESCHOOLCONFIG
+        - sql:
+            schema:
+              table:
+                name: GRADESCHOOLFORMULAASSOC
+        - sql:
+            schema:
+              table:
+                name: GRADESECTIONCONFIG
+        - sql:
+            schema:
+              table:
+                name: ORIGINALCONTACTMAP
+        - sql:
+            schema:
+              table:
+                name: PERSON
+        - sql:
+            schema:
+              table:
+                name: PERSONADDRESS
+        - sql:
+            schema:
+              table:
+                name: PERSONADDRESSASSOC
+        - sql:
+            schema:
+              table:
+                name: PERSONEMAILADDRESSASSOC
+        - sql:
+            schema:
+              table:
+                name: PERSONPHONENUMBERASSOC
+        - sql:
+            schema:
+              table:
+                name: PHONENUMBER
+        - sql:
+            schema:
+              table:
+                name: ROLEDEF
+        - sql:
+            schema:
+              table:
+                name: S_NJ_CRS_X
+        - sql:
+            schema:
+              table:
+                name: S_NJ_REN_X
+        - sql:
+            schema:
+              table:
+                name: S_NJ_STU_X
+        - sql:
+            schema:
+              table:
+                name: S_NJ_USR_X
+        - sql:
+            schema:
+              table:
+                name: STUDENTCONTACTASSOC
+        - sql:
+            schema:
+              table:
+                name: STUDENTCONTACTDETAIL
+        - sql:
+            schema:
+              table:
+                name: STUDENTCOREFIELDS
+        - sql:
+            schema:
+              table:
+                name: STUDENTRACE
+        - sql:
+            schema:
+              table:
+                name: U_CLG_ET_STU
+        - sql:
+            schema:
+              table:
+                name: U_CLG_ET_STU_ALT
+        - sql:
+            schema:
+              table:
+                name: U_DEF_EXT_STUDENTS
+        - sql:
+            schema:
+              table:
+                name: U_STUDENTSUSERFIELDS
+        - sql:
+            schema:
+              table:
+                name: DISTRICTTEACHERCATEGORY
+        - sql:
+            schema:
+              table:
+                name: SCHOOLSTAFF
+        - sql:
+            schema:
+              table:
+                name: SECTIONTEACHER
+        - sql:
+            schema:
+              table:
+                name: USERS
+        - sql:
+            schema:
+              table:
+                name: CC
+        - sql:
+            schema:
+              table:
+                name: COURSES
+        - sql:
+            schema:
+              table:
+                name: PREFS
+        - sql:
+            schema:
+              table:
+                name: SCHOOLS
+        - sql:
+            schema:
+              table:
+                name: STUDENTS
+        - sql:
+            schema:
+              table:
+                name: TERMBINS
+        - sql:
+            schema:
+              table:
+                name: TERMS
