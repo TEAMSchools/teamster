@@ -12,51 +12,51 @@ ops:
         - sql:
             schema:
               table:
-                name: BELL_SCHEDULE
+                name: bell_schedule
         - sql:
             schema:
               table:
-                name: CALENDAR_DAY
+                name: calendar_day
         - sql:
             schema:
               table:
-                name: CYCLE_DAY
+                name: cycle_day
         - sql:
             schema:
               table:
-                name: PERIOD
+                name: period
         - sql:
             schema:
               table:
-                name: GEN
+                name: gen
         - sql:
             schema:
               table:
-                name: ATTENDANCE_CODE
+                name: attendance_code
         - sql:
             schema:
               table:
-                name: ATTENDANCE_CONVERSION_ITEMS
+                name: attendance_conversion_items
         - sql:
             schema:
               table:
-                name: FTE
+                name: fte
         - sql:
             schema:
               table:
-                name: REENROLLMENTS
+                name: reenrollments
         - sql:
             schema:
               table:
-                name: SPENROLLMENTS
+                name: spenrollments
         - sql:
             schema:
               table:
-                name: TEST
+                name: test
         - sql:
             schema:
               table:
-                name: TESTSCORE
+                name: testscore
   execute_query:
     ops:
       extract:

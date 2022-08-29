@@ -17,228 +17,228 @@ ops:
         - sql:
             schema:
               table:
-                name: BELL_SCHEDULE
+                name: bell_schedule
         - sql:
             schema:
               table:
-                name: CALENDAR_DAY
+                name: calendar_day
         - sql:
             schema:
               table:
-                name: CYCLE_DAY
+                name: cycle_day
         - sql:
             schema:
               table:
-                name: PERIOD
+                name: period
         - sql:
             schema:
               table:
-                name: ASSIGNMENTCATEGORYASSOC
+                name: assignmentcategoryassoc
         - sql:
             schema:
               table:
-                name: ASSIGNMENTSECTION
+                name: assignmentsection
         - sql:
             schema:
               table:
-                name: TEACHERCATEGORY
+                name: teachercategory
         - sql:
             schema:
               table:
-                name: GEN
+                name: gen
         - sql:
             schema:
               table:
-                name: SECTIONS
+                name: sections
         - sql:
             schema:
               table:
-                name: ATTENDANCE_CODE
+                name: attendance_code
         - sql:
             schema:
               table:
-                name: ATTENDANCE_CONVERSION_ITEMS
+                name: attendance_conversion_items
         - sql:
             schema:
               table:
-                name: FTE
+                name: fte
         - sql:
             schema:
               table:
-                name: REENROLLMENTS
+                name: reenrollments
         - sql:
             schema:
               table:
-                name: SPENROLLMENTS
+                name: spenrollments
         - sql:
             schema:
               table:
-                name: TEST
+                name: test
         - sql:
             schema:
               table:
-                name: TESTSCORE
+                name: testscore
         - sql:
             schema:
               table:
-                name: CODESET
+                name: codeset
         - sql:
             schema:
               table:
-                name: EMAILADDRESS
+                name: emailaddress
         - sql:
             schema:
               table:
-                name: GRADECALCFORMULAWEIGHT
+                name: gradecalcformulaweight
         - sql:
             schema:
               table:
-                name: GRADECALCSCHOOLASSOC
+                name: gradecalcschoolassoc
         - sql:
             schema:
               table:
-                name: GRADECALCULATIONTYPE
+                name: gradecalculationtype
         - sql:
             schema:
               table:
-                name: GRADEFORMULASET
+                name: gradeformulaset
         - sql:
             schema:
               table:
-                name: GRADESCALEITEM
+                name: gradescaleitem
         - sql:
             schema:
               table:
-                name: GRADESCHOOLCONFIG
+                name: gradeschoolconfig
         - sql:
             schema:
               table:
-                name: GRADESCHOOLFORMULAASSOC
+                name: gradeschoolformulaassoc
         - sql:
             schema:
               table:
-                name: GRADESECTIONCONFIG
+                name: gradesectionconfig
         - sql:
             schema:
               table:
-                name: ORIGINALCONTACTMAP
+                name: originalcontactmap
         - sql:
             schema:
               table:
-                name: PERSON
+                name: person
         - sql:
             schema:
               table:
-                name: PERSONADDRESS
+                name: personaddress
         - sql:
             schema:
               table:
-                name: PERSONADDRESSASSOC
+                name: personaddressassoc
         - sql:
             schema:
               table:
-                name: PERSONEMAILADDRESSASSOC
+                name: personemailaddressassoc
         - sql:
             schema:
               table:
-                name: PERSONPHONENUMBERASSOC
+                name: personphonenumberassoc
         - sql:
             schema:
               table:
-                name: PHONENUMBER
+                name: phonenumber
         - sql:
             schema:
               table:
-                name: ROLEDEF
+                name: roledef
         - sql:
             schema:
               table:
-                name: S_NJ_CRS_X
+                name: s_nj_crs_x
         - sql:
             schema:
               table:
-                name: S_NJ_REN_X
+                name: s_nj_ren_x
         - sql:
             schema:
               table:
-                name: S_NJ_STU_X
+                name: s_nj_stu_x
         - sql:
             schema:
               table:
-                name: S_NJ_USR_X
+                name: s_nj_usr_x
         - sql:
             schema:
               table:
-                name: STUDENTCONTACTASSOC
+                name: studentcontactassoc
         - sql:
             schema:
               table:
-                name: STUDENTCONTACTDETAIL
+                name: studentcontactdetail
         - sql:
             schema:
               table:
-                name: STUDENTCOREFIELDS
+                name: studentcorefields
         - sql:
             schema:
               table:
-                name: STUDENTRACE
+                name: studentrace
         - sql:
             schema:
               table:
-                name: U_CLG_ET_STU
+                name: u_clg_et_stu
         - sql:
             schema:
               table:
-                name: U_CLG_ET_STU_ALT
+                name: u_clg_et_stu_alt
         - sql:
             schema:
               table:
-                name: U_DEF_EXT_STUDENTS
+                name: u_def_ext_students
         - sql:
             schema:
               table:
-                name: U_STUDENTSUSERFIELDS
+                name: u_studentsuserfields
         - sql:
             schema:
               table:
-                name: DISTRICTTEACHERCATEGORY
+                name: districtteachercategory
         - sql:
             schema:
               table:
-                name: SCHOOLSTAFF
+                name: schoolstaff
         - sql:
             schema:
               table:
-                name: SECTIONTEACHER
+                name: sectionteacher
         - sql:
             schema:
               table:
-                name: USERS
+                name: users
         - sql:
             schema:
               table:
-                name: CC
+                name: cc
         - sql:
             schema:
               table:
-                name: COURSES
+                name: courses
         - sql:
             schema:
               table:
-                name: PREFS
+                name: prefs
         - sql:
             schema:
               table:
-                name: SCHOOLS
+                name: schools
         - sql:
             schema:
               table:
-                name: STUDENTS
+                name: students
         - sql:
             schema:
               table:
-                name: TERMBINS
+                name: termbins
         - sql:
             schema:
               table:
-                name: TERMS
+                name: terms
