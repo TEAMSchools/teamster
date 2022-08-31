@@ -7,7 +7,7 @@ import pandas as pd
 from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.config.db import QUERY_CONFIG, SSH_TUNNEL_CONFIG
+from teamster.core.config.db.schema import QUERY_CONFIG, SSH_TUNNEL_CONFIG
 from teamster.core.utils import NOW, TODAY, CustomJSONEncoder, get_last_schedule_run
 
 
