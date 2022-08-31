@@ -76,21 +76,25 @@ def extract(context, dynamic_query):
     else:
         ssh_tunnel = None
 
-    data = context.resources.db.execute_query(query)
+    query_kwargs = {}
+    if dest_config["type"] == "gcs":
+        query_kwargs["output_fmt"] = "files"
+
+    data = context.resources.db.execute_query(query, **query_kwargs)
 
     if ssh_tunnel is not None:
         context.log.info("Stopping SSH tunnel.")
         ssh_tunnel.stop()
 
-    if dest_config["type"] == "gcs":
-        for fp in data:
-            file_path = pathlib.Path(fp)
-            with file_path.open(mode="r") as f:
-                context.resources.file_manager.write(
-                    file_obj=f, key=f"{table_name}/{file_path.name}"
-                )
-
     if data:
+        if query_kwargs["output_fmt"] == "files":
+            for fp in data:
+                file_path = pathlib.Path(fp)
+                with file_path.open(mode="r") as f:
+                    context.resources.file_manager.write(
+                        file_obj=f, key=f"{table_name}/{file_path.name}"
+                    )
+
         yield Output(value=data, output_name="data")
         yield Output(value=file_config, output_name="file_config")
         yield Output(value=dest_config, output_name="dest_config")
