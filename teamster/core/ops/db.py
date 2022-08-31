@@ -60,10 +60,13 @@ def compose_queries(context):
         "file_config": Out(dagster_type=Dict, is_required=False),
         "dest_config": Out(dagster_type=Dict, is_required=False),
     },
-    required_resource_keys={"db", "ssh"},
+    required_resource_keys={"db", "ssh", "file_manager"},
     tags={"dagster/priority": 2},
 )
 def extract(context, dynamic_query):
+    mapping_key = context.get_mapping_key()
+    table_name = mapping_key[: mapping_key.rfind("_")]
+
     query, file_config, dest_config = dynamic_query
 
     if hasattr(context.resources.ssh, "get_tunnel"):
@@ -78,6 +81,14 @@ def extract(context, dynamic_query):
     if ssh_tunnel is not None:
         context.log.info("Stopping SSH tunnel.")
         ssh_tunnel.stop()
+
+    if dest_config["type"] == "gcs":
+        for fp in data:
+            file_path = pathlib.Path(fp)
+            with file_path.open(mode="r") as f:
+                context.resources.file_manager.write(
+                    file_obj=f, key=f"{table_name}/{file_path.name}"
+                )
 
     if data:
         yield Output(value=data, output_name="data")
