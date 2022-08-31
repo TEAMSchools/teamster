@@ -52,6 +52,8 @@ class SqlAlchemyEngine(object):
                     with gzip.open(tmp_file.name, "w") as gz:
                         gz.write(json.dumps(data).encode("utf-8"))
 
+                    del data
+
                     output_obj.append(tmp_file.name)
                 self.log.info(f"Retrieved {len_data} rows.")
             else:
