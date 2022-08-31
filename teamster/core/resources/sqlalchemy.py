@@ -1,5 +1,7 @@
+import gzip
 import json
 import sys
+import tempfile
 
 import oracledb
 from dagster import Field, IntSource, StringSource, resource
@@ -9,6 +11,8 @@ from sqlalchemy.engine import URL, create_engine
 from teamster.core.utils import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
+
+PARTITION_SIZE = 10000
 
 
 class SqlAlchemyEngine(object):
@@ -21,19 +25,40 @@ class SqlAlchemyEngine(object):
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
-    def execute_query(self, query, output="dict"):
+    def execute_query(self, query, output_fmt="dict"):
         self.log.info(f"Executing query:\n{query}")
 
         with self.engine.connect() as conn:
             result = conn.execute(statement=query)
-
-            if output in ["dict", "json"]:
-                output_obj = [dict(row) for row in result.mappings()]
+            if output_fmt in ["dict", "json", "files"]:
+                result_stg = result.mappings()
             else:
-                output_obj = [row for row in result]
+                result_stg = result
 
-        self.log.info(f"Retrieved {len(output_obj)} rows.")
-        if output == "json":
+            partitions = result_stg.partitions(size=PARTITION_SIZE)
+            if output_fmt == "files":
+                tmp_dir = tempfile.TemporaryDirectory(dir=".")
+
+                len_data = 0
+                output_obj = []
+                for pt in partitions:
+                    data = [dict(row) for row in pt]
+                    len_data += len(data)
+
+                    tmp_file = tempfile.NamedTemporaryFile(
+                        dir=tmp_dir.name, suffix=".json.gz"
+                    )
+                    with gzip.open(tmp_file.name, "w") as gz:
+                        gz.write(json.dumps(data).encode("utf-8"))
+
+                    output_obj.append(tmp_file.name)
+                self.log.info(f"Retrieved {len_data} rows.")
+            else:
+                pts_unpacked = [rows for pt in partitions for rows in pt]
+                output_obj = [dict(row) for row in pts_unpacked]
+                self.log.info(f"Retrieved {len(output_obj)} rows.")
+
+        if output_fmt == "json":
             return json.dumps(obj=output_obj, cls=CustomJSONEncoder)
         else:
             return output_obj
