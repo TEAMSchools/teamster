@@ -45,6 +45,8 @@ class SqlAlchemyEngine(object):
                     data = [dict(row) for row in pt]
                     len_data += len(data)
 
+                    del pt
+
                     tmp_file = tempfile.NamedTemporaryFile(
                         dir=tmp_dir.name, suffix=".json.gz"
                     )
