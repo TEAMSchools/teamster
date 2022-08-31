@@ -52,7 +52,9 @@ class SqlAlchemyEngine(object):
                     )
                     self.log.debug(f"Saving partition {i} to {tmp_file.name}")
                     with gzip.open(tmp_file.name, "w") as gz:
-                        gz.write(json.dumps(data).encode("utf-8"))
+                        gz.write(
+                            json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
+                        )
 
                     del data
 
