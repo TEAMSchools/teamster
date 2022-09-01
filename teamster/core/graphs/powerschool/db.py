@@ -1,14 +1,12 @@
 from dagster import graph
 
-from teamster.core.ops.datagun import transform
 from teamster.core.ops.db import compose_queries, extract
 
 
 @graph
 def execute_query(dynamic_query):
-    data, file_config, dest_config = extract(dynamic_query=dynamic_query)
-
-    transform(data=data, file_config=file_config, dest_config=dest_config)
+    # trunk-ignore(flake8/F841)
+    data = extract(dynamic_query=dynamic_query)
 
 
 @graph
