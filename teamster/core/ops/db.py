@@ -44,7 +44,7 @@ def compose_queries(context):
         elif query_type == "schema":
             table_name = value["table"]["name"]
             where_fmt = value.get("where", "").format(
-                TODAY=TODAY, LAST_RUN=get_last_schedule_run(context=context)
+                today=TODAY, last_run=get_last_schedule_run(context=context)
             )
             query = (
                 select(*[literal_column(col) for col in value["select"]])
@@ -100,16 +100,19 @@ def extract(context, dynamic_query):
 
     if data:
         if query_kwargs["output_fmt"] == "files":
+            file_handles = []
             for fp in data:
                 with fp.open(mode="rb") as f:
-                    context.resources.file_manager.write(
-                        file_obj=f, key=f"{table_name}/{fp.name}"
+                    file_handle = context.resources.file_manager.write(
+                        file_obj=f, key=f"{table_name}/{fp.stem}", ext=fp.suffix
                     )
+                file_handles.append(file_handle)
+
+            yield Output(value=file_handles, output_name="data")
         else:
             yield Output(value=file_config, output_name="file_config")
             yield Output(value=dest_config, output_name="dest_config")
-
-        yield Output(value=data, output_name="data")
+            yield Output(value=data, output_name="data")
 
 
 @op(
@@ -129,7 +132,9 @@ def transform(context, data, file_config, dest_config):
     now_ts = NOW.timestamp()
     if file_config:
         file_stem = file_config["stem"].format(
-            TODAY=TODAY.date().isoformat(), NOW=now_ts.replace(".", "_")
+            today=TODAY.date().isoformat(),
+            now=now_ts.replace(".", "_"),
+            last_run=get_last_schedule_run(context=context),
         )
         file_suffix = file_config["suffix"]
         file_format = file_config.get("format", {})

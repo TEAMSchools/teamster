@@ -23,7 +23,6 @@ powerschool_db_extract = run_queries.to_job(
             "./teamster/core/config/google/resource.yaml",
             "./teamster/core/config/powerschool/db/resource.yaml",
             "./teamster/core/config/powerschool/db/query-test.yaml",
-            "./teamster/local/config/powerschool/db/resource.yaml",
         ]
     ),
 )
@@ -42,7 +41,6 @@ powerschool_db_resync = resync.to_job(
         [
             "./teamster/core/config/google/resource.yaml",
             "./teamster/core/config/powerschool/db/resource.yaml",
-            "./teamster/local/config/powerschool/db/resource.yaml",
             "./teamster/local/config/powerschool/db/query-resync.yaml",
             "./teamster/local/config/powerschool/db/query-resync-full.yaml",
             "./teamster/local/config/powerschool/db/query-resync-log.yaml",

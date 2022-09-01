@@ -46,9 +46,8 @@ class SqlAlchemyEngine(object):
                 output_obj = []
                 for i, pt in enumerate(partitions):
                     self.log.debug(f"Querying partition {i}")
-                    data = [dict(row) for row in pt]
-                    len_data += len(data)
 
+                    data = [dict(row) for row in pt]
                     del pt
 
                     now_ts = str(datetime.now().timestamp())
@@ -59,6 +58,7 @@ class SqlAlchemyEngine(object):
                             json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
                         )
 
+                    len_data += len(data)
                     del data
 
                     output_obj.append(tmp_file)
