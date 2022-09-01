@@ -12,7 +12,7 @@ from teamster.core.utils import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
 
-PARTITION_SIZE = 10000
+PARTITION_SIZE = 100000
 
 
 class SqlAlchemyEngine(object):
@@ -41,15 +41,23 @@ class SqlAlchemyEngine(object):
 
                 len_data = 0
                 output_obj = []
-                for pt in partitions:
+                for i, pt in enumerate(partitions):
+                    self.log.debug(f"Querying partition {i}")
                     data = [dict(row) for row in pt]
                     len_data += len(data)
+
+                    del pt
 
                     tmp_file = tempfile.NamedTemporaryFile(
                         dir=tmp_dir.name, suffix=".json.gz"
                     )
+                    self.log.debug(f"Saving to {tmp_file.name}")
                     with gzip.open(tmp_file.name, "w") as gz:
-                        gz.write(json.dumps(data).encode("utf-8"))
+                        gz.write(
+                            json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
+                        )
+
+                    del data
 
                     output_obj.append(tmp_file.name)
                 self.log.info(f"Retrieved {len_data} rows.")
