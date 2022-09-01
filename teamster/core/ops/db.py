@@ -76,6 +76,7 @@ def extract(context, dynamic_query):
     else:
         ssh_tunnel = None
 
+    # TODO: refactor query_kwargs to config
     query_kwargs = {}
     if dest_config["type"] == "gcs":
         query_kwargs["output_fmt"] = "files"
@@ -93,7 +94,7 @@ def extract(context, dynamic_query):
                     context.resources.file_manager.write(
                         file_obj=f, key=f"{table_name}/{fp.name}"
                     )
-
+    else:
         yield Output(value=data, output_name="data")
         yield Output(value=file_config, output_name="file_config")
         yield Output(value=dest_config, output_name="dest_config")
