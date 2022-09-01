@@ -42,7 +42,6 @@ powerschool_db_resync = resync.to_job(
             "./teamster/core/config/google/resource.yaml",
             "./teamster/core/config/powerschool/db/resource.yaml",
             "./teamster/local/config/powerschool/db/query-resync.yaml",
-            "./teamster/local/config/powerschool/db/query-resync-full.yaml",
             "./teamster/local/config/powerschool/db/query-resync-log.yaml",
             "./teamster/local/config/powerschool/db/query-resync-attendance.yaml",
             "./teamster/local/config/powerschool/db/query-resync-storedgrades.yaml",
