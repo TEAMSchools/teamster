@@ -4,7 +4,18 @@ import pathlib
 import re
 
 import pandas as pd
-from dagster import Dict, DynamicOut, DynamicOutput, In, List, Out, Output, Tuple, op
+from dagster import (
+    Any,
+    Dict,
+    DynamicOut,
+    DynamicOutput,
+    In,
+    List,
+    Out,
+    Output,
+    Tuple,
+    op,
+)
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.db.schema import QUERY_CONFIG, SSH_TUNNEL_CONFIG
@@ -56,7 +67,7 @@ def compose_queries(context):
     config_schema=SSH_TUNNEL_CONFIG,
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
-        "data": Out(dagster_type=List[Dict], is_required=False),
+        "data": Out(dagster_type=List[Any], is_required=False),
         "file_config": Out(dagster_type=Dict, is_required=False),
         "dest_config": Out(dagster_type=Dict, is_required=False),
     },
@@ -78,7 +89,7 @@ def extract(context, dynamic_query):
 
     # TODO: refactor query_kwargs to config
     query_kwargs = {}
-    if dest_config["type"] == "gcs":
+    if dest_config["type"] == "fs":
         query_kwargs["output_fmt"] = "files"
 
     data = context.resources.db.execute_query(query, **query_kwargs)
@@ -94,10 +105,11 @@ def extract(context, dynamic_query):
                     context.resources.file_manager.write(
                         file_obj=f, key=f"{table_name}/{fp.name}"
                     )
-    else:
+        else:
+            yield Output(value=file_config, output_name="file_config")
+            yield Output(value=dest_config, output_name="dest_config")
+
         yield Output(value=data, output_name="data")
-        yield Output(value=file_config, output_name="file_config")
-        yield Output(value=dest_config, output_name="dest_config")
 
 
 @op(
@@ -114,16 +126,17 @@ def transform(context, data, file_config, dest_config):
     mapping_key = context.get_mapping_key()
     table_name = mapping_key[: mapping_key.rfind("_")]
 
+    now_ts = NOW.timestamp()
     if file_config:
         file_stem = file_config["stem"].format(
-            TODAY=TODAY.date().isoformat(), NOW=NOW.timestamp()
+            TODAY=TODAY.date().isoformat(), NOW=now_ts.replace(".", "_")
         )
         file_suffix = file_config["suffix"]
         file_format = file_config.get("format", {})
 
         file_encoding = file_format.get("encoding", "utf-8")
     else:
-        file_stem = f"{table_name}_{NOW.timestamp()}"
+        file_stem = now_ts.replace(".", "_")
         file_suffix = "json.gz"
         file_format = {}
         file_encoding = "utf-8"
@@ -139,7 +152,7 @@ def transform(context, data, file_config, dest_config):
         df_dict["shape"] = df.shape
 
         yield Output(value=(dest_config, file_stem, df_dict), output_name="transformed")
-    elif dest_type in ["gcs", "sftp"]:
+    elif dest_type in ["fs", "sftp"]:
         context.log.info(f"Transforming data to {file_suffix}")
 
         if file_suffix == "json":

@@ -3,6 +3,7 @@ import json
 import pathlib
 import sys
 import uuid
+from datetime import datetime
 
 import oracledb
 from dagster import Field, IntSource, StringSource, resource
@@ -50,7 +51,8 @@ class SqlAlchemyEngine(object):
 
                     del pt
 
-                    tmp_file = tmp_dir / (uuid.uuid4().hex + ".json.gz")
+                    now_ts = str(datetime.now().timestamp())
+                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
                     self.log.debug(f"Saving to {tmp_file}")
                     with gzip.open(tmp_file, "wb") as gz:
                         gz.write(
