@@ -42,6 +42,7 @@ class SqlAlchemyEngine(object):
                 len_data = 0
                 output_obj = []
                 for i, pt in enumerate(partitions):
+                    self.log.debug(f"Querying partition {i}")
                     data = [dict(row) for row in pt]
                     len_data += len(data)
 
@@ -50,7 +51,7 @@ class SqlAlchemyEngine(object):
                     tmp_file = tempfile.NamedTemporaryFile(
                         dir=tmp_dir.name, suffix=".json.gz"
                     )
-                    self.log.debug(f"Saving partition {i} to {tmp_file.name}")
+                    self.log.debug(f"Saving to {tmp_file.name}")
                     with gzip.open(tmp_file.name, "w") as gz:
                         gz.write(
                             json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
