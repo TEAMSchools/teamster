@@ -93,3 +93,11 @@ ops:
           file:
             stem: gsheets_pm_assignment_roster
             suffix: gsheet
+        - sql:
+            schema:
+              table:
+                name: "gsheets_kfwd_contacts"
+                schema: "gabby.extracts"
+          file:
+            stem: gsheets_kfwd_contacts
+            suffix: gsheet
