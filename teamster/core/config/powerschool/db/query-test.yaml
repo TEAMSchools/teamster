@@ -7,7 +7,7 @@ ops:
   compose_queries:
     config:
       destination:
-        type: gcs
+        type: fs
       queries:
         - sql:
             schema:

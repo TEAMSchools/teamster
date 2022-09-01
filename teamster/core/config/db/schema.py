@@ -16,7 +16,7 @@ DESTINATION_CONFIG = Shape(
         "type": Field(
             Enum(
                 name="DestinationType",
-                enum_values=[EnumValue("sftp"), EnumValue("gsheet"), EnumValue("gcs")],
+                enum_values=[EnumValue("sftp"), EnumValue("gsheet"), EnumValue("fs")],
             )
         ),
         "name": Field(String, is_required=False),
