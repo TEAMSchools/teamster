@@ -1,0 +1,5 @@
+*
+!.gitignore
+!common.env.tmpl
+!local.env.tmpl
+!env-update.sh
