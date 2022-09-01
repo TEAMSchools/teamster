@@ -89,10 +89,9 @@ def extract(context, dynamic_query):
     if data:
         if query_kwargs["output_fmt"] == "files":
             for fp in data:
-                file_path = pathlib.Path(fp)
-                with file_path.open(mode="r") as f:
+                with fp.open(mode="rb") as f:
                     context.resources.file_manager.write(
-                        file_obj=f, key=f"{table_name}/{file_path.name}"
+                        file_obj=f, key=f"{table_name}/{fp.name}"
                     )
 
         yield Output(value=data, output_name="data")
