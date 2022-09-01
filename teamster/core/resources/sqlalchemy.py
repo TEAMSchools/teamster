@@ -1,7 +1,9 @@
 import gzip
 import json
+import pathlib
 import sys
-import tempfile
+import uuid
+from datetime import datetime
 
 import oracledb
 from dagster import Field, IntSource, StringSource, resource
@@ -37,29 +39,29 @@ class SqlAlchemyEngine(object):
 
             partitions = result_stg.partitions(size=PARTITION_SIZE)
             if output_fmt == "files":
-                tmp_dir = tempfile.TemporaryDirectory(dir=".")
+                tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
+                tmp_dir.mkdir(parents=True, exist_ok=True)
 
                 len_data = 0
                 output_obj = []
                 for i, pt in enumerate(partitions):
                     self.log.debug(f"Querying partition {i}")
-                    data = [dict(row) for row in pt]
-                    len_data += len(data)
 
+                    data = [dict(row) for row in pt]
                     del pt
 
-                    tmp_file = tempfile.NamedTemporaryFile(
-                        dir=tmp_dir.name, suffix=".json.gz"
-                    )
-                    self.log.debug(f"Saving to {tmp_file.name}")
-                    with gzip.open(tmp_file.name, "w") as gz:
+                    now_ts = str(datetime.now().timestamp())
+                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
+                    self.log.debug(f"Saving to {tmp_file}")
+                    with gzip.open(tmp_file, "wb") as gz:
                         gz.write(
                             json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
                         )
 
+                    len_data += len(data)
                     del data
 
-                    output_obj.append(tmp_file.name)
+                    output_obj.append(tmp_file)
                 self.log.info(f"Retrieved {len_data} rows.")
             else:
                 pts_unpacked = [rows for pt in partitions for rows in pt]

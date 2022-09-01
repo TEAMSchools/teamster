@@ -1,6 +1,7 @@
 from dagster import graph
 
-from teamster.core.ops.db import compose_queries, extract, transform
+from teamster.core.ops.datagun import transform
+from teamster.core.ops.db import compose_queries, extract
 
 
 @graph
