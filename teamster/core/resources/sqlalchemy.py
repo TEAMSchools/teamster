@@ -13,7 +13,7 @@ from teamster.core.utils import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
 
-PARTITION_SIZE = 100000
+PARTITION_SIZE = 10000
 
 
 class SqlAlchemyEngine(object):
