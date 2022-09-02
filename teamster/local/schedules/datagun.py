@@ -63,7 +63,7 @@ gsheets_datagun = ScheduleDefinition(
     tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"limits": {"cpu": "1250m", "memory": "1536Mi"}}
+                "resources": {"limits": {"cpu": "1500m", "memory": "1536Mi"}}
             }
         }
     },
