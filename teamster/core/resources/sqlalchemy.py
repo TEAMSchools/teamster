@@ -10,7 +10,8 @@ from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils import merge_dicts
 from sqlalchemy.engine import URL, create_engine
 
-from teamster.core.utils import CustomJSONEncoder, time_limit
+from teamster.core.utils.classes import CustomJSONEncoder
+from teamster.core.utils.functions import time_limit
 
 sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
 
