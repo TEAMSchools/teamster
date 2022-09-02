@@ -89,6 +89,10 @@ def load_destination(context, transformed):
     dest_type = dest_config["type"]
     if dest_type == "gsheet":
         file_stem, df_dict = transformed[1:]
+
+        if file_stem[0].isnumeric():
+            file_stem = "GS" + file_stem
+
         context.resources.destination.update_named_range(
             data=df_dict, spreadsheet_name=file_stem, range_name=file_stem
         )
