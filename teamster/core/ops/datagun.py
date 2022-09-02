@@ -17,6 +17,7 @@ from teamster.core.utils import NOW, TODAY, CustomJSONEncoder, get_last_schedule
     out={"transformed": Out(dagster_type=Tuple, is_required=False)},
     required_resource_keys={"file_manager"},
     tags={"dagster/priority": 3},
+    retry_policy=RetryPolicy(max_retries=2),
 )
 def transform(context, data, file_config, dest_config):
     mapping_key = context.get_mapping_key()
