@@ -1,4 +1,0 @@
-resources:
-  ssh:
-    config:
-      remote_port: 5484
