@@ -23,7 +23,7 @@ def transform(context, data, file_config, dest_config):
     mapping_key = context.get_mapping_key()
     table_name = mapping_key[: mapping_key.rfind("_")]
 
-    now_ts = NOW.timestamp()
+    now_ts = str(NOW.timestamp())
     if file_config:
         file_stem = file_config["stem"].format(
             today=TODAY.date().isoformat(),
