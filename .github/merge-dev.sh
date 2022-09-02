@@ -13,7 +13,7 @@ elif [[ ${1} == "stg" ]]; then
 	for BRANCH in ./.git/refs/remotes/origin/kipp*; do
 		branch_name=$(basename -- "${BRANCH}")
 
-		git switch "${branch_name}"
+		git switch stg-"${branch_name}"
 		git merge dev
 	done
 
