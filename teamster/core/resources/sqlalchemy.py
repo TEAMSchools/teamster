@@ -6,11 +6,11 @@ import uuid
 from datetime import datetime
 
 import oracledb
-from dagster import Field, IntSource, StringSource, resource
+from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils import merge_dicts
 from sqlalchemy.engine import URL, create_engine
 
-from teamster.core.utils import CustomJSONEncoder
+from teamster.core.utils import CustomJSONEncoder, time_limit
 
 sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
 
@@ -19,7 +19,7 @@ PARTITION_SIZE = 100000
 
 class SqlAlchemyEngine(object):
     def __init__(self, dialect, driver, logger, **kwargs):
-        engine_keys = ["arraysize"]
+        engine_keys = ["arraysize", "connect_args"]
         engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
         url_kwargs = {k: v for k, v in kwargs.items() if k not in engine_keys}
 
@@ -31,7 +31,9 @@ class SqlAlchemyEngine(object):
         self.log.info(f"Executing query:\n{query}")
 
         with self.engine.connect() as conn:
-            result = conn.execute(statement=query)
+            with time_limit(seconds=60):
+                result = conn.execute(statement=query)
+
             if output_fmt in ["dict", "json", "files"]:
                 result_stg = result.mappings()
             else:
@@ -104,6 +106,7 @@ SQLALCHEMY_ENGINE_CONFIG = {
     "host": Field(StringSource, is_required=False),
     "port": Field(IntSource, is_required=False),
     "database": Field(StringSource, is_required=False),
+    "connect_args": Field(Permissive(), is_required=False),
 }
 
 

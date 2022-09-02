@@ -20,10 +20,6 @@ def run_queries():
 
 @graph
 def resync():
-    # full
-    dynamic_query = compose_queries()
-    dynamic_query.map(execute_query)
-
     # log
     dynamic_query = compose_queries()
     dynamic_query.map(execute_query)
