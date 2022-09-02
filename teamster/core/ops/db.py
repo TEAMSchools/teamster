@@ -17,7 +17,8 @@ from dagster import (
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.db.schema import QUERY_CONFIG, SSH_TUNNEL_CONFIG
-from teamster.core.utils import TODAY, get_last_schedule_run
+from teamster.core.utils.functions import get_last_schedule_run
+from teamster.core.utils.variables import TODAY
 
 
 @op(
