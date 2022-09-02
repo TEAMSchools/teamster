@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 
 import oracledb
-from dagster import Field, IntSource, StringSource, resource
+from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils import merge_dicts
 from sqlalchemy.engine import URL, create_engine
 
@@ -19,7 +19,7 @@ PARTITION_SIZE = 100000
 
 class SqlAlchemyEngine(object):
     def __init__(self, dialect, driver, logger, **kwargs):
-        engine_keys = ["arraysize"]
+        engine_keys = ["arraysize", "connect_args"]
         engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
         url_kwargs = {k: v for k, v in kwargs.items() if k not in engine_keys}
 
@@ -124,6 +124,7 @@ def mssql(context):
             "version": Field(StringSource, is_required=True),
             "prefetchrows": Field(IntSource, is_required=False),
             "arraysize": Field(IntSource, is_required=False),
+            "connect_args": Field(Permissive(), is_required=False),
         },
     )
 )
