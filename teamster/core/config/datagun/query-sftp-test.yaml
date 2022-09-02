@@ -16,12 +16,12 @@ ops:
         path: "sftp/test-path"
       queries:
         - file:
-            stem: "json-test-{NOW}"
+            stem: "json-test-{now}"
             suffix: "json.gz"
           sql:
             file: "./teamster/core/config/datagun/sql/test.sql"
         - file:
-            stem: "tsv-test-{TODAY}"
+            stem: "tsv-test-{today}"
             suffix: "txt"
             format:
               quoting: 1 # csv.QUOTE_ALL
@@ -34,8 +34,8 @@ ops:
                 schema: gabby.utilities
               select:
                 - n
-                - "n + 1 AS n2"
-                - "n + 2 AS n3"
-                - "n + 3 AS n4"
-                - "n + 4 AS n5"
+                - "n + 1"
+                - "n + 2"
+                - "n + 3"
+                - "n + 4"
               where: "n <= 5"
