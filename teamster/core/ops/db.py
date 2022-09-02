@@ -24,7 +24,7 @@ from teamster.core.utils import TODAY, get_last_schedule_run
     config_schema=QUERY_CONFIG,
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
     tags={"dagster/priority": 1},
-    retry_policy=RetryPolicy(max_retries=2),
+    retry_policy=RetryPolicy(max_retries=3),
 )
 def compose_queries(context):
     dest_config = context.op_config["destination"]
@@ -72,7 +72,7 @@ def compose_queries(context):
     },
     required_resource_keys={"db", "ssh", "file_manager"},
     tags={"dagster/priority": 2},
-    retry_policy=RetryPolicy(max_retries=2),
+    retry_policy=RetryPolicy(max_retries=3),
 )
 def extract(context, dynamic_query):
     mapping_key = context.get_mapping_key()
