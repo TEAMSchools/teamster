@@ -99,7 +99,7 @@ def extract(context, dynamic_query):
         ssh_tunnel.stop()
 
     if data:
-        if query_kwargs["output_fmt"] == "files":
+        if query_kwargs.get("output_fmt") == "files":
             file_handles = []
             for fp in data:
                 with fp.open(mode="rb") as f:
