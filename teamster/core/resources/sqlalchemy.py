@@ -1,19 +1,25 @@
+import gzip
 import json
+import pathlib
 import sys
+import uuid
+from datetime import datetime
 
 import oracledb
-from dagster import Field, IntSource, StringSource, resource
+from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils import merge_dicts
 from sqlalchemy.engine import URL, create_engine
 
-from teamster.core.utils import CustomJSONEncoder
+from teamster.core.utils import CustomJSONEncoder, time_limit
 
 sys.modules["cx_Oracle"] = oracledb  # patched until sqlalchemy supports oracledb (v2)
+
+PARTITION_SIZE = 100000
 
 
 class SqlAlchemyEngine(object):
     def __init__(self, dialect, driver, logger, **kwargs):
-        engine_keys = ["arraysize"]
+        engine_keys = ["arraysize", "connect_args"]
         engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
         url_kwargs = {k: v for k, v in kwargs.items() if k not in engine_keys}
 
@@ -21,19 +27,50 @@ class SqlAlchemyEngine(object):
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
-    def execute_query(self, query, output="dict"):
+    def execute_query(self, query, output_fmt="dict"):
         self.log.info(f"Executing query:\n{query}")
 
         with self.engine.connect() as conn:
-            result = conn.execute(statement=query)
+            with time_limit(seconds=60):
+                result = conn.execute(statement=query)
 
-            if output in ["dict", "json"]:
-                output_obj = [dict(row) for row in result.mappings()]
+            if output_fmt in ["dict", "json", "files"]:
+                result_stg = result.mappings()
             else:
-                output_obj = [row for row in result]
+                result_stg = result
 
-        self.log.info(f"Retrieved {len(output_obj)} rows.")
-        if output == "json":
+            partitions = result_stg.partitions(size=PARTITION_SIZE)
+            if output_fmt == "files":
+                tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
+                tmp_dir.mkdir(parents=True, exist_ok=True)
+
+                len_data = 0
+                output_obj = []
+                for i, pt in enumerate(partitions):
+                    self.log.debug(f"Querying partition {i}")
+
+                    data = [dict(row) for row in pt]
+                    del pt
+
+                    now_ts = str(datetime.now().timestamp())
+                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
+                    self.log.debug(f"Saving to {tmp_file}")
+                    with gzip.open(tmp_file, "wb") as gz:
+                        gz.write(
+                            json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
+                        )
+
+                    len_data += len(data)
+                    del data
+
+                    output_obj.append(tmp_file)
+                self.log.info(f"Retrieved {len_data} rows.")
+            else:
+                pts_unpacked = [rows for pt in partitions for rows in pt]
+                output_obj = [dict(row) for row in pts_unpacked]
+                self.log.info(f"Retrieved {len(output_obj)} rows.")
+
+        if output_fmt == "json":
             return json.dumps(obj=output_obj, cls=CustomJSONEncoder)
         else:
             return output_obj
@@ -69,6 +106,7 @@ SQLALCHEMY_ENGINE_CONFIG = {
     "host": Field(StringSource, is_required=False),
     "port": Field(IntSource, is_required=False),
     "database": Field(StringSource, is_required=False),
+    "connect_args": Field(Permissive(), is_required=False),
 }
 
 
