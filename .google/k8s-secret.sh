@@ -1,23 +1,27 @@
 #!/bin/bash
+if [[ -z ${1} ]]; then
+	echo "Usage: ${0} <instance_name>"
+	exit 1
+else
+	pdm run env-update "${1}"
 
-pdm run env-update "${INSTANCE_NAME}"
-
-# trunk-ignore(shellcheck/SC2312)
-kubectl create secret generic "${INSTANCE_NAME}" \
-	--save-config \
-	--dry-run=client \
-	--namespace=dagster-cloud \
-	--from-env-file=./env/"${INSTANCE_NAME}"/prod.env \
-	--output=yaml |
-	kubectl apply -f -
-
-if [[ -d ./secrets/"${INSTANCE_NAME}" ]]; then
 	# trunk-ignore(shellcheck/SC2312)
-	kubectl create secret generic "${INSTANCE_NAME}"-ssh-keys \
+	kubectl create secret generic "${1}" \
 		--save-config \
 		--dry-run=client \
 		--namespace=dagster-cloud \
-		--from-file=egencia-privatekey=./secrets/"${INSTANCE_NAME}"/egencia/rsa-private-key \
+		--from-env-file=./env/"${1}"/prod.env \
 		--output=yaml |
 		kubectl apply -f -
+
+	if [[ -d ./secrets/"${1}" ]]; then
+		# trunk-ignore(shellcheck/SC2312)
+		kubectl create secret generic "${1}"-ssh-keys \
+			--save-config \
+			--dry-run=client \
+			--namespace=dagster-cloud \
+			--from-file=egencia-privatekey=./secrets/"${1}"/egencia/rsa-private-key \
+			--output=yaml |
+			kubectl apply -f -
+	fi
 fi
