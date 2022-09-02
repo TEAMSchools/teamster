@@ -3,8 +3,8 @@ execution:
     resources:
       limits:
         cpu: 750m
-        memory: 3.0Gi
-    max_concurrent: 26
+        memory: 1.0Gi
+    max_concurrent: 60
 resources:
   db:
     config:

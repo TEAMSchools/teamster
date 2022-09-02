@@ -1,5 +1,5 @@
 ops:
-  execute_query_3:
+  execute_query_2:
     ops:
       extract:
         config:
@@ -9,10 +9,10 @@ ops:
             env: PS_SSH_REMOTE_BIND_HOST
           local_port:
             env: PS_DB_PORT
-  compose_queries_3:
+  compose_queries_2:
     config:
       destination:
-        type: gcs
+        type: fs
       queries:
         - sql:
             schema:

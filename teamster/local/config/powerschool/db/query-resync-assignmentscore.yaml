@@ -1,5 +1,5 @@
 ops:
-  execute_query_6:
+  execute_query_5:
     ops:
       extract:
         config:
@@ -9,148 +9,106 @@ ops:
             env: PS_SSH_REMOTE_BIND_HOST
           local_port:
             env: PS_DB_PORT
-  compose_queries_6:
+  compose_queries_5:
     config:
       destination:
-        type: gcs
+        type: fs
       queries:
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2016-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2016-09-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2016-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2016-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2016-10-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2016-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2017-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2017-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2017-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2017-03-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2017-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2017-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2017-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2017-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2018-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2018-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2017-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2017-09-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2018-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2018-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2017-10-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2017-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2019-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2019-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2018-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2018-03-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2019-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2019-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2018-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2018-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2020-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2020-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2018-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2018-09-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2020-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2020-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2018-10-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2018-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2021-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2021-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2019-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2019-03-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2021-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2021-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2019-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2019-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2022-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2022-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2019-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2019-09-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2022-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2022-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
         - sql:
             schema:
               table:
                 name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2019-10-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2019-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2020-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2020-03-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2020-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2020-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2020-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2020-09-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2020-10-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2020-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2021-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2021-03-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2021-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2021-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2021-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2021-09-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2021-10-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2021-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2022-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2022-03-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2022-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2022-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2022-07-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2022-09-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2022-10-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2022-12-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2023-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2023-03-31 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
-        - sql:
-            schema:
-              table:
-                name: assignmentscore
-              where: "whenmodified BETWEEN TO_TIMESTAMP_TZ('2023-04-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND TO_TIMESTAMP_TZ('2023-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+              where: whenmodified BETWEEN
+                TO_TIMESTAMP_TZ('2023-01-01 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') AND
+                TO_TIMESTAMP_TZ('2023-06-30 00:00:00-04:00', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
