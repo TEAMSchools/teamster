@@ -17,5 +17,5 @@ ops:
         - sql:
             file: "./teamster/local/config/datagun/sql/egencia-users.sql"
           file:
-            stem: "users_{}"
+            stem: "users_{TODAY}"
             suffix: csv
