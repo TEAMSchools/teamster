@@ -106,6 +106,7 @@ SQLALCHEMY_ENGINE_CONFIG = {
     "host": Field(StringSource, is_required=False),
     "port": Field(IntSource, is_required=False),
     "database": Field(StringSource, is_required=False),
+    "connect_args": Field(Permissive(), is_required=False),
 }
 
 
@@ -126,7 +127,6 @@ def mssql(context):
             "version": Field(StringSource, is_required=True),
             "prefetchrows": Field(IntSource, is_required=False),
             "arraysize": Field(IntSource, is_required=False),
-            "connect_args": Field(Permissive(), is_required=False),
         },
     )
 )

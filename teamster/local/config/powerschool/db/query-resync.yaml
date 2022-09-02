@@ -10,5 +10,3 @@ resources:
     config:
       prefetchrows: 100000
       arraysize: 100000
-      connect_args:
-        call_timeout: 60000
