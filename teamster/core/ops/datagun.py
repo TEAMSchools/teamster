@@ -17,12 +17,13 @@ from teamster.core.utils import NOW, TODAY, CustomJSONEncoder, get_last_schedule
     out={"transformed": Out(dagster_type=Tuple, is_required=False)},
     required_resource_keys={"file_manager"},
     tags={"dagster/priority": 3},
+    retry_policy=RetryPolicy(max_retries=3),
 )
 def transform(context, data, file_config, dest_config):
     mapping_key = context.get_mapping_key()
     table_name = mapping_key[: mapping_key.rfind("_")]
 
-    now_ts = NOW.timestamp()
+    now_ts = str(NOW.timestamp())
     if file_config:
         file_stem = file_config["stem"].format(
             today=TODAY.date().isoformat(),
@@ -80,7 +81,7 @@ def transform(context, data, file_config, dest_config):
     ins={"transformed": In(dagster_type=Tuple)},
     tags={"dagster/priority": 4},
     required_resource_keys={"destination", "file_manager"},
-    retry_policy=RetryPolicy(max_retries=2),
+    retry_policy=RetryPolicy(max_retries=3),
 )
 def load_destination(context, transformed):
     dest_config = transformed[0]
@@ -88,6 +89,10 @@ def load_destination(context, transformed):
     dest_type = dest_config["type"]
     if dest_type == "gsheet":
         file_stem, df_dict = transformed[1:]
+
+        if file_stem[0].isnumeric():
+            file_stem = "GS" + file_stem
+
         context.resources.destination.update_named_range(
             data=df_dict, spreadsheet_name=file_stem, range_name=file_stem
         )
