@@ -90,19 +90,17 @@ def extract(context, dynamic_query):
     else:
         ssh_tunnel = None
 
-    # TODO: refactor query_kwargs to config
-    query_kwargs = {}
     if dest_config["type"] == "fs":
-        query_kwargs["output_fmt"] = "files"
-
-    data = context.resources.db.execute_query(query, **query_kwargs)
+        data = context.resources.db.execute_query(query, output_fmt="files")
+    else:
+        data = context.resources.db.execute_query(query)
 
     if ssh_tunnel is not None:
         context.log.info("Stopping SSH tunnel.")
         ssh_tunnel.stop()
 
     if data:
-        if query_kwargs.get("output_fmt") == "files":
+        if dest_config["type"] == "fs":
             file_handles = []
             for fp in data:
                 with fp.open(mode="rb") as f:
