@@ -16,12 +16,12 @@ ops:
         path: "sftp/test-path"
       queries:
         - file:
-            stem: "json-test-{NOW}"
+            stem: "json-test-{now}"
             suffix: "json.gz"
           sql:
             file: "./teamster/core/config/datagun/sql/test.sql"
         - file:
-            stem: "tsv-test-{TODAY}"
+            stem: "tsv-test-{today}"
             suffix: "txt"
             format:
               quoting: 1 # csv.QUOTE_ALL
