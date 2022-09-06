@@ -5,7 +5,9 @@ import pathlib
 import pandas as pd
 from dagster import Dict, In, List, Out, Output, RetryPolicy, Tuple, op
 
-from teamster.core.utils import NOW, TODAY, CustomJSONEncoder, get_last_schedule_run
+from teamster.core.utils.classes import CustomJSONEncoder
+from teamster.core.utils.functions import get_last_schedule_run
+from teamster.core.utils.variables import NOW, TODAY
 
 
 @op(
