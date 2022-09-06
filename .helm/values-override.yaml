@@ -1,5 +1,4 @@
 dagsterCloud:
-  deployment: prod
   branchDeployments: true
 
 dagsterCloudAgent:
