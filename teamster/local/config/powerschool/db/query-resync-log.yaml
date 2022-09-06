@@ -1,0 +1,21 @@
+ops:
+  execute_query:
+    ops:
+      extract:
+        config:
+          remote_port:
+            env: PS_SSH_REMOTE_BIND_PORT
+          remote_host:
+            env: PS_SSH_REMOTE_BIND_HOST
+          local_port:
+            env: PS_DB_PORT
+  compose_queries:
+    config:
+      destination:
+        type: fs
+      queries:
+        - sql:
+            schema:
+              table:
+                name: log
+              where: "entry_date BETWEEN TO_DATE('2022-07-01', 'YYYY-MM-DD') AND TO_DATE('2023-06-30', 'YYYY-MM-DD')"
