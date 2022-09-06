@@ -1,7 +1,8 @@
 import signal
 from contextlib import contextmanager
+from functools import wraps
 
-from dagster import DagsterRunStatus
+from dagster import DagsterExecutionInterruptedError, DagsterRunStatus, RetryRequested
 from dagster._core.storage.pipeline_run import RunsFilter
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -40,3 +41,16 @@ def get_last_schedule_run(context):
     else:
         # pass if ad hoc query
         return None
+
+
+def retry_on_exception(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            fn(*args, **kwargs)
+        except DagsterExecutionInterruptedError as e:
+            raise RetryRequested() from e
+        except Exception as e:
+            raise RetryRequested(max_retries=2) from e
+
+    return wrapper
