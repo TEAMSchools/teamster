@@ -2,7 +2,7 @@ ARG PYTHON_VERSION
 ARG PDM_VERSION
 
 # Debian Bullseye
-FROM python:"${IMAGE_PYTHON_VERSION}"-slim
+FROM python:${IMAGE_PYTHON_VERSION}-slim
 
 # install system deps
 # trunk-ignore(hadolint/DL3008)
