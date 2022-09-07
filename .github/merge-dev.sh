@@ -1,24 +1,22 @@
 #!/bin/bash
 
-if [[ ${1} == "prod" ]]; then
+if [[ -z ${1} ]]; then
+	echo "Usage: ${0} <prod|stg>"
+	exit 1
+else
 	for BRANCH in ./.git/refs/remotes/origin/kipp*; do
 		branch_name=$(basename -- "${BRANCH}")
 
 		git switch "${branch_name}"
+		git pull
+
+		if [[ ${1} == "stg" ]]; then
+			git switch stg-"${branch_name}"
+			git merge "${branch_name}"
+		fi
+
 		git merge dev
 	done
 
 	git switch dev
-elif [[ ${1} == "stg" ]]; then
-	for BRANCH in ./.git/refs/remotes/origin/kipp*; do
-		branch_name=$(basename -- "${BRANCH}")
-
-		git switch stg-"${branch_name}"
-		git merge dev
-	done
-
-	git switch dev
-else
-	echo "Usage: ${0} <prod|stg>"
-	exit 1
 fi

@@ -1,7 +1,3 @@
-execution:
-  config:
-    multiprocess:
-      max_concurrent: 11
 resources:
   destination:
     config:

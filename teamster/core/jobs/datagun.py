@@ -1,5 +1,6 @@
 from dagster import config_from_files, resource
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.graphs.datagun import run_queries
@@ -14,6 +15,7 @@ def dummy_ssh_resource(context):
 
 datagun_etl_sftp = run_queries.to_job(
     name="datagun_etl_sftp",
+    executor_def=k8s_job_executor,
     resource_defs={
         "db": mssql,
         "file_manager": gcs_file_manager,
@@ -33,6 +35,7 @@ datagun_etl_sftp = run_queries.to_job(
 
 datagun_etl_gsheets = run_queries.to_job(
     name="datagun_etl_gsheets",
+    executor_def=k8s_job_executor,
     resource_defs={
         "db": mssql,
         "file_manager": gcs_file_manager,

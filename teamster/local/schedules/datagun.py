@@ -18,13 +18,6 @@ deanslist_datagun = ScheduleDefinition(
             "./teamster/local/config/datagun/query-deanslist.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"limits": {"cpu": "2000m", "memory": "2560Mi"}}
-            }
-        }
-    },
 )
 
 illuminate_datagun = ScheduleDefinition(
@@ -39,13 +32,6 @@ illuminate_datagun = ScheduleDefinition(
             "./teamster/local/config/datagun/query-illuminate.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"limits": {"cpu": "1250m", "memory": "1536Mi"}}
-            }
-        }
-    },
 )
 
 gsheets_datagun = ScheduleDefinition(
@@ -60,13 +46,6 @@ gsheets_datagun = ScheduleDefinition(
             "./teamster/local/config/datagun/query-gsheets.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"limits": {"cpu": "1500m", "memory": "1536Mi"}}
-            }
-        }
-    },
 )
 
 clever_datagun = ScheduleDefinition(
@@ -81,13 +60,6 @@ clever_datagun = ScheduleDefinition(
             "./teamster/local/config/datagun/query-clever.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"limits": {"cpu": "1000m", "memory": "1536Mi"}}
-            }
-        }
-    },
 )
 
 razkids_datagun = ScheduleDefinition(
