@@ -3,10 +3,10 @@ import json
 import pathlib
 
 import pandas as pd
-from dagster import Dict, In, List, Out, Output, RetryPolicy, Tuple, op
+from dagster import Dict, In, List, Out, Output, Tuple, op
 
 from teamster.core.utils.classes import CustomJSONEncoder
-from teamster.core.utils.functions import get_last_schedule_run
+from teamster.core.utils.functions import get_last_schedule_run, retry_on_exception
 from teamster.core.utils.variables import NOW, TODAY
 
 
@@ -19,8 +19,8 @@ from teamster.core.utils.variables import NOW, TODAY
     out={"transformed": Out(dagster_type=Tuple, is_required=False)},
     required_resource_keys={"file_manager"},
     tags={"dagster/priority": 3},
-    retry_policy=RetryPolicy(max_retries=3),
 )
+@retry_on_exception
 def transform(context, data, file_config, dest_config):
     mapping_key = context.get_mapping_key()
     table_name = mapping_key[: mapping_key.rfind("_")]
@@ -30,7 +30,7 @@ def transform(context, data, file_config, dest_config):
         file_stem = file_config["stem"].format(
             today=TODAY.date().isoformat(),
             now=now_ts.replace(".", "_"),
-            last_run=get_last_schedule_run(context=context),
+            last_run=get_last_schedule_run(context=context) or TODAY.date().isoformat(),
         )
         file_suffix = file_config["suffix"]
         file_format = file_config.get("format", {})
@@ -83,8 +83,8 @@ def transform(context, data, file_config, dest_config):
     ins={"transformed": In(dagster_type=Tuple)},
     tags={"dagster/priority": 4},
     required_resource_keys={"destination", "file_manager"},
-    retry_policy=RetryPolicy(max_retries=3),
 )
+@retry_on_exception
 def load_destination(context, transformed):
     dest_config = transformed[0]
 
