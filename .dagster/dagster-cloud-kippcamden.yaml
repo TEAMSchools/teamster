@@ -1,7 +1,7 @@
 locations:
   - location_name: kippcamden
     code_source:
-      package_name: teamster.local
+      python_file: ./teamster/local/repository.py
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
