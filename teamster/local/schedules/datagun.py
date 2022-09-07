@@ -18,13 +18,6 @@ powerschool_datagun = ScheduleDefinition(
             "./teamster/local/config/datagun/query-powerschool.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"limits": {"cpu": "500m", "memory": "1024Mi"}}
-            }
-        }
-    },
 )
 
 nps_datagun = ScheduleDefinition(
