@@ -51,4 +51,5 @@ dagster-local.shell = "docker compose run --rm dagster dagster-cloud agent run .
 dagster-sync.shell = "bash ./.dagster/dagster-cloud-workspace-sync.sh"
 k8s-init.shell = "bash ./.google/k8s-init.sh"
 helm-install.shell = "bash .helm/helm-install.sh"
-tf-export.shell = "gcloud beta resource-config bulk-export --path=./.google/terraform --project=${GCP_PROJECT_ID} --resource-format=terraform"
+git-merge-dev.shell = "bash ./.github/merge-dev.sh"
+git-open-pr.shell = "bash ./.github/open-pr.sh"
