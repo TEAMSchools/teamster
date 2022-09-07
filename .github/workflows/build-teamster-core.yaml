@@ -18,7 +18,7 @@ concurrency:
 env:
   REGISTRY: us-central1-docker.pkg.dev
   SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
-  PYTHON_VERSION: 3.10
+  PYTHON_VERSION: "3.10"
 
 jobs:
   parse_workspace:
