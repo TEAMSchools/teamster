@@ -1,6 +1,7 @@
 import gzip
 import json
 import pathlib
+import sys
 import uuid
 from datetime import datetime
 
@@ -11,6 +12,8 @@ from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
 from teamster.core.utils.functions import time_limit
+
+sys.modules["cx_Oracle"] = oracledb
 
 PARTITION_SIZE = 100000
 
