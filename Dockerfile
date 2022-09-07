@@ -6,7 +6,7 @@ FROM python:${IMAGE_PYTHON_VERSION}-slim
 # install system deps
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl gnupg build-essential git \
+    && apt-get install -y --no-install-recommends curl gnupg build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
