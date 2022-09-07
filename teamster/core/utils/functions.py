@@ -47,7 +47,7 @@ def retry_on_exception(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         try:
-            fn(*args, **kwargs)
+            return fn(*args, **kwargs)
         except DagsterExecutionInterruptedError as e:
             raise RetryRequested() from e
         except Exception as e:
