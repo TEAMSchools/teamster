@@ -17,15 +17,15 @@ else
 
 		git merge dev
 
-		echo "Push?"
-		select yn in "Yes" "No"; do
+		while true; do
+			read -rp "Push? " yn
 			case ${yn} in
-			Yes)
+			[Yy]*)
 				git push
 				break
 				;;
-			No) exit ;;
-			*) exit ;;
+			[Nn]*) break ;;
+			*) break ;;
 			esac
 		done
 	done
