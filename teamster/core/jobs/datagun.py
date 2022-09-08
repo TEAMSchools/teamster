@@ -34,7 +34,9 @@ datagun_etl_sftp = run_queries.to_job(
     tags={
         "dagster-k8s/config": {
             "pod_template_spec_metadata": {
-                "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+                "annotations": {
+                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+                }
             }
         }
     },
@@ -61,7 +63,9 @@ datagun_etl_gsheets = run_queries.to_job(
     tags={
         "dagster-k8s/config": {
             "pod_template_spec_metadata": {
-                "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+                "annotations": {
+                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+                }
             }
         }
     },

@@ -24,7 +24,9 @@ powerschool_api_extract = run_queries.to_job(
     tags={
         "dagster-k8s/config": {
             "pod_template_spec_metadata": {
-                "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+                "annotations": {
+                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+                }
             }
         }
     },
