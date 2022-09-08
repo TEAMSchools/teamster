@@ -29,7 +29,7 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = ["dagster-docker>=0.16.1"]
+dev = []
 
 [tool.pdm.scripts]
 _.env_file = "./env/dev/prod.env"
