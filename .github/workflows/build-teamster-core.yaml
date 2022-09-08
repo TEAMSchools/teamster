@@ -22,17 +22,8 @@ env:
   PYTHON_VERSION: "3.10"
 
 jobs:
-  parse_workspace:
-    runs-on: ubuntu-latest
-
-    steps:
-      # https://github.com/actions/checkout
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
   teamster_core_build_push:
     runs-on: ubuntu-latest
-    needs: parse_workspace
 
     strategy:
       fail-fast: false
