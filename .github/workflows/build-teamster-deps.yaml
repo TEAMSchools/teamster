@@ -67,4 +67,4 @@ jobs:
         with:
           file: .docker/Dockerfile.deps
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-deps/teamster-deps:${{ env.PYTHON_VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-deps/teamster-deps:latest
