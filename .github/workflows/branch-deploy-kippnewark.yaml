@@ -4,7 +4,10 @@ on:
   pull_request:
     branches:
       - kippnewark
-    types: [opened, synchronize, reopened, closed]
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 concurrency:
   # Cancel in-progress runs on same branch
