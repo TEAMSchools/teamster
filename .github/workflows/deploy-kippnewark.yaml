@@ -10,8 +10,6 @@ on:
       - ".github/workflows/deploy-kippnewark.yaml"
       - ".dagster/dagster-cloud-kippnewark.yaml"
       - "Dockerfile"
-      - ".dockerignore"
-      - "pdm.lock"
 
 concurrency:
   # Cancel in-progress runs on same branch

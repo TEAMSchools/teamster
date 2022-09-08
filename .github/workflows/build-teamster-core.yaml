@@ -1,0 +1,68 @@
+name: Build teamster-core
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - ".docker/Dockerfile.core"
+      - ".github/workflows/build-teamster-core.yaml"
+      - ".dockerignore"
+
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: us-central1-docker.pkg.dev
+  GCP_PROJECT_ID: teamster-332318
+  SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
+  IMAGE_PYTHON_VERSION: "3.10"
+
+jobs:
+  build_push:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      # https://github.com/actions/checkout
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      # https://github.com/google-github-actions/auth
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: google-github-actions/auth@v0
+        with:
+          token_format: "access_token"
+          workload_identity_provider: projects/624231820004/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
+      # https://github.com/docker/login-action
+      - name: Login to GAR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      # https://github.com/docker/build-push-action
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          file: .docker/Dockerfile.core
+          push: true
+          build-args: IMAGE_PYTHON_VERSION=${{ env.IMAGE_PYTHON_VERSION }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:${{ env.IMAGE_PYTHON_VERSION }}
+            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:latest
