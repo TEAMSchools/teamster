@@ -25,15 +25,6 @@ powerschool_db_extract = run_queries.to_job(
             "./teamster/core/config/powerschool/db/query-test.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "pod_template_spec_metadata": {
-                "annotations": {
-                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
-                }
-            }
-        }
-    },
 )
 
 powerschool_db_resync = resync.to_job(
@@ -58,15 +49,6 @@ powerschool_db_resync = resync.to_job(
             "./teamster/local/config/powerschool/db/query-resync-assignmentscore.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "pod_template_spec_metadata": {
-                "annotations": {
-                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
-                }
-            }
-        }
-    },
 )
 
 __all__ = ["powerschool_db_extract", "powerschool_db_resync"]
