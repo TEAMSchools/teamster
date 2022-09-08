@@ -1,4 +1,4 @@
-name: Build/Push teamster-core
+name: Build teamster-core
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ env:
   PYTHON_VERSION: "3.10"
 
 jobs:
-  teamster_core_build_push:
+  build_push:
     runs-on: ubuntu-latest
 
     strategy:
@@ -63,4 +63,6 @@ jobs:
           file: .docker/Dockerfile.core
           push: true
           build-args: PYTHON_VERSION=${{ env.PYTHON_VERSION }}
-          tags: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:${{ env.PYTHON_VERSION }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:${{ env.PYTHON_VERSION }}
+            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:latest

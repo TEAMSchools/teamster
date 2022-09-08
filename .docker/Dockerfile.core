@@ -32,4 +32,8 @@ RUN apt-get update \
 
 # install pdm
 RUN curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
-ENV PATH="/root/.local/bin:$PATH"
+
+# set env vars
+ENV HOME="/root"
+ENV PATH="/root/app/__pypackages__/${PYTHON_VERSION}/bin:/root/.local/bin:$PATH"
+ENV PYTHONPATH="/root/app/__pypackages__/${PYTHON_VERSION}/lib"
