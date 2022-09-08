@@ -1,6 +1,5 @@
-ARG IMAGE_PYTHON_VERSION
-
 # Debian Bullseye
+ARG IMAGE_PYTHON_VERSION
 FROM python:${IMAGE_PYTHON_VERSION}-slim
 
 # install system deps
@@ -34,6 +33,7 @@ RUN apt-get update \
 RUN curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
 
 # set env vars
-ENV HOME="/root"
+ARG IMAGE_PYTHON_VERSION
 ENV PATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/bin:/root/.local/bin:$PATH"
 ENV PYTHONPATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/lib"
+ENV HOME="/root"
