@@ -18,14 +18,14 @@ else
 		git merge dev
 
 		echo "Push?"
-		select yn in "Yes" "No"; do
+		select yn in "Y" "N"; do
 			case ${yn} in
-			Yes)
+			Y)
 				git push
 				break
 				;;
-			No) exit ;;
-			*) exit ;;
+			N) break ;;
+			*) break ;;
 			esac
 		done
 	done
