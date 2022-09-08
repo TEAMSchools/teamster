@@ -1,3 +1,8 @@
+execution:
+  config:
+    resources:
+      limits:
+        memory: 1.0Gi
 resources:
   destination:
     config:
