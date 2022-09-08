@@ -16,6 +16,18 @@ else
 		fi
 
 		git merge dev
+
+		echo "Push?"
+		select yn in "Yes" "No"; do
+			case ${yn} in
+			Yes)
+				git push
+				break
+				;;
+			No) exit ;;
+			*) exit ;;
+			esac
+		done
 	done
 
 	git switch dev
