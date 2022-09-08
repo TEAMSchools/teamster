@@ -18,7 +18,7 @@ else
 		git merge dev
 
 		while true; do
-			read -rp "Push? [y/N]" yn
+			read -rp "Push? [y/N]: " yn
 			case ${yn} in
 			[Yy]*)
 				git push
