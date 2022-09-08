@@ -16,7 +16,7 @@ from dagster import (
 )
 
 from teamster.core.utils.classes import CustomJSONEncoder
-from teamster.core.utils.functions import get_last_schedule_run, retry_on_exception
+from teamster.core.utils.functions import get_last_schedule_run  # retry_on_exception
 from teamster.core.utils.variables import NOW, TODAY
 
 
@@ -30,7 +30,7 @@ from teamster.core.utils.variables import NOW, TODAY
     required_resource_keys={"file_manager"},
     tags={"dagster/priority": 3},
 )
-@retry_on_exception
+# @retry_on_exception
 def transform(context, data, file_config, dest_config):
     try:
         mapping_key = context.get_mapping_key()
@@ -104,7 +104,7 @@ def transform(context, data, file_config, dest_config):
     tags={"dagster/priority": 4},
     required_resource_keys={"destination", "file_manager"},
 )
-@retry_on_exception
+# @retry_on_exception
 def load_destination(context, transformed):
     try:
         dest_config = transformed[0]

@@ -18,7 +18,7 @@ from dagster import (
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.db.schema import QUERY_CONFIG, SSH_TUNNEL_CONFIG
-from teamster.core.utils.functions import get_last_schedule_run, retry_on_exception
+from teamster.core.utils.functions import get_last_schedule_run  # retry_on_exception
 from teamster.core.utils.variables import TODAY
 
 
@@ -27,7 +27,7 @@ from teamster.core.utils.variables import TODAY
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
     tags={"dagster/priority": 1},
 )
-@retry_on_exception
+# @retry_on_exception
 def compose_queries(context):
     try:
         dest_config = context.op_config["destination"]
@@ -83,7 +83,7 @@ def compose_queries(context):
     required_resource_keys={"db", "ssh", "file_manager"},
     tags={"dagster/priority": 2},
 )
-@retry_on_exception
+# @retry_on_exception
 def extract(context, dynamic_query):
     try:
         mapping_key = context.get_mapping_key()
