@@ -31,6 +31,13 @@ datagun_etl_sftp = run_queries.to_job(
             "./teamster/core/config/datagun/query-sftp-test.yaml",
         ]
     ),
+    tags={
+        "dagster-k8s/config": {
+            "pod_template_spec_metadata": {
+                "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+            }
+        }
+    },
 )
 
 datagun_etl_gsheets = run_queries.to_job(
@@ -51,6 +58,13 @@ datagun_etl_gsheets = run_queries.to_job(
             "./teamster/core/config/datagun/query-gsheets-test.yaml",
         ]
     ),
+    tags={
+        "dagster-k8s/config": {
+            "pod_template_spec_metadata": {
+                "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+            }
+        }
+    },
 )
 
 __all__ = ["datagun_etl_sftp", "datagun_etl_gsheets"]
