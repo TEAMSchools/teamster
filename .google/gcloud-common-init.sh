@@ -58,3 +58,17 @@ gcloud iam service-accounts \
 	--project="${GCP_PROJECT_ID}" \
 	--role="roles/iam.workloadIdentityUser" \
 	--member="principalSet://iam.googleapis.com/${GH_WORKLOAD_IDENTITY_POOL_ID}/attribute.repository/${GH_ORG_NAME}/teamster"
+
+# create Artifact Registry repository
+gcloud artifacts repositories create \
+	teamster-core \
+	--project="${GCP_PROJECT_ID}" \
+	--location="${GCP_REGION}" \
+	--repository-format=docker
+
+# create Artifact Registry repository
+gcloud artifacts repositories create \
+	teamster-deps \
+	--project="${GCP_PROJECT_ID}" \
+	--location="${GCP_REGION}" \
+	--repository-format=docker
