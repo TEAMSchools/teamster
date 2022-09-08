@@ -33,7 +33,6 @@ dev = []
 
 [tool.pdm.scripts]
 _.env_file = "./env/kippnewark/prod.env"
-dagster-docker.env_file = "./env/kippnewark/docker.env"
 local-init.env_file = "./env/core.env"
 core-init.shell = "bash ./.init/core-init.sh"
 local-init.shell = "bash ./.init/local-init.sh"
