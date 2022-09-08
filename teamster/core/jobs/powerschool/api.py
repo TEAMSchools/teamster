@@ -21,15 +21,6 @@ powerschool_api_extract = run_queries.to_job(
             "./teamster/core/config/powerschool/api/query-test.yaml",
         ]
     ),
-    tags={
-        "dagster-k8s/config": {
-            "pod_template_spec_metadata": {
-                "annotations": {
-                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
-                }
-            }
-        }
-    },
 )
 
 __all__ = ["powerschool_api_extract"]
