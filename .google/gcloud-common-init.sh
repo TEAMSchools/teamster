@@ -65,3 +65,10 @@ gcloud artifacts repositories create \
 	--project="${GCP_PROJECT_ID}" \
 	--location="${GCP_REGION}" \
 	--repository-format=docker
+
+# create Artifact Registry repository
+gcloud artifacts repositories create \
+	teamster-deps \
+	--project="${GCP_PROJECT_ID}" \
+	--location="${GCP_REGION}" \
+	--repository-format=docker
