@@ -17,6 +17,7 @@ concurrency:
 
 env:
   REGISTRY: us-central1-docker.pkg.dev
+  GCP_PROJECT_ID: teamster-332318
   SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
   PYTHON_VERSION: "3.10"
 
@@ -71,4 +72,4 @@ jobs:
           file: .docker/Dockerfile.core
           push: true
           build-args: PYTHON_VERSION=${{ env.PYTHON_VERSION }}
-          tags: ${{ env.PYTHON_VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:${{ env.PYTHON_VERSION }}
