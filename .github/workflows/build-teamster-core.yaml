@@ -55,7 +55,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
-      
+
       # https://github.com/docker/build-push-action
       - name: Build and push
         uses: docker/build-push-action@v3
