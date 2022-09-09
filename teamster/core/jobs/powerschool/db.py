@@ -25,6 +25,7 @@ powerschool_db_extract = run_queries.to_job(
             "./teamster/core/config/powerschool/db/query-test.yaml",
         ]
     ),
+    tags={"dagster/retry_strategy": "ALL_STEPS"},
 )
 
 powerschool_db_resync = resync.to_job(
@@ -49,6 +50,7 @@ powerschool_db_resync = resync.to_job(
             "./teamster/local/config/powerschool/db/query-resync-assignmentscore.yaml",
         ]
     ),
+    tags={"dagster/retry_strategy": "ALL_STEPS"},
 )
 
 __all__ = ["powerschool_db_extract", "powerschool_db_resync"]
