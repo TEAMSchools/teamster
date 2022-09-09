@@ -162,3 +162,4 @@ cython_debug/
 # custom exclusions
 history/
 .helm/values.yaml
+.dagster/stats/data
