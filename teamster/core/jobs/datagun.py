@@ -8,8 +8,8 @@ from teamster.core.resources.google import gcs_file_manager, google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 
 
-@resource()
-def dummy_ssh_resource(context):
+@resource
+def dummy_ssh_resource():
     return object
 
 
