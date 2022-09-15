@@ -9,5 +9,5 @@ gcloud artifacts repositories create \
 # create Storage bucket
 gsutil mb -p "${GCP_PROJECT_ID}" gs://"${IMAGE_NAME}"
 
-# Push prod.env variables to k8s secret
+# Push local env variables to k8s secret
 pdm run k8s-secret
