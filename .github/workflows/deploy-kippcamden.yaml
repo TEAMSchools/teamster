@@ -2,6 +2,11 @@ name: kippcamden - Hybrid Prod Deployment
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Build teamster-deps
+    types:
+      - completed
   push:
     branches:
       - kippcamden
