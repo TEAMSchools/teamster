@@ -16,6 +16,18 @@ else
 		fi
 
 		git merge dev
+
+		while true; do
+			read -rp "Push (y/N)? " yn
+			case ${yn} in
+			[Yy]*)
+				git push
+				break
+				;;
+			[Nn]*) break ;;
+			*) break ;;
+			esac
+		done
 	done
 
 	git switch dev

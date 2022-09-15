@@ -29,21 +29,18 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = ["dagster-docker>=0.16.1"]
+dev = []
 
 [tool.pdm.scripts]
-_.env_file = "./env/kippnewark/prod.env"
-dagster-docker.env_file = "./env/kippnewark/docker.env"
+_.env_file = "./env/kippnewark.env"
 local-init.env_file = "./env/core.env"
-core-init.shell = "bash ./.init/core-init.sh"
-local-init.shell = "bash ./.init/local-init.sh"
-env-update.shell = "bash ./env/env-update.sh"
+init-core.shell = "bash ./.init/init-core.sh"
+init-local.shell = "bash ./.init/init-local.sh"
 gcloud-core.shell = "bash ./.google/gcloud-core-init.sh"
 gcloud-local.shell = "bash ./.google/gcloud-local-init.sh"
-k8s-secret.shell = "bash ./.google/k8s-secret.sh"
-docker-build.shell = "docker compose build"
-dagster-validate.shell = "python -c 'from teamster.local.repository import *'"
 k8s-init.shell = "bash ./.google/k8s-init.sh"
+k8s-secret.shell = "bash ./.google/k8s-secret.sh"
+dagster-validate.shell = "python -c 'from teamster.local.repository import *'"
 helm-install.shell = "bash .helm/helm-install.sh"
 git-merge-dev.shell = "bash ./.github/merge-dev.sh"
 git-open-pr.shell = "bash ./.github/open-pr.sh"

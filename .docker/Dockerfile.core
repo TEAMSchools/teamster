@@ -1,0 +1,39 @@
+# Debian Bullseye
+ARG IMAGE_PYTHON_VERSION
+FROM python:${IMAGE_PYTHON_VERSION}-slim
+
+# install system deps
+# trunk-ignore(hadolint/DL3008)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        gnupg \
+        build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the SHELL option -o pipefail before RUN with a pipe in
+# https://github.com/codacy/codacy-hadolint/blob/a762bbf9decbe11c111e898fdee6dcb3f11a656b/codacy-hadolint/docs/description/DL4006.md
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# install Microsoft ODBC driver for SQL Server
+# https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver16#debian18
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list
+
+# trunk-ignore(hadolint/DL3008)
+RUN apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
+        msodbcsql18 \
+        unixodbc-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# install pdm
+RUN curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
+
+# set env vars
+ARG IMAGE_PYTHON_VERSION
+ENV PATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/bin:/root/.local/bin:$PATH"
+ENV PYTHONPATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/lib"
+ENV HOME="/root"
