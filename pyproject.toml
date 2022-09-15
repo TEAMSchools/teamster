@@ -32,8 +32,8 @@ build-backend = "pdm.pep517.api"
 dev = []
 
 [tool.pdm.scripts]
-_.env_file = "./env/kippnewark.env"
-local-init.env_file = "./env/core.env"
+_.env_file = "env/kippnewark.env"
+init-local.env_file = "./env/core.env"
 init-core.shell = "bash ./.init/init-core.sh"
 init-local.shell = "bash ./.init/init-local.sh"
 gcloud-core.shell = "bash ./.google/gcloud-core-init.sh"

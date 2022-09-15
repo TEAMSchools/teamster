@@ -7,15 +7,18 @@ resources:
         env: NPS_SFTP_USERNAME
       password:
         env: NPS_SFTP_PASSWORD
-destination:
-  name: nps
-  type: sftp
-queries:
-  - sql:
-      schema:
-        table:
-          name: nps_student_info
-          schema: gabby.extracts
-    file:
-      stem: kipp-newark-student-data
-      suffix: txt
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: nps
+        type: sftp
+      queries:
+        - sql:
+            schema:
+              table:
+                name: nps_student_info
+                schema: gabby.extracts
+          file:
+            stem: kipp-newark-student-data
+            suffix: txt
