@@ -33,12 +33,12 @@ else
 		# create local env dir
 		mkdir -p ./env/"${INSTANCE_NAME}"
 
-		# create local.env
+		# create local .env
 		tmpfile=$(mktemp)
 		cat ./env/core.env \
 			./env/local.env.tmpl \
 			>"${tmpfile}"
-		envsubst <"${tmpfile}" >./env/"${INSTANCE_NAME}"/local.env
+		envsubst <"${tmpfile}" >./env/"${INSTANCE_NAME}".env
 
 		# create prod and stg .env
 		pdm run env-update "${INSTANCE_NAME}"
