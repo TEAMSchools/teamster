@@ -14,9 +14,9 @@ dagsterCloudAgent:
 
 workspace:
   serverTTL:
-    fullDeployments:
-      enabled: true
-      ttlSeconds: 1800 # 30 min
+    # fullDeployments:
+    #   enabled: true
+    #   ttlSeconds: 1800 # 30 min
     branchDeployments:
       ttlSeconds: 1800 # 30 min
   resources:
