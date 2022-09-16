@@ -1,16 +1,16 @@
 dagsterCloud:
   branchDeployments: true
 
-dagsterCloudAgent:
-  resources:
-    limits:
-      cpu: "250m"
-      memory: "512Mi"
-      ephemeral-storage: "1Gi"
-    requests:
-      cpu: "250m"
-      memory: "512Mi"
-      ephemeral-storage: "1Gi"
+# dagsterCloudAgent:
+#   resources:
+#     limits:
+#       cpu: "250m"
+#       memory: "512Mi"
+#       ephemeral-storage: "1Gi"
+#     requests:
+#       cpu: "250m"
+#       memory: "512Mi"
+#       ephemeral-storage: "1Gi"
 
 workspace:
   serverTTL:
