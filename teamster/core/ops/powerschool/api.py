@@ -33,8 +33,9 @@ from powerschool.utils import (
 )
 from requests.exceptions import HTTPError
 
-from teamster.core.config.powerschool.schema import COMPOSE_API_QUERIES_CONFIG
-from teamster.core.utils import TODAY, get_last_schedule_run, time_limit
+from teamster.core.config.powerschool.api.schema import COMPOSE_API_QUERIES_CONFIG
+from teamster.core.utils.functions import get_last_schedule_run, time_limit
+from teamster.core.utils.variables import TODAY
 
 
 @op(
