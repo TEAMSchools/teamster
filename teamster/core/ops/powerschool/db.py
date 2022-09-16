@@ -1,4 +1,4 @@
-from dagster import Any, List, Out, Output, String, op
+from dagster import Any, List, Out, Output, Permissive, String, op
 
 from teamster.core.utils.functions import retry_on_exception
 
@@ -8,6 +8,7 @@ from teamster.core.utils.functions import retry_on_exception
         "query": Any,
         "output_fmt": String,
         "destination_type": String,
+        "ssh_tunnel": Permissive(),
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
@@ -15,11 +16,9 @@ from teamster.core.utils.functions import retry_on_exception
 )
 @retry_on_exception
 def extract(context):
-    if hasattr(context.resources.ssh, "get_tunnel"):
+    if context.op_config["ssh_tunnel"]:
         context.log.info("Starting SSH tunnel.")
-        ssh_tunnel = context.resources.ssh.get_tunnel(
-            **context.resources.ssh.resource_config
-        )
+        ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config["ssh_tunnel"])
         ssh_tunnel.start()
     else:
         ssh_tunnel = None
@@ -33,7 +32,7 @@ def extract(context):
         ssh_tunnel.stop()
 
     if data:
-        if context.op_config["destination_type"] == "fs":
+        if context.op_config["destination_type"] == "file":
             file_handles = []
             for fp in data:
                 with fp.open(mode="rb") as f:
