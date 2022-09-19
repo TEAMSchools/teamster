@@ -1,7 +1,6 @@
 import pathlib
 
 from dagster import config_mapping, graph
-from dagster._utils import merge_dicts
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.powerschool.db.schema import PS_DB_CONFIG
@@ -9,7 +8,7 @@ from teamster.core.ops.powerschool.db import extract
 from teamster.core.utils.variables import TODAY
 
 
-@config_mapping(config_schema=merge_dicts(PS_DB_CONFIG))
+@config_mapping(config_schema=PS_DB_CONFIG)
 def construct_graph_config(config):
     query_config = config["query"]
     destination_config = config["destination"]
