@@ -1,5 +1,6 @@
-from dagster import Any, List, Out, Output, Permissive, String, op
+from dagster import Any, List, Out, Output, String, op
 
+from teamster.core.config.powerschool.db.schema import SSH_TUNNEL_CONFIG
 from teamster.core.utils.functions import retry_on_exception
 
 
@@ -8,7 +9,7 @@ from teamster.core.utils.functions import retry_on_exception
         "query": Any,
         "output_fmt": String,
         "destination_type": String,
-        "ssh_tunnel": Permissive(),
+        "ssh_tunnel": SSH_TUNNEL_CONFIG,
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
