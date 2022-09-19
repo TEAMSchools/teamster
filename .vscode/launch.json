@@ -8,9 +8,11 @@
       "name": "Python: Current File",
       "type": "python",
       "request": "launch",
-      "program": "${file}",
+      "program": "teamster/local/repository.py",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "envFile": "${workspaceFolder}/env/kippnewark.env",
+      "env": { "PYTHONPATH": "/home/cbini/.local/share/pdm/venv/lib/python3.8/site-packages/pdm/pep582:${workspaceFolder}"}
     }
   ]
 }

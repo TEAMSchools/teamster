@@ -4,19 +4,15 @@ resources:
       prefetchrows: 100000
       arraysize: 100000
 ops:
-  compose_queries:
     config:
       destination:
-        type: fs
-      queries:
-        - sql:
-            schema:
-              table:
-                name: dual
-  execute_query:
-    ops:
-      extract:
-        config:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: dual
+      ssh_tunnel:
           remote_port:
             env: PS_SSH_REMOTE_BIND_PORT
           remote_host:

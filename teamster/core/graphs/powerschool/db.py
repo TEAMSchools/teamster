@@ -1,6 +1,7 @@
 import pathlib
 
-from dagster import Field, GraphDefinition, Permissive, config_mapping, graph
+from dagster import Field, Permissive, config_mapping, graph
+from dagster._utils import merge_dicts
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.powerschool.db.schema import QUERY_CONFIG
@@ -9,10 +10,10 @@ from teamster.core.utils.variables import TODAY
 
 
 @config_mapping(
-    config_schema={
-        **QUERY_CONFIG,
-        "ssh_tunnel": Field(Permissive(), is_required=False, default_value={}),
-    }
+    config_schema=merge_dicts(
+        QUERY_CONFIG,
+        {"ssh_tunnel": Field(Permissive(), is_required=False, default_value={})},
+    )
 )
 def construct_query_config(config):
     ssh_tunnel_config = config["ssh_tunnel"]
@@ -46,9 +47,12 @@ def construct_query_config(config):
     }
 
 
-@graph
-def generate_queries():
-    for tbl in ["bell_schedule", "calendar_day", "cycle_day"]:
-        return GraphDefinition(
-            name=tbl, node_defs=[extract], config=construct_query_config
-        )
+@graph(config=construct_query_config)
+def foo():
+    extract()
+
+
+# @graph
+# def generate_queries():
+#     for tbl in ["bell_schedule", "calendar_day", "cycle_day"]:
+#         foo.alias(tbl)
