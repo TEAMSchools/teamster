@@ -16,22 +16,22 @@ from teamster.core.utils.variables import TODAY
     )
 )
 def construct_query_config(config):
-    ssh_tunnel_config = config["ssh_tunnel"]
     query_config = config["query"]
+    ssh_tunnel_config = config["ssh_tunnel"]
     destination_config = config["destination"]
 
-    [(query_type, output_fmt, value)] = query_config["sql"].items()
-    if query_type == "text":
-        query = text(value)
-    elif query_type == "file":
-        query_file = pathlib.Path(value).absolute()
+    [(sql_key, sql_value)] = query_config["sql"].items()
+    if sql_key == "text":
+        query = text(sql_value)
+    elif sql_key == "file":
+        query_file = pathlib.Path(sql_value).absolute()
         with query_file.open(mode="r") as f:
             query = text(f.read())
-    elif query_type == "schema":
-        where_fmt = value.get("where", "").format(today=TODAY.date().isoformat())
+    elif sql_key == "schema":
+        where_fmt = sql_value.get("where", "").format(today=TODAY.date().isoformat())
         query = (
-            select(*[literal_column(col) for col in value["select"]])
-            .select_from(table(**value["table"]))
+            select(*[literal_column(col) for col in sql_value["select"]])
+            .select_from(table(**sql_value["table"]))
             .where(text(where_fmt))
         )
 
@@ -39,7 +39,7 @@ def construct_query_config(config):
         "extract": {
             "config": {
                 "query": query,
-                "output_fmt": output_fmt,
+                "output_fmt": query_config["output_fmt"],
                 "destination_type": destination_config["type"],
                 "ssh_tunnel": ssh_tunnel_config,
             }
