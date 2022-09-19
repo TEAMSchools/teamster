@@ -52,7 +52,7 @@ def foo():
     extract()
 
 
-# @graph
-# def generate_queries():
-#     for tbl in ["bell_schedule", "calendar_day", "cycle_day"]:
-#         foo.alias(tbl)
+@graph
+def bar():
+    foo.alias("bell_schedule")
+    foo.alias("calendar_day")

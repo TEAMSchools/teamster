@@ -21,7 +21,7 @@ powerschool_db_extract = foo.to_job(
         [
             "./teamster/core/config/google/resource.yaml",
             "./teamster/core/config/powerschool/db/resource.yaml",
-            f"./teamster/core/config/powerschool/db/query-spam.yaml",
+            "./teamster/core/config/powerschool/db/query-test.yaml",
         ]
     ),
 )
