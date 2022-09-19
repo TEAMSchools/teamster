@@ -4,36 +4,37 @@ resources:
       prefetchrows: 100000
       arraysize: 100000
 ops:
-    bell_schedule:
-      config:
-        destination:
-          type: file
-        query:
-          sql:
-            schema:
-              table:
-                name: bell_schedule
-        ssh_tunnel:
-            remote_port:
-              env: PS_SSH_REMOTE_BIND_PORT
-            remote_host:
-              env: PS_SSH_REMOTE_BIND_HOST
-            local_port:
-              env: PS_DB_PORT
-    calendar_day:
-      config:
-        destination:
-          type: file
-        query:
-          sql:
-            schema:
-              table:
-                name: calendar_day
-        ssh_tunnel:
-            remote_port:
-              env: PS_SSH_REMOTE_BIND_PORT
-            remote_host:
-              env: PS_SSH_REMOTE_BIND_HOST
-            local_port:
-              env: PS_DB_PORT
-              
+  bell_schedule:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: bell_schedule
+        output_fmt: file
+      ssh_tunnel:
+          remote_port:
+            env: PS_SSH_REMOTE_BIND_PORT
+          remote_host:
+            env: PS_SSH_REMOTE_BIND_HOST
+          local_port:
+            env: PS_DB_PORT
+  calendar_day:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: calendar_day
+        output_fmt: file
+      ssh_tunnel:
+          remote_port:
+            env: PS_SSH_REMOTE_BIND_PORT
+          remote_host:
+            env: PS_SSH_REMOTE_BIND_HOST
+          local_port:
+            env: PS_DB_PORT

@@ -7,8 +7,7 @@ from teamster.local.schedules import datagun as datagun_schedules
 
 @repository
 def powerschool():
-    # jobs = [v for k, v in vars(psdb_jobs_core).items() if k in psdb_jobs_core.__all__]
-    jobs = psdb_jobs_core.__all__
+    jobs = [v for k, v in vars(psdb_jobs_core).items() if k in psdb_jobs_core.__all__]
     schedules = []
     sensors = []
 

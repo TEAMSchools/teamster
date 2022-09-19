@@ -54,5 +54,8 @@ def foo():
 
 @graph
 def bar():
-    foo.alias("bell_schedule")
-    foo.alias("calendar_day")
+    bell_schedule = foo.alias("bell_schedule")
+    bell_schedule()
+
+    calendar_day = foo.alias("calendar_day")
+    calendar_day()

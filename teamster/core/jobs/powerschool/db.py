@@ -4,11 +4,11 @@ from dagster_gcp.gcs.resources import gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
-from teamster.core.graphs.powerschool.db import foo
+from teamster.core.graphs.powerschool.db import bar
 from teamster.core.resources.google import gcs_file_manager
 from teamster.core.resources.sqlalchemy import oracle
 
-powerschool_db_extract = foo.to_job(
+powerschool_db_extract = bar.to_job(
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
