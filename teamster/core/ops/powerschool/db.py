@@ -15,7 +15,7 @@ from teamster.core.utils.functions import retry_on_exception
 )
 @retry_on_exception
 def extract(context):
-    if context.resources.ssh.remote_bind_host is not None:
+    if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel.")
         ssh_tunnel = context.resources.ssh.get_tunnel()
         ssh_tunnel.start()
