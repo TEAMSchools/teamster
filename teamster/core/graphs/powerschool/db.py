@@ -4,18 +4,18 @@ from dagster import Field, Permissive, config_mapping, graph
 from dagster._utils import merge_dicts
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.config.powerschool.db.schema import QUERY_CONFIG
+from teamster.core.config.powerschool.db.schema import PS_DB_CONFIG
 from teamster.core.ops.powerschool.db import extract
 from teamster.core.utils.variables import TODAY
 
 
 @config_mapping(
     config_schema=merge_dicts(
-        QUERY_CONFIG,
+        PS_DB_CONFIG,
         {"ssh_tunnel": Field(Permissive(), is_required=False, default_value={})},
     )
 )
-def construct_query_config(config):
+def construct_graph_config(config):
     query_config = config["query"]
     ssh_tunnel_config = config["ssh_tunnel"]
     destination_config = config["destination"]
@@ -47,7 +47,7 @@ def construct_query_config(config):
     }
 
 
-@graph(config=construct_query_config)
+@graph(config=construct_graph_config)
 def foo():
     extract()
 

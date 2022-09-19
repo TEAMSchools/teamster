@@ -1,7 +1,27 @@
-from dagster import Array, Enum, EnumValue, Field, Permissive, Selector, Shape, String
+from dagster import (
+    Array,
+    Enum,
+    EnumValue,
+    Field,
+    IntSource,
+    Permissive,
+    Selector,
+    Shape,
+    String,
+    StringSource,
+)
 
-SQL_CONFIG = Shape(
+SSH_TUNNEL_CONFIG = Shape(
     {
+        "remote_port": IntSource,
+        "remote_host": Field(StringSource, is_required=False),
+        "local_port": Field(IntSource, is_required=False),
+    }
+)
+
+QUERY_CONFIG = Shape(
+    {
+        "ssh_tunnel": Field(SSH_TUNNEL_CONFIG, is_required=False),
         "output_fmt": Field(String, is_required=False, default_value="dict"),
         "sql": Selector(
             {
@@ -53,8 +73,8 @@ DESTINATION_CONFIG = Shape(
     }
 )
 
-QUERY_CONFIG = {
-    "query": Field(SQL_CONFIG),
+PS_DB_CONFIG = {
+    "query": Field(QUERY_CONFIG),
     "file": Field(DATA_FILE_CONFIG, is_required=False),
     "destination": Field(DESTINATION_CONFIG),
 }
