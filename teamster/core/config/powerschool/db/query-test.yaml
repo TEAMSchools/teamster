@@ -1,8 +1,3 @@
-resources:
-  db:
-    config:
-      prefetchrows: 100000
-      arraysize: 100000
 ops:
   bell_schedule:
     config:
@@ -14,13 +9,6 @@ ops:
             table:
               name: bell_schedule
         output_fmt: file
-      ssh_tunnel:
-          remote_port:
-            env: PS_SSH_REMOTE_BIND_PORT
-          remote_host:
-            env: PS_SSH_REMOTE_BIND_HOST
-          local_port:
-            env: PS_DB_PORT
   calendar_day:
     config:
       destination:
@@ -31,10 +19,3 @@ ops:
             table:
               name: calendar_day
         output_fmt: file
-      ssh_tunnel:
-          remote_port:
-            env: PS_SSH_REMOTE_BIND_PORT
-          remote_host:
-            env: PS_SSH_REMOTE_BIND_HOST
-          local_port:
-            env: PS_DB_PORT

@@ -1,6 +1,5 @@
 from dagster import Any, List, Out, Output, String, op
 
-from teamster.core.config.powerschool.db.schema import SSH_TUNNEL_CONFIG
 from teamster.core.utils.functions import retry_on_exception
 
 
@@ -9,7 +8,6 @@ from teamster.core.utils.functions import retry_on_exception
         "query": Any,
         "output_fmt": String,
         "destination_type": String,
-        "ssh_tunnel": SSH_TUNNEL_CONFIG,
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
@@ -17,9 +15,9 @@ from teamster.core.utils.functions import retry_on_exception
 )
 @retry_on_exception
 def extract(context):
-    if context.op_config["ssh_tunnel"]:
+    if context.resources.ssh.remote_bind_host is not None:
         context.log.info("Starting SSH tunnel.")
-        ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config["ssh_tunnel"])
+        ssh_tunnel = context.resources.ssh.get_tunnel()
         ssh_tunnel.start()
     else:
         ssh_tunnel = None
