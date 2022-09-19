@@ -35,13 +35,13 @@ class SqlAlchemyEngine(object):
             with time_limit(seconds=60):
                 result = conn.execute(statement=query)
 
-            if output_fmt in ["dict", "json", "files"]:
+            if output_fmt in ["dict", "json", "file"]:
                 result_stg = result.mappings()
             else:
                 result_stg = result
 
             partitions = result_stg.partitions(size=PARTITION_SIZE)
-            if output_fmt == "files":
+            if output_fmt == "file":
                 tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
                 tmp_dir.mkdir(parents=True, exist_ok=True)
 
