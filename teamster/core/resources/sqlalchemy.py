@@ -5,6 +5,7 @@ import sys
 import uuid
 from datetime import datetime
 from functools import partial
+from multiprocessing import Pool
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
@@ -62,10 +63,14 @@ class SqlAlchemyEngine(object):
                 tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
                 tmp_dir.mkdir(parents=True, exist_ok=True)
 
-                len_data = 0
-                output_obj = list(
-                    map(partial(self._consume_partition, tmp_dir=tmp_dir), partitions)
-                )
+                with Pool(10) as p:
+                    output_obj = list(
+                        p.map(
+                            partial(self._consume_partition, tmp_dir=tmp_dir),
+                            partitions,
+                        )
+                    )
+
                 # [self._foo(pt) for pt in partitions]
                 # for i, pt in enumerate(partitions):
                 #     self.log.debug(f"Querying partition {i}")
@@ -85,7 +90,8 @@ class SqlAlchemyEngine(object):
                 #     del data
 
                 #     output_obj.append(tmp_file)
-                self.log.info(f"Retrieved {len_data} rows.")
+
+                # self.log.info(f"Retrieved {len_data} rows.")
             else:
                 pts_unpacked = [rows for pt in partitions for rows in pt]
                 output_obj = [dict(row) for row in pts_unpacked]
