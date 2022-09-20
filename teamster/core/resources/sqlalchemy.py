@@ -4,8 +4,6 @@ import pathlib
 import sys
 import uuid
 from datetime import datetime
-from functools import partial
-from multiprocessing import Pool
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
@@ -17,7 +15,7 @@ from teamster.core.utils.functions import time_limit
 
 sys.modules["cx_Oracle"] = oracledb
 
-PARTITION_SIZE = 100000
+PARTITION_SIZE = 10000
 
 
 class SqlAlchemyEngine(object):
@@ -29,22 +27,6 @@ class SqlAlchemyEngine(object):
         self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
-
-    def _consume_partition(self, pt, tmp_dir):
-        self.log.debug("Querying partition")
-
-        data = [dict(row) for row in pt]
-        del pt
-
-        now_ts = str(datetime.now().timestamp())
-        tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
-
-        self.log.debug(f"Saving to {tmp_file}")
-        with gzip.open(tmp_file, "wb") as gz:
-            gz.write(json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8"))
-        del data
-
-        return tmp_file
 
     def execute_query(self, query, output_fmt="dict"):
         self.log.info(f"Executing query:\n{query}")
@@ -59,39 +41,33 @@ class SqlAlchemyEngine(object):
                 result_stg = result
 
             partitions = result_stg.partitions(size=PARTITION_SIZE)
+
             if output_fmt == "file":
                 tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
                 tmp_dir.mkdir(parents=True, exist_ok=True)
 
-                with Pool(10) as p:
-                    output_obj = list(
-                        p.map(
-                            partial(self._consume_partition, tmp_dir=tmp_dir),
-                            partitions,
+                len_data = 0
+                output_obj = []
+                for i, pt in enumerate(partitions):
+                    self.log.debug(f"Querying partition {i}")
+
+                    data = [dict(row) for row in pt]
+                    del pt
+
+                    now_ts = str(datetime.now().timestamp())
+                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
+                    self.log.debug(f"Saving to {tmp_file}")
+                    with gzip.open(tmp_file, "wb") as gz:
+                        gz.write(
+                            json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
                         )
-                    )
 
-                # [self._foo(pt) for pt in partitions]
-                # for i, pt in enumerate(partitions):
-                #     self.log.debug(f"Querying partition {i}")
+                    len_data += len(data)
+                    del data
 
-                #     data = [dict(row) for row in pt]
-                #     del pt
+                    output_obj.append(tmp_file)
 
-                #     now_ts = str(datetime.now().timestamp())
-                #     tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
-                #     self.log.debug(f"Saving to {tmp_file}")
-                #     with gzip.open(tmp_file, "wb") as gz:
-                #         gz.write(
-                #             json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
-                #         )
-
-                #     len_data += len(data)
-                #     del data
-
-                #     output_obj.append(tmp_file)
-
-                # self.log.info(f"Retrieved {len_data} rows.")
+                self.log.info(f"Retrieved {len_data} rows.")
             else:
                 pts_unpacked = [rows for pt in partitions for rows in pt]
                 output_obj = [dict(row) for row in pts_unpacked]
