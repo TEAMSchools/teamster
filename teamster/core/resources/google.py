@@ -20,7 +20,9 @@ class GCSFileManager(GCSFileManager):
         self.log.debug(gcs_key)
 
         blobs = self._client.list_blobs(
-            bucket_or_name=self._gcs_bucket, prefix=self._gcs_base_key
+            bucket_or_name=self._gcs_bucket,
+            prefix=self._gcs_base_key + "/",
+            delimiter="/",
         )
         self.log.debug(list(blobs))
 
