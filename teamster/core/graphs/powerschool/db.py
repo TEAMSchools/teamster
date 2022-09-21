@@ -16,8 +16,10 @@ def construct_graph_config(config):
     [(sql_key, sql_value)] = query_config["sql"].items()
     if sql_key == "text":
         query = text(sql_value)
+        table_name = "data"
     elif sql_key == "file":
         query_file = pathlib.Path(sql_value).absolute()
+        table_name = query_file.stem
         with query_file.open(mode="r") as f:
             query = text(f.read())
     elif sql_key == "schema":
@@ -27,6 +29,7 @@ def construct_graph_config(config):
             .select_from(table(**sql_value["table"]))
             .where(text(where_fmt))
         )
+        table_name = sql_value["table"]["name"]
 
     return {
         "extract": {
@@ -35,6 +38,7 @@ def construct_graph_config(config):
                 "output_fmt": query_config["output_fmt"],
                 "partition_size": query_config["partition_size"],
                 "destination_type": destination_config["type"],
+                "table_name": table_name,
             }
         }
     }

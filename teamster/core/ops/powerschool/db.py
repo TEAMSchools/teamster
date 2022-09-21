@@ -9,6 +9,7 @@ from teamster.core.utils.functions import retry_on_exception
         "output_fmt": String,
         "partition_size": Int,
         "destination_type": String,
+        "table_name": String,
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
@@ -40,7 +41,7 @@ def extract(context):
                 with fp.open(mode="rb") as f:
                     file_handle = context.resources.file_manager.write(
                         file_obj=f,
-                        key=f"{context.job_def.graph.name}/{fp.stem}",
+                        key=f"{context.op_config['table_name']}/{fp.stem}",
                         ext=fp.suffix,
                     )
 
