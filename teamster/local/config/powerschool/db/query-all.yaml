@@ -1,3 +1,9 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 750m
+        memory: 1.0Gi
 ops:
   attendance:
     config:

@@ -40,7 +40,7 @@ def extract(context):
                 with fp.open(mode="rb") as f:
                     file_handle = context.resources.file_manager.write(
                         file_obj=f,
-                        key=f"{context.job_def.graph_def.name}/{fp.stem}",
+                        key=f"{context.job_def.graph.name}/{fp.stem}",
                         ext=fp.suffix,
                     )
 
