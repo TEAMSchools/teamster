@@ -4,7 +4,6 @@ import pathlib
 import sys
 import uuid
 from datetime import datetime
-from multiprocessing import Pool
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
@@ -16,7 +15,7 @@ from teamster.core.utils.functions import time_limit
 
 sys.modules["cx_Oracle"] = oracledb
 
-PARTITION_SIZE = 10000
+PARTITION_SIZE = 100000
 
 
 class SqlAlchemyEngine(object):
@@ -28,24 +27,6 @@ class SqlAlchemyEngine(object):
         self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
-
-    def _retrieve_partition_rows(self, partition):
-        self.log.debug("Retrieving rows from parition")
-        data = [dict(row) for row in partition]
-        del partition
-
-        tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
-        tmp_dir.mkdir(parents=True, exist_ok=True)
-
-        now_ts = str(datetime.now().timestamp())
-        tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
-
-        self.log.debug(f"Saving to {tmp_file}")
-        with gzip.open(tmp_file, "wb") as gz:
-            gz.write(json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8"))
-        del data
-
-        return tmp_file
 
     def execute_query(self, query, output_fmt="dict"):
         self.log.info(f"Executing query:\n{query}")
@@ -61,39 +42,35 @@ class SqlAlchemyEngine(object):
 
             partitions = result_stg.partitions(size=PARTITION_SIZE)
 
+            self.log.debug("Retrieving rows from all partitions")
             if output_fmt == "file":
-                with Pool(2) as p:
-                    output_obj = p.map(self._retrieve_partition_rows, partitions)
+                tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
+                tmp_dir.mkdir(parents=True, exist_ok=True)
 
-                self.log.info(
-                    f"Retrieved approximately {len(output_obj) * PARTITION_SIZE} rows."
-                )
-                # len_data = 0
-                # output_obj = []
-                # for i, pt in enumerate(partitions):
-                #     self.log.debug(
-                #         f"Retrieving rows from partition {i}/{len_partitions}"
-                #     )
+                len_data = 0
+                output_obj = []
 
-                #     data = [dict(row) for row in pt]
-                #     del pt
+                for i, pt in enumerate(partitions):
+                    self.log.debug(f"Retrieving rows from partition {i}")
 
-                #     now_ts = str(datetime.now().timestamp())
-                #     tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
-                #     self.log.debug(f"Saving to {tmp_file}")
-                #     with gzip.open(tmp_file, "wb") as gz:
-                #         gz.write(
-                #             json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
-                #         )
+                    data = [dict(row) for row in pt]
+                    del pt
 
-                #     len_data += len(data)
-                #     del data
+                    now_ts = str(datetime.now().timestamp())
+                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
+                    self.log.debug(f"Saving to {tmp_file}")
+                    with gzip.open(tmp_file, "wb") as gz:
+                        gz.write(
+                            json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
+                        )
 
-                #     output_obj.append(tmp_file)
+                    len_data += len(data)
+                    del data
 
-                # self.log.info(f"Retrieved {len_data} rows.")
+                    output_obj.append(tmp_file)
+
+                self.log.info(f"Retrieved {len_data} rows.")
             else:
-                self.log.debug("Retrieving rows from all partitions")
                 pts_unpacked = [rows for pt in partitions for rows in pt]
                 output_obj = [dict(row) for row in pts_unpacked]
 
