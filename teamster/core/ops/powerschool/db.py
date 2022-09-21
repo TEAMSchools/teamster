@@ -16,7 +16,7 @@ from teamster.core.utils.variables import TODAY
     tags={"dagster/priority": 2},
 )
 def extract(context):
-    file_manager_key = str(context.solid_handle.path)
+    file_manager_key = context.solid_handle.path[0]
 
     if context.op_config[
         "destination_type"
