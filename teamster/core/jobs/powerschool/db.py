@@ -21,7 +21,7 @@ powerschool_db_extract = bar.to_job(
         [
             "./teamster/core/config/google/resource.yaml",
             "./teamster/core/config/powerschool/db/resource.yaml",
-            "./teamster/core/config/powerschool/db/query-test.yaml",
+            "./teamster/local/config/powerschool/db/query-all.yaml",
         ]
     ),
 )

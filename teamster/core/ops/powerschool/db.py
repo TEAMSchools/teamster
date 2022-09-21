@@ -1,4 +1,4 @@
-from dagster import Any, List, Out, Output, String, op
+from dagster import Any, Int, List, Out, Output, String, op
 
 from teamster.core.utils.functions import retry_on_exception
 
@@ -7,6 +7,7 @@ from teamster.core.utils.functions import retry_on_exception
     config_schema={
         "query": Any,
         "output_fmt": String,
+        "partition_size": Int,
         "destination_type": String,
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
@@ -23,7 +24,9 @@ def extract(context):
         ssh_tunnel = None
 
     data = context.resources.db.execute_query(
-        query=context.op_config["query"], output_fmt=context.op_config["output_fmt"]
+        query=context.op_config["query"],
+        partition_size=context.op_config["partition_size"],
+        output_fmt=context.op_config["output_fmt"],
     )
 
     if ssh_tunnel is not None:

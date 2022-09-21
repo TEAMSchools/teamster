@@ -33,6 +33,7 @@ def construct_graph_config(config):
             "config": {
                 "query": query,
                 "output_fmt": query_config["output_fmt"],
+                "partition_size": query_config["partition_size"],
                 "destination_type": destination_config["type"],
             }
         }
@@ -46,8 +47,17 @@ def foo():
 
 @graph
 def bar():
-    bell_schedule = foo.alias("bell_schedule")
-    bell_schedule()
+    attendance = foo.alias("attendance")
+    attendance()
 
-    calendar_day = foo.alias("calendar_day")
-    calendar_day()
+    log = foo.alias("log")
+    log()
+
+    assignmentscore = foo.alias("assignmentscore")
+    assignmentscore()
+
+    pgfinalgrades = foo.alias("pgfinalgrades")
+    pgfinalgrades()
+
+    storedgrades = foo.alias("storedgrades")
+    storedgrades()

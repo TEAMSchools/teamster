@@ -3,6 +3,7 @@ from dagster import (
     Enum,
     EnumValue,
     Field,
+    Int,
     IntSource,
     Permissive,
     Selector,
@@ -23,6 +24,7 @@ QUERY_CONFIG = Shape(
     {
         "ssh_tunnel": Field(SSH_TUNNEL_CONFIG, is_required=False),
         "output_fmt": Field(String, is_required=False, default_value="dict"),
+        "partition_size": Field(Int, is_required=False, default_value=10000),
         "sql": Selector(
             {
                 "text": Field(String),
