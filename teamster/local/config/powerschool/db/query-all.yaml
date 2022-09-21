@@ -15,7 +15,7 @@ ops:
           schema:
             table:
               name: attendance
-            where: "transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
   log:
@@ -38,7 +38,7 @@ ops:
           schema:
             table:
               name: assignmentscore
-            where: "whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
   pgfinalgrades:
@@ -50,7 +50,7 @@ ops:
           schema:
             table:
               name: pgfinalgrades
-            where: "transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
   storedgrades:
@@ -62,6 +62,6 @@ ops:
           schema:
             table:
               name: storedgrades
-            where: "transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')"
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
