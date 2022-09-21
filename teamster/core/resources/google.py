@@ -22,10 +22,9 @@ class GCSFileManager(GCSFileManager):
         blobs = self._client.list_blobs(
             bucket_or_name=self._gcs_bucket, prefix=self._gcs_base_key
         )
-        blob_match = [b for b in blobs if b.name == gcs_key]
-        self.log.debug(blob_match)
+        self.log.debug(list(blobs))
 
-        return True if blob_match else False
+        return True if [b for b in blobs if b.name == gcs_key] else False
 
     def download_as_bytes(self, file_handle):
         bucket_obj = self._client.bucket(file_handle.gcs_bucket)
