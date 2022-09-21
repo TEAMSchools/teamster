@@ -1,4 +1,4 @@
-from dagster import Any, Int, List, Out, Output, String, op
+from dagster import Any, Int, List, Out, Output, RetryPolicy, String, op
 
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
@@ -13,6 +13,7 @@ from teamster.core.utils.variables import TODAY
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
+    retry_policy=RetryPolicy(max_retries=2)
     # tags={"dagster/priority": 2},
 )
 def extract(context):
