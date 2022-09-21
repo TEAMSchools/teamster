@@ -56,7 +56,7 @@ def extract(context):
                     file_handle = context.resources.file_manager.write(
                         file_obj=f,
                         key=f"{file_manager_key}/{fp.stem}",
-                        ext=fp.suffix,
+                        ext=fp.suffix[1:],
                     )
 
                 context.log.info(f"Saved to {file_handle.path_desc}")
