@@ -62,7 +62,7 @@ class SqlAlchemyEngine(object):
             partitions = result_stg.partitions(size=PARTITION_SIZE)
 
             if output_fmt == "file":
-                with Pool(4) as p:
+                with Pool(2) as p:
                     output_obj = p.map(self._retrieve_partition_rows, partitions)
 
                 self.log.info(
