@@ -40,7 +40,7 @@ class SqlAlchemyEngine(object):
                 result_stg = result
 
             partitions = result_stg.partitions(size=partition_size)
-            if output_fmt == "files":
+            if output_fmt == "file":
                 tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
                 tmp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -50,17 +50,17 @@ class SqlAlchemyEngine(object):
                 for i, pt in enumerate(partitions):
                     self.log.debug(f"Retrieving rows from partition {i}")
 
+                    now_ts = str(datetime.now().timestamp())
+                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
+
                     data = [dict(row) for row in pt]
                     del pt
 
-                    now_ts = str(datetime.now().timestamp())
-                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
-                    self.log.debug(f"Saving to {tmp_file}")
+                    self.log.debug(f"Saving data to {tmp_file}")
                     with gzip.open(tmp_file, "wb") as gz:
                         gz.write(
                             json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
                         )
-
                     len_data += len(data)
                     del data
 
