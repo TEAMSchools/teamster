@@ -27,7 +27,8 @@ def extract(context):
         context.op_config["query"].whereclause.text = ""
     else:
         context.op_config["query"].whereclause.text.format(
-            today=TODAY.date().isoformat(), last_run=get_last_schedule_run(context)
+            today=TODAY.date().isoformat(),
+            last_run=get_last_schedule_run(context) or TODAY.isoformat(),
         )
 
     if context.resources.ssh.tunnel:

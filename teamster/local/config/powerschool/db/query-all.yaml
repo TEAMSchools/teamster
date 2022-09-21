@@ -4,6 +4,7 @@ execution:
       limits:
         cpu: 750m
         memory: 1.0Gi
+    max_concurrent: 60
 ops:
   attendance:
     config:
