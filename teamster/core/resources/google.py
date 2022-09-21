@@ -17,15 +17,12 @@ class GCSFileManager(GCSFileManager):
         key = check.opt_str_param(key, "key")
 
         gcs_key = self.get_full_key(key + (("." + ext) if ext is not None else ""))
-        self.log.debug(gcs_key)
-
         blobs = self._client.list_blobs(
             bucket_or_name=self._gcs_bucket,
             prefix=self._gcs_base_key + "/",
             delimiter="/",
         )
-
-        next(blobs, None)  # force list_blobs to make API call (lazy loading)
+        next(blobs, None)  # force list_blobs result to make API call (lazy loading)
         blob_prefixes = blobs.prefixes
 
         return True if gcs_key + "/" in blob_prefixes else False
