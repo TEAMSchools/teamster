@@ -1,5 +1,3 @@
-import uuid
-
 import dagster._check as check
 import google.auth
 import gspread
@@ -10,17 +8,24 @@ from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
 
 
 class GCSFileManager(GCSFileManager):
-    def __init__(self, client, gcs_bucket, gcs_base_key):
+    def __init__(self, logger, client, gcs_bucket, gcs_base_key):
+        self.log = logger
+
         super().__init__(client, gcs_bucket, gcs_base_key)
 
     def blob_exists(self, ext=None, key=None):
-        key = check.opt_str_param(key, "key", default=str(uuid.uuid4()))
+        key = check.opt_str_param(key, "key")
+
         gcs_key = self.get_full_key(key + (("." + ext) if ext is not None else ""))
+        self.log.debug(gcs_key)
 
         blobs = self._client.list_blobs(
             bucket_or_name=self._gcs_bucket, prefix=self._gcs_base_key
         )
-        return True if [b for b in blobs if b.name == gcs_key] else False
+        blob_match = [b for b in blobs if b.name == gcs_key]
+        self.log.debug(blob_match)
+
+        return True if blob_match else False
 
     def download_as_bytes(self, file_handle):
         bucket_obj = self._client.bucket(file_handle.gcs_bucket)
@@ -45,6 +50,7 @@ def gcs_file_manager(context):
     """
     gcs_client = _gcs_client_from_config(context.resource_config)
     return GCSFileManager(
+        logger=context.log,
         client=gcs_client,
         gcs_bucket=context.resource_config["gcs_bucket"],
         gcs_base_key=context.resource_config["gcs_prefix"],
