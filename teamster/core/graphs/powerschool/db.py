@@ -41,23 +41,23 @@ def construct_graph_config(config):
 
 
 @graph(config=construct_graph_config)
-def foo():
+def sync_table():
     extract()
 
 
 @graph
-def bar():
-    attendance = foo.alias("attendance")
+def sync_all():
+    attendance = sync_table.alias("attendance")
     attendance()
 
-    log = foo.alias("log")
+    log = sync_table.alias("log")
     log()
 
-    assignmentscore = foo.alias("assignmentscore")
+    assignmentscore = sync_table.alias("assignmentscore")
     assignmentscore()
 
-    pgfinalgrades = foo.alias("pgfinalgrades")
+    pgfinalgrades = sync_table.alias("pgfinalgrades")
     pgfinalgrades()
 
-    storedgrades = foo.alias("storedgrades")
+    storedgrades = sync_table.alias("storedgrades")
     storedgrades()

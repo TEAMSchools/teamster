@@ -3,12 +3,12 @@ from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.graphs.powerschool.db import bar
+from teamster.core.graphs.powerschool.db import sync_all
 from teamster.core.resources.google import gcs_file_manager
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
-powerschool_db_extract = bar.to_job(
+powerschool_db_extract = sync_all.to_job(
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
