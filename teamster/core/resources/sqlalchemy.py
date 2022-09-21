@@ -30,6 +30,7 @@ class SqlAlchemyEngine(object):
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
     def _retrieve_partition_rows(self, partition):
+        self.log.debug("Retrieving rows from parition")
         data = [dict(row) for row in partition]
         del partition
 
@@ -59,12 +60,14 @@ class SqlAlchemyEngine(object):
                 result_stg = result
 
             partitions = result_stg.partitions(size=PARTITION_SIZE)
-            len_partitions = len(partitions)
 
             if output_fmt == "file":
                 with Pool(4) as p:
                     output_obj = p.map(self._retrieve_partition_rows, partitions)
 
+                self.log.info(
+                    f"Retrieved approximately {len(output_obj) * PARTITION_SIZE} rows."
+                )
                 # len_data = 0
                 # output_obj = []
                 # for i, pt in enumerate(partitions):
@@ -90,7 +93,7 @@ class SqlAlchemyEngine(object):
 
                 # self.log.info(f"Retrieved {len_data} rows.")
             else:
-                self.log.debug(f"Retrieving rows from {len_partitions} partitions")
+                self.log.debug("Retrieving rows from all partitions")
                 pts_unpacked = [rows for pt in partitions for rows in pt]
                 output_obj = [dict(row) for row in pts_unpacked]
 
