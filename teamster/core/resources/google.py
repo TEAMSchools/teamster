@@ -17,9 +17,10 @@ class GCSFileManager(GCSFileManager):
         key = check.opt_str_param(key, "key", default=str(uuid.uuid4()))
         gcs_key = self.get_full_key(key + (("." + ext) if ext is not None else ""))
 
-        bucket_obj = self._client.bucket(self._gcs_bucket)
-        blob = bucket_obj.get_blob(gcs_key)
-        return blob is not None
+        blobs = self._client.list_blobs(
+            bucket_or_name=self._gcs_bucket, prefix=self._gcs_base_key
+        )
+        return True if [b for b in blobs if b.name == gcs_key] else False
 
     def download_as_bytes(self, file_handle):
         bucket_obj = self._client.bucket(file_handle.gcs_bucket)

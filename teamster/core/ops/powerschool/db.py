@@ -21,7 +21,7 @@ def extract(context):
     if context.op_config[
         "destination_type"
     ] == "file" and not context.resources.file_manager.blob_exists(
-        key=file_manager_key
+        key=file_manager_key + "/"
     ):
         context.log.info(f"Running initial sync of {file_manager_key}")
         context.op_config["query"].whereclause.text = ""
