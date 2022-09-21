@@ -26,29 +26,4 @@ powerschool_db_extract = sync_all.to_job(
     ),
 )
 
-# powerschool_db_resync = generate_queries.to_job(
-#     name="powerschool_db_resync",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": oracle,
-#         "ssh": ssh_resource,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "./teamster/core/config/google/resource.yaml",
-#             "./teamster/core/config/powerschool/db/resource.yaml",
-#             "./teamster/local/config/powerschool/db/query-resync.yaml",
-#             "./teamster/local/config/powerschool/db/query-resync-log.yaml",
-#             "./teamster/local/config/powerschool/db/query-resync-attendance.yaml",
-#             "./teamster/local/config/powerschool/db/query-resync-storedgrades.yaml",
-#             "./teamster/local/config/powerschool/db/query-resync-pgfinalgrades.yaml",
-#             "./teamster/local/config/powerschool/db/query-resync-assignmentscore.yaml",
-#         ]
-#     ),
-#     tags={"dagster/retry_strategy": "ALL_STEPS"},
-# )
-
 __all__ = ["powerschool_db_extract"]

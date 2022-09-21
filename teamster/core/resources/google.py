@@ -1,3 +1,6 @@
+import uuid
+
+import dagster._check as check
 import google.auth
 import gspread
 from dagster import Field, String, StringSource, resource
@@ -9,6 +12,15 @@ from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
 class GCSFileManager(GCSFileManager):
     def __init__(self, client, gcs_bucket, gcs_base_key):
         super().__init__(client, gcs_bucket, gcs_base_key)
+
+    def blob_exists(self, ext=None, key=None):
+        key = check.opt_str_param(key, "key", default=str(uuid.uuid4()))
+        gcs_key = self.get_full_key(key + (("." + ext) if ext is not None else ""))
+
+        bucket_obj = self._client.bucket(self._gcs_bucket)
+        blob = bucket_obj.blob(gcs_key)
+
+        return blob.exists()
 
     def download_as_bytes(self, file_handle):
         bucket_obj = self._client.bucket(file_handle.gcs_bucket)
