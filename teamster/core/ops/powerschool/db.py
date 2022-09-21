@@ -11,6 +11,7 @@ from dagster import (
 )
 
 from teamster.core.utils.functions import get_last_schedule_run
+from teamster.core.utils.variables import TODAY
 
 
 @op(
@@ -37,7 +38,7 @@ def extract(context):
             context.op_config["query"].whereclause.text = ""
         else:
             context.op_config["query"].whereclause.text.format(
-                last_run=get_last_schedule_run(context)
+                today=TODAY.date().isoformat(), last_run=get_last_schedule_run(context)
             )
 
         if context.resources.ssh.tunnel:

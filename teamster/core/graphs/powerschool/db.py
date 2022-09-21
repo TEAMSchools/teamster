@@ -5,7 +5,6 @@ from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.config.powerschool.db.schema import PS_DB_CONFIG
 from teamster.core.ops.powerschool.db import extract
-from teamster.core.utils.variables import TODAY
 
 
 @config_mapping(config_schema=PS_DB_CONFIG)
@@ -21,11 +20,10 @@ def construct_graph_config(config):
         with query_file.open(mode="r") as f:
             query = text(f.read())
     elif sql_key == "schema":
-        where_fmt = sql_value.get("where", "").format(today=TODAY.date().isoformat())
         query = (
             select(*[literal_column(col) for col in sql_value["select"]])
             .select_from(table(**sql_value["table"]))
-            .where(text(where_fmt))
+            .where(text(sql_value.get("where", "")))
         )
 
     return {
