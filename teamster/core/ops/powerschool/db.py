@@ -13,7 +13,7 @@ from teamster.core.utils.variables import TODAY
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
-    tags={"dagster/priority": 2},
+    # tags={"dagster/priority": 2},
 )
 def extract(context):
     file_manager_key = context.solid_handle.path[0]

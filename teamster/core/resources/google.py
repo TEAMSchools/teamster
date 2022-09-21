@@ -19,10 +19,16 @@ class GCSFileManager(GCSFileManager):
         gcs_key = self.get_full_key(key + (("." + ext) if ext is not None else ""))
         self.log.debug(gcs_key)
 
-        blobs = self._client.list_blobs(bucket_or_name=self._gcs_bucket)
-        self.log.debug(list(blobs))
+        blobs = self._client.list_blobs(
+            bucket_or_name=self._gcs_bucket,
+            prefix=self._gcs_base_key + "/",
+            delimiter="/",
+        )
 
-        return True if [b for b in blobs if b.name == gcs_key] else False
+        next(blobs, None)  # force list_blobs to make API call (lazy loading)
+        blob_prefixes = blobs.prefixes
+
+        return True if gcs_key + "/" in blob_prefixes else False
 
     def download_as_bytes(self, file_handle):
         bucket_obj = self._client.bucket(file_handle.gcs_bucket)
