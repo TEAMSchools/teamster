@@ -17,20 +17,21 @@ from teamster.core.utils.variables import TODAY
     tags={"dagster/priority": 1},
 )
 def extract(context):
+    query = context.op_config["query"]
+    destination_type = context.op_config["destination_type"]
     file_manager_key = context.solid_handle.path[0]
 
-    if context.op_config[
-        "destination_type"
-    ] == "file" and not context.resources.file_manager.blob_exists(
+    if destination_type == "file" and not context.resources.file_manager.blob_exists(
         key=file_manager_key
     ):
         context.log.info(f"Running initial sync of {file_manager_key}")
-        context.op_config["query"].whereclause.text = ""
+        query.whereclause.text = ""
     else:
-        context.op_config["query"].whereclause.text.format(
+        whereclause_fmt = query.whereclause.text.format(
             today=TODAY.date().isoformat(),
             last_run=get_last_schedule_run(context) or TODAY.isoformat(),
         )
+        query.whereclause.text = whereclause_fmt
 
     if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel")
@@ -40,7 +41,7 @@ def extract(context):
         ssh_tunnel = None
 
     data = context.resources.db.execute_query(
-        query=context.op_config["query"],
+        query=query,
         partition_size=context.op_config["partition_size"],
         output_fmt=context.op_config["output_fmt"],
     )
@@ -50,7 +51,7 @@ def extract(context):
         ssh_tunnel.stop()
 
     if data:
-        if context.op_config["destination_type"] == "file":
+        if destination_type == "file":
             file_handles = []
             for fp in data:
                 with fp.open(mode="rb") as f:
