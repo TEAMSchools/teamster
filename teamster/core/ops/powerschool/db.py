@@ -39,7 +39,7 @@ def extract(context):
             for fp in data:
                 with fp.open(mode="rb") as f:
                     file_handle = context.resources.file_manager.write(
-                        file_obj=f, key=fp.stem, ext=fp.suffix
+                        file_obj=f, key=f"{context.job_name}/{fp.stem}", ext=fp.suffix
                     )
 
                 context.log.info(f"Saved to {file_handle.path_desc}.")

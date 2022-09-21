@@ -18,11 +18,12 @@ sys.modules["cx_Oracle"] = oracledb
 
 class SqlAlchemyEngine(object):
     def __init__(self, dialect, driver, logger, **kwargs):
+        self.log = logger
+
         engine_keys = ["arraysize", "connect_args"]
         engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
         url_kwargs = {k: v for k, v in kwargs.items() if k not in engine_keys}
 
-        self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
