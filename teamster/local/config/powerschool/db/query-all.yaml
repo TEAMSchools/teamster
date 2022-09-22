@@ -6,41 +6,189 @@ execution:
         memory: 1.0Gi
     max_concurrent: 60
 ops:
-  attendance:
+  # no filter
+  attendance_code:
     config:
       destination:
         type: file
       query:
+        output_fmt: file
+        partition_size: 100000
         sql:
           schema:
             table:
-              name: attendance
-            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+              name: attendance_code
+  attendance_conversion_items:
+    config:
+      destination:
+        type: file
+      query:
         output_fmt: file
         partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: attendance_conversion_items
+  bell_schedule:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: bell_schedule
+  calendar_day:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: calendar_day
+  cycle_day:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: cycle_day
+  fte:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: fte
+  gen:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gen
+  period:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: period
+  reenrollments:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: reenrollments
+  spenrollments:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: spenrollments
+  test:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: test
+  testscore:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: testscore
+  # table-specific filter
   log:
     config:
       destination:
         type: file
       query:
+        output_fmt: file
+        partition_size: 100000
         sql:
           schema:
             table:
               name: log
-        output_fmt: file
-        partition_size: 100000
-  assignmentscore:
+            where: entry_date >= TO_TIMESTAMP_TZ('{today}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # transaction_date
+  attendance:
     config:
       destination:
         type: file
       query:
+        output_fmt: file
+        partition_size: 100000
         sql:
           schema:
             table:
-              name: assignmentscore
-            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+              name: attendance
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  cc:
+    config:
+      destination:
+        type: file
+      query:
         output_fmt: file
         partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: cc
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  courses:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: courses
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   pgfinalgrades:
     config:
       destination:
@@ -53,6 +201,18 @@ ops:
             where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
+  prefs:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: prefs
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   storedgrades:
     config:
       destination:
@@ -65,3 +225,520 @@ ops:
             where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
+  sections:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: sections
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  schools:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: schools
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  students:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: students
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  termbins:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: termbins
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  terms:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: terms
+            where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # whenmodified
+  assignmentscore:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentcategoryassoc:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: assignmentcategoryassoc
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  assignmentsection:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: assignmentsection
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  codeset:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: codeset
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  districtteachercategory:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: districtteachercategory
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  emailaddress:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: emailaddress
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradecalcformulaweight:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradecalcformulaweight
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradecalcschoolassoc:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradecalcschoolassoc
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradecalculationtype:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradecalculationtype
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradeformulaset:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradeformulaset
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradescaleitem:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradescaleitem
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradeschoolconfig:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradeschoolconfig
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradeschoolformulaassoc:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradeschoolformulaassoc
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradesectionconfig:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: gradesectionconfig
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  originalcontactmap:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: originalcontactmap
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  person:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: person
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personaddress:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: personaddress
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personaddressassoc:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: personaddressassoc
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personemailaddressassoc:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: personemailaddressassoc
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personphonenumberassoc:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: personphonenumberassoc
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  phonenumber:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: phonenumber
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  roledef:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: roledef
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  s_nj_crs_x:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: s_nj_crs_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  s_nj_ren_x:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: s_nj_ren_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  s_nj_stu_x:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: s_nj_stu_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  s_nj_usr_x:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: s_nj_usr_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  schoolstaff:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: schoolstaff
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  sectionteacher:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: sectionteacher
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentcontactassoc:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: studentcontactassoc
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentcontactdetail:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: studentcontactdetail
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentcorefields:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: studentcorefields
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentrace:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: studentrace
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  teachercategory:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: teachercategory
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_clg_et_stu:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: u_clg_et_stu
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_clg_et_stu_alt:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: u_clg_et_stu_alt
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_def_ext_students:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: u_def_ext_students
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_studentsuserfields:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: u_studentsuserfields
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  users:
+    config:
+      destination:
+        type: file
+      query:
+        output_fmt: file
+        partition_size: 100000
+        sql:
+          schema:
+            table:
+              name: users
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')

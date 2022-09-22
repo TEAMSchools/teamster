@@ -1,5 +1,5 @@
 ops:
-  bell_schedule:
+  test:
     config:
       destination:
         type: file
@@ -7,15 +7,5 @@ ops:
         sql:
           schema:
             table:
-              name: bell_schedule
-        output_fmt: file
-  calendar_day:
-    config:
-      destination:
-        type: file
-      query:
-        sql:
-          schema:
-            table:
-              name: calendar_day
+              name: dual
         output_fmt: file
