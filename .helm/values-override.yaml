@@ -14,17 +14,17 @@ dagsterCloud:
 
 workspace:
   serverTTL:
-    # fullDeployments:
-    #   enabled: true
-    #   ttlSeconds: 1800 # 30 min
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 900 # 15 min
     branchDeployments:
-      ttlSeconds: 1800 # 30 min
-  resources:
-    limits:
-      cpu: "250m"
-      memory: "512Mi"
-      ephemeral-storage: "10Gi"
-    requests:
-      cpu: "250m"
-      memory: "512Mi"
-      ephemeral-storage: "10Gi"
+      ttlSeconds: 900 # 15 min
+  # resources:
+  #   limits:
+  #     cpu: "250m"
+  #     memory: "512Mi"
+  #     ephemeral-storage: "10Gi"
+  #   requests:
+  #     cpu: "250m"
+  #     memory: "512Mi"
+  #     ephemeral-storage: "10Gi"
