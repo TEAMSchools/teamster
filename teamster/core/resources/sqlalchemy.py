@@ -27,10 +27,10 @@ class SqlAlchemyEngine(object):
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
-    def execute_query(self, query, partition_size, output_fmt):
+    def execute_query(self, query, partition_size, output_fmt, connect_kwargs={}):
         self.log.info(f"Executing query:\n{query}")
 
-        with self.engine.connect() as conn:
+        with self.engine.connect(**connect_kwargs) as conn:
             with time_limit(seconds=60):
                 result = conn.execute(statement=query)
 
