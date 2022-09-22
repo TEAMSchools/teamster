@@ -55,9 +55,6 @@ def sync_all():
     assignmentcategoryassoc = sync_table.alias("assignmentcategoryassoc")
     assignmentcategoryassoc()
 
-    assignmentscore = sync_table.alias("assignmentscore")
-    assignmentscore()
-
     assignmentsection = sync_table.alias("assignmentsection")
     assignmentsection()
 
@@ -237,3 +234,24 @@ def sync_all():
 
     users = sync_table.alias("users")
     users()
+
+    assignmentscore_01 = sync_table.alias("assignmentscore_01")
+    assignmentscore_01()
+    assignmentscore_02 = sync_table.alias("assignmentscore_02")
+    assignmentscore_02()
+    assignmentscore_03 = sync_table.alias("assignmentscore_03")
+    assignmentscore_03()
+    assignmentscore_04 = sync_table.alias("assignmentscore_04")
+    assignmentscore_04()
+    assignmentscore_05 = sync_table.alias("assignmentscore_05")
+    assignmentscore_05()
+    assignmentscore_06 = sync_table.alias("assignmentscore_06")
+    assignmentscore_06()
+    assignmentscore_07 = sync_table.alias("assignmentscore_07")
+    assignmentscore_07()
+    assignmentscore_08 = sync_table.alias("assignmentscore_08")
+    assignmentscore_08()
+    assignmentscore_09 = sync_table.alias("assignmentscore_09")
+    assignmentscore_09()
+    assignmentscore_10 = sync_table.alias("assignmentscore_10")
+    assignmentscore_10()

@@ -19,13 +19,23 @@ from teamster.core.utils.variables import TODAY
 def extract(context):
     query = context.op_config["query"]
     destination_type = context.op_config["destination_type"]
-    file_manager_key = context.solid_handle.path[0]
+
+    if context.solid_handle.path[0][:-3] == "assignmentscore":
+        file_manager_key = "assignmentscore"
+    else:
+        file_manager_key = context.solid_handle.path[0]
 
     if destination_type == "file" and not context.resources.file_manager.blob_exists(
         key=file_manager_key
     ):
         context.log.info(f"Running initial sync of {file_manager_key}")
-        query.whereclause.text = ""
+        if file_manager_key == "assignmentscore":
+            query.whereclause.text = query.whereclause.text.replace(
+                " AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM')",
+                "",
+            )
+        else:
+            query.whereclause.text = ""
     else:
         whereclause_fmt = query.whereclause.text.format(
             today=TODAY.date().isoformat(),

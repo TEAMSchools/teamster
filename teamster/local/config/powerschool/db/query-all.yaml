@@ -286,18 +286,6 @@ ops:
               name: terms
             where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   # whenmodified
-  assignmentscore:
-    config:
-      destination:
-        type: file
-      query:
-        sql:
-          schema:
-            table:
-              name: assignmentscore
-            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
-        output_fmt: file
-        partition_size: 100000
   assignmentcategoryassoc:
     config:
       destination:
@@ -742,3 +730,124 @@ ops:
             table:
               name: users
             where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # assignmentscore
+  assignmentscore_01:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 0 AND 999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_02:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 1000000 AND 1999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_03:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 2000000 AND 2999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_04:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 3000000 AND 3999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_05:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 4000000 AND 4999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_06:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 5000000 AND 5999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_07:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscoreid BETWEEN 6000000 AND 6999999 AND assignmentscore
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_08:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 7000000 AND 7999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_09:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 8000000 AND 8999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
+  assignmentscore_10:
+    config:
+      destination:
+        type: file
+      query:
+        sql:
+          schema:
+            table:
+              name: assignmentscoreid BETWEEN 9000000 AND 9999999 AND assignmentscore
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+        output_fmt: file
+        partition_size: 100000
