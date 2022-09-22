@@ -33,7 +33,7 @@ def construct_graph_config(config):
                 "output_fmt": query_config["output_fmt"],
                 "partition_size": query_config["partition_size"],
                 "destination_type": destination_config["type"],
-                "connect_kwargs": {"disable_oob": True},
+                # "connect_kwargs": {"disable_oob": True},
             }
         }
     }
