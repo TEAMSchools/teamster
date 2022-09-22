@@ -811,8 +811,8 @@ ops:
         sql:
           schema:
             table:
-              name: assignmentscoreid BETWEEN 6000000 AND 6999999 AND assignmentscore
-            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 6000000 AND 6999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
   assignmentscore_08:
@@ -847,7 +847,7 @@ ops:
         sql:
           schema:
             table:
-              name: assignmentscoreid BETWEEN 9000000 AND 9999999 AND assignmentscore
-            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 9000000 AND 9999999 AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
         output_fmt: file
         partition_size: 100000
