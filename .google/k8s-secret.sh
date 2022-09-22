@@ -1,9 +1,9 @@
 #!/bin/bash
+
 if [[ -z ${1} ]]; then
 	echo "Usage: ${0} <instance_name>"
 	exit 1
 else
-	# trunk-ignore(shellcheck/SC2312)
 	kubectl create secret generic "${1}" \
 		--save-config \
 		--dry-run=client \
@@ -13,7 +13,6 @@ else
 		kubectl apply -f -
 
 	if [[ -d ./secrets/"${1}" ]]; then
-		# trunk-ignore(shellcheck/SC2312)
 		kubectl create secret generic "${1}"-ssh-keys \
 			--save-config \
 			--dry-run=client \
