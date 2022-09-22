@@ -19,8 +19,9 @@ plugins:
       ref: v0.0.4
       uri: https://github.com/trunk-io/plugins
 lint:
+  disabled:
+    - sqlfluff
   enabled:
-    - sqlfluff@1.3.1
     - actionlint@1.6.19
     - black@22.8.0
     - flake8@5.0.4
@@ -32,4 +33,14 @@ lint:
     - prettier@2.7.1
     - shellcheck@0.8.0
     - shfmt@3.5.0
-    - taplo@release-taplo-cli-0.7.0
+    - taplo@release-cli-0.6.0
+    - sql-formatter@10.7.1
+  definitions:
+    - name: sql-formatter
+      commands:
+        - output: rewrite
+          success_codes:
+            - 0
+          formatter: true
+          run: sql-formatter --config .trunk/config/sql-formatter.json
+          stdin: true
