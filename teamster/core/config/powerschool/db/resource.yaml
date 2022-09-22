@@ -12,6 +12,8 @@ resources:
         env: PS_DB_PASSWORD
       version:
         env: PS_DB_VERSION
+      prefetchrows: 100000
+      arraysize: 100000
   ssh:
     config:
       remote_host:
@@ -22,6 +24,13 @@ resources:
         env: PS_SSH_USERNAME
       password:
         env: PS_SSH_PASSWORD
+      tunnel:
+        remote_bind_port:
+          env: PS_SSH_REMOTE_BIND_PORT
+        remote_bind_host:
+          env: PS_SSH_REMOTE_BIND_HOST
+        local_bind_port:
+          env: PS_DB_PORT
   file_manager:
     config:
       gcs_prefix: powerschool
