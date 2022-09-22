@@ -8,8 +8,8 @@ from teamster.core.resources.google import gcs_file_manager, google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 
 
-@resource()
-def dummy_ssh_resource(context):
+@resource
+def dummy_ssh_resource():
     return object
 
 
@@ -31,6 +31,7 @@ datagun_etl_sftp = run_queries.to_job(
             "./teamster/core/config/datagun/query-sftp-test.yaml",
         ]
     ),
+    tags={"dagster/retry_strategy": "ALL_STEPS", "dagster/max_retries": 3},
 )
 
 datagun_etl_gsheets = run_queries.to_job(
@@ -51,6 +52,7 @@ datagun_etl_gsheets = run_queries.to_job(
             "./teamster/core/config/datagun/query-gsheets-test.yaml",
         ]
     ),
+    tags={"dagster/retry_strategy": "ALL_STEPS", "dagster/max_retries": 3},
 )
 
 __all__ = ["datagun_etl_sftp", "datagun_etl_gsheets"]

@@ -2,6 +2,11 @@ name: kipptaf - Hybrid Prod Deployment
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Build teamster-deps
+    types:
+      - completed
   push:
     branches:
       - kipptaf
@@ -10,8 +15,6 @@ on:
       - ".github/workflows/deploy-kipptaf.yaml"
       - ".dagster/dagster-cloud-kipptaf.yaml"
       - "Dockerfile"
-      - ".dockerignore"
-      - "pdm.lock"
 
 concurrency:
   # Cancel in-progress runs on same branch

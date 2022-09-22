@@ -2,6 +2,11 @@ name: ${INSTANCE_NAME} - Hybrid Prod Deployment
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Build teamster-deps
+    types:
+      - completed
   push:
     branches:
       - ${INSTANCE_NAME}
@@ -10,8 +15,6 @@ on:
       - ".github/workflows/deploy-${INSTANCE_NAME}.yaml"
       - ".dagster/dagster-cloud-${INSTANCE_NAME}.yaml"
       - "Dockerfile"
-      - ".dockerignore"
-      - "pdm.lock"
 
 concurrency:
   # Cancel in-progress runs on same branch

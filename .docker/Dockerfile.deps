@@ -1,0 +1,10 @@
+# trunk-ignore(hadolint/DL3007)
+FROM us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core:latest
+
+# copy project into container
+WORKDIR $HOME/app
+COPY ../pdm.lock ../pyproject.toml ./
+
+# # install project dependencies
+RUN pdm config python.use_venv False \
+    && pdm install --prod --no-lock --no-editable
