@@ -1,4 +1,4 @@
-from dagster import Any, Int, List, Out, Output, String, op
+from dagster import Any, Int, List, Out, Output, Permissive, String, op
 
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
@@ -10,6 +10,7 @@ from teamster.core.utils.variables import TODAY
         "output_fmt": String,
         "partition_size": Int,
         "destination_type": String,
+        "connect_kwargs": Permissive(),
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
@@ -43,6 +44,7 @@ def extract(context):
         query=query,
         partition_size=context.op_config["partition_size"],
         output_fmt=context.op_config["output_fmt"],
+        connect_kwargs=context.op_config["connect_kwargs"],
     )
 
     if ssh_tunnel is not None:
