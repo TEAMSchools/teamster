@@ -33,7 +33,6 @@ def construct_graph_config(config):
                 "output_fmt": query_config["output_fmt"],
                 "partition_size": query_config["partition_size"],
                 "destination_type": destination_config["type"],
-                # "connect_kwargs": {"disable_oob": True},
             }
         }
     }
@@ -160,18 +159,6 @@ def sync_all():
     roledef = sync_table.alias("roledef")
     roledef()
 
-    s_nj_crs_x = sync_table.alias("s_nj_crs_x")
-    s_nj_crs_x()
-
-    s_nj_ren_x = sync_table.alias("s_nj_ren_x")
-    s_nj_ren_x()
-
-    s_nj_stu_x = sync_table.alias("s_nj_stu_x")
-    s_nj_stu_x()
-
-    s_nj_usr_x = sync_table.alias("s_nj_usr_x")
-    s_nj_usr_x()
-
     schools = sync_table.alias("schools")
     schools()
 
@@ -220,38 +207,53 @@ def sync_all():
     testscore = sync_table.alias("testscore")
     testscore()
 
-    u_clg_et_stu = sync_table.alias("u_clg_et_stu")
-    u_clg_et_stu_alt = sync_table.alias("u_clg_et_stu_alt")
-    u_clg_et_stu_alt()
-
-    u_clg_et_stu()
-
-    u_def_ext_students = sync_table.alias("u_def_ext_students")
-    u_def_ext_students()
-
-    u_studentsuserfields = sync_table.alias("u_studentsuserfields")
-    u_studentsuserfields()
-
     users = sync_table.alias("users")
     users()
 
-    assignmentscore_01 = sync_table.alias("assignmentscore_01")
-    assignmentscore_01()
-    assignmentscore_02 = sync_table.alias("assignmentscore_02")
-    assignmentscore_02()
-    assignmentscore_03 = sync_table.alias("assignmentscore_03")
-    assignmentscore_03()
-    assignmentscore_04 = sync_table.alias("assignmentscore_04")
-    assignmentscore_04()
-    assignmentscore_05 = sync_table.alias("assignmentscore_05")
-    assignmentscore_05()
-    assignmentscore_06 = sync_table.alias("assignmentscore_06")
-    assignmentscore_06()
-    assignmentscore_07 = sync_table.alias("assignmentscore_07")
-    assignmentscore_07()
-    assignmentscore_08 = sync_table.alias("assignmentscore_08")
-    assignmentscore_08()
-    assignmentscore_09 = sync_table.alias("assignmentscore_09")
-    assignmentscore_09()
-    assignmentscore_10 = sync_table.alias("assignmentscore_10")
-    assignmentscore_10()
+    assignmentscore = sync_table.alias("assignmentscore")
+    assignmentscore()
+    assignmentscore_R01 = sync_table.alias("assignmentscore_R01")
+    assignmentscore_R01()
+    assignmentscore_R02 = sync_table.alias("assignmentscore_R02")
+    assignmentscore_R02()
+    assignmentscore_R03 = sync_table.alias("assignmentscore_R03")
+    assignmentscore_R03()
+    assignmentscore_R04 = sync_table.alias("assignmentscore_R04")
+    assignmentscore_R04()
+    assignmentscore_R05 = sync_table.alias("assignmentscore_R05")
+    assignmentscore_R05()
+    assignmentscore_R06 = sync_table.alias("assignmentscore_R06")
+    assignmentscore_R06()
+    assignmentscore_R07 = sync_table.alias("assignmentscore_R07")
+    assignmentscore_R07()
+    assignmentscore_R08 = sync_table.alias("assignmentscore_R08")
+    assignmentscore_R08()
+    assignmentscore_R09 = sync_table.alias("assignmentscore_R09")
+    assignmentscore_R09()
+    assignmentscore_R10 = sync_table.alias("assignmentscore_R10")
+    assignmentscore_R10()
+
+    # # extensions
+    # s_nj_crs_x = sync_table.alias("s_nj_crs_x")
+    # s_nj_crs_x()
+
+    # s_nj_ren_x = sync_table.alias("s_nj_ren_x")
+    # s_nj_ren_x()
+
+    # s_nj_stu_x = sync_table.alias("s_nj_stu_x")
+    # s_nj_stu_x()
+
+    # s_nj_usr_x = sync_table.alias("s_nj_usr_x")
+    # s_nj_usr_x()
+
+    # u_clg_et_stu = sync_table.alias("u_clg_et_stu")
+    # u_clg_et_stu()
+
+    # u_clg_et_stu_alt = sync_table.alias("u_clg_et_stu_alt")
+    # u_clg_et_stu_alt()
+
+    # u_def_ext_students = sync_table.alias("u_def_ext_students")
+    # u_def_ext_students()
+
+    # u_studentsuserfields = sync_table.alias("u_studentsuserfields")
+    # u_studentsuserfields()

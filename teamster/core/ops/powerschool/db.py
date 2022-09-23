@@ -1,3 +1,5 @@
+import re
+
 from dagster import Any, Int, List, Out, Output, Permissive, String, op
 
 from teamster.core.utils.functions import get_last_schedule_run
@@ -19,29 +21,35 @@ from teamster.core.utils.variables import TODAY
 def extract(context):
     query = context.op_config["query"]
     destination_type = context.op_config["destination_type"]
+    file_manager_key = context.solid_handle.path[0]
 
-    if context.solid_handle.path[0][:-3] == "assignmentscore":
-        file_manager_key = "assignmentscore"
-    else:
-        file_manager_key = context.solid_handle.path[0]
+    # parse standard/resync query type
+    re_match = re.match(r"([\w_]+)(_[RS]\d+)", file_manager_key)
+    if re_match is not None:
+        table_name, query_type = re_match.groups()
+        file_manager_key = f"{table_name}/{query_type}"
 
+    where_clause = query.whereclause.text
     if destination_type == "file" and not context.resources.file_manager.blob_exists(
         key=file_manager_key
     ):
         context.log.info(f"Running initial sync of {file_manager_key}")
-        if file_manager_key == "assignmentscore":
-            query.whereclause.text = query.whereclause.text.replace(
-                " AND whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM')",
-                "",
-            )
+        if re_match:
+            # skip standard query on initial run
+            if query_type[0] == "S":
+                return Output(value=[], output_name="data")
+            # skip resync queries on subsequent runs
+            elif query_type[0] == "R":
+                pass
         else:
             query.whereclause.text = ""
     else:
-        whereclause_fmt = query.whereclause.text.format(
+        # subsequent runs
+        where_clause_fmt = where_clause.format(
             today=TODAY.date().isoformat(),
             last_run=get_last_schedule_run(context) or TODAY.isoformat(),
         )
-        query.whereclause.text = whereclause_fmt
+        query.whereclause.text = where_clause_fmt
 
     if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel")
