@@ -29,26 +29,42 @@ def extract(context):
         table_name, query_type = re_match.groups()
         file_manager_key = f"{table_name}/{query_type}"
 
-    where_clause = query.whereclause.text
-    if destination_type == "file" and not context.resources.file_manager.blob_exists(
-        key=file_manager_key
-    ):
+    if not context.resources.file_manager.blob_exists(key=file_manager_key):
+        # initial run
         context.log.info(f"Running initial sync of {file_manager_key}")
-        if re_match:
-            # skip standard query on initial run
-            if query_type[0] == "S":
-                return Output(value=[], output_name="data")
-            # skip resync queries on subsequent runs
-            elif query_type[0] == "R":
-                pass
+        if destination_type == "file":
+            if re_match is not None:
+                if query_type[0] == "S":
+                    # skip standard query
+                    return Output(value=[], output_name="data")
+                else:
+                    # run resync query as is
+                    pass
+            else:
+                # drop where clause
+                query.whereclause.text = ""
         else:
-            query.whereclause.text = ""
+            query.whereclause.text = query.whereclause.text.format(
+                today=TODAY.date().isoformat(),
+                last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+            )
     else:
         # subsequent runs
-        query.whereclause.text = where_clause.format(
-            today=TODAY.date().isoformat(),
-            last_run=get_last_schedule_run(context) or TODAY.isoformat(),
-        )
+        if destination_type == "file":
+            if re_match is not None:
+                # skip resync query
+                if query_type[0] == "R":
+                    return Output(value=[], output_name="data")
+            else:
+                query.whereclause.text = query.whereclause.text.format(
+                    today=TODAY.date().isoformat(),
+                    last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+                )
+        else:
+            query.whereclause.text = query.whereclause.text.format(
+                today=TODAY.date().isoformat(),
+                last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+            )
 
     if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel")
