@@ -10,7 +10,6 @@ from teamster.core.ops.powerschool.db import extract
 @config_mapping(config_schema=PS_DB_CONFIG)
 def construct_graph_config(config):
     query_config = config["query"]
-    destination_config = config["destination"]
 
     [(sql_key, sql_value)] = query_config["sql"].items()
     if sql_key == "text":
@@ -30,9 +29,7 @@ def construct_graph_config(config):
         "extract": {
             "config": {
                 "query": query,
-                "output_fmt": query_config["output_fmt"],
                 "partition_size": query_config["partition_size"],
-                "destination_type": destination_config["type"],
             }
         }
     }
@@ -56,9 +53,6 @@ def sync_all():
 
     assignmentsection = sync_table.alias("assignmentsection")
     assignmentsection()
-
-    attendance = sync_table.alias("attendance")
-    attendance()
 
     attendance_code = sync_table.alias("attendance_code")
     attendance_code()
@@ -144,9 +138,6 @@ def sync_all():
     personphonenumberassoc = sync_table.alias("personphonenumberassoc")
     personphonenumberassoc()
 
-    pgfinalgrades = sync_table.alias("pgfinalgrades")
-    pgfinalgrades()
-
     phonenumber = sync_table.alias("phonenumber")
     phonenumber()
 
@@ -209,6 +200,26 @@ def sync_all():
 
     users = sync_table.alias("users")
     users()
+
+    pgfinalgrades_S01 = sync_table.alias("pgfinalgrades_S01")
+    pgfinalgrades_S01()
+    pgfinalgrades_R01 = sync_table.alias("pgfinalgrades_R01")
+    pgfinalgrades_R01()
+    pgfinalgrades_R02 = sync_table.alias("pgfinalgrades_R02")
+    pgfinalgrades_R02()
+    pgfinalgrades_R03 = sync_table.alias("pgfinalgrades_R03")
+    pgfinalgrades_R03()
+
+    attendance_S01 = sync_table.alias("attendance_S01")
+    attendance_S01()
+    attendance_R01 = sync_table.alias("attendance_R01")
+    attendance_R01()
+    attendance_R02 = sync_table.alias("attendance_R02")
+    attendance_R02()
+    attendance_R03 = sync_table.alias("attendance_R03")
+    attendance_R03()
+    attendance_R04 = sync_table.alias("attendance_R04")
+    attendance_R04()
 
     assignmentscore_S01 = sync_table.alias("assignmentscore_S01")
     assignmentscore_S01()

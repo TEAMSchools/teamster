@@ -1,6 +1,6 @@
 import re
 
-from dagster import Any, Int, List, Out, Output, Permissive, String, op
+from dagster import Any, Int, List, Out, Output, Permissive, op
 
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
@@ -8,10 +8,8 @@ from teamster.core.utils.variables import TODAY
 
 @op(
     config_schema={
-        "query": Any,
-        "output_fmt": String,
+        "sql": Any,
         "partition_size": Int,
-        "destination_type": String,
         "connect_kwargs": Permissive(),
     },
     out={"data": Out(dagster_type=List[Any], is_required=False)},
@@ -19,12 +17,11 @@ from teamster.core.utils.variables import TODAY
     tags={"dagster/priority": 1},
 )
 def extract(context):
-    query = context.op_config["query"]
-    destination_type = context.op_config["destination_type"]
+    sql = context.op_config["sql"]
     file_manager_key = context.solid_handle.path[0]
 
     # format where clause
-    query.whereclause.text = query.whereclause.text.format(
+    sql.whereclause.text = sql.whereclause.text.format(
         today=TODAY.date().isoformat(),
         last_run=get_last_schedule_run(context) or TODAY.isoformat(),
     )
@@ -35,24 +32,17 @@ def extract(context):
         table_name, query_type = re_match.groups()
         file_manager_key = f"{table_name}/{query_type}"
 
-    if not context.resources.file_manager.blob_exists(key=file_manager_key):
-        # initial run
-        context.log.info(f"Running initial sync of {file_manager_key}")
-        if destination_type == "file":
-            if re_match is not None:
-                if query_type[0] == "S":
-                    # skip standard query
-                    return Output(value=[], output_name="data")
-            else:
-                # drop where clause
-                query.whereclause.text = ""
+        if not context.resources.file_manager.blob_exists(key=file_manager_key):
+            context.log.info(f"Running initial sync of {file_manager_key}")
+        else:
+            # regular run--> skip resync query
+            if query_type[0] == "R":
+                return Output(value=[], output_name="data")
     else:
-        # subsequent runs
-        if destination_type == "file":
-            if re_match is not None:
-                # skip resync query
-                if query_type[0] == "R":
-                    return Output(value=[], output_name="data")
+        if not context.resources.file_manager.blob_exists(key=file_manager_key):
+            # initial run -> drop where clause
+            context.log.info(f"Running initial sync of {file_manager_key}")
+            sql.whereclause.text = ""
 
     if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel")
@@ -62,10 +52,10 @@ def extract(context):
         ssh_tunnel = None
 
     data = context.resources.db.execute_query(
-        query=query,
+        query=sql,
         partition_size=context.op_config["partition_size"],
-        output_fmt=context.op_config["output_fmt"],
         connect_kwargs=context.op_config["connect_kwargs"],
+        output_fmt="file",
     )
 
     if ssh_tunnel is not None:
@@ -73,19 +63,16 @@ def extract(context):
         ssh_tunnel.stop()
 
     if data:
-        if destination_type == "file":
-            file_handles = []
-            for fp in data:
-                with fp.open(mode="rb") as f:
-                    file_handle = context.resources.file_manager.write(
-                        file_obj=f,
-                        key=f"{file_manager_key}/{fp.stem}",
-                        ext=fp.suffix[1:],
-                    )
+        file_handles = []
+        for fp in data:
+            with fp.open(mode="rb") as f:
+                file_handle = context.resources.file_manager.write(
+                    file_obj=f,
+                    key=f"{file_manager_key}/{fp.stem}",
+                    ext=fp.suffix[1:],
+                )
 
-                context.log.info(f"Saved to {file_handle.path_desc}")
-                file_handles.append(file_handle)
+            context.log.info(f"Saved to {file_handle.path_desc}")
+            file_handles.append(file_handle)
 
-            yield Output(value=file_handles, output_name="data")
-        else:
-            yield Output(value=data, output_name="data")
+        yield Output(value=file_handles, output_name="data")

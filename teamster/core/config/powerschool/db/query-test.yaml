@@ -1,11 +1,7 @@
 ops:
   test:
     config:
-      destination:
-        type: file
-      query:
-        sql:
-          schema:
-            table:
-              name: dual
-        output_fmt: file
+      sql:
+        schema:
+          table:
+            name: dual

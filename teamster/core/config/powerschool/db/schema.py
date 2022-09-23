@@ -1,16 +1,4 @@
-from dagster import (
-    Array,
-    Enum,
-    EnumValue,
-    Field,
-    Int,
-    IntSource,
-    Permissive,
-    Selector,
-    Shape,
-    String,
-    StringSource,
-)
+from dagster import Array, Field, Int, IntSource, Selector, Shape, String, StringSource
 
 SSH_TUNNEL_CONFIG = Shape(
     {
@@ -20,10 +8,9 @@ SSH_TUNNEL_CONFIG = Shape(
     }
 )
 
-QUERY_CONFIG = Shape(
+PS_DB_CONFIG = Shape(
     {
         "ssh_tunnel": Field(SSH_TUNNEL_CONFIG, is_required=False),
-        "output_fmt": Field(String, is_required=False, default_value="dict"),
         "partition_size": Field(Int, is_required=False, default_value=10000),
         "sql": Selector(
             {
@@ -53,30 +40,3 @@ QUERY_CONFIG = Shape(
         ),
     }
 )
-
-DATA_FILE_CONFIG = Shape(
-    {
-        "stem": Field(String),
-        "suffix": Field(String),
-        "format": Field(Permissive(), is_required=False),
-    }
-)
-
-DESTINATION_CONFIG = Shape(
-    {
-        "type": Field(
-            Enum(
-                name="DestinationType",
-                enum_values=[EnumValue("sftp"), EnumValue("gsheet"), EnumValue("file")],
-            )
-        ),
-        "name": Field(String, is_required=False),
-        "path": Field(String, is_required=False),
-    }
-)
-
-PS_DB_CONFIG = {
-    "query": Field(QUERY_CONFIG),
-    "file": Field(DATA_FILE_CONFIG, is_required=False),
-    "destination": Field(DESTINATION_CONFIG),
-}
