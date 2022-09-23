@@ -23,6 +23,12 @@ def extract(context):
     destination_type = context.op_config["destination_type"]
     file_manager_key = context.solid_handle.path[0]
 
+    # format where clause
+    query.whereclause.text = query.whereclause.text.format(
+        today=TODAY.date().isoformat(),
+        last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+    )
+
     # parse standard/resync query type
     re_match = re.match(r"([\w_]+)_([RS]\d+)", file_manager_key)
     if re_match is not None:
@@ -37,17 +43,9 @@ def extract(context):
                 if query_type[0] == "S":
                     # skip standard query
                     return Output(value=[], output_name="data")
-                else:
-                    # run resync query as is
-                    pass
             else:
                 # drop where clause
                 query.whereclause.text = ""
-        else:
-            query.whereclause.text = query.whereclause.text.format(
-                today=TODAY.date().isoformat(),
-                last_run=get_last_schedule_run(context) or TODAY.isoformat(),
-            )
     else:
         # subsequent runs
         if destination_type == "file":
@@ -55,16 +53,6 @@ def extract(context):
                 # skip resync query
                 if query_type[0] == "R":
                     return Output(value=[], output_name="data")
-            else:
-                query.whereclause.text = query.whereclause.text.format(
-                    today=TODAY.date().isoformat(),
-                    last_run=get_last_schedule_run(context) or TODAY.isoformat(),
-                )
-        else:
-            query.whereclause.text = query.whereclause.text.format(
-                today=TODAY.date().isoformat(),
-                last_run=get_last_schedule_run(context) or TODAY.isoformat(),
-            )
 
     if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel")
