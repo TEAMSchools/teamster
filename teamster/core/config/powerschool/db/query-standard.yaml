@@ -635,7 +635,7 @@ ops:
               name: users
             where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   # assignmentscore
-  assignmentscore:
+  assignmentscore_S01:
     config:
       destination:
         type: file

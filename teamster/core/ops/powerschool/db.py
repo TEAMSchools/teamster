@@ -24,7 +24,7 @@ def extract(context):
     file_manager_key = context.solid_handle.path[0]
 
     # parse standard/resync query type
-    re_match = re.match(r"([\w_]+)(_[RS]\d+)", file_manager_key)
+    re_match = re.match(r"([\w_]+)_([RS]\d+)", file_manager_key)
     if re_match is not None:
         table_name, query_type = re_match.groups()
         file_manager_key = f"{table_name}/{query_type}"
@@ -45,11 +45,10 @@ def extract(context):
             query.whereclause.text = ""
     else:
         # subsequent runs
-        where_clause_fmt = where_clause.format(
+        query.whereclause.text = where_clause.format(
             today=TODAY.date().isoformat(),
             last_run=get_last_schedule_run(context) or TODAY.isoformat(),
         )
-        query.whereclause.text = where_clause_fmt
 
     if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel")

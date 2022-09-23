@@ -26,7 +26,7 @@ test_powerschool_db_sync = test_sync_all.to_job(
     ),
 )
 
-powerschool_db_sync = sync_all.to_job(
+powerschool_db_sync_standard = sync_all.to_job(
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
@@ -39,9 +39,9 @@ powerschool_db_sync = sync_all.to_job(
         [
             "./teamster/core/config/google/resource.yaml",
             "./teamster/core/config/powerschool/db/resource.yaml",
-            "./teamster/local/config/powerschool/db/query-all.yaml",
+            "./teamster/core/config/powerschool/db/query-standard.yaml",
         ]
     ),
 )
 
-__all__ = ["powerschool_db_sync", "test_powerschool_db_sync"]
+__all__ = ["powerschool_db_sync_standard", "test_powerschool_db_sync"]

@@ -210,8 +210,8 @@ def sync_all():
     users = sync_table.alias("users")
     users()
 
-    assignmentscore = sync_table.alias("assignmentscore")
-    assignmentscore()
+    assignmentscore_S01 = sync_table.alias("assignmentscore_S01")
+    assignmentscore_S01()
     assignmentscore_R01 = sync_table.alias("assignmentscore_R01")
     assignmentscore_R01()
     assignmentscore_R02 = sync_table.alias("assignmentscore_R02")
