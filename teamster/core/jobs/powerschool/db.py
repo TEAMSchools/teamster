@@ -9,6 +9,7 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
 test_powerschool_db_sync = test_sync_all.to_job(
+    name="test_powerschool_db_sync",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
@@ -27,6 +28,7 @@ test_powerschool_db_sync = test_sync_all.to_job(
 )
 
 powerschool_db_sync_standard = sync_all.to_job(
+    name="powerschool_db_sync_standard",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
