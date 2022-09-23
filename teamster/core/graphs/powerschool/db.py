@@ -9,17 +9,15 @@ from teamster.core.ops.powerschool.db import extract
 
 @config_mapping(config_schema=PS_DB_CONFIG)
 def construct_graph_config(config):
-    query_config = config["query"]
-
-    [(sql_key, sql_value)] = query_config["sql"].items()
+    [(sql_key, sql_value)] = config["sql"].items()
     if sql_key == "text":
-        query = text(sql_value)
+        sql = text(sql_value)
     elif sql_key == "file":
-        query_file = pathlib.Path(sql_value).absolute()
-        with query_file.open(mode="r") as f:
-            query = text(f.read())
+        sql_file = pathlib.Path(sql_value).absolute()
+        with sql_file.open(mode="r") as f:
+            sql = text(f.read())
     elif sql_key == "schema":
-        query = (
+        sql = (
             select(*[literal_column(col) for col in sql_value["select"]])
             .select_from(table(**sql_value["table"]))
             .where(text(sql_value.get("where", "")))
@@ -28,8 +26,8 @@ def construct_graph_config(config):
     return {
         "extract": {
             "config": {
-                "query": query,
-                "partition_size": query_config["partition_size"],
+                "sql": sql,
+                "partition_size": config["partition_size"],
             }
         }
     }
