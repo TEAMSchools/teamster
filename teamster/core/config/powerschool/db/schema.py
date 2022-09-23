@@ -11,7 +11,7 @@ SSH_TUNNEL_CONFIG = Shape(
 PS_DB_CONFIG = Shape(
     {
         "ssh_tunnel": Field(SSH_TUNNEL_CONFIG, is_required=False),
-        "partition_size": Field(Int, is_required=False, default_value=10000),
+        "partition_size": Field(Int, is_required=False, default_value=100000),
         "sql": Selector(
             {
                 "text": Field(String),

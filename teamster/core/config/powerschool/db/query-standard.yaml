@@ -4,89 +4,77 @@ execution:
       limits:
         cpu: 750m
         memory: 1.0Gi
-    max_concurrent: 50
+    max_concurrent: 30
 ops:
   # no filter
   attendance_code:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: attendance_code
   attendance_conversion_items:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: attendance_conversion_items
   bell_schedule:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: bell_schedule
   calendar_day:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: calendar_day
   cycle_day:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: cycle_day
   fte:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: fte
   gen:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: gen
   period:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: period
   reenrollments:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: reenrollments
   spenrollments:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: spenrollments
   test:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
             name: test
   testscore:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -94,7 +82,6 @@ ops:
   # table-specific filter
   log:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -103,7 +90,6 @@ ops:
   # transaction_date
   cc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -111,7 +97,6 @@ ops:
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   courses:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -119,7 +104,6 @@ ops:
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   prefs:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -132,10 +116,9 @@ ops:
           table:
             name: storedgrades
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
-      partition_size: 100000
+
   sections:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -143,7 +126,6 @@ ops:
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   schools:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -151,7 +133,6 @@ ops:
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   students:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -159,7 +140,6 @@ ops:
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   termbins:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -167,7 +147,6 @@ ops:
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   terms:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -176,7 +155,6 @@ ops:
   # whenmodified
   assignmentcategoryassoc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -184,7 +162,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   assignmentsection:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -192,7 +169,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   codeset:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -200,7 +176,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   districtteachercategory:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -208,7 +183,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   emailaddress:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -216,7 +190,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradecalcformulaweight:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -224,7 +197,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradecalcschoolassoc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -232,7 +204,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradecalculationtype:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -240,7 +211,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradeformulaset:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -248,7 +218,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradescaleitem:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -256,7 +225,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradeschoolconfig:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -264,7 +232,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradeschoolformulaassoc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -272,7 +239,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   gradesectionconfig:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -280,7 +246,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   originalcontactmap:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -288,7 +253,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   person:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -296,7 +260,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   personaddress:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -304,7 +267,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   personaddressassoc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -312,7 +274,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   personemailaddressassoc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -320,7 +281,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   personphonenumberassoc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -328,7 +288,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   phonenumber:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -336,7 +295,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   roledef:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -344,7 +302,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   schoolstaff:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -352,7 +309,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   sectionteacher:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -360,7 +316,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   studentcontactassoc:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -368,7 +323,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   studentcontactdetail:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -376,7 +330,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   studentcorefields:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -384,7 +337,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   studentrace:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -392,7 +344,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   teachercategory:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -400,7 +351,6 @@ ops:
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   users:
     config:
-      partition_size: 100000
       sql:
         schema:
           table:
@@ -414,7 +364,6 @@ ops:
           table:
             name: pgfinalgrades
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
-      partition_size: 100000
   pgfinalgrades_R01:
     config:
       sql:
@@ -422,7 +371,6 @@ ops:
           table:
             name: pgfinalgrades
           where: dcid BETWEEN 0 AND 999999
-      partition_size: 100000
   pgfinalgrades_R02:
     config:
       sql:
@@ -430,7 +378,6 @@ ops:
           table:
             name: pgfinalgrades
           where: dcid BETWEEN 1000000 AND 1999999
-      partition_size: 100000
   pgfinalgrades_R03:
     config:
       sql:
@@ -438,7 +385,6 @@ ops:
           table:
             name: pgfinalgrades
           where: dcid BETWEEN 2000000 AND 2999999
-      partition_size: 100000
   # attendance
   attendance_S01:
     config:
@@ -447,7 +393,6 @@ ops:
           table:
             name: attendance
           where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
-      partition_size: 100000
   attendance_R01:
     config:
       sql:
@@ -455,7 +400,6 @@ ops:
           table:
             name: attendance
           where: dcid BETWEEN 0 AND 999999
-      partition_size: 100000
   attendance_R02:
     config:
       sql:
@@ -463,7 +407,6 @@ ops:
           table:
             name: attendance
           where: dcid BETWEEN 1000000 AND 1999999
-      partition_size: 100000
   attendance_R03:
     config:
       sql:
@@ -471,7 +414,6 @@ ops:
           table:
             name: attendance
           where: dcid BETWEEN 2000000 AND 2999999
-      partition_size: 100000
   attendance_R04:
     config:
       sql:
@@ -479,7 +421,6 @@ ops:
           table:
             name: attendance
           where: dcid BETWEEN 3000000 AND 3999999
-      partition_size: 100000
   # assignmentscore
   assignmentscore_S01:
     config:
@@ -488,7 +429,6 @@ ops:
           table:
             name: assignmentscore
           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
-      partition_size: 100000
   assignmentscore_R01:
     config:
       sql:
@@ -496,7 +436,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 0 AND 999999
-      partition_size: 100000
   assignmentscore_R02:
     config:
       sql:
@@ -504,7 +443,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 1000000 AND 1999999
-      partition_size: 100000
   assignmentscore_R03:
     config:
       sql:
@@ -512,7 +450,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 2000000 AND 2999999
-      partition_size: 100000
   assignmentscore_R04:
     config:
       sql:
@@ -520,7 +457,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 3000000 AND 3999999
-      partition_size: 100000
   assignmentscore_R05:
     config:
       sql:
@@ -528,7 +464,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 4000000 AND 4999999
-      partition_size: 100000
   assignmentscore_R06:
     config:
       sql:
@@ -536,7 +471,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 5000000 AND 5999999
-      partition_size: 100000
   assignmentscore_R07:
     config:
       sql:
@@ -544,7 +478,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 6000000 AND 6999999
-      partition_size: 100000
   assignmentscore_R08:
     config:
       sql:
@@ -552,7 +485,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 7000000 AND 7999999
-      partition_size: 100000
   assignmentscore_R09:
     config:
       sql:
@@ -560,7 +492,6 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 8000000 AND 8999999
-      partition_size: 100000
   assignmentscore_R10:
     config:
       sql:
@@ -568,15 +499,11 @@ ops:
           table:
             name: assignmentscore
           where: assignmentscoreid BETWEEN 9000000 AND 9999999
-      partition_size: 100000
   # # extensions
   # s_nj_crs_x:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
@@ -586,9 +513,6 @@ ops:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
@@ -598,9 +522,6 @@ ops:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
@@ -610,9 +531,6 @@ ops:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
@@ -622,9 +540,6 @@ ops:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
@@ -634,9 +549,6 @@ ops:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
@@ -646,9 +558,6 @@ ops:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
@@ -658,9 +567,6 @@ ops:
   #   config:
   #     destination:
   #       type: file
-  #
-  #
-  #       partition_size: 100000
   #       sql:
   #         schema:
   #           table:
