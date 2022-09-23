@@ -163,3 +163,4 @@ cython_debug/
 history/
 .helm/values.yaml
 .dagster/stats/data
+teamster/dev/
