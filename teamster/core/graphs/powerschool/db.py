@@ -45,10 +45,7 @@ def test_sync_all():
 
 
 @graph
-def sync_all():
-    assignmentcategoryassoc = sync_table.alias("assignmentcategoryassoc")
-    assignmentcategoryassoc()
-
+def resync():
     assignmentsection = sync_table.alias("assignmentsection")
     assignmentsection()
 
@@ -63,9 +60,6 @@ def sync_all():
 
     calendar_day = sync_table.alias("calendar_day")
     calendar_day()
-
-    cc = sync_table.alias("cc")
-    cc()
 
     codeset = sync_table.alias("codeset")
     codeset()
@@ -111,9 +105,6 @@ def sync_all():
 
     gradesectionconfig = sync_table.alias("gradesectionconfig")
     gradesectionconfig()
-
-    log = sync_table.alias("log")
-    log()
 
     originalcontactmap = sync_table.alias("originalcontactmap")
     originalcontactmap()
@@ -163,8 +154,8 @@ def sync_all():
     spenrollments = sync_table.alias("spenrollments")
     spenrollments()
 
-    storedgrades = sync_table.alias("storedgrades")
-    storedgrades()
+    students = sync_table.alias("students")
+    students()
 
     studentcontactassoc = sync_table.alias("studentcontactassoc")
     studentcontactassoc()
@@ -177,9 +168,6 @@ def sync_all():
 
     studentrace = sync_table.alias("studentrace")
     studentrace()
-
-    students = sync_table.alias("students")
-    students()
 
     teachercategory = sync_table.alias("teachercategory")
     teachercategory()
@@ -199,8 +187,62 @@ def sync_all():
     users = sync_table.alias("users")
     users()
 
-    pgfinalgrades_S01 = sync_table.alias("pgfinalgrades_S01")
-    pgfinalgrades_S01()
+    # 100,000
+    assignmentcategoryassoc_R01 = sync_table.alias("assignmentcategoryassoc_R01")
+    assignmentcategoryassoc_R01()
+    assignmentcategoryassoc_R02 = sync_table.alias("assignmentcategoryassoc_R02")
+    assignmentcategoryassoc_R02()
+    assignmentcategoryassoc_R03 = sync_table.alias("assignmentcategoryassoc_R03")
+    assignmentcategoryassoc_R03()
+    assignmentcategoryassoc_R04 = sync_table.alias("assignmentcategoryassoc_R04")
+    assignmentcategoryassoc_R04()
+    assignmentcategoryassoc_R05 = sync_table.alias("assignmentcategoryassoc_R05")
+    assignmentcategoryassoc_R05()
+
+    cc_R01 = sync_table.alias("cc_R01")
+    cc_R01()
+    cc_R02 = sync_table.alias("cc_R02")
+    cc_R02()
+    cc_R03 = sync_table.alias("cc_R03")
+    cc_R03()
+    cc_R04 = sync_table.alias("cc_R04")
+    cc_R04()
+    cc_R05 = sync_table.alias("cc_R05")
+    cc_R05()
+    cc_R06 = sync_table.alias("cc_R06")
+    cc_R06()
+
+    log_R01 = sync_table.alias("log_R01")
+    log_R01()
+    log_R02 = sync_table.alias("log_R02")
+    log_R02()
+    log_R03 = sync_table.alias("log_R03")
+    log_R03()
+    log_R04 = sync_table.alias("log_R04")
+    log_R04()
+
+    storedgrades_R01 = sync_table.alias("storedgrades_R01")
+    storedgrades_R01()
+    storedgrades_R02 = sync_table.alias("storedgrades_R02")
+    storedgrades_R02()
+    storedgrades_R03 = sync_table.alias("storedgrades_R03")
+    storedgrades_R03()
+    storedgrades_R04 = sync_table.alias("storedgrades_R04")
+    storedgrades_R04()
+    storedgrades_R05 = sync_table.alias("storedgrades_R05")
+    storedgrades_R05()
+    storedgrades_R06 = sync_table.alias("storedgrades_R06")
+    storedgrades_R06()
+    storedgrades_R07 = sync_table.alias("storedgrades_R07")
+    storedgrades_R07()
+    storedgrades_R08 = sync_table.alias("storedgrades_R08")
+    storedgrades_R08()
+    storedgrades_R09 = sync_table.alias("storedgrades_R09")
+    storedgrades_R09()
+    storedgrades_R10 = sync_table.alias("storedgrades_R10")
+    storedgrades_R10()
+
+    # 1,000,000
     pgfinalgrades_R01 = sync_table.alias("pgfinalgrades_R01")
     pgfinalgrades_R01()
     pgfinalgrades_R02 = sync_table.alias("pgfinalgrades_R02")
@@ -208,8 +250,6 @@ def sync_all():
     pgfinalgrades_R03 = sync_table.alias("pgfinalgrades_R03")
     pgfinalgrades_R03()
 
-    attendance_S01 = sync_table.alias("attendance_S01")
-    attendance_S01()
     attendance_R01 = sync_table.alias("attendance_R01")
     attendance_R01()
     attendance_R02 = sync_table.alias("attendance_R02")
@@ -218,9 +258,9 @@ def sync_all():
     attendance_R03()
     attendance_R04 = sync_table.alias("attendance_R04")
     attendance_R04()
+    attendance_R05 = sync_table.alias("attendance_R05")
+    attendance_R05()
 
-    assignmentscore_S01 = sync_table.alias("assignmentscore_S01")
-    assignmentscore_S01()
     assignmentscore_R01 = sync_table.alias("assignmentscore_R01")
     assignmentscore_R01()
     assignmentscore_R02 = sync_table.alias("assignmentscore_R02")
@@ -241,28 +281,32 @@ def sync_all():
     assignmentscore_R09()
     assignmentscore_R10 = sync_table.alias("assignmentscore_R10")
     assignmentscore_R10()
+    assignmentscore_R11 = sync_table.alias("assignmentscore_R11")
+    assignmentscore_R11()
 
-    # # extensions
-    # s_nj_crs_x = sync_table.alias("s_nj_crs_x")
-    # s_nj_crs_x()
 
-    # s_nj_ren_x = sync_table.alias("s_nj_ren_x")
-    # s_nj_ren_x()
+@graph
+def sync_extensions():
+    s_nj_crs_x = sync_table.alias("s_nj_crs_x")
+    s_nj_crs_x()
 
-    # s_nj_stu_x = sync_table.alias("s_nj_stu_x")
-    # s_nj_stu_x()
+    s_nj_ren_x = sync_table.alias("s_nj_ren_x")
+    s_nj_ren_x()
 
-    # s_nj_usr_x = sync_table.alias("s_nj_usr_x")
-    # s_nj_usr_x()
+    s_nj_stu_x = sync_table.alias("s_nj_stu_x")
+    s_nj_stu_x()
 
-    # u_clg_et_stu = sync_table.alias("u_clg_et_stu")
-    # u_clg_et_stu()
+    s_nj_usr_x = sync_table.alias("s_nj_usr_x")
+    s_nj_usr_x()
 
-    # u_clg_et_stu_alt = sync_table.alias("u_clg_et_stu_alt")
-    # u_clg_et_stu_alt()
+    u_clg_et_stu = sync_table.alias("u_clg_et_stu")
+    u_clg_et_stu()
 
-    # u_def_ext_students = sync_table.alias("u_def_ext_students")
-    # u_def_ext_students()
+    u_clg_et_stu_alt = sync_table.alias("u_clg_et_stu_alt")
+    u_clg_et_stu_alt()
 
-    # u_studentsuserfields = sync_table.alias("u_studentsuserfields")
-    # u_studentsuserfields()
+    u_def_ext_students = sync_table.alias("u_def_ext_students")
+    u_def_ext_students()
+
+    u_studentsuserfields = sync_table.alias("u_studentsuserfields")
+    u_studentsuserfields()
