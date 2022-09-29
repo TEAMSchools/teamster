@@ -7,26 +7,29 @@ resources:
         env: CPN_SFTP_USERNAME
       password:
         env: CPN_SFTP_PASSWORD
-destination:
-  name: cpn
-  type: sftp
-  path: /Data
-queries:
-  - sql:
-      schema:
-        table:
-          name: cpn_attendance
-          schema: gabby.extracts
-        where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
-    file:
-      stem: cpn_attendance
-      suffix: csv
-  - sql:
-      schema:
-        table:
-          name: cpn_demographic
-          schema: gabby.extracts
-        where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
-    file:
-      stem: cpn_demographic
-      suffix: csv
+ops:
+  compose_queries:
+    config:
+      destination:
+        name: cpn
+        type: sftp
+        path: /Data
+      queries:
+        - sql:
+            schema:
+              table:
+                name: cpn_attendance
+                schema: gabby.extracts
+              where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+          file:
+            stem: cpn_attendance
+            suffix: csv
+        - sql:
+            schema:
+              table:
+                name: cpn_demographic
+                schema: gabby.extracts
+              where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+          file:
+            stem: cpn_demographic
+            suffix: csv
