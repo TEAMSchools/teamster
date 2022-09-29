@@ -7,66 +7,18 @@ execution:
     max_concurrent: 26
 ops:
   # no filter
-  attendance_code:
-    config:
-      sql:
-        schema:
-          table:
-            name: attendance_code
   attendance_conversion_items:
     config:
       sql:
         schema:
           table:
             name: attendance_conversion_items
-  bell_schedule:
-    config:
-      sql:
-        schema:
-          table:
-            name: bell_schedule
-  calendar_day:
-    config:
-      sql:
-        schema:
-          table:
-            name: calendar_day
-  cycle_day:
-    config:
-      sql:
-        schema:
-          table:
-            name: cycle_day
-  fte:
-    config:
-      sql:
-        schema:
-          table:
-            name: fte
   gen:
     config:
       sql:
         schema:
           table:
             name: gen
-  period:
-    config:
-      sql:
-        schema:
-          table:
-            name: period
-  reenrollments:
-    config:
-      sql:
-        schema:
-          table:
-            name: reenrollments
-  spenrollments:
-    config:
-      sql:
-        schema:
-          table:
-            name: spenrollments
   test:
     config:
       sql:
@@ -79,6 +31,55 @@ ops:
         schema:
           table:
             name: testscore
+  # yearid (potential)
+  attendance_code:
+    config:
+      sql:
+        schema:
+          table:
+            name: attendance_code
+  bell_schedule:
+    config:
+      sql:
+        schema:
+          table:
+            name: bell_schedule
+  cycle_day:
+    config:
+      sql:
+        schema:
+          table:
+            name: cycle_day
+  fte:
+    config:
+      sql:
+        schema:
+          table:
+            name: fte
+  period:
+    config:
+      sql:
+        schema:
+          table:
+            name: period
+  reenrollments: # entry_date (potential)
+    config:
+      sql:
+        schema:
+          table:
+            name: reenrollments
+  calendar_day: # date_value (potential)
+    config:
+      sql:
+        schema:
+          table:
+            name: calendar_day
+  spenrollments: # enter_date (potential)
+    config:
+      sql:
+        schema:
+          table:
+            name: spenrollments
   # table-specific filter
   log:
     config:
@@ -86,7 +87,7 @@ ops:
         schema:
           table:
             name: log
-          where: entry_date >= TO_TIMESTAMP_TZ('{today}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+          where: entry_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
   # transaction_date
   cc:
     config:

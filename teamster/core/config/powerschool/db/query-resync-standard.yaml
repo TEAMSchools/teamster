@@ -2,11 +2,10 @@ execution:
   config:
     resources:
       limits:
-        cpu: 250m
+        cpu: 500m
         memory: 1.0Gi
-    max_concurrent: 26
+    max_concurrent: 50
 ops:
-  # no filter
   attendance_code:
     config:
       sql:
@@ -121,7 +120,6 @@ ops:
         schema:
           table:
             name: terms
-  # whenmodified
   assignmentsection:
     config:
       sql:
