@@ -3,7 +3,7 @@ execution:
     resources:
       limits:
         cpu: 250m
-        memory: 0.5Gi
+        memory: 1.0Gi
     max_concurrent: 8
 ops:
   s_nj_crs_x:
