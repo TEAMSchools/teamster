@@ -1,0 +1,80 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+    max_concurrent: 30
+ops:
+  s_nj_crs_x:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: s_nj_crs_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  s_nj_ren_x:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: s_nj_ren_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  s_nj_stu_x:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: s_nj_stu_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  s_nj_usr_x:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: s_nj_usr_x
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_clg_et_stu:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: u_clg_et_stu
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_clg_et_stu_alt:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: u_clg_et_stu_alt
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_def_ext_students:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: u_def_ext_students
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  u_studentsuserfields:
+    config:
+      destination:
+        type: file
+        sql:
+          schema:
+            table:
+              name: u_studentsuserfields
+            where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')

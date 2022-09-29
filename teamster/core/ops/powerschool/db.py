@@ -1,5 +1,3 @@
-import re
-
 from dagster import Any, Int, List, Out, Output, op
 
 from teamster.core.utils.functions import get_last_schedule_run
@@ -21,24 +19,6 @@ def extract(context):
         today=TODAY.date().isoformat(),
         last_run=get_last_schedule_run(context) or TODAY.isoformat(),
     )
-
-    # parse standard/resync query type
-    re_match = re.match(r"([\w_]+)_([RS]\d+)", file_manager_key)
-    if re_match is not None:
-        table_name, query_type = re_match.groups()
-        file_manager_key = f"{table_name}/{query_type}"
-
-        if not context.resources.file_manager.blob_exists(key=file_manager_key):
-            context.log.info(f"Running initial sync of {file_manager_key}")
-        else:
-            # regular run--> skip resync query
-            if query_type[0] == "R":
-                return Output(value=[], output_name="data")
-    else:
-        if not context.resources.file_manager.blob_exists(key=file_manager_key):
-            # initial run -> drop where clause
-            context.log.info(f"Running initial sync of {file_manager_key}")
-            sql.whereclause.text = ""
 
     if context.resources.ssh.tunnel:
         context.log.info("Starting SSH tunnel")
