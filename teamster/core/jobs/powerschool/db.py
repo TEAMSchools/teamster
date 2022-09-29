@@ -1,10 +1,8 @@
 from dagster import config_from_files
-from dagster_gcp.gcs import gcs_pickle_io_manager
-from dagster_gcp.gcs.resources import gcs_resource
+from dagster_gcp.gcs import gcs_file_manager, gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.graphs.powerschool.db import resync, sync, test_sync
-from teamster.core.resources.google import gcs_file_manager
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
