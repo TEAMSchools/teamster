@@ -1,3 +1,5 @@
+import re
+
 from dagster import Any, Int, List, Out, Output, op
 
 from teamster.core.utils.functions import get_last_schedule_run
@@ -13,6 +15,12 @@ from teamster.core.utils.variables import TODAY
 def extract(context):
     sql = context.op_config["sql"]
     file_manager_key = context.solid_handle.path[0]
+
+    # next resync partitions under table folder
+    re_match = re.match(r"([\w_]+)_(R\d+)", file_manager_key)
+    if re_match:
+        table_name, resync_partition = re_match.groups()
+        file_manager_key = f"{table_name}/{resync_partition}"
 
     # format where clause
     sql.whereclause.text = sql.whereclause.text.format(
