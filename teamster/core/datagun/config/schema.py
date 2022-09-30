@@ -21,7 +21,7 @@ DESTINATION_CONFIG = Shape(
             )
         ),
         "name": Field(String, is_required=False),
-        "path": Field(String, is_required=False),
+        "path": Field(String, is_required=False, default_value=""),
     }
 )
 

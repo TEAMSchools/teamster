@@ -115,7 +115,7 @@ def load_sftp(context, file_handle):
     with sftp_conn.open_sftp() as sftp:
         sftp.chdir(".")
 
-        if destination_path:
+        if destination_path != "":
             destination_filepath = (
                 pathlib.Path(sftp.getcwd()) / destination_path / file_name
             )
