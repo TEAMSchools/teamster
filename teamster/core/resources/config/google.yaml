@@ -1,0 +1,9 @@
+resources:
+  file_manager:
+    config:
+      gcs_bucket:
+        env: IMAGE_NAME
+  io_manager:
+    config:
+      gcs_bucket:
+        env: IMAGE_NAME

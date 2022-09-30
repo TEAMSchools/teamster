@@ -16,10 +16,11 @@ class GCSFileManager(GCSFileManager):
     def blob_exists(self, ext=None, key=None):
         key = check.opt_str_param(key, "key")
 
-        gcs_key = self.get_full_key(key + (("." + ext) if ext is not None else ""))
+        gcs_key = f"{self._gcs_base_key}/{key}"
+
         blobs = self._client.list_blobs(
             bucket_or_name=self._gcs_bucket,
-            prefix=self._gcs_base_key + "/",
+            prefix=gcs_key,
             delimiter="/",
         )
         next(blobs, None)  # force list_blobs result to make API call (lazy loading)

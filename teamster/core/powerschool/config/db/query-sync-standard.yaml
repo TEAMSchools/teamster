@@ -1,0 +1,454 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+    max_concurrent: 30
+ops:
+  # no filter
+  attendance_conversion_items:
+    config:
+      sql:
+        schema:
+          table:
+            name: attendance_conversion_items
+  gen:
+    config:
+      sql:
+        schema:
+          table:
+            name: gen
+  test:
+    config:
+      sql:
+        schema:
+          table:
+            name: test
+  testscore:
+    config:
+      sql:
+        schema:
+          table:
+            name: testscore
+  # yearid (potential)
+  attendance_code:
+    config:
+      sql:
+        schema:
+          table:
+            name: attendance_code
+  bell_schedule:
+    config:
+      sql:
+        schema:
+          table:
+            name: bell_schedule
+  cycle_day:
+    config:
+      sql:
+        schema:
+          table:
+            name: cycle_day
+  fte:
+    config:
+      sql:
+        schema:
+          table:
+            name: fte
+  period:
+    config:
+      sql:
+        schema:
+          table:
+            name: period
+  reenrollments: # entry_date (potential)
+    config:
+      sql:
+        schema:
+          table:
+            name: reenrollments
+  calendar_day: # date_value (potential)
+    config:
+      sql:
+        schema:
+          table:
+            name: calendar_day
+  spenrollments: # enter_date (potential)
+    config:
+      sql:
+        schema:
+          table:
+            name: spenrollments
+  # table-specific filter
+  log:
+    config:
+      sql:
+        schema:
+          table:
+            name: log
+          where: entry_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # transaction_date
+  cc:
+    config:
+      sql:
+        schema:
+          table:
+            name: cc
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  courses:
+    config:
+      sql:
+        schema:
+          table:
+            name: courses
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  prefs:
+    config:
+      sql:
+        schema:
+          table:
+            name: prefs
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  storedgrades:
+    config:
+      sql:
+        schema:
+          table:
+            name: storedgrades
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+
+  sections:
+    config:
+      sql:
+        schema:
+          table:
+            name: sections
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  schools:
+    config:
+      sql:
+        schema:
+          table:
+            name: schools
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  students:
+    config:
+      sql:
+        schema:
+          table:
+            name: students
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  termbins:
+    config:
+      sql:
+        schema:
+          table:
+            name: termbins
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  terms:
+    config:
+      sql:
+        schema:
+          table:
+            name: terms
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # whenmodified
+  assignmentcategoryassoc:
+    config:
+      sql:
+        schema:
+          table:
+            name: assignmentcategoryassoc
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  assignmentsection:
+    config:
+      sql:
+        schema:
+          table:
+            name: assignmentsection
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  codeset:
+    config:
+      sql:
+        schema:
+          table:
+            name: codeset
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  districtteachercategory:
+    config:
+      sql:
+        schema:
+          table:
+            name: districtteachercategory
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  emailaddress:
+    config:
+      sql:
+        schema:
+          table:
+            name: emailaddress
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradecalcformulaweight:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradecalcformulaweight
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradecalcschoolassoc:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradecalcschoolassoc
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradecalculationtype:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradecalculationtype
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradeformulaset:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradeformulaset
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradescaleitem:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradescaleitem
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradeschoolconfig:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradeschoolconfig
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradeschoolformulaassoc:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradeschoolformulaassoc
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  gradesectionconfig:
+    config:
+      sql:
+        schema:
+          table:
+            name: gradesectionconfig
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  originalcontactmap:
+    config:
+      sql:
+        schema:
+          table:
+            name: originalcontactmap
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  person:
+    config:
+      sql:
+        schema:
+          table:
+            name: person
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personaddress:
+    config:
+      sql:
+        schema:
+          table:
+            name: personaddress
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personaddressassoc:
+    config:
+      sql:
+        schema:
+          table:
+            name: personaddressassoc
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personemailaddressassoc:
+    config:
+      sql:
+        schema:
+          table:
+            name: personemailaddressassoc
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  personphonenumberassoc:
+    config:
+      sql:
+        schema:
+          table:
+            name: personphonenumberassoc
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  phonenumber:
+    config:
+      sql:
+        schema:
+          table:
+            name: phonenumber
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  roledef:
+    config:
+      sql:
+        schema:
+          table:
+            name: roledef
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  schoolstaff:
+    config:
+      sql:
+        schema:
+          table:
+            name: schoolstaff
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  sectionteacher:
+    config:
+      sql:
+        schema:
+          table:
+            name: sectionteacher
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentcontactassoc:
+    config:
+      sql:
+        schema:
+          table:
+            name: studentcontactassoc
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentcontactdetail:
+    config:
+      sql:
+        schema:
+          table:
+            name: studentcontactdetail
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentcorefields:
+    config:
+      sql:
+        schema:
+          table:
+            name: studentcorefields
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  studentrace:
+    config:
+      sql:
+        schema:
+          table:
+            name: studentrace
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  teachercategory:
+    config:
+      sql:
+        schema:
+          table:
+            name: teachercategory
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  users:
+    config:
+      sql:
+        schema:
+          table:
+            name: users
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  pgfinalgrades:
+    config:
+      sql:
+        schema:
+          table:
+            name: pgfinalgrades
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  attendance:
+    config:
+      sql:
+        schema:
+          table:
+            name: attendance
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  assignmentscore:
+    config:
+      sql:
+        schema:
+          table:
+            name: assignmentscore
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+
+  # # extensions
+  # s_nj_crs_x:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: s_nj_crs_x
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # s_nj_ren_x:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: s_nj_ren_x
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # s_nj_stu_x:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: s_nj_stu_x
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # s_nj_usr_x:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: s_nj_usr_x
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # u_clg_et_stu:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: u_clg_et_stu
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # u_clg_et_stu_alt:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: u_clg_et_stu_alt
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # u_def_ext_students:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: u_def_ext_students
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
+  # u_studentsuserfields:
+  #   config:
+  #     destination:
+  #       type: file
+  #       sql:
+  #         schema:
+  #           table:
+  #             name: u_studentsuserfields
+  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SSTZH:TZM')
