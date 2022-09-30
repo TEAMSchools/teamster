@@ -25,8 +25,8 @@ test_powerschool_db_sync = test_sync.to_job(
     ),
 )
 
-powerschool_db_sync_standard = sync.to_job(
-    name="powerschool_db_sync_standard",
+powerschool_db_sync_std = sync.to_job(
+    name="powerschool_db_sync_std",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
@@ -44,8 +44,8 @@ powerschool_db_sync_standard = sync.to_job(
     ),
 )
 
-powerschool_db_resync = resync.to_job(
-    name="powerschool_db_resync",
+powerschool_db_resync_std = resync.to_job(
+    name="powerschool_db_resync_std",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
@@ -64,7 +64,7 @@ powerschool_db_resync = resync.to_job(
 )
 
 __all__ = [
-    "powerschool_db_sync_standard",
+    "powerschool_db_sync_std",
+    "powerschool_db_resync_std",
     "test_powerschool_db_sync",
-    "powerschool_db_resync",
 ]

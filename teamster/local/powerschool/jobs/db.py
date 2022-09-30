@@ -6,8 +6,8 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 from teamster.local.powerschool.graphs.db import sync_extensions
 
-powerschool_db_sync_extensions = sync_extensions.to_job(
-    name="powerschool_db_sync_extensions",
+powerschool_db_sync_ext = sync_extensions.to_job(
+    name="powerschool_db_sync_ext",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
@@ -25,8 +25,8 @@ powerschool_db_sync_extensions = sync_extensions.to_job(
     ),
 )
 
-powerschool_db_resync_extensions = sync_extensions.to_job(
-    name="powerschool_db_resync_extensions",
+powerschool_db_resync_ext = sync_extensions.to_job(
+    name="powerschool_db_resync_ext",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": oracle,
