@@ -79,7 +79,7 @@ QUERY_CONFIG = Shape(
 DATAGUN_CONFIG = Shape(
     {
         "query": Field(QUERY_CONFIG),
-        "file": Field(FILE_CONFIG, is_required=False),
+        "file": Field(FILE_CONFIG),
         "destination": Field(DESTINATION_CONFIG),
     }
 )
