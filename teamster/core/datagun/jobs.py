@@ -3,7 +3,7 @@ from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
-from teamster.core.graphs.datagun import run_queries
+from teamster.core.datagun.graphs import run_queries
 from teamster.core.resources.google import gcs_file_manager, google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 
@@ -26,9 +26,9 @@ datagun_etl_sftp = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/config/google/resource.yaml",
-            "./teamster/core/config/datagun/resource.yaml",
-            "./teamster/core/config/datagun/query-sftp-test.yaml",
+            "./teamster/core/resources/config/google.yaml",
+            "./teamster/core/datagun/config/resource.yaml",
+            "./teamster/core/datagun/config/query-sftp-test.yaml",
         ]
     ),
     tags={"dagster/retry_strategy": "ALL_STEPS", "dagster/max_retries": 3},
@@ -47,9 +47,9 @@ datagun_etl_gsheets = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/config/google/resource.yaml",
-            "./teamster/core/config/datagun/resource.yaml",
-            "./teamster/core/config/datagun/query-gsheets-test.yaml",
+            "./teamster/core/resources/config/google.yaml",
+            "./teamster/core/datagun/config/resource.yaml",
+            "./teamster/core/datagun/config/query-gsheets-test.yaml",
         ]
     ),
     tags={"dagster/retry_strategy": "ALL_STEPS", "dagster/max_retries": 3},

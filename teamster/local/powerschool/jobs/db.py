@@ -4,7 +4,7 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
-from teamster.local.graphs.powerschool.db import sync_extensions
+from teamster.local.powerschool.graphs.db import sync_extensions
 
 powerschool_db_sync_extensions = sync_extensions.to_job(
     name="powerschool_db_sync_extensions",
@@ -18,9 +18,9 @@ powerschool_db_sync_extensions = sync_extensions.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/config/google/resource.yaml",
-            "./teamster/core/config/powerschool/db/resource.yaml",
-            "./teamster/local/config/powerschool/db/query-sync-extensions.yaml",
+            "./teamster/core/resources/config/google.yaml",
+            "./teamster/core/powerschool/config/db/resource.yaml",
+            "./teamster/local/powerschool/config/db/query-sync-extensions.yaml",
         ]
     ),
 )
@@ -37,9 +37,9 @@ powerschool_db_resync_extensions = sync_extensions.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/config/google/resource.yaml",
-            "./teamster/core/config/powerschool/db/resource.yaml",
-            "./teamster/local/config/powerschool/db/query-resync-extensions.yaml",
+            "./teamster/core/resources/config/google.yaml",
+            "./teamster/core/powerschool/config/db/resource.yaml",
+            "./teamster/local/powerschool/config/db/query-resync-extensions.yaml",
         ]
     ),
 )

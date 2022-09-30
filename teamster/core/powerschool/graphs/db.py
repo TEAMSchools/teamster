@@ -3,8 +3,8 @@ import pathlib
 from dagster import config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.config.powerschool.db.schema import PS_DB_CONFIG
-from teamster.core.ops.powerschool.db import extract
+from teamster.core.powerschool.config.db.schema import PS_DB_CONFIG
+from teamster.core.powerschool.ops.db import extract
 
 
 @config_mapping(config_schema=PS_DB_CONFIG)

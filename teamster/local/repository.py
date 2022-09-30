@@ -1,9 +1,9 @@
 from dagster import repository
 
-from teamster.core.jobs import datagun as datagun_jobs_core
-from teamster.core.jobs.powerschool import db as psdb_jobs_core
-from teamster.local.jobs.powerschool import db as psdb_jobs_local
-from teamster.local.schedules import datagun as datagun_schedules
+from teamster.core.datagun import jobs as datagun_jobs_core
+from teamster.core.powerschool.jobs import db as psdb_jobs_core
+from teamster.local.datagun import schedules as datagun_schedules
+from teamster.local.powerschool.jobs import db as psdb_jobs_local
 
 
 @repository

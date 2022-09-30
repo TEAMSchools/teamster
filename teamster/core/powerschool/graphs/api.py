@@ -1,6 +1,6 @@
 from dagster import graph
 
-from teamster.core.ops.powerschool.api import (
+from teamster.core.powerschool.ops.api import (
     compose_queries,
     compose_resyncs,
     compose_tables,

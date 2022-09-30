@@ -1,6 +1,6 @@
 from dagster import graph
 
-from teamster.core.graphs.powerschool.db import sync_table
+from teamster.core.powerschool.graphs.db import sync_table
 
 
 @graph

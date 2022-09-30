@@ -2,7 +2,7 @@ from dagster import config_from_files
 from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 
-from teamster.core.graphs.powerschool.api import run_queries
+from teamster.core.powerschool.graphs.api import run_queries
 from teamster.core.resources.google import gcs_file_manager
 from teamster.core.resources.powerschool import powerschool_api
 
