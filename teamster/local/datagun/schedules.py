@@ -16,6 +16,12 @@ from teamster.local.datagun.jobs import (
 
 LOCAL_TIME_ZONE = os.getenv("LOCAL_TIME_ZONE")
 
+datagun_gsheets = ScheduleDefinition(
+    job=datagun_etl_gsheets,
+    cron_schedule="0 6 * * *",
+    execution_timezone=LOCAL_TIME_ZONE,
+)
+
 datagun_deanslist = ScheduleDefinition(
     job=datagun_etl_sftp,
     cron_schedule="25 1 * * *",
@@ -25,12 +31,6 @@ datagun_deanslist = ScheduleDefinition(
 datagun_illuminate = ScheduleDefinition(
     job=datagun_etl_sftp,
     cron_schedule="30 2 * * *",
-    execution_timezone=LOCAL_TIME_ZONE,
-)
-
-datagun_gsheets = ScheduleDefinition(
-    job=datagun_etl_gsheets,
-    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIME_ZONE,
 )
 
