@@ -26,9 +26,10 @@ def datagun():
     jobs = [
         v for k, v in vars(datagun_jobs_core).items() if k in datagun_jobs_core.__all__
     ]
-    schedules = [
-        v for k, v in vars(datagun_schedules).items() if k in datagun_schedules.__all__
-    ]
+    schedules = []
+    # schedules = [
+    #     v for k, v in vars(datagun_schedules).items() if k in datagun_schedules.__all__
+    # ]
 
     return jobs + schedules
 

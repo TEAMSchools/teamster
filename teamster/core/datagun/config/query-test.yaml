@@ -7,8 +7,25 @@ resources:
         env: PYTHONANYWHERE_SFTP_USERNAME
       password:
         env: PYTHONANYWHERE_SFTP_PASSWORD
+  gsheet:
+    config:
+      folder_id: 1jCBrkr547my9MxBt4pBP-hBfAZXk9T_U
 ops:
-  test1:
+  test_gsheet:
+    config:
+      destination:
+        type: gsheet
+      query:
+        sql:
+          text: SELECT
+            n,
+            n + 1,
+            n + 2,
+            n + 3,
+            n + 4
+            FROM gabby.utilities.row_generator_smallint
+            WHERE n <= 5
+  test_sftp_1:
     config:
       query:
         sql:
@@ -20,7 +37,7 @@ ops:
         type: sftp
         name: test
         path: sftp/test-path
-  test2:
+  test_sftp_2:
     config:
       query:
         sql:

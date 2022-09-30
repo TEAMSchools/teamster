@@ -20,10 +20,11 @@ def extract(context):
     sql = context.op_config["sql"]
 
     # format where clause
-    sql.whereclause.text = sql.whereclause.text.format(
-        today=TODAY.isoformat(),
-        last_run=get_last_schedule_run(context) or TODAY.isoformat(),
-    )
+    if hasattr(sql, "whereclause"):
+        sql.whereclause.text = sql.whereclause.text.format(
+            today=TODAY.isoformat(),
+            last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+        )
 
     data = context.resources.db.execute_query(
         query=sql,
