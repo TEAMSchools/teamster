@@ -20,6 +20,4 @@ powerschool_datagun = ScheduleDefinition(
     ),
 )
 
-__all__ = [
-    "powerschool_datagun",
-]
+__all__ = ["powerschool_datagun"]
