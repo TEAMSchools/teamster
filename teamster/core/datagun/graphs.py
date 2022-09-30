@@ -77,11 +77,11 @@ def etl_gsheet():
 
 @graph
 def test_etl():
-    test_gsheet = etl_sftp.alias("test_gsheet")
+    test_gsheet = etl_gsheet.alias("test_gsheet")
     test_gsheet()
 
     test_sftp_1 = etl_sftp.alias("test_sftp_1")
     test_sftp_1()
 
-    test_sftp_2 = etl_gsheet.alias("test_sftp_2")
+    test_sftp_2 = etl_sftp.alias("test_sftp_2")
     test_sftp_2()

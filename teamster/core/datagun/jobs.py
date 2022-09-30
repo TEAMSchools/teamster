@@ -8,7 +8,7 @@ from teamster.core.resources.google import gcs_file_manager, google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 
 test_datagun_etl = test_etl.to_job(
-    name="datagun_etl",
+    name="test_datagun_etl",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": mssql,

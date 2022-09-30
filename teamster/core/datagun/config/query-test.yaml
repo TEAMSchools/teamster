@@ -13,8 +13,6 @@ resources:
 ops:
   test_gsheet:
     config:
-      destination:
-        type: gsheet
       query:
         sql:
           text: SELECT
@@ -25,6 +23,8 @@ ops:
             n + 4
             FROM gabby.utilities.row_generator_smallint
             WHERE n <= 5
+      destination:
+        type: gsheet
   test_sftp_1:
     config:
       query:
