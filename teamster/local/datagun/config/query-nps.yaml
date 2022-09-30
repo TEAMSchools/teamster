@@ -1,5 +1,5 @@
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: NPS_SFTP_HOST
@@ -8,17 +8,16 @@ resources:
       password:
         env: NPS_SFTP_PASSWORD
 ops:
-  compose_queries:
-    config:
-      destination:
-        name: nps
-        type: sftp
-      queries:
-        - sql:
-            schema:
-              table:
-                name: nps_student_info
-                schema: gabby.extracts
-          file:
-            stem: kipp-newark-student-data
-            suffix: txt
+  config:
+    query:
+      sql:
+        schema:
+          table:
+            name: nps_student_info
+            schema: gabby.extracts
+    file:
+      stem: kipp-newark-student-data
+      suffix: txt
+    destination:
+      name: nps
+      type: sftp

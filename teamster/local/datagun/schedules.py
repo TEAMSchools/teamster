@@ -1,40 +1,26 @@
 import os
 
-from dagster import ScheduleDefinition, config_from_files
+from dagster import ScheduleDefinition
 
-# from teamster.core.datagun.jobs import datagun_etl_sftp
+from teamster.local.datagun.jobs import datagun_nps, datagun_ps_autocomm
 
 LOCAL_TIME_ZONE = os.getenv("LOCAL_TIME_ZONE")
 
-# powerschool_datagun = ScheduleDefinition(
-#     name="powerschool_datagun_nwk",
-#     job=datagun_etl_sftp,
-#     cron_schedule="15 2 * * *",
-#     execution_timezone=LOCAL_TIME_ZONE,
-#     run_config=config_from_files(
-#         [
-#             "./teamster/core/resources/config/google.yaml",
-#             "./teamster/core/datagun/config/resource.yaml",
-#             "./teamster/local/datagun/config/query-powerschool.yaml",
-#         ]
-#     ),
-# )
+datagun_ps_autocomm = ScheduleDefinition(
+    name="datagun_powerschool",
+    job=datagun_ps_autocomm,
+    cron_schedule="15 2 * * *",
+    execution_timezone=LOCAL_TIME_ZONE,
+)
 
-# nps_datagun = ScheduleDefinition(
-#     name="nps_datagun",
-#     job=datagun_etl_sftp,
-#     cron_schedule="0 0 * * *",
-#     execution_timezone=LOCAL_TIME_ZONE,
-#     run_config=config_from_files(
-#         [
-#             "./teamster/core/resources/config/google.yaml",
-#             "./teamster/core/datagun/config/resource.yaml",
-#             "./teamster/local/datagun/config/query-nps.yaml",
-#         ]
-#     ),
-# )
+datagun_nps = ScheduleDefinition(
+    name="nps_datagun",
+    job=datagun_nps,
+    cron_schedule="0 0 * * *",
+    execution_timezone=LOCAL_TIME_ZONE,
+)
 
-# __all__ = [
-#     "powerschool_datagun",
-#     "nps_datagun",
-# ]
+__all__ = [
+    "datagun_ps_autocomm",
+    "datagun_nps",
+]
