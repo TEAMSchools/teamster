@@ -44,4 +44,4 @@ powerschool_db_resync_ext = sync_extensions.to_job(
     ),
 )
 
-__all__ = ["powerschool_db_sync_extensions", "powerschool_db_resync_extensions"]
+__all__ = ["powerschool_db_sync_ext", "powerschool_db_resync_ext"]
