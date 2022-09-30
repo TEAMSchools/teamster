@@ -1,0 +1,67 @@
+resources:
+  sftp:
+    config:
+      remote_host:
+        env: PYTHONANYWHERE_SFTP_HOST
+      username:
+        env: PYTHONANYWHERE_SFTP_USERNAME
+      password:
+        env: PYTHONANYWHERE_SFTP_PASSWORD
+ops:
+  students_accessaccounts:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: powerschool_autocomm_students_accessaccounts
+              schema: gabby.extracts
+            where: "db_name = 'kippnewark'"
+      file:
+        stem: powerschool_autocomm_students_accessaccounts
+        suffix: txt
+        format:
+          header: False
+          sep: "\t"
+      destination:
+        name: powerschool
+        type: sftp
+        path: "./sftp/powerschool/kippnewark"
+  teachers_accounts:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: powerschool_autocomm_teachers_accounts
+              schema: gabby.extracts
+            where: "legal_entity_name = 'TEAM Academy Charter School'"
+      file:
+        stem: powerschool_autocomm_teachers_accounts
+        suffix: txt
+        format:
+          header: False
+          sep: "\t"
+      destination:
+        name: powerschool
+        type: sftp
+        path: "./sftp/powerschool/kippnewark"
+  students_easyiep:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: powerschool_autocomm_students_easyiep
+              schema: gabby.extracts
+            where: "db_name = 'kippnewark'"
+      file:
+        stem: powerschool_autocomm_students_easyiep
+        suffix: txt
+        format:
+          header: False
+          sep: "\t"
+      destination:
+        name: powerschool
+        type: sftp
+        path: "./sftp/powerschool/kippnewark"
