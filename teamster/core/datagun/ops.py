@@ -1,162 +1,68 @@
 import gzip
 import json
 import pathlib
-import re
 
 import pandas as pd
-from dagster import (
-    Any,
-    Dict,
-    DynamicOut,
-    DynamicOutput,
-    In,
-    List,
-    Out,
-    Output,
-    Tuple,
-    op,
-)
-from sqlalchemy import literal_column, select, table, text
+from dagster import Any, Dict, In, Int, List, Out, Output, Permissive, String, op
 
-from teamster.core.datagun.config.schema import QUERY_CONFIG, SSH_TUNNEL_CONFIG
 from teamster.core.utils.classes import CustomJSONEncoder
-from teamster.core.utils.functions import get_last_schedule_run, retry_on_exception
+from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import NOW, TODAY
 
 
 @op(
-    config_schema=QUERY_CONFIG,
-    out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
+    config_schema={"sql": Any, "partition_size": Int, "output_fmt": String},
+    out={"data": Out(dagster_type=List[Dict], is_required=False)},
+    required_resource_keys={"db"},
     tags={"dagster/priority": 1},
 )
-@retry_on_exception
-def compose_queries(context):
-    dest_config = context.op_config["destination"]
-    queries = context.op_config["queries"]
+def extract(context):
+    sql = context.op_config["sql"]
 
-    for i, q in enumerate(queries):
-        [(query_type, value)] = q["sql"].items()
+    # format where clause
+    sql.whereclause.text = sql.whereclause.text.format(
+        today=TODAY.isoformat(),
+        last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+    )
 
-        if query_type == "text":
-            table_name = "query"
-            query = text(value)
-        elif query_type == "file":
-            query_file = pathlib.Path(value).absolute()
-            table_name = query_file.stem
-            with query_file.open(mode="r") as f:
-                query = text(f.read())
-        elif query_type == "schema":
-            table_name = value["table"]["name"]
-            where_fmt = value.get("where", "").format(
-                today=TODAY.date().isoformat(),
-                last_run=get_last_schedule_run(context=context)
-                or TODAY.date().isoformat(),
-            )
-            query = (
-                select(*[literal_column(col) for col in value["select"]])
-                .select_from(table(**value["table"]))
-                .where(text(where_fmt))
-            )
-
-        yield DynamicOutput(
-            value=(query, q.get("file", {}), dest_config),
-            output_name="dynamic_query",
-            mapping_key=re.sub(
-                r"[^A-Za-z0-9_]+",
-                "",
-                f"{(q.get('file', {}).get('stem') or table_name)}_{i}",
-            ),
-        )
-
-
-@op(
-    config_schema=SSH_TUNNEL_CONFIG,
-    ins={"dynamic_query": In(dagster_type=Tuple)},
-    out={
-        "data": Out(dagster_type=List[Any], is_required=False),
-        "file_config": Out(dagster_type=Dict, is_required=False),
-        "dest_config": Out(dagster_type=Dict, is_required=False),
-    },
-    required_resource_keys={"db", "ssh", "file_manager"},
-    tags={"dagster/priority": 2},
-)
-@retry_on_exception
-def extract(context, dynamic_query):
-    mapping_key = context.get_mapping_key()
-    table_name = mapping_key[: mapping_key.rfind("_")]
-
-    query, file_config, dest_config = dynamic_query
-
-    if hasattr(context.resources.ssh, "get_tunnel"):
-        context.log.info("Starting SSH tunnel.")
-        ssh_tunnel = context.resources.ssh.get_tunnel(**context.op_config)
-        ssh_tunnel.start()
-    else:
-        ssh_tunnel = None
-
-    if dest_config["type"] == "fs":
-        data = context.resources.db.execute_query(query, output_fmt="files")
-    else:
-        data = context.resources.db.execute_query(query)
-
-    if ssh_tunnel is not None:
-        context.log.info("Stopping SSH tunnel.")
-        ssh_tunnel.stop()
+    data = context.resources.db.execute_query(
+        query=sql,
+        partition_size=context.op_config["partition_size"],
+        output_fmt=context.op_config["output_fmt"],
+    )
 
     if data:
-        if dest_config["type"] == "fs":
-            file_handles = []
-            for fp in data:
-                with fp.open(mode="rb") as f:
-                    file_handle = context.resources.file_manager.write(
-                        file_obj=f, key=f"{table_name}/{fp.stem}", ext=fp.suffix
-                    )
-
-                context.log.info(f"Saved to {file_handle.path_desc}.")
-                file_handles.append(file_handle)
-
-            yield Output(value=file_handles, output_name="data")
-        else:
-            yield Output(value=file_config, output_name="file_config")
-            yield Output(value=dest_config, output_name="dest_config")
-            yield Output(value=data, output_name="data")
+        yield Output(value=data, output_name="data")
 
 
 @op(
-    ins={
-        "data": In(dagster_type=List[Dict]),
-        "file_config": In(dagster_type=Dict),
-        "dest_config": In(dagster_type=Dict),
+    config_schema={
+        "destination_type": String,
+        "destination_name": String,
+        "file": Permissive(),
     },
-    out={"transformed": Out(dagster_type=Tuple, is_required=False)},
+    ins={"data": In(dagster_type=List[Dict])},
+    out={
+        "file_handle": Out(dagster_type=Any, is_required=False),
+        "df_dict": Out(dagster_type=Any, is_required=False),
+    },
     required_resource_keys={"file_manager"},
-    tags={"dagster/priority": 3},
+    tags={"dagster/priority": 2},
 )
-@retry_on_exception
-def transform(context, data, file_config, dest_config):
-    mapping_key = context.get_mapping_key()
-    table_name = mapping_key[: mapping_key.rfind("_")]
+def transform(context, data):
+    file_config = context.op_config["file"]
+    destination_type = context.op_config["destination_type"]
+    destination_name = context.op_config["destination_name"]
 
-    now_ts = str(NOW.timestamp())
-    if file_config:
-        file_stem = file_config["stem"].format(
-            today=TODAY.date().isoformat(),
-            now=now_ts.replace(".", "_"),
-            last_run=get_last_schedule_run(context=context) or TODAY.date().isoformat(),
-        )
-        file_suffix = file_config["suffix"]
-        file_format = file_config.get("format", {})
+    file_suffix = file_config["suffix"]
+    file_encoding = file_config["encoding"]
+    file_stem = file_config["stem"].format(
+        today=TODAY.date().isoformat(),
+        now=str(NOW.timestamp()).replace(".", "_"),
+        last_run=get_last_schedule_run(context=context) or TODAY.date().isoformat(),
+    )
 
-        file_encoding = file_format.get("encoding", "utf-8")
-    else:
-        file_stem = now_ts.replace(".", "_")
-        file_suffix = "json.gz"
-        file_format = {}
-        file_encoding = "utf-8"
-
-    dest_type = dest_config["type"]
-
-    if dest_type == "gsheet":
+    if destination_type == "gsheet":
         context.log.info("Transforming data to DataFrame")
         df = pd.DataFrame(data=data)
         df_json = df.to_json(orient="split", date_format="iso", index=False)
@@ -164,8 +70,8 @@ def transform(context, data, file_config, dest_config):
         df_dict = json.loads(df_json)
         df_dict["shape"] = df.shape
 
-        yield Output(value=(dest_config, file_stem, df_dict), output_name="transformed")
-    elif dest_type in ["fs", "sftp"]:
+        yield Output(value=df_dict, output_name="df_dict")
+    elif destination_type in ["fs", "sftp"]:
         context.log.info(f"Transforming data to {file_suffix}")
 
         if file_suffix == "json":
@@ -178,80 +84,86 @@ def transform(context, data, file_config, dest_config):
             )
         elif file_suffix in ["csv", "txt", "tsv"]:
             df = pd.DataFrame(data=data)
-            data_bytes = df.to_csv(index=False, **file_format).encode(file_encoding)
+            data_bytes = df.to_csv(index=False, **file_config["format"]).encode(
+                file_encoding
+            )
 
         file_handle = context.resources.file_manager.write_data(
             data=data_bytes,
-            key=f"{(dest_config.get('name') or table_name or 'data')}/{file_stem}",
+            key=f"{destination_name}/{file_stem}",
             ext=file_suffix,
         )
         context.log.info(f"Saved to {file_handle.path_desc}.")
 
-        if dest_type == "sftp":
-            yield Output(value=(dest_config, file_handle), output_name="transformed")
+        if destination_type == "sftp":
+            yield Output(value=file_handle, output_name="file_handle")
 
 
 @op(
-    ins={"transformed": In(dagster_type=Tuple)},
-    tags={"dagster/priority": 4},
-    required_resource_keys={"destination", "file_manager"},
+    config_schema={"destination_path": String},
+    ins={"file_handle": In(dagster_type=Any)},
+    tags={"dagster/priority": 3},
+    required_resource_keys={"sftp", "file_manager"},
 )
-@retry_on_exception
-def load_destination(context, transformed):
-    dest_config = transformed[0]
+def load_sftp(context, file_handle):
+    destination_path = context.op_config["destination_path"]
+    sftp_conn = context.resources.sftp.get_connection()
 
-    dest_type = dest_config["type"]
-    if dest_type == "gsheet":
-        file_stem, df_dict = transformed[1:]
+    file_name = pathlib.Path(file_handle.gcs_key).name
 
-        if file_stem[0].isnumeric():
-            file_stem = "GS" + file_stem
+    with sftp_conn.open_sftp() as sftp:
+        sftp.chdir(".")
 
-        context.resources.destination.update_named_range(
-            data=df_dict, spreadsheet_name=file_stem, range_name=file_stem
+        if destination_path:
+            destination_filepath = (
+                pathlib.Path(sftp.getcwd()) / destination_path / file_name
+            )
+        else:
+            destination_filepath = pathlib.Path(sftp.getcwd()) / file_name
+
+        # confirm destination_filepath dir exists or create it
+        try:
+            sftp.stat(str(destination_filepath.parent))
+        except IOError:
+            dir_path = pathlib.Path("/")
+            for dir in destination_filepath.parent.parts:
+                dir_path = dir_path / dir
+                try:
+                    sftp.stat(str(dir_path))
+                except IOError:
+                    context.log.info(f"Creating directory: {dir_path}")
+                    sftp.mkdir(str(dir_path))
+
+        # if destination_path given, chdir after confirming
+        if destination_path:
+            sftp.chdir(str(destination_filepath.parent))
+
+        context.log.info(
+            (
+                "Starting to transfer file from "
+                f"{file_handle.path_desc} to {destination_filepath}"
+            )
         )
-    elif dest_type == "sftp":
-        file_handle = transformed[1]
-        dest_path = dest_config.get("path")
 
-        sftp_conn = context.resources.destination.get_connection()
-        file_name = pathlib.Path(file_handle.gcs_key).name
-
-        with sftp_conn.open_sftp() as sftp:
-            sftp.chdir(".")
-
-            if dest_path:
-                dest_filepath = pathlib.Path(sftp.getcwd()) / dest_path / file_name
-            else:
-                dest_filepath = pathlib.Path(sftp.getcwd()) / file_name
-
-            # confirm dest_filepath dir exists or create it
-            try:
-                sftp.stat(str(dest_filepath.parent))
-            except IOError:
-                dir_path = pathlib.Path("/")
-                for dir in dest_filepath.parent.parts:
-                    dir_path = dir_path / dir
-                    try:
-                        sftp.stat(str(dir_path))
-                    except IOError:
-                        context.log.info(f"Creating directory: {dir_path}")
-                        sftp.mkdir(str(dir_path))
-
-            # if dest_path given, chdir after confirming
-            if dest_path:
-                sftp.chdir(str(dest_filepath.parent))
-
-            context.log.info(
-                (
-                    "Starting to transfer file from "
-                    f"{file_handle.path_desc} to {dest_filepath}"
+        with sftp.file(file_name, "w") as f:
+            f.write(
+                context.resources.file_manager.download_as_bytes(
+                    file_handle=file_handle
                 )
             )
 
-            with sftp.file(file_name, "w") as f:
-                f.write(
-                    context.resources.file_manager.download_as_bytes(
-                        file_handle=file_handle
-                    )
-                )
+
+@op(
+    ins={"df_dict": In(dagster_type=Any)},
+    tags={"dagster/priority": 3},
+    required_resource_keys={"gsheet"},
+)
+def load_gsheet(context, df_dict):
+    file_stem = context.op_config["file_stem"]
+
+    if file_stem[0].isnumeric():
+        file_stem = "GS" + file_stem
+
+    context.resources.gsheet.update_named_range(
+        data=df_dict, spreadsheet_name=file_stem, range_name=file_stem
+    )

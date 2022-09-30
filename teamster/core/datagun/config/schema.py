@@ -3,6 +3,7 @@ from dagster import (
     Enum,
     EnumValue,
     Field,
+    Int,
     IntSource,
     Permissive,
     Selector,
@@ -16,7 +17,7 @@ DESTINATION_CONFIG = Shape(
         "type": Field(
             Enum(
                 name="DestinationType",
-                enum_values=[EnumValue("sftp"), EnumValue("gsheet"), EnumValue("fs")],
+                enum_values=[EnumValue("sftp"), EnumValue("gsheet")],
             )
         ),
         "name": Field(String, is_required=False),
@@ -24,64 +25,61 @@ DESTINATION_CONFIG = Shape(
     }
 )
 
-SQL_CONFIG = Selector(
+FILE_CONFIG = Shape(
     {
-        "text": Field(String),
-        "file": Field(String),
-        "schema": Field(
-            Shape(
-                {
-                    "table": Field(
-                        Shape(
-                            {
-                                "name": Field(String),
-                                "schema": Field(String, is_required=False),
-                            }
-                        )
-                    ),
-                    "select": Field(
-                        Array(String), default_value=["*"], is_required=False
-                    ),
-                    "where": Field(String, is_required=False),
-                }
-            )
+        "stem": Field(String, is_required=False, default_value="{now}"),
+        "suffix": Field(String, is_required=False, default_value="json.gz"),
+        "encoding": Field(String, is_required=False, default_value="utf-8"),
+        "format": Field(Permissive(), is_required=False, default_value={}),
+    }
+)
+
+SSH_TUNNEL_CONFIG = Shape(
+    {
+        "remote_port": IntSource,
+        "remote_host": Field(StringSource, is_required=False),
+        "local_port": Field(IntSource, is_required=False),
+    }
+)
+
+QUERY_CONFIG = Shape(
+    {
+        "ssh_tunnel": Field(SSH_TUNNEL_CONFIG, is_required=False),
+        "partition_size": Field(Int, is_required=False, default_value=100000),
+        "output_fmt": Field(String, is_required=False, default_value="dict"),
+        "sql": Selector(
+            {
+                "text": Field(String),
+                "file": Field(String),
+                "schema": Field(
+                    Shape(
+                        {
+                            "table": Field(
+                                Shape(
+                                    {
+                                        "name": Field(String),
+                                        "schema": Field(String, is_required=False),
+                                    }
+                                )
+                            ),
+                            "select": Field(
+                                Array(String),
+                                default_value=["*"],
+                                is_required=False,
+                            ),
+                            "where": Field(String, is_required=False),
+                        }
+                    )
+                ),
+            }
         ),
     }
 )
 
-DATA_FILE_CONFIG = Shape(
+DATAGUN_CONFIG = Shape(
     {
-        "stem": Field(String),
-        "suffix": Field(String),
-        "format": Field(Permissive(), is_required=False),
+        "query": Field(QUERY_CONFIG),
+        "file": Field(FILE_CONFIG, is_required=False),
+        "destination": Field(DESTINATION_CONFIG),
     }
-)
-
-QUERY_CONFIG = Field(
-    Shape(
-        {
-            "destination": Field(DESTINATION_CONFIG),
-            "queries": Field(
-                Array(
-                    Shape(
-                        {
-                            "sql": Field(SQL_CONFIG),
-                            "file": Field(DATA_FILE_CONFIG, is_required=False),
-                        }
-                    )
-                )
-            ),
-        }
-    )
-)
-
-SSH_TUNNEL_CONFIG = Field(
-    Shape(
-        {
-            "remote_port": IntSource,
-            "remote_host": Field(StringSource, is_required=False),
-            "local_port": Field(IntSource, is_required=False),
-        }
-    ),
-    is_required=False,
 )

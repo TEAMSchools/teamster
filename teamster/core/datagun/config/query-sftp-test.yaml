@@ -1,5 +1,5 @@
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: PYTHONANYWHERE_SFTP_HOST
@@ -8,34 +8,41 @@ resources:
       password:
         env: PYTHONANYWHERE_SFTP_PASSWORD
 ops:
-  compose_queries:
+  test1:
     config:
+      query:
+        sql:
+          file: ./teamster/core/config/datagun/sql/test.sql
+      file:
+        stem: json-test-{now}
+        suffix: json.gz
       destination:
-        type: "sftp"
-        name: "test"
-        path: "sftp/test-path"
-      queries:
-        - file:
-            stem: "json-test-{now}"
-            suffix: "json.gz"
-          sql:
-            file: "./teamster/core/config/datagun/sql/test.sql"
-        - file:
-            stem: "tsv-test-{today}"
-            suffix: "txt"
-            format:
-              quoting: 1 # csv.QUOTE_ALL
-              encoding: "latin1"
-              sep: "\t"
-          sql:
-            schema:
-              table:
-                name: row_generator_smallint
-                schema: gabby.utilities
-              select:
-                - n
-                - "n + 1"
-                - "n + 2"
-                - "n + 3"
-                - "n + 4"
-              where: "n <= 5"
+        type: sftp
+        name: test
+        path: sftp/test-path
+  test2:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: row_generator_smallint
+              schema: gabby.utilities
+            select:
+              - n
+              - n + 1
+              - n + 2
+              - n + 3
+              - n + 4
+            where: n <= 5
+      file:
+        stem: tsv-test-{today}
+        suffix: txt
+        format:
+          quoting: 1 # csv.QUOTE_ALL
+          encoding: latin1
+          sep: \t
+      destination:
+        type: sftp
+        name: test
+        path: sftp/test-path

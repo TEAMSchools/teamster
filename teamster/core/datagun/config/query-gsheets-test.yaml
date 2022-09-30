@@ -1,21 +1,19 @@
 resources:
-  destination:
+  gsheet:
     config:
-      folder_id: "1jCBrkr547my9MxBt4pBP-hBfAZXk9T_U"
+      folder_id: 1jCBrkr547my9MxBt4pBP-hBfAZXk9T_U
 ops:
-  compose_queries:
+  test:
     config:
       destination:
-        type: "gsheet"
-      queries:
-        - sql:
-            text: "
-              SELECT
-              n,
-              n + 1 AS n2,
-              n + 2 AS n3,
-              n + 3 AS n4,
-              n + 4 AS n5
-              FROM gabby.utilities.row_generator_smallint
-              WHERE n <= 5
-              "
+        type: gsheet
+      query:
+        sql:
+          text: SELECT
+            n,
+            n + 1,
+            n + 2,
+            n + 3,
+            n + 4
+            FROM gabby.utilities.row_generator_smallint
+            WHERE n <= 5
