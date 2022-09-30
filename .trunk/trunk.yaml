@@ -22,7 +22,7 @@ lint:
   disabled:
     - sqlfluff
   enabled:
-    - actionlint@1.6.19
+    - actionlint@1.6.20
     - black@22.8.0
     - flake8@5.0.4
     - git-diff-check@SYSTEM
@@ -34,7 +34,7 @@ lint:
     - shellcheck@0.8.0
     - shfmt@3.5.0
     - taplo@release-taplo-cli-0.7.0
-    - sql-formatter@10.7.2
+    - sql-formatter@11.0.0
   definitions:
     - name: sql-formatter
       commands:
