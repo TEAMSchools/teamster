@@ -64,7 +64,7 @@ powerschool_db_resync_std = resync.to_job(
 )
 
 __all__ = [
-    "powerschool_db_sync_std",
     "powerschool_db_resync_std",
+    "powerschool_db_sync_std",
     "test_powerschool_db_sync",
 ]
