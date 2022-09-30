@@ -10,8 +10,8 @@ on:
       - reopened
 
 concurrency:
-  # Cancel in-progress runs on same branch
-  group: ${{ github.ref }}
+  # Cancel in-progress runs on same workflow
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 env:

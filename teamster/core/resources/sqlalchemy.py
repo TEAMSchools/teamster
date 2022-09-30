@@ -15,6 +15,8 @@ from teamster.core.utils.functions import time_limit
 
 sys.modules["cx_Oracle"] = oracledb
 
+PARTITION_SIZE = 100000
+
 
 class SqlAlchemyEngine(object):
     def __init__(self, dialect, driver, logger, **kwargs):
@@ -26,7 +28,7 @@ class SqlAlchemyEngine(object):
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
-    def execute_query(self, query, partition_size=10000, output_fmt="dict"):
+    def execute_query(self, query, output_fmt="dict"):
         self.log.info(f"Executing query:\n{query}")
 
         with self.engine.connect() as conn:
@@ -38,7 +40,7 @@ class SqlAlchemyEngine(object):
             else:
                 result_stg = result
 
-            partitions = result_stg.partitions(size=partition_size)
+            partitions = result_stg.partitions(size=PARTITION_SIZE)
             if output_fmt == "files":
                 tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
                 tmp_dir.mkdir(parents=True, exist_ok=True)
