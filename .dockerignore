@@ -74,15 +74,10 @@ compose.yaml
 .github/
 .google/
 .helm/
-.teamster/
+.init/
 .trunk/
 .vscode/
 history/
 schedules/
 secrets/
-.flake8
 .gitignore
-.hadolint.yaml
-.isort.cfg
-.markdownlint.yaml
-.shellcheckrc
