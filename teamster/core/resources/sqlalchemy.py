@@ -15,60 +15,62 @@ from teamster.core.utils.functions import time_limit
 
 sys.modules["cx_Oracle"] = oracledb
 
-PARTITION_SIZE = 100000
-
 
 class SqlAlchemyEngine(object):
     def __init__(self, dialect, driver, logger, **kwargs):
+        self.log = logger
+
         engine_keys = ["arraysize", "connect_args"]
         engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
         url_kwargs = {k: v for k, v in kwargs.items() if k not in engine_keys}
 
-        self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
-    def execute_query(self, query, output_fmt="dict"):
+    def execute_query(self, query, partition_size, output_fmt, connect_kwargs={}):
         self.log.info(f"Executing query:\n{query}")
 
-        with self.engine.connect() as conn:
+        with self.engine.connect(**connect_kwargs) as conn:
             with time_limit(seconds=60):
                 result = conn.execute(statement=query)
 
-            if output_fmt in ["dict", "json", "files"]:
+            if output_fmt in ["dict", "json", "file"]:
                 result_stg = result.mappings()
             else:
                 result_stg = result
 
-            partitions = result_stg.partitions(size=PARTITION_SIZE)
-            if output_fmt == "files":
+            partitions = result_stg.partitions(size=partition_size)
+            if output_fmt == "file":
                 tmp_dir = pathlib.Path(uuid.uuid4().hex).absolute()
                 tmp_dir.mkdir(parents=True, exist_ok=True)
 
                 len_data = 0
                 output_obj = []
+
                 for i, pt in enumerate(partitions):
-                    self.log.debug(f"Querying partition {i}")
+                    self.log.debug(f"Retrieving rows from partition {i}")
+
+                    now_ts = str(datetime.now().timestamp())
+                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
 
                     data = [dict(row) for row in pt]
                     del pt
 
-                    now_ts = str(datetime.now().timestamp())
-                    tmp_file = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
-                    self.log.debug(f"Saving to {tmp_file}")
+                    self.log.debug(f"Saving data to {tmp_file}")
                     with gzip.open(tmp_file, "wb") as gz:
                         gz.write(
                             json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
                         )
-
                     len_data += len(data)
                     del data
 
                     output_obj.append(tmp_file)
+
                 self.log.info(f"Retrieved {len_data} rows.")
             else:
                 pts_unpacked = [rows for pt in partitions for rows in pt]
                 output_obj = [dict(row) for row in pts_unpacked]
+
                 self.log.info(f"Retrieved {len(output_obj)} rows.")
 
         if output_fmt == "json":
