@@ -1,0 +1,16 @@
+resources:
+  powerschool:
+    config:
+      host:
+        env: POWERSCHOOL_HOST
+      client_id:
+        env: POWERSCHOOL_CLIENT_ID
+      client_secret:
+        env: POWERSCHOOL_CLIENT_SECRET
+  file_manager:
+    config:
+      gcs_prefix: powerschool
+execution:
+  config:
+    multiprocess:
+      max_concurrent: 50
