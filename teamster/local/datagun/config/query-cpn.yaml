@@ -1,0 +1,48 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+resources:
+  sftp:
+    config:
+      remote_host:
+        env: CPN_SFTP_HOST
+      username:
+        env: CPN_SFTP_USERNAME
+      password:
+        env: CPN_SFTP_PASSWORD
+ops:
+  attendance:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: cpn_attendance
+              schema: gabby.extracts
+            where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+      file:
+        stem: cpn_attendance
+        suffix: csv
+      destination:
+        name: cpn
+        type: sftp
+        path: /Data
+  demographic:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: cpn_demographic
+              schema: gabby.extracts
+            where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+      file:
+        stem: cpn_demographic
+        suffix: csv
+      destination:
+        name: cpn
+        type: sftp
+        path: /Data
