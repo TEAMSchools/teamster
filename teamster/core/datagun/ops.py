@@ -160,7 +160,9 @@ def load_sftp(context, file_handle):
     required_resource_keys={"gsheet"},
 )
 def load_gsheet(context, df_dict):
-    file_stem = context.op_config["file_stem"]
+    file_stem = context.op_config["file_stem"].format(
+        now=str(NOW.timestamp()).replace(".", "_")
+    )
 
     if file_stem[0].isnumeric():
         file_stem = "GS" + file_stem

@@ -58,7 +58,7 @@ ops:
         format:
           quoting: 1 # csv.QUOTE_ALL
           encoding: latin1
-          sep: \t
+          sep: "\t"
       destination:
         type: sftp
         name: test
