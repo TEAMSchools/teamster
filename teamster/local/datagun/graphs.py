@@ -38,6 +38,9 @@ def gsheets():
     kfwd_contacts = etl_gsheet.alias("kfwd_contacts")
     kfwd_contacts()
 
+    battleboard = etl_gsheet.alias("battleboard")
+    battleboard()
+
 
 @graph
 def deanslist():
