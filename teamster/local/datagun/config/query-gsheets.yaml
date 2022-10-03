@@ -163,3 +163,17 @@ ops:
       file:
         stem: gsheets_kfwd_contacts
         suffix: gsheet
+  battleboard:
+    config:
+      destination:
+        name: gsheets
+        type: gsheet
+      query:
+        sql:
+          schema:
+            table:
+              name: gsheets_battleboard
+              schema: gabby.extracts
+      file:
+        stem: gsheets_battleboard
+        suffix: gsheet
