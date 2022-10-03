@@ -4,12 +4,39 @@ from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.datagun.graphs import etl_sftp
-from teamster.core.resources.google import gcs_file_manager
+from teamster.core.resources.google import gcs_file_manager, google_sheets
 from teamster.core.resources.sqlalchemy import mssql
-from teamster.local.datagun.graphs import powerschool_autocomm
+from teamster.local.datagun.graphs import (
+    clever,
+    deanslist,
+    gam,
+    gsheets,
+    illuminate,
+    razkids,
+    read180,
+)
 
-datagun_ps_autocomm = powerschool_autocomm.to_job(
-    name="datagun_ps_autocomm",
+datagun_gsheets = gsheets.to_job(
+    name="datagun_gsheets",
+    executor_def=k8s_job_executor,
+    resource_defs={
+        "db": mssql,
+        "file_manager": gcs_file_manager,
+        "io_manager": gcs_pickle_io_manager,
+        "gcs": gcs_resource,
+        "gsheet": google_sheets,
+    },
+    config=config_from_files(
+        [
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/datagun/config/resource.yaml",
+            "teamster/local/datagun/config/query-gsheets.yaml",
+        ]
+    ),
+)
+
+datagun_clever = clever.to_job(
+    name="datagun_clever",
     executor_def=k8s_job_executor,
     resource_defs={
         "db": mssql,
@@ -22,7 +49,102 @@ datagun_ps_autocomm = powerschool_autocomm.to_job(
         [
             "teamster/core/resources/config/google.yaml",
             "teamster/core/datagun/config/resource.yaml",
-            "teamster/local/datagun/config/query-powerschool.yaml",
+            "teamster/local/datagun/config/query-clever.yaml",
+        ]
+    ),
+)
+
+datagun_deanslist = deanslist.to_job(
+    name="datagun_deanslist",
+    executor_def=k8s_job_executor,
+    resource_defs={
+        "db": mssql,
+        "file_manager": gcs_file_manager,
+        "io_manager": gcs_pickle_io_manager,
+        "gcs": gcs_resource,
+        "sftp": ssh_resource,
+    },
+    config=config_from_files(
+        [
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/datagun/config/resource.yaml",
+            "teamster/local/datagun/config/query-deanslist.yaml",
+        ]
+    ),
+)
+
+datagun_gam = gam.to_job(
+    name="datagun_gam",
+    executor_def=k8s_job_executor,
+    resource_defs={
+        "db": mssql,
+        "file_manager": gcs_file_manager,
+        "io_manager": gcs_pickle_io_manager,
+        "gcs": gcs_resource,
+        "sftp": ssh_resource,
+    },
+    config=config_from_files(
+        [
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/datagun/config/resource.yaml",
+            "teamster/local/datagun/config/query-gam.yaml",
+        ]
+    ),
+)
+
+datagun_illuminate = illuminate.to_job(
+    name="datagun_illuminate",
+    executor_def=k8s_job_executor,
+    resource_defs={
+        "db": mssql,
+        "file_manager": gcs_file_manager,
+        "io_manager": gcs_pickle_io_manager,
+        "gcs": gcs_resource,
+        "sftp": ssh_resource,
+    },
+    config=config_from_files(
+        [
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/datagun/config/resource.yaml",
+            "teamster/local/datagun/config/query-illuminate.yaml",
+        ]
+    ),
+)
+
+datagun_razkids = razkids.to_job(
+    name="datagun_razkids",
+    executor_def=k8s_job_executor,
+    resource_defs={
+        "db": mssql,
+        "file_manager": gcs_file_manager,
+        "io_manager": gcs_pickle_io_manager,
+        "gcs": gcs_resource,
+        "sftp": ssh_resource,
+    },
+    config=config_from_files(
+        [
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/datagun/config/resource.yaml",
+            "teamster/local/datagun/config/query-razkids.yaml",
+        ]
+    ),
+)
+
+datagun_read180 = read180.to_job(
+    name="datagun_read180",
+    executor_def=k8s_job_executor,
+    resource_defs={
+        "db": mssql,
+        "file_manager": gcs_file_manager,
+        "io_manager": gcs_pickle_io_manager,
+        "gcs": gcs_resource,
+        "sftp": ssh_resource,
+    },
+    config=config_from_files(
+        [
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/datagun/config/resource.yaml",
+            "teamster/local/datagun/config/query-read180.yaml",
         ]
     ),
 )
@@ -218,7 +340,6 @@ datagun_whetstone = etl_sftp.to_job(
 )
 
 __all__ = [
-    "datagun_ps_autocomm",
     "datagun_adp",
     "datagun_alchemer",
     "datagun_blissbook",

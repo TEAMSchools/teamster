@@ -5,7 +5,7 @@ execution:
         cpu: 250m
         memory: 0.5Gi
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: EGENCIA_SFTP_HOST
@@ -13,15 +13,14 @@ resources:
         env: EGENCIA_SFTP_USERNAME
       key_file: /etc/secret-volume/egencia-privatekey
 ops:
-  compose_queries:
-    config:
-      destination:
-        name: egencia
-        type: sftp
-        path: "/global/50323/USERS"
-      queries:
-        - sql:
-            file: "./teamster/local/config/datagun/sql/egencia-users.sql"
-          file:
-            stem: "users_{today}"
-            suffix: csv
+  config:
+    destination:
+      name: egencia
+      type: sftp
+      path: /global/50323/USERS
+    query:
+      sql:
+        file: ./teamster/local/config/datagun/sql/egencia-users.sql
+    file:
+      stem: users_{today}
+      suffix: csv

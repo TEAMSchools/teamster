@@ -5,7 +5,7 @@ execution:
         cpu: 250m
         memory: 0.5Gi
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: LITTLESIS_SFTP_HOST
@@ -14,17 +14,16 @@ resources:
       password:
         env: LITTLESIS_SFTP_PASSWORD
 ops:
-  compose_queries:
-    config:
-      destination:
-        name: littlesis
-        type: sftp
-      queries:
-        - sql:
-            schema:
-              table:
-                name: "littlesis_enrollments"
-                schema: "gabby.extracts"
-          file:
-            stem: littlesis_extract
-            suffix: csv
+  config:
+    destination:
+      name: littlesis
+      type: sftp
+    query:
+      sql:
+        schema:
+          table:
+            name: littlesis_enrollments
+            schema: gabby.extracts
+    file:
+      stem: littlesis_extract
+      suffix: csv

@@ -5,7 +5,7 @@ execution:
         cpu: 250m
         memory: 0.5Gi
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: BLISSBOOK_SFTP_HOST
@@ -15,17 +15,16 @@ resources:
         env: BLISSBOOK_SFTP_PASSWORD
       remote_port: 3022
 ops:
-  compose_queries:
-    config:
-      destination:
-        name: blissbook
-        type: sftp
-      queries:
-        - sql:
-            schema:
-              table:
-                name: "blissbook_employee_list"
-                schema: "gabby.extracts"
-          file:
-            stem: members
-            suffix: csv
+  config:
+    destination:
+      name: blissbook
+      type: sftp
+    query:
+      sql:
+        schema:
+          table:
+            name: "blissbook_employee_list"
+            schema: "gabby.extracts"
+    file:
+      stem: members
+      suffix: csv

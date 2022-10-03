@@ -5,7 +5,7 @@ execution:
         cpu: 250m
         memory: 0.5Gi
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: CLEVER_SFTP_HOST
@@ -14,57 +14,87 @@ resources:
       password:
         env: CLEVER_SFTP_PASSWORD
 ops:
-  compose_queries:
+  enrollments:
     config:
+      query:
+        sql:
+          schema:
+            table:
+              name: clever_enrollments
+              schema: gabby.extracts
+      file:
+        stem: enrollments
+        suffix: csv
       destination:
         name: clever
         type: sftp
-      queries:
-        - sql:
-            schema:
-              table:
-                name: "clever_enrollments"
-                schema: "gabby.extracts"
-          file:
-            stem: enrollments
-            suffix: csv
-        - sql:
-            schema:
-              table:
-                name: "clever_teachers"
-                schema: "gabby.extracts"
-          file:
-            stem: teachers
-            suffix: csv
-        - sql:
-            schema:
-              table:
-                name: "clever_students"
-                schema: "gabby.extracts"
-          file:
-            stem: students
-            suffix: csv
-        - sql:
-            schema:
-              table:
-                name: "clever_staff"
-                schema: "gabby.extracts"
-          file:
-            stem: staff
-            suffix: csv
-        - sql:
-            schema:
-              table:
-                name: "clever_sections"
-                schema: "gabby.extracts"
-          file:
-            stem: sections
-            suffix: csv
-        - sql:
-            schema:
-              table:
-                name: "clever_schools"
-                schema: "gabby.extracts"
-          file:
-            stem: schools
-            suffix: csv
+  teachers:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: clever_teachers
+              schema: gabby.extracts
+      file:
+        stem: teachers
+        suffix: csv
+      destination:
+        name: clever
+        type: sftp
+  students:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: clever_students
+              schema: gabby.extracts
+      file:
+        stem: students
+        suffix: csv
+      destination:
+        name: clever
+        type: sftp
+  staff:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: clever_staff
+              schema: gabby.extracts
+      file:
+        stem: staff
+        suffix: csv
+      destination:
+        name: clever
+        type: sftp
+  sections:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: clever_sections
+              schema: gabby.extracts
+      file:
+        stem: sections
+        suffix: csv
+      destination:
+        name: clever
+        type: sftp
+  schools:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: clever_schools
+              schema: gabby.extracts
+      file:
+        stem: schools
+        suffix: csv
+      destination:
+        name: clever
+        type: sftp

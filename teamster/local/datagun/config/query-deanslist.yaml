@@ -5,7 +5,7 @@ execution:
         cpu: 250m
         memory: 1.0Gi
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: DEANSLIST_SFTP_HOST
@@ -14,137 +14,227 @@ resources:
       password:
         env: DEANSLIST_SFTP_PASSWORD
 ops:
-  compose_queries:
+  college_admission_tests:
     config:
       destination:
         name: deanslist
         type: sftp
-      queries:
-        - sql:
-            schema:
-              table:
-                name: "deanslist_college_admission_tests"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_college_admission_tests
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_designations"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_designations
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_transcript_grades"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_transcript_grades
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_finalgrades"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_finalgrades
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_instructional_tech"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_instructional_tech
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_iready_diagnostics"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_iready_diagnostics
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_iready_lessons"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_iready_lessons
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_missing_assignments"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_missing_assignments
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_mod_assessment"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_mod_assessment
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_mod_standards"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_mod_standards
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_promo_status"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_promo_status
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_reading_levels"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_reading_levels
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_sight_words"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_sight_words
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_state_test_scores"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_state_test_scores
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_student_misc"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_student_misc
-            suffix: json
-        - sql:
-            schema:
-              table:
-                name: "deanslist_transcript_gpas"
-                schema: "gabby.extracts"
-          file:
-            stem: deanslist_transcript_gpas
-            suffix: json
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_college_admission_tests
+              schema: gabby.extracts
+      file:
+        stem: deanslist_college_admission_tests
+        suffix: json
+  designations:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_designations
+              schema: gabby.extracts
+      file:
+        stem: deanslist_designations
+        suffix: json
+  transcript_grades:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_transcript_grades
+              schema: gabby.extracts
+      file:
+        stem: deanslist_transcript_grades
+        suffix: json
+  finalgrades:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_finalgrades
+              schema: gabby.extracts
+      file:
+        stem: deanslist_finalgrades
+        suffix: json
+  instructional_tech:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_instructional_tech
+              schema: gabby.extracts
+      file:
+        stem: deanslist_instructional_tech
+        suffix: json
+  iready_diagnostics:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_iready_diagnostics
+              schema: gabby.extracts
+      file:
+        stem: deanslist_iready_diagnostics
+        suffix: json
+  iready_lessons:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_iready_lessons
+              schema: gabby.extracts
+      file:
+        stem: deanslist_iready_lessons
+        suffix: json
+  missing_assignments:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_missing_assignments
+              schema: gabby.extracts
+      file:
+        stem: deanslist_missing_assignments
+        suffix: json
+  mod_assessment:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_mod_assessment
+              schema: gabby.extracts
+      file:
+        stem: deanslist_mod_assessment
+        suffix: json
+  mod_standards:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_mod_standards
+              schema: gabby.extracts
+      file:
+        stem: deanslist_mod_standards
+        suffix: json
+  promo_status:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_promo_status
+              schema: gabby.extracts
+      file:
+        stem: deanslist_promo_status
+        suffix: json
+  reading_levels:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_reading_levels
+              schema: gabby.extracts
+      file:
+        stem: deanslist_reading_levels
+        suffix: json
+  sight_words:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_sight_words
+              schema: gabby.extracts
+      file:
+        stem: deanslist_sight_words
+        suffix: json
+  state_test_scores:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_state_test_scores
+              schema: gabby.extracts
+      file:
+        stem: deanslist_state_test_scores
+        suffix: json
+  student_misc:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_student_misc
+              schema: gabby.extracts
+      file:
+        stem: deanslist_student_misc
+        suffix: json
+  transcript_gpas:
+    config:
+      destination:
+        name: deanslist
+        type: sftp
+      query:
+        sql:
+          schema:
+            table:
+              name: deanslist_transcript_gpas
+              schema: gabby.extracts
+      file:
+        stem: deanslist_transcript_gpas
+        suffix: json

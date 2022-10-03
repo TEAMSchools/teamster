@@ -5,7 +5,7 @@ execution:
         cpu: 250m
         memory: 0.5Gi
 resources:
-  destination:
+  sftp:
     config:
       remote_host:
         env: PYTHONANYWHERE_SFTP_HOST
@@ -14,15 +14,14 @@ resources:
       password:
         env: PYTHONANYWHERE_SFTP_PASSWORD
 ops:
-  compose_queries:
-    config:
-      destination:
-        name: "whetstone"
-        type: "sftp"
-        path: "./sftp/whetstone"
-      queries:
-        - file:
-            stem: "whetstone_users"
-            suffix: "json"
-          sql:
-            file: "./teamster/local/config/datagun/sql/whetstone-users.sql"
+  config:
+    destination:
+      name: whetstone
+      type: sftp
+      path: ./sftp/whetstone
+    query:
+      sql:
+        file: ./teamster/local/config/datagun/sql/whetstone-users.sql
+    file:
+      stem: whetstone_users
+      suffix: json
