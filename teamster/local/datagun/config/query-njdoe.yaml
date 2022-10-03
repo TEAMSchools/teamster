@@ -1,0 +1,31 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+resources:
+  sftp:
+    config:
+      remote_host:
+        env: PYTHONANYWHERE_SFTP_HOST
+      username:
+        env: PYTHONANYWHERE_SFTP_USERNAME
+      password:
+        env: PYTHONANYWHERE_SFTP_PASSWORD
+ops:
+  config:
+    destination:
+      name: njdoe
+      type: sftp
+      path: ./sftp/njdoe
+    query:
+      sql:
+        schema:
+          table:
+            name: njdoe_bgcheck_audit
+            schema: gabby.extracts
+          where: (is_approved = 0 OR is_approved_district = 0)
+    file:
+      stem: njdoe_bgcheck_audit
+      suffix: json
