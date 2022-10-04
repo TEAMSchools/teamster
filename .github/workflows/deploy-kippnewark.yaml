@@ -1,12 +1,7 @@
-name: kippnewark - Hybrid Prod Deployment
+name: kippnewark - Prod Deployment
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Build teamster-deps
-    types:
-      - completed
   push:
     branches:
       - kippnewark

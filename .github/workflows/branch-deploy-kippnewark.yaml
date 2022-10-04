@@ -1,4 +1,4 @@
-name: kippnewark - Hybrid Branch Deployments
+name: kippnewark - Branch Deployment
 
 on:
   pull_request:
