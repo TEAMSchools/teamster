@@ -16,7 +16,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v0.0.4
+      ref: v0.0.5
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
@@ -34,7 +34,7 @@ lint:
     - shellcheck@0.8.0
     - shfmt@3.5.0
     - taplo@release-taplo-cli-0.7.0
-    - sql-formatter@11.0.0
+    - sql-formatter@11.0.1
   definitions:
     - name: sql-formatter
       commands:
