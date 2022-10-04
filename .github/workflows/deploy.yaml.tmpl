@@ -1,12 +1,7 @@
-name: ${INSTANCE_NAME} - Hybrid Prod Deployment
+name: ${INSTANCE_NAME} - Prod Deployment
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Build teamster-deps
-    types:
-      - completed
   push:
     branches:
       - ${INSTANCE_NAME}

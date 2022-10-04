@@ -1,4 +1,4 @@
-name: kippcamden - Hybrid Branch Deployments
+name: kippcamden - Branch Deployment
 
 on:
   pull_request:
