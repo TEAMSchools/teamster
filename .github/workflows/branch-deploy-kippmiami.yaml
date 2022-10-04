@@ -1,4 +1,4 @@
-name: kippmiami - Hybrid Branch Deployments
+name: kippmiami - Branch Deployment
 
 on:
   pull_request:
