@@ -1,4 +1,4 @@
-name: kipptaf - Hybrid Branch Deployments
+name: kipptaf - Branch Deployment
 
 on:
   pull_request:

@@ -1,12 +1,7 @@
-name: kippmiami - Hybrid Prod Deployment
+name: kippmiami - Prod Deployment
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Build teamster-deps
-    types:
-      - completed
   push:
     branches:
       - kippmiami
