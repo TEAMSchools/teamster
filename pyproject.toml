@@ -32,15 +32,14 @@ build-backend = "pdm.pep517.api"
 dev = []
 
 [tool.pdm.scripts]
-_.env_file = "./env/kippcamden.env"
-local-init.env_file = "./env/core.env"
-init-core.shell = "bash ./.init/init-core.sh"
-init-local.shell = "bash ./.init/init-local.sh"
-gcloud-core.shell = "bash ./.google/gcloud-core-init.sh"
-gcloud-local.shell = "bash ./.google/gcloud-local-init.sh"
-k8s-init.shell = "bash ./.google/k8s-init.sh"
-k8s-secret.shell = "bash ./.google/k8s-secret.sh"
-dagster-validate.shell = "python -c 'from teamster.local.repository import *'"
-helm-install.shell = "bash .helm/helm-install.sh"
-git-merge-dev.shell = "bash ./.github/merge-dev.sh"
-git-open-pr.shell = "bash ./.github/open-pr.sh"
+_.env_file = "env/kippcamden.env"
+init-core = { shell = "bash .init/init-core.sh" }
+init-local = { shell = "bash .init/init-local.sh", env_file = "env/core.env" }
+gcloud-core = { shell = "bash .google/gcloud-core-init.sh" }
+gcloud-local = { shell = "bash .google/gcloud-local-init.sh" }
+k8s-init = { shell = "bash .google/k8s-init.sh" }
+k8s-secret = { shell = "bash .google/k8s-secret.sh" }
+dagster-validate = { shell = "python -c 'from teamster.local.repository import *'" }
+helm-install = { shell = "bash .helm/helm-install.sh" }
+git-merge-dev = { shell = "bash .github/merge-dev.sh" }
+git-open-pr = { shell = "bash .github/open-pr.sh" }
