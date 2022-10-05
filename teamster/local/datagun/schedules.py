@@ -113,7 +113,7 @@ datagun_whetstone_schedule = ScheduleDefinition(
 
 datagun_idauto_schedule = ScheduleDefinition(
     job=datagun_idauto,
-    cron_schedule="55 * * * *",
+    cron_schedule="45 0 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
