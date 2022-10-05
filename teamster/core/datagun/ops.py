@@ -72,7 +72,7 @@ def transform(context, data):
         df_dict["shape"] = df.shape
 
         yield Output(value=df_dict, output_name="df_dict")
-    elif destination_type in ["fs", "sftp"]:
+    elif destination_type == "sftp":
         context.log.info(f"Transforming data to {file_suffix}")
 
         if file_suffix == "json":
@@ -85,9 +85,9 @@ def transform(context, data):
             )
         elif file_suffix in ["csv", "txt", "tsv"]:
             df = pd.DataFrame(data=data)
-            data_bytes = df.to_csv(index=False, **file_config["format"]).encode(
-                file_encoding
-            )
+            data_bytes = df.to_csv(
+                index=False, encoding=file_encoding, **file_config["format"]
+            ).encode(file_encoding)
 
         file_handle = context.resources.file_manager.write_data(
             data=data_bytes,
