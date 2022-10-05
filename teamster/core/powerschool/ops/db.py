@@ -23,9 +23,9 @@ def extract(context):
         file_manager_key = f"{table_name}/{resync_partition}"
 
     # format where clause
+    last_run = get_last_schedule_run(context) or TODAY
     sql.whereclause.text = sql.whereclause.text.format(
-        today=TODAY.isoformat(),
-        last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+        today=TODAY.isoformat(), last_run=last_run.isoformat()
     )
 
     if context.resources.ssh.tunnel:
