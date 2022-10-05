@@ -1,5 +1,3 @@
-import os
-
 from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -22,7 +20,7 @@ from teamster.local.datagun.jobs import (
     datagun_whetstone,
 )
 
-datagun_gsheets_schedule_schedule = ScheduleDefinition(
+datagun_gsheets_schedule = ScheduleDefinition(
     job=datagun_gsheets,
     cron_schedule="0 6 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
