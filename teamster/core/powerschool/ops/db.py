@@ -25,7 +25,8 @@ def extract(context):
     # format where clause
     last_run = get_last_schedule_run(context) or TODAY
     sql.whereclause.text = sql.whereclause.text.format(
-        today=TODAY.isoformat(), last_run=last_run.replace(microsecond=0).isoformat()
+        today=TODAY.isoformat(timespec="microseconds"),
+        last_run=last_run.isoformat(timespec="microseconds"),
     )
 
     if context.resources.ssh.tunnel:
