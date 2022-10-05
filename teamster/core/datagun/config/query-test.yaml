@@ -55,9 +55,9 @@ ops:
       file:
         stem: tsv-test-{today}
         suffix: txt
+        encoding: latin1
         format:
           quoting: 1 # csv.QUOTE_ALL
-          encoding: latin1
           sep: "\t"
       destination:
         type: sftp
