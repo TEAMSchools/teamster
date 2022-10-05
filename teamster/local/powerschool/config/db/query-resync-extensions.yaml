@@ -4,7 +4,6 @@ execution:
       limits:
         cpu: 250m
         memory: 1.0Gi
-    max_concurrent: 8
 ops:
   s_nj_crs_x:
     config:
