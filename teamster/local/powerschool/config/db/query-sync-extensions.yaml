@@ -11,53 +11,53 @@ ops:
         schema:
           table:
             name: s_nj_crs_x
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   s_nj_ren_x:
     config:
       sql:
         schema:
           table:
             name: s_nj_ren_x
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   s_nj_stu_x:
     config:
       sql:
         schema:
           table:
             name: s_nj_stu_x
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   s_nj_usr_x:
     config:
       sql:
         schema:
           table:
             name: s_nj_usr_x
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   u_clg_et_stu:
     config:
       sql:
         schema:
           table:
             name: u_clg_et_stu
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   u_clg_et_stu_alt:
     config:
       sql:
         schema:
           table:
             name: u_clg_et_stu_alt
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   u_def_ext_students:
     config:
       sql:
         schema:
           table:
             name: u_def_ext_students
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   u_studentsuserfields:
     config:
       sql:
         schema:
           table:
             name: u_studentsuserfields
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
