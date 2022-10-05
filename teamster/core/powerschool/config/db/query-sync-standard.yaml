@@ -87,7 +87,7 @@ ops:
         schema:
           table:
             name: log
-          where: entry_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: entry_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   # transaction_date
   cc:
     config:
@@ -95,28 +95,28 @@ ops:
         schema:
           table:
             name: cc
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   courses:
     config:
       sql:
         schema:
           table:
             name: courses
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   prefs:
     config:
       sql:
         schema:
           table:
             name: prefs
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   storedgrades:
     config:
       sql:
         schema:
           table:
             name: storedgrades
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
 
   sections:
     config:
@@ -124,35 +124,35 @@ ops:
         schema:
           table:
             name: sections
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   schools:
     config:
       sql:
         schema:
           table:
             name: schools
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   students:
     config:
       sql:
         schema:
           table:
             name: students
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   termbins:
     config:
       sql:
         schema:
           table:
             name: termbins
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   terms:
     config:
       sql:
         schema:
           table:
             name: terms
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   # whenmodified
   assignmentcategoryassoc:
     config:
@@ -160,295 +160,221 @@ ops:
         schema:
           table:
             name: assignmentcategoryassoc
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   assignmentsection:
     config:
       sql:
         schema:
           table:
             name: assignmentsection
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   codeset:
     config:
       sql:
         schema:
           table:
             name: codeset
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   districtteachercategory:
     config:
       sql:
         schema:
           table:
             name: districtteachercategory
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   emailaddress:
     config:
       sql:
         schema:
           table:
             name: emailaddress
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradecalcformulaweight:
     config:
       sql:
         schema:
           table:
             name: gradecalcformulaweight
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradecalcschoolassoc:
     config:
       sql:
         schema:
           table:
             name: gradecalcschoolassoc
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradecalculationtype:
     config:
       sql:
         schema:
           table:
             name: gradecalculationtype
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradeformulaset:
     config:
       sql:
         schema:
           table:
             name: gradeformulaset
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradescaleitem:
     config:
       sql:
         schema:
           table:
             name: gradescaleitem
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradeschoolconfig:
     config:
       sql:
         schema:
           table:
             name: gradeschoolconfig
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradeschoolformulaassoc:
     config:
       sql:
         schema:
           table:
             name: gradeschoolformulaassoc
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   gradesectionconfig:
     config:
       sql:
         schema:
           table:
             name: gradesectionconfig
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   originalcontactmap:
     config:
       sql:
         schema:
           table:
             name: originalcontactmap
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   person:
     config:
       sql:
         schema:
           table:
             name: person
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   personaddress:
     config:
       sql:
         schema:
           table:
             name: personaddress
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   personaddressassoc:
     config:
       sql:
         schema:
           table:
             name: personaddressassoc
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   personemailaddressassoc:
     config:
       sql:
         schema:
           table:
             name: personemailaddressassoc
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   personphonenumberassoc:
     config:
       sql:
         schema:
           table:
             name: personphonenumberassoc
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   phonenumber:
     config:
       sql:
         schema:
           table:
             name: phonenumber
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   roledef:
     config:
       sql:
         schema:
           table:
             name: roledef
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   schoolstaff:
     config:
       sql:
         schema:
           table:
             name: schoolstaff
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   sectionteacher:
     config:
       sql:
         schema:
           table:
             name: sectionteacher
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   studentcontactassoc:
     config:
       sql:
         schema:
           table:
             name: studentcontactassoc
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   studentcontactdetail:
     config:
       sql:
         schema:
           table:
             name: studentcontactdetail
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   studentcorefields:
     config:
       sql:
         schema:
           table:
             name: studentcorefields
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   studentrace:
     config:
       sql:
         schema:
           table:
             name: studentrace
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   teachercategory:
     config:
       sql:
         schema:
           table:
             name: teachercategory
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   users:
     config:
       sql:
         schema:
           table:
             name: users
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   pgfinalgrades:
     config:
       sql:
         schema:
           table:
             name: pgfinalgrades
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   attendance:
     config:
       sql:
         schema:
           table:
             name: attendance
-          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: transaction_date >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
   assignmentscore:
     config:
       sql:
         schema:
           table:
             name: assignmentscore
-          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-
-  # # extensions
-  # s_nj_crs_x:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: s_nj_crs_x
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-  # s_nj_ren_x:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: s_nj_ren_x
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-  # s_nj_stu_x:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: s_nj_stu_x
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-  # s_nj_usr_x:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: s_nj_usr_x
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-  # u_clg_et_stu:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: u_clg_et_stu
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-  # u_clg_et_stu_alt:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: u_clg_et_stu_alt
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-  # u_def_ext_students:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: u_def_ext_students
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
-  # u_studentsuserfields:
-  #   config:
-  #     destination:
-  #       type: file
-  #       sql:
-  #         schema:
-  #           table:
-  #             name: u_studentsuserfields
-  #           where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.ffffffTZH:TZM')
+          where: whenmodified >= TO_TIMESTAMP_TZ('{last_run}', 'YYYY-MM-DD"T"HH24:MI:SS.FF6TZH:TZM')
