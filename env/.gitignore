@@ -1,4 +1,4 @@
 *
 !.gitignore
-!common.env.tmpl
+!core.env.tmpl
 !local.env.tmpl
