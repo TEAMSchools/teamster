@@ -27,6 +27,6 @@ ops:
     file:
       stem: AD
       suffix: csv
+      encoding: latin1
       format:
         quoting: 1 # csv.QUOTE_ALL
-        encoding: latin1
