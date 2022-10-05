@@ -2,9 +2,11 @@ from dagster import repository
 
 from teamster.core.datagun import jobs as datagun_jobs_core
 from teamster.core.powerschool.jobs import db as psdb_jobs_core
+from teamster.core.powerschool.schedules import db as psdb_sched_core
 from teamster.local.datagun import jobs as datagun_jobs_local
 from teamster.local.datagun import schedules as datagun_schedules
 from teamster.local.powerschool.jobs import db as psdb_jobs_local
+from teamster.local.powerschool.schedules import db as psdb_sched_local
 
 
 @repository
@@ -16,7 +18,15 @@ def powerschool():
         v for k, v in vars(psdb_jobs_local).items() if k in psdb_jobs_local.__all__
     ]
     jobs = core_jobs + local_jobs
-    schedules = []
+
+    core_schedules = [
+        v for k, v in vars(psdb_sched_core).items() if k in psdb_sched_core.__all__
+    ]
+    local_schedules = [
+        v for k, v in vars(psdb_sched_local).items() if k in psdb_sched_local.__all__
+    ]
+    schedules = core_schedules + local_schedules
+
     sensors = []
 
     return jobs + schedules + sensors
