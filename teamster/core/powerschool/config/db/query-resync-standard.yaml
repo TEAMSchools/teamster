@@ -2,9 +2,9 @@ execution:
   config:
     resources:
       limits:
-        cpu: 500m
+        cpu: 750m
         memory: 1.0Gi
-    max_concurrent: 25
+    max_concurrent: 10
 ops:
   attendance_code:
     config:
