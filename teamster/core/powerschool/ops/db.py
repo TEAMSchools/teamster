@@ -63,7 +63,7 @@ tables = [
 ]
 
 
-@op(out={tbl: Out(Bool) for tbl in tables})
+@op(out={tbl: Out(Bool, is_required=False) for tbl in tables})
 def get_counts(context):
     for tbl in tables:
         if tbl in [
