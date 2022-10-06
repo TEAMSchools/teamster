@@ -1,18 +1,17 @@
 import pathlib
 
-from dagster import Array, Shape, config_mapping, graph
+from dagster import config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.powerschool.config.db import schema, tables
 from teamster.core.powerschool.ops.db import extract, get_counts
 
 
-@config_mapping(config_schema=Shape({"tables": Array(schema.PS_DB_CONFIG)}))
+@config_mapping()
 def construct_sync_multi_config(config):
-    tables = config["tables"]
-    for tbl in tables:
-        table_name = tbl["sql"]["schema"]["table"]["name"]
-        return {table_name: {"config": {"sql": tbl["sql"]}}}
+    for tbl in config.items():
+        table_name, config_val = tbl
+        return {table_name: {"config": {"sql": config_val}}}
 
 
 @config_mapping(config_schema=schema.PS_DB_CONFIG)
