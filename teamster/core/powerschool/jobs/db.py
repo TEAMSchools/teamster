@@ -37,9 +37,9 @@ powerschool_db_sync_std = sync.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/resources/config/google.yaml",
-            "./teamster/core/powerschool/config/db/resource.yaml",
-            "./teamster/core/powerschool/config/db/query-sync-standard.yaml",
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/powerschool/config/db/resource.yaml",
+            "teamster/core/powerschool/config/db/query-sync-foo.yaml",
         ]
     ),
 )

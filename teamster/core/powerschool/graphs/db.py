@@ -1,14 +1,22 @@
 import pathlib
 
-from dagster import config_mapping, graph
+from dagster import Array, Shape, config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.powerschool.config.db.schema import PS_DB_CONFIG
+from teamster.core.powerschool.config.db import schema, tables
 from teamster.core.powerschool.ops.db import extract, get_counts
 
 
-@config_mapping(config_schema=PS_DB_CONFIG)
-def construct_graph_config(config):
+@config_mapping(config_schema=Shape({"tables": Array(schema.PS_DB_CONFIG)}))
+def construct_sync_multi_config(config):
+    tables = config["tables"]
+    for tbl in tables:
+        table_name = tbl["sql"]["schema"]["table"]["name"]
+        return {table_name: {"config": {"sql": tbl["sql"]}}}
+
+
+@config_mapping(config_schema=schema.PS_DB_CONFIG)
+def construct_sync_table_config(config):
     [(sql_key, sql_value)] = config["sql"].items()
     if sql_key == "text":
         sql = text(sql_value)
@@ -17,10 +25,20 @@ def construct_graph_config(config):
         with sql_file.open(mode="r") as f:
             sql = text(f.read())
     elif sql_key == "schema":
+        sql_where = sql_value.get("where")
+        if sql_where is not None:
+            constructed_sql_where = (
+                f"{sql_where['column']} >= "
+                f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
+                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+            )
+        else:
+            constructed_sql_where = ""
+
         sql = (
             select(*[literal_column(col) for col in sql_value["select"]])
             .select_from(table(**sql_value["table"]))
-            .where(text(sql_value.get("where", "")))
+            .where(text(constructed_sql_where))
         )
 
     return {
@@ -33,7 +51,7 @@ def construct_graph_config(config):
     }
 
 
-@graph(config=construct_graph_config)
+@graph(config=construct_sync_table_config)
 def sync_table(has_count):
     extract(has_count)
 
@@ -44,177 +62,177 @@ def sync_table(has_count):
 #     sync_table_inst()
 
 
-# @graph
-# def sync():
-#
-
-#     for tbl in valid_tables:
-#         sync_table_inst = sync_table.alias(tbl)
-#         sync_table_inst()
-
-
-@graph
+@graph(config=construct_sync_multi_config)
 def sync():
     valid_tables = get_counts()
 
-    assignmentsection = sync_table.alias("assignmentsection")
-    assignmentsection(valid_tables.assignmentsection)
+    for tbl in tables.STANDARD_TABLES:
+        sync_table_inst = sync_table.alias(tbl)
+        sync_table_inst(getattr(valid_tables, tbl))
 
-    attendance_code = sync_table.alias("attendance_code")
-    attendance_code(valid_tables.attendance_code)
 
-    attendance_conversion_items = sync_table.alias("attendance_conversion_items")
-    attendance_conversion_items(valid_tables.attendance_conversion_items)
+# @graph
+# def sync():
+#     valid_tables = get_counts()
 
-    bell_schedule = sync_table.alias("bell_schedule")
-    bell_schedule(valid_tables.bell_schedule)
+# assignmentsection = sync_table.alias("assignmentsection")
+# assignmentsection(valid_tables.assignmentsection)
 
-    calendar_day = sync_table.alias("calendar_day")
-    calendar_day(valid_tables.calendar_day)
+# attendance_code = sync_table.alias("attendance_code")
+# attendance_code(valid_tables.attendance_code)
 
-    codeset = sync_table.alias("codeset")
-    codeset(valid_tables.codeset)
+# attendance_conversion_items = sync_table.alias("attendance_conversion_items")
+# attendance_conversion_items(valid_tables.attendance_conversion_items)
 
-    courses = sync_table.alias("courses")
-    courses(valid_tables.courses)
+# bell_schedule = sync_table.alias("bell_schedule")
+# bell_schedule(valid_tables.bell_schedule)
 
-    cycle_day = sync_table.alias("cycle_day")
-    cycle_day(valid_tables.cycle_day)
+# calendar_day = sync_table.alias("calendar_day")
+# calendar_day(valid_tables.calendar_day)
 
-    districtteachercategory = sync_table.alias("districtteachercategory")
-    districtteachercategory(valid_tables.districtteachercategory)
+# codeset = sync_table.alias("codeset")
+# codeset(valid_tables.codeset)
 
-    emailaddress = sync_table.alias("emailaddress")
-    emailaddress(valid_tables.emailaddress)
+# courses = sync_table.alias("courses")
+# courses(valid_tables.courses)
 
-    fte = sync_table.alias("fte")
-    fte(valid_tables.fte)
+# cycle_day = sync_table.alias("cycle_day")
+# cycle_day(valid_tables.cycle_day)
 
-    gen = sync_table.alias("gen")
-    gen(valid_tables.gen)
+# districtteachercategory = sync_table.alias("districtteachercategory")
+# districtteachercategory(valid_tables.districtteachercategory)
 
-    gradecalcformulaweight = sync_table.alias("gradecalcformulaweight")
-    gradecalcformulaweight(valid_tables.gradecalcformulaweight)
+# emailaddress = sync_table.alias("emailaddress")
+# emailaddress(valid_tables.emailaddress)
 
-    gradecalcschoolassoc = sync_table.alias("gradecalcschoolassoc")
-    gradecalcschoolassoc(valid_tables.gradecalcschoolassoc)
+# fte = sync_table.alias("fte")
+# fte(valid_tables.fte)
 
-    gradecalculationtype = sync_table.alias("gradecalculationtype")
-    gradecalculationtype(valid_tables.gradecalculationtype)
+# gen = sync_table.alias("gen")
+# gen(valid_tables.gen)
 
-    gradeformulaset = sync_table.alias("gradeformulaset")
-    gradeformulaset(valid_tables.gradeformulaset)
+# gradecalcformulaweight = sync_table.alias("gradecalcformulaweight")
+# gradecalcformulaweight(valid_tables.gradecalcformulaweight)
 
-    gradescaleitem = sync_table.alias("gradescaleitem")
-    gradescaleitem(valid_tables.gradescaleitem)
+# gradecalcschoolassoc = sync_table.alias("gradecalcschoolassoc")
+# gradecalcschoolassoc(valid_tables.gradecalcschoolassoc)
 
-    gradeschoolconfig = sync_table.alias("gradeschoolconfig")
-    gradeschoolconfig(valid_tables.gradeschoolconfig)
+# gradecalculationtype = sync_table.alias("gradecalculationtype")
+# gradecalculationtype(valid_tables.gradecalculationtype)
 
-    gradeschoolformulaassoc = sync_table.alias("gradeschoolformulaassoc")
-    gradeschoolformulaassoc(valid_tables.gradeschoolformulaassoc)
+# gradeformulaset = sync_table.alias("gradeformulaset")
+# gradeformulaset(valid_tables.gradeformulaset)
 
-    gradesectionconfig = sync_table.alias("gradesectionconfig")
-    gradesectionconfig(valid_tables.gradesectionconfig)
+# gradescaleitem = sync_table.alias("gradescaleitem")
+# gradescaleitem(valid_tables.gradescaleitem)
 
-    originalcontactmap = sync_table.alias("originalcontactmap")
-    originalcontactmap(valid_tables.originalcontactmap)
+# gradeschoolconfig = sync_table.alias("gradeschoolconfig")
+# gradeschoolconfig(valid_tables.gradeschoolconfig)
 
-    period = sync_table.alias("period")
-    period(valid_tables.period)
+# gradeschoolformulaassoc = sync_table.alias("gradeschoolformulaassoc")
+# gradeschoolformulaassoc(valid_tables.gradeschoolformulaassoc)
 
-    person = sync_table.alias("person")
-    person(valid_tables.person)
+# gradesectionconfig = sync_table.alias("gradesectionconfig")
+# gradesectionconfig(valid_tables.gradesectionconfig)
 
-    personaddress = sync_table.alias("personaddress")
-    personaddress(valid_tables.personaddress)
+# originalcontactmap = sync_table.alias("originalcontactmap")
+# originalcontactmap(valid_tables.originalcontactmap)
 
-    personaddressassoc = sync_table.alias("personaddressassoc")
-    personaddressassoc(valid_tables.personaddressassoc)
+# period = sync_table.alias("period")
+# period(valid_tables.period)
 
-    personemailaddressassoc = sync_table.alias("personemailaddressassoc")
-    personemailaddressassoc(valid_tables.personemailaddressassoc)
+# person = sync_table.alias("person")
+# person(valid_tables.person)
 
-    personphonenumberassoc = sync_table.alias("personphonenumberassoc")
-    personphonenumberassoc(valid_tables.personphonenumberassoc)
+# personaddress = sync_table.alias("personaddress")
+# personaddress(valid_tables.personaddress)
 
-    phonenumber = sync_table.alias("phonenumber")
-    phonenumber(valid_tables.phonenumber)
+# personaddressassoc = sync_table.alias("personaddressassoc")
+# personaddressassoc(valid_tables.personaddressassoc)
 
-    prefs = sync_table.alias("prefs")
-    prefs(valid_tables.prefs)
+# personemailaddressassoc = sync_table.alias("personemailaddressassoc")
+# personemailaddressassoc(valid_tables.personemailaddressassoc)
 
-    reenrollments = sync_table.alias("reenrollments")
-    reenrollments(valid_tables.reenrollments)
+# personphonenumberassoc = sync_table.alias("personphonenumberassoc")
+# personphonenumberassoc(valid_tables.personphonenumberassoc)
 
-    roledef = sync_table.alias("roledef")
-    roledef(valid_tables.roledef)
+# phonenumber = sync_table.alias("phonenumber")
+# phonenumber(valid_tables.phonenumber)
 
-    schools = sync_table.alias("schools")
-    schools(valid_tables.schools)
+# prefs = sync_table.alias("prefs")
+# prefs(valid_tables.prefs)
 
-    schoolstaff = sync_table.alias("schoolstaff")
-    schoolstaff(valid_tables.schoolstaff)
+# reenrollments = sync_table.alias("reenrollments")
+# reenrollments(valid_tables.reenrollments)
 
-    sections = sync_table.alias("sections")
-    sections(valid_tables.sections)
+# roledef = sync_table.alias("roledef")
+# roledef(valid_tables.roledef)
 
-    sectionteacher = sync_table.alias("sectionteacher")
-    sectionteacher(valid_tables.sectionteacher)
+# schools = sync_table.alias("schools")
+# schools(valid_tables.schools)
 
-    spenrollments = sync_table.alias("spenrollments")
-    spenrollments(valid_tables.spenrollments)
+# schoolstaff = sync_table.alias("schoolstaff")
+# schoolstaff(valid_tables.schoolstaff)
 
-    students = sync_table.alias("students")
-    students(valid_tables.students)
+# sections = sync_table.alias("sections")
+# sections(valid_tables.sections)
 
-    studentcontactassoc = sync_table.alias("studentcontactassoc")
-    studentcontactassoc(valid_tables.studentcontactassoc)
+# sectionteacher = sync_table.alias("sectionteacher")
+# sectionteacher(valid_tables.sectionteacher)
 
-    studentcontactdetail = sync_table.alias("studentcontactdetail")
-    studentcontactdetail(valid_tables.studentcontactdetail)
+# spenrollments = sync_table.alias("spenrollments")
+# spenrollments(valid_tables.spenrollments)
 
-    studentcorefields = sync_table.alias("studentcorefields")
-    studentcorefields(valid_tables.studentcorefields)
+# students = sync_table.alias("students")
+# students(valid_tables.students)
 
-    studentrace = sync_table.alias("studentrace")
-    studentrace(valid_tables.studentrace)
+# studentcontactassoc = sync_table.alias("studentcontactassoc")
+# studentcontactassoc(valid_tables.studentcontactassoc)
 
-    teachercategory = sync_table.alias("teachercategory")
-    teachercategory(valid_tables.teachercategory)
+# studentcontactdetail = sync_table.alias("studentcontactdetail")
+# studentcontactdetail(valid_tables.studentcontactdetail)
 
-    termbins = sync_table.alias("termbins")
-    termbins(valid_tables.termbins)
+# studentcorefields = sync_table.alias("studentcorefields")
+# studentcorefields(valid_tables.studentcorefields)
 
-    terms = sync_table.alias("terms")
-    terms(valid_tables.terms)
+# studentrace = sync_table.alias("studentrace")
+# studentrace(valid_tables.studentrace)
 
-    test = sync_table.alias("test")
-    test(valid_tables.test)
+# teachercategory = sync_table.alias("teachercategory")
+# teachercategory(valid_tables.teachercategory)
 
-    testscore = sync_table.alias("testscore")
-    testscore(valid_tables.testscore)
+# termbins = sync_table.alias("termbins")
+# termbins(valid_tables.termbins)
 
-    users = sync_table.alias("users")
-    users(valid_tables.users)
+# terms = sync_table.alias("terms")
+# terms(valid_tables.terms)
 
-    assignmentcategoryassoc = sync_table.alias("assignmentcategoryassoc")
-    assignmentcategoryassoc(valid_tables.assignmentcategoryassoc)
+# test = sync_table.alias("test")
+# test(valid_tables.test)
 
-    cc = sync_table.alias("cc")
-    cc(valid_tables.cc)
+# testscore = sync_table.alias("testscore")
+# testscore(valid_tables.testscore)
 
-    log = sync_table.alias("log")
-    log(valid_tables.log)
+# users = sync_table.alias("users")
+# users(valid_tables.users)
 
-    storedgrades = sync_table.alias("storedgrades")
-    storedgrades(valid_tables.storedgrades)
+# assignmentcategoryassoc = sync_table.alias("assignmentcategoryassoc")
+# assignmentcategoryassoc(valid_tables.assignmentcategoryassoc)
 
-    pgfinalgrades = sync_table.alias("pgfinalgrades")
-    pgfinalgrades(valid_tables.pgfinalgrades)
+# cc = sync_table.alias("cc")
+# cc(valid_tables.cc)
 
-    attendance = sync_table.alias("attendance")
-    attendance(valid_tables.attendance)
+# log = sync_table.alias("log")
+# log(valid_tables.log)
 
-    assignmentscore = sync_table.alias("assignmentscore")
-    assignmentscore(valid_tables.assignmentscore)
+# storedgrades = sync_table.alias("storedgrades")
+# storedgrades(valid_tables.storedgrades)
+
+# pgfinalgrades = sync_table.alias("pgfinalgrades")
+# pgfinalgrades(valid_tables.pgfinalgrades)
+
+# attendance = sync_table.alias("attendance")
+# attendance(valid_tables.attendance)
+
+# assignmentscore = sync_table.alias("assignmentscore")
+# assignmentscore(valid_tables.assignmentscore)

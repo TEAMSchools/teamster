@@ -2,91 +2,15 @@ import re
 
 from dagster import Any, Bool, In, Int, List, Out, Output, op
 
+from teamster.core.powerschool.config.db import tables
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
-tables = [
-    "assignmentsection",
-    "attendance_code",
-    "attendance_conversion_items",
-    "bell_schedule",
-    "calendar_day",
-    "codeset",
-    "courses",
-    "cycle_day",
-    "districtteachercategory",
-    "emailaddress",
-    "fte",
-    "gen",
-    "gradecalcformulaweight",
-    "gradecalcschoolassoc",
-    "gradecalculationtype",
-    "gradeformulaset",
-    "gradescaleitem",
-    "gradeschoolconfig",
-    "gradeschoolformulaassoc",
-    "gradesectionconfig",
-    "originalcontactmap",
-    "period",
-    "person",
-    "personaddress",
-    "personaddressassoc",
-    "personemailaddressassoc",
-    "personphonenumberassoc",
-    "phonenumber",
-    "prefs",
-    "reenrollments",
-    "roledef",
-    "schools",
-    "schoolstaff",
-    "sections",
-    "sectionteacher",
-    "spenrollments",
-    "students",
-    "studentcontactassoc",
-    "studentcontactdetail",
-    "studentcorefields",
-    "studentrace",
-    "teachercategory",
-    "termbins",
-    "terms",
-    "test",
-    "testscore",
-    "users",
-    "assignmentcategoryassoc",
-    "cc",
-    "log",
-    "storedgrades",
-    "pgfinalgrades",
-    "attendance",
-    "assignmentscore",
-]
 
-
-@op(out={tbl: Out(Bool, is_required=False) for tbl in tables})
+@op(out={tbl: Out(Bool, is_required=False) for tbl in tables.STANDARD_TABLES})
 def get_counts(context):
-    for tbl in tables:
-        if tbl in [
-            "assignmentsection",
-            "attendance_code",
-            "attendance_conversion_items",
-            "bell_schedule",
-            "calendar_day",
-            "codeset",
-            "courses",
-            "cycle_day",
-            "districtteachercategory",
-            "emailaddress",
-            "fte",
-            "gen",
-            "gradecalcformulaweight",
-            "gradecalcschoolassoc",
-            "gradecalculationtype",
-            "gradeformulaset",
-            "gradescaleitem",
-            "gradeschoolconfig",
-            "gradeschoolformulaassoc",
-        ]:
+    for tbl in tables.STANDARD_TABLES:
+        if tbl in [t for t in tables.STANDARD_TABLES if t in [11, 5, 19, 8, 7]]:
             yield Output(value=True, output_name=tbl)
 
 
@@ -114,20 +38,16 @@ def extract(context, has_count):
         last_run=last_run.isoformat(timespec="microseconds"),
     )
 
-    if context.resources.ssh.tunnel:
-        context.log.info("Starting SSH tunnel")
-        ssh_tunnel = context.resources.ssh.get_tunnel()
-        ssh_tunnel.start()
-    else:
-        ssh_tunnel = None
+    context.log.info("Starting SSH tunnel")
+    ssh_tunnel = context.resources.ssh.get_tunnel()
+    ssh_tunnel.start()
 
     data = context.resources.db.execute_query(
         query=sql, partition_size=context.op_config["partition_size"], output_fmt="file"
     )
 
-    if ssh_tunnel is not None:
-        context.log.info("Stopping SSH tunnel")
-        ssh_tunnel.stop()
+    context.log.info("Stopping SSH tunnel")
+    ssh_tunnel.stop()
 
     if data:
         file_handles = []
