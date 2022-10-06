@@ -5,26 +5,120 @@ from teamster.core.powerschool.graphs.db import sync_table
 
 @graph
 def sync_extensions():
-    s_nj_crs_x = sync_table.alias("s_nj_crs_x")
-    s_nj_crs_x()
+    tables = [
+        "u_def_ext_students",
+        "u_studentsuserfields",
+        "u_clg_et_stu_alt",
+        "u_clg_et_stu",
+        "s_nj_usr_x",
+        "s_nj_stu_x",
+        "s_nj_ren_x",
+        "s_nj_crs_x",
+    ]
 
-    s_nj_ren_x = sync_table.alias("s_nj_ren_x")
-    s_nj_ren_x()
+    for tbl in tables:
+        graph_instance = sync_table.alias(tbl)
+        graph_instance()
 
-    s_nj_stu_x = sync_table.alias("s_nj_stu_x")
-    s_nj_stu_x()
 
-    s_nj_usr_x = sync_table.alias("s_nj_usr_x")
-    s_nj_usr_x()
+@graph
+def resync():
+    tables = [
+        "assignmentsection",
+        "attendance_code",
+        "attendance_conversion_items",
+        "bell_schedule",
+        "calendar_day",
+        "codeset",
+        "courses",
+        "cycle_day",
+        "districtteachercategory",
+        "emailaddress",
+        "fte",
+        "gen",
+        "gradecalcformulaweight",
+        "gradecalcschoolassoc",
+        "gradecalculationtype",
+        "gradeformulaset",
+        "gradescaleitem",
+        "gradeschoolconfig",
+        "gradeschoolformulaassoc",
+        "gradesectionconfig",
+        "originalcontactmap",
+        "period",
+        "person",
+        "personaddress",
+        "personaddressassoc",
+        "personemailaddressassoc",
+        "personphonenumberassoc",
+        "phonenumber",
+        "prefs",
+        "reenrollments",
+        "roledef",
+        "schools",
+        "schoolstaff",
+        "sections",
+        "sectionteacher",
+        "spenrollments",
+        "students",
+        "studentcontactassoc",
+        "studentcontactdetail",
+        "studentcorefields",
+        "studentrace",
+        "teachercategory",
+        "termbins",
+        "terms",
+        "test",
+        "testscore",
+        "users",
+        "assignmentcategoryassoc_R01",
+        "assignmentcategoryassoc_R02",
+        "assignmentcategoryassoc_R03",
+        "assignmentcategoryassoc_R04",
+        "assignmentcategoryassoc_R05",
+        "cc_R01",
+        "cc_R02",
+        "cc_R03",
+        "cc_R04",
+        "cc_R05",
+        "cc_R06",
+        "log_R01",
+        "log_R02",
+        "log_R03",
+        "log_R04",
+        "storedgrades_R01",
+        "storedgrades_R02",
+        "storedgrades_R03",
+        "storedgrades_R04",
+        "storedgrades_R05",
+        "storedgrades_R06",
+        "storedgrades_R07",
+        "storedgrades_R08",
+        "storedgrades_R09",
+        "storedgrades_R10",
+        "storedgrades_R11",
+        "storedgrades_R12",
+        "pgfinalgrades_R01",
+        "pgfinalgrades_R02",
+        "pgfinalgrades_R03",
+        "attendance_R01",
+        "attendance_R02",
+        "attendance_R03",
+        "attendance_R04",
+        "attendance_R05",
+        "assignmentscore_R01",
+        "assignmentscore_R02",
+        "assignmentscore_R03",
+        "assignmentscore_R04",
+        "assignmentscore_R05",
+        "assignmentscore_R06",
+        "assignmentscore_R07",
+        "assignmentscore_R08",
+        "assignmentscore_R09",
+        "assignmentscore_R10",
+        "assignmentscore_R11",
+    ]
 
-    u_clg_et_stu = sync_table.alias("u_clg_et_stu")
-    u_clg_et_stu()
-
-    u_clg_et_stu_alt = sync_table.alias("u_clg_et_stu_alt")
-    u_clg_et_stu_alt()
-
-    u_def_ext_students = sync_table.alias("u_def_ext_students")
-    u_def_ext_students()
-
-    u_studentsuserfields = sync_table.alias("u_studentsuserfields")
-    u_studentsuserfields()
+    for tbl in tables:
+        graph_instance = sync_table.alias(tbl)
+        graph_instance()
