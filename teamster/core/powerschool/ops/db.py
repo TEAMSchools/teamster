@@ -10,7 +10,7 @@ from teamster.core.utils.variables import TODAY
 @op(out={tbl: Out(Bool, is_required=False) for tbl in tables.STANDARD_TABLES})
 def get_counts(context):
     for tbl in tables.STANDARD_TABLES:
-        if tbl in [t for t in tables.STANDARD_TABLES if t in [11, 5, 19, 8, 7]]:
+        if tbl in ["codeset", "prefs"]:
             yield Output(value=True, output_name=tbl)
 
 
