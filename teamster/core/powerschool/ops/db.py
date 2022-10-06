@@ -1,6 +1,6 @@
 import re
 
-from dagster import Any, Bool, In, Int, List, Out, Output, String, op
+from dagster import Any, Bool, In, Int, List, Out, Output, op
 
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
@@ -63,7 +63,7 @@ tables = [
 ]
 
 
-@op(out={tbl: Out(String) for tbl in tables})
+@op(out={tbl: Out(Bool) for tbl in tables})
 def get_counts(context):
     for tbl in tables:
         if tbl in [
