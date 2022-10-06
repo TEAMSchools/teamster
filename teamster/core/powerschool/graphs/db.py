@@ -11,7 +11,7 @@ from teamster.core.powerschool.ops.db import extract, get_counts
 def construct_sync_multi_config(config):
     for tbl in config.items():
         table_name, config_val = tbl
-        return {table_name: {"config": {"sql": config_val}}}
+        return {table_name: {"config": config_val}}
 
 
 @config_mapping(config_schema=schema.PS_DB_CONFIG)
