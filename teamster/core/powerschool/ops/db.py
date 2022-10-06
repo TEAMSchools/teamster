@@ -1,18 +1,103 @@
 import re
 
-from dagster import Any, Int, List, Out, Output, op
+from dagster import Any, Bool, In, Int, List, Out, Output, String, op
 
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
+tables = [
+    "assignmentsection",
+    "attendance_code",
+    "attendance_conversion_items",
+    "bell_schedule",
+    "calendar_day",
+    "codeset",
+    "courses",
+    "cycle_day",
+    "districtteachercategory",
+    "emailaddress",
+    "fte",
+    "gen",
+    "gradecalcformulaweight",
+    "gradecalcschoolassoc",
+    "gradecalculationtype",
+    "gradeformulaset",
+    "gradescaleitem",
+    "gradeschoolconfig",
+    "gradeschoolformulaassoc",
+    "gradesectionconfig",
+    "originalcontactmap",
+    "period",
+    "person",
+    "personaddress",
+    "personaddressassoc",
+    "personemailaddressassoc",
+    "personphonenumberassoc",
+    "phonenumber",
+    "prefs",
+    "reenrollments",
+    "roledef",
+    "schools",
+    "schoolstaff",
+    "sections",
+    "sectionteacher",
+    "spenrollments",
+    "students",
+    "studentcontactassoc",
+    "studentcontactdetail",
+    "studentcorefields",
+    "studentrace",
+    "teachercategory",
+    "termbins",
+    "terms",
+    "test",
+    "testscore",
+    "users",
+    "assignmentcategoryassoc",
+    "cc",
+    "log",
+    "storedgrades",
+    "pgfinalgrades",
+    "attendance",
+    "assignmentscore",
+]
+
+
+@op(out={tbl: Out(String) for tbl in tables})
+def get_counts(context):
+    for tbl in tables:
+        if tbl in [
+            "assignmentsection",
+            "attendance_code",
+            "attendance_conversion_items",
+            "bell_schedule",
+            "calendar_day",
+            "codeset",
+            "courses",
+            "cycle_day",
+            "districtteachercategory",
+            "emailaddress",
+            "fte",
+            "gen",
+            "gradecalcformulaweight",
+            "gradecalcschoolassoc",
+            "gradecalculationtype",
+            "gradeformulaset",
+            "gradescaleitem",
+            "gradeschoolconfig",
+            "gradeschoolformulaassoc",
+        ]:
+            yield Output(value=True, output_name=tbl)
+
 
 @op(
     config_schema={"sql": Any, "partition_size": Int},
+    ins={"has_count": In(dagster_type=Bool)},
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
     tags={"dagster/priority": 1},
 )
-def extract(context):
+def extract(context, has_count):
     sql = context.op_config["sql"]
     file_manager_key = context.solid_handle.path[0]
 
