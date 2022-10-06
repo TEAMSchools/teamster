@@ -9,9 +9,13 @@ from teamster.core.powerschool.ops.db import extract, get_counts
 
 @config_mapping()
 def construct_sync_multi_config(config):
+    constructed_config = {}
+
     for tbl in config.items():
         table_name, config_val = tbl
-        return {table_name: {"config": config_val}}
+        constructed_config[table_name] = {"config": config_val}
+
+    return constructed_config
 
 
 @config_mapping(config_schema=schema.PS_DB_CONFIG)
