@@ -1,4 +1,4 @@
-from dagster import Array, Field, Int, ScalarUnion, Shape, String
+from dagster import Array, Bool, Field, Int, ScalarUnion, Shape, String
 
 QUERY_CONFIG = Shape(
     {
@@ -46,5 +46,6 @@ QUERY_CONFIG = Shape(
 )
 
 TABLES_CONFIG = Field(
-    Shape({"graph_alias": String, "queries": Array(QUERY_CONFIG)}), is_required=False
+    Shape({"resync": Bool, "graph_alias": String, "queries": Array(QUERY_CONFIG)}),
+    is_required=False,
 )
