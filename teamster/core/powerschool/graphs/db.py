@@ -7,7 +7,7 @@ from teamster.core.powerschool.config.db import schema, tables
 from teamster.core.powerschool.ops.db import extract, get_counts
 
 
-@config_mapping(config_schema=schema.TABLES_CONFIG)
+@config_mapping(config_schema=schema.TABLES_CONFIG)  # type: ignore
 def construct_sync_multi_config(config):
     constructed_config = {"get_counts": {"config": {"queries": []}}}
 
@@ -15,8 +15,9 @@ def construct_sync_multi_config(config):
         sql_config = query["sql"]
 
         table_name = sql_config["schema"]["table"]["name"]
-        constructed_config[table_name] = {"config": sql_config}
+        constructed_config[table_name] = {"config": {"sql": sql_config}}
 
+        sql = None
         [(sql_key, sql_value)] = sql_config.items()
         if sql_key == "text":
             sql = text(sql_value)
@@ -46,17 +47,17 @@ def construct_sync_multi_config(config):
     return constructed_config
 
 
-@config_mapping(config_schema=schema.QUERY_CONFIG)
+@config_mapping(config_schema=schema.QUERY_CONFIG)  # type: ignore
 def construct_sync_table_config(config):
     return {"extract": {"config": {"partition_size": config["partition_size"]}}}
 
 
-@graph(config=construct_sync_table_config)
+@graph(config=construct_sync_table_config)  # type: ignore
 def sync_table(has_count):
     extract(has_count)
 
 
-@graph(config=construct_sync_multi_config)
+@graph(config=construct_sync_multi_config)  # type: ignore
 def sync():  # TODO: rename to sync_standard
     valid_tables = get_counts()
 
