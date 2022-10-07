@@ -5,7 +5,7 @@ from dagster import config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.powerschool.config.db import schema
-from teamster.core.powerschool.ops.db import extract, get_counts_factory
+from teamster.core.powerschool.ops.db import extract_to_data_lake, get_counts_factory
 
 
 def get_table_names(instance, table_set):
@@ -64,20 +64,26 @@ def construct_sync_table_config(config):
 
 
 @graph(config=construct_sync_table_config)
-def sync_table(has_count):
-    extract(has_count)
+def sync_table(sql):
+    extract_to_data_lake(sql)
 
 
-@graph(config=construct_sync_multi_config)
-def sync():  # TODO: rename to sync_standard
-    table_names = get_table_names(instance="core", table_set="standard")
+def graph_factory(instance, table_set):
+    table_names = get_table_names(instance=instance, table_set=table_set)
 
-    get_counts = get_counts_factory(table_names=table_names)
-    valid_tables = get_counts()
+    @graph(config=construct_sync_multi_config)
+    def sync_standard():
+        get_counts = get_counts_factory(table_names=table_names)
+        valid_tables = get_counts()
 
-    for tbl in table_names:
-        sync_table_inst = sync_table.alias(tbl)
-        sync_table_inst(getattr(valid_tables, tbl))
+        for tbl in table_names:
+            sync_table_inst = sync_table.alias(tbl)
+            sync_table_inst(getattr(valid_tables, tbl))
+
+    return sync_standard
+
+
+sync_standard = graph_factory(instance="core", table_set="standard")
 
 
 # @graph

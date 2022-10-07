@@ -7,7 +7,6 @@ from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
 
-# TODO: make op factory for table sets?
 def get_counts_factory(table_names):
     @op(
         config_schema={"queries": Array(Any)},
@@ -35,7 +34,11 @@ def get_counts_factory(table_names):
             else:
                 [(count,)] = context.resources.db.execute_query(
                     query=text(
-                        f"SELECT COUNT(*) FROM {table_name} WHERE {sql.whereclause.text}"
+                        (
+                            "SELECT COUNT(*) "
+                            f"FROM {table_name} "
+                            f"WHERE {sql.whereclause.text}"
+                        )
                     ),
                     partition_size=1,
                     output_fmt=None,
@@ -57,7 +60,7 @@ def get_counts_factory(table_names):
     required_resource_keys={"db", "ssh", "file_manager"},
     tags={"dagster/priority": 1},
 )
-def extract(context, sql):
+def extract_to_data_lake(context, sql):
     file_manager_key = context.solid_handle.path[0]
 
     # organize partitions under table folder

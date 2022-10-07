@@ -2,7 +2,7 @@ from dagster import config_from_files
 from dagster_gcp.gcs import gcs_file_manager, gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.powerschool.graphs.db import sync  # test_sync_table
+from teamster.core.powerschool.graphs.db import sync_standard  # test_sync_table
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
@@ -25,7 +25,7 @@ from teamster.core.resources.ssh import ssh_resource
 #     ),
 # )
 
-powerschool_db_sync_std = sync.to_job(
+powerschool_db_sync_std = sync_standard.to_job(
     name="powerschool_db_sync_std",
     executor_def=k8s_job_executor,
     resource_defs={
