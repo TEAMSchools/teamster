@@ -1,5 +1,6 @@
 ops:
   config:
+    graph_alias: standard
     queries:
       # no filter
       - sql:

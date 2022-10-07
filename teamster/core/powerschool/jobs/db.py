@@ -21,6 +21,7 @@ powerschool_db_sync_std = sync_standard.to_job(
             "teamster/core/resources/config/google.yaml",
             "teamster/core/powerschool/config/db/resource.yaml",
             "teamster/core/powerschool/config/db/sync.yaml",
+            "teamster/core/powerschool/config/db/sync-standard.yaml",
         ]
     ),
 )
@@ -37,9 +38,10 @@ powerschool_db_resync = resync.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/resources/config/google.yaml",
-            "./teamster/core/powerschool/config/db/resource.yaml",
-            "./teamster/core/powerschool/config/db/resync.yaml",
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/powerschool/config/db/resource.yaml",
+            "teamster/core/powerschool/config/db/resync.yaml",
+            "teamster/local/powerschool/config/db/sync-resync.yaml",
         ]
     ),
 )

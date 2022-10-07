@@ -45,7 +45,8 @@ def construct_sync_table_config(config):
 
 @config_mapping(config_schema=schema.TABLES_CONFIG)
 def construct_sync_table_multi_config(config):
-    constructed_config = {"get_counts": {"config": {"queries": []}}}
+    graph_alias = config["graph_alias"]
+    constructed_config = {f"get_counts_{graph_alias}": {"config": {"queries": []}}}
 
     for query in config["queries"]:
         sql_config = query["sql"]
@@ -80,7 +81,7 @@ def construct_sync_table_multi_config(config):
                 .where(text(constructed_sql_where))
             )
 
-        constructed_config["get_counts"]["config"]["queries"].append(sql)
+        constructed_config[f"get_counts_{graph_alias}"]["config"]["queries"].append(sql)
 
     return constructed_config
 

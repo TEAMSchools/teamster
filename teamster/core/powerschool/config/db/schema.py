@@ -45,4 +45,6 @@ QUERY_CONFIG = Shape(
     }
 )
 
-TABLES_CONFIG = Field(Shape({"queries": Array(QUERY_CONFIG)}), is_required=False)
+TABLES_CONFIG = Field(
+    Shape({"graph_alias": String, "queries": Array(QUERY_CONFIG)}), is_required=False
+)
