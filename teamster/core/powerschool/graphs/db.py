@@ -35,6 +35,7 @@ def construct_sync_table_config(config):
                 f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
                 "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
             )
+
         else:
             constructed_sql_where = ""
 
@@ -60,7 +61,7 @@ def sync_table(has_count):
 
 
 @graph(config=construct_sync_multi_config)
-def sync():
+def sync():  # TODO: rename to sync_standard
     valid_tables = get_counts()
 
     for tbl in tables.STANDARD_TABLES:

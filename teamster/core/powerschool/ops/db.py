@@ -7,6 +7,7 @@ from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
 
+# TODO: make op factory for table sets?
 @op(out={tbl: Out(Bool, is_required=False) for tbl in tables.STANDARD_TABLES})
 def get_counts(context):
     for tbl in tables.STANDARD_TABLES:

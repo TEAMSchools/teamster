@@ -1,56 +1,13 @@
-STANDARD_TABLES = [
-    "assignmentsection",
-    "attendance_code",
-    "attendance_conversion_items",
-    "bell_schedule",
-    "calendar_day",
-    "codeset",
-    "courses",
-    "cycle_day",
-    "districtteachercategory",
-    "emailaddress",
-    "fte",
-    "gen",
-    "gradecalcformulaweight",
-    "gradecalcschoolassoc",
-    "gradecalculationtype",
-    "gradeformulaset",
-    "gradescaleitem",
-    "gradeschoolconfig",
-    "gradeschoolformulaassoc",
-    "gradesectionconfig",
-    "originalcontactmap",
-    "period",
-    "person",
-    "personaddress",
-    "personaddressassoc",
-    "personemailaddressassoc",
-    "personphonenumberassoc",
-    "phonenumber",
-    "prefs",
-    "reenrollments",
-    "roledef",
-    "schools",
-    "schoolstaff",
-    "sections",
-    "sectionteacher",
-    "spenrollments",
-    "students",
-    "studentcontactassoc",
-    "studentcontactdetail",
-    "studentcorefields",
-    "studentrace",
-    "teachercategory",
-    "termbins",
-    "terms",
-    "test",
-    "testscore",
-    "users",
-    "assignmentcategoryassoc",
-    "cc",
-    "log",
-    "storedgrades",
-    "pgfinalgrades",
-    "attendance",
-    "assignmentscore",
-]
+import yaml
+
+
+def get_table_names(instance, table_set):
+    file_path = f"teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
+
+    with open(file=file_path) as f:
+        config_yaml = yaml.safe_load(f.read())
+
+    return list(config_yaml["ops"]["config"].keys())
+
+
+STANDARD_TABLES = get_table_names(instance="core", table_set="standard")
