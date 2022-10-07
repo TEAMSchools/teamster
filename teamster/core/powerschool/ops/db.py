@@ -1,6 +1,7 @@
 import re
 
-from dagster import Any, Bool, In, Int, List, Out, Output, op
+from dagster import Any, Array, In, Int, List, Out, Output, op
+from sqlalchemy import text
 
 from teamster.core.powerschool.config.db import tables
 from teamster.core.utils.functions import get_last_schedule_run
@@ -8,22 +9,50 @@ from teamster.core.utils.variables import TODAY
 
 
 # TODO: make op factory for table sets?
-@op(out={tbl: Out(Bool, is_required=False) for tbl in tables.STANDARD_TABLES})
+@op(
+    config_schema={"queries": Array(Any)},
+    out={tbl: Out(Any, is_required=False) for tbl in tables.STANDARD_TABLES},
+    required_resource_keys={"db", "ssh"},
+)
 def get_counts(context):
-    for tbl in tables.STANDARD_TABLES:
-        if tbl in ["codeset", "prefs"]:
-            yield Output(value=True, output_name=tbl)
+    context.log.info("Starting SSH tunnel")
+    ssh_tunnel = context.resources.ssh.get_tunnel()
+    ssh_tunnel.start()
+
+    for sql in context.op_config["queries"]:
+        table_name = sql.get_final_froms()[0].name
+
+        # format where clause
+        last_run = get_last_schedule_run(context) or TODAY
+        sql.whereclause.text = sql.whereclause.text.format(
+            today=TODAY.isoformat(timespec="microseconds"),
+            last_run=last_run.isoformat(timespec="microseconds"),
+        )
+
+        count_sql = text(
+            f"SELECT COUNT(*) FROM {table_name} WHERE {sql.whereclause.text}"
+        )
+
+        data = context.resources.db.execute_query(
+            query=count_sql, partition_size=1, output_fmt=None
+        )
+
+        [(count,)] = data
+        if count > 0:
+            yield Output(value=sql, output_name=table_name)
+
+    context.log.info("Stopping SSH tunnel")
+    ssh_tunnel.stop()
 
 
 @op(
-    config_schema={"sql": Any, "partition_size": Int},
-    ins={"has_count": In(dagster_type=Bool)},
+    config_schema={"partition_size": Int},
+    ins={"sql": In(dagster_type=Any)},
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
     tags={"dagster/priority": 1},
 )
-def extract(context, has_count):
-    sql = context.op_config["sql"]
+def extract(context, sql):
     file_manager_key = context.solid_handle.path[0]
 
     # organize partitions under table folder
@@ -31,13 +60,6 @@ def extract(context, has_count):
     if re_match:
         table_name, resync_partition = re_match.groups()
         file_manager_key = f"{table_name}/{resync_partition}"
-
-    # format where clause
-    last_run = get_last_schedule_run(context) or TODAY
-    sql.whereclause.text = sql.whereclause.text.format(
-        today=TODAY.isoformat(timespec="microseconds"),
-        last_run=last_run.isoformat(timespec="microseconds"),
-    )
 
     context.log.info("Starting SSH tunnel")
     ssh_tunnel = context.resources.ssh.get_tunnel()

@@ -7,52 +7,48 @@ from teamster.core.powerschool.config.db import schema, tables
 from teamster.core.powerschool.ops.db import extract, get_counts
 
 
-@config_mapping()
+@config_mapping(config_schema=schema.TABLES_CONFIG)
 def construct_sync_multi_config(config):
-    constructed_config = {}
+    constructed_config = {"get_counts": {"config": {"queries": []}}}
 
-    for tbl in config.items():
-        table_name, config_val = tbl
-        constructed_config[table_name] = {"config": config_val}
+    for query in config["queries"]:
+        sql_config = query["sql"]
+
+        table_name = sql_config["schema"]["table"]["name"]
+        constructed_config[table_name] = {"config": sql_config}
+
+        [(sql_key, sql_value)] = sql_config.items()
+        if sql_key == "text":
+            sql = text(sql_value)
+        elif sql_key == "file":
+            sql_file = pathlib.Path(sql_value).absolute()
+            with sql_file.open(mode="r") as f:
+                sql = text(f.read())
+        elif sql_key == "schema":
+            sql_where = sql_value.get("where")
+            if sql_where is not None:
+                constructed_sql_where = (
+                    f"{sql_where['column']} >= "
+                    f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
+                    "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+                )
+            else:
+                constructed_sql_where = ""
+
+            sql = (
+                select(*[literal_column(col) for col in sql_value["select"]])
+                .select_from(table(**sql_value["table"]))
+                .where(text(constructed_sql_where))
+            )
+
+        constructed_config["get_counts"]["config"]["queries"].append(sql)
 
     return constructed_config
 
 
-@config_mapping(config_schema=schema.PS_DB_CONFIG)
+@config_mapping(config_schema=schema.QUERY_CONFIG)
 def construct_sync_table_config(config):
-    [(sql_key, sql_value)] = config["sql"].items()
-    if sql_key == "text":
-        sql = text(sql_value)
-    elif sql_key == "file":
-        sql_file = pathlib.Path(sql_value).absolute()
-        with sql_file.open(mode="r") as f:
-            sql = text(f.read())
-    elif sql_key == "schema":
-        sql_where = sql_value.get("where")
-        if sql_where is not None:
-            constructed_sql_where = (
-                f"{sql_where['column']} >= "
-                f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
-                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
-            )
-
-        else:
-            constructed_sql_where = ""
-
-        sql = (
-            select(*[literal_column(col) for col in sql_value["select"]])
-            .select_from(table(**sql_value["table"]))
-            .where(text(constructed_sql_where))
-        )
-
-    return {
-        "extract": {
-            "config": {
-                "sql": sql,
-                "partition_size": config["partition_size"],
-            }
-        }
-    }
+    return {"extract": {"config": {"partition_size": config["partition_size"]}}}
 
 
 @graph(config=construct_sync_table_config)

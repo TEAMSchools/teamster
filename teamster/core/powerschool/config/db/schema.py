@@ -1,6 +1,6 @@
 from dagster import Array, Field, Int, Shape, String
 
-PS_DB_CONFIG = Shape(
+QUERY_CONFIG = Shape(
     {
         "partition_size": Field(Int, is_required=False, default_value=100000),
         "sql": Shape(
@@ -41,3 +41,5 @@ PS_DB_CONFIG = Shape(
         ),
     }
 )
+
+TABLES_CONFIG = Shape({"queries": Array(QUERY_CONFIG)})

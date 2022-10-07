@@ -70,7 +70,11 @@ class SqlAlchemyEngine(object):
                 self.log.info(f"Retrieved {len_data} rows.")
             else:
                 pts_unpacked = [rows for pt in partitions for rows in pt]
-                output_obj = [dict(row) for row in pts_unpacked]
+
+                if output_fmt in ["dict", "json"]:
+                    output_obj = [dict(row) for row in pts_unpacked]
+                else:
+                    output_obj = [row for row in pts_unpacked]
 
                 self.log.info(f"Retrieved {len(output_obj)} rows.")
 

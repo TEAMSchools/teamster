@@ -7,7 +7,8 @@ def get_table_names(instance, table_set):
     with open(file=file_path) as f:
         config_yaml = yaml.safe_load(f.read())
 
-    return list(config_yaml["ops"]["config"].keys())
+    table_configs = config_yaml["ops"]["config"]["queries"]
+    return [t["sql"]["schema"]["table"]["name"] for t in table_configs]
 
 
 STANDARD_TABLES = get_table_names(instance="core", table_set="standard")
