@@ -3,49 +3,51 @@ import re
 from dagster import Any, Array, In, Int, List, Out, Output, op
 from sqlalchemy import text
 
-from teamster.core.powerschool.config.db import tables
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
 
 # TODO: make op factory for table sets?
-@op(
-    config_schema={"queries": Array(Any)},
-    out={tbl: Out(Any, is_required=False) for tbl in tables.STANDARD_TABLES},
-    required_resource_keys={"db", "ssh"},
-)
-def get_counts(context):
-    context.log.info("Starting SSH tunnel")
-    ssh_tunnel = context.resources.ssh.get_tunnel()
-    ssh_tunnel.start()
+def get_counts_factory(table_names):
+    @op(
+        config_schema={"queries": Array(Any)},
+        out={tbl: Out(Any, is_required=False) for tbl in table_names},
+        required_resource_keys={"db", "ssh"},
+    )
+    def get_counts(context):
+        context.log.info("Starting SSH tunnel")
+        ssh_tunnel = context.resources.ssh.get_tunnel()
+        ssh_tunnel.start()
 
-    for sql in context.op_config["queries"]:
-        table_name = sql.get_final_froms()[0].name
+        for sql in context.op_config["queries"]:
+            table_name = sql.get_final_froms()[0].name
 
-        # format where clause
-        sql.whereclause.text = sql.whereclause.text.format(
-            today=TODAY.isoformat(timespec="microseconds"),
-            last_run=(get_last_schedule_run(context) or TODAY).isoformat(
-                timespec="microseconds"
-            ),
-        )
-
-        if sql.whereclause.text == "":
-            yield Output(value=sql, output_name=table_name)
-        else:
-            [(count,)] = context.resources.db.execute_query(
-                query=text(
-                    f"SELECT COUNT(*) FROM {table_name} WHERE {sql.whereclause.text}"
+            # format where clause
+            sql.whereclause.text = sql.whereclause.text.format(
+                today=TODAY.isoformat(timespec="microseconds"),
+                last_run=(get_last_schedule_run(context) or TODAY).isoformat(
+                    timespec="microseconds"
                 ),
-                partition_size=1,
-                output_fmt=None,
             )
 
-            if count > 0:
+            if sql.whereclause.text == "":
                 yield Output(value=sql, output_name=table_name)
+            else:
+                [(count,)] = context.resources.db.execute_query(
+                    query=text(
+                        f"SELECT COUNT(*) FROM {table_name} WHERE {sql.whereclause.text}"
+                    ),
+                    partition_size=1,
+                    output_fmt=None,
+                )
 
-    context.log.info("Stopping SSH tunnel")
-    ssh_tunnel.stop()
+                if count > 0:
+                    yield Output(value=sql, output_name=table_name)
+
+        context.log.info("Stopping SSH tunnel")
+        ssh_tunnel.stop()
+
+    return get_counts
 
 
 @op(

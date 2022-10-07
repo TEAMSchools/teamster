@@ -1,13 +1,24 @@
 import pathlib
 
+import yaml
 from dagster import config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.powerschool.config.db import schema, tables
-from teamster.core.powerschool.ops.db import extract, get_counts
+from teamster.core.powerschool.config.db import schema
+from teamster.core.powerschool.ops.db import extract, get_counts_factory
 
 
-@config_mapping(config_schema=schema.TABLES_CONFIG)  # type: ignore
+def get_table_names(instance, table_set):
+    file_path = f"teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
+
+    with open(file=file_path) as f:
+        config_yaml = yaml.safe_load(f.read())
+
+    table_configs = config_yaml["ops"]["config"]["queries"]
+    return [t["sql"]["schema"]["table"]["name"] for t in table_configs]
+
+
+@config_mapping(config_schema=schema.TABLES_CONFIG)
 def construct_sync_multi_config(config):
     constructed_config = {"get_counts": {"config": {"queries": []}}}
 
@@ -47,21 +58,24 @@ def construct_sync_multi_config(config):
     return constructed_config
 
 
-@config_mapping(config_schema=schema.QUERY_CONFIG)  # type: ignore
+@config_mapping(config_schema=schema.QUERY_CONFIG)
 def construct_sync_table_config(config):
     return {"extract": {"config": {"partition_size": config["partition_size"]}}}
 
 
-@graph(config=construct_sync_table_config)  # type: ignore
+@graph(config=construct_sync_table_config)
 def sync_table(has_count):
     extract(has_count)
 
 
-@graph(config=construct_sync_multi_config)  # type: ignore
+@graph(config=construct_sync_multi_config)
 def sync():  # TODO: rename to sync_standard
+    table_names = get_table_names(instance="core", table_set="standard")
+
+    get_counts = get_counts_factory(table_names=table_names)
     valid_tables = get_counts()
 
-    for tbl in tables.STANDARD_TABLES:
+    for tbl in table_names:
         sync_table_inst = sync_table.alias(tbl)
         sync_table_inst(getattr(valid_tables, tbl))
 

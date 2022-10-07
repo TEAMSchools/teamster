@@ -31,7 +31,7 @@ class SqlAlchemyEngine(object):
     def execute_query(self, query, partition_size, output_fmt, connect_kwargs={}):
         self.log.info(f"Executing query:\n{query}")
 
-        with self.engine.connect(**connect_kwargs) as conn:  # type: ignore
+        with self.engine.connect(**connect_kwargs) as conn:
             # with time_limit(seconds=60):
             result = conn.execute(statement=query)
 
