@@ -1,5 +1,6 @@
 ops:
   config:
+    resync: false
     graph_alias: standard
     queries:
       # no filter

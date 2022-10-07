@@ -1,5 +1,6 @@
 ops:
   config:
+    resync: True
     graph_alias: resync
     queries:
       - sql:
