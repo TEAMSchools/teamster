@@ -23,10 +23,11 @@ def get_counts(context):
         table_name = sql.get_final_froms()[0].name
 
         # format where clause
-        last_run = get_last_schedule_run(context) or TODAY
         sql.whereclause.text = sql.whereclause.text.format(
             today=TODAY.isoformat(timespec="microseconds"),
-            last_run=last_run.isoformat(timespec="microseconds"),
+            last_run=(get_last_schedule_run(context) or TODAY).isoformat(
+                timespec="microseconds"
+            ),
         )
 
         if sql.whereclause.text == "":
