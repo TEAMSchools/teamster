@@ -45,13 +45,22 @@ def construct_sync_table_config(config):
 
 @config_mapping(config_schema=schema.TABLES_CONFIG)
 def construct_sync_table_multi_config(config):
+    queries = config["queries"]
+    resync = config["resync"]
     graph_alias = config["graph_alias"]
+
     constructed_config = {f"get_counts_{graph_alias}": {"config": {"queries": []}}}
 
-    for query in config["queries"]:
+    table_iterations = {t["sql"]["schema"]["table"]["name"]: 0 for t in queries}
+    for query in queries:
         sql_config = query["sql"]
 
         table_name = sql_config["schema"]["table"]["name"]
+        if resync:
+            table_iterations[table_name] += 1
+            table_iteration = f"0{table_iterations[table_name]}"[-2:]
+            table_name += f"_R{table_iteration}"
+
         constructed_config[table_name] = {"config": {"sql": sql_config}}
 
         sql = None
