@@ -42,4 +42,4 @@ QUERY_CONFIG = Shape(
     }
 )
 
-TABLES_CONFIG = Shape({"queries": Array(QUERY_CONFIG)})
+TABLES_CONFIG = Field(Shape({"queries": Array(QUERY_CONFIG)}), is_required=False)

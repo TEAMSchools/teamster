@@ -9,13 +9,27 @@ from teamster.core.powerschool.ops.db import extract_to_data_lake, get_counts_fa
 
 
 def get_table_names(instance, table_set):
-    file_path = f"teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
+    file_path = pathlib.Path(
+        f"teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
+    )
 
-    with open(file=file_path) as f:
-        config_yaml = yaml.safe_load(f.read())
+    if file_path.exists():
+        with file_path.open("r") as f:
+            config_yaml = yaml.safe_load(f.read())
 
-    table_configs = config_yaml["ops"]["config"]["queries"]
-    return [t["sql"]["schema"]["table"]["name"] for t in table_configs]
+        return [
+            t["sql"]["schema"]["table"]["name"]
+            for t in config_yaml["ops"]["config"]["queries"]
+        ]
+    else:
+        return []
+
+
+@config_mapping(config_schema=schema.QUERY_CONFIG)
+def construct_sync_table_config(config):
+    return {
+        "extract_to_data_lake": {"config": {"partition_size": config["partition_size"]}}
+    }
 
 
 @config_mapping(config_schema=schema.TABLES_CONFIG)
@@ -58,37 +72,35 @@ def construct_sync_table_multi_config(config):
     return constructed_config
 
 
-@config_mapping(config_schema=schema.QUERY_CONFIG)
-def construct_sync_table_config(config):
-    return {
-        "extract_to_data_lake": {"config": {"partition_size": config["partition_size"]}}
-    }
-
-
 @graph(config=construct_sync_table_config)
 def sync_table(sql):
     extract_to_data_lake(sql)
 
 
-def sync_table_multi_factory(instance, table_set):
-    table_names = get_table_names(instance=instance, table_set=table_set)
+def sync_table_multi_factory(table_sets):
+    table_names = [
+        tbl
+        for ts in table_sets
+        for tbl in get_table_names(instance=ts["instance"], table_set=ts["table_set"])
+    ]
 
     @graph(config=construct_sync_table_multi_config)
     def sync_table_multi():
-        get_counts = get_counts_factory(table_names=table_names)
-        valid_tables = get_counts()
+        get_counts = get_counts_factory(table_names=list(table_names))
+        counts_output = get_counts()
 
         for tbl in table_names:
-            sync_table_inst = sync_table.alias(tbl)
-            sync_table_inst(getattr(valid_tables, tbl))
+            sql = getattr(counts_output, tbl)
+
+            sync_table_invocation = sync_table.alias(tbl)
+            sync_table_invocation(sql)
 
     return sync_table_multi
 
 
-sync_standard = sync_table_multi_factory(instance="core", table_set="standard")
-
-
-# @graph
-# def test_sync_table():
-#     sync_table_inst = sync_table.alias("test_sync_table")
-#     sync_table_inst()
+sync_standard = sync_table_multi_factory(
+    table_sets=[
+        {"instance": "core", "table_set": "standard"},
+        {"instance": "local", "table_set": "extensions"},
+    ]
+)
