@@ -101,9 +101,10 @@ def sync_table_multi_factory(table_sets, get_counts_alias, resync=False):
 
     @graph(config=construct_sync_table_multi_config)
     def sync_table_multi():
-        get_counts = get_counts_factory(table_names=table_names)
-        get_counts_invocation = get_counts.alias(get_counts_alias)
-        counts_output = get_counts_invocation()
+        get_counts = get_counts_factory(
+            table_names=table_names, op_alias=get_counts_alias
+        )
+        counts_output = get_counts()
 
         for table_name in table_names:
             sql = getattr(counts_output, table_name)

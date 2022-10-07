@@ -7,8 +7,9 @@ from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
 
-def get_counts_factory(table_names):
+def get_counts_factory(table_names, op_alias):
     @op(
+        name=op_alias,
         config_schema={"queries": Array(Any)},
         out={tbl: Out(Any, is_required=False) for tbl in table_names},
         required_resource_keys={"db", "ssh"},
