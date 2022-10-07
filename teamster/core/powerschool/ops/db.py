@@ -9,7 +9,7 @@ from teamster.core.utils.variables import TODAY
 
 def get_counts_factory(table_names, op_alias):
     @op(
-        name=op_alias,
+        name=f"get_counts_{op_alias}",
         config_schema={"queries": Array(Any)},
         out={tbl: Out(Any, is_required=False) for tbl in table_names},
         required_resource_keys={"db", "ssh"},

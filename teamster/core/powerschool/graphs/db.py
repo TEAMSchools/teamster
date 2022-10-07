@@ -90,7 +90,7 @@ def sync_table(sql):
     extract_to_data_lake(sql)
 
 
-def sync_table_multi_factory(table_sets, get_counts_alias, resync=False):
+def sync_table_multi_factory(table_sets, graph_alias, op_alias, resync=False):
     table_names = [
         tbl
         for ts in table_sets
@@ -99,11 +99,11 @@ def sync_table_multi_factory(table_sets, get_counts_alias, resync=False):
         )
     ]
 
-    @graph(config=construct_sync_table_multi_config)
+    @graph(
+        name=f"sync_table_multi_{graph_alias}", config=construct_sync_table_multi_config
+    )
     def sync_table_multi():
-        get_counts = get_counts_factory(
-            table_names=table_names, op_alias=get_counts_alias
-        )
+        get_counts = get_counts_factory(table_names=table_names, op_alias=op_alias)
         counts_output = get_counts()
 
         for table_name in table_names:
@@ -120,13 +120,15 @@ sync_standard = sync_table_multi_factory(
         {"instance": "core", "table_set": "standard"},
         {"instance": "local", "table_set": "extensions"},
     ],
-    get_counts_alias="spam",
+    graph_alias="resync",
+    op_alias="resync",
 )
 
 resync = sync_table_multi_factory(
     table_sets=[
         {"instance": "local", "table_set": "resync"},
     ],
-    get_counts_alias="eggs",
+    graph_alias="resync",
+    op_alias="resync",
     resync=True,
 )
