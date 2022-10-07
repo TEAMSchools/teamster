@@ -19,7 +19,7 @@ def get_table_names(instance, table_set):
 
 
 @config_mapping(config_schema=schema.TABLES_CONFIG)
-def construct_sync_multi_config(config):
+def construct_sync_table_multi_config(config):
     constructed_config = {"get_counts": {"config": {"queries": []}}}
 
     for query in config["queries"]:
@@ -60,7 +60,9 @@ def construct_sync_multi_config(config):
 
 @config_mapping(config_schema=schema.QUERY_CONFIG)
 def construct_sync_table_config(config):
-    return {"extract": {"config": {"partition_size": config["partition_size"]}}}
+    return {
+        "extract_to_data_lake": {"config": {"partition_size": config["partition_size"]}}
+    }
 
 
 @graph(config=construct_sync_table_config)
@@ -68,11 +70,11 @@ def sync_table(sql):
     extract_to_data_lake(sql)
 
 
-def graph_factory(instance, table_set):
+def sync_table_multi_factory(instance, table_set):
     table_names = get_table_names(instance=instance, table_set=table_set)
 
-    @graph(config=construct_sync_multi_config)
-    def sync_standard():
+    @graph(config=construct_sync_table_multi_config)
+    def sync_table_multi():
         get_counts = get_counts_factory(table_names=table_names)
         valid_tables = get_counts()
 
@@ -80,10 +82,10 @@ def graph_factory(instance, table_set):
             sync_table_inst = sync_table.alias(tbl)
             sync_table_inst(getattr(valid_tables, tbl))
 
-    return sync_standard
+    return sync_table_multi
 
 
-sync_standard = graph_factory(instance="core", table_set="standard")
+sync_standard = sync_table_multi_factory(instance="core", table_set="standard")
 
 
 # @graph
