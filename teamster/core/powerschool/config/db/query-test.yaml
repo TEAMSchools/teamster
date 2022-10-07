@@ -1,7 +1,0 @@
-ops:
-  test_sync_table:
-    config:
-      sql:
-        schema:
-          table:
-            name: dual

@@ -1,4 +1,4 @@
-from dagster import Array, Field, Int, Shape, String
+from dagster import Array, Field, Int, ScalarUnion, Shape, String
 
 QUERY_CONFIG = Shape(
     {
@@ -22,15 +22,18 @@ QUERY_CONFIG = Shape(
                                 is_required=False,
                             ),
                             "where": Field(
-                                Shape(
-                                    {
-                                        "column": Field(String),
-                                        "value": Field(
-                                            String,
-                                            is_required=False,
-                                            default_value="last_run",
-                                        ),
-                                    }
+                                ScalarUnion(
+                                    scalar_type=String,
+                                    non_scalar_schema=Shape(
+                                        {
+                                            "column": Field(String),
+                                            "value": Field(
+                                                String,
+                                                is_required=False,
+                                                default_value="last_run",
+                                            ),
+                                        }
+                                    ),
                                 ),
                                 is_required=False,
                             ),

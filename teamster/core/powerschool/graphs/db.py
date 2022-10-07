@@ -8,7 +8,7 @@ from teamster.core.powerschool.config.db import schema
 from teamster.core.powerschool.ops.db import extract_to_data_lake, get_counts_factory
 
 
-def get_table_names(instance, table_set):
+def get_table_names(instance, table_set, resync):
     file_path = pathlib.Path(
         f"teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
     )
@@ -17,10 +17,21 @@ def get_table_names(instance, table_set):
         with file_path.open("r") as f:
             config_yaml = yaml.safe_load(f.read())
 
-        return [
-            t["sql"]["schema"]["table"]["name"]
-            for t in config_yaml["ops"]["config"]["queries"]
-        ]
+        queries = config_yaml["ops"]["config"]["queries"]
+        table_iterations = {t["sql"]["schema"]["table"]["name"]: 0 for t in queries}
+
+        table_names = []
+        for t in queries:
+            table_name = t["sql"]["schema"]["table"]["name"]
+            if resync:
+                table_iterations[table_name] += 1
+                table_iteration = f"0{table_iterations[table_name]}"[-2:]
+
+                table_name += f"_R{table_iteration}"
+
+            table_names.append(table_name)
+
+        return table_names
     else:
         return []
 
@@ -52,14 +63,16 @@ def construct_sync_table_multi_config(config):
                 sql = text(f.read())
         elif sql_key == "schema":
             sql_where = sql_value.get("where")
-            if sql_where is not None:
+            if sql_where is None:
+                constructed_sql_where = ""
+            elif sql_where == "last_run":
                 constructed_sql_where = (
                     f"{sql_where['column']} >= "
                     f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
                     "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
                 )
             else:
-                constructed_sql_where = ""
+                constructed_sql_where = sql_where
 
             sql = (
                 select(*[literal_column(col) for col in sql_value["select"]])
@@ -77,22 +90,24 @@ def sync_table(sql):
     extract_to_data_lake(sql)
 
 
-def sync_table_multi_factory(table_sets):
+def sync_table_multi_factory(table_sets, resync=False):
     table_names = [
         tbl
         for ts in table_sets
-        for tbl in get_table_names(instance=ts["instance"], table_set=ts["table_set"])
+        for tbl in get_table_names(
+            instance=ts["instance"], table_set=ts["table_set"], resync=resync
+        )
     ]
 
     @graph(config=construct_sync_table_multi_config)
     def sync_table_multi():
-        get_counts = get_counts_factory(table_names=list(table_names))
+        get_counts = get_counts_factory(table_names=table_names)
         counts_output = get_counts()
 
-        for tbl in table_names:
-            sql = getattr(counts_output, tbl)
+        for table_name in table_names:
+            sql = getattr(counts_output, table_name)
 
-            sync_table_invocation = sync_table.alias(tbl)
+            sync_table_invocation = sync_table.alias(table_name)
             sync_table_invocation(sql)
 
     return sync_table_multi
@@ -103,4 +118,11 @@ sync_standard = sync_table_multi_factory(
         {"instance": "core", "table_set": "standard"},
         {"instance": "local", "table_set": "extensions"},
     ]
+)
+
+resync = sync_table_multi_factory(
+    table_sets=[
+        {"instance": "local", "table_set": "resync"},
+    ],
+    resync=True,
 )

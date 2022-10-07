@@ -32,11 +32,12 @@ def get_counts_factory(table_names):
             if sql.whereclause.text == "":
                 yield Output(value=sql, output_name=table_name)
             else:
+                table_name_clean = re.sub(r"_R\d+$", "", table_name)
                 [(count,)] = context.resources.db.execute_query(
                     query=text(
                         (
                             "SELECT COUNT(*) "
-                            f"FROM {table_name} "
+                            f"FROM {table_name_clean} "
                             f"WHERE {sql.whereclause.text}"
                         )
                     ),

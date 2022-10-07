@@ -1,7 +1,0 @@
-ops:
-  config:
-    queries:
-      - sql:
-          schema:
-            table:
-              name: dual
