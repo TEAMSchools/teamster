@@ -22,6 +22,7 @@ powerschool_db_sync_std = sync_standard.to_job(
             "teamster/core/powerschool/config/db/resource.yaml",
             "teamster/core/powerschool/config/db/sync.yaml",
             "teamster/core/powerschool/config/db/sync-standard.yaml",
+            "teamster/core/powerschool/config/db/sync-extensions.yaml",
         ]
     ),
 )
