@@ -75,14 +75,14 @@ def construct_sync_table_multi_config(config):
             sql_where = sql_value.get("where")
             if sql_where is None:
                 constructed_sql_where = ""
-            elif sql_where == "last_run":
+            elif isinstance(sql_where, str):
+                constructed_sql_where = sql_where
+            else:
                 constructed_sql_where = (
                     f"{sql_where['column']} >= "
                     f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
                     "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
                 )
-            else:
-                constructed_sql_where = sql_where
 
             sql = (
                 select(*[literal_column(col) for col in sql_value["select"]])
