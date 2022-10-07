@@ -120,8 +120,8 @@ sync_standard = sync_table_multi_factory(
         {"instance": "core", "table_set": "standard"},
         {"instance": "local", "table_set": "extensions"},
     ],
-    graph_alias="resync",
-    op_alias="resync",
+    graph_alias="standard",
+    op_alias="standard",
 )
 
 resync = sync_table_multi_factory(
