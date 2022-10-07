@@ -29,17 +29,19 @@ def get_counts(context):
             last_run=last_run.isoformat(timespec="microseconds"),
         )
 
-        count_sql = text(
-            f"SELECT COUNT(*) FROM {table_name} WHERE {sql.whereclause.text}"
-        )
-
-        data = context.resources.db.execute_query(
-            query=count_sql, partition_size=1, output_fmt=None
-        )
-
-        [(count,)] = data
-        if count > 0:
+        if sql.whereclause.text == "":
             yield Output(value=sql, output_name=table_name)
+        else:
+            [(count,)] = context.resources.db.execute_query(
+                query=text(
+                    f"SELECT COUNT(*) FROM {table_name} WHERE {sql.whereclause.text}"
+                ),
+                partition_size=1,
+                output_fmt=None,
+            )
+
+            if count > 0:
+                yield Output(value=sql, output_name=table_name)
 
     context.log.info("Stopping SSH tunnel")
     ssh_tunnel.stop()
