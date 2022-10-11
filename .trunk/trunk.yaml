@@ -14,18 +14,18 @@ runtimes:
 lint:
   enabled:
     - sql-formatter@11.0.2
-    - actionlint@1.6.9
+    - actionlint@1.6.21
     - black@22.10.0
     - flake8@5.0.4
     - git-diff-check
-    - gitleaks@8.8.7
-    - hadolint@2.8.0
+    - gitleaks@8.14.1
+    - hadolint@2.10.0
     - isort@5.10.1
     - markdownlint@0.32.2
     - prettier@2.7.1
     - shellcheck@0.8.0
     - shfmt@3.5.0
-    - taplo@release-cli-0.6.0
+    - taplo@release-taplo-cli-0.7.0
   definitions:
     - name: sql-formatter
       commands:
