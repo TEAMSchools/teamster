@@ -11,22 +11,14 @@ runtimes:
     - go@1.18.3
     - node@16.14.2
     - python@3.10.3
-cli:
-  version: 0.18.1-beta
-plugins:
-  sources:
-    - id: trunk
-      ref: v0.0.5
-      uri: https://github.com/trunk-io/plugins
 lint:
-  disabled:
-    - sqlfluff
   enabled:
-    - actionlint@1.6.20
-    - black@22.8.0
+    - sql-formatter@11.0.2
+    - actionlint@1.6.21
+    - black@22.10.0
     - flake8@5.0.4
-    - git-diff-check@SYSTEM
-    - gitleaks@8.13.0
+    - git-diff-check
+    - gitleaks@8.14.1
     - hadolint@2.10.0
     - isort@5.10.1
     - markdownlint@0.32.2
@@ -34,7 +26,6 @@ lint:
     - shellcheck@0.8.0
     - shfmt@3.5.0
     - taplo@release-taplo-cli-0.7.0
-    - sql-formatter@11.0.2
   definitions:
     - name: sql-formatter
       commands:
@@ -44,3 +35,5 @@ lint:
           formatter: true
           run: sql-formatter --config .trunk/config/sql-formatter.json
           stdin: true
+cli:
+  version: 0.18.1-beta
