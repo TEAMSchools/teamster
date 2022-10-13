@@ -51,6 +51,8 @@ def construct_sync_table_multi_config(config):
 
     constructed_config = {f"get_counts_{graph_alias}": {"config": {"queries": []}}}
 
+    constructed_config[f"get_counts_{graph_alias}"]["config"]["resync"] = resync
+
     table_iterations = {t["sql"]["schema"]["table"]["name"]: 0 for t in queries}
     for query in queries:
         sql_config = query["sql"]

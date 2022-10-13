@@ -1,6 +1,6 @@
 import re
 
-from dagster import Any, Array, In, Int, List, Out, Output, op
+from dagster import Any, Array, Bool, Field, In, Int, List, Out, Output, op
 from sqlalchemy import text
 
 from teamster.core.utils.functions import get_last_schedule_run
@@ -10,7 +10,7 @@ from teamster.core.utils.variables import TODAY
 def get_counts_factory(table_names, op_alias):
     @op(
         name=f"get_counts_{op_alias}",
-        config_schema={"queries": Array(Any)},
+        config_schema={"queries": Array(Any), "resync": Field(Bool)},
         out={tbl: Out(Any, is_required=False) for tbl in table_names},
         required_resource_keys={"db", "ssh"},
     )
@@ -19,8 +19,18 @@ def get_counts_factory(table_names, op_alias):
         ssh_tunnel = context.resources.ssh.get_tunnel()
         ssh_tunnel.start()
 
-        for sql in context.op_config["queries"]:
+        queries = context.op_config["queries"]
+        table_iterations = {q.get_final_froms()[0].name: 0 for q in queries}
+
+        for sql in queries:
             table_name = sql.get_final_froms()[0].name
+
+            if context.op_config["resync"]:
+                table_iterations[table_name] += 1
+                table_iteration = f"0{table_iterations[table_name]}"[-2:]
+                output_table_name = f"{table_name}_R{table_iteration}"
+            else:
+                output_table_name = table_name
 
             # format where clause
             sql.whereclause.text = sql.whereclause.text.format(
@@ -31,14 +41,13 @@ def get_counts_factory(table_names, op_alias):
             )
 
             if sql.whereclause.text == "":
-                yield Output(value=sql, output_name=table_name)
+                yield Output(value=sql, output_name=output_table_name)
             else:
-                table_name_clean = re.sub(r"_R\d+$", "", table_name)
                 [(count,)] = context.resources.db.execute_query(
                     query=text(
                         (
                             "SELECT COUNT(*) "
-                            f"FROM {table_name_clean} "
+                            f"FROM {table_name} "
                             f"WHERE {sql.whereclause.text}"
                         )
                     ),
@@ -47,7 +56,7 @@ def get_counts_factory(table_names, op_alias):
                 )
 
                 if count > 0:
-                    yield Output(value=sql, output_name=table_name)
+                    yield Output(value=sql, output_name=output_table_name)
 
         context.log.info("Stopping SSH tunnel")
         ssh_tunnel.stop()

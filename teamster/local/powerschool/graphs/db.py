@@ -4,24 +4,6 @@ from teamster.core.powerschool.graphs.db import sync_table
 
 
 @graph
-def sync_extensions():
-    tables = [
-        "u_def_ext_students",
-        "u_studentsuserfields",
-        "u_clg_et_stu_alt",
-        "u_clg_et_stu",
-        "s_nj_usr_x",
-        "s_nj_stu_x",
-        "s_nj_ren_x",
-        "s_nj_crs_x",
-    ]
-
-    for tbl in tables:
-        graph_instance = sync_table.alias(tbl)
-        graph_instance()
-
-
-@graph
 def resync():
     tables = [
         "assignmentsection",
