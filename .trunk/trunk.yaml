@@ -18,7 +18,7 @@ lint:
     - black@22.10.0
     - flake8@5.0.4
     - git-diff-check
-    - gitleaks@8.14.1
+    - gitleaks@8.15.0
     - hadolint@2.10.0
     - isort@5.10.1
     - markdownlint@0.32.2
