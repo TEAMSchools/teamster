@@ -1,7 +1,6 @@
 import gzip
 import json
 import pathlib
-import sys
 import uuid
 from datetime import datetime
 
@@ -11,8 +10,6 @@ from dagster._utils import merge_dicts
 from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
-
-sys.modules["cx_Oracle"] = oracledb
 
 
 class SqlAlchemyEngine(object):
