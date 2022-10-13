@@ -118,6 +118,18 @@ ops:
               name: terms
             where:
               column: transaction_date
+      - sql:
+          schema:
+            table:
+              name: pgfinalgrades
+            where:
+              column: transaction_date
+      - sql:
+          schema:
+            table:
+              name: attendance
+            where:
+              column: transaction_date
       # whenmodified
       - sql:
           schema:
@@ -293,18 +305,6 @@ ops:
               name: users
             where:
               column: whenmodified
-      - sql:
-          schema:
-            table:
-              name: pgfinalgrades
-            where:
-              column: transaction_date
-      - sql:
-          schema:
-            table:
-              name: attendance
-            where:
-              column: transaction_date
       - sql:
           schema:
             table:
