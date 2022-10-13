@@ -1,19 +1,77 @@
 import re
 
-from dagster import Any, Int, List, Out, Output, op
+from dagster import Any, Array, Bool, Field, In, Int, List, Out, Output, op
+from sqlalchemy import text
 
 from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
 
+def get_counts_factory(table_names, op_alias):
+    @op(
+        name=f"get_counts_{op_alias}",
+        config_schema={"queries": Array(Any), "resync": Field(Bool)},
+        out={tbl: Out(Any, is_required=False) for tbl in table_names},
+        required_resource_keys={"db", "ssh"},
+    )
+    def get_counts(context):
+        context.log.info("Starting SSH tunnel")
+        ssh_tunnel = context.resources.ssh.get_tunnel()
+        ssh_tunnel.start()
+
+        queries = context.op_config["queries"]
+        table_iterations = {q.get_final_froms()[0].name: 0 for q in queries}
+
+        for sql in queries:
+            table_name = sql.get_final_froms()[0].name
+
+            if context.op_config["resync"]:
+                table_iterations[table_name] += 1
+                table_iteration = f"0{table_iterations[table_name]}"[-2:]
+                output_table_name = f"{table_name}_R{table_iteration}"
+            else:
+                output_table_name = table_name
+
+            # format where clause
+            sql.whereclause.text = sql.whereclause.text.format(
+                today=TODAY.isoformat(timespec="microseconds"),
+                last_run=(get_last_schedule_run(context) or TODAY).isoformat(
+                    timespec="microseconds"
+                ),
+            )
+
+            if sql.whereclause.text == "":
+                yield Output(value=sql, output_name=output_table_name)
+            else:
+                [(count,)] = context.resources.db.execute_query(
+                    query=text(
+                        (
+                            "SELECT COUNT(*) "
+                            f"FROM {table_name} "
+                            f"WHERE {sql.whereclause.text}"
+                        )
+                    ),
+                    partition_size=1,
+                    output_fmt=None,
+                )
+
+                if count > 0:
+                    yield Output(value=sql, output_name=output_table_name)
+
+        context.log.info("Stopping SSH tunnel")
+        ssh_tunnel.stop()
+
+    return get_counts
+
+
 @op(
-    config_schema={"sql": Any, "partition_size": Int},
+    config_schema={"partition_size": Int},
+    ins={"sql": In(dagster_type=Any)},
     out={"data": Out(dagster_type=List[Any], is_required=False)},
     required_resource_keys={"db", "ssh", "file_manager"},
     tags={"dagster/priority": 1},
 )
-def extract(context):
-    sql = context.op_config["sql"]
+def extract_to_data_lake(context, sql):
     file_manager_key = context.solid_handle.path[0]
 
     # organize partitions under table folder
@@ -22,27 +80,16 @@ def extract(context):
         table_name, resync_partition = re_match.groups()
         file_manager_key = f"{table_name}/{resync_partition}"
 
-    # format where clause
-    last_run = get_last_schedule_run(context) or TODAY
-    sql.whereclause.text = sql.whereclause.text.format(
-        today=TODAY.isoformat(timespec="microseconds"),
-        last_run=last_run.isoformat(timespec="microseconds"),
-    )
-
-    if context.resources.ssh.tunnel:
-        context.log.info("Starting SSH tunnel")
-        ssh_tunnel = context.resources.ssh.get_tunnel()
-        ssh_tunnel.start()
-    else:
-        ssh_tunnel = None
+    context.log.info("Starting SSH tunnel")
+    ssh_tunnel = context.resources.ssh.get_tunnel()
+    ssh_tunnel.start()
 
     data = context.resources.db.execute_query(
         query=sql, partition_size=context.op_config["partition_size"], output_fmt="file"
     )
 
-    if ssh_tunnel is not None:
-        context.log.info("Stopping SSH tunnel")
-        ssh_tunnel.stop()
+    context.log.info("Stopping SSH tunnel")
+    ssh_tunnel.stop()
 
     if data:
         file_handles = []
