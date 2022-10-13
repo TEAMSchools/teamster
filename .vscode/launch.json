@@ -13,7 +13,7 @@
       "justMyCode": true,
       "envFile": "${workspaceFolder}/env/kippnewark.env",
       "env": {
-        "PYTHONPATH": "/home/cbini/.local/share/pdm/venv/lib/python3.8/site-packages/pdm/pep582:${workspaceFolder}"
+        "PYTHONPATH": "/home/cbini/.local/share/pdm/venv/lib/python3.10/site-packages/pdm/pep582:${workspaceFolder}"
       }
     }
   ]

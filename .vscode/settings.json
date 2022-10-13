@@ -3,5 +3,6 @@
   "python.analysis.extraPaths": ["__pypackages__/3.10/lib"],
   "files.exclude": {
     "**/.git": false
-  }
+  },
+  "python.analysis.typeCheckingMode": "off"
 }
