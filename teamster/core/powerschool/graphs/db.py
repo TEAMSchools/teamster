@@ -4,7 +4,7 @@ import yaml
 from dagster import config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.powerschool.config.db import schema
+from teamster.core.powerschool.config.db.schema import QUERY_CONFIG, TABLES_CONFIG
 from teamster.core.powerschool.ops.db import extract_to_data_lake, get_counts_factory
 
 
@@ -36,14 +36,14 @@ def get_table_names(instance, table_set, resync):
         return []
 
 
-@config_mapping(config_schema=schema.QUERY_CONFIG)
+@config_mapping(config_schema=QUERY_CONFIG)
 def construct_sync_table_config(config):
     return {
         "extract_to_data_lake": {"config": {"partition_size": config["partition_size"]}}
     }
 
 
-@config_mapping(config_schema=schema.TABLES_CONFIG)
+@config_mapping(config_schema=TABLES_CONFIG)
 def construct_sync_table_multi_config(config):
     queries = config["queries"]
     resync = config["resync"]

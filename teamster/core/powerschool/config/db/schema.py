@@ -45,13 +45,10 @@ QUERY_CONFIG = Shape(
     }
 )
 
-TABLES_CONFIG = Field(
-    Shape(
-        {
-            "queries": Field(Array(QUERY_CONFIG)),
-            "graph_alias": Field(String),
-            "resync": Field(Bool, is_required=False, default_value=False),
-        }
-    ),
-    is_required=False,
+TABLES_CONFIG = Shape(
+    {
+        "queries": Field(Array(QUERY_CONFIG)),
+        "graph_alias": Field(String),
+        "resync": Field(Bool, is_required=False, default_value=False),
+    }
 )
