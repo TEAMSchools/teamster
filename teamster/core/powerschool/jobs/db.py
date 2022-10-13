@@ -10,6 +10,7 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
 
+# https://stackoverflow.com/a/7205107
 def merge(a, b, path=None):
     "merges b into a"
     if path is None:
