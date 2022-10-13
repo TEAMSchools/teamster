@@ -1,0 +1,7 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+    max_concurrent: 30

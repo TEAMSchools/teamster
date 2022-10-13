@@ -1,21 +1,10 @@
-from dagster import Array, Field, Int, IntSource, Selector, Shape, String, StringSource
+from dagster import Array, Bool, Field, Int, ScalarUnion, Shape, String
 
-SSH_TUNNEL_CONFIG = Shape(
+QUERY_CONFIG = Shape(
     {
-        "remote_port": IntSource,
-        "remote_host": Field(StringSource, is_required=False),
-        "local_port": Field(IntSource, is_required=False),
-    }
-)
-
-PS_DB_CONFIG = Shape(
-    {
-        "ssh_tunnel": Field(SSH_TUNNEL_CONFIG, is_required=False),
         "partition_size": Field(Int, is_required=False, default_value=100000),
-        "sql": Selector(
+        "sql": Shape(
             {
-                "text": Field(String),
-                "file": Field(String),
                 "schema": Field(
                     Shape(
                         {
@@ -32,11 +21,34 @@ PS_DB_CONFIG = Shape(
                                 default_value=["*"],
                                 is_required=False,
                             ),
-                            "where": Field(String, is_required=False),
+                            "where": Field(
+                                ScalarUnion(
+                                    scalar_type=String,
+                                    non_scalar_schema=Shape(
+                                        {
+                                            "column": Field(String),
+                                            "value": Field(
+                                                String,
+                                                is_required=False,
+                                                default_value="last_run",
+                                            ),
+                                        }
+                                    ),
+                                ),
+                                is_required=False,
+                            ),
                         }
                     )
                 ),
             }
         ),
+    }
+)
+
+TABLES_CONFIG = Shape(
+    {
+        "queries": Field(Array(QUERY_CONFIG)),
+        "graph_alias": Field(String),
+        "resync": Field(Bool, is_required=False, default_value=False),
     }
 )

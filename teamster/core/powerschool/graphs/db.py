@@ -1,454 +1,146 @@
 import pathlib
 
+import yaml
 from dagster import config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.powerschool.config.db.schema import PS_DB_CONFIG
-from teamster.core.powerschool.ops.db import extract
+from teamster.core.powerschool.config.db.schema import QUERY_CONFIG, TABLES_CONFIG
+from teamster.core.powerschool.ops.db import extract_to_data_lake, get_counts_factory
 
 
-@config_mapping(config_schema=PS_DB_CONFIG)
-def construct_graph_config(config):
-    [(sql_key, sql_value)] = config["sql"].items()
-    if sql_key == "text":
-        sql = text(sql_value)
-    elif sql_key == "file":
-        sql_file = pathlib.Path(sql_value).absolute()
-        with sql_file.open(mode="r") as f:
-            sql = text(f.read())
-    elif sql_key == "schema":
-        sql = (
-            select(*[literal_column(col) for col in sql_value["select"]])
-            .select_from(table(**sql_value["table"]))
-            .where(text(sql_value.get("where", "")))
-        )
+def get_table_names(instance, table_set, resync):
+    file_path = pathlib.Path(
+        f"teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
+    )
 
+    if file_path.exists():
+        with file_path.open("r") as f:
+            config_yaml = yaml.safe_load(f.read())
+
+        queries = config_yaml["ops"]["config"]["queries"]
+        table_iterations = {t["sql"]["schema"]["table"]["name"]: 0 for t in queries}
+
+        table_names = []
+        for t in queries:
+            table_name = t["sql"]["schema"]["table"]["name"]
+            if resync:
+                table_iterations[table_name] += 1
+                table_iteration = f"0{table_iterations[table_name]}"[-2:]
+
+                table_name += f"_R{table_iteration}"
+
+            table_names.append(table_name)
+
+        return table_names
+    else:
+        return []
+
+
+@config_mapping(config_schema=QUERY_CONFIG)
+def construct_sync_table_config(config):
     return {
-        "extract": {
-            "config": {
-                "sql": sql,
-                "partition_size": config["partition_size"],
-            }
-        }
+        "extract_to_data_lake": {"config": {"partition_size": config["partition_size"]}}
     }
 
 
-@graph(config=construct_graph_config)
-def sync_table():
-    extract()
-
-
-@graph
-def test_sync():
-    test = sync_table.alias("test")
-    test()
-
-
-@graph
-def sync():
-    assignmentsection = sync_table.alias("assignmentsection")
-    assignmentsection()
-
-    attendance_code = sync_table.alias("attendance_code")
-    attendance_code()
-
-    attendance_conversion_items = sync_table.alias("attendance_conversion_items")
-    attendance_conversion_items()
-
-    bell_schedule = sync_table.alias("bell_schedule")
-    bell_schedule()
-
-    calendar_day = sync_table.alias("calendar_day")
-    calendar_day()
-
-    codeset = sync_table.alias("codeset")
-    codeset()
-
-    courses = sync_table.alias("courses")
-    courses()
-
-    cycle_day = sync_table.alias("cycle_day")
-    cycle_day()
-
-    districtteachercategory = sync_table.alias("districtteachercategory")
-    districtteachercategory()
-
-    emailaddress = sync_table.alias("emailaddress")
-    emailaddress()
-
-    fte = sync_table.alias("fte")
-    fte()
-
-    gen = sync_table.alias("gen")
-    gen()
-
-    gradecalcformulaweight = sync_table.alias("gradecalcformulaweight")
-    gradecalcformulaweight()
-
-    gradecalcschoolassoc = sync_table.alias("gradecalcschoolassoc")
-    gradecalcschoolassoc()
-
-    gradecalculationtype = sync_table.alias("gradecalculationtype")
-    gradecalculationtype()
-
-    gradeformulaset = sync_table.alias("gradeformulaset")
-    gradeformulaset()
-
-    gradescaleitem = sync_table.alias("gradescaleitem")
-    gradescaleitem()
-
-    gradeschoolconfig = sync_table.alias("gradeschoolconfig")
-    gradeschoolconfig()
-
-    gradeschoolformulaassoc = sync_table.alias("gradeschoolformulaassoc")
-    gradeschoolformulaassoc()
-
-    gradesectionconfig = sync_table.alias("gradesectionconfig")
-    gradesectionconfig()
-
-    originalcontactmap = sync_table.alias("originalcontactmap")
-    originalcontactmap()
-
-    period = sync_table.alias("period")
-    period()
-
-    person = sync_table.alias("person")
-    person()
-
-    personaddress = sync_table.alias("personaddress")
-    personaddress()
-
-    personaddressassoc = sync_table.alias("personaddressassoc")
-    personaddressassoc()
-
-    personemailaddressassoc = sync_table.alias("personemailaddressassoc")
-    personemailaddressassoc()
-
-    personphonenumberassoc = sync_table.alias("personphonenumberassoc")
-    personphonenumberassoc()
-
-    phonenumber = sync_table.alias("phonenumber")
-    phonenumber()
-
-    prefs = sync_table.alias("prefs")
-    prefs()
-
-    reenrollments = sync_table.alias("reenrollments")
-    reenrollments()
-
-    roledef = sync_table.alias("roledef")
-    roledef()
-
-    schools = sync_table.alias("schools")
-    schools()
-
-    schoolstaff = sync_table.alias("schoolstaff")
-    schoolstaff()
-
-    sections = sync_table.alias("sections")
-    sections()
-
-    sectionteacher = sync_table.alias("sectionteacher")
-    sectionteacher()
-
-    spenrollments = sync_table.alias("spenrollments")
-    spenrollments()
-
-    students = sync_table.alias("students")
-    students()
-
-    studentcontactassoc = sync_table.alias("studentcontactassoc")
-    studentcontactassoc()
-
-    studentcontactdetail = sync_table.alias("studentcontactdetail")
-    studentcontactdetail()
-
-    studentcorefields = sync_table.alias("studentcorefields")
-    studentcorefields()
-
-    studentrace = sync_table.alias("studentrace")
-    studentrace()
-
-    teachercategory = sync_table.alias("teachercategory")
-    teachercategory()
-
-    termbins = sync_table.alias("termbins")
-    termbins()
-
-    terms = sync_table.alias("terms")
-    terms()
-
-    test = sync_table.alias("test")
-    test()
-
-    testscore = sync_table.alias("testscore")
-    testscore()
-
-    users = sync_table.alias("users")
-    users()
-
-    assignmentcategoryassoc = sync_table.alias("assignmentcategoryassoc")
-    assignmentcategoryassoc()
-
-    cc = sync_table.alias("cc")
-    cc()
-
-    log = sync_table.alias("log")
-    log()
-
-    storedgrades = sync_table.alias("storedgrades")
-    storedgrades()
-
-    pgfinalgrades = sync_table.alias("pgfinalgrades")
-    pgfinalgrades()
-
-    attendance = sync_table.alias("attendance")
-    attendance()
-
-    assignmentscore = sync_table.alias("assignmentscore")
-    assignmentscore()
-
-
-@graph
-def resync():
-    assignmentsection = sync_table.alias("assignmentsection")
-    assignmentsection()
-
-    attendance_code = sync_table.alias("attendance_code")
-    attendance_code()
-
-    attendance_conversion_items = sync_table.alias("attendance_conversion_items")
-    attendance_conversion_items()
-
-    bell_schedule = sync_table.alias("bell_schedule")
-    bell_schedule()
-
-    calendar_day = sync_table.alias("calendar_day")
-    calendar_day()
-
-    codeset = sync_table.alias("codeset")
-    codeset()
-
-    courses = sync_table.alias("courses")
-    courses()
-
-    cycle_day = sync_table.alias("cycle_day")
-    cycle_day()
-
-    districtteachercategory = sync_table.alias("districtteachercategory")
-    districtteachercategory()
-
-    emailaddress = sync_table.alias("emailaddress")
-    emailaddress()
-
-    fte = sync_table.alias("fte")
-    fte()
-
-    gen = sync_table.alias("gen")
-    gen()
-
-    gradecalcformulaweight = sync_table.alias("gradecalcformulaweight")
-    gradecalcformulaweight()
-
-    gradecalcschoolassoc = sync_table.alias("gradecalcschoolassoc")
-    gradecalcschoolassoc()
-
-    gradecalculationtype = sync_table.alias("gradecalculationtype")
-    gradecalculationtype()
-
-    gradeformulaset = sync_table.alias("gradeformulaset")
-    gradeformulaset()
-
-    gradescaleitem = sync_table.alias("gradescaleitem")
-    gradescaleitem()
-
-    gradeschoolconfig = sync_table.alias("gradeschoolconfig")
-    gradeschoolconfig()
-
-    gradeschoolformulaassoc = sync_table.alias("gradeschoolformulaassoc")
-    gradeschoolformulaassoc()
-
-    gradesectionconfig = sync_table.alias("gradesectionconfig")
-    gradesectionconfig()
-
-    originalcontactmap = sync_table.alias("originalcontactmap")
-    originalcontactmap()
-
-    period = sync_table.alias("period")
-    period()
-
-    person = sync_table.alias("person")
-    person()
-
-    personaddress = sync_table.alias("personaddress")
-    personaddress()
-
-    personaddressassoc = sync_table.alias("personaddressassoc")
-    personaddressassoc()
-
-    personemailaddressassoc = sync_table.alias("personemailaddressassoc")
-    personemailaddressassoc()
-
-    personphonenumberassoc = sync_table.alias("personphonenumberassoc")
-    personphonenumberassoc()
-
-    phonenumber = sync_table.alias("phonenumber")
-    phonenumber()
-
-    prefs = sync_table.alias("prefs")
-    prefs()
-
-    reenrollments = sync_table.alias("reenrollments")
-    reenrollments()
-
-    roledef = sync_table.alias("roledef")
-    roledef()
-
-    schools = sync_table.alias("schools")
-    schools()
-
-    schoolstaff = sync_table.alias("schoolstaff")
-    schoolstaff()
-
-    sections = sync_table.alias("sections")
-    sections()
-
-    sectionteacher = sync_table.alias("sectionteacher")
-    sectionteacher()
-
-    spenrollments = sync_table.alias("spenrollments")
-    spenrollments()
-
-    students = sync_table.alias("students")
-    students()
-
-    studentcontactassoc = sync_table.alias("studentcontactassoc")
-    studentcontactassoc()
-
-    studentcontactdetail = sync_table.alias("studentcontactdetail")
-    studentcontactdetail()
-
-    studentcorefields = sync_table.alias("studentcorefields")
-    studentcorefields()
-
-    studentrace = sync_table.alias("studentrace")
-    studentrace()
-
-    teachercategory = sync_table.alias("teachercategory")
-    teachercategory()
-
-    termbins = sync_table.alias("termbins")
-    termbins()
-
-    terms = sync_table.alias("terms")
-    terms()
-
-    test = sync_table.alias("test")
-    test()
-
-    testscore = sync_table.alias("testscore")
-    testscore()
-
-    users = sync_table.alias("users")
-    users()
-
-    # 100,000
-    assignmentcategoryassoc_R01 = sync_table.alias("assignmentcategoryassoc_R01")
-    assignmentcategoryassoc_R01()
-    assignmentcategoryassoc_R02 = sync_table.alias("assignmentcategoryassoc_R02")
-    assignmentcategoryassoc_R02()
-    assignmentcategoryassoc_R03 = sync_table.alias("assignmentcategoryassoc_R03")
-    assignmentcategoryassoc_R03()
-    assignmentcategoryassoc_R04 = sync_table.alias("assignmentcategoryassoc_R04")
-    assignmentcategoryassoc_R04()
-    assignmentcategoryassoc_R05 = sync_table.alias("assignmentcategoryassoc_R05")
-    assignmentcategoryassoc_R05()
-
-    cc_R01 = sync_table.alias("cc_R01")
-    cc_R01()
-    cc_R02 = sync_table.alias("cc_R02")
-    cc_R02()
-    cc_R03 = sync_table.alias("cc_R03")
-    cc_R03()
-    cc_R04 = sync_table.alias("cc_R04")
-    cc_R04()
-    cc_R05 = sync_table.alias("cc_R05")
-    cc_R05()
-    cc_R06 = sync_table.alias("cc_R06")
-    cc_R06()
-
-    log_R01 = sync_table.alias("log_R01")
-    log_R01()
-    log_R02 = sync_table.alias("log_R02")
-    log_R02()
-    log_R03 = sync_table.alias("log_R03")
-    log_R03()
-    log_R04 = sync_table.alias("log_R04")
-    log_R04()
-
-    storedgrades_R01 = sync_table.alias("storedgrades_R01")
-    storedgrades_R01()
-    storedgrades_R02 = sync_table.alias("storedgrades_R02")
-    storedgrades_R02()
-    storedgrades_R03 = sync_table.alias("storedgrades_R03")
-    storedgrades_R03()
-    storedgrades_R04 = sync_table.alias("storedgrades_R04")
-    storedgrades_R04()
-    storedgrades_R05 = sync_table.alias("storedgrades_R05")
-    storedgrades_R05()
-    storedgrades_R06 = sync_table.alias("storedgrades_R06")
-    storedgrades_R06()
-    storedgrades_R07 = sync_table.alias("storedgrades_R07")
-    storedgrades_R07()
-    storedgrades_R08 = sync_table.alias("storedgrades_R08")
-    storedgrades_R08()
-    storedgrades_R09 = sync_table.alias("storedgrades_R09")
-    storedgrades_R09()
-    storedgrades_R10 = sync_table.alias("storedgrades_R10")
-    storedgrades_R10()
-    storedgrades_R11 = sync_table.alias("storedgrades_R11")
-    storedgrades_R11()
-    storedgrades_R12 = sync_table.alias("storedgrades_R12")
-    storedgrades_R12()
-
-    # 1,000,000
-    pgfinalgrades_R01 = sync_table.alias("pgfinalgrades_R01")
-    pgfinalgrades_R01()
-    pgfinalgrades_R02 = sync_table.alias("pgfinalgrades_R02")
-    pgfinalgrades_R02()
-    pgfinalgrades_R03 = sync_table.alias("pgfinalgrades_R03")
-    pgfinalgrades_R03()
-
-    attendance_R01 = sync_table.alias("attendance_R01")
-    attendance_R01()
-    attendance_R02 = sync_table.alias("attendance_R02")
-    attendance_R02()
-    attendance_R03 = sync_table.alias("attendance_R03")
-    attendance_R03()
-    attendance_R04 = sync_table.alias("attendance_R04")
-    attendance_R04()
-    attendance_R05 = sync_table.alias("attendance_R05")
-    attendance_R05()
-
-    assignmentscore_R01 = sync_table.alias("assignmentscore_R01")
-    assignmentscore_R01()
-    assignmentscore_R02 = sync_table.alias("assignmentscore_R02")
-    assignmentscore_R02()
-    assignmentscore_R03 = sync_table.alias("assignmentscore_R03")
-    assignmentscore_R03()
-    assignmentscore_R04 = sync_table.alias("assignmentscore_R04")
-    assignmentscore_R04()
-    assignmentscore_R05 = sync_table.alias("assignmentscore_R05")
-    assignmentscore_R05()
-    assignmentscore_R06 = sync_table.alias("assignmentscore_R06")
-    assignmentscore_R06()
-    assignmentscore_R07 = sync_table.alias("assignmentscore_R07")
-    assignmentscore_R07()
-    assignmentscore_R08 = sync_table.alias("assignmentscore_R08")
-    assignmentscore_R08()
-    assignmentscore_R09 = sync_table.alias("assignmentscore_R09")
-    assignmentscore_R09()
-    assignmentscore_R10 = sync_table.alias("assignmentscore_R10")
-    assignmentscore_R10()
-    assignmentscore_R11 = sync_table.alias("assignmentscore_R11")
-    assignmentscore_R11()
+@config_mapping(config_schema=TABLES_CONFIG)
+def construct_sync_table_multi_config(config):
+    queries = config["queries"]
+    resync = config["resync"]
+    graph_alias = config["graph_alias"]
+
+    constructed_config = {f"get_counts_{graph_alias}": {"config": {"queries": []}}}
+
+    constructed_config[f"get_counts_{graph_alias}"]["config"]["resync"] = resync
+
+    table_iterations = {t["sql"]["schema"]["table"]["name"]: 0 for t in queries}
+    for query in queries:
+        sql_config = query["sql"]
+
+        table_name = sql_config["schema"]["table"]["name"]
+        if resync:
+            table_iterations[table_name] += 1
+            table_iteration = f"0{table_iterations[table_name]}"[-2:]
+            table_name += f"_R{table_iteration}"
+
+        constructed_config[table_name] = {"config": {"sql": sql_config}}
+
+        sql = None
+        [(sql_key, sql_value)] = sql_config.items()
+        if sql_key == "text":
+            sql = text(sql_value)
+        elif sql_key == "file":
+            sql_file = pathlib.Path(sql_value).absolute()
+            with sql_file.open(mode="r") as f:
+                sql = text(f.read())
+        elif sql_key == "schema":
+            sql_where = sql_value.get("where")
+            if sql_where is None:
+                constructed_sql_where = ""
+            elif isinstance(sql_where, str):
+                constructed_sql_where = sql_where
+            else:
+                constructed_sql_where = (
+                    f"{sql_where['column']} >= "
+                    f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
+                    "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+                )
+
+            sql = (
+                select(*[literal_column(col) for col in sql_value["select"]])
+                .select_from(table(**sql_value["table"]))
+                .where(text(constructed_sql_where))
+            )
+
+        constructed_config[f"get_counts_{graph_alias}"]["config"]["queries"].append(sql)
+
+    return constructed_config
+
+
+@graph(config=construct_sync_table_config)
+def sync_table(sql):
+    extract_to_data_lake(sql)
+
+
+def sync_table_multi_factory(table_sets, graph_alias, op_alias, resync=False):
+    table_names = [
+        tbl
+        for ts in table_sets
+        for tbl in get_table_names(
+            instance=ts["instance"], table_set=ts["table_set"], resync=resync
+        )
+    ]
+
+    @graph(
+        name=f"sync_table_multi_{graph_alias}", config=construct_sync_table_multi_config
+    )
+    def sync_table_multi():
+        get_counts = get_counts_factory(table_names=table_names, op_alias=op_alias)
+        counts_output = get_counts()
+
+        for table_name in table_names:
+            sql = getattr(counts_output, table_name)
+
+            sync_table_invocation = sync_table.alias(table_name)
+            sync_table_invocation(sql)
+
+    return sync_table_multi
+
+
+sync_standard = sync_table_multi_factory(
+    table_sets=[
+        {"instance": "core", "table_set": "standard"},
+        {"instance": "local", "table_set": "extensions"},
+    ],
+    graph_alias="standard",
+    op_alias="standard",
+)
+
+resync = sync_table_multi_factory(
+    table_sets=[
+        {"instance": "local", "table_set": "resync"},
+    ],
+    graph_alias="resync",
+    op_alias="resync",
+    resync=True,
+)

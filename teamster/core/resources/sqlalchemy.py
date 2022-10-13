@@ -12,8 +12,6 @@ from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
 
-# from teamster.core.utils.functions import time_limit
-
 sys.modules["cx_Oracle"] = oracledb
 
 
@@ -32,7 +30,6 @@ class SqlAlchemyEngine(object):
         self.log.info(f"Executing query:\n{query}")
 
         with self.engine.connect(**connect_kwargs) as conn:
-            # with time_limit(seconds=60):
             result = conn.execute(statement=query)
 
             if output_fmt in ["dict", "json", "file"]:
@@ -70,7 +67,11 @@ class SqlAlchemyEngine(object):
                 self.log.info(f"Retrieved {len_data} rows.")
             else:
                 pts_unpacked = [rows for pt in partitions for rows in pt]
-                output_obj = [dict(row) for row in pts_unpacked]
+
+                if output_fmt in ["dict", "json"]:
+                    output_obj = [dict(row) for row in pts_unpacked]
+                else:
+                    output_obj = [row for row in pts_unpacked]
 
                 self.log.info(f"Retrieved {len(output_obj)} rows.")
 
