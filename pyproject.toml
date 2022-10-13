@@ -16,7 +16,7 @@ dependencies = [
   "oracledb>=1.0.3",
   "sshtunnel>=0.4.0",
   "dagster-k8s>=0.16.3",
-  "sqlalchemy>=1.4.41",
+  "sqlalchemy>=2.0.0b1",
 ]
 requires-python = ">=3.9"
 license = { text = "MIT" }
