@@ -10,6 +10,7 @@ on:
       - ".github/workflows/deploy-kippcamden.yaml"
       - ".dagster/dagster-cloud-kippcamden.yaml"
       - "Dockerfile"
+      - pdm.lock
 
 concurrency:
   # Cancel in-progress runs on same workflow
