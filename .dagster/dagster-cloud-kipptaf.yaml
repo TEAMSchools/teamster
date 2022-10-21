@@ -17,4 +17,4 @@ locations:
         volume_mounts:
           - name: secret-volume
             readOnly: true
-            mountPath: "/etc/secret-volume"
+            mountPath: /etc/secret-volume

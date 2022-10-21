@@ -6,10 +6,10 @@ on:
     branches:
       - kipptaf
     paths:
-      - "teamster/**"
-      - ".github/workflows/deploy-kipptaf.yaml"
-      - ".dagster/dagster-cloud-kipptaf.yaml"
-      - "Dockerfile"
+      - teamster/**
+      - .github/workflows/deploy-kipptaf.yaml
+      - .dagster/dagster-cloud-kipptaf.yaml
+      - Dockerfile
       - pdm.lock
 
 concurrency:
