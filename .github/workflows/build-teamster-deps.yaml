@@ -1,7 +1,7 @@
 name: Build teamster-deps
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: null
   workflow_run:
     workflows:
       - Build teamster-core

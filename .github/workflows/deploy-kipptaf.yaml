@@ -1,7 +1,7 @@
 name: kipptaf - Prod Deployment
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: null
   push:
     branches:
       - kipptaf
