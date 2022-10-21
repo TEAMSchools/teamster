@@ -1,3 +1,4 @@
 {
-  "language": "tsql"
+  "language": "tsql",
+  "tabWidth": 4
 }

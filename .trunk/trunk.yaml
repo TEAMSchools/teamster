@@ -25,13 +25,25 @@ lint:
     - black@22.10.0
   definitions:
     - name: sql-formatter
+      direct_configs: [sql-formatter.json]
       commands:
         - output: rewrite
           success_codes:
             - 0
           formatter: true
-          run: sql-formatter --config .trunk/config/sql-formatter.json
+          run: sql-formatter --config sql-formatter.json
           stdin: true
+    - name: sqlfluff
+      direct_configs: [.sqlfluff]
+      commands:
+        - output: sarif
+          success_codes:
+            - 0
+          parser:
+            run: ${plugin}/linters/sqlfluff/sqlfluff_to_sarif.py
+            runtime: python
+          read_output_from: stdout
+          run: sqlfluff lint ${target} --format json --config .sqlfluff --nofail
 runtimes:
   enabled:
     - go@1.18.3

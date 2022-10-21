@@ -1,7 +1,7 @@
 name: Build teamster-core
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: null
   push:
     branches:
       - dev
