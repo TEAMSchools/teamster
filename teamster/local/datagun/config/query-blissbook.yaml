@@ -23,8 +23,8 @@ ops:
       sql:
         schema:
           table:
-            name: "blissbook_employee_list"
-            schema: "gabby.extracts"
+            name: blissbook_employee_list
+            schema: gabby.extracts
     file:
       stem: members
       suffix: csv
