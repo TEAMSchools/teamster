@@ -22,7 +22,7 @@ ops:
             table:
               name: powerschool_autocomm_students_accessaccounts
               schema: gabby.extracts
-            where: "db_name = 'kippnewark'"
+            where: db_name = 'kippnewark'
       file:
         stem: powerschool_autocomm_students_accessaccounts
         suffix: txt
@@ -32,7 +32,7 @@ ops:
       destination:
         name: powerschool
         type: sftp
-        path: "./sftp/powerschool/kippnewark"
+        path: sftp/powerschool/kippnewark
   teachers_accounts:
     config:
       query:
@@ -41,7 +41,7 @@ ops:
             table:
               name: powerschool_autocomm_teachers_accounts
               schema: gabby.extracts
-            where: "legal_entity_name = 'TEAM Academy Charter School'"
+            where: legal_entity_name = 'TEAM Academy Charter School'
       file:
         stem: powerschool_autocomm_teachers_accounts
         suffix: txt
@@ -51,7 +51,7 @@ ops:
       destination:
         name: powerschool
         type: sftp
-        path: "./sftp/powerschool/kippnewark"
+        path: sftp/powerschool/kippnewark
   students_easyiep:
     config:
       query:
@@ -60,7 +60,7 @@ ops:
             table:
               name: powerschool_autocomm_students_easyiep
               schema: gabby.extracts
-            where: "db_name = 'kippnewark'"
+            where: db_name = 'kippnewark'
       file:
         stem: powerschool_autocomm_students_easyiep
         suffix: txt
@@ -70,4 +70,4 @@ ops:
       destination:
         name: powerschool
         type: sftp
-        path: "./sftp/powerschool/kippnewark"
+        path: sftp/powerschool/kippnewark
