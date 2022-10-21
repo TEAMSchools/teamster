@@ -1,7 +1,7 @@
 name: ${INSTANCE_NAME} - Prod Deployment
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: null
   push:
     branches:
       - ${INSTANCE_NAME}
@@ -38,7 +38,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: ./.dagster/dagster-cloud-${INSTANCE_NAME}.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-${INSTANCE_NAME}.yaml
 
   dagster_cloud_build_push:
     runs-on: ubuntu-latest

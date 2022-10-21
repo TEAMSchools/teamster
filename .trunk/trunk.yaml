@@ -16,22 +16,34 @@ lint:
     - prettier@2.7.1
     - markdownlint@0.32.2
     - shellcheck@0.8.0
-    - taplo@release-cli-0.6.0
+    - taplo@release-taplo-cli-0.7.0
     - shfmt@3.5.0
     - actionlint@1.6.21
     - flake8@5.0.4
-    - gitleaks@8.8.7
+    - gitleaks@8.15.0
     - isort@5.10.1
     - black@22.10.0
   definitions:
     - name: sql-formatter
+      direct_configs: [sql-formatter.json]
       commands:
         - output: rewrite
           success_codes:
             - 0
           formatter: true
-          run: sql-formatter --config .trunk/config/sql-formatter.json
+          run: sql-formatter --config sql-formatter.json
           stdin: true
+    - name: sqlfluff
+      direct_configs: [.sqlfluff]
+      commands:
+        - output: sarif
+          success_codes:
+            - 0
+          parser:
+            run: ${plugin}/linters/sqlfluff/sqlfluff_to_sarif.py
+            runtime: python
+          read_output_from: stdout
+          run: sqlfluff lint ${target} --format json --config .sqlfluff --nofail
 runtimes:
   enabled:
     - go@1.18.3
