@@ -1,3 +1,4 @@
+-- noqa: disable=L057, L059
 SELECT
     [Username],
     [Email],
@@ -9,4 +10,5 @@ SELECT
     [Role],
     [Traveler Group]
 FROM
-    gabby.extracts.egencia_users;
+    gabby.extracts.egencia_users -- noqa: L014
+;

@@ -2,11 +2,11 @@ SELECT DISTINCT
     user_internal_id,
     group_type,
     group_name,
-    [user_id],
+    user_id,
     archived_at,
     user_email,
     user_email_ws,
-    [user_name],
+    user_name,
     user_name_ws,
     inactive,
     inactive_ws,
@@ -30,7 +30,7 @@ WHERE
     )
     AND (
         /* create user */
-        [user_id] IS NULL
+        user_id IS NULL
         /* update user */
         OR ISNULL(inactive, '') <> ISNULL(inactive_ws, '')
         OR ISNULL(coach_id, '') <> ISNULL(coach_id_ws, '')
@@ -39,6 +39,6 @@ WHERE
         OR ISNULL(course_id, '') <> ISNULL(course_id_ws, '')
         OR ISNULL(role_id, '') <> ISNULL(role_id_ws, '')
         OR ISNULL(user_email, '') <> ISNULL(user_email_ws, '')
-        OR ISNULL([user_name], '') <> ISNULL(user_name_ws, '')
+        OR ISNULL(user_name, '') <> ISNULL(user_name_ws, '')
         OR ISNULL(group_type, '') <> ISNULL(group_type_ws, '')
     )
