@@ -16,11 +16,11 @@ lint:
     - prettier@2.7.1
     - markdownlint@0.32.2
     - shellcheck@0.8.0
-    - taplo@release-cli-0.6.0
+    - taplo@release-taplo-cli-0.7.0
     - shfmt@3.5.0
     - actionlint@1.6.21
     - flake8@5.0.4
-    - gitleaks@8.8.7
+    - gitleaks@8.15.0
     - isort@5.10.1
     - black@22.10.0
   definitions:
