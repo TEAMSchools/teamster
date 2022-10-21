@@ -20,9 +20,9 @@ test_datagun_etl = test_etl.to_job(
     },
     config=config_from_files(
         [
-            "./teamster/core/resources/config/google.yaml",
-            "./teamster/core/datagun/config/resource.yaml",
-            "./teamster/core/datagun/config/query-test.yaml",
+            "teamster/core/resources/config/google.yaml",
+            "teamster/core/datagun/config/resource.yaml",
+            "teamster/core/datagun/config/query-test.yaml",
         ]
     ),
 )

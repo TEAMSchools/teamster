@@ -15,21 +15,16 @@ ops:
     config:
       query:
         sql:
-          text: SELECT
-            n AS n0,
-            n + 1 AS n1,
-            n + 2 AS n2,
-            n + 3 AS n3,
-            n + 4 AS n4
-            FROM gabby.utilities.row_generator_smallint
-            WHERE n <= 5
+          text:
+            SELECT n AS n0, n + 1 AS n1, n + 2 AS n2, n + 3 AS n3, n + 4 AS n4 FROM
+            gabby.utilities.row_generator_smallint WHERE n <= 5
       destination:
         type: gsheet
   test_sftp_1:
     config:
       query:
         sql:
-          file: ./teamster/core/datagun/config/sql/test.sql
+          file: teamster/core/datagun/config/sql/test.sql
       file:
         stem: json-test-{now}
         suffix: json.gz
