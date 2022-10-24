@@ -1,4 +1,5 @@
 dagsterCloud:
+  deployment: prod
   branchDeployments: true
 
 workspace:
