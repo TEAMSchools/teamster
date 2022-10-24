@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "gspread"
-version = "5.6.0"
+version = "5.6.2"
 requires_python = ">=3.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 summary = "Google Spreadsheets Python API"
 dependencies = [
@@ -1268,9 +1268,9 @@ content_hash = "sha256:1e9fb3280883ad6ed44d0ab8d5738270b0fceafb4c4a4195142b8dcea
     {url = "https://files.pythonhosted.org/packages/5d/51/0f0bb1b955d1c650fe619da8514cecf33b5fd5a7d33553559c259b1b4566/grpcio_status-1.47.2-py3-none-any.whl", hash = "sha256:e1d6c96dee4083cade6dd7426b1d5afb42a433be5d6ebf7bf8967c40378454a8"},
     {url = "https://files.pythonhosted.org/packages/94/d9/e0a038d2443f591d4a16f63e1ef2070fdff2657831f22567135d972a15b2/grpcio-status-1.47.2.tar.gz", hash = "sha256:c94e04dfd208f9bb270c5ac53e7a534913b00b5ebfbc555dfe3fad0d332aca6e"},
 ]
-"gspread 5.6.0" = [
-    {url = "https://files.pythonhosted.org/packages/0c/db/afe8a9e7c3063d774eaf9319af7f3e74af2b6521de359cd41271674b34c7/gspread-5.6.0-py3-none-any.whl", hash = "sha256:0fe52bec73cc232abadfbc2a999e30201bc5cb0c2728ec00fcfdf38f6f669375"},
-    {url = "https://files.pythonhosted.org/packages/b8/53/ed36d8672a3032a63362bdea0a3b3a360e76f8b81426e05e7427b8def71a/gspread-5.6.0.tar.gz", hash = "sha256:9fca855173fdb2e648b3da9e7bbffb83601bfd7c7131d44fa781df84c689e7fc"},
+"gspread 5.6.2" = [
+    {url = "https://files.pythonhosted.org/packages/3b/84/0261e7ac190c8df39c8e0ba583698c0e9aa078da5a31dedb428cfe92a692/gspread-5.6.2-py3-none-any.whl", hash = "sha256:41f7a416425f1ec5a1b677f49b8fbf599102766c27ed7be6601a58c9a1550ebc"},
+    {url = "https://files.pythonhosted.org/packages/ce/02/64d63bb3abc0356a0760b1879ca9fd8504c05da4e05d6a9f9615f1b9f79a/gspread-5.6.2.tar.gz", hash = "sha256:d3bbff4b7aad0fc2c986458e148537a02fe7b46e7162f41f3a42392bfa2adb89"},
 ]
 "httplib2 0.20.4" = [
     {url = "https://files.pythonhosted.org/packages/59/0f/29725a9caf4b2618f524e0f28e2bda91aca8f880123ec77426ede6ea1ea4/httplib2-0.20.4-py3-none-any.whl", hash = "sha256:8b6a905cb1c79eefd03f8669fd993c36dc341f7c558f056cb5a33b5c2f458543"},
