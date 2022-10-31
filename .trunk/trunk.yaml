@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - sqlfluff@1.3.2
+    - sqlfluff@1.4.0
     - yamllint@1.28.0
     - sql-formatter@11.0.2
     - git-diff-check
