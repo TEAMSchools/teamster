@@ -3,7 +3,7 @@ resources:
     config:
       dialect: mssql
       driver: pyodbc
-      mssql_driver: "ODBC Driver 18 for SQL Server"
+      mssql_driver: ODBC Driver 18 for SQL Server
       username:
         env: MSSQL_USERNAME
       password:

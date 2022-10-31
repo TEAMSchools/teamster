@@ -10,15 +10,13 @@ dependencies = [
   "dagster-cloud>=1.0.1",
   "dagster-gcp>=0.16.1",
   "dagster-ssh>=0.16.1",
+  "dagster-k8s>=0.16.3",
   "powerschool>=3.6.0",
   "pyodbc>=4.0.34",
   "gspread>=5.4.0",
   "oracledb>=1.0.3",
-  "sshtunnel>=0.4.0",
-  "dagster-k8s>=0.16.3",
-  "sqlalchemy>=2.0.0b1",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 [project.optional-dependencies]
 
