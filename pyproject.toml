@@ -16,7 +16,7 @@ dependencies = [
   "gspread>=5.4",
   "oracledb>=1.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.11"
 license = { text = "MIT" }
 [project.optional-dependencies]
 
@@ -43,3 +43,4 @@ merge-root = { shell = "bash .github/merge-root.sh" }
 open-pr = { shell = "bash .github/open-pr.sh" }
 validate = { shell = "python -c 'from teamster.local.repository import *'" }
 stats = { shell = "python .dagster/stats/run-stats.py" }
+post_lock = { shell = "pdm export -f requirements > requirements.txt" }
