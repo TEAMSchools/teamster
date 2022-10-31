@@ -1,9 +1,9 @@
 locations:
   - location_name: kipptaf
     code_source:
-      python_file: ./teamster/local/repository.py
+      python_file: teamster/local/repository.py
     build:
-      directory: ./
+      directory: .
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
     working_directory: /root/app
     container_context:
@@ -17,4 +17,4 @@ locations:
         volume_mounts:
           - name: secret-volume
             readOnly: true
-            mountPath: "/etc/secret-volume"
+            mountPath: /etc/secret-volume
