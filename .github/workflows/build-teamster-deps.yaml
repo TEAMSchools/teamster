@@ -13,8 +13,7 @@ on:
     paths:
       - .docker/Dockerfile.deps
       - .github/workflows/build-teamster-deps.yaml
-      - pdm.lock
-      - pyproject.toml
+      - requirements.txt
 
 concurrency:
   # Cancel in-progress runs on same branch
