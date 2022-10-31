@@ -3,8 +3,10 @@ FROM us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core:late
 
 # copy project into container
 WORKDIR $HOME/app
-COPY ../pdm.lock ../pyproject.toml ./
+# COPY ../pdm.lock ../pyproject.toml ./
+COPY ../requirements.txt ./
 
 # # install project dependencies
-RUN pdm config python.use_venv False \
-    && pdm install --prod --no-lock --no-editable
+# RUN pdm config python.use_venv False \
+#     && pdm install --prod --no-lock --no-editable
+RUN pip install --no-cache-dir -r requirements.txt

@@ -29,11 +29,11 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# install pdm
-RUN curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
+# # install pdm
+# RUN curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
 
 # set env vars
-ARG IMAGE_PYTHON_VERSION
-ENV PATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/bin:/root/.local/bin:$PATH"
-ENV PYTHONPATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/lib"
+# ARG IMAGE_PYTHON_VERSION
+# ENV PATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/bin:/root/.local/bin:$PATH"
+# ENV PYTHONPATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/lib"
 ENV HOME="/root"
