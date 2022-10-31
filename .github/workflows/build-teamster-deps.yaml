@@ -1,7 +1,7 @@
 name: Build teamster-deps
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: null
   workflow_run:
     workflows:
       - Build teamster-core
@@ -11,10 +11,10 @@ on:
     branches:
       - dev
     paths:
-      - ".docker/Dockerfile.deps"
-      - ".github/workflows/build-teamster-deps.yaml"
-      - "pdm.lock"
-      - "pyproject.toml"
+      - .docker/Dockerfile.deps
+      - .github/workflows/build-teamster-deps.yaml
+      - pdm.lock
+      - pyproject.toml
 
 concurrency:
   # Cancel in-progress runs on same branch
@@ -45,11 +45,11 @@ jobs:
           ref: ${{ github.head_ref }}
 
       # https://github.com/google-github-actions/auth
-      - id: "auth"
-        name: "Authenticate to Google Cloud"
+      - id: auth
+        name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          token_format: "access_token"
+          token_format: access_token
           workload_identity_provider: projects/624231820004/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
