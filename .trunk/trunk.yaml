@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - sqlfluff@1.4.0
+    - sqlfluff@1.4.1
     - yamllint@1.28.0
     - sql-formatter@11.0.2
     - git-diff-check
@@ -16,9 +16,9 @@ lint:
     - prettier@2.7.1
     - markdownlint@0.32.2
     - shellcheck@0.8.0
-    - taplo@release-taplo-cli-0.7.0
+    - taplo@0.8.0
     - shfmt@3.5.0
-    - actionlint@1.6.21
+    - actionlint@1.6.22
     - flake8@5.0.4
     - gitleaks@8.15.0
     - isort@5.10.1
