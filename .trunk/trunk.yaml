@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v0.0.5
+      ref: v0.0.6
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
@@ -16,7 +16,7 @@ lint:
     - prettier@2.7.1
     - markdownlint@0.32.2
     - shellcheck@0.8.0
-    - taplo@0.8.0
+    - taplo@0.7.0
     - shfmt@3.5.0
     - actionlint@1.6.22
     - flake8@5.0.4
