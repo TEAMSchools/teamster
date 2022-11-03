@@ -3,6 +3,7 @@ from dagster import ScheduleDefinition
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.local.datagun.jobs import (
     datagun_adp,
+    datagun_alchemer,
     datagun_blissbook,
     datagun_clever,
     datagun_coupa,
@@ -117,6 +118,12 @@ datagun_idauto_schedule = ScheduleDefinition(
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
+datagun_alchemer_schedule = ScheduleDefinition(
+    job=datagun_alchemer,
+    cron_schedule="* 0 * * *",
+    execution_timezone=str(LOCAL_TIME_ZONE),
+)
+
 __all__ = [
     "datagun_deanslist_schedule",
     "datagun_illuminate_schedule",
@@ -134,4 +141,5 @@ __all__ = [
     "datagun_njdoe_schedule",
     "datagun_whetstone_schedule",
     "datagun_idauto_schedule",
+    "datagun_alchemer_schedule",
 ]

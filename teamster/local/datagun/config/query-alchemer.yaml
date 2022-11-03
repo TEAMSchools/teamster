@@ -23,7 +23,7 @@ ops:
       sql:
         schema:
           table:
-            name: surveygizmo_contacts
+            name: alchemer_contacts
             schema: gabby.extracts
     file:
       stem: alchemer_contacts
