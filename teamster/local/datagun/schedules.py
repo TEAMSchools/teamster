@@ -120,7 +120,7 @@ datagun_idauto_schedule = ScheduleDefinition(
 
 datagun_alchemer_schedule = ScheduleDefinition(
     job=datagun_alchemer,
-    cron_schedule="* 0 * * *",
+    cron_schedule="30 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
