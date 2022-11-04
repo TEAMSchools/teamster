@@ -30,7 +30,7 @@ build-backend = "pdm.pep517.api"
 dev = []
 
 [tool.pdm.scripts]
-_.env_file = "env/kipptaf.env"
+_.env_file = "env/dev.env"
 init-core = { shell = "bash .init/init-core.sh" }
 init-local = { shell = "bash .init/init-local.sh", env_file = "env/core.env" }
 gcloud-core = { shell = "bash .google/gcloud-core-init.sh" }
