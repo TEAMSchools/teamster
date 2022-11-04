@@ -43,4 +43,4 @@ merge-root = { shell = "bash .github/merge-root.sh" }
 open-pr = { shell = "bash .github/open-pr.sh" }
 validate = { shell = "python -c 'from teamster.local.repository import *'" }
 stats = { shell = "python .dagster/stats/run-stats.py" }
-post_lock = { shell = "pdm export -f requirements > requirements.txt" }
+post_lock = { shell = "pdm export -f requirements -o requirements.txt" }
