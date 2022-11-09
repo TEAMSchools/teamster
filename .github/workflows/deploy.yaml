@@ -27,7 +27,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action
       - name: Parse cloud workspace
         id: parse-workspace
-        uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1.9
         with:
           dagster_cloud_file: .dagster/dagster-cloud-${{ github.ref_name }}.yaml
 
