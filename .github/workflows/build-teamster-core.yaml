@@ -16,9 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY: us-central1-docker.pkg.dev
-  GCP_PROJECT_ID: teamster-332318
-  SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
+  REGISTRY: ${{ secrets.GCP_REGION }}-docker.pkg.dev
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  SERVICE_ACCOUNT:
+    ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
   IMAGE_PYTHON_VERSION: "3.10"
 
 jobs:
@@ -45,7 +46,9 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           token_format: access_token
-          workload_identity_provider: projects/624231820004/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          workload_identity_provider:
+            projects/${{ secrets.GCP_PROJECT_NUMBER
+            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
       # https://github.com/docker/login-action
