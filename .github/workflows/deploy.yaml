@@ -4,10 +4,10 @@ on:
   workflow_dispatch: null
   push:
     branches:
-      - github.ref_name
+      - kipp*
     paths:
       - teamster/**
-      - .github/workflows/deploy-*.yaml
+      - .github/workflows/deploy.yaml
       - .dagster/dagster-cloud-*.yaml
       - Dockerfile
       - requirements.txt
