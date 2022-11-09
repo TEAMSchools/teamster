@@ -42,22 +42,16 @@ gcloud iam workload-identity-pools providers create-oidc "github-provider" \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository"
 
-# save WI pool id to env
-GH_WORKLOAD_IDENTITY_POOL_ID=gcloud iam workload-identity-pools describe "github-pool" \
-  --project="${GCP_PROJECT_ID}" \
-  --location="global" \
-  --format="value(name)"
-
-export GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}
-echo "GH_WORKLOAD_IDENTITY_POOL_ID=${GH_WORKLOAD_IDENTITY_POOL_ID}" >>env/core.env
-echo "GH_WORKLOAD_IDENTITY_POOL_PROVIDER=${GH_WORKLOAD_IDENTITY_POOL_ID}/providers/github-provider" >>env/core.env
+echo "GH_WORKLOAD_IDENTITY_POOL_ID=github-pool" >>env/core.env
+echo "GH_WORKLOAD_IDENTITY_PROVIDER_ID=github-provider" >>env/core.env
 
 # bind service account to WI pool
+GH_ORG_NAME=$(gh repo view --json owner --jq '.owner.login')
 gcloud iam service-accounts \
   add-iam-policy-binding "${GCP_SERVICE_ACCOUNT}" \
   --project="${GCP_PROJECT_ID}" \
   --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/${GH_WORKLOAD_IDENTITY_POOL_ID}/attribute.repository/${GH_ORG_NAME}/teamster"
+  --member="principalSet://iam.googleapis.com/projects/${GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-pool/attribute.repository/${GH_ORG_NAME}/teamster"
 
 # create Artifact Registry repository
 gcloud artifacts repositories create \
