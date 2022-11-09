@@ -1,6 +1,7 @@
 #!/bin/bash
 
 kubectl create namespace dagster-cloud
+
 kubectl create secret generic dagster-cloud-agent-token \
   --save-config \
   --dry-run=client \
