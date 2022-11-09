@@ -3,8 +3,6 @@ name: Prod Deployment
 on:
   workflow_dispatch: null
   push:
-    branches:
-      - github.ref_name
     paths:
       - teamster/**
       - .github/workflows/deploy-*.yaml
