@@ -26,7 +26,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1.9
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-stg-${{ github.base_ref }}.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-${{ github.base_ref }}.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
