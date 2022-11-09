@@ -6,15 +6,15 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 dependencies = [
-  "dagster>=1.0",
-  "dagster-cloud>=1.0",
-  "dagster-gcp>=0.16",
-  "dagster-ssh>=0.16",
-  "dagster-k8s>=0.16",
-  "powerschool>=3.6",
-  "pyodbc>=4.0",
-  "gspread>=5.4",
-  "oracledb>=1.0",
+  "dagster>=1.0.16",
+  "dagster-cloud>=1.0.16",
+  "dagster-gcp>=0.16.16",
+  "dagster-ssh>=0.16.16",
+  "dagster-k8s>=0.16.16",
+  "powerschool>=4.0.1",
+  "pyodbc>=4.0.34",
+  "gspread>=5.6.2",
+  "oracledb>=1.1.1",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "MIT" }
@@ -33,6 +33,7 @@ dev = []
 _.env_file = "env/kippnewark.env"
 init-core = { shell = "bash .init/init-core.sh" }
 init-local = { shell = "bash .init/init-local.sh", env_file = "env/core.env" }
+gh-secret = { shell = "gh secret set -f env/core.env" }
 gcloud-core = { shell = "bash .google/gcloud-core-init.sh" }
 gcloud-local = { shell = "bash .google/gcloud-local-init.sh" }
 k8s-init = { shell = "bash .google/k8s-init.sh" }
