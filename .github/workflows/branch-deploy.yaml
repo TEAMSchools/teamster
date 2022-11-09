@@ -1,10 +1,9 @@
 name: Branch Deployment
 
 on:
-  workflow_dispatch: null
   pull_request:
     branches:
-      - github.ref_name
+      - kipp*
     types:
       - opened
       - synchronize
@@ -25,7 +24,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action
       - name: Parse cloud workspace
         id: parse-workspace
-        uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1.9
         with:
           dagster_cloud_file: .dagster/dagster-cloud-${{ github.ref_name }}.yaml
 
@@ -72,7 +71,7 @@ jobs:
 
       # https://github.com/dagster-io/dagster-cloud-action
       - name: Build and deploy to Dagster Cloud hybrid
-        uses: dagster-io/dagster-cloud-action/actions/hybrid_branch_deploy@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/hybrid_branch_deploy@v0.1.9
         with:
           organization_id: ${{ secrets.DAGSTER_ORGANIZATION_ID }}
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
