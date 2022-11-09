@@ -64,7 +64,7 @@ jobs:
         with:
           file: .docker/Dockerfile.core
           push: true
-          build-args: IMAGE_PYTHON_VERSION="${{ secrets.IMAGE_PYTHON_VERSION }}"
+          build-args: IMAGE_PYTHON_VERSION=${{ secrets.IMAGE_PYTHON_VERSION }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:${{ env.IMAGE_PYTHON_VERSION }}
+            ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:${{ secrets.IMAGE_PYTHON_VERSION }}
             ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/teamster-core/teamster-core:latest
