@@ -1,14 +1,16 @@
-name: Branch Deployment
+name: Prod Deployment
 
 on:
   workflow_dispatch: null
-  pull_request:
+  push:
     branches:
       - github.ref_name
-    types:
-      - opened
-      - synchronize
-      - reopened
+    paths:
+      - teamster/**
+      - .github/workflows/deploy-${{ github.ref_name }}.yaml
+      - .dagster/dagster-cloud-${{ github.ref_name }}.yaml
+      - Dockerfile
+      - requirements.txt
 
 jobs:
   parse_workspace:
@@ -42,7 +44,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      pull-requests: write
 
     steps:
       # https://github.com/actions/checkout
