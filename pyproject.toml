@@ -33,7 +33,7 @@ dev = []
 _.env_file = "env/dev.env"
 init-core = { shell = "bash .init/init-core.sh" }
 init-local = { shell = "bash .init/init-local.sh", env_file = "env/core.env" }
-gh-secret = { shell = "gh secret set -f env/core.env", env_file = "env/core.env" }
+gh-secret = { shell = "gh secret set -f env/core.env" }
 gcloud-core = { shell = "bash .google/gcloud-core-init.sh" }
 gcloud-local = { shell = "bash .google/gcloud-local-init.sh" }
 k8s-init = { shell = "bash .google/k8s-init.sh" }
