@@ -1,9 +1,13 @@
+env:
+  BRANCH_NAME: kippcamden
+
 name: kippcamden - Branch Deployment
 
 on:
+  workflow_dispatch: null
   pull_request:
     branches:
-      - kippcamden
+      - env.BRANCH_NAME
     types:
       - opened
       - synchronize
@@ -13,10 +17,6 @@ concurrency:
   # Cancel in-progress runs on same workflow
   group: ${{ github.workflow }}
   cancel-in-progress: true
-
-env:
-  REGISTRY: us-central1-docker.pkg.dev
-  SERVICE_ACCOUNT: service-account@teamster-332318.iam.gserviceaccount.com
 
 jobs:
   parse_workspace:
@@ -35,7 +35,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-kippcamden.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-${{ github.ref }}.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
@@ -56,23 +56,25 @@ jobs:
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
 
       # https://github.com/google-github-actions/auth
       - id: auth
         name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           token_format: access_token
-          workload_identity_provider: projects/624231820004/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: ${{ env.SERVICE_ACCOUNT }}
+          workload_identity_provider:
+            projects/${{ secrets.GCP_PROJECT_NUMBER
+            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account:
+            ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}@${{ secrets.GCP_PROJECT_ID
+            }}.iam.gserviceaccount.com
 
       # https://github.com/docker/login-action
       - name: Login to GAR
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
@@ -80,8 +82,8 @@ jobs:
       - name: Build and deploy to Dagster Cloud hybrid
         uses: dagster-io/dagster-cloud-action/actions/hybrid_branch_deploy@v0.1
         with:
-          organization_id: kipptaf
-          dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+          organization_id: ${{ secrets.DAGSTER_ORGANIZATION_ID }}
+          dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
           location: ${{ toJson(matrix.location) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
