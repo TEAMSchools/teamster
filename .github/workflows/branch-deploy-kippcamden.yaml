@@ -1,9 +1,10 @@
 env:
   BRANCH_NAME: kippcamden
 
-name: ${{ env.BRANCH_NAME }} - Branch Deployment
+name: kippcamden - Branch Deployment
 
 on:
+  workflow_dispatch: null
   pull_request:
     branches:
       - env.BRANCH_NAME
