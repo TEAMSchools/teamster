@@ -1,4 +1,4 @@
-name: kippcamden - Branch Deployment
+name: Branch Deployment
 
 on:
   workflow_dispatch: null
@@ -9,6 +9,11 @@ on:
       - opened
       - synchronize
       - reopened
+
+concurrency:
+  # Cancel in-progress runs on same workflow
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
   parse_workspace:
