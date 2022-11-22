@@ -1,9 +1,9 @@
 [project]
-name = "${GITHUB_REPOSITORY_NAME}"
+name = "teamster-new"
 version = "0.1.0"
-description = "${GITHUB_REPOSITORY_DESC}"
+description = ""
 authors = [
-  { name = "${GITHUB_ACTOR_NAME}", email = "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com" },
+  { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 requires-python = ">=3.7"
 license = { text = "GPL-3.0-or-later" }

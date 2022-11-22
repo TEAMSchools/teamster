@@ -1,5 +1,5 @@
 # https://www.mkdocs.org/user-guide/configuration/
 
-site_name: ${GITHUB_REPOSITORY_NAME}
+site_name: teamster-new
 theme:
   name: material
