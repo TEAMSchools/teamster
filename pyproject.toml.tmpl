@@ -1,0 +1,30 @@
+[project]
+name = "${GITHUB_REPOSITORY_NAME}"
+version = "0.1.0"
+description = "${GITHUB_REPOSITORY_DESC}"
+authors = [
+  { name = "${GITHUB_ACTOR_NAME}", email = "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com" },
+]
+requires-python = ">=3.7"
+license = { text = "GPL-3.0-or-later" }
+dependencies = []
+
+[project.optional-dependencies]
+
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool.pdm.dev-dependencies]
+dev = ["pytest", "towncrier"]
+
+[tool.pdm.scripts]
+post_lock = { shell = "pdm export -f requirements -o requirements.txt", help = "Export the locked packages set to requirements.txt" }
+clean-build = { shell = "bash .pdm/scripts/clean-build.sh", help = "remove build artifacts" }
+clean-pyc = { shell = "bash .pdm/scripts/clean-pyc.sh", help = "remove Python file artifacts" }
+clean-test = { shell = "bash .pdm/scripts/clean-test.sh", help = "remove test and coverage artifacts" }
+clean = { shell = "pdm run clean-build && pdm run clean-pyc && pdm run clean-test", help = "remove all build, test, coverage and Python artifacts" }
+docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
+docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
+docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
+test = { shell = "pdm run pytest", help = "run tests with the default Python" }
