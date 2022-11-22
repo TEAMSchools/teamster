@@ -8,6 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
+    - taplo@0.7.0
     - markdownlint@0.32.2
     - flake8@5.0.4
     - gitleaks@8.15.1
