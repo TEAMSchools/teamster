@@ -14,6 +14,7 @@ on:
       - .docker/Dockerfile.deps
       - .github/workflows/build-teamster-deps.yaml
       - requirements.txt
+      - pyproject.toml
 
 concurrency:
   # Cancel in-progress runs on same branch
