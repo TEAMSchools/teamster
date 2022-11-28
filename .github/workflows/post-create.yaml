@@ -44,6 +44,6 @@ jobs:
           route: PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
-          workflow_id: "post-create.yml"
+          workflow_id: post-create.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
