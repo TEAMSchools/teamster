@@ -50,6 +50,8 @@ runtimes:
     - node@16.14.2
     - python@3.10.3
 actions:
+  disabled:
+    - commitlint
   enabled:
     - trunk-announce
     - trunk-check-pre-push
