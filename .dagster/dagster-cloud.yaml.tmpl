@@ -1,0 +1,13 @@
+locations:
+  - location_name: ${INSTANCE_NAME}
+    code_source:
+      python_file: teamster/local/repository.py
+    build:
+      directory: .
+      registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${INSTANCE_NAME}/teamster-${INSTANCE_NAME}
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - ${INSTANCE_NAME}
+          
