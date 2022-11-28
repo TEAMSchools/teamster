@@ -16,9 +16,9 @@ powerschool_api_extract = run_queries.to_job(
     },
     config=config_from_files(
         [
-            "teamster/core/config/google/resource.yaml",
-            "teamster/core/config/powerschool/api/resource.yaml",
-            "teamster/core/config/powerschool/api/query-test.yaml",
+            "src/teamster/core/config/google/resource.yaml",
+            "src/teamster/core/config/powerschool/api/resource.yaml",
+            "src/teamster/core/config/powerschool/api/query-test.yaml",
         ]
     ),
 )

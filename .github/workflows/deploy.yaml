@@ -6,7 +6,7 @@ on:
     branches:
       - kipp*
     paths:
-      - teamster/**
+      - src/teamster/**
       - .github/workflows/deploy.yaml
       - .dagster/dagster-cloud-*.yaml
       - Dockerfile
