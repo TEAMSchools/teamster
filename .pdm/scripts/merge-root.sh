@@ -7,9 +7,9 @@ for BRANCH in .git/refs/remotes/origin/kipp*; do
   git pull
 
   git merge --no-ff --no-commit dev
-  git reset HEAD teamster/
-  git checkout -- teamster/
-  git commit -m "merged dev root"
+  git reset HEAD src/
+  git checkout -- src/
+  git commit -m "Merge dev root"
 
   while true; do
     read -rp "Push (y/N)? " yn
