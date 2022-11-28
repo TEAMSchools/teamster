@@ -3,7 +3,7 @@ FROM us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core:late
 
 # copy project into container
 WORKDIR $HOME/app
-COPY ../requirements.txt ./
+COPY ../requirements.txt ../pyproject.toml ./
 
 # install project dependencies
 RUN pip install --no-cache-dir -r requirements.txt
