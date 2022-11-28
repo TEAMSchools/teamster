@@ -1,0 +1,49 @@
+name: Post-Create Setup
+
+on: create
+
+jobs:
+  envsubst:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # https://github.com/octokit/request-action
+      - name: GET user from API
+        uses: octokit/request-action@v2.1.7
+        id: get_user
+        with:
+          route: GET /users/{username}
+          username: ${{ github.actor }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run envsubst script
+        run: bash .github/scripts/envsubst.sh
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+          GITHUB_REPOSITORY_DESC: ${{ github.event.description }}
+          GITHUB_ACTOR_ID: ${{ github.actor_id }} # trunk-ignore(actionlint/expression)
+          GITHUB_ACTOR_NAME: ${{ fromJson(steps.get_user.outputs.data).name }}
+
+      - name: Commit and push changes
+        # trunk-ignore(actionlint/expression)
+        run: |
+          git config --global user.name "${{ fromJson(steps.get_user.outputs.data).name }}"
+          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+          git add -A
+          git commit -m "Post-create action commit"
+          git push
+
+      # https://github.com/octokit/request-action
+      - name: Disable this workflow
+        uses: octokit/request-action@v2.1.7
+        with:
+          route: PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          workflow_id: "post-create.yml"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
