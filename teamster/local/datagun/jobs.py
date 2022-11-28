@@ -2,11 +2,11 @@ from dagster import config_from_files
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
+from teamster.local.datagun.graphs import powerschool_autocomm
 
 from teamster.core.datagun.graphs import etl_sftp
 from teamster.core.resources.google import gcs_file_manager
 from teamster.core.resources.sqlalchemy import mssql
-from teamster.local.datagun.graphs import powerschool_autocomm
 
 datagun_ps_autocomm = powerschool_autocomm.to_job(
     name="datagun_ps_autocomm",
@@ -20,9 +20,9 @@ datagun_ps_autocomm = powerschool_autocomm.to_job(
     },
     config=config_from_files(
         [
-            "teamster/core/resources/config/google.yaml",
-            "teamster/core/datagun/config/resource.yaml",
-            "teamster/local/datagun/config/query-powerschool.yaml",
+            "src/teamster/core/resources/config/google.yaml",
+            "src/teamster/core/datagun/config/resource.yaml",
+            "src/teamster/local/datagun/config/query-powerschool.yaml",
         ]
     ),
 )
@@ -39,9 +39,9 @@ datagun_nps = etl_sftp.to_job(
     },
     config=config_from_files(
         [
-            "teamster/core/resources/config/google.yaml",
-            "teamster/core/datagun/config/resource.yaml",
-            "teamster/local/datagun/config/query-nps.yaml",
+            "src/teamster/core/resources/config/google.yaml",
+            "src/teamster/core/datagun/config/resource.yaml",
+            "src/teamster/local/datagun/config/query-nps.yaml",
         ]
     ),
 )

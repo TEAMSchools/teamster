@@ -1,0 +1,5 @@
+# https://www.mkdocs.org/user-guide/configuration/
+
+site_name: teamster
+theme:
+  name: material
