@@ -30,6 +30,10 @@ build-backend = "pdm.pep517.api"
 [tool.pdm.dev-dependencies]
 dev = ["pytest", "towncrier"]
 
+[tool.pdm.build]
+package-dir = "src"
+includes = ["src/teamster/*"]
+
 [tool.pdm.scripts]
 _.env_file = "env/kippcamden.env"
 post_lock = { shell = "pdm export -f requirements -o requirements.txt", help = "Export the locked packages set to requirements.txt" }
