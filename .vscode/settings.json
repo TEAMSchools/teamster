@@ -1,0 +1,38 @@
+{
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/__pypackages__/3.7/lib",
+    "${workspaceFolder}/__pypackages__/3.8/lib",
+    "${workspaceFolder}/__pypackages__/3.9/lib",
+    "${workspaceFolder}/__pypackages__/3.10/lib",
+    "${workspaceFolder}/__pypackages__/3.11/lib"
+  ],
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/__pypackages__/3.7/lib",
+    "${workspaceFolder}/__pypackages__/3.8/lib",
+    "${workspaceFolder}/__pypackages__/3.9/lib",
+    "${workspaceFolder}/__pypackages__/3.10/lib",
+    "${workspaceFolder}/__pypackages__/3.11/lib"
+  ],
+  "files.exclude": {
+    "**/.trunk/*out": true
+  },
+  "files.watcherExclude": {
+    "**/.trunk/*out": true
+  },
+  "editor.renderControlCharacters": true,
+  "editor.wordWrap": "bounded",
+  "editor.wordWrapColumn": 88,
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "trunk.io"
+  },
+  "python.analysis.autoImportCompletions": false,
+  "python.linting.ignorePatterns": [
+    "**/site-packages/**/*.py",
+    ".vscode/*.py",
+    "**/__pypackages__/**/*.py"
+  ],
+  "[yaml]": {
+    "editor.defaultFormatter": "trunk.io"
+  }
+}
