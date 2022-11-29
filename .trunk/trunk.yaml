@@ -10,17 +10,17 @@ lint:
   enabled:
     - sqlfluff@1.4.2
     - yamllint@1.28.0
-    - sql-formatter@12.0.0
+    - sql-formatter@12.0.3
     - git-diff-check
     - hadolint@2.12.0
-    - prettier@2.7.1
+    - prettier@2.8.0
     - markdownlint@0.32.2
     - shellcheck@0.8.0
     - taplo@0.7.0
     - shfmt@3.5.0
     - actionlint@1.6.22
-    - flake8@5.0.4
-    - gitleaks@8.15.0
+    - flake8@6.0.0
+    - gitleaks@8.15.1
     - isort@5.10.1
     - black@22.10.0
   definitions:
@@ -50,6 +50,8 @@ runtimes:
     - node@16.14.2
     - python@3.10.3
 actions:
+  disabled:
+    - commitlint
   enabled:
     - trunk-announce
     - trunk-check-pre-push
