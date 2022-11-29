@@ -1,6 +1,6 @@
 [project]
-name = ""
-version = ""
+name = "teamster"
+version = "0.1.0"
 description = ""
 authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
@@ -28,7 +28,7 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = ["pytest", "towncrier"]
+dev = ["pytest"]
 
 [tool.pdm.build]
 package-dir = "src"
