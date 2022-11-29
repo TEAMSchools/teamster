@@ -20,9 +20,9 @@ datagun_ps_autocomm = powerschool_autocomm.to_job(
     },
     config=config_from_files(
         [
-            "teamster/core/resources/config/google.yaml",
-            "teamster/core/datagun/config/resource.yaml",
-            "teamster/local/datagun/config/query-powerschool.yaml",
+            "src/teamster/core/resources/config/google.yaml",
+            "src/teamster/core/datagun/config/resource.yaml",
+            "src/teamster/local/datagun/config/query-powerschool.yaml",
         ]
     ),
 )
@@ -39,9 +39,9 @@ datagun_nps = etl_sftp.to_job(
     },
     config=config_from_files(
         [
-            "teamster/core/resources/config/google.yaml",
-            "teamster/core/datagun/config/resource.yaml",
-            "teamster/local/datagun/config/query-nps.yaml",
+            "src/teamster/core/resources/config/google.yaml",
+            "src/teamster/core/datagun/config/resource.yaml",
+            "src/teamster/local/datagun/config/query-nps.yaml",
         ]
     ),
 )

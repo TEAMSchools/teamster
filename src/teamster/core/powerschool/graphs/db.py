@@ -10,7 +10,7 @@ from teamster.core.powerschool.ops.db import extract_to_data_lake, get_counts_fa
 
 def get_table_names(instance, table_set, resync):
     file_path = pathlib.Path(
-        f"teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
+        f"src/teamster/{instance}/powerschool/config/db/sync-{table_set}.yaml"
     )
 
     if file_path.exists():

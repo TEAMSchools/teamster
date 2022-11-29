@@ -1,6 +1,6 @@
 [project]
-name = ""
-version = ""
+name = "teamster"
+version = "0.1.0"
 description = ""
 authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
@@ -15,11 +15,10 @@ dependencies = [
   "pyodbc>=4.0.34",
   "gspread>=5.6.2",
   "oracledb>=1.1.1",
-  "google-cloud-storage>=2.6.0",
-  "google-cloud-bigquery>=3.3.6",
 ]
 requires-python = ">=3.10,<3.11"
-license = { text = "MIT" }
+license = { text = "GPL-3.0-or-later" }
+
 [project.optional-dependencies]
 
 [build-system]
@@ -29,21 +28,33 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = []
+dev = ["pytest", "towncrier"]
+
+[tool.pdm.build]
+package-dir = "src"
+includes = ["src/teamster/*"]
 
 [tool.pdm.scripts]
 _.env_file = "env/kippnewark.env"
-init-core = { shell = "bash .init/init-core.sh" }
-init-local = { shell = "bash .init/init-local.sh", env_file = "env/core.env" }
+post_lock = { shell = "pdm export -f requirements -o requirements.txt", help = "Export the locked packages set to requirements.txt" }
+clean-build = { shell = "bash .pdm/scripts/clean-build.sh", help = "remove build artifacts" }
+clean-pyc = { shell = "bash .pdm/scripts/clean-pyc.sh", help = "remove Python file artifacts" }
+clean-test = { shell = "bash .pdm/scripts/clean-test.sh", help = "remove test and coverage artifacts" }
+clean = { shell = "pdm run clean-build && pdm run clean-pyc && pdm run clean-test", help = "remove all build, test, coverage and Python artifacts" }
+docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
+docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
+docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
+test = { shell = "pdm run pytest", help = "run tests with the default Python" }
+init-core = { shell = "bash .pdm/scripts/init-core.sh" }
+init-local = { shell = "bash .pdm/scripts/init-local.sh", env_file = "env/core.env" }
 gh-secret = { shell = "gh secret set -f env/core.env" }
-gcloud-core = { shell = "bash .google/gcloud-core-init.sh" }
-gcloud-local = { shell = "bash .google/gcloud-local-init.sh" }
-k8s-init = { shell = "bash .google/k8s-init.sh" }
-k8s-secret = { shell = "bash .google/k8s-secret.sh" }
-helm-install = { shell = "bash .helm/helm-install.sh" }
-merge-dev = { shell = "bash .github/merge-dev.sh" }
-merge-root = { shell = "bash .github/merge-root.sh" }
-open-pr = { shell = "bash .github/open-pr.sh" }
+gcloud-core = { shell = "bash .pdm/scripts/gcloud-core-init.sh" }
+gcloud-local = { shell = "bash .pdm/scripts/gcloud-local-init.sh" }
+k8s-init = { shell = "bash .pdm/scripts/k8s-init.sh" }
+k8s-secret = { shell = "bash .pdm/scripts/k8s-secret.sh" }
+helm-install = { shell = "bash .pdm/scripts/helm-install.sh" }
+merge-dev = { shell = "bash .pdm/scripts/merge-dev.sh" }
+merge-root = { shell = "bash .pdm/scripts/merge-root.sh" }
+open-pr = { shell = "bash .pdm/scripts/open-pr.sh" }
 validate = { shell = "python -c 'from teamster.local.repository import *'" }
 stats = { shell = "python .dagster/stats/run-stats.py" }
-post_lock = { shell = "pdm export -f requirements -o requirements.txt" }

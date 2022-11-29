@@ -24,7 +24,7 @@ ops:
     config:
       query:
         sql:
-          file: ./teamster/core/datagun/config/sql/test.sql
+          file: src/teamster/core/datagun/config/sql/test.sql
       file:
         stem: json-test-{now}
         suffix: json.gz

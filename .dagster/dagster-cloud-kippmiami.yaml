@@ -1,7 +1,7 @@
 locations:
   - location_name: kippmiami
     code_source:
-      python_file: teamster/local/repository.py
+      python_file: src/teamster/local/repository.py
     build:
       directory: .
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
