@@ -1,4 +1,4 @@
-name: Prod Deployment
+name: Hybrid Prod Deployment
 
 on:
   workflow_dispatch: null
@@ -6,11 +6,16 @@ on:
     branches:
       - kipp*
     paths:
-      - src/teamster/**
-      - .github/workflows/deploy.yaml
-      - .dagster/dagster-cloud-*.yaml
       - Dockerfile
+      - .github/workflows/prod-deploy.yaml
+      - .dagster/dagster-cloud.yaml
       - requirements.txt
+      - src/teamster/**
+
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   parse_workspace:
@@ -29,7 +34,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1.9
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-${{ github.ref_name }}.yaml
+          dagster_cloud_file: .dagster/dagster-cloud.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
@@ -49,6 +54,8 @@ jobs:
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
 
       # https://github.com/google-github-actions/auth
       - id: auth
