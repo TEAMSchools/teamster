@@ -1,6 +1,5 @@
 # Debian
-ARG IMAGE_PYTHON_VERSION
-FROM python:${IMAGE_PYTHON_VERSION}-slim
+FROM python:3.10-slim
 
 # update system pip
 # trunk-ignore(hadolint/DL3013)
