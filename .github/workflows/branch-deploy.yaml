@@ -85,3 +85,4 @@ jobs:
           location: ${{ toJson(matrix.location) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_PYTHON_VERSION: ${{ secrets.IMAGE_PYTHON_VERSION }}
