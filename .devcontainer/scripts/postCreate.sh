@@ -21,13 +21,13 @@ git add .
 git commit -m "Initial devcontainer commit"
 
 # install pdm dependencies
-pdm install
+pdm install --no-self
 
 curl https://get.trunk.io -fsSL | bash -s -- -y
-trunk init --yes-to-all --nocheck-sample --no-progress
-trunk actions enable trunk-announce trunk-check-pre-push trunk-fmt-pre-commit
-trunk config share
-trunk check --all --fix --no-progress
+trunk init --yes-to-all --nocheck-sample >/dev/null
+trunk actions enable trunk-announce trunk-check-pre-push trunk-fmt-pre-commit >/dev/null
+trunk config share >/dev/null
+trunk check --all --fix
 
 # commit new files
 git add .
