@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for BRANCH in .git/refs/remotes/origin/kipp*; do
+for BRANCH in .git/refs/heads/kipp*; do
   branch_name=$(basename -- "${BRANCH}")
 
   git switch "${branch_name}"
