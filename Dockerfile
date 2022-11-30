@@ -26,21 +26,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# set env vars
-ENV HOME="/root"
-
-# FROM base
-
-# copy project into container
-# WORKDIR $HOME/app
-# COPY ../requirements.txt ../pyproject.toml ./
-
-# install project dependencies
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# FROM deps
-
-WORKDIR $HOME/app
+# copy project files into container
+WORKDIR /root/app
 COPY ../requirements.txt ../pyproject.toml ./
 COPY src/teamster ./src/teamster
 
