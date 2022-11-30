@@ -10,7 +10,7 @@ sudo apt-get -qq -y update --no-install-recommends &&
 python -m pip install --no-cache-dir --upgrade pip
 
 # update pdm
-pdm self update
+pdm self update --no-self
 
 # update trunk
 trunk upgrade -y --no-progress
