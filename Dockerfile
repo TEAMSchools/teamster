@@ -8,7 +8,8 @@ RUN python -m pip install --no-cache-dir --upgrade pip
 # install system deps
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends \
+        curl gnupg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
