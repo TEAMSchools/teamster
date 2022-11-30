@@ -28,7 +28,7 @@ RUN apt-get update \
 
 # copy project files into container
 WORKDIR /root/app
-COPY ../requirements.txt ../pyproject.toml ./
+COPY requirements.txt pyproject.toml ./
 COPY src/teamster ./src/teamster
 
 # install project
