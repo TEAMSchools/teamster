@@ -6,11 +6,16 @@ on:
     branches:
       - kipp*
     paths:
-      - src/teamster/**
-      - .github/workflows/deploy.yaml
-      - .dagster/dagster-cloud-*.yaml
       - Dockerfile
+      - .github/workflows/prod-deploy.yaml
+      - .dagster/dagster-cloud-*.yaml
       - requirements.txt
+      - src/teamster/**
+
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   parse_workspace:
@@ -49,6 +54,8 @@ jobs:
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
 
       # https://github.com/google-github-actions/auth
       - id: auth
