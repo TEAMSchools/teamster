@@ -54,7 +54,6 @@ k8s-init = { shell = "bash .pdm/scripts/k8s-init.sh" }
 k8s-secret = { shell = "bash .pdm/scripts/k8s-secret.sh" }
 helm-install = { shell = "bash .pdm/scripts/helm-install.sh" }
 merge-dev = { shell = "bash .pdm/scripts/merge-dev.sh" }
-merge-root = { shell = "bash .pdm/scripts/merge-root.sh" }
 open-pr = { shell = "bash .pdm/scripts/open-pr.sh" }
 validate = { shell = "python -c 'from teamster.local.repository import *'" }
 stats = { shell = "python .dagster/stats/run-stats.py" }

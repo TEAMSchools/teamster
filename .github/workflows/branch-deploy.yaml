@@ -1,4 +1,4 @@
-name: Branch Deployment
+name: Hybrid Branch Deployment
 
 on:
   pull_request:
@@ -8,6 +8,11 @@ on:
       - opened
       - synchronize
       - reopened
+
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   parse_workspace:
@@ -26,7 +31,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1.9
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-${{ github.base_ref }}.yaml
+          dagster_cloud_file: .dagster/dagster-cloud.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
@@ -47,6 +52,8 @@ jobs:
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
 
       # https://github.com/google-github-actions/auth
       - id: auth
