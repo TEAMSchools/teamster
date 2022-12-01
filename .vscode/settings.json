@@ -14,7 +14,6 @@
     "${workspaceFolder}/__pypackages__/3.11/lib"
   ],
   "files.exclude": {
-    "**/.git": false,
     "**/.trunk/*out": true
   },
   "files.watcherExclude": {
