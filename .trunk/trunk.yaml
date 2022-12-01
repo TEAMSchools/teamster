@@ -57,3 +57,8 @@ actions:
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
+  definitions:
+    - id: post-checkout
+      triggers:
+        - git_hooks: [post-checkout]
+      run: echo "${@}"
