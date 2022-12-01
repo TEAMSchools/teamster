@@ -2,5 +2,4 @@
 
 branch=$(git branch --show-current)
 
-touch env/.env
-ln -sf env/"${branch^^}".env env/.env
+cp env/"${branch^^}".env env/.env
