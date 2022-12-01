@@ -35,7 +35,7 @@ package-dir = "src"
 includes = ["src/teamster/*"]
 
 [tool.pdm.scripts]
-_.env_file = ".env"
+_.env_file = "env/.env"
 post_lock = { shell = "pdm export -f requirements -o requirements.txt", help = "Export the locked packages set to requirements.txt" }
 clean-build = { shell = "bash .pdm/scripts/clean-build.sh", help = "remove build artifacts" }
 clean-pyc = { shell = "bash .pdm/scripts/clean-pyc.sh", help = "remove Python file artifacts" }
@@ -47,7 +47,6 @@ docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to
 test = { shell = "pdm run pytest", help = "run tests with the default Python" }
 init-core = { shell = "bash .pdm/scripts/init-core.sh" }
 init-local = { shell = "bash .pdm/scripts/init-local.sh" }
-gh-secret = { shell = "gh secret set -f env/core.env" }
 gcloud-core = { shell = "bash .pdm/scripts/gcloud-core-init.sh" }
 gcloud-local = { shell = "bash .pdm/scripts/gcloud-local-init.sh" }
 k8s-init = { shell = "bash .pdm/scripts/k8s-init.sh" }
