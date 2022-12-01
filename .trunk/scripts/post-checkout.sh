@@ -2,4 +2,4 @@
 
 branch=$(git branch --show-current)
 
-cp env/"${branch^^}".env env/.env
+cp --remove-destination env/"${branch^^}".env env/.env
