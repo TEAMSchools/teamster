@@ -62,4 +62,4 @@ actions:
     - id: post-checkout
       triggers:
         - git_hooks: [post-checkout]
-      run: bash .trunk/scripts/post-commit.sh
+      run: bash .trunk/scripts/post-checkout.sh
