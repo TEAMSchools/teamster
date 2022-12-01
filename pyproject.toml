@@ -47,7 +47,6 @@ docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to
 test = { shell = "pdm run pytest", help = "run tests with the default Python" }
 init-core = { shell = "bash .pdm/scripts/init-core.sh" }
 init-local = { shell = "bash .pdm/scripts/init-local.sh" }
-gh-secret = { shell = "gh secret set -f env/core.env" }
 gcloud-core = { shell = "bash .pdm/scripts/gcloud-core-init.sh" }
 gcloud-local = { shell = "bash .pdm/scripts/gcloud-local-init.sh" }
 k8s-init = { shell = "bash .pdm/scripts/k8s-init.sh" }
