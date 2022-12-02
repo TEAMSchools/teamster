@@ -45,8 +45,7 @@ docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
 test = { shell = "pdm run pytest", help = "run tests with the default Python" }
-init-core = { shell = "bash .pdm/scripts/init-core.sh" }
-init-local = { shell = "bash .pdm/scripts/init-local.sh" }
+init-location = { shell = "bash .pdm/scripts/init-location.sh" }
 gcloud-core = { shell = "bash .pdm/scripts/gcloud-core-init.sh" }
 gcloud-local = { shell = "bash .pdm/scripts/gcloud-local-init.sh" }
 k8s-init = { shell = "bash .pdm/scripts/k8s-init.sh" }
