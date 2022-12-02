@@ -28,4 +28,16 @@ else
   git add pyproject.toml
   git commit -m "Create ${LOCATION_NAME} branch"
   git status
+
+  # create Artifact Registry repository
+  gcloud artifacts repositories create \
+    "teamster-${LOCATION_NAME}" \
+    --location="${GCP_REGION}" \
+    --repository-format=docker
+
+  # create Storage bucket
+  gsutil mb -p "${GCP_PROJECT_ID}" "gs://teamster-${LOCATION_NAME}"
+
+  # Push local env variables to k8s secret
+  pdm run k8s-secret "${LOCATION_NAME}"
 fi
