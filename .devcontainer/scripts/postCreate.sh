@@ -19,6 +19,7 @@ pdm config strategy.update eager
 pdm install --no-self
 
 # commit new files
+git config pull.rebase false
 git add .
 git commit -m "Initial PDM commit"
 git push
