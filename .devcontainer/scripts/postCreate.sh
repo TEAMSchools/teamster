@@ -28,9 +28,10 @@ echo "${GCP_SERVICE_ACCOUNT_KEY}" >env/service-account.json
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=env/service-account.json
 
-# set gcloud project
+# set gcloud project & region
 project_id=$(jq -r .project_id env/service-account.json)
 gcloud config set project "${project_id}"
+gcloud config set compute/region "${GCP_REGION}"
 
 # install kubectl authentication plugin
 sudo apt-get -qq -y install --no-install-recommends google-cloud-sdk-gke-gcloud-auth-plugin &&
@@ -38,4 +39,4 @@ sudo apt-get -qq -y install --no-install-recommends google-cloud-sdk-gke-gcloud-
   sudo apt-get -qq clean -y
 
 # update the kubectl configuration to use the plugin
-gcloud container clusters get-credentials dagster-cloud --region "${GCP_REGION}"
+gcloud container clusters get-credentials dagster-cloud
