@@ -8,15 +8,15 @@ sudo apt-get -qq -y update --no-install-recommends &&
   sudo apt-get -qq clean -y
 
 # update pip
-pip install --no-cache-dir --upgrade pip
+python -m pip install --no-cache-dir --upgrade pip
 
-# create gitignore fn
-function gi() {
-  curl -sL "https://www.toptal.com/developers/gitignore/api/${1}"
-}
+# install Trunk
+curl https://get.trunk.io -fsSL | bash -s -- -y
 
 # install pdm dependencies
 pdm install --no-self
 
-# install trunk
-curl https://get.trunk.io -fsSL | bash -s -- -y
+# commit new files
+git add .
+git commit -m "Initial PDM commit"
+git push
