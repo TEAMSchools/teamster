@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for branch in $(git for-each-ref --format='%(refname:short)' refs/**/kipp*); do
+for branch in $(git for-each-ref --format='%(refname:short)' refs/**/origin/kipp*); do
   branch_name=$(basename -- "${branch}")
 
   git switch "${branch_name}"
