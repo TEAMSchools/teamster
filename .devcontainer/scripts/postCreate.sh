@@ -43,6 +43,16 @@ sudo apt-get -qq -y install --no-install-recommends google-cloud-sdk-gke-gcloud-
 gcloud container clusters get-credentials dagster-cloud
 
 echo "
+GCP_PROJECT_ID=\"$(jq -r .project_id env/service-account.json)\"
+export GCP_PROJECT_ID
+
+GCP_PROJECT_NUMER=$(
+  gcloud projects list \
+    --filter="$(gcloud config get-value project)" \
+    --format="value(PROJECT_NUMBER)"
+)
+export GCP_PROJECT_NUMER
+
 # do not write .pyc files on the import of source modules
 export PYTHONDONTWRITEBYTECODE=1
 " >>"${HOME}/.bashrc"
