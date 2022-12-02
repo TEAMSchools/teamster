@@ -1,11 +1,29 @@
 {
-  "python.autoComplete.extraPaths": [
-    "${workspaceFolder}/__pypackages__/3.7/lib",
-    "${workspaceFolder}/__pypackages__/3.8/lib",
-    "${workspaceFolder}/__pypackages__/3.9/lib",
-    "${workspaceFolder}/__pypackages__/3.10/lib",
-    "${workspaceFolder}/__pypackages__/3.11/lib"
-  ],
+  "editor.inlineSuggest.enabled": true,
+  "editor.renderControlCharacters": true,
+  "editor.wordWrap": "bounded",
+  "editor.wordWrapColumn": 88,
+  "files.associations": {
+    "*.toml": "toml",
+    "*.env": "shellscript"
+  },
+  "files.exclude": {
+    "**/.trunk/*out": true
+  },
+  "files.watcherExclude": {
+    "**/.trunk/*out": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "trunk.io"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "trunk.io"
+  },
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "trunk.io"
+  },
+  "python.analysis.autoImportCompletions": false,
   "python.analysis.extraPaths": [
     "${workspaceFolder}/__pypackages__/3.7/lib",
     "${workspaceFolder}/__pypackages__/3.8/lib",
@@ -13,25 +31,20 @@
     "${workspaceFolder}/__pypackages__/3.10/lib",
     "${workspaceFolder}/__pypackages__/3.11/lib"
   ],
-  "files.exclude": {
-    "**/.trunk/*out": true
-  },
-  "files.watcherExclude": {
-    "**/.trunk/*out": true
-  },
-  "editor.renderControlCharacters": true,
-  "editor.wordWrap": "bounded",
-  "editor.wordWrapColumn": 88,
-  "[python]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "trunk.io"
-  },
-  "python.analysis.autoImportCompletions": false,
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/__pypackages__/3.7/lib",
+    "${workspaceFolder}/__pypackages__/3.8/lib",
+    "${workspaceFolder}/__pypackages__/3.9/lib",
+    "${workspaceFolder}/__pypackages__/3.10/lib",
+    "${workspaceFolder}/__pypackages__/3.11/lib"
+  ],
   "python.linting.ignorePatterns": [
     "**/site-packages/**/*.py",
     ".vscode/*.py",
     "**/__pypackages__/**/*.py"
   ],
+  "python.linting.pylintEnabled": false,
+  "python.terminal.activateEnvironment": false,
   "[yaml]": {
     "editor.defaultFormatter": "trunk.io"
   }
