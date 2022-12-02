@@ -12,6 +12,7 @@ python -m pip install --no-cache-dir --upgrade pip
 
 # install Trunk
 curl https://get.trunk.io -fsSL | bash -s -- -y
+trunk install --ci
 
 # install pdm dependencies
 pdm config strategy.update eager
