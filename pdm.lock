@@ -95,7 +95,7 @@ dependencies = [
 
 [[package]]
 name = "dagster"
-version = "1.1.3"
+version = "1.1.5"
 summary = "The data orchestration platform built for productivity."
 dependencies = [
     "Jinja2",
@@ -119,9 +119,9 @@ dependencies = [
     "setuptools",
     "sqlalchemy>=1.0",
     "tabulate",
+    "tomli",
     "toposort>=1.0",
     "tqdm",
-    "typing-compat",
     "typing-extensions>=4.0.1",
     "universal-pathlib",
     "watchdog>=0.8.3",
@@ -129,11 +129,11 @@ dependencies = [
 
 [[package]]
 name = "dagster-cloud"
-version = "1.1.3"
+version = "1.1.5"
 summary = "UNKNOWN"
 dependencies = [
-    "dagster-cloud-cli==1.1.3",
-    "dagster==1.1.3",
+    "dagster-cloud-cli==1.1.5",
+    "dagster==1.1.5",
     "questionary",
     "requests",
     "typer[all]",
@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "dagster-cloud-cli"
-version = "1.1.3"
+version = "1.1.5"
 summary = "UNKNOWN"
 dependencies = [
     "PyYAML>=5.1",
@@ -153,11 +153,11 @@ dependencies = [
 
 [[package]]
 name = "dagster-gcp"
-version = "0.17.3"
+version = "0.17.5"
 summary = "Package for GCP-specific Dagster framework op and resource components."
 dependencies = [
-    "dagster-pandas==0.17.3",
-    "dagster==1.1.3",
+    "dagster-pandas==0.17.5",
+    "dagster==1.1.5",
     "db-dtypes",
     "google-api-python-client",
     "google-cloud-bigquery",
@@ -167,28 +167,28 @@ dependencies = [
 
 [[package]]
 name = "dagster-k8s"
-version = "0.17.3"
+version = "0.17.5"
 summary = "A Dagster integration for k8s"
 dependencies = [
-    "dagster==1.1.3",
+    "dagster==1.1.5",
     "kubernetes",
 ]
 
 [[package]]
 name = "dagster-pandas"
-version = "0.17.3"
+version = "0.17.5"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 dependencies = [
-    "dagster==1.1.3",
+    "dagster==1.1.5",
     "pandas",
 ]
 
 [[package]]
 name = "dagster-ssh"
-version = "0.17.3"
+version = "0.17.5"
 summary = "Package for ssh Dagster framework components."
 dependencies = [
-    "dagster==1.1.3",
+    "dagster==1.1.5",
     "paramiko",
     "sshtunnel",
 ]
@@ -230,11 +230,11 @@ summary = "File-system specification"
 
 [[package]]
 name = "google-api-core"
-version = "2.10.2"
+version = "2.11.0"
 requires_python = ">=3.7"
 summary = "Google API client core library"
 dependencies = [
-    "google-auth<3.0dev,>=1.25.0",
+    "google-auth<3.0dev,>=2.14.1",
     "googleapis-common-protos<2.0dev,>=1.56.2",
     "protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.19.5",
     "requests<3.0.0dev,>=2.18.0",
@@ -242,19 +242,19 @@ dependencies = [
 
 [[package]]
 name = "google-api-core"
-version = "2.10.2"
+version = "2.11.0"
 extras = ["grpc"]
 requires_python = ">=3.7"
 summary = "Google API client core library"
 dependencies = [
-    "google-api-core==2.10.2",
+    "google-api-core==2.11.0",
     "grpcio-status<2.0dev,>=1.33.2",
     "grpcio<2.0dev,>=1.33.2",
 ]
 
 [[package]]
 name = "google-api-python-client"
-version = "2.66.0"
+version = "2.68.0"
 requires_python = ">=3.7"
 summary = "Google API Client Library for Python"
 dependencies = [
@@ -267,7 +267,7 @@ dependencies = [
 
 [[package]]
 name = "google-auth"
-version = "2.14.1"
+version = "2.15.0"
 requires_python = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*"
 summary = "Google Authentication Library"
 dependencies = [
@@ -517,7 +517,7 @@ summary = "A generic, spec-compliant, thorough implementation of the OAuth reque
 
 [[package]]
 name = "oracledb"
-version = "1.2.0"
+version = "1.2.1"
 requires_python = ">=3.6"
 summary = "Python interface to Oracle Database"
 dependencies = [
@@ -860,12 +860,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "typing-compat"
-version = "0.1.0"
-requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-summary = "Python typing compatibility library"
-
-[[package]]
 name = "typing-extensions"
 version = "4.4.0"
 requires_python = ">=3.7"
@@ -910,7 +904,7 @@ requires_python = ">=3.7"
 summary = "WebSocket client for Python with low level API options"
 
 [metadata]
-lock_version = "4.0"
+lock_version = "4.1"
 content_hash = "sha256:8771a4f4830cdf0fb6017e9a526cd38f345cbba2072595b41231bc5615dce0d7"
 
 [metadata.files]
@@ -1071,33 +1065,33 @@ content_hash = "sha256:8771a4f4830cdf0fb6017e9a526cd38f345cbba2072595b41231bc561
     {url = "https://files.pythonhosted.org/packages/e3/3f/41186b1f2fd86a542d399175f6b8e43f82cd4dfa51235a0b030a042b811a/cryptography-38.0.4.tar.gz", hash = "sha256:175c1a818b87c9ac80bb7377f5520b7f31b3ef2a0004e2420319beadedb67290"},
     {url = "https://files.pythonhosted.org/packages/fb/28/0544f67e2ffdc15874d7a650a867c78a7dba245afe3392f51cfae363545c/cryptography-38.0.4-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:80ca53981ceeb3241998443c4964a387771588c4e4a5d92735a493af868294f9"},
 ]
-"dagster 1.1.3" = [
-    {url = "https://files.pythonhosted.org/packages/84/b8/0e4f70b0f48ba751a66cb07ef7650e822dbd49b0a12479f046ee2cb50481/dagster-1.1.3-py3-none-any.whl", hash = "sha256:3b27066c946caaeeccedec6bdff4aaa4f9e79197f73d115128f2130581dd38c3"},
-    {url = "https://files.pythonhosted.org/packages/c8/3e/2951f3def5e2003f9194cab5502b26fe01d6bd76b236a66b4c9f2881e7e9/dagster-1.1.3.tar.gz", hash = "sha256:f3d969fad9f9a291f7b50832e7f3276601a59c346f1732948c3b00d8a6212cca"},
+"dagster 1.1.5" = [
+    {url = "https://files.pythonhosted.org/packages/bd/b5/57d7db13da977e4d8e9ecc59079316d325f49b1b37b9f68215409277ba94/dagster-1.1.5.tar.gz", hash = "sha256:ec32e7208fce5fc656d75c7b270166c98914245d59cfa2414c6e85ae83374f70"},
+    {url = "https://files.pythonhosted.org/packages/d8/4d/ba1536d69342c2f48962029eda0e8783867677ac8fda0b09c3c57cd293b2/dagster-1.1.5-py3-none-any.whl", hash = "sha256:2b5bb2554a968d155a9a1d5112985b6d1b0d3e406d6fb6a22915942fef330b14"},
 ]
-"dagster-cloud 1.1.3" = [
-    {url = "https://files.pythonhosted.org/packages/63/c0/0035d520b11365fd3a84bcccd692cafa0fcf91b585bc849497831668d53d/dagster_cloud-1.1.3.tar.gz", hash = "sha256:f41c21e34cc870ea0b1d96c7bf6371ab2b2ef4158b669c5544da881b80e3995f"},
-    {url = "https://files.pythonhosted.org/packages/aa/78/2b265f55200de47a8f5ec2eaf4b9d301189541e0f9ceed3c2a1da0d0de4a/dagster_cloud-1.1.3-py3-none-any.whl", hash = "sha256:15de1059ef7ee92fed9fc386cfda6644c7c23c68de96a156132bc05e886f8109"},
+"dagster-cloud 1.1.5" = [
+    {url = "https://files.pythonhosted.org/packages/67/0c/4ac60ed0ad9d7a87b01aa680c815f8dec1b3403df9f99b85ba566263b073/dagster_cloud-1.1.5-py3-none-any.whl", hash = "sha256:6b9cca9dc0e9b176a66cf9f09f2db4a8a2ac8980327ae52ba0763bcc5941cb13"},
+    {url = "https://files.pythonhosted.org/packages/83/d5/02e9140c83c399f7e0987cf30470e4b1598205602c04a32cb169831c7644/dagster_cloud-1.1.5.tar.gz", hash = "sha256:264cdc641152bc12eff0fca3db956580d3b37578f0aed273fc02408231e9b374"},
 ]
-"dagster-cloud-cli 1.1.3" = [
-    {url = "https://files.pythonhosted.org/packages/36/8c/a25237efac55d93fc211a18a99e6ae8246f994980691683be4eaa9c0d2da/dagster_cloud_cli-1.1.3.tar.gz", hash = "sha256:97919a9b2a0bcd9d3e898017f032f51fc23e97427f8b9e23ad55f5ee577f5af9"},
-    {url = "https://files.pythonhosted.org/packages/46/aa/6c6fc34339cf1ec2312e11532ce5ca5c4a2a22bad5bebbc2c4a606250255/dagster_cloud_cli-1.1.3-py3-none-any.whl", hash = "sha256:e3f3c94b6985958944d3908ba0bef1a401f4a0b95146332349442ee060d05443"},
+"dagster-cloud-cli 1.1.5" = [
+    {url = "https://files.pythonhosted.org/packages/06/46/7cd090697d62d0bd2e860c91d8b657c67a0be1d688587a3286a509b680e6/dagster_cloud_cli-1.1.5-py3-none-any.whl", hash = "sha256:60727e3bdd8fac8017d923d53e7667855696491e5747e07b446bddb6f9cbce55"},
+    {url = "https://files.pythonhosted.org/packages/6a/f0/650ed13d294fe3d388a50796c4494b71910fbc2b1a786bfac7f14e3f6ac8/dagster_cloud_cli-1.1.5.tar.gz", hash = "sha256:5d079a8fed043be62ebfa87b40f54f221c3b9e9d0c5e8ebe4cef1f184ccc4142"},
 ]
-"dagster-gcp 0.17.3" = [
-    {url = "https://files.pythonhosted.org/packages/b7/51/dbecc43fc4fb35af9d83477b73a7ab75b067ab59b2704ad5edcb6f606b44/dagster_gcp-0.17.3-py3-none-any.whl", hash = "sha256:6c845252db4873d0bcf45252377c117142cb2bcb3d149eda2b7a4a49d9c9ec2d"},
-    {url = "https://files.pythonhosted.org/packages/e4/5a/cb9ed3e1fd5637e841ec06347b1f23075d2af70504c15abb6a4fbce1491b/dagster-gcp-0.17.3.tar.gz", hash = "sha256:b0fa3f11e2a83bba570aa7f840eab149eb65f8ca3ac287c75544b52b543f4370"},
+"dagster-gcp 0.17.5" = [
+    {url = "https://files.pythonhosted.org/packages/3a/e6/2c1e7ea6ec919da793193e946adb201be8f61ea5a819850f29b87a0b3e88/dagster_gcp-0.17.5-py3-none-any.whl", hash = "sha256:888c1f8dabee90eeffbbf57335bc7224ad2bad037d89c1b5c51cf26ab822ed67"},
+    {url = "https://files.pythonhosted.org/packages/63/14/b007c415ad23bea02c05bc97f75faab927bbca6bb768fff45724f563778e/dagster-gcp-0.17.5.tar.gz", hash = "sha256:8bf44348309bc84dc707932963b60247238810f326279712086cf9d7ffbbcea2"},
 ]
-"dagster-k8s 0.17.3" = [
-    {url = "https://files.pythonhosted.org/packages/0e/3e/73f1debbe18fb420d83e36db552f4c9c9edefe0f7417459043f1dc4fe880/dagster_k8s-0.17.3-py3-none-any.whl", hash = "sha256:08bf02caea101f6c4f44757a9a09e949639d2ab48c2fd4370151f600ac87dc8c"},
-    {url = "https://files.pythonhosted.org/packages/7f/da/244bcb36ee16100f440bbee319be9bea83852b1fea73846a75fb68f0c0bd/dagster-k8s-0.17.3.tar.gz", hash = "sha256:ffe17cccd73641ec8874ffc381350206083fd18d2326dfa05c4bc5d564a37e74"},
+"dagster-k8s 0.17.5" = [
+    {url = "https://files.pythonhosted.org/packages/46/32/369b9c1018a34bc6a355a8570b864a8f0e3972bf6ab87a2c59942dc29caa/dagster-k8s-0.17.5.tar.gz", hash = "sha256:a62b6a7fd1949387f3fbb199809bee05477772de33ba42a56f6d768af2344733"},
+    {url = "https://files.pythonhosted.org/packages/76/78/d9c834caff08610941e5672a3e21c187421750bcb0aad3115cd829c7887d/dagster_k8s-0.17.5-py3-none-any.whl", hash = "sha256:28a7a67b6d4049e60a86528d0deb4761086095178c4c2efd15d26a496c95736d"},
 ]
-"dagster-pandas 0.17.3" = [
-    {url = "https://files.pythonhosted.org/packages/19/d2/81ccc9d2127d71ef152945139efeb766af1afd375d853b6560b87db5c13a/dagster_pandas-0.17.3-py3-none-any.whl", hash = "sha256:14e6d098f7beb7fa775a4a4d4be45d934f7a1469fb4d0b2face095b1b4e52ae7"},
-    {url = "https://files.pythonhosted.org/packages/ac/5a/37055caacead52aafbdc9b42d75d2137f12eac36dc60f86959bb4a8d706b/dagster-pandas-0.17.3.tar.gz", hash = "sha256:afc503843b8f95f81583847698d4049c438c301bc44ce3abcedc6b79eeb71017"},
+"dagster-pandas 0.17.5" = [
+    {url = "https://files.pythonhosted.org/packages/ab/e7/6987b5735253671973c8f8db85c25efa23a1c5832a7a19c3b247000a1b25/dagster-pandas-0.17.5.tar.gz", hash = "sha256:c9f51299de3460a0dec86a5e9dea0e6c60b477a8c6e4e7c4de2a1cf7f63ad32d"},
+    {url = "https://files.pythonhosted.org/packages/cb/95/362268a2ecd63ca0f92b3a1b2f4c4d5caa726d5b91d7d595e7664d71658f/dagster_pandas-0.17.5-py3-none-any.whl", hash = "sha256:beb62bc6d0b8c6ef236d4090724fb670f805dc18f63e0dfe2ce217ffbc6515d1"},
 ]
-"dagster-ssh 0.17.3" = [
-    {url = "https://files.pythonhosted.org/packages/a1/a3/f732e483ec9657fe3ea5816d25ed57929d66b3119251b5a380de9d49cdb6/dagster-ssh-0.17.3.tar.gz", hash = "sha256:a7fcbf8725b232c22577eab7cc39ef83388925c2c33a071d6fd6fea377993fa1"},
-    {url = "https://files.pythonhosted.org/packages/a7/ee/63f77896f7c691ecd0b8b79b1c9b3591d6892fdbbd741296fa57d2def964/dagster_ssh-0.17.3-py3-none-any.whl", hash = "sha256:550d2ee4e179fc1c975cdf527b40824f20251e9c11a0110b8be6f9b09f45ff60"},
+"dagster-ssh 0.17.5" = [
+    {url = "https://files.pythonhosted.org/packages/c0/46/96066a9fd714e4d4364f5aa199fdc4669025ba720bed960463f3d7873e6c/dagster-ssh-0.17.5.tar.gz", hash = "sha256:987f6e09fa556d7137c2f4302138c5834bc0b7f183b6eb78d1a8de5dda360195"},
+    {url = "https://files.pythonhosted.org/packages/eb/40/6f13fe24548a7b21382a139922b019d641feb8748188ac731662d52ca225/dagster_ssh-0.17.5-py3-none-any.whl", hash = "sha256:32d6bc931775cea02a86e340f243ed9e5f5af7ef455fdc5206ee7795f44cf274"},
 ]
 "db-dtypes 1.0.4" = [
     {url = "https://files.pythonhosted.org/packages/08/22/ff302e48556550f7e75fb4c0977b3ac7d92dd272ea204b11849e3479a8a9/db_dtypes-1.0.4-py2.py3-none-any.whl", hash = "sha256:996c0250051c0c3faef8a9bd02b30a182d553e6a9b8d34b5344a30fe2fb9de33"},
@@ -1118,17 +1112,17 @@ content_hash = "sha256:8771a4f4830cdf0fb6017e9a526cd38f345cbba2072595b41231bc561
     {url = "https://files.pythonhosted.org/packages/37/57/eb7c3c10b187d3b8565946772ce0229c79e3c623010eda0aeb5032ff56f4/fsspec-2022.11.0-py3-none-any.whl", hash = "sha256:d6e462003e3dcdcb8c7aa84c73a228f8227e72453cd22570e2363e8844edfe7b"},
     {url = "https://files.pythonhosted.org/packages/44/7c/fb753d18e2eeb186a47ecd6939326f7633a027fe23a44ee7912978e64819/fsspec-2022.11.0.tar.gz", hash = "sha256:259d5fd5c8e756ff2ea72f42e7613c32667dc2049a4ac3d84364a7ca034acb8b"},
 ]
-"google-api-core 2.10.2" = [
-    {url = "https://files.pythonhosted.org/packages/15/fb/b641357b0f8fc540c766bc8f66048de0398d0a3e0cad7c4a08e2fbee733a/google_api_core-2.10.2-py3-none-any.whl", hash = "sha256:34f24bd1d5f72a8c4519773d99ca6bf080a6c4e041b4e9f024fe230191dda62e"},
-    {url = "https://files.pythonhosted.org/packages/fe/d6/5dd223fc5cb476ab62966849f3e6466056799dbfc005d74da800eb097f7d/google-api-core-2.10.2.tar.gz", hash = "sha256:10c06f7739fe57781f87523375e8e1a3a4674bf6392cd6131a3222182b971320"},
+"google-api-core 2.11.0" = [
+    {url = "https://files.pythonhosted.org/packages/2b/15/7bafa5379a228ed72baf769eea5e6019a944469fe637ea0742c0351109bf/google-api-core-2.11.0.tar.gz", hash = "sha256:4b9bb5d5a380a0befa0573b302651b8a9a89262c1730e37bf423cec511804c22"},
+    {url = "https://files.pythonhosted.org/packages/f7/24/a17e75c733609dce285a2dae6f56837d69a9566963c9d1cab96d788546c8/google_api_core-2.11.0-py3-none-any.whl", hash = "sha256:ce222e27b0de0d7bc63eb043b956996d6dccab14cc3b690aaea91c9cc99dc16e"},
 ]
-"google-api-python-client 2.66.0" = [
-    {url = "https://files.pythonhosted.org/packages/a0/17/f3d92ac464f96bcc89a1ba4b6e72f51cfdaab41af856f10e3ec00d75dcd7/google_api_python_client-2.66.0-py2.py3-none-any.whl", hash = "sha256:3b45110b638232959f75418231dfb487228102a4a91a7a3e64147684befaebee"},
-    {url = "https://files.pythonhosted.org/packages/b8/ca/4fcfeb70d90f70f9784e10b79f6db41463278e5e4acef00606b8ef4e9bbb/google-api-python-client-2.66.0.tar.gz", hash = "sha256:4cfaf0205aa7c538c8fb1772368be3d049dfed7886adf48597e9a766e9828a6e"},
+"google-api-python-client 2.68.0" = [
+    {url = "https://files.pythonhosted.org/packages/83/b8/ff54d6a2a946b6ffcd7a5e999237291ee79fca91f41997b1b89a20568453/google_api_python_client-2.68.0-py2.py3-none-any.whl", hash = "sha256:d4d317ccd365118f96d8d4b6a61aaba8fd414cf1a8617cb229386f2094013cea"},
+    {url = "https://files.pythonhosted.org/packages/bc/de/8b6eb80aa71052f5ae6126822413f40fb8c0038cca8717df91dc4d267863/google-api-python-client-2.68.0.tar.gz", hash = "sha256:19177411b7dcf8fcd66bff085c6838ecea5fd6b598998d594be1f7290dfc34b4"},
 ]
-"google-auth 2.14.1" = [
-    {url = "https://files.pythonhosted.org/packages/89/e3/b9002efddfc812af8afd59577ed04432cd3bfcc9c46e0210f3a1b56dfe4c/google-auth-2.14.1.tar.gz", hash = "sha256:ccaa901f31ad5cbb562615eb8b664b3dd0bf5404a67618e642307f00613eda4d"},
-    {url = "https://files.pythonhosted.org/packages/9b/9b/f40ea5c60762eabeb17cebdc05c395f44584c5c7fd7ce636a869c4f1e05d/google_auth-2.14.1-py2.py3-none-any.whl", hash = "sha256:f5d8701633bebc12e0deea4df8abd8aff31c28b355360597f7f2ee60f2e4d016"},
+"google-auth 2.15.0" = [
+    {url = "https://files.pythonhosted.org/packages/52/a6/72c80f4a0b37c2c32d35636b2373bdf07c1dad81b109f9361742d3aa1cbe/google-auth-2.15.0.tar.gz", hash = "sha256:72f12a6cfc968d754d7bdab369c5c5c16032106e52d32c6dfd8484e4c01a6d1f"},
+    {url = "https://files.pythonhosted.org/packages/59/18/f8201fa70cbc7bebc14a50e891783c88c277a9158e9c8c07a9044ecd98eb/google_auth-2.15.0-py2.py3-none-any.whl", hash = "sha256:6897b93556d8d807ad70701bb89f000183aea366ca7ed94680828b37437a4994"},
 ]
 "google-auth-httplib2 0.1.0" = [
     {url = "https://files.pythonhosted.org/packages/ba/db/721e2f3f32339080153995d16e46edc3a7657251f167ddcb9327e632783b/google_auth_httplib2-0.1.0-py2.py3-none-any.whl", hash = "sha256:31e49c36c6b5643b57e82617cb3e021e3e1d2df9da63af67252c02fa9c1f4a10"},
@@ -1462,35 +1456,35 @@ content_hash = "sha256:8771a4f4830cdf0fb6017e9a526cd38f345cbba2072595b41231bc561
     {url = "https://files.pythonhosted.org/packages/6d/fa/fbf4001037904031639e6bfbfc02badfc7e12f137a8afa254df6c4c8a670/oauthlib-3.2.2.tar.gz", hash = "sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918"},
     {url = "https://files.pythonhosted.org/packages/7e/80/cab10959dc1faead58dc8384a781dfbf93cb4d33d50988f7a69f1b7c9bbe/oauthlib-3.2.2-py3-none-any.whl", hash = "sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca"},
 ]
-"oracledb 1.2.0" = [
-    {url = "https://files.pythonhosted.org/packages/07/04/84ca12bd8495a3368d9589cafa8adaa9a7b01f720ba25ba42b9a02372a30/oracledb-1.2.0-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:74f5c2f13dbebcaeac810ae72bfa19c115d7749959833ebaaae4b497695a625f"},
-    {url = "https://files.pythonhosted.org/packages/09/82/85eda69702acba0836119eabaaada6f0475d3e6885bc253e886f7e639b91/oracledb-1.2.0-cp39-cp39-win32.whl", hash = "sha256:d8b04167bb490895f924e43387b69dcf12aabef651becc245c38de40822e2c93"},
-    {url = "https://files.pythonhosted.org/packages/1b/db/10ae998dbbd3c0681e986a7c217a44ffd7d24241112ef115442f2785fcaf/oracledb-1.2.0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f3c9a78b623696448834dc0ab49a18f985acb3cebb6fb96f4cdfbee17f9d2aa9"},
-    {url = "https://files.pythonhosted.org/packages/2a/28/433fa572561ab94746c6451106bde16938edb37fd1b006a44ab5e8a9d122/oracledb-1.2.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a48772323ce560fd85d5474bd9c9c858f79621eba85b766cb5e16f5a9d4a48dc"},
-    {url = "https://files.pythonhosted.org/packages/2a/e5/fe81fd3d1b43341c359a37cd6b1da9a97f26e5db92a49cde2c6189c60c37/oracledb-1.2.0-cp310-cp310-win32.whl", hash = "sha256:2e0636c5b26d30b047f5acd60de20f6226936f9a4d30dec6f3b35edee08b6bbd"},
-    {url = "https://files.pythonhosted.org/packages/3f/b9/ead04ace43459eb6d710efe51539c463dfd7f470e5012a23c9c77004fbd0/oracledb-1.2.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ed037b902ed0b90067a71d2a38abb967692a9d82b100386159e1d693f8228b52"},
-    {url = "https://files.pythonhosted.org/packages/54/79/9d93989678ed7ee2ee549f60364c1a7ed287d9238bb9acf1f252aed8337d/oracledb-1.2.0-cp37-cp37m-win32.whl", hash = "sha256:45a6ab3a7fdc2142fce95930d90bdef7dde1e344ab897b4381b5e381d11ba5e3"},
-    {url = "https://files.pythonhosted.org/packages/5e/f0/7aed703d4b16c553c638996438c12a44796dbc40dad790b431804c35954e/oracledb-1.2.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:dbe550e2fbd8ebdd5dcc1426ae5137f0ab3da435109e2a4947372eb8d73190b2"},
-    {url = "https://files.pythonhosted.org/packages/71/44/fc1dd92c8d50dcf1734812560fe4269769d44f7318f81960bde1ab721925/oracledb-1.2.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8d12a9cd1d64dffcc442c405d84d23af79cde5d855831b2ae43cc8e1b39b9163"},
-    {url = "https://files.pythonhosted.org/packages/8c/df/e0961ade131782e44cf87fac4b1403786c7e7a850e09e9cbe4487d720a66/oracledb-1.2.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1d5aff76c2bb2e6ca0ce7377381bb1d5869977deeaea6f8e675762d7ffffb0ad"},
-    {url = "https://files.pythonhosted.org/packages/9a/69/73a645ed8f7c0628c32cefe4bed5bb2215f3efbe1423b8d3cbeab661c432/oracledb-1.2.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6f7b7608c674b09527edb3a8fb6d4a688ecdbba6ad51d32930ddbfea7a9b389e"},
-    {url = "https://files.pythonhosted.org/packages/9c/1f/9434dd0603323ff56a7e520a3e5998eedd3d6c4feed91b847ba949f48ab6/oracledb-1.2.0-cp311-cp311-win_amd64.whl", hash = "sha256:989524ea2e54269b9119340d3ad690f0aacafa50f028d9ea9dad96b0b8ac8b4a"},
-    {url = "https://files.pythonhosted.org/packages/9c/b5/a8fc6998d7dd38988bff5d1ea2a4c5f0178156d0c222580c3986359e4578/oracledb-1.2.0-cp311-cp311-win32.whl", hash = "sha256:7b2fb0aacebde75d667e21cbb53e65ebc5d4110bd6b263c4d8a3798d2e0c889f"},
-    {url = "https://files.pythonhosted.org/packages/9d/49/b2d7bef3b127b80c867160cf6cd9bc459fa71d23a74146b557035e2e683f/oracledb-1.2.0-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e50fa0ef531df0b57cdf5b31bee6bc86fdcc27f5b5635e6ab057a46605db72e0"},
-    {url = "https://files.pythonhosted.org/packages/a7/d3/5e687735542d214526faf1b90403bab974fb461274c6b65d0253517bda3a/oracledb-1.2.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:8043124a55b3946bffd9ebb83953141f62f9d14fb30fa4b9cfcb09bdd7e2fae5"},
-    {url = "https://files.pythonhosted.org/packages/ac/86/b812ab897afda4317109b219d5989ba8e160b2b1b2a2ec31b4c217c2c390/oracledb-1.2.0-cp38-cp38-win_amd64.whl", hash = "sha256:86fa01c9aa20edb533ec1dfde33fa097631e8fcc044a74ffba5e892313774d5a"},
-    {url = "https://files.pythonhosted.org/packages/ad/7b/31483f6f7518fb575a8ef3aab1820c082c3e1d740a31e2e0d1f3980ed129/oracledb-1.2.0-cp39-cp39-win_amd64.whl", hash = "sha256:43c856aacadb786d234e7508f28fcaf1b8888da052c6b9f1284702ca6509d7d5"},
-    {url = "https://files.pythonhosted.org/packages/b2/5d/21a7fd6a6a9fdcbf982686799e3327c03f05d7e10768e2bbd2900cd2dfe8/oracledb-1.2.0-cp37-cp37m-win_amd64.whl", hash = "sha256:393c12c7f7adbd05e7650ca871e20485680305add0f76ae87247af9055d97153"},
-    {url = "https://files.pythonhosted.org/packages/b4/33/e165dc4ce9bcfb69cfc4fde621d14a6e55cabb5ecc744382544744f1e05b/oracledb-1.2.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c03ffd713a2ca5551ae44d103e72b3ecf440a5041b99b2bf8462d5e54a8c01c5"},
-    {url = "https://files.pythonhosted.org/packages/b5/67/c20cd89de56a40afd076f6f6ee21dfd85156829bede9c5f9f2cffaa6a85c/oracledb-1.2.0-cp38-cp38-win32.whl", hash = "sha256:171b932eba53782500123047b23984c01c5d7d997d567108931e96538cbafd26"},
-    {url = "https://files.pythonhosted.org/packages/b6/37/ca200dfa9e4c74ca64712bb358e6b1c7787d279c62ca3c5f75cf2b1a8d32/oracledb-1.2.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:59bb3f3f66f4affe347ef138f85548c5cb919309e74a73d09a8f03f35af436b7"},
-    {url = "https://files.pythonhosted.org/packages/ce/22/d9cd5f4633225e9d1f7ad65a679402c391cb1e76be14a6657f12a0b6e50e/oracledb-1.2.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c4fcb54bc7910193760ea5a210310a88d22e06647f973a3951516c6533b8faa6"},
-    {url = "https://files.pythonhosted.org/packages/db/66/91ef8365f655331c9c8416cabaca74b65dd9817c550857db44f9497da89c/oracledb-1.2.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3b9adac2f87113c573582d4b48c1b28adb0e67115aa9f8db721a9c0a172048ee"},
-    {url = "https://files.pythonhosted.org/packages/e0/e3/ce48c5b855b558c18da9a4449115bd813844fdad4e714f335c379abfe6ba/oracledb-1.2.0.tar.gz", hash = "sha256:a69ad4a65872e323a64fd7348eafcc9a1ae7725ddb3918ceb78037f98d6becde"},
-    {url = "https://files.pythonhosted.org/packages/e5/e0/7fca6494aecad030a70a13e29ff83f5e4de11b8a1438ad73f944a6a823f6/oracledb-1.2.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:551ac2acde38a72380f5a3e93128262ece4e27aa5acb13d058e5aa10362031a5"},
-    {url = "https://files.pythonhosted.org/packages/e9/a0/8089af9ef913c1ad32fcf0c78632db4ddddb2aec5bff4848dc8a0cc07ce4/oracledb-1.2.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:4dad11f14d2cfa6276ea52f033bdd6ac98cc809c731acee2d23ecbefac76a7b8"},
-    {url = "https://files.pythonhosted.org/packages/ef/e3/d34342420990de171f92497aa620f4bd2eff8d24b26370c4d7e50da15fd5/oracledb-1.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:dfee7490715a29db9fa11758c3732516dfec731511cea1cfe606c411250c6681"},
-    {url = "https://files.pythonhosted.org/packages/fb/84/930fe96813c1f8babd2f2facfe4e8abcd8785cf316596dc4cdaafaf5919f/oracledb-1.2.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:1086bb446fdfaf3571d61ea0c3000afe2b2326aa27c9b75252a281e5d09c5aa9"},
+"oracledb 1.2.1" = [
+    {url = "https://files.pythonhosted.org/packages/01/20/3ac9ddd44129815372a7e3f6ec68e4dfb9dbcb26090c8dcd8a9f90423078/oracledb-1.2.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d5ff9930790f610a42c86bba63ebd4cc3c6a6c2a14c33ca6b1adb8a5bb6a7ec"},
+    {url = "https://files.pythonhosted.org/packages/01/f9/c423364ab8a20ac51d1dac639549715a495a823d15ad8ecbe044a456ef42/oracledb-1.2.1-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:96b5c0e421d16e4fb83b27dfb7096c162205883c076b21373a7b0b4bbf427095"},
+    {url = "https://files.pythonhosted.org/packages/07/84/1394e68bc642bed475daa52a39745e4837b3fe911187227e51597c57f1f0/oracledb-1.2.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b85ff3e649099b4bd71dd4b53c1a3b4adf08aa5bb6c765b3d55017818cb1ab27"},
+    {url = "https://files.pythonhosted.org/packages/0f/14/6e4adb53bd952cbeb7a4d70cc75f3d0dd0c3dc5e42645814bf546d56dff6/oracledb-1.2.1-cp37-cp37m-win_amd64.whl", hash = "sha256:b83f764b6f98df36324c48b07b69fd2d779f2baa6d21e1fe511960483f99fcaf"},
+    {url = "https://files.pythonhosted.org/packages/11/b3/60d801082c8d6d8cb5592ce887a85b0e4b0c1189067d450e837332b75b2d/oracledb-1.2.1-cp311-cp311-win32.whl", hash = "sha256:acf4647c67536a7ccf69cd1f7aafd7738ce6f1d0d7060ac9dbccf9504ebca283"},
+    {url = "https://files.pythonhosted.org/packages/21/82/48999dea849ae92fc65833cb7a70a310a207f4eb9f5f00cea987c7be7475/oracledb-1.2.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3288b70c2a882e9400da5d4eac5974d2aebacc2caa7ae8cc65b16b17e8914481"},
+    {url = "https://files.pythonhosted.org/packages/2f/02/c2f8a95495ac0c45f13d64f48443e84985a69602c3c52a29476034bb49c6/oracledb-1.2.1.tar.gz", hash = "sha256:fb91181294597a1bb56ee273b177d6359e208a63fe0ab61e75ce1368cf02cc9f"},
+    {url = "https://files.pythonhosted.org/packages/38/4a/722b017e48072b3190b05c9479640e3519dd916edebe2ee06b3c559241c3/oracledb-1.2.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:80b50934b2dba435ecb60c430ae429d018a76f397888175f221b671cb4a97acd"},
+    {url = "https://files.pythonhosted.org/packages/42/8b/85c28110d9584c0dbb846bbdf1420f8a3992abeeb6073260f80097fc0044/oracledb-1.2.1-cp310-cp310-win_amd64.whl", hash = "sha256:075c33684986db2d94d301b67649b64522536e064fd105ba7849cca0ffb882b9"},
+    {url = "https://files.pythonhosted.org/packages/44/80/42ce1eb7a2b1d6424e35aee61284ac5b560250223e28b9ffe30eeb9381c0/oracledb-1.2.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bed7f2606106aa6b29e5273977fddb520f11942fb68233d6ae2ca1c9a1de3473"},
+    {url = "https://files.pythonhosted.org/packages/53/7d/4780c5bd913a330ae88f15d8e507088815d76129e99af43788af47f3350a/oracledb-1.2.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7518d4aca4725672758ddd7f9fac815e3da8bc95893d003ddda07a46fbc731f7"},
+    {url = "https://files.pythonhosted.org/packages/56/f6/fdfa0392dd07b8678896b8ad4f6167070e8c36f0fe4152d4701c0686fff4/oracledb-1.2.1-cp38-cp38-win_amd64.whl", hash = "sha256:cf03443c32b93a9ed8ce3260cec2d1601ced2e67f0913ccd108bbcbac5ccdff4"},
+    {url = "https://files.pythonhosted.org/packages/6e/11/7f5f701c0de7f72ef97c76051770430f376e5c495e5967c0185bbe8c883c/oracledb-1.2.1-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:5751006cdfd8d642bdad7fba7e7c1cbb911e9fa5537715af572c01068c150f51"},
+    {url = "https://files.pythonhosted.org/packages/7b/1a/74cba28fbd91012e30792ec0a1c085b5691e3dbb03cdb098708f59d05f97/oracledb-1.2.1-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:755fbdb535dc6bef25fa991d9d9ddef627511e67324b5add680719b3352f7025"},
+    {url = "https://files.pythonhosted.org/packages/7d/d6/2f34afa0cf053af046ef7d698fdd79b9fc81c6f3a5c4a712679659721626/oracledb-1.2.1-cp311-cp311-win_amd64.whl", hash = "sha256:1d98a9ec2abd41417524e051fa7589c8d645f65461f22ae41881a9d9ca5ab77e"},
+    {url = "https://files.pythonhosted.org/packages/81/88/cb1b83fa3cec53dfb9d8f163bb755cd46448ac7c6faccd1a44f5bc318b7f/oracledb-1.2.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:b28006e7fa6fedc65c6a6410ea4244d32e00e97e0eb78307f665db6387c7f055"},
+    {url = "https://files.pythonhosted.org/packages/8c/76/ae7fd96be5ce0e61c578c3505f0456755b13e1762a23763b2b6602caf642/oracledb-1.2.1-cp310-cp310-win32.whl", hash = "sha256:c71e342710d22e421e63094b99191263e09a75bd0ed2ec0bd6d152095dc7f4f2"},
+    {url = "https://files.pythonhosted.org/packages/8d/2e/9f3d9cd07504755a58ff33a8266a1e811aab3b4d5ef4ce94d1957342ee19/oracledb-1.2.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:f63e8c134c54c74f8b356939f0b7d3431158ebcfaf9199ecec6a6f4fb98e3ff1"},
+    {url = "https://files.pythonhosted.org/packages/aa/18/50805dc666846c0e743ba8cc9007af53ba47e90a6cb67b32467cfe768c69/oracledb-1.2.1-cp39-cp39-win32.whl", hash = "sha256:8a87ce3277d37c4e05b12b98aed5ed7fb98020ca82198d09afa77e56f018837f"},
+    {url = "https://files.pythonhosted.org/packages/b0/26/276dcb285295cde6dd8cad41f77a94cc3ea7a7cea351b615e94af58c8f93/oracledb-1.2.1-cp38-cp38-win32.whl", hash = "sha256:840a9d83b91d6fcb1654636765a56a201bc94195adc739636d121739f868b4a8"},
+    {url = "https://files.pythonhosted.org/packages/b5/1e/e940a117f330434f2241bd53d2f4eb86c57a549fc951f9617ef8ab40171d/oracledb-1.2.1-cp39-cp39-win_amd64.whl", hash = "sha256:2db753160682bef565fd32776cd153564dfc6176317a079bde424e183f81fa03"},
+    {url = "https://files.pythonhosted.org/packages/b6/3c/69a43edc76cc977cbc96caf184444ebc70a57440d06f2e25c7cf800ea87d/oracledb-1.2.1-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:36119ba78e70481c1f7e106c1c11d69ddebf05347c5fa1f018ae570c76eddfdf"},
+    {url = "https://files.pythonhosted.org/packages/b8/0a/a80cf8e43b8d6ef738d6ac74287fc0efbc4ea48816f14754f0f504d189f0/oracledb-1.2.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f2a6dc58806f5a190057173f8349e8600c8fbff71c6d0b6bf3c7171b3b4e53f2"},
+    {url = "https://files.pythonhosted.org/packages/c7/59/e5264196a69bf9892da34f2b2b178cb54a4c17f428999430268cba79515e/oracledb-1.2.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:261d02e9aa42899d20c1be028987cace6f5e05c7b6250a0f5d85239529e98fd8"},
+    {url = "https://files.pythonhosted.org/packages/d1/4c/c2a8d71339b90a45414cf82f214e704b21c568370565f10694fe9464c937/oracledb-1.2.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:26d0c412dd8b8967b4c22e9014f414c6107d03506d454b478076fa67ee536ac2"},
+    {url = "https://files.pythonhosted.org/packages/e7/be/e02689fcd9cfb45ac4d49bb44b58100ed70217ca5a2739fab5d4b4be6b95/oracledb-1.2.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:13e5450eb9e9a8b9807ba9bd80405cff444a357c147d672130f52fc7c97abb9b"},
+    {url = "https://files.pythonhosted.org/packages/ee/71/12ee82b4798150712d93fe80d6f4e3b73fa74833f9f68978944a8bb072ee/oracledb-1.2.1-cp37-cp37m-win32.whl", hash = "sha256:ff113727383365ce5b37239376e3704ac2d183dac6449a61cb13f4089aa725b8"},
+    {url = "https://files.pythonhosted.org/packages/fa/18/25e9a330e2c229c8f4d9812714c9786993cd404a9a8c4c6ee6ea54035a9b/oracledb-1.2.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:58b8a6b7352bf4642b996139ed60d78e0b4f811d14e8ae6a4c04e5aaade19f83"},
 ]
 "packaging 21.3" = [
     {url = "https://files.pythonhosted.org/packages/05/8e/8de486cbd03baba4deef4142bd643a3e7bbe954a784dc1bb17142572d127/packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
@@ -1881,10 +1875,6 @@ content_hash = "sha256:8771a4f4830cdf0fb6017e9a526cd38f345cbba2072595b41231bc561
 "typer 0.7.0" = [
     {url = "https://files.pythonhosted.org/packages/0d/44/56c3f48d2bb83d76f5c970aef8e2c3ebd6a832f09e3621c5395371fe6999/typer-0.7.0-py3-none-any.whl", hash = "sha256:b5e704f4e48ec263de1c0b3a2387cd405a13767d2f907f44c1a08cbad96f606d"},
     {url = "https://files.pythonhosted.org/packages/e1/45/bcbc581f87c8d8f2a56b513eb994d07ea4546322818d95dc6a3caf2c928b/typer-0.7.0.tar.gz", hash = "sha256:ff797846578a9f2a201b53442aedeb543319466870fbe1c701eab66dd7681165"},
-]
-"typing-compat 0.1.0" = [
-    {url = "https://files.pythonhosted.org/packages/c8/f3/47e8f5d02b190aa1d47ad0311f55873121b7a0728c30423ce56bf790232c/typing-compat-0.1.0.tar.gz", hash = "sha256:a7159db80406de342bc128ab315fae3afe1ddc87cbc2df7a023763090fdfe5d2"},
-    {url = "https://files.pythonhosted.org/packages/ca/38/837105d59d0b72eebf843dee6eda0c084aba4b6b4f64dd0251435eb86930/typing_compat-0.1.0-py2.py3-none-any.whl", hash = "sha256:a8b94eb34c95982fbd34b8daa46fd78c43db33c075b98c79b6e1d77e8f7dd4d5"},
 ]
 "typing-extensions 4.4.0" = [
     {url = "https://files.pythonhosted.org/packages/0b/8e/f1a0a5a76cfef77e1eb6004cb49e5f8d72634da638420b9ea492ce8305e8/typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},

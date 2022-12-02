@@ -37,22 +37,16 @@ includes = ["src/teamster/*"]
 [tool.pdm.scripts]
 _.env_file = "env/.env"
 post_lock = { shell = "pdm export -f requirements -o requirements.txt", help = "Export the locked packages set to requirements.txt" }
-clean-build = { shell = "bash .pdm/scripts/clean-build.sh", help = "remove build artifacts" }
-clean-pyc = { shell = "bash .pdm/scripts/clean-pyc.sh", help = "remove Python file artifacts" }
-clean-test = { shell = "bash .pdm/scripts/clean-test.sh", help = "remove test and coverage artifacts" }
-clean = { shell = "pdm run clean-build && pdm run clean-pyc && pdm run clean-test", help = "remove all build, test, coverage and Python artifacts" }
+clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
 docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
-test = { shell = "pdm run pytest", help = "run tests with the default Python" }
-init-core = { shell = "bash .pdm/scripts/init-core.sh" }
-init-local = { shell = "bash .pdm/scripts/init-local.sh" }
-gcloud-core = { shell = "bash .pdm/scripts/gcloud-core-init.sh" }
-gcloud-local = { shell = "bash .pdm/scripts/gcloud-local-init.sh" }
-k8s-init = { shell = "bash .pdm/scripts/k8s-init.sh" }
-k8s-secret = { shell = "bash .pdm/scripts/k8s-secret.sh" }
-helm-install = { shell = "bash .pdm/scripts/helm-install.sh" }
-merge-dev = { shell = "bash .pdm/scripts/merge-dev.sh" }
-open-pr = { shell = "bash .pdm/scripts/open-pr.sh" }
-validate = { shell = "python -c 'from teamster.local.repository import *'" }
-stats = { shell = "python .dagster/stats/run-stats.py" }
+test = { shell = "pdm run pytest", help = "Run tests with the default Python" }
+location-init = { shell = "bash .pdm/scripts/location-init.sh", help = "Create a new branch for a Dagster Code Location" }
+gcloud-init = { shell = "bash .pdm/scripts/gcloud-init.sh", help = "Set up GCP" }
+k8s-secret = { shell = "bash .pdm/scripts/k8s-secret.sh", help = "Update k8s secret for branch" }
+helm-install = { shell = "bash .helm/scripts/install.sh", help = "Update Dagster Cloud Agent via Helm" }
+merge-dev = { shell = "bash .pdm/scripts/merge-dev.sh", help = "Merge dev branch into location branches" }
+open-pr = { shell = "bash .pdm/scripts/open-pr.sh", help = "Open a pull request for all staging branches" }
+validate = { shell = "python -c 'from teamster.local.repository import *'", help = "Validate Dagster imports and configs" }
+stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
