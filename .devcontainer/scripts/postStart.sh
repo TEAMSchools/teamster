@@ -16,13 +16,9 @@ pdm self update
 trunk upgrade -y --no-progress
 
 # save github codespace secrets to .env files
-for branch in $(
-  git for-each-ref --format='%(refname:short)' refs
-); do
+for branch in $(git for-each-ref --format='%(refname:short)' refs/**/kipp*); do
   branch_name=$(basename -- "${branch}")
-  branch_name_clean=$(
-    echo "${branch_name^^}" | tr -cd '[:alnum:]'
-  )
+  branch_name_clean=$(echo "${branch_name^^}" | tr -cd '[:alnum:]')
 
   if [ -n "${!branch_name_clean}" ]; then
     echo "${!branch_name_clean}" >"./env/${branch_name}.env"
