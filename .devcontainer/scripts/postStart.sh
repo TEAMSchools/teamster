@@ -21,6 +21,7 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/**/origin/kipp
   branch_name_clean=$(echo "${branch_name^^}" | tr -cd '[:alnum:]')
 
   if [ -n "${!branch_name_clean}" ]; then
-    echo "${!branch_name_clean}" >"./env/${branch_name}.env"
+    mkdir -p "env/${branch_name}"
+    echo "${!branch_name_clean}" >"./env/${branch_name}/.env"
   fi
 done

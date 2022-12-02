@@ -1,10 +1,5 @@
 #!/bin/bash
 
-read -r -p "Enter GCP Project ID: " GCP_PROJECT_ID
-read -r -p "Enter GCP Project Number: " GCP_PROJECT_NUMBER
-read -r -p "Enter GCP Region: " GCP_REGION
-read -r -p "Enter Dagster Cloud Agent Token: " DAGSTER_CLOUD_AGENT_TOKEN
-
 # https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to
 # Get credentials for your cluster:
 gcloud container clusters get-credentials dagster-cloud
