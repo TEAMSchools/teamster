@@ -19,6 +19,7 @@ pdm config strategy.update eager
 pdm install --no-self
 
 # commit new files
+git config pull.rebase false
 git add .
 git commit -m "Initial PDM commit"
 git push
@@ -40,3 +41,8 @@ sudo apt-get -qq -y install --no-install-recommends google-cloud-sdk-gke-gcloud-
 
 # update the kubectl configuration to use the plugin
 gcloud container clusters get-credentials dagster-cloud
+
+echo "
+# do not write .pyc files on the import of source modules
+export PYTHONDONTWRITEBYTECODE=1
+" >>"${HOME}/.bashrc"
