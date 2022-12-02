@@ -12,12 +12,32 @@ python -m pip install --no-cache-dir --upgrade pip
 
 # install Trunk
 curl https://get.trunk.io -fsSL | bash -s -- -y
+trunk install --ci
 
 # install pdm dependencies
 pdm config strategy.update eager
 pdm install --no-self
 
 # commit new files
+git config pull.rebase false
 git add .
 git commit -m "Initial PDM commit"
 git push
+
+# export GCP service account key to file
+echo "${GCP_SERVICE_ACCOUNT_KEY}" >env/service-account.json
+
+# authenticate gcloud
+gcloud auth activate-service-account --key-file=env/service-account.json
+
+# set gcloud project & region
+gcloud config set project "$(jq -r .project_id env/service-account.json)"
+gcloud config set compute/region "${GCP_REGION}"
+
+# install kubectl authentication plugin
+sudo apt-get -qq -y install --no-install-recommends google-cloud-sdk-gke-gcloud-auth-plugin &&
+  sudo apt-get -qq autoremove -y &&
+  sudo apt-get -qq clean -y
+
+# update the kubectl configuration to use the plugin
+gcloud container clusters get-credentials dagster-cloud
