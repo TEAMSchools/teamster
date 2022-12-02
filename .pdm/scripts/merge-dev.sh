@@ -1,7 +1,7 @@
 #!/bin/bash
 
-for BRANCH in .git/refs/heads/kipp*; do
-  branch_name=$(basename -- "${BRANCH}")
+for branch in $(git for-each-ref --format='%(refname:short)' refs/**/kipp*); do
+  branch_name=$(basename -- "${branch}")
 
   git switch "${branch_name}"
   git pull
