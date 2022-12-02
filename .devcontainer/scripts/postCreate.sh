@@ -29,8 +29,7 @@ echo "${GCP_SERVICE_ACCOUNT_KEY}" >env/service-account.json
 gcloud auth activate-service-account --key-file=env/service-account.json
 
 # set gcloud project & region
-project_id=$(jq -r .project_id env/service-account.json)
-gcloud config set project "${project_id}"
+gcloud config set project "$(jq -r .project_id env/service-account.json)"
 gcloud config set compute/region "${GCP_REGION}"
 
 # install kubectl authentication plugin
