@@ -24,3 +24,8 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/**/origin/kipp
     echo "${!branch_name_clean}" >"./env/${branch_name}.env"
   fi
 done
+
+echo "
+# do not write .pyc files on the import of source modules
+export PYTHONDONTWRITEBYTECODE=1
+" >>"${HOME}/.bashrc"
