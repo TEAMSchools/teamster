@@ -14,6 +14,7 @@ python -m pip install --no-cache-dir --upgrade pip
 curl https://get.trunk.io -fsSL | bash -s -- -y
 
 # install pdm dependencies
+pdm config strategy.update eager
 pdm install --no-self
 
 # commit new files
