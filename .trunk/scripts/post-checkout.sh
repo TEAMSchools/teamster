@@ -2,4 +2,8 @@
 
 branch=$(git branch --show-current)
 
-cp --remove-destination env/"${branch}".env env/.env
+if [[ -f env/"${branch}".env ]]; then
+  cp --remove-destination env/"${branch}".env env/.env
+else
+  echo >env/.env
+fi
