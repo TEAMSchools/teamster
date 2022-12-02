@@ -1,30 +1,39 @@
 #!/bin/bash
 
+read -r -p "Enter GCP Project ID: " GCP_PROJECT_ID
+read -r -p "Enter GCP Project Number: " GCP_PROJECT_NUMBER
+read -r -p "Enter GCP Region: " GCP_REGION
+read -r -p "Enter Dagster Cloud Agent Token: " DAGSTER_CLOUD_AGENT_TOKEN
+
 # https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to
 # Get credentials for your cluster:
 gcloud container clusters get-credentials dagster-cloud
 
-# Create an IAM service account for your application or use an existing IAM service account instead.
+# Create an IAM service account for your application
+# or use an existing IAM service account instead.
 gcloud iam service-accounts \
   create user-cloud-dagster-cloud-agent --project="${GCP_PROJECT_ID}"
 
-# Ensure that your IAM service account has the roles you need. You can grant additional roles using the following command:
+# Ensure that your IAM service account has the roles you need.
+# You can grant additional roles using the following command:
 gcloud projects \
   add-iam-policy-binding "${GCP_PROJECT_ID}" \
   --member "serviceAccount:user-cloud-dagster-cloud-agent@${GCP_PROJECT_ID}.iam.gserviceaccount.com" \
   --role "roles/storage.admin"
 
-# Allow the Kubernetes service account to impersonate the IAM service account by adding an IAM policy binding between the two service accounts.
+# Allow the Kubernetes service account to impersonate the IAM service account
+# by adding an IAM policy binding between the two service accounts.
 # This binding allows the Kubernetes service account to act as the IAM service account.
 gcloud iam service-accounts \
   add-iam-policy-binding user-cloud-dagster-cloud-agent@"${GCP_PROJECT_ID}".iam.gserviceaccount.com \
   --role roles/iam.workloadIdentityUser \
   --member "serviceAccount:${GCP_PROJECT_ID}.svc.id.goog[dagster-cloud/user-cloud-dagster-cloud-agent]"
 
-# Annotate the Kubernetes service account with the email address of the IAM service account.
+# Annotate the Kubernetes service account
+# with the email address of the IAM service account.
 kubectl annotate serviceaccount user-cloud-dagster-cloud-agent \
   --namespace dagster-cloud \
-  iam.gke.io/gcp-service-account=user-cloud-dagster-cloud-agent@"${GCP_PROJECT_ID}".iam.gserviceaccount.com
+  "iam.gke.io/gcp-service-account=user-cloud-dagster-cloud-agent@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 
 # set up Workload Identity Federation for GitHub actions
 # create WI pool
@@ -48,7 +57,7 @@ echo "GH_WORKLOAD_IDENTITY_PROVIDER_ID=github-provider" >>env/core.env
 # bind service account to WI pool
 GH_ORG_NAME=$(gh repo view --json owner --jq '.owner.login')
 gcloud iam service-accounts \
-  add-iam-policy-binding "${GCP_SERVICE_ACCOUNT}" \
+  add-iam-policy-binding "service-account@${GCP_PROJECT_ID}.iam.gserviceaccount.com" \
   --project="${GCP_PROJECT_ID}" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/${GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-pool/attribute.repository/${GH_ORG_NAME}/teamster"
@@ -66,3 +75,11 @@ gcloud artifacts repositories create \
   --project="${GCP_PROJECT_ID}" \
   --location="${GCP_REGION}" \
   --repository-format=docker
+
+# create k8s namespace
+kubectl create namespace dagster-cloud
+
+# create secret for Dagster Cloud Agent
+kubectl create secret generic dagster-cloud-agent-token \
+  --from-literal=DAGSTER_CLOUD_AGENT_TOKEN="${DAGSTER_CLOUD_AGENT_TOKEN}" \
+  --namespace dagster-cloud
