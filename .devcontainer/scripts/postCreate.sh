@@ -43,6 +43,8 @@ sudo apt-get -qq -y install --no-install-recommends google-cloud-sdk-gke-gcloud-
 gcloud container clusters get-credentials dagster-cloud
 
 echo "
+
+# postCreat.sh
 GCP_PROJECT_ID=\"$(jq -r .project_id env/service-account.json)\"
 export GCP_PROJECT_ID
 
