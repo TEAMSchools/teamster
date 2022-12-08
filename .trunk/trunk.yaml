@@ -13,7 +13,7 @@ lint:
     - sql-formatter@12.0.3
     - git-diff-check
     - hadolint@2.12.0
-    - prettier@2.8.0
+    - prettier@2.8.1
     - markdownlint@0.32.2
     - shellcheck@0.8.0
     - taplo@0.7.0
