@@ -22,7 +22,7 @@ SELECT DISTINCT
   role_id_ws,
   role_names
 FROM
-  gabby.extracts.whetstone_users
+  extracts.whetstone_users
 WHERE
   NOT (
     CONCAT(inactive, inactive_ws) = '11'
