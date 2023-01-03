@@ -22,7 +22,7 @@ lint:
     - flake8@6.0.0
     - gitleaks@8.15.2
     - isort@5.10.1
-    - black@22.10.0
+    - black@22.12.0
   definitions:
     - name: sql-formatter
       direct_configs: [sql-formatter.json]
