@@ -177,9 +177,9 @@ fsspec==2022.11.0 \
 google-api-core==2.11.0 \
     --hash=sha256:4b9bb5d5a380a0befa0573b302651b8a9a89262c1730e37bf423cec511804c22 \
     --hash=sha256:ce222e27b0de0d7bc63eb043b956996d6dccab14cc3b690aaea91c9cc99dc16e
-google-api-python-client==2.70.0 \
-    --hash=sha256:262de094d5a30d337f59e66581019fed45b698c078397ac48dd323c0968236e7 \
-    --hash=sha256:67da78956f2bf4b763305cd791aeab250878c1f88f1422aaba4682a608b8e5a4
+google-api-python-client==2.71.0 \
+    --hash=sha256:9412ad3445518fa9d24d02c673a70b07c9d124990f44763cdf4f5304ca5b4d08 \
+    --hash=sha256:a4ea351db2bb2a9b1a7e96d8fa8de0fcbc31d9e237b724f4a07b243c2d63e9a4
 google-auth==2.15.0 \
     --hash=sha256:6897b93556d8d807ad70701bb89f000183aea366ca7ed94680828b37437a4994 \
     --hash=sha256:72f12a6cfc968d754d7bdab369c5c5c16032106e52d32c6dfd8484e4c01a6d1f
@@ -270,9 +270,9 @@ google-crc32c==1.5.0 \
 google-resumable-media==2.4.0 \
     --hash=sha256:2aa004c16d295c8f6c33b2b4788ba59d366677c0a25ae7382436cb30f776deaa \
     --hash=sha256:8d5518502f92b9ecc84ac46779bd4f09694ecb3ba38a3e7ca737a86d15cbca1f
-googleapis-common-protos==1.57.0 \
-    --hash=sha256:27a849d6205838fb6cc3c1c21cb9800707a661bb21c6ce7fb13e99eb1f8a0c46 \
-    --hash=sha256:a9f4a1d7f6d9809657b7f1316a1aa527f6664891531bcfcc13b6696e685f443c
+googleapis-common-protos==1.57.1 \
+    --hash=sha256:2672d6b3a7b6188b70a5a4c70def7ddbb9000852dfbf49daf52fc7306c09db0c \
+    --hash=sha256:e877f2f041b640b4888b6917dde4f44515ab938bf744c4dbc06f11f0e8ed56b5
 greenlet==2.0.1 \
     --hash=sha256:0109af1138afbfb8ae647e31a2b1ab030f58b21dd8528c27beaeb0093b7938a9 \
     --hash=sha256:0459d94f73265744fee4c2d5ec44c6f34aa8a31017e6e9de770f7bcf29710be9 \
