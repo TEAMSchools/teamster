@@ -48,5 +48,5 @@ k8s-secret = { shell = "bash .pdm/scripts/k8s-secret.sh", help = "Update k8s sec
 helm-install = { shell = "bash .helm/scripts/install.sh", help = "Update Dagster Cloud Agent via Helm" }
 merge-dev = { shell = "bash .pdm/scripts/merge-dev.sh", help = "Merge dev branch into location branches" }
 open-pr = { shell = "bash .pdm/scripts/open-pr.sh", help = "Open a pull request for all staging branches" }
-validate = { shell = "python -c 'from teamster.local.repository import *'", help = "Validate Dagster imports and configs" }
+validate = { shell = "python -c 'from teamster.local.definitions import defs'", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
