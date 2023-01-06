@@ -72,10 +72,7 @@ def extract(context, sql):
     )
 
 
-@asset(
-    required_resource_keys={"db", "ssh"},
-    tags={"dagster/priority": 1},
-)
+@asset(required_resource_keys={"db", "ssh"})
 def students(context):
     sql = construct_sql(context=context)
 
