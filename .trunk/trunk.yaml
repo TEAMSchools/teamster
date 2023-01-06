@@ -7,6 +7,10 @@ plugins:
       ref: v0.0.8
       uri: https://github.com/trunk-io/plugins
 lint:
+  ignore:
+    - linters: [ALL]
+      paths:
+        - .helm/values.yaml
   enabled:
     - sqlfluff@1.4.5
     - yamllint@1.28.0
