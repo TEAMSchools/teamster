@@ -7,16 +7,16 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/**/origin/kipp
   git pull
 
   if [[ ${1} == "hotfix" ]]; then
-    git merge dev
+    git merge main
   elif [[ ${1} == "root" ]]; then
-    git merge --no-ff --no-commit dev
+    git merge --no-ff --no-commit main
     git reset HEAD src/
     git checkout -- src/
     git commit -m "Merge project root"
   else
     git switch stg-"${branch_name}"
     git merge "${branch_name}"
-    git merge dev
+    git merge main
   fi
 
   while true; do
@@ -32,4 +32,4 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/**/origin/kipp
   done
 done
 
-git switch dev
+git switch main
