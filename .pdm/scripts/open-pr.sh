@@ -7,4 +7,4 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/**/origin/stg-
   gh pr create --base "${branch_name#*-}"
 done
 
-git switch dev
+git switch main
