@@ -231,6 +231,46 @@ workspace:
   # been uploaded before. When disabled, the workspace snapshot is uploaded as a single payload.
   deferJobSnapshots: ~
 
+  # Specifies security settings for pods launched by the agent.
+  securityContext: ~
+
+  # Raw k8s configuration for the Kubernetes Job and Pod created for each run.
+  # See: https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
+  #
+  # Example:
+  # runK8sConfig:
+  #   containerConfig: # raw config for the pod's main container
+  #     resources:
+  #       cpu: 100m
+  #       memory: 128Mi
+  #   podTemplateSpecMetadata: # raw config for the pod's metadata
+  #     annotations:
+  #       mykey: myvalue
+  #   podSpecConfig: # raw config for the spec of the launched's pod
+  #     nodeSelector:
+  #       disktype: ssd
+  #   jobSpecConfig: # raw config for the kubernetes job's spec
+  #     ttlSecondsAfterFinished: 7200
+  #   jobMetadata: # raw config for the kubernetes job's metadata
+  #     annotations:
+  #       mykey: myvalue
+  runK8sConfig: {}
+
+  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  #
+  # Example:
+  # serverK8sConfig:
+  #   containerConfig: # raw config for the pod's main container
+  #     resources:
+  #       cpu: 100m
+  #       memory: 128Mi
+  #   podTemplateSpecMetadata: # raw config for the pod's metadata
+  #     annotations:
+  #       mykey: myvalue
+  #   podSpecConfig: # raw config for the spec of the launched's pod
+  #     nodeSelector:
+  #       disktype: ssd
+  serverK8sConfig: {}
 
 ####################################################################################################
 # Compute Logs: (Optional) settings for compute logging
