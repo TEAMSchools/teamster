@@ -32,4 +32,4 @@ COPY requirements.txt pyproject.toml ./
 COPY src/teamster ./src/teamster
 
 # install project
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
