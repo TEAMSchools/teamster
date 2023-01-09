@@ -3,8 +3,8 @@ locations:
     code_source:
       python_file: src/teamster/kippnewark/repository.py
     build:
-      directory: .
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/teamster
+      directory: .docker/kippnewark/
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippnewark/teamster-kippnewark
     working_directory: /root/app
     container_context:
       k8s:
@@ -14,8 +14,8 @@ locations:
     code_source:
       python_file: src/teamster/kippcamden/repository.py
     build:
-      directory: .
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/teamster
+      directory: .docker/kippcamden/
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
     working_directory: /root/app
     container_context:
       k8s:
@@ -25,8 +25,8 @@ locations:
     code_source:
       python_file: src/teamster/kippmiami/repository.py
     build:
-      directory: .
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/teamster
+      directory: .docker/kippmiami/
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
     working_directory: /root/app
     container_context:
       k8s:
@@ -36,8 +36,8 @@ locations:
     code_source:
       python_file: src/teamster/kipptaf/repository.py
     build:
-      directory: .
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/teamster
+      directory: .docker/kipptaf/
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
     working_directory: /root/app
     container_context:
       k8s:
