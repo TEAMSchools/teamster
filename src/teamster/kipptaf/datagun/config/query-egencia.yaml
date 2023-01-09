@@ -20,7 +20,7 @@ ops:
       path: /global/50323/USERS
     query:
       sql:
-        file: src/teamster/local/datagun/config/sql/egencia-users.sql
+        file: src/teamster/kipptaf/datagun/config/sql/egencia-users.sql
     file:
       stem: users_{today}
       suffix: csv

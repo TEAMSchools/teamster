@@ -1,7 +1,7 @@
 from dagster import ScheduleDefinition
-from teamster.local.datagun.jobs import datagun_ps_autocomm
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
+from teamster.kippmiami.datagun.jobs import datagun_ps_autocomm
 
 datagun_ps_autocomm = ScheduleDefinition(
     job=datagun_ps_autocomm,

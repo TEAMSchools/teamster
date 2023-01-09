@@ -1,8 +1,8 @@
 from dagster import repository
-from teamster.local.datagun import jobs as datagun_jobs_local
-from teamster.local.datagun import schedules as datagun_schedules
 
 from teamster.core.datagun import jobs as datagun_jobs_core
+from teamster.kipptaf.datagun import jobs as datagun_jobs_local
+from teamster.kipptaf.datagun import schedules as datagun_schedules
 
 
 @repository

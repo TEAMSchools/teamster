@@ -1,5 +1,7 @@
 from dagster import ScheduleDefinition
-from teamster.local.datagun.jobs import (
+
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
+from teamster.kipptaf.datagun.jobs import (
     datagun_adp,
     datagun_alchemer,
     datagun_blissbook,
@@ -18,8 +20,6 @@ from teamster.local.datagun.jobs import (
     datagun_read180,
     datagun_whetstone,
 )
-
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 datagun_gsheets_schedule = ScheduleDefinition(
     job=datagun_gsheets,
