@@ -63,12 +63,16 @@ def extract(context, sql, partition_size, output_fmt):
 
 
 def table_asset_factory(
-    table_name, columns=["*"], where={}, partition_size=100000, output_fmt="file"
+    table_name,
+    group_name="powerschool",
+    columns=["*"],
+    where={},
+    partition_size=100000,
+    output_fmt="file",
 ):
     @asset(
         name=table_name,
-        key_prefix="powerschool",
-        group_name="powerschool",
+        group_name=group_name,
         required_resource_keys={"db", "ssh"},
         output_required=False,
     )
@@ -92,11 +96,14 @@ def table_asset_factory(
         ssh_tunnel.stop()
 
         return data
+        # TODO: handle output via custom IO mgr, upload list of files to GCS
 
     return ps_table
 
 
 students = table_asset_factory(table_name="students")
+schools = table_asset_factory(table_name="schools")
+gen = table_asset_factory(table_name="gen")
 
 # file_manager_key = context.solid_handle.path[0]
 # # organize partitions under table folder
