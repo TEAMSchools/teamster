@@ -28,13 +28,13 @@ RUN apt-get update \
 
 # copy requirements files into container
 WORKDIR /root/app
-COPY ../../requirements.txt ./requirements.txt
-COPY ../../pyproject.toml ./pyproject.toml
+COPY requirements.txt ./requirements.txt
+COPY pyproject.toml ./pyproject.toml
 
 # install project
 RUN pip install --no-cache-dir -r requirements.txt
 
 # copy project files into container
-COPY ../../src/teamster/core ./src/teamster/core
-COPY ../../src/teamster/kippnewark ./src/teamster/kippnewark
+COPY src/teamster/core ./src/teamster/core
+COPY src/teamster/kippnewark ./src/teamster/kippnewark
 RUN pip install --no-cache-dir .
