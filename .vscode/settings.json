@@ -24,20 +24,6 @@
     "editor.defaultFormatter": "trunk.io"
   },
   "python.analysis.autoImportCompletions": false,
-  "python.analysis.extraPaths": [
-    "${workspaceFolder}/__pypackages__/3.7/lib",
-    "${workspaceFolder}/__pypackages__/3.8/lib",
-    "${workspaceFolder}/__pypackages__/3.9/lib",
-    "${workspaceFolder}/__pypackages__/3.10/lib",
-    "${workspaceFolder}/__pypackages__/3.11/lib"
-  ],
-  "python.autoComplete.extraPaths": [
-    "${workspaceFolder}/__pypackages__/3.7/lib",
-    "${workspaceFolder}/__pypackages__/3.8/lib",
-    "${workspaceFolder}/__pypackages__/3.9/lib",
-    "${workspaceFolder}/__pypackages__/3.10/lib",
-    "${workspaceFolder}/__pypackages__/3.11/lib"
-  ],
   "python.defaultInterpreterPath": ".venv/bin/python",
   "python.linting.ignorePatterns": [
     "**/site-packages/**/*.py",

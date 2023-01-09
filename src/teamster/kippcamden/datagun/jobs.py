@@ -40,7 +40,7 @@ datagun_cpn = cpn.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-cpn.yaml",
+            "src/teamster/kippcamden/datagun/config/query-cpn.yaml",
         ]
     ),
 )

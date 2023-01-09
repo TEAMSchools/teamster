@@ -1,0 +1,2 @@
+gcs_bucket:
+  env: IMAGE_NAME
