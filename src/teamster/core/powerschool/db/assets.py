@@ -70,7 +70,7 @@ def extract(context, sql, partition_size, output_fmt):
 
 def table_asset_factory(
     table_name,
-    partitions_def,
+    partitions_def=None,
     group_name="powerschool",
     columns=["*"],
     where={},
