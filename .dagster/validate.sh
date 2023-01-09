@@ -10,5 +10,9 @@ else
     echo >env/.env
   fi
 
-  python -c "from teamster.${1}.definitions import defs"
+  if [[ -f "src/teamster/${1}/definitions.py" ]]; then
+    python -c "from teamster.${1}.definitions import defs"
+  else
+    python -c "from teamster.${1}.repository import *"
+  fi
 fi
