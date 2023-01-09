@@ -34,7 +34,7 @@ def merge(a, b, path=None):
 yaml_configs = []
 for file_path in [
     "src/teamster/core/powerschool/config/db/sync-standard.yaml",
-    "src/teamster/local/powerschool/config/db/sync-extensions.yaml",
+    # "src/teamster/local/powerschool/config/db/sync-extensions.yaml",
 ]:
     with open(file=file_path, mode="r") as f:
         yaml_configs.append(yaml.safe_load(f.read()))
@@ -78,7 +78,7 @@ powerschool_db_resync = resync.to_job(
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/powerschool/config/db/resource.yaml",
             "src/teamster/core/powerschool/config/db/resync.yaml",
-            "src/teamster/local/powerschool/config/db/sync-resync.yaml",
+            # "src/teamster/local/powerschool/config/db/sync-resync.yaml",
         ]
     ),
 )
