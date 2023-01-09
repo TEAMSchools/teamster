@@ -1,0 +1,32 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+resources:
+  sftp:
+    config:
+      remote_host:
+        env: KTAF_SFTP_HOST
+      username:
+        env: KTAF_SFTP_USERNAME
+      password:
+        env: KTAF_SFTP_PASSWORD
+ops:
+  config:
+    destination:
+      name: idauto
+      type: sftp
+    query:
+      sql:
+        schema:
+          table:
+            name: idauto_staff_roster
+            schema: gabby.extracts
+    file:
+      stem: AD
+      suffix: csv
+      encoding: latin1
+      format:
+        quoting: 1 # csv.QUOTE_ALL

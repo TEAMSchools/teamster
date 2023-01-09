@@ -1,0 +1,54 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+resources:
+  sftp:
+    config:
+      remote_host:
+        env: PYTHONANYWHERE_SFTP_HOST
+      username:
+        env: PYTHONANYWHERE_SFTP_USERNAME
+      password:
+        env: PYTHONANYWHERE_SFTP_PASSWORD
+ops:
+  students_accessaccounts:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: powerschool_autocomm_students_accessaccounts
+              schema: gabby.extracts
+            where: db_name = 'kippmiami'
+      file:
+        stem: powerschool_autocomm_students_accessaccounts
+        suffix: txt
+        format:
+          header: False
+          sep: "\t"
+      destination:
+        name: powerschool
+        type: sftp
+        path: sftp/powerschool/kippmiami
+  teachers_accounts:
+    config:
+      query:
+        sql:
+          schema:
+            table:
+              name: powerschool_autocomm_teachers_accounts
+              schema: gabby.extracts
+            where: legal_entity_name = 'KIPP Miami'
+      file:
+        stem: powerschool_autocomm_teachers_accounts
+        suffix: txt
+        format:
+          header: False
+          sep: "\t"
+      destination:
+        name: powerschool
+        type: sftp
+        path: sftp/powerschool/kippmiami
