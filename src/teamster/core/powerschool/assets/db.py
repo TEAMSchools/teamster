@@ -1,5 +1,3 @@
-import pathlib
-
 from dagster import asset
 from sqlalchemy import literal_column, select, table, text
 
@@ -7,33 +5,23 @@ from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import TODAY
 
 
-def construct_sql(context):
-    [(sql_key, sql_value)] = context.op_config["query"]["sql"].items()
-    if sql_key == "text":
-        sql = text(sql_value)
-    elif sql_key == "file":
-        sql_file = pathlib.Path(sql_value).absolute()
-        with sql_file.open(mode="r") as f:
-            sql = text(f.read())
-    elif sql_key == "schema":
-        sql_where = sql_value.get("where")
-
-        if sql_where is None:
-            constructed_sql_where = ""
-        elif isinstance(sql_where, str):
-            constructed_sql_where = sql_where
-        else:
-            constructed_sql_where = (
-                f"{sql_where['column']} >= "
-                f"TO_TIMESTAMP_TZ('{{{sql_where['value']}}}', "
-                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
-            )
-
-        sql = (
-            select(*[literal_column(col) for col in sql_value["select"]])
-            .select_from(table(**sql_value["table"]))
-            .where(text(constructed_sql_where))
+def construct_sql(table_name, columns, where):
+    if not where:
+        constructed_sql_where = ""
+    elif isinstance(where, str):
+        constructed_sql_where = where
+    elif isinstance(where, dict):
+        constructed_sql_where = (
+            f"{where['column']} >= "
+            f"TO_TIMESTAMP_TZ('{{{where['value']}}}', "
+            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
         )
+
+    sql = (
+        select(*[literal_column(col) for col in columns])
+        .select_from(table(table_name))
+        .where(text(constructed_sql_where))
+    )
 
     return sql
 
@@ -72,10 +60,10 @@ def extract(context, sql):
     )
 
 
-def asset_factory(name):
-    @asset(name=name, required_resource_keys={"db", "ssh"})
+def table_asset_factory(table_name, columns=["*"], where={}):
+    @asset(name=table_name, required_resource_keys={"db", "ssh"})
     def ps_table(context):
-        sql = construct_sql(context=context)
+        sql = construct_sql(table_name=table_name, columns=columns, where=where)
 
         context.log.info("Starting SSH tunnel")
         ssh_tunnel = context.resources.ssh.get_tunnel()
@@ -93,7 +81,7 @@ def asset_factory(name):
     return ps_table
 
 
-students = asset_factory(name="students")
+students = table_asset_factory(table_name="students")
 
 # file_manager_key = context.solid_handle.path[0]
 # # organize partitions under table folder
