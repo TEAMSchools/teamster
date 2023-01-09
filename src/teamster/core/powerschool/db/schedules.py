@@ -1,6 +1,6 @@
 from dagster import ScheduleDefinition
 
-from teamster.core.powerschool.jobs.db import powerschool_db_sync_std
+from teamster.core.powerschool.db.jobs import powerschool_db_sync_std
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 powerschool_db_sync_std_schedule = ScheduleDefinition(

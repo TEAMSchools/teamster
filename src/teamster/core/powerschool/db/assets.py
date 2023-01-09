@@ -1,11 +1,16 @@
+from datetime import datetime, timedelta
+
 from dagster import asset
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.utils.functions import get_last_schedule_run
-from teamster.core.utils.variables import TODAY
+# from teamster.core.utils.functions import get_last_schedule_run
+# from teamster.core.utils.variables import TODAY
 
 
-def construct_sql(table_name, columns, where):
+def construct_sql(context, table_name, columns, where):
+    partition_key = context.asset_partition_key_for_output()
+    end_datetime = datetime.fromisoformat(partition_key) + timedelta(hours=1)
+
     if not where:
         constructed_sql_where = ""
     elif isinstance(where, str):
@@ -13,7 +18,10 @@ def construct_sql(table_name, columns, where):
     elif isinstance(where, dict):
         constructed_sql_where = (
             f"{where['column']} >= "
-            f"TO_TIMESTAMP_TZ('{{{where['value']}}}', "
+            f"TO_TIMESTAMP_TZ('{partition_key}', "
+            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
+            f"{where['column']} < "
+            f"TO_TIMESTAMP_TZ('{end_datetime.isoformat(timespec='microseconds')}', "
             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
         )
 
@@ -27,18 +35,17 @@ def construct_sql(table_name, columns, where):
 
 
 def count(context, sql):
-    # format where clause
-    sql.whereclause.text = sql.whereclause.text.format(
-        today=TODAY.isoformat(timespec="microseconds"),
-        last_run=(get_last_schedule_run(context) or TODAY).isoformat(
-            timespec="microseconds"
-        ),
-    )
+    # # format where clause
+    # sql.whereclause.text = sql.whereclause.text.format(
+    #     today=TODAY.isoformat(timespec="microseconds"),
+    #     last_run=(get_last_schedule_run(context) or TODAY).isoformat(
+    #         timespec="microseconds"
+    #     ),
+    # )
 
     if sql.whereclause.text == "":
         return 1
     else:
-
         [(count,)] = context.resources.ps_db.execute_query(
             query=text(
                 (
@@ -50,7 +57,6 @@ def count(context, sql):
             partition_size=1,
             output_fmt=None,
         )
-
         return count
 
 
@@ -64,6 +70,7 @@ def extract(context, sql, partition_size, output_fmt):
 
 def table_asset_factory(
     table_name,
+    partitions_def,
     group_name="powerschool",
     columns=["*"],
     where={},
@@ -72,12 +79,15 @@ def table_asset_factory(
 ):
     @asset(
         name=table_name,
+        partitions_def=partitions_def,
         group_name=group_name,
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
     def ps_table(context):
-        sql = construct_sql(table_name=table_name, columns=columns, where=where)
+        sql = construct_sql(
+            context=context, table_name=table_name, columns=columns, where=where
+        )
 
         context.log.info("Starting SSH tunnel")
         ssh_tunnel = context.resources.ps_ssh.get_tunnel()
@@ -100,12 +110,6 @@ def table_asset_factory(
 
     return ps_table
 
-
-students = table_asset_factory(table_name="students")
-schools = table_asset_factory(table_name="schools")
-gen = table_asset_factory(table_name="gen")
-
-__all__ = [students, schools, gen]
 
 # file_manager_key = context.solid_handle.path[0]
 # # organize partitions under table folder
