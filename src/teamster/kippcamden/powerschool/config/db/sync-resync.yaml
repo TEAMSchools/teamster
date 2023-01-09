@@ -1,0 +1,463 @@
+ops:
+  config:
+    resync: true
+    graph_alias: resync
+    queries:
+      - sql:
+          schema:
+            table:
+              name: attendance_code
+      - sql:
+          schema:
+            table:
+              name: attendance_conversion_items
+      - sql:
+          schema:
+            table:
+              name: bell_schedule
+      - sql:
+          schema:
+            table:
+              name: calendar_day
+      - sql:
+          schema:
+            table:
+              name: cycle_day
+      - sql:
+          schema:
+            table:
+              name: fte
+      - sql:
+          schema:
+            table:
+              name: gen
+      - sql:
+          schema:
+            table:
+              name: period
+      - sql:
+          schema:
+            table:
+              name: reenrollments
+      - sql:
+          schema:
+            table:
+              name: spenrollments
+      - sql:
+          schema:
+            table:
+              name: test
+      - sql:
+          schema:
+            table:
+              name: testscore
+      - sql:
+          schema:
+            table:
+              name: courses
+      - sql:
+          schema:
+            table:
+              name: prefs
+      - sql:
+          schema:
+            table:
+              name: sections
+      - sql:
+          schema:
+            table:
+              name: schools
+      - sql:
+          schema:
+            table:
+              name: students
+      - sql:
+          schema:
+            table:
+              name: termbins
+      - sql:
+          schema:
+            table:
+              name: terms
+      - sql:
+          schema:
+            table:
+              name: assignmentsection
+      - sql:
+          schema:
+            table:
+              name: codeset
+      - sql:
+          schema:
+            table:
+              name: districtteachercategory
+      - sql:
+          schema:
+            table:
+              name: emailaddress
+      - sql:
+          schema:
+            table:
+              name: gradecalcformulaweight
+      - sql:
+          schema:
+            table:
+              name: gradecalcschoolassoc
+      - sql:
+          schema:
+            table:
+              name: gradecalculationtype
+      - sql:
+          schema:
+            table:
+              name: gradeformulaset
+      - sql:
+          schema:
+            table:
+              name: gradescaleitem
+      - sql:
+          schema:
+            table:
+              name: gradeschoolconfig
+      - sql:
+          schema:
+            table:
+              name: gradeschoolformulaassoc
+      - sql:
+          schema:
+            table:
+              name: gradesectionconfig
+      - sql:
+          schema:
+            table:
+              name: originalcontactmap
+      - sql:
+          schema:
+            table:
+              name: person
+      - sql:
+          schema:
+            table:
+              name: personaddress
+      - sql:
+          schema:
+            table:
+              name: personaddressassoc
+      - sql:
+          schema:
+            table:
+              name: personemailaddressassoc
+      - sql:
+          schema:
+            table:
+              name: personphonenumberassoc
+      - sql:
+          schema:
+            table:
+              name: phonenumber
+      - sql:
+          schema:
+            table:
+              name: roledef
+      - sql:
+          schema:
+            table:
+              name: schoolstaff
+      - sql:
+          schema:
+            table:
+              name: sectionteacher
+      - sql:
+          schema:
+            table:
+              name: studentcontactassoc
+      - sql:
+          schema:
+            table:
+              name: studentcontactdetail
+      - sql:
+          schema:
+            table:
+              name: studentcorefields
+      - sql:
+          schema:
+            table:
+              name: studentrace
+      - sql:
+          schema:
+            table:
+              name: teachercategory
+      - sql:
+          schema:
+            table:
+              name: users
+      # assignmentcategoryassoc
+      - sql:
+          schema:
+            table:
+              name: assignmentcategoryassoc
+            where: assignmentcategoryassocid BETWEEN 0 AND 99999
+      - sql:
+          schema:
+            table:
+              name: assignmentcategoryassoc
+            where: assignmentcategoryassocid BETWEEN 100000 AND 199999
+      - sql:
+          schema:
+            table:
+              name: assignmentcategoryassoc
+            where: assignmentcategoryassocid BETWEEN 200000 AND 299999
+      - sql:
+          schema:
+            table:
+              name: assignmentcategoryassoc
+            where: assignmentcategoryassocid BETWEEN 300000 AND 399999
+      - sql:
+          schema:
+            table:
+              name: assignmentcategoryassoc
+            where: assignmentcategoryassocid BETWEEN 400000 AND 499999
+      # cc
+      - sql:
+          schema:
+            table:
+              name: cc
+            where: dcid BETWEEN 0 AND 99999
+      - sql:
+          schema:
+            table:
+              name: cc
+            where: dcid BETWEEN 100000 AND 199999
+      - sql:
+          schema:
+            table:
+              name: cc
+            where: dcid BETWEEN 200000 AND 299999
+      - sql:
+          schema:
+            table:
+              name: cc
+            where: dcid BETWEEN 300000 AND 399999
+      - sql:
+          schema:
+            table:
+              name: cc
+            where: dcid BETWEEN 400000 AND 499999
+      - sql:
+          schema:
+            table:
+              name: cc
+            where: dcid BETWEEN 500000 AND 599999
+      # log
+      - sql:
+          schema:
+            table:
+              name: log
+            where: dcid BETWEEN 0 AND 99999
+      - sql:
+          schema:
+            table:
+              name: log
+            where: dcid BETWEEN 100000 AND 199999
+      - sql:
+          schema:
+            table:
+              name: log
+            where: dcid BETWEEN 200000 AND 299999
+      - sql:
+          schema:
+            table:
+              name: log
+            where: dcid BETWEEN 300000 AND 399999
+      # storedgrades
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 0 AND 99999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 100000 AND 199999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 200000 AND 299999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 300000 AND 399999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 400000 AND 499999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 500000 AND 599999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 600000 AND 699999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 700000 AND 799999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 800000 AND 899999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 900000 AND 999999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 1000000 AND 1099999
+      - sql:
+          schema:
+            table:
+              name: storedgrades
+            where: dcid BETWEEN 1100000 AND 1199999
+      # pgfinalgrades
+      - sql:
+          schema:
+            table:
+              name: pgfinalgrades
+            where: dcid BETWEEN 0 AND 999999
+      - sql:
+          schema:
+            table:
+              name: pgfinalgrades
+            where: dcid BETWEEN 1000000 AND 1999999
+      - sql:
+          schema:
+            table:
+              name: pgfinalgrades
+            where: dcid BETWEEN 2000000 AND 2999999
+      # attendance
+      - sql:
+          schema:
+            table:
+              name: attendance
+            where: dcid BETWEEN 0 AND 999999
+      - sql:
+          schema:
+            table:
+              name: attendance
+            where: dcid BETWEEN 1000000 AND 1999999
+      - sql:
+          schema:
+            table:
+              name: attendance
+            where: dcid BETWEEN 2000000 AND 2999999
+      - sql:
+          schema:
+            table:
+              name: attendance
+            where: dcid BETWEEN 3000000 AND 3999999
+      - sql:
+          schema:
+            table:
+              name: attendance
+            where: dcid BETWEEN 4000000 AND 4999999
+      # assignmentscore
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 0 AND 999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 1000000 AND 1999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 2000000 AND 2999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 3000000 AND 3999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 4000000 AND 4999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 5000000 AND 5999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 6000000 AND 6999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 7000000 AND 7999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 8000000 AND 8999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 9000000 AND 9999999
+      - sql:
+          schema:
+            table:
+              name: assignmentscore
+            where: assignmentscoreid BETWEEN 10000000 AND 10999999
+      # extensions
+      - sql:
+          schema:
+            table:
+              name: s_nj_crs_x
+      - sql:
+          schema:
+            table:
+              name: s_nj_ren_x
+      - sql:
+          schema:
+            table:
+              name: s_nj_stu_x
+      - sql:
+          schema:
+            table:
+              name: s_nj_usr_x
+      - sql:
+          schema:
+            table:
+              name: u_clg_et_stu
+      - sql:
+          schema:
+            table:
+              name: u_clg_et_stu_alt
+      - sql:
+          schema:
+            table:
+              name: u_def_ext_students
+      - sql:
+          schema:
+            table:
+              name: u_studentsuserfields

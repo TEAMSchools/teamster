@@ -1,0 +1,29 @@
+execution:
+  config:
+    resources:
+      limits:
+        cpu: 250m
+        memory: 0.5Gi
+resources:
+  sftp:
+    config:
+      remote_host:
+        env: NPS_SFTP_HOST
+      username:
+        env: NPS_SFTP_USERNAME
+      password:
+        env: NPS_SFTP_PASSWORD
+ops:
+  config:
+    query:
+      sql:
+        schema:
+          table:
+            name: nps_student_info
+            schema: gabby.extracts
+    file:
+      stem: kipp-newark-student-data
+      suffix: txt
+    destination:
+      name: nps
+      type: sftp

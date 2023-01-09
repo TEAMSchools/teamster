@@ -1,0 +1,27 @@
+ops:
+  config:
+    queries:
+      - sql:
+          schema:
+            table:
+              name: u_clg_et_stu
+            where:
+              column: whenmodified
+      - sql:
+          schema:
+            table:
+              name: u_clg_et_stu_alt
+            where:
+              column: whenmodified
+      - sql:
+          schema:
+            table:
+              name: u_def_ext_students
+            where:
+              column: whenmodified
+      - sql:
+          schema:
+            table:
+              name: u_studentsuserfields
+            where:
+              column: whenmodified
