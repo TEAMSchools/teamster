@@ -1,7 +1,7 @@
 locations:
   - location_name: ${LOCATION_NAME}
     code_source:
-      python_file: src/teamster/local/repository.py
+      python_file: src/teamster/${LOCATION_NAME}/repository.py
     build:
       directory: .
       registry: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/teamster-${LOCATION_NAME}/teamster-${LOCATION_NAME}

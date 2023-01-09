@@ -21,7 +21,7 @@ ops:
       path: ./sftp/whetstone
     query:
       sql:
-        file: src/teamster/local/datagun/config/sql/whetstone-users.sql
+        file: src/teamster/kipptaf/datagun/config/sql/whetstone-users.sql
     file:
       stem: whetstone_users
       suffix: json

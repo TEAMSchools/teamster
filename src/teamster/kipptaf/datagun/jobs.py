@@ -2,7 +2,11 @@ from dagster import config_from_files
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
-from teamster.local.datagun.graphs import (
+
+from teamster.core.datagun.graphs import etl_sftp
+from teamster.core.resources.google import gcs_file_manager, google_sheets
+from teamster.core.resources.sqlalchemy import mssql
+from teamster.kipptaf.datagun.graphs import (
     clever,
     deanslist,
     gam,
@@ -11,10 +15,6 @@ from teamster.local.datagun.graphs import (
     razkids,
     read180,
 )
-
-from teamster.core.datagun.graphs import etl_sftp
-from teamster.core.resources.google import gcs_file_manager, google_sheets
-from teamster.core.resources.sqlalchemy import mssql
 
 datagun_gsheets = gsheets.to_job(
     name="datagun_gsheets",
@@ -30,7 +30,7 @@ datagun_gsheets = gsheets.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-gsheets.yaml",
+            "src/teamster/kipptaf/datagun/config/query-gsheets.yaml",
         ]
     ),
 )
@@ -49,7 +49,7 @@ datagun_clever = clever.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-clever.yaml",
+            "src/teamster/kipptaf/datagun/config/query-clever.yaml",
         ]
     ),
 )
@@ -68,7 +68,7 @@ datagun_deanslist = deanslist.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-deanslist.yaml",
+            "src/teamster/kipptaf/datagun/config/query-deanslist.yaml",
         ]
     ),
 )
@@ -87,7 +87,7 @@ datagun_gam = gam.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-gam.yaml",
+            "src/teamster/kipptaf/datagun/config/query-gam.yaml",
         ]
     ),
 )
@@ -106,7 +106,7 @@ datagun_illuminate = illuminate.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-illuminate.yaml",
+            "src/teamster/kipptaf/datagun/config/query-illuminate.yaml",
         ]
     ),
 )
@@ -125,7 +125,7 @@ datagun_razkids = razkids.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-razkids.yaml",
+            "src/teamster/kipptaf/datagun/config/query-razkids.yaml",
         ]
     ),
 )
@@ -144,7 +144,7 @@ datagun_read180 = read180.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-read180.yaml",
+            "src/teamster/kipptaf/datagun/config/query-read180.yaml",
         ]
     ),
 )
@@ -163,7 +163,7 @@ datagun_adp = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-adp.yaml",
+            "src/teamster/kipptaf/datagun/config/query-adp.yaml",
         ]
     ),
 )
@@ -182,7 +182,7 @@ datagun_alchemer = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-alchemer.yaml",
+            "src/teamster/kipptaf/datagun/config/query-alchemer.yaml",
         ]
     ),
 )
@@ -201,7 +201,7 @@ datagun_blissbook = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-blissbook.yaml",
+            "src/teamster/kipptaf/datagun/config/query-blissbook.yaml",
         ]
     ),
 )
@@ -220,7 +220,7 @@ datagun_coupa = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-coupa.yaml",
+            "src/teamster/kipptaf/datagun/config/query-coupa.yaml",
         ]
     ),
 )
@@ -239,7 +239,7 @@ datagun_egencia = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-egencia.yaml",
+            "src/teamster/kipptaf/datagun/config/query-egencia.yaml",
         ]
     ),
 )
@@ -258,7 +258,7 @@ datagun_fpodms = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-fpodms.yaml",
+            "src/teamster/kipptaf/datagun/config/query-fpodms.yaml",
         ]
     ),
 )
@@ -277,7 +277,7 @@ datagun_idauto = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-idauto.yaml",
+            "src/teamster/kipptaf/datagun/config/query-idauto.yaml",
         ]
     ),
 )
@@ -296,7 +296,7 @@ datagun_littlesis = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-littlesis.yaml",
+            "src/teamster/kipptaf/datagun/config/query-littlesis.yaml",
         ]
     ),
 )
@@ -315,7 +315,7 @@ datagun_njdoe = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-njdoe.yaml",
+            "src/teamster/kipptaf/datagun/config/query-njdoe.yaml",
         ]
     ),
 )
@@ -334,7 +334,7 @@ datagun_whetstone = etl_sftp.to_job(
         [
             "src/teamster/core/resources/config/google.yaml",
             "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/local/datagun/config/query-whetstone.yaml",
+            "src/teamster/kipptaf/datagun/config/query-whetstone.yaml",
         ]
     ),
 )
