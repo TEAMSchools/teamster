@@ -39,7 +39,7 @@ def count(context, sql):
         return 1
     else:
 
-        [(count,)] = context.resources.db.execute_query(
+        [(count,)] = context.resources.ps_db.execute_query(
             query=text(
                 (
                     "SELECT COUNT(*) "
@@ -55,7 +55,7 @@ def count(context, sql):
 
 
 def extract(context, sql, partition_size, output_fmt):
-    return context.resources.db.execute_query(
+    return context.resources.ps_db.execute_query(
         query=sql,
         partition_size=partition_size,
         output_fmt=output_fmt,
@@ -73,14 +73,14 @@ def table_asset_factory(
     @asset(
         name=table_name,
         group_name=group_name,
-        required_resource_keys={"db", "ssh"},
+        required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
     def ps_table(context):
         sql = construct_sql(table_name=table_name, columns=columns, where=where)
 
         context.log.info("Starting SSH tunnel")
-        ssh_tunnel = context.resources.ssh.get_tunnel()
+        ssh_tunnel = context.resources.ps_ssh.get_tunnel()
         ssh_tunnel.start()
 
         row_count = count(context=context, sql=sql)
@@ -104,6 +104,8 @@ def table_asset_factory(
 students = table_asset_factory(table_name="students")
 schools = table_asset_factory(table_name="schools")
 gen = table_asset_factory(table_name="gen")
+
+__all__ = [students, schools, gen]
 
 # file_manager_key = context.solid_handle.path[0]
 # # organize partitions under table folder
