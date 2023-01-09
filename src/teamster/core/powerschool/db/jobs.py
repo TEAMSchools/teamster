@@ -5,7 +5,7 @@ from dagster import config_from_files
 from dagster_gcp.gcs import gcs_file_manager, gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.powerschool.graphs.db import sync_standard  # , resync
+from teamster.core.powerschool.db.graphs import sync_standard  # , resync
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
@@ -33,8 +33,8 @@ def merge(a, b, path=None):
 
 yaml_configs = []
 for file_path in [
-    "src/teamster/core/powerschool/config/db/sync-standard.yaml",
-    # "src/teamster/local/powerschool/config/db/sync-extensions.yaml",
+    "src/teamster/core/powerschool/db/config/sync-standard.yaml",
+    # "src/teamster/local/powerschool/db/config/sync-extensions.yaml",
 ]:
     with open(file=file_path, mode="r") as f:
         yaml_configs.append(yaml.safe_load(f.read()))
@@ -55,8 +55,8 @@ powerschool_db_sync_std = sync_standard.to_job(
         **config_from_files(
             [
                 "src/teamster/core/resources/config/google.yaml",
-                "src/teamster/core/powerschool/config/db/resource.yaml",
-                "src/teamster/core/powerschool/config/db/sync.yaml",
+                "src/teamster/core/powerschool/db/config/resource.yaml",
+                "src/teamster/core/powerschool/db/config/sync.yaml",
             ]
         ),
         **sync_standard_config,

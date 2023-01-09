@@ -4,8 +4,8 @@ import yaml
 from dagster import config_mapping, graph
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.powerschool.config.db.schema import QUERY_CONFIG, TABLES_CONFIG
-from teamster.core.powerschool.ops.db import extract_to_data_lake, get_counts_factory
+from teamster.core.powerschool.db.config.schema import QUERY_CONFIG, TABLES_CONFIG
+from teamster.core.powerschool.db.ops import extract_to_data_lake, get_counts_factory
 
 
 def get_table_names(instance, table_set, resync):
