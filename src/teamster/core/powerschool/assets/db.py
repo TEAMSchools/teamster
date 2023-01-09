@@ -54,14 +54,24 @@ def count(context, sql):
         return count
 
 
-def extract(context, sql):
+def extract(context, sql, partition_size, output_fmt):
     return context.resources.db.execute_query(
-        query=sql, partition_size=context.op_config["partition_size"], output_fmt="file"
+        query=sql,
+        partition_size=partition_size,
+        output_fmt=output_fmt,
     )
 
 
-def table_asset_factory(table_name, columns=["*"], where={}):
-    @asset(name=table_name, required_resource_keys={"db", "ssh"})
+def table_asset_factory(
+    table_name, columns=["*"], where={}, partition_size=100000, output_fmt="file"
+):
+    @asset(
+        name=table_name,
+        key_prefix="powerschool",
+        group_name="powerschool",
+        required_resource_keys={"db", "ssh"},
+        output_required=False,
+    )
     def ps_table(context):
         sql = construct_sql(table_name=table_name, columns=columns, where=where)
 
@@ -71,7 +81,12 @@ def table_asset_factory(table_name, columns=["*"], where={}):
 
         row_count = count(context=context, sql=sql)
         if row_count > 0:
-            data = extract(context=context, sql=sql)
+            data = extract(
+                context=context,
+                sql=sql,
+                partition_size=partition_size,
+                output_fmt=output_fmt,
+            )
 
         context.log.info("Stopping SSH tunnel")
         ssh_tunnel.stop()
