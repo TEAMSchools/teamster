@@ -15,10 +15,10 @@ defs = Definitions(
             config_from_files(["src/teamster/core/powerschool/config/ssh.yaml"])
         ),
         "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files(["src/teamster/core/powerschool/config/io.yaml"])
+            config_from_files(["src/teamster/core/resources/config/io.yaml"])
         ),
         "gcs": gcs_resource.configured(
-            config_from_files(["src/teamster/core/powerschool/config/io.yaml"])
+            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
         ),
     },
 )
