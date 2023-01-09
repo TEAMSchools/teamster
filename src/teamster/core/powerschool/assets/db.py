@@ -72,42 +72,48 @@ def extract(context, sql):
     )
 
 
-@asset(required_resource_keys={"db", "ssh"})
-def students(context):
-    sql = construct_sql(context=context)
+def asset_factory(name):
+    @asset(name=name, required_resource_keys={"db", "ssh"})
+    def ps_table(context):
+        sql = construct_sql(context=context)
 
-    context.log.info("Starting SSH tunnel")
-    ssh_tunnel = context.resources.ssh.get_tunnel()
-    ssh_tunnel.start()
+        context.log.info("Starting SSH tunnel")
+        ssh_tunnel = context.resources.ssh.get_tunnel()
+        ssh_tunnel.start()
 
-    row_count = count(context=context, sql=sql)
-    if row_count > 0:
-        data = extract(context=context, sql=sql)
+        row_count = count(context=context, sql=sql)
+        if row_count > 0:
+            data = extract(context=context, sql=sql)
 
-    context.log.info("Stopping SSH tunnel")
-    ssh_tunnel.stop()
+        context.log.info("Stopping SSH tunnel")
+        ssh_tunnel.stop()
 
-    return data
+        return data
 
-    # file_manager_key = context.solid_handle.path[0]
-    # # organize partitions under table folder
-    # re_match = re.match(r"([\w_]+)_(R\d+)", file_manager_key)
-    # if re_match:
-    #     table_name, resync_partition = re_match.groups()
-    #     file_manager_key = f"{table_name}/{resync_partition}"
-    # ...
-    # if data:
-    #     file_handles = []
-    #     for i, fp in enumerate(data):
-    #         if sql.whereclause.text == "":
-    #             file_stem = f"{file_manager_key}_R{i}"
-    #         else:
-    #             file_stem = fp.stem
-    #         with fp.open(mode="rb") as f:
-    #             file_handle = context.resources.file_manager.write(
-    #                 file_obj=f,
-    #                 key=f"{file_manager_key}/{file_stem}",
-    #                 ext=fp.suffix[1:],
-    #             )
-    #         context.log.info(f"Saved to {file_handle.path_desc}")
-    #         file_handles.append(file_handle)
+    return ps_table
+
+
+students = asset_factory(name="students")
+
+# file_manager_key = context.solid_handle.path[0]
+# # organize partitions under table folder
+# re_match = re.match(r"([\w_]+)_(R\d+)", file_manager_key)
+# if re_match:
+#     table_name, resync_partition = re_match.groups()
+#     file_manager_key = f"{table_name}/{resync_partition}"
+# ...
+# if data:
+#     file_handles = []
+#     for i, fp in enumerate(data):
+#         if sql.whereclause.text == "":
+#             file_stem = f"{file_manager_key}_R{i}"
+#         else:
+#             file_stem = fp.stem
+#         with fp.open(mode="rb") as f:
+#             file_handle = context.resources.file_manager.write(
+#                 file_obj=f,
+#                 key=f"{file_manager_key}/{file_stem}",
+#                 ext=fp.suffix[1:],
+#             )
+#         context.log.info(f"Saved to {file_handle.path_desc}")
+#         file_handles.append(file_handle)
