@@ -8,21 +8,24 @@ from sqlalchemy import literal_column, select, table, text
 
 
 def construct_sql(context, table_name, columns, where):
-    partition_key = context.asset_partition_key_for_output()
-    end_datetime = datetime.fromisoformat(partition_key) + timedelta(hours=1)
-
     if not where:
         constructed_sql_where = ""
     elif isinstance(where, str):
         constructed_sql_where = where
-    elif isinstance(where, dict):
+    elif context.has_partition_key:
+        partition_key = context.asset_partition_key_for_output()
+
+        start_datetime = datetime.strptime(partition_key, "%Y-%m-%dT%H:%M:%S.%f%z")
+        end_datetime = start_datetime + timedelta(hours=1)
+
+        where_column = where["column"]
         constructed_sql_where = (
-            f"{where['column']} >= "
-            f"TO_TIMESTAMP_TZ('{partition_key}', "
-            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
-            f"{where['column']} < "
-            f"TO_TIMESTAMP_TZ('{end_datetime.isoformat(timespec='microseconds')}', "
-            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+            f"{where_column} >= TO_TIMESTAMP_TZ('"
+            f"{start_datetime.isoformat(timespec='microseconds')}"
+            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
+            f"{where_column} < TO_TIMESTAMP_TZ('"
+            f"{end_datetime.isoformat(timespec='microseconds')}"
+            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
         )
 
     sql = (
