@@ -1,6 +1,7 @@
+import os
 from datetime import timedelta
 
-from dagster import asset
+from dagster import HourlyPartitionsDefinition, asset
 from sqlalchemy import literal_column, select, table, text
 
 
@@ -102,25 +103,99 @@ def table_asset_factory(
     return ps_table
 
 
-# file_manager_key = context.solid_handle.path[0]
-# # organize partitions under table folder
-# re_match = re.match(r"([\w_]+)_(R\d+)", file_manager_key)
-# if re_match:
-#     table_name, resync_partition = re_match.groups()
-#     file_manager_key = f"{table_name}/{resync_partition}"
-# ...
-# if data:
-#     file_handles = []
-#     for i, fp in enumerate(data):
-#         if sql.whereclause.text == "":
-#             file_stem = f"{file_manager_key}_R{i}"
-#         else:
-#             file_stem = fp.stem
-#         with fp.open(mode="rb") as f:
-#             file_handle = context.resources.file_manager.write(
-#                 file_obj=f,
-#                 key=f"{file_manager_key}/{file_stem}",
-#                 ext=fp.suffix[1:],
-#             )
-#         context.log.info(f"Saved to {file_handle.path_desc}")
-#         file_handles.append(file_handle)
+hourly_partition = HourlyPartitionsDefinition(
+    start_date="2002-07-01T00:00:00.000000-0400",
+    timezone=os.getenv("LOCAL_TIME_ZONE"),
+    fmt="%Y-%m-%dT%H:%M:%S.%f%z",
+)
+
+core_ps_db_assets = []
+
+# not partitionable
+for table_name in [
+    "attendance_conversion_items",
+    "gen",
+    "test",
+    "testscore",
+    "attendance_code",
+    "bell_schedule",
+    "cycle_day",
+    "fte",
+    "period",
+    "reenrollments",
+    "calendar_day",
+    "spenrollments",
+]:
+    core_ps_db_assets.append(table_asset_factory(table_name=table_name))
+
+# table-specific partition
+core_ps_db_assets.append(
+    table_asset_factory(
+        table_name="log",
+        where={"column": "entry_date"},
+        partitions_def=hourly_partition,
+    )
+)
+
+# transaction_date
+for table_name in [
+    "attendance",
+    "cc",
+    "courses",
+    "pgfinalgrades",
+    "prefs",
+    "schools",
+    "sections",
+    "storedgrades",
+    "students",
+    "termbins",
+    "terms",
+]:
+    core_ps_db_assets.append(
+        table_asset_factory(
+            table_name=table_name,
+            where={"column": "transaction_date"},
+            partitions_def=hourly_partition,
+        )
+    )
+
+# whenmodified
+for table_name in [
+    "assignmentcategoryassoc",
+    "assignmentscore",
+    "assignmentsection",
+    "codeset",
+    "districtteachercategory",
+    "emailaddress",
+    "gradecalcformulaweight",
+    "gradecalcschoolassoc",
+    "gradecalculationtype",
+    "gradeformulaset",
+    "gradescaleitem",
+    "gradeschoolconfig",
+    "gradeschoolformulaassoc",
+    "gradesectionconfig",
+    "originalcontactmap",
+    "person",
+    "personaddress",
+    "personaddressassoc",
+    "personemailaddressassoc",
+    "personphonenumberassoc",
+    "phonenumber",
+    "roledef",
+    "schoolstaff",
+    "sectionteacher",
+    "studentcontactassoc",
+    "studentcontactdetail",
+    "studentcorefields",
+    "studentrace",
+    "teachercategory",
+    "users",
+]:
+    core_ps_db_assets.append(
+        table_asset_factory(
+            table_name=table_name,
+            where={"column": "whenmodified"},
+            partitions_def=hourly_partition,
+        )
+    )
