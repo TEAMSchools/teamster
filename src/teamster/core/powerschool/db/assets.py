@@ -64,11 +64,12 @@ def table_asset_factory(
     columns=["*"],
     where={},
     partition_size=100000,
-    output_fmt="file",
+    output_fmt="dict",
 ):
     @asset(
         name=table_name,
         partitions_def=partitions_def,
+        key_prefix=group_name,
         group_name=group_name,
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
@@ -97,7 +98,6 @@ def table_asset_factory(
         ssh_tunnel.stop()
 
         return data
-        # TODO: handle output via custom IO mgr, upload list of files to GCS
 
     return ps_table
 
