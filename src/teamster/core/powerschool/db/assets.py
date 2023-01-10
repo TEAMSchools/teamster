@@ -3,9 +3,6 @@ from datetime import datetime, timedelta
 from dagster import asset
 from sqlalchemy import literal_column, select, table, text
 
-# from teamster.core.utils.functions import get_last_schedule_run
-# from teamster.core.utils.variables import TODAY
-
 
 def construct_sql(context, table_name, columns, where):
     if not where:
@@ -13,12 +10,11 @@ def construct_sql(context, table_name, columns, where):
     elif isinstance(where, str):
         constructed_sql_where = where
     elif context.has_partition_key:
+        where_column = where["column"]
         partition_key = context.asset_partition_key_for_output()
-
         start_datetime = datetime.strptime(partition_key, "%Y-%m-%dT%H:%M:%S.%f%z")
         end_datetime = start_datetime + timedelta(hours=1)
 
-        where_column = where["column"]
         constructed_sql_where = (
             f"{where_column} >= TO_TIMESTAMP_TZ('"
             f"{start_datetime.isoformat(timespec='microseconds')}"
@@ -28,24 +24,14 @@ def construct_sql(context, table_name, columns, where):
             "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
         )
 
-    sql = (
+    return (
         select(*[literal_column(col) for col in columns])
         .select_from(table(table_name))
         .where(text(constructed_sql_where))
     )
 
-    return sql
-
 
 def count(context, sql):
-    # # format where clause
-    # sql.whereclause.text = sql.whereclause.text.format(
-    #     today=TODAY.isoformat(timespec="microseconds"),
-    #     last_run=(get_last_schedule_run(context) or TODAY).isoformat(
-    #         timespec="microseconds"
-    #     ),
-    # )
-
     if sql.whereclause.text == "":
         return 1
     else:
@@ -64,11 +50,12 @@ def count(context, sql):
 
 
 def extract(context, sql, partition_size, output_fmt):
-    return context.resources.ps_db.execute_query(
+    data = context.resources.ps_db.execute_query(
         query=sql,
         partition_size=partition_size,
         output_fmt=output_fmt,
     )
+    return data
 
 
 def table_asset_factory(
