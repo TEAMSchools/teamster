@@ -5,7 +5,7 @@ from teamster.core.powerschool.db.assets import table_asset_factory
 academic_year_partition = TimeWindowPartitionsDefinition(
     fmt="%Y-%m-%dT%H:%M:%S.%f%z",
     timezone="US/Eastern",
-    start="2002-07-01T00:00:00.000000-04:00",
+    start="2002-07-01T00:00:00.000000-0400",
     cron_schedule="0 0 1 7 *",
 )
 
