@@ -860,9 +860,9 @@ tabulate==0.9.0 \
 tomli==2.0.1 \
     --hash=sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc \
     --hash=sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f
-toposort==1.7 \
-    --hash=sha256:8ed8e109e96ae30bf66da2d2155e4eb9989d9c5c743c837e37d9774a4eddd804 \
-    --hash=sha256:ddc2182c42912a440511bd7ff5d3e6a1cabc3accbc674a3258c8c41cbfbb2125
+toposort==1.8 \
+    --hash=sha256:b1e89996c43daaf0e03805d33df22333c99c9d36715b188dea0e551ce2f1cd81 \
+    --hash=sha256:c87fd1a8d70b2ca8c928eaf90a538307171fed89e1dcfcdbf7cf6599dfc3208a
 tqdm==4.64.1 \
     --hash=sha256:5f4f682a004951c1b450bc753c710e9280c5746ce6ffedee253ddbcbf54cf1e4 \
     --hash=sha256:6fee160d6ffcd1b1c68c65f14c829c22832bc401726335ce92c52d395944a6a1
