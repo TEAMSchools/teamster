@@ -9,9 +9,10 @@ def construct_sql(context, table_name, columns, where):
     elif isinstance(where, str):
         constructed_sql_where = where
     elif context.has_partition_key:
+        context.log.debug(context.asset_partitions_def_for_output())
         where_column = where["column"]
         start_datetime = context.partition_time_window.start
-        end_datetime = start_datetime + relativedelta(years=1)
+        end_datetime = start_datetime + relativedelta(hou=1)
 
         constructed_sql_where = (
             f"{where_column} >= TO_TIMESTAMP_TZ('"
