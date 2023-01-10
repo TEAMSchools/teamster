@@ -9,7 +9,9 @@ from teamster.kippnewark.powerschool.db import assets as local_ps_db_assets
 defs = Definitions(
     # assets=core_ps_db_assets + local_ps_db_assets,
     assets=load_assets_from_modules(
-        modules=[core_ps_db_assets, local_ps_db_assets], group_name="powerschool"
+        modules=[core_ps_db_assets, local_ps_db_assets],
+        group_name="powerschool",
+        key_prefix="powerschool",
     ),
     resources={
         "ps_db": oracle.configured(
