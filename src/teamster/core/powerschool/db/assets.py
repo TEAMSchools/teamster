@@ -10,6 +10,10 @@ def construct_sql(context, table_name, columns, where):
     elif isinstance(where, str):
         constructed_sql_where = where
     elif context.has_partition_key:
+        context.log.debug(context.asset_partition_key_range)
+        context.log.debug(context.partition_key)
+        context.log.debug(context.partition_time_window)
+
         where_column = where["column"]
         partition_key = context.asset_partition_key_for_output()
         start_datetime = datetime.strptime(partition_key, "%Y-%m-%dT%H:%M:%S.%f%z")
@@ -35,7 +39,7 @@ def count(context, sql):
     if sql.whereclause.text == "":
         return 1
     else:
-        [(count,)] = context.resources.ps_db.execute_query(
+        data = context.resources.ps_db.execute_query(
             query=text(
                 (
                     "SELECT COUNT(*) "
@@ -46,6 +50,8 @@ def count(context, sql):
             partition_size=1,
             output_fmt=None,
         )
+        context.log.debug(data)
+        count = data[0][0]
         return count
 
 
@@ -84,6 +90,7 @@ def table_asset_factory(
         ssh_tunnel.start()
 
         row_count = count(context=context, sql=sql)
+        context.log.debug(row_count)
         if row_count > 0:
             data = extract(
                 context=context,
