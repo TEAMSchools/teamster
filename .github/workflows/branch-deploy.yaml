@@ -3,7 +3,7 @@ name: Hybrid Branch Deployment
 on:
   pull_request:
     branches:
-      - kipp*
+      - main
     types:
       - opened
       - synchronize
