@@ -71,7 +71,7 @@ def table_asset_factory(
         name=table_name,
         partitions_def=partitions_def,
         key_prefix=group_name,
-        group_name=group_name,
+        # group_name=group_name,
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
@@ -109,7 +109,7 @@ hourly_partition = HourlyPartitionsDefinition(
     fmt="%Y-%m-%dT%H:%M:%S.%f%z",
 )
 
-core_ps_db_assets = []
+# core_ps_db_assets = []
 
 # not partitionable
 for table_name in [
@@ -126,16 +126,15 @@ for table_name in [
     "calendar_day",
     "spenrollments",
 ]:
-    core_ps_db_assets.append(table_asset_factory(table_name=table_name))
+    table_asset_factory(table_name=table_name)
 
 # table-specific partition
-core_ps_db_assets.append(
-    table_asset_factory(
-        table_name="log",
-        where={"column": "entry_date"},
-        partitions_def=hourly_partition,
-    )
+table_asset_factory(
+    table_name="log",
+    where={"column": "entry_date"},
+    partitions_def=hourly_partition,
 )
+
 
 # transaction_date
 for table_name in [
@@ -151,13 +150,12 @@ for table_name in [
     "termbins",
     "terms",
 ]:
-    core_ps_db_assets.append(
-        table_asset_factory(
-            table_name=table_name,
-            where={"column": "transaction_date"},
-            partitions_def=hourly_partition,
-        )
+    table_asset_factory(
+        table_name=table_name,
+        where={"column": "transaction_date"},
+        partitions_def=hourly_partition,
     )
+
 
 # whenmodified
 for table_name in [
@@ -192,10 +190,8 @@ for table_name in [
     "teachercategory",
     "users",
 ]:
-    core_ps_db_assets.append(
-        table_asset_factory(
-            table_name=table_name,
-            where={"column": "whenmodified"},
-            partitions_def=hourly_partition,
-        )
+    table_asset_factory(
+        table_name=table_name,
+        where={"column": "whenmodified"},
+        partitions_def=hourly_partition,
     )
