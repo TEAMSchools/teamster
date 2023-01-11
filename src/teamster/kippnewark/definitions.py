@@ -14,7 +14,7 @@ ps_db_assets = load_assets_from_modules(
 )
 
 datagun_assets = load_assets_from_modules(
-    modules=[local_datagun_assets], group_name="datagun", key_prefix="datagun"
+    modules=[local_datagun_assets], group_name="datagun"
 )
 
 defs = Definitions(
