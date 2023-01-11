@@ -102,10 +102,11 @@ def load_gsheet(context, data, file_stem):
 
 
 def sftp_extract_asset_factory(
-    asset_name, query_config, file_config, destination_config
+    asset_name, key_prefix, query_config, file_config, destination_config
 ):
     @asset(
         name=asset_name,
+        key_prefix=key_prefix,
         required_resource_keys={"warehouse", f"sftp_{destination_config['name']}"},
     )
     def sftp_extract(context):
