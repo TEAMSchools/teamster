@@ -2,6 +2,7 @@ from teamster.core.datagun.assets import sftp_extract_asset_factory
 
 students_accessaccounts = sftp_extract_asset_factory(
     asset_name="students_accessaccounts",
+    key_prefix="powerschool",
     query_config={
         "query_type": "schema",
         "query_value": {
