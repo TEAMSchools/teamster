@@ -3,114 +3,63 @@ import json
 import pathlib
 
 import pandas as pd
+from dagster import asset
+from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.classes import CustomJSONEncoder
-from teamster.core.utils.functions import get_last_schedule_run
 from teamster.core.utils.variables import NOW, TODAY
 
 
-# @op(
-#     config_schema={"sql": Any, "partition_size": Int, "output_fmt": String},
-#     out={"data": Out(dagster_type=List[Dict], is_required=False)},
-#     required_resource_keys={"db"},
-#     tags={"dagster/priority": 1},
-# )
-def extract(context):
-    sql = context.op_config["sql"]
-
-    # format where clause
-    if hasattr(sql, "whereclause"):
-        sql.whereclause.text = sql.whereclause.text.format(
-            today=TODAY.isoformat(),
-            last_run=get_last_schedule_run(context) or TODAY.isoformat(),
+def construct_sql(context, query_type, query_value):
+    if query_type == "text":
+        return text(query_value)
+    elif query_type == "file":
+        sql_file = pathlib.Path(query_value).absolute()
+        with sql_file.open(mode="r") as f:
+            return text(f.read())
+    elif query_type == "schema":
+        return (
+            select(*[literal_column(col) for col in query_value["select"]])
+            .select_from(table(**query_value["table"]))
+            .where(text(query_value.get("where", "")))
         )
 
-    data = context.resources.db.execute_query(
-        query=sql,
-        partition_size=context.op_config["partition_size"],
-        output_fmt=context.op_config["output_fmt"],
+
+def extract(context, sql, partition_size):
+    if hasattr(sql, "whereclause"):
+        sql.whereclause.text = sql.whereclause.text.format(today=TODAY.isoformat())
+
+    return context.resources.db.execute_query(
+        query=sql, partition_size=partition_size, output_fmt="dict"
     )
 
-    if data:
-        return data
 
-
-# @op(
-#     config_schema={
-#         "destination_type": String,
-#         "destination_name": String,
-#         "file": Permissive(),
-#     },
-#     ins={"data": In(dagster_type=List[Dict])},
-#     out={
-#         "file_handle": Out(dagster_type=Any, is_required=False),
-#         "df_dict": Out(dagster_type=Any, is_required=False),
-#     },
-#     required_resource_keys={"file_manager"},
-#     tags={"dagster/priority": 2},
-# )
-def transform(context, data):
-    file_config = context.op_config["file"]
-    destination_type = context.op_config["destination_type"]
-    destination_name = context.op_config["destination_name"]
-
-    file_suffix = file_config["suffix"]
-    file_encoding = file_config["encoding"]
-    file_stem = file_config["stem"].format(
-        today=TODAY.date().isoformat(),
-        now=str(NOW.timestamp()).replace(".", "_"),
-        last_run=get_last_schedule_run(context=context) or TODAY.date().isoformat(),
-    )
-
-    if destination_type == "gsheet":
-        context.log.info("Transforming data to DataFrame")
+def transform(context, data, file_suffix, file_encoding=None, file_format=None):
+    context.log.info(f"Transforming data to {file_suffix}")
+    if file_suffix == "gsheet":
         df = pd.DataFrame(data=data)
+
         df_json = df.to_json(orient="split", date_format="iso", index=False)
 
         df_dict = json.loads(df_json)
         df_dict["shape"] = df.shape
 
         return df_dict
-    elif destination_type == "sftp":
-        context.log.info(f"Transforming data to {file_suffix}")
-
-        if file_suffix == "json":
-            data_bytes = json.dumps(obj=data, cls=CustomJSONEncoder).encode(
-                file_encoding
-            )
-        elif file_suffix == "json.gz":
-            data_bytes = gzip.compress(
-                json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
-            )
-        elif file_suffix in ["csv", "txt", "tsv"]:
-            df = pd.DataFrame(data=data)
-            data_bytes = df.to_csv(
-                index=False, encoding=file_encoding, **file_config["format"]
-            ).encode(file_encoding)
-
-        file_handle = context.resources.file_manager.write_data(
-            data=data_bytes,
-            key=f"{destination_name}/{file_stem}",
-            ext=file_suffix,
+    elif file_suffix == "json":
+        return json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
+    elif file_suffix == "json.gz":
+        return gzip.compress(
+            json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
-        context.log.info(f"Saved to {file_handle.path_desc}.")
+    elif file_suffix in ["csv", "txt", "tsv"]:
+        df = pd.DataFrame(data=data)
+        return df.to_csv(index=False, encoding=file_encoding, **file_format).encode(
+            file_encoding
+        )
 
-        if destination_type == "sftp":
-            return file_handle
 
-
-# @op(
-#     config_schema={"destination_path": String},
-#     ins={"file_handle": In(dagster_type=Any)},
-#     tags={"dagster/priority": 3},
-#     required_resource_keys={"sftp", "file_manager"},
-# )
-def load_sftp(context, file_handle):
-    destination_path = context.op_config["destination_path"]
+def load_sftp(context, data, file_name, destination_path):
     sftp_conn = context.resources.sftp.get_connection()
-
-    file_name = pathlib.Path(file_handle.gcs_key).name
-
     with sftp_conn.open_sftp() as sftp:
         sftp.chdir(".")
 
@@ -138,34 +87,74 @@ def load_sftp(context, file_handle):
         if destination_path:
             sftp.chdir(str(destination_filepath.parent))
 
-        context.log.info(
-            (
-                "Starting to transfer file from "
-                f"{file_handle.path_desc} to {destination_filepath}"
-            )
-        )
-
+        context.log.info("Saving file to {destination_filepath}")
         with sftp.file(file_name, "w") as f:
-            f.write(
-                context.resources.file_manager.download_as_bytes(
-                    file_handle=file_handle
-                )
-            )
+            f.write(data)
 
 
-# @op(
-#     ins={"df_dict": In(dagster_type=Any)},
-#     tags={"dagster/priority": 3},
-#     required_resource_keys={"gsheet"},
-# )
-def load_gsheet(context, df_dict):
-    file_stem = context.op_config["file_stem"].format(
-        now=str(NOW.timestamp()).replace(".", "_")
-    )
-
+def load_gsheet(context, data, file_stem):
     if file_stem[0].isnumeric():
         file_stem = "GS" + file_stem
 
     context.resources.gsheet.update_named_range(
-        data=df_dict, spreadsheet_name=file_stem, range_name=file_stem
+        data=data, spreadsheet_name=file_stem, range_name=file_stem
     )
+
+
+@asset(required_resource_keys={"warehouse", "sftp"})
+def sftp_extract(context, query_config, file_config, destination_path=""):
+    file_suffix = file_config["suffix"]
+    file_stem = file_config["stem"].format(
+        today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
+    )
+    file_name = f"{file_stem}.{file_suffix}"
+
+    sql = construct_sql(
+        context=context,
+        query_type=query_config["query_type"],
+        query_value=query_config["query_value"],
+    )
+
+    extract_data = extract(
+        context=context, sql=sql, partition_size=query_config["partition_size"]
+    )
+
+    if extract_data:
+        transformed_data = transform(
+            context=context,
+            data=extract_data,
+            file_suffix=file_suffix,
+            file_encoding=file_config.get("encoding", "utf-8"),
+            file_format=file_config.get("format", {}),
+        )
+
+        load_sftp(
+            context=context,
+            data=transformed_data,
+            file_name=file_name,
+            destination_path=destination_path,
+        )
+
+
+@asset(required_resource_keys={"warehouse", "gsheet"})
+def gsheet_extract(context, query_config, file_config):
+    file_stem = file_config["stem"].format(
+        today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
+    )
+
+    sql = construct_sql(
+        context=context,
+        query_type=query_config["query_type"],
+        query_value=query_config["query_value"],
+    )
+
+    extract_data = extract(
+        context=context, sql=sql, partition_size=query_config["partition_size"]
+    )
+
+    if extract_data:
+        transformed_data = transform(
+            context=context, data=extract_data, file_suffix="gsheet"
+        )
+
+        load_gsheet(context=context, data=transformed_data, file_stem=file_stem)
