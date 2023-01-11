@@ -58,17 +58,9 @@ def extract(context, sql, partition_size, output_fmt):
     return data
 
 
-def table_asset_factory(
-    table_name,
-    partitions_def=None,
-    group_name="powerschool",
-    columns=["*"],
-    where={},
-    partition_size=100000,
-    output_fmt="dict",
-):
+def table_asset_factory(asset_name, partitions_def=None, columns=["*"], where={}):
     @asset(
-        name=table_name,
+        name=asset_name,
         partitions_def=partitions_def,
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
@@ -87,8 +79,8 @@ def table_asset_factory(
             data = extract(
                 context=context,
                 sql=sql,
-                partition_size=partition_size,
-                output_fmt=output_fmt,
+                partition_size=100000,
+                output_fmt="dict",
             )
         else:
             data = None
@@ -124,12 +116,12 @@ for table_name in [
     "calendar_day",
     "spenrollments",
 ]:
-    core_ps_db_assets.append(table_asset_factory(table_name=table_name))
+    core_ps_db_assets.append(table_asset_factory(asset_name=table_name))
 
 # table-specific partition
 core_ps_db_assets.append(
     table_asset_factory(
-        table_name="log",
+        asset_name="log",
         where={"column": "entry_date"},
         partitions_def=hourly_partition,
     )
@@ -151,7 +143,7 @@ for table_name in [
 ]:
     core_ps_db_assets.append(
         table_asset_factory(
-            table_name=table_name,
+            asset_name=table_name,
             where={"column": "transaction_date"},
             partitions_def=hourly_partition,
         )
@@ -192,7 +184,7 @@ for table_name in [
 ]:
     core_ps_db_assets.append(
         table_asset_factory(
-            table_name=table_name,
+            asset_name=table_name,
             where={"column": "whenmodified"},
             partitions_def=hourly_partition,
         )

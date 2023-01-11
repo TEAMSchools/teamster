@@ -87,7 +87,7 @@ def load_sftp(context, data, file_name, destination_path):
         if destination_path:
             sftp.chdir(str(destination_filepath.parent))
 
-        context.log.info("Saving file to {destination_filepath}")
+        context.log.info(f"Saving file to {destination_filepath}")
         with sftp.file(file_name, "w") as f:
             f.write(data)
 
@@ -101,39 +101,47 @@ def load_gsheet(context, data, file_stem):
     )
 
 
-@asset(required_resource_keys={"warehouse", "sftp"})
-def sftp_extract(context, query_config, file_config, destination_path=""):
-    file_suffix = file_config["suffix"]
-    file_stem = file_config["stem"].format(
-        today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
+def sftp_extract_asset_factory(
+    asset_name, query_config, file_config, destination_config
+):
+    @asset(
+        name=asset_name,
+        required_resource_keys={"warehouse", f"sftp_{destination_config['name']}"},
     )
-    file_name = f"{file_stem}.{file_suffix}"
+    def sftp_extract(context):
+        file_suffix = file_config["suffix"]
+        file_stem = file_config["stem"].format(
+            today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
+        )
+        file_name = f"{file_stem}.{file_suffix}"
 
-    sql = construct_sql(
-        context=context,
-        query_type=query_config["query_type"],
-        query_value=query_config["query_value"],
-    )
-
-    extract_data = extract(
-        context=context, sql=sql, partition_size=query_config["partition_size"]
-    )
-
-    if extract_data:
-        transformed_data = transform(
+        sql = construct_sql(
             context=context,
-            data=extract_data,
-            file_suffix=file_suffix,
-            file_encoding=file_config.get("encoding", "utf-8"),
-            file_format=file_config.get("format", {}),
+            query_type=query_config["query_type"],
+            query_value=query_config["query_value"],
         )
 
-        load_sftp(
-            context=context,
-            data=transformed_data,
-            file_name=file_name,
-            destination_path=destination_path,
+        extract_data = extract(
+            context=context, sql=sql, partition_size=query_config["partition_size"]
         )
+
+        if extract_data:
+            transformed_data = transform(
+                context=context,
+                data=extract_data,
+                file_suffix=file_suffix,
+                file_encoding=file_config.get("encoding", "utf-8"),
+                file_format=file_config.get("format", {}),
+            )
+
+            load_sftp(
+                context=context,
+                data=transformed_data,
+                file_name=file_name,
+                destination_path=destination_config.get("path"),
+            )
+
+    return sftp_extract
 
 
 @asset(required_resource_keys={"warehouse", "gsheet"})
