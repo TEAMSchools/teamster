@@ -18,12 +18,10 @@ def construct_sql(context, query_type, query_value):
         with sql_file.open(mode="r") as f:
             return text(f.read())
     elif query_type == "schema":
-        query_select = query_value.get("select", "*")
-        query_where = query_value.get("where", "")
         return (
-            select(*[literal_column(col) for col in query_select])
+            select(*[literal_column(col) for col in query_value.get("select", "*")])
             .select_from(table(**query_value["table"]))
-            .where(text(query_where))
+            .where(text(query_value.get("where", "")))
         )
 
 
@@ -125,7 +123,9 @@ def sftp_extract_asset_factory(
         )
 
         extract_data = extract(
-            context=context, sql=sql, partition_size=query_config["partition_size"]
+            context=context,
+            sql=sql,
+            partition_size=query_config.get("partition_size", 100000),
         )
 
         if extract_data:
@@ -160,7 +160,9 @@ def gsheet_extract(context, query_config, file_config):
     )
 
     extract_data = extract(
-        context=context, sql=sql, partition_size=query_config["partition_size"]
+        context=context,
+        sql=sql,
+        partition_size=query_config.get("partition_size", 100000),
     )
 
     if extract_data:
