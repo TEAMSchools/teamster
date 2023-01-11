@@ -14,7 +14,7 @@ for table_name in [
 ]:
     local_ps_db_assets.append(
         table_asset_factory(
-            table_name=table_name,
+            asset_name=table_name,
             where={"column": "whenmodified"},
             partitions_def=hourly_partition,
         )
