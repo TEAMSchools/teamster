@@ -18,10 +18,12 @@ def construct_sql(context, query_type, query_value):
         with sql_file.open(mode="r") as f:
             return text(f.read())
     elif query_type == "schema":
+        query_select = query_value.get("select", "*")
+        query_where = query_value.get("where", "")
         return (
-            select(*[literal_column(col) for col in query_value["select"]])
+            select(*[literal_column(col) for col in query_select])
             .select_from(table(**query_value["table"]))
-            .where(text(query_value.get("where", "")))
+            .where(text(query_where))
         )
 
 
