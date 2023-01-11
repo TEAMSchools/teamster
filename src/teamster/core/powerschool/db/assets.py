@@ -70,8 +70,6 @@ def table_asset_factory(
     @asset(
         name=table_name,
         partitions_def=partitions_def,
-        # key_prefix=group_name,
-        # group_name=group_name,
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )

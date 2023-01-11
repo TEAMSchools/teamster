@@ -28,7 +28,7 @@ class SqlAlchemyEngine(object):
     def execute_query(self, query, partition_size, output_fmt, connect_kwargs={}):
         self.log.debug("Opening connection to engine")
         with self.engine.connect(**connect_kwargs) as conn:
-            self.log.debug(f"Executing query:\n{query}")
+            self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
 
             if output_fmt in ["dict", "json", "file"]:
@@ -66,7 +66,7 @@ class SqlAlchemyEngine(object):
 
                     output_obj.append(tmp_file_path)
 
-                self.log.debug(f"Retrieved {len_data} rows.")
+                self.log.info(f"Retrieved {len_data} rows")
             else:
                 self.log.debug("Retrieving rows from all partitions")
                 pt_rows = [rows for pt in partitions for rows in pt]
@@ -79,7 +79,7 @@ class SqlAlchemyEngine(object):
                 output_obj = [row for row in pt_rows]
             del pt_rows
 
-            self.log.debug(f"Retrieved {len(output_obj)} rows.")
+            self.log.info(f"Retrieved {len(output_obj)} rows")
 
         if output_fmt == "json":
             return json.dumps(obj=output_obj, cls=CustomJSONEncoder)
