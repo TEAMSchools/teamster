@@ -19,7 +19,7 @@ def construct_sql(context, query_type, query_value):
             return text(f.read())
     elif query_type == "schema":
         return (
-            select(*[literal_column(col) for col in query_value.get("select", "*")])
+            select(*[literal_column(col) for col in query_value.get("select", ["*"])])
             .select_from(table(**query_value["table"]))
             .where(text(query_value.get("where", "")))
         )
