@@ -29,7 +29,7 @@ def extract(context, sql, partition_size):
     if hasattr(sql, "whereclause"):
         sql.whereclause.text = sql.whereclause.text.format(today=TODAY.isoformat())
 
-    return context.resources.db.execute_query(
+    return context.resources.warehouse.execute_query(
         query=sql, partition_size=partition_size, output_fmt="dict"
     )
 
@@ -58,8 +58,14 @@ def transform(context, data, file_suffix, file_encoding=None, file_format=None):
         )
 
 
-def load_sftp(context, data, file_name, destination_path):
-    sftp_conn = context.resources.sftp.get_connection()
+def load_sftp(context, data, file_name, destination_config):
+    destination_name = destination_config.get("name")
+    destination_path = destination_config.get("path")
+
+    if destination_name == "pythonanywhere":
+        sftp = context.resources.sftp_pythonanywhere
+
+    sftp_conn = sftp.get_connection()
     with sftp_conn.open_sftp() as sftp:
         sftp.chdir(".")
 
@@ -141,7 +147,7 @@ def sftp_extract_asset_factory(
                 context=context,
                 data=transformed_data,
                 file_name=file_name,
-                destination_path=destination_config.get("path"),
+                destination_config=destination_config,
             )
 
     return sftp_extract
