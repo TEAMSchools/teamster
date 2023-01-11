@@ -153,27 +153,34 @@ def sftp_extract_asset_factory(
     return sftp_extract
 
 
-@asset(required_resource_keys={"warehouse", "gsheet"})
-def gsheet_extract(context, query_config, file_config):
-    file_stem = file_config["stem"].format(
-        today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
+def gsheet_extract_asset_factory(asset_name, key_prefix, query_config, file_config):
+    @asset(
+        name=asset_name,
+        key_prefix=key_prefix,
+        required_resource_keys={"warehouse", "gsheet"},
     )
-
-    sql = construct_sql(
-        context=context,
-        query_type=query_config["query_type"],
-        query_value=query_config["query_value"],
-    )
-
-    extract_data = extract(
-        context=context,
-        sql=sql,
-        partition_size=query_config.get("partition_size", 100000),
-    )
-
-    if extract_data:
-        transformed_data = transform(
-            context=context, data=extract_data, file_suffix="gsheet"
+    def gsheet_extract(context):
+        file_stem = file_config["stem"].format(
+            today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
         )
 
-        load_gsheet(context=context, data=transformed_data, file_stem=file_stem)
+        sql = construct_sql(
+            context=context,
+            query_type=query_config["query_type"],
+            query_value=query_config["query_value"],
+        )
+
+        extract_data = extract(
+            context=context,
+            sql=sql,
+            partition_size=query_config.get("partition_size", 100000),
+        )
+
+        if extract_data:
+            transformed_data = transform(
+                context=context, data=extract_data, file_suffix="gsheet"
+            )
+
+            load_gsheet(context=context, data=transformed_data, file_stem=file_stem)
+
+    return gsheet_extract
