@@ -1,0 +1,109 @@
+assets:
+  - asset_name: next_year_status
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_next_year_status
+          schema: extracts
+    file_config:
+      stem: gsheets_next_year_status
+  - asset_name: dlm_roster
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_dlm_roster
+          schema: extracts
+    file_config:
+      stem: gsheets_dlm_roster
+  - asset_name: ar_reading_log
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_ar_reading_log
+          schema: extracts
+    file_config:
+      stem: gsheets_ar_reading_log
+  - asset_name: staff_roster
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_staff_roster
+          schema: extracts
+    file_config:
+      stem: gsheets_staff_roster
+  - asset_name: student_roster
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_student_roster
+          schema: extracts
+    file_config:
+      stem: gsheets_student_roster
+  - asset_name: student_contact_info
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_student_contact_info
+          schema: extracts
+    file_config:
+      stem: gsheets_student_contact_info
+  - asset_name: survey_completion
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_survey_completion
+          schema: extracts
+    file_config:
+      stem: gsheets_survey_completion
+  - asset_name: student_logins
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_student_logins
+          schema: extracts
+    file_config:
+      stem: gsheets_student_logins
+  - asset_name: ktc_undermatch_analyis
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_ktc_undermatch_analyis
+          schema: extracts
+    file_config:
+      stem: gsheets_ktc_undermatch_analyis
+  - asset_name: pm_assignment_roster
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_pm_assignment_roster
+          schema: extracts
+    file_config:
+      stem: gsheets_pm_assignment_roster
+  - asset_name: kfwd_contacts
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_kfwd_contacts
+          schema: extracts
+    file_config:
+      stem: gsheets_kfwd_contacts
+  - asset_name: battleboard
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_battleboard
+          schema: extracts
+    file_config:
+      stem: gsheets_battleboard
