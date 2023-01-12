@@ -15,18 +15,13 @@ from teamster.core.resources.ssh import ssh_resource
 from teamster.kippcamden.datagun import assets as local_datagun_assets
 from teamster.kippcamden.datagun import jobs as local_datagun_jobs
 from teamster.kippcamden.datagun import schedules as local_datagun_schedules
-from teamster.kippcamden.powerschool.db.assets import (
-    core_ps_db_assets,
-    local_ps_db_assets,
-)
+from teamster.kippnewark.powerschool.db import assets as ps_db_assets
 
 defs = Definitions(
     executor=k8s_job_executor,
     assets=(
         load_assets_from_modules(
-            modules=[core_ps_db_assets, local_ps_db_assets],
-            group_name="powerschool",
-            key_prefix="powerschool",
+            modules=[ps_db_assets], group_name="powerschool", key_prefix="powerschool"
         )
         + load_assets_from_modules(modules=[local_datagun_assets], group_name="datagun")
     ),
