@@ -63,31 +63,31 @@ def load_sftp(context, data, file_name, destination_config):
     destination_path = destination_config.get("path")
 
     context.log.debug(context.resources)
-
-    if destination_name == "pythonanywhere":
-        sftp = context.resources.sftp_pythonanywhere
-    elif destination_name == "nps":
-        sftp = context.resources.sftp_nps
-    elif destination_name == "blissbook":
-        sftp = context.resources.sftp_blissbook
-    elif destination_name == "clever":
-        sftp = context.resources.sftp_clever
-    elif destination_name == "coupa":
-        sftp = context.resources.sftp_coupa
-    elif destination_name == "deanslist":
-        sftp = context.resources.sftp_deanslist
-    elif destination_name == "egencia":
-        sftp = context.resources.sftp_egencia
-    elif destination_name == "illuminate":
-        sftp = context.resources.sftp_illuminate
-    elif destination_name == "kipptaf":
-        sftp = context.resources.sftp_kipptaf
-    elif destination_name == "littlesis":
-        sftp = context.resources.sftp_littlesis
-    elif destination_name == "razkids":
-        sftp = context.resources.sftp_razkids
-    elif destination_name == "read180":
-        sftp = context.resources.sftp_read180
+    sftp = getattr(context.resources, f"sftp_{destination_name}")
+    # if destination_name == "pythonanywhere":
+    #     sftp = context.resources.sftp_pythonanywhere
+    # elif destination_name == "nps":
+    #     sftp = context.resources.sftp_nps
+    # elif destination_name == "blissbook":
+    #     sftp = context.resources.sftp_blissbook
+    # elif destination_name == "clever":
+    #     sftp = context.resources.sftp_clever
+    # elif destination_name == "coupa":
+    #     sftp = context.resources.sftp_coupa
+    # elif destination_name == "deanslist":
+    #     sftp = context.resources.sftp_deanslist
+    # elif destination_name == "egencia":
+    #     sftp = context.resources.sftp_egencia
+    # elif destination_name == "illuminate":
+    #     sftp = context.resources.sftp_illuminate
+    # elif destination_name == "kipptaf":
+    #     sftp = context.resources.sftp_kipptaf
+    # elif destination_name == "littlesis":
+    #     sftp = context.resources.sftp_littlesis
+    # elif destination_name == "razkids":
+    #     sftp = context.resources.sftp_razkids
+    # elif destination_name == "read180":
+    #     sftp = context.resources.sftp_read180
 
     sftp_conn = sftp.get_connection()
     with sftp_conn.open_sftp() as sftp:
