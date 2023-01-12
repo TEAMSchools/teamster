@@ -23,7 +23,7 @@ locations:
           - kippcamden
   - location_name: kippmiami
     code_source:
-      python_file: src/teamster/kippmiami/repository.py
+      python_file: src/teamster/kippmiami/definitions.py
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
