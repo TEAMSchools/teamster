@@ -27,7 +27,7 @@
     suffix: txt
     format:
       header: False
-      sep: \t
+      sep: "\t"
   destination_config:
     name: pythonanywhere
     path: sftp/powerschool/kippnewark
@@ -45,7 +45,7 @@
     suffix: txt
     format:
       header: False
-      sep: \t
+      sep: "\t"
   destination_config:
     name: pythonanywhere
     path: sftp/powerschool/kippnewark
@@ -63,7 +63,7 @@
     suffix: txt
     format:
       header: False
-      sep: \t
+      sep: "\t"
   destination_config:
     name: pythonanywhere
     path: sftp/powerschool/kippnewark
