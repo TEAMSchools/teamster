@@ -1,0 +1,14 @@
+assets:
+  - asset_name: littlesis_extract_csv
+    key_prefix: littlesis
+    query_config:
+      type: schema
+      value:
+        table:
+          name: littlesis_enrollments
+          schema: extracts
+    file_config:
+      stem: littlesis_extract
+      suffix: csv
+    destination_config:
+      name: littlesis

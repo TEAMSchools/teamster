@@ -1,20 +1,69 @@
-from dagster import config_from_files
+from teamster.core.datagun.assets import generate_extract_assets
 
-from teamster.core.datagun.assets import (
-    gsheet_extract_asset_factory,
-    sftp_extract_asset_factory,
+adp_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="adp", extract_type="sftp"
 )
 
-sftp_extract_config = config_from_files(
-    ["src/teamster/kipptaf/datagun/config/assets/sftp.yaml"]
+alchemer_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="alchemer", extract_type="sftp"
 )
-sftp_extract_assets = []
-for sec in sftp_extract_config["assets"]:
-    sftp_extract_assets.append(sftp_extract_asset_factory(**sec))
 
-gsheet_extract_config = config_from_files(
-    ["src/teamster/kipptaf/datagun/config/assets/gsheets.yaml"]
+blissbook_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="blissbook", extract_type="sftp"
 )
-gsheet_extract_assets = []
-for gec in gsheet_extract_config["assets"]:
-    gsheet_extract_assets.append(gsheet_extract_asset_factory(**gec))
+
+clever_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="clever", extract_type="sftp"
+)
+
+coupa_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="coupa", extract_type="sftp"
+)
+
+deanslist_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="deanslist", extract_type="sftp"
+)
+
+egencia_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="egencia", extract_type="sftp"
+)
+
+fpodms_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="fpodms", extract_type="sftp"
+)
+
+gam_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="gam", extract_type="sftp"
+)
+
+idauto_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="idauto", extract_type="sftp"
+)
+
+illuminate_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="illuminate", extract_type="sftp"
+)
+
+littlesis_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="littlesis", extract_type="sftp"
+)
+
+njdoe_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="njdoe", extract_type="sftp"
+)
+
+razkids_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="razkids", extract_type="sftp"
+)
+
+read180_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="read180", extract_type="sftp"
+)
+
+whetstone_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="whetstone", extract_type="sftp"
+)
+
+gsheet_extract_assets = generate_extract_assets(
+    code_location="kipptaf", name="gsheets", extract_type="gsheet"
+)

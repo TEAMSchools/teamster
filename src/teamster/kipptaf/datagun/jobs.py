@@ -1,361 +1,106 @@
 from dagster import AssetSelection, define_asset_job
 
-# from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
-# from dagster_k8s import k8s_job_executor
-# from dagster_ssh import ssh_resource
-
-# from teamster.core.datagun.graphs import etl_sftp
-# from teamster.core.resources.google import gcs_file_manager, google_sheets
-# from teamster.core.resources.sqlalchemy import mssql
-# from teamster.kipptaf.datagun.graphs import (
-#     clever,
-#     deanslist,
-#     gam,
-#     gsheets,
-#     illuminate,
-#     razkids,
-#     read180,
-# )
-
-datagun_gsheets_asset_job = define_asset_job(
-    name="datagun_gsheets_asset_job",
-    selection=AssetSelection.groups("datagun")
-    & AssetSelection.keys("gsheets/ar_reading_log"),
+from teamster.kipptaf.datagun.assets import (
+    adp_extract_assets,
+    alchemer_extract_assets,
+    blissbook_extract_assets,
+    clever_extract_assets,
+    coupa_extract_assets,
+    deanslist_extract_assets,
+    egencia_extract_assets,
+    fpodms_extract_assets,
+    gam_extract_assets,
+    gsheet_extract_assets,
+    idauto_extract_assets,
+    illuminate_extract_assets,
+    littlesis_extract_assets,
+    njdoe_extract_assets,
+    razkids_extract_assets,
+    read180_extract_assets,
+    whetstone_extract_assets,
 )
 
+adp_extract_assets_job = define_asset_job(
+    name="adp_extract_assets_job",
+    selection=AssetSelection.assets(*adp_extract_assets),
+)
 
-# datagun_gsheets = gsheets.to_job(
-#     name="datagun_gsheets",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "gsheet": google_sheets,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-gsheets.yaml",
-#         ]
-#     ),
-# )
+alchemer_extract_assets_job = define_asset_job(
+    name="alchemer_extract_assets_job",
+    selection=AssetSelection.assets(*alchemer_extract_assets),
+)
 
-# datagun_clever = clever.to_job(
-#     name="datagun_clever",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-clever.yaml",
-#         ]
-#     ),
-# )
+blissbook_extract_assets_job = define_asset_job(
+    name="blissbook_extract_assets_job",
+    selection=AssetSelection.assets(*blissbook_extract_assets),
+)
 
-# datagun_deanslist = deanslist.to_job(
-#     name="datagun_deanslist",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-deanslist.yaml",
-#         ]
-#     ),
-# )
+clever_extract_assets_job = define_asset_job(
+    name="clever_extract_assets_job",
+    selection=AssetSelection.assets(*clever_extract_assets),
+)
 
-# datagun_gam = gam.to_job(
-#     name="datagun_gam",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-gam.yaml",
-#         ]
-#     ),
-# )
+coupa_extract_assets_job = define_asset_job(
+    name="coupa_extract_assets_job",
+    selection=AssetSelection.assets(*coupa_extract_assets),
+)
 
-# datagun_illuminate = illuminate.to_job(
-#     name="datagun_illuminate",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-illuminate.yaml",
-#         ]
-#     ),
-# )
+deanslist_extract_assets_job = define_asset_job(
+    name="deanslist_extract_assets_job",
+    selection=AssetSelection.assets(*deanslist_extract_assets),
+)
 
-# datagun_razkids = razkids.to_job(
-#     name="datagun_razkids",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-razkids.yaml",
-#         ]
-#     ),
-# )
+egencia_extract_assets_job = define_asset_job(
+    name="egencia_extract_assets_job",
+    selection=AssetSelection.assets(*egencia_extract_assets),
+)
 
-# datagun_read180 = read180.to_job(
-#     name="datagun_read180",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-read180.yaml",
-#         ]
-#     ),
-# )
+fpodms_extract_assets_job = define_asset_job(
+    name="fpodms_extract_assets_job",
+    selection=AssetSelection.assets(*fpodms_extract_assets),
+)
 
-# datagun_adp = etl_sftp.to_job(
-#     name="datagun_adp",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-adp.yaml",
-#         ]
-#     ),
-# )
+gam_extract_assets_job = define_asset_job(
+    name="gam_extract_assets_job",
+    selection=AssetSelection.assets(*gam_extract_assets),
+)
 
-# datagun_alchemer = etl_sftp.to_job(
-#     name="datagun_alchemer",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-alchemer.yaml",
-#         ]
-#     ),
-# )
+idauto_extract_assets_job = define_asset_job(
+    name="idauto_extract_assets_job",
+    selection=AssetSelection.assets(*idauto_extract_assets),
+)
 
-# datagun_blissbook = etl_sftp.to_job(
-#     name="datagun_blissbook",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-blissbook.yaml",
-#         ]
-#     ),
-# )
+illuminate_extract_assets_job = define_asset_job(
+    name="illuminate_extract_assets_job",
+    selection=AssetSelection.assets(*illuminate_extract_assets),
+)
 
-# datagun_coupa = etl_sftp.to_job(
-#     name="datagun_coupa",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-coupa.yaml",
-#         ]
-#     ),
-# )
+littlesis_extract_assets_job = define_asset_job(
+    name="littlesis_extract_assets_job",
+    selection=AssetSelection.assets(*littlesis_extract_assets),
+)
 
-# datagun_egencia = etl_sftp.to_job(
-#     name="datagun_egencia",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-egencia.yaml",
-#         ]
-#     ),
-# )
+njdoe_extract_assets_job = define_asset_job(
+    name="njdoe_extract_assets_job",
+    selection=AssetSelection.assets(*njdoe_extract_assets),
+)
 
-# datagun_fpodms = etl_sftp.to_job(
-#     name="datagun_fpodms",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-fpodms.yaml",
-#         ]
-#     ),
-# )
+razkids_extract_assets_job = define_asset_job(
+    name="razkids_extract_assets_job",
+    selection=AssetSelection.assets(*razkids_extract_assets),
+)
 
-# datagun_idauto = etl_sftp.to_job(
-#     name="datagun_idauto",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-idauto.yaml",
-#         ]
-#     ),
-# )
+read180_extract_assets_job = define_asset_job(
+    name="read180_extract_assets_job",
+    selection=AssetSelection.assets(*read180_extract_assets),
+)
 
-# datagun_littlesis = etl_sftp.to_job(
-#     name="datagun_littlesis",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-littlesis.yaml",
-#         ]
-#     ),
-# )
+whetstone_extract_assets_job = define_asset_job(
+    name="whetstone_extract_assets_job",
+    selection=AssetSelection.assets(*whetstone_extract_assets),
+)
 
-# datagun_njdoe = etl_sftp.to_job(
-#     name="datagun_njdoe",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-njdoe.yaml",
-#         ]
-#     ),
-# )
-
-# datagun_whetstone = etl_sftp.to_job(
-#     name="datagun_whetstone",
-#     executor_def=k8s_job_executor,
-#     resource_defs={
-#         "db": mssql,
-#         "file_manager": gcs_file_manager,
-#         "io_manager": gcs_pickle_io_manager,
-#         "gcs": gcs_resource,
-#         "sftp": ssh_resource,
-#     },
-#     config=config_from_files(
-#         [
-#             "src/teamster/core/resources/config/google.yaml",
-#             "src/teamster/core/datagun/config/resource.yaml",
-#             "src/teamster/kipptaf/datagun/config/query-whetstone.yaml",
-#         ]
-#     ),
-# )
-
-# __all__ = [
-#     "datagun_adp",
-#     "datagun_alchemer",
-#     "datagun_blissbook",
-#     "datagun_coupa",
-#     "datagun_egencia",
-#     "datagun_fpodms",
-#     "datagun_idauto",
-#     "datagun_littlesis",
-#     "datagun_njdoe",
-#     "datagun_whetstone",
-# ]
+gsheet_extract_assets_job = define_asset_job(
+    name="gsheet_extract_assets_job",
+    selection=AssetSelection.assets(*gsheet_extract_assets),
+)
