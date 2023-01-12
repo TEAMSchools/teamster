@@ -124,8 +124,8 @@ def sftp_extract_asset_factory(
 
         sql = construct_sql(
             context=context,
-            query_type=query_config["query_type"],
-            query_value=query_config["query_value"],
+            query_type=query_config["type"],
+            query_value=query_config["value"],
         )
 
         extract_data = extract(
@@ -153,10 +153,10 @@ def sftp_extract_asset_factory(
     return sftp_extract
 
 
-def gsheet_extract_asset_factory(asset_name, key_prefix, query_config, file_config):
+def gsheet_extract_asset_factory(asset_name, query_config, file_config):
     @asset(
         name=asset_name,
-        key_prefix=key_prefix,
+        key_prefix="gsheets",
         required_resource_keys={"warehouse", "gsheet"},
     )
     def gsheet_extract(context):
@@ -166,8 +166,8 @@ def gsheet_extract_asset_factory(asset_name, key_prefix, query_config, file_conf
 
         sql = construct_sql(
             context=context,
-            query_type=query_config["query_type"],
-            query_value=query_config["query_value"],
+            query_type=query_config["type"],
+            query_value=query_config["value"],
         )
 
         extract_data = extract(
