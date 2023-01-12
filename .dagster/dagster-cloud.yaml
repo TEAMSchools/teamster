@@ -12,7 +12,7 @@ locations:
           - kippnewark
   - location_name: kippcamden
     code_source:
-      python_file: src/teamster/kippcamden/repository.py
+      python_file: src/teamster/kippcamden/definitions.py
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden

@@ -12,10 +12,10 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.core.resources.sqlalchemy import mssql, oracle
 from teamster.core.resources.ssh import ssh_resource
-from teamster.kippnewark.datagun import assets as local_datagun_assets
-from teamster.kippnewark.datagun import jobs as local_datagun_jobs
-from teamster.kippnewark.datagun import schedules as local_datagun_schedules
-from teamster.kippnewark.powerschool.db.assets import (
+from teamster.kippmiami.datagun import assets as local_datagun_assets
+from teamster.kippmiami.datagun import jobs as local_datagun_jobs
+from teamster.kippmiami.datagun import schedules as local_datagun_schedules
+from teamster.kippmiami.powerschool.db.assets import (
     core_ps_db_assets,
     local_ps_db_assets,
 )
@@ -53,11 +53,6 @@ defs = Definitions(
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files(
                 ["src/teamster/core/resources/config/sftp_pythonanywhere.yaml"]
-            )
-        ),
-        "sftp_nps": ssh_resource.configured(
-            config_from_files(
-                ["src/teamster/kippnewark/resources/config/sftp_nps.yaml"]
             )
         ),
         "ps_db": oracle.configured(
