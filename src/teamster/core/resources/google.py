@@ -2,7 +2,7 @@ import dagster._check as check
 import google.auth
 import gspread
 from dagster import Field, String, StringSource, resource
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster_gcp.gcs.file_manager import GCSFileManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
 

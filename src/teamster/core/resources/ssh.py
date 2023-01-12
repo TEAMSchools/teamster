@@ -1,7 +1,7 @@
 from dagster import BoolSource, Field, IntSource, Noneable, Shape, StringSource
 from dagster import _check as check
 from dagster import resource
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster_ssh import SSHResource
 from paramiko.config import SSH_PORT
 from sshtunnel import SSHTunnelForwarder
