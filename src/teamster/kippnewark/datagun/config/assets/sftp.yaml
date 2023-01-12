@@ -1,0 +1,69 @@
+assets:
+  - asset_name: kipp_newark_student_data_txt
+    key_prefix: nps
+    query_config:
+      type: schema
+      value:
+        table:
+          name: nps_student_info
+          schema: extracts
+    file_config:
+      stem: kipp-newark-student-data
+      suffix: txt
+    destination_config:
+      name: nps
+      path: sftp
+  - asset_name: powerschool_autocomm_students_accessaccounts_txt
+    key_prefix: powerschool
+    query_config:
+      type: schema
+      value:
+        table:
+          name: powerschool_autocomm_students_accessaccounts
+          schema: extracts
+        where: db_name = 'kippnewark'
+    file_config:
+      stem: powerschool_autocomm_students_accessaccounts
+      suffix: txt
+      format:
+        header: False
+        sep: "\t"
+    destination_config:
+      name: pythonanywhere
+      path: sftp/powerschool/kippnewark
+  - asset_name: powerschool_autocomm_teachers_accounts_txt
+    key_prefix: powerschool
+    query_config:
+      type: schema
+      value:
+        table:
+          name: powerschool_autocomm_teachers_accounts
+          schema: extracts
+        where: legal_entity_name = 'TEAM Academy Charter School'
+    file_config:
+      stem: powerschool_autocomm_teachers_accounts
+      suffix: txt
+      format:
+        header: False
+        sep: "\t"
+    destination_config:
+      name: pythonanywhere
+      path: sftp/powerschool/kippnewark
+  - asset_name: powerschool_autocomm_students_easyiep_txt
+    key_prefix: powerschool
+    query_config:
+      type: schema
+      value:
+        table:
+          name: powerschool_autocomm_students_easyiep
+          schema: extracts
+        where: db_name = 'kippnewark'
+    file_config:
+      stem: powerschool_autocomm_students_easyiep
+      suffix: txt
+      format:
+        header: False
+        sep: "\t"
+    destination_config:
+      name: pythonanywhere
+      path: sftp/powerschool/kippnewark

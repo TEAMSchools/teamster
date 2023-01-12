@@ -6,6 +6,7 @@ from teamster.core.resources.google import google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 from teamster.core.resources.ssh import ssh_resource
 from teamster.kipptaf.datagun import assets as local_datagun_assets
+from teamster.kipptaf.datagun.jobs import datagun_gsheets_asset_job
 
 datagun_assets = load_assets_from_modules(
     modules=[local_datagun_assets], group_name="datagun"
@@ -14,6 +15,7 @@ datagun_assets = load_assets_from_modules(
 defs = Definitions(
     executor=k8s_job_executor,
     assets=datagun_assets,
+    jobs=[datagun_gsheets_asset_job],
     resources={
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(["src/teamster/core/resources/config/io.yaml"])
