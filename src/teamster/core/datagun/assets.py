@@ -60,7 +60,7 @@ def transform(context, data, file_suffix, file_encoding=None, file_format=None):
 
 def load_sftp(context, data, file_name, destination_config):
     destination_name = destination_config.get("name")
-    destination_path = destination_config.get("path")
+    destination_path = destination_config.get("path", "")
 
     # context.resources is a namedtuple
     sftp = getattr(context.resources, f"sftp_{destination_name}")
@@ -102,7 +102,7 @@ def load_gsheet(context, data, file_stem):
     if file_stem[0].isnumeric():
         file_stem = "GS" + file_stem
 
-    context.resources.gsheet.update_named_range(
+    context.resources.gsheets.update_named_range(
         data=data, spreadsheet_name=file_stem, range_name=file_stem
     )
 
