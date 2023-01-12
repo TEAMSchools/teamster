@@ -7,7 +7,7 @@ assets:
         table:
           name: njdoe_bgcheck_audit
           schema: extracts
-          where: (is_approved = 0 OR is_approved_district = 0)
+        where: (is_approved = 0 OR is_approved_district = 0)
     file_config:
       stem: bgcheck_audit
       suffix: json
