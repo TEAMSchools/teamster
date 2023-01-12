@@ -11,7 +11,7 @@ assets:
       stem: courses
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: enrollment_txt
@@ -26,7 +26,7 @@ assets:
       stem: enrollment
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: mastschd_txt
@@ -41,7 +41,7 @@ assets:
       stem: mastschd
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: roles_txt
@@ -56,7 +56,7 @@ assets:
       stem: roles
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: roster_txt
@@ -71,7 +71,7 @@ assets:
       stem: roster
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: users_txt
@@ -86,7 +86,7 @@ assets:
       stem: users
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: terms_txt
@@ -101,7 +101,7 @@ assets:
       stem: terms
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: student_portal_accounts_txt
@@ -116,7 +116,7 @@ assets:
       stem: student_portal_accounts
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: studemo_txt
@@ -131,7 +131,7 @@ assets:
       stem: studemo
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
   - asset_name: sites_txt
@@ -146,6 +146,6 @@ assets:
       stem: sites
       suffix: txt
       format:
-        sep: \t
+        sep: "\t"
     destination_config:
       name: illuminate
