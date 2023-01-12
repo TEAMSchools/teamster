@@ -6,7 +6,7 @@ from datetime import datetime
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
