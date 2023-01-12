@@ -1,5 +1,6 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_k8s import k8s_job_executor
 
 from teamster.core.powerschool.db import assets as core_ps_db_assets
 from teamster.core.resources.sqlalchemy import mssql, oracle
@@ -18,14 +19,26 @@ datagun_assets = load_assets_from_modules(
 )
 
 defs = Definitions(
+    executor=k8s_job_executor,
     assets=ps_db_assets + datagun_assets,
     resources={
+        "io_manager": gcs_pickle_io_manager.configured(
+            config_from_files(["src/teamster/core/resources/config/io.yaml"])
+        ),
+        "gcs": gcs_resource.configured(
+            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
+        ),
         "warehouse": mssql.configured(
-            config_from_files(["src/teamster/core/datagun/config/warehouse.yaml"])
+            config_from_files(["src/teamster/core/resources/config/warehouse.yaml"])
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/core/datagun/config/sftp_pythonanywhere.yaml"]
+                ["src/teamster/core/resources/config/sftp_pythonanywhere.yaml"]
+            )
+        ),
+        "sftp_nps": ssh_resource.configured(
+            config_from_files(
+                ["src/teamster/kippnewark/resources/config/sftp_nps.yaml"]
             )
         ),
         "ps_db": oracle.configured(
@@ -33,12 +46,6 @@ defs = Definitions(
         ),
         "ps_ssh": ssh_resource.configured(
             config_from_files(["src/teamster/core/powerschool/db/config/ssh.yaml"])
-        ),
-        "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files(["src/teamster/core/resources/config/io.yaml"])
-        ),
-        "gcs": gcs_resource.configured(
-            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
         ),
     },
 )

@@ -1,25 +1,10 @@
+import yaml
+
 from teamster.core.datagun.assets import sftp_extract_asset_factory
 
-students_accessaccounts = sftp_extract_asset_factory(
-    asset_name="students_accessaccounts",
-    key_prefix="powerschool",
-    query_config={
-        "query_type": "schema",
-        "query_value": {
-            "table": {
-                "name": "powerschool_autocomm_students_accessaccounts",
-                "schema": "extracts",
-            },
-            "where": "db_name = 'kippnewark'",
-        },
-    },
-    file_config={
-        "stem": "powerschool_autocomm_students_accessaccounts",
-        "suffix": "txt",
-        "format": {"header": False, "sep": "\t"},
-    },
-    destination_config={
-        "name": "pythonanywhere",
-        "path": "sftp/powerschool/kippnewark",
-    },
-)
+sftp_extract_assets = []
+with open("src/teamster/kippnewark/datagun/config/assets_sftp.yaml") as f:
+    sftp_extract_configs = yaml.safe_load(f)
+
+for sec in sftp_extract_configs:
+    sftp_extract_assets.append(sftp_extract_asset_factory(**sec))

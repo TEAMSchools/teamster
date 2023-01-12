@@ -157,7 +157,7 @@ def gsheet_extract_asset_factory(asset_name, query_config, file_config):
     @asset(
         name=asset_name,
         key_prefix="gsheets",
-        required_resource_keys={"warehouse", "gsheet"},
+        required_resource_keys={"warehouse", "gsheets"},
     )
     def gsheet_extract(context):
         file_stem = file_config["stem"].format(

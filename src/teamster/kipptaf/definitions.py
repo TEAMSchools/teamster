@@ -1,5 +1,6 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_k8s import k8s_job_executor
 
 from teamster.core.resources.google import google_sheets
 from teamster.core.resources.sqlalchemy import mssql
@@ -11,6 +12,7 @@ datagun_assets = load_assets_from_modules(
 )
 
 defs = Definitions(
+    executor=k8s_job_executor,
     assets=datagun_assets,
     resources={
         "io_manager": gcs_pickle_io_manager.configured(
@@ -20,53 +22,63 @@ defs = Definitions(
             config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
         ),
         "warehouse": mssql.configured(
-            config_from_files(["src/teamster/core/datagun/config/warehouse.yaml"])
+            config_from_files(["src/teamster/core/resources/config/warehouse.yaml"])
         ),
-        "gsheet": google_sheets.configured(
-            config_from_files(["src/teamster/kipptaf/datagun/config/gsheet.yaml"])
+        "gsheets": google_sheets.configured(
+            config_from_files(["src/teamster/kipptaf/resources/config/gsheets.yaml"])
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/core/datagun/config/sftp_pythonanywhere.yaml"]
+                ["src/teamster/core/resources/config/sftp_pythonanywhere.yaml"]
             )
         ),
         "sftp_blissbook": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/kipptaf/datagun/config/sftp_blissbook.yaml"]
+                ["src/teamster/kipptaf/resources/config/sftp_blissbook.yaml"]
             )
         ),
         "sftp_clever": ssh_resource.configured(
-            config_from_files(["src/teamster/kipptaf/datagun/config/sftp_clever.yaml"])
+            config_from_files(
+                ["src/teamster/kipptaf/resources/config/sftp_clever.yaml"]
+            )
         ),
         "sftp_coupa": ssh_resource.configured(
-            config_from_files(["src/teamster/kipptaf/datagun/config/sftp_coupa.yaml"])
+            config_from_files(["src/teamster/kipptaf/resources/config/sftp_coupa.yaml"])
         ),
         "sftp_deanslist": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/kipptaf/datagun/config/sftp_deanslist.yaml"]
+                ["src/teamster/kipptaf/resources/config/sftp_deanslist.yaml"]
             )
         ),
         "sftp_egencia": ssh_resource.configured(
-            config_from_files(["src/teamster/kipptaf/datagun/config/sftp_egencia.yaml"])
+            config_from_files(
+                ["src/teamster/kipptaf/resources/config/sftp_egencia.yaml"]
+            )
         ),
         "sftp_illuminate": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/kipptaf/datagun/config/sftp_illuminate.yaml"]
+                ["src/teamster/kipptaf/resources/config/sftp_illuminate.yaml"]
             )
         ),
         "sftp_kipptaf": ssh_resource.configured(
-            config_from_files(["src/teamster/kipptaf/datagun/config/sftp_kipptaf.yaml"])
+            config_from_files(
+                ["src/teamster/kipptaf/resources/config/sftp_kipptaf.yaml"]
+            )
         ),
         "sftp_littlesis": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/kipptaf/datagun/config/sftp_littlesis.yaml"]
+                ["src/teamster/kipptaf/resources/config/sftp_littlesis.yaml"]
             )
         ),
         "sftp_razkids": ssh_resource.configured(
-            config_from_files(["src/teamster/kipptaf/datagun/config/sftp_razkids.yaml"])
+            config_from_files(
+                ["src/teamster/kipptaf/resources/config/sftp_razkids.yaml"]
+            )
         ),
         "sftp_read180": ssh_resource.configured(
-            config_from_files(["src/teamster/kipptaf/datagun/config/sftp_read180.yaml"])
+            config_from_files(
+                ["src/teamster/kipptaf/resources/config/sftp_read180.yaml"]
+            )
         ),
     },
 )
