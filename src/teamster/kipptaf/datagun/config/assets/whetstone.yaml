@@ -1,0 +1,12 @@
+assets:
+  - asset_name: users_json
+    key_prefix: whetstone
+    query_config:
+      type: file
+      value: src/teamster/kipptaf/datagun/config/sql/whetstone_users.sql
+    file_config:
+      stem: users
+      suffix: json
+    destination_config:
+      name: pythonanywhere
+      path: sftp/whetstone

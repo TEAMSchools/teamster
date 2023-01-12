@@ -3,7 +3,7 @@ import json
 import pathlib
 
 import pandas as pd
-from dagster import asset
+from dagster import asset, config_from_files
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.classes import CustomJSONEncoder
@@ -184,3 +184,15 @@ def gsheet_extract_asset_factory(asset_name, query_config, file_config):
             load_gsheet(context=context, data=transformed_data, file_stem=file_stem)
 
     return gsheet_extract
+
+
+def generate_extract_assets(code_location, name, extract_type):
+    assets = []
+    for cfg in config_from_files(
+        [f"src/teamster/{code_location}/datagun/config/assets/{name}.yaml"]
+    )["assets"]:
+        if extract_type == "sftp":
+            assets.append(sftp_extract_asset_factory(**cfg))
+        elif extract_type == "gsheet":
+            assets.append(gsheet_extract_asset_factory(**cfg))
+    return assets

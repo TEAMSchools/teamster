@@ -1,8 +1,9 @@
-import os
 from datetime import timedelta
 
 from dagster import HourlyPartitionsDefinition, asset
 from sqlalchemy import literal_column, select, table, text
+
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def construct_sql(context, table_name, columns, where):
@@ -95,7 +96,7 @@ def table_asset_factory(asset_name, partitions_def=None, columns=["*"], where={}
 
 hourly_partition = HourlyPartitionsDefinition(
     start_date="2002-07-01T00:00:00.000000-0400",
-    timezone=os.getenv("LOCAL_TIME_ZONE"),
+    timezone=str(LOCAL_TIME_ZONE),
     fmt="%Y-%m-%dT%H:%M:%S.%f%z",
 )
 

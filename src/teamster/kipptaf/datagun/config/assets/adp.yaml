@@ -1,0 +1,15 @@
+assets:
+  - asset_name: workers_json
+    key_prefix: adp
+    query_config:
+      type: schema
+      value:
+        table:
+          name: adp_workers
+          schema: extracts
+    file_config:
+      stem: workers
+      suffix: json
+    destination_config:
+      name: pythonanywhere
+      path: sftp/adp

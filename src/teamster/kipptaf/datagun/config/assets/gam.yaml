@@ -1,0 +1,29 @@
+assets:
+  - asset_name: users_students_json
+    key_prefix: gam
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gam_users_students
+          schema: extracts
+    file_config:
+      stem: users_students
+      suffix: json
+    destination_config:
+      name: pythonanywhere
+      path: sftp/gam
+  - asset_name: users_admins_json
+    key_prefix: gam
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gam_users_admins
+          schema: extracts
+    file_config:
+      stem: users_admins
+      suffix: json
+    destination_config:
+      name: pythonanywhere
+      path: sftp/gam

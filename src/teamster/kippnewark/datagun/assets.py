@@ -1,10 +1,9 @@
-from dagster import config_from_files
+from teamster.core.datagun.assets import generate_extract_assets
 
-from teamster.core.datagun.assets import sftp_extract_asset_factory
-
-sftp_extract_config = config_from_files(
-    ["src/teamster/kippnewark/datagun/config/assets/sftp.yaml"]
+nps_extract_assets = generate_extract_assets(
+    code_location="kippnewark", name="nps", extract_type="sftp"
 )
-sftp_extract_assets = []
-for sec in sftp_extract_config["assets"]:
-    sftp_extract_assets.append(sftp_extract_asset_factory(**sec))
+
+powerschool_extract_assets = generate_extract_assets(
+    code_location="kippnewark", name="powerschool", extract_type="sftp"
+)

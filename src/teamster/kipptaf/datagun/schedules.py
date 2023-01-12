@@ -2,144 +2,124 @@ from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kipptaf.datagun.jobs import (
-    datagun_adp,
-    datagun_alchemer,
-    datagun_blissbook,
-    datagun_clever,
-    datagun_coupa,
-    datagun_deanslist,
-    datagun_egencia,
-    datagun_fpodms,
-    datagun_gam,
-    datagun_gsheets,
-    datagun_idauto,
-    datagun_illuminate,
-    datagun_littlesis,
-    datagun_njdoe,
-    datagun_razkids,
-    datagun_read180,
-    datagun_whetstone,
+    adp_extract_assets_job,
+    alchemer_extract_assets_job,
+    blissbook_extract_assets_job,
+    clever_extract_assets_job,
+    coupa_extract_assets_job,
+    deanslist_extract_assets_job,
+    egencia_extract_assets_job,
+    fpodms_extract_assets_job,
+    gam_extract_assets_job,
+    gsheet_extract_assets_job,
+    idauto_extract_assets_job,
+    illuminate_extract_assets_job,
+    littlesis_extract_assets_job,
+    njdoe_extract_assets_job,
+    razkids_extract_assets_job,
+    read180_extract_assets_job,
+    whetstone_extract_assets_job,
 )
 
-datagun_gsheets_schedule = ScheduleDefinition(
-    job=datagun_gsheets,
+gsheet_extract_assets_schedule = ScheduleDefinition(
+    job=gsheet_extract_assets_job,
     cron_schedule="0 6 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_deanslist_schedule = ScheduleDefinition(
-    job=datagun_deanslist,
+deanslist_extract_assets_schedule = ScheduleDefinition(
+    job=deanslist_extract_assets_job,
     cron_schedule="25 1 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_illuminate_schedule = ScheduleDefinition(
-    job=datagun_illuminate,
+illuminate_extract_assets_schedule = ScheduleDefinition(
+    job=illuminate_extract_assets_job,
     cron_schedule="30 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_clever_schedule = ScheduleDefinition(
-    job=datagun_clever,
+clever_extract_assets_schedule = ScheduleDefinition(
+    job=clever_extract_assets_job,
     cron_schedule="@hourly",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_razkids_schedule = ScheduleDefinition(
-    job=datagun_razkids,
+razkids_extract_assets_schedule = ScheduleDefinition(
+    job=razkids_extract_assets_job,
     cron_schedule="45 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_read180_schedule = ScheduleDefinition(
-    job=datagun_read180,
+read180_extract_assets_schedule = ScheduleDefinition(
+    job=read180_extract_assets_job,
     cron_schedule="	15 3 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_gam_schedule = ScheduleDefinition(
-    job=datagun_gam,
+gam_extract_assets_schedule = ScheduleDefinition(
+    job=gam_extract_assets_job,
     cron_schedule="0 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_littlesis_schedule = ScheduleDefinition(
-    job=datagun_littlesis,
+littlesis_extract_assets_schedule = ScheduleDefinition(
+    job=littlesis_extract_assets_job,
     cron_schedule="30 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
 
-datagun_blissbook_schedule = ScheduleDefinition(
-    job=datagun_blissbook,
+blissbook_extract_assets_schedule = ScheduleDefinition(
+    job=blissbook_extract_assets_job,
     cron_schedule="10 5 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_coupa_schedule = ScheduleDefinition(
-    job=datagun_coupa,
+coupa_extract_assets_schedule = ScheduleDefinition(
+    job=coupa_extract_assets_job,
     cron_schedule="20 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_egencia_schedule = ScheduleDefinition(
-    job=datagun_egencia,
+egencia_extract_assets_schedule = ScheduleDefinition(
+    job=egencia_extract_assets_job,
     cron_schedule="20 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_adp_schedule = ScheduleDefinition(
-    job=datagun_adp,
+adp_extract_assets_schedule = ScheduleDefinition(
+    job=adp_extract_assets_job,
     cron_schedule="10 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_fpodms_schedule = ScheduleDefinition(
-    job=datagun_fpodms,
+fpodms_extract_assets_schedule = ScheduleDefinition(
+    job=fpodms_extract_assets_job,
     cron_schedule="40 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_njdoe_schedule = ScheduleDefinition(
-    job=datagun_njdoe,
+njdoe_extract_assets_schedule = ScheduleDefinition(
+    job=njdoe_extract_assets_job,
     cron_schedule="55 11 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_whetstone_schedule = ScheduleDefinition(
-    job=datagun_whetstone,
+whetstone_extract_assets_schedule = ScheduleDefinition(
+    job=whetstone_extract_assets_job,
     cron_schedule="55 3 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_idauto_schedule = ScheduleDefinition(
-    job=datagun_idauto,
+idauto_extract_assets_schedule = ScheduleDefinition(
+    job=idauto_extract_assets_job,
     cron_schedule="45 0 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
 
-datagun_alchemer_schedule = ScheduleDefinition(
-    job=datagun_alchemer,
+alchemer_extract_assets_schedule = ScheduleDefinition(
+    job=alchemer_extract_assets_job,
     cron_schedule="30 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
-
-__all__ = [
-    "datagun_deanslist_schedule",
-    "datagun_illuminate_schedule",
-    "datagun_gsheets_schedule",
-    "datagun_clever_schedule",
-    "datagun_razkids_schedule",
-    "datagun_read180_schedule",
-    "datagun_littlesis_schedule",
-    "datagun_gam_schedule",
-    "datagun_blissbook_schedule",
-    "datagun_coupa_schedule",
-    "datagun_egencia_schedule",
-    "datagun_adp_schedule",
-    "datagun_fpodms_schedule",
-    "datagun_njdoe_schedule",
-    "datagun_whetstone_schedule",
-    "datagun_idauto_schedule",
-    "datagun_alchemer_schedule",
-]

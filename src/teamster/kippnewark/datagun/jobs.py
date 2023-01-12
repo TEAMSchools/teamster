@@ -1,49 +1,16 @@
-from dagster import config_from_files
-from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
-from dagster_k8s import k8s_job_executor
-from dagster_ssh import ssh_resource
+from dagster import AssetSelection, define_asset_job
 
-from teamster.core.datagun.graphs import etl_sftp
-from teamster.core.resources.google import gcs_file_manager
-from teamster.core.resources.sqlalchemy import mssql
-from teamster.kippnewark.datagun.graphs import powerschool_autocomm
-
-datagun_ps_autocomm = powerschool_autocomm.to_job(
-    name="datagun_ps_autocomm",
-    executor_def=k8s_job_executor,
-    resource_defs={
-        "db": mssql,
-        "file_manager": gcs_file_manager,
-        "io_manager": gcs_pickle_io_manager,
-        "gcs": gcs_resource,
-        "sftp": ssh_resource,
-    },
-    config=config_from_files(
-        [
-            "src/teamster/core/resources/config/google.yaml",
-            "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/kippnewark/datagun/config/query-powerschool.yaml",
-        ]
-    ),
+from teamster.kippnewark.datagun.assets import (
+    nps_extract_assets,
+    powerschool_extract_assets,
 )
 
-datagun_nps = etl_sftp.to_job(
-    name="datagun_nps",
-    executor_def=k8s_job_executor,
-    resource_defs={
-        "db": mssql,
-        "file_manager": gcs_file_manager,
-        "io_manager": gcs_pickle_io_manager,
-        "gcs": gcs_resource,
-        "sftp": ssh_resource,
-    },
-    config=config_from_files(
-        [
-            "src/teamster/core/resources/config/google.yaml",
-            "src/teamster/core/datagun/config/resource.yaml",
-            "src/teamster/kippnewark/datagun/config/query-nps.yaml",
-        ]
-    ),
+nps_extract_assets_job = define_asset_job(
+    name="nps_extract_assets_job",
+    selection=AssetSelection.assets(*nps_extract_assets),
 )
 
-__all__ = ["datagun_ps_autocomm", "datagun_nps"]
+powerschool_extract_assets_job = define_asset_job(
+    name="powerschool_extract_assets_job",
+    selection=AssetSelection.assets(*powerschool_extract_assets),
+)
