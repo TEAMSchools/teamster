@@ -1,9 +1,7 @@
 from datetime import timedelta
 
-from dagster import HourlyPartitionsDefinition, asset
+from dagster import asset
 from sqlalchemy import literal_column, select, table, text
-
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def construct_sql(context, table_name, columns, where):
@@ -68,7 +66,7 @@ def table_asset_factory(asset_name, partitions_def=None, columns=["*"], where={}
     )
     def ps_table(context):
         sql = construct_sql(
-            context=context, table_name=table_name, columns=columns, where=where
+            context=context, table_name=asset_name, columns=columns, where=where
         )
 
         context.log.info("Starting SSH tunnel")
@@ -94,99 +92,96 @@ def table_asset_factory(asset_name, partitions_def=None, columns=["*"], where={}
     return ps_table
 
 
-hourly_partition = HourlyPartitionsDefinition(
-    start_date="2002-07-01T00:00:00.000000-0400",
-    timezone=str(LOCAL_TIME_ZONE),
-    fmt="%Y-%m-%dT%H:%M:%S.%f%z",
-)
+def generate_powerschool_assets(partition):
+    assets = []
 
-core_ps_db_assets = []
+    # not partitionable
+    for table_name in [
+        "attendance_conversion_items",
+        "gen",
+        "test",
+        "testscore",
+        "attendance_code",
+        "bell_schedule",
+        "cycle_day",
+        "fte",
+        "period",
+        "reenrollments",
+        "calendar_day",
+        "spenrollments",
+    ]:
+        assets.append(table_asset_factory(asset_name=table_name))
 
-# not partitionable
-for table_name in [
-    "attendance_conversion_items",
-    "gen",
-    "test",
-    "testscore",
-    "attendance_code",
-    "bell_schedule",
-    "cycle_day",
-    "fte",
-    "period",
-    "reenrollments",
-    "calendar_day",
-    "spenrollments",
-]:
-    core_ps_db_assets.append(table_asset_factory(asset_name=table_name))
-
-# table-specific partition
-core_ps_db_assets.append(
-    table_asset_factory(
-        asset_name="log",
-        where={"column": "entry_date"},
-        partitions_def=hourly_partition,
-    )
-)
-
-# transaction_date
-for table_name in [
-    "attendance",
-    "cc",
-    "courses",
-    "pgfinalgrades",
-    "prefs",
-    "schools",
-    "sections",
-    "storedgrades",
-    "students",
-    "termbins",
-    "terms",
-]:
-    core_ps_db_assets.append(
+    # table-specific partition
+    assets.append(
         table_asset_factory(
-            asset_name=table_name,
-            where={"column": "transaction_date"},
-            partitions_def=hourly_partition,
+            asset_name="log",
+            where={"column": "entry_date"},
+            partitions_def=partition,
         )
     )
 
-# whenmodified
-for table_name in [
-    "assignmentcategoryassoc",
-    "assignmentscore",
-    "assignmentsection",
-    "codeset",
-    "districtteachercategory",
-    "emailaddress",
-    "gradecalcformulaweight",
-    "gradecalcschoolassoc",
-    "gradecalculationtype",
-    "gradeformulaset",
-    "gradescaleitem",
-    "gradeschoolconfig",
-    "gradeschoolformulaassoc",
-    "gradesectionconfig",
-    "originalcontactmap",
-    "person",
-    "personaddress",
-    "personaddressassoc",
-    "personemailaddressassoc",
-    "personphonenumberassoc",
-    "phonenumber",
-    "roledef",
-    "schoolstaff",
-    "sectionteacher",
-    "studentcontactassoc",
-    "studentcontactdetail",
-    "studentcorefields",
-    "studentrace",
-    "teachercategory",
-    "users",
-]:
-    core_ps_db_assets.append(
-        table_asset_factory(
-            asset_name=table_name,
-            where={"column": "whenmodified"},
-            partitions_def=hourly_partition,
+    # transaction_date
+    for table_name in [
+        "attendance",
+        "cc",
+        "courses",
+        "pgfinalgrades",
+        "prefs",
+        "schools",
+        "sections",
+        "storedgrades",
+        "students",
+        "termbins",
+        "terms",
+    ]:
+        assets.append(
+            table_asset_factory(
+                asset_name=table_name,
+                where={"column": "transaction_date"},
+                partitions_def=partition,
+            )
         )
-    )
+
+    # whenmodified
+    for table_name in [
+        "assignmentcategoryassoc",
+        "assignmentscore",
+        "assignmentsection",
+        "codeset",
+        "districtteachercategory",
+        "emailaddress",
+        "gradecalcformulaweight",
+        "gradecalcschoolassoc",
+        "gradecalculationtype",
+        "gradeformulaset",
+        "gradescaleitem",
+        "gradeschoolconfig",
+        "gradeschoolformulaassoc",
+        "gradesectionconfig",
+        "originalcontactmap",
+        "person",
+        "personaddress",
+        "personaddressassoc",
+        "personemailaddressassoc",
+        "personphonenumberassoc",
+        "phonenumber",
+        "roledef",
+        "schoolstaff",
+        "sectionteacher",
+        "studentcontactassoc",
+        "studentcontactdetail",
+        "studentcorefields",
+        "studentrace",
+        "teachercategory",
+        "users",
+    ]:
+        assets.append(
+            table_asset_factory(
+                asset_name=table_name,
+                where={"column": "whenmodified"},
+                partitions_def=partition,
+            )
+        )
+
+    return assets

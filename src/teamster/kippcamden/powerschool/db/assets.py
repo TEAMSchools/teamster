@@ -7,7 +7,7 @@ from teamster.core.powerschool.db.assets import (
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 hourly_partition = HourlyPartitionsDefinition(
-    start_date="2002-07-01T00:00:00.000000-0400",
+    start_date="2014-07-01T00:00:00.000000-0400",
     timezone=str(LOCAL_TIME_ZONE),
     fmt="%Y-%m-%dT%H:%M:%S.%f%z",
 )

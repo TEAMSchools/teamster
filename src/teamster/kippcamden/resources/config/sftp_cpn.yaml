@@ -1,0 +1,6 @@
+remote_host:
+  env: CPN_SFTP_HOST
+username:
+  env: CPN_SFTP_USERNAME
+password:
+  env: CPN_SFTP_PASSWORD
