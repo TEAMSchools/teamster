@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from dagster import DailyPartitionsDefinition, asset
-from sqlalchemy import literal_column, select, table, text
+from sqlalchemy import literal_column, select, table, text, union_all
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -34,11 +34,21 @@ def construct_sql(context, table_name, columns, where):
             " 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM' )"
         )
 
-    return (
-        select(*[literal_column(col) for col in columns])
-        .select_from(table(table_name))
-        .where(text(constructed_sql_where))
-    )
+        sql = (
+            select(*[literal_column(col) for col in columns])
+            .select_from(table(table_name))
+            .where(text(constructed_sql_where))
+        )
+
+        if start_datetime == partition_start_date:
+            union_sql = (
+                select(*[literal_column(col) for col in columns])
+                .select_from(table(table_name))
+                .where(text(f"{where_column} IS NULL"))
+            )
+            sql = union_all(sql, union_sql)
+
+    return sql
 
 
 def count(context, sql):
@@ -103,6 +113,7 @@ def table_asset_factory(asset_name, partition_start_date, columns=["*"], where={
                 output_fmt="dict",
             )
         else:
+            context.log.info(f"Retrieved {row_count} rows")
             data = None
 
         context.log.info("Stopping SSH tunnel")
