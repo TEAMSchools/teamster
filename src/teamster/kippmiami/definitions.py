@@ -41,7 +41,9 @@ defs = Definitions(
     ],
     resources={
         "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files(["src/teamster/kippmiami/resources/config/io.yaml"])
+            config_from_files(
+                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
+            )
         ),
         "gcs": gcs_resource.configured(
             config_from_files(["src/teamster/core/resources/config/gcs.yaml"])

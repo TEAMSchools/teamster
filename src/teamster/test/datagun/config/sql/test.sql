@@ -5,6 +5,6 @@ SELECT
   n + 3 AS n4,
   n + 4 AS n5
 FROM
-  gabby.utilities.row_generator_smallint
+  utilities.row_generator_smallint
 WHERE
   n <= 5
