@@ -1,7 +1,9 @@
 from datetime import timedelta
 
-from dagster import asset
+from dagster import DailyPartitionsDefinition, asset
 from sqlalchemy import literal_column, select, table, text
+
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def construct_sql(context, table_name, columns, where):
@@ -12,7 +14,7 @@ def construct_sql(context, table_name, columns, where):
     elif context.has_partition_key:
         where_column = where["column"]
         start_datetime = context.partition_time_window.start
-        end_datetime = start_datetime + timedelta(hours=1)
+        end_datetime = start_datetime + timedelta(days=1)
 
         constructed_sql_where = (
             f"{where_column} >= TO_TIMESTAMP_TZ('"
@@ -57,10 +59,19 @@ def extract(context, sql, partition_size, output_fmt):
     return data
 
 
-def table_asset_factory(asset_name, partitions_def=None, columns=["*"], where={}):
+def table_asset_factory(asset_name, partition_start_date, columns=["*"], where={}):
+    if partition_start_date is not None:
+        daily_partitions_def = DailyPartitionsDefinition(
+            start_date=partition_start_date,
+            timezone=str(LOCAL_TIME_ZONE),
+            fmt="%Y-%m-%dT%H:%M:%S.%f%z",
+        )
+    else:
+        daily_partitions_def = None
+
     @asset(
         name=asset_name,
-        partitions_def=partitions_def,
+        partitions_def=daily_partitions_def,
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
@@ -92,7 +103,7 @@ def table_asset_factory(asset_name, partitions_def=None, columns=["*"], where={}
     return ps_table
 
 
-def generate_powerschool_assets(partition):
+def generate_powerschool_assets(partition_start_date=None):
     assets = []
 
     # not partitionable
@@ -110,14 +121,18 @@ def generate_powerschool_assets(partition):
         "calendar_day",
         "spenrollments",
     ]:
-        assets.append(table_asset_factory(asset_name=table_name))
+        assets.append(
+            table_asset_factory(
+                asset_name=table_name, partition_start_date=partition_start_date
+            )
+        )
 
     # table-specific partition
     assets.append(
         table_asset_factory(
             asset_name="log",
             where={"column": "entry_date"},
-            partitions_def=partition,
+            partition_start_date=partition_start_date,
         )
     )
 
@@ -139,7 +154,7 @@ def generate_powerschool_assets(partition):
             table_asset_factory(
                 asset_name=table_name,
                 where={"column": "transaction_date"},
-                partitions_def=partition,
+                partition_start_date=partition_start_date,
             )
         )
 
@@ -180,7 +195,7 @@ def generate_powerschool_assets(partition):
             table_asset_factory(
                 asset_name=table_name,
                 where={"column": "whenmodified"},
-                partitions_def=partition,
+                partition_start_date=partition_start_date,
             )
         )
 
