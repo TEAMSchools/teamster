@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from dagster import DailyPartitionsDefinition, asset
 from sqlalchemy import literal_column, select, table, text, union_all
+from sqlalchemy.sql.expression import CompoundSelect
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -52,23 +53,24 @@ def construct_sql(context, table_name, columns, where):
 
 
 def count(context, sql):
-    # if sql.whereclause.text == "":
-    #     return 1
-    # else:
-    [(count,)] = context.resources.ps_db.execute_query(
-        query=text(
-            (
-                "SELECT COUNT(*) "
-                f"FROM {sql.get_final_froms()[0].name} "
-                f"WHERE {sql.whereclause.text}"
-            )
-        ),
-        partition_size=1,
-        output_fmt=None,
-    )
+    if isinstance(sql, CompoundSelect):
+        context.log.info("CompoundSelect: cannot get count")
+        return 1
+    else:
+        [(count,)] = context.resources.ps_db.execute_query(
+            query=text(
+                (
+                    "SELECT COUNT(*) "
+                    f"FROM {sql.get_final_froms()[0].name} "
+                    f"WHERE {sql.whereclause.text}"
+                )
+            ),
+            partition_size=1,
+            output_fmt=None,
+        )
 
-    context.log.info(f"Found {count} rows")
-    return count
+        context.log.info(f"Found {count} rows")
+        return count
 
 
 def extract(context, sql, partition_size, output_fmt):
