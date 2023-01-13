@@ -52,11 +52,12 @@ assets:
     destination_config:
       name: deanslist
     op_tags:
-      execution:
-        config:
+      dagster-k8s/config:
+        container_config:
           resources:
-            limits:
-              memory: 1.0Gi
+            requests:
+              limits:
+                memory: 1.0Gi
   - asset_name: deanslist_instructional_tech_json
     key_prefix: deanslist
     query_config:
@@ -201,8 +202,9 @@ assets:
     destination_config:
       name: deanslist
     op_tags:
-      execution:
-        config:
+      dagster-k8s/config:
+        container_config:
           resources:
-            limits:
-              memory: 1.0Gi
+            requests:
+              limits:
+                memory: 1.0Gi
