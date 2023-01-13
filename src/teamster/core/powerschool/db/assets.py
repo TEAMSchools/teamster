@@ -52,21 +52,23 @@ def construct_sql(context, table_name, columns, where):
 
 
 def count(context, sql):
-    if sql.whereclause.text == "":
-        return 1
-    else:
-        [(count,)] = context.resources.ps_db.execute_query(
-            query=text(
-                (
-                    "SELECT COUNT(*) "
-                    f"FROM {sql.get_final_froms()[0].name} "
-                    f"WHERE {sql.whereclause.text}"
-                )
-            ),
-            partition_size=1,
-            output_fmt=None,
-        )
-        return count
+    # if sql.whereclause.text == "":
+    #     return 1
+    # else:
+    [(count,)] = context.resources.ps_db.execute_query(
+        query=text(
+            (
+                "SELECT COUNT(*) "
+                f"FROM {sql.get_final_froms()[0].name} "
+                f"WHERE {sql.whereclause.text}"
+            )
+        ),
+        partition_size=1,
+        output_fmt=None,
+    )
+
+    context.log.info(f"Found {count} rows")
+    return count
 
 
 def extract(context, sql, partition_size, output_fmt):
@@ -113,7 +115,6 @@ def table_asset_factory(asset_name, partition_start_date, columns=["*"], where={
                 output_fmt="dict",
             )
         else:
-            context.log.info(f"Retrieved {row_count} rows")
             data = None
 
         context.log.info("Stopping SSH tunnel")
