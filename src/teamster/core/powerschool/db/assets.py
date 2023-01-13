@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from dagster import DailyPartitionsDefinition, asset
 from sqlalchemy import literal_column, select, table, text
@@ -13,16 +13,25 @@ def construct_sql(context, table_name, columns, where):
         constructed_sql_where = where
     elif context.has_partition_key:
         where_column = where["column"]
+        partition_start_date = datetime.strptime(
+            where["partition_start_date"], "%Y-%m-%dT%H:%M:%S.%f%z"
+        )
+
         start_datetime = context.partition_time_window.start
         end_datetime = start_datetime + timedelta(days=1)
 
         constructed_sql_where = (
-            f"{where_column} >= TO_TIMESTAMP_TZ('"
-            f"{start_datetime.isoformat(timespec='microseconds')}"
-            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
-            f"{where_column} < TO_TIMESTAMP_TZ('"
-            f"{end_datetime.isoformat(timespec='microseconds')}"
-            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+            f"COALESCE( {where_column}, "
+            f"TO_TIMESTAMP_TZ( "
+            f"'{partition_start_date.isoformat(timespec='microseconds')}' ,"
+            " 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM' )"
+            " ) >= "
+            f"TO_TIMESTAMP_TZ( '{start_datetime.isoformat(timespec='microseconds')}' ,"
+            " 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM' )"
+            f" AND {where_column}"
+            " < "
+            f"TO_TIMESTAMP_TZ( '{end_datetime.isoformat(timespec='microseconds')}' , "
+            " 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM' )"
         )
 
     return (
@@ -61,6 +70,7 @@ def extract(context, sql, partition_size, output_fmt):
 
 def table_asset_factory(asset_name, partition_start_date, columns=["*"], where={}):
     if partition_start_date is not None:
+        where["partition_start_date"] = partition_start_date
         daily_partitions_def = DailyPartitionsDefinition(
             start_date=partition_start_date,
             timezone=str(LOCAL_TIME_ZONE),

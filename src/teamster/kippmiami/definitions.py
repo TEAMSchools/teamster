@@ -15,7 +15,7 @@ from teamster.core.resources.ssh import ssh_resource
 from teamster.kippmiami.datagun import assets as local_datagun_assets
 from teamster.kippmiami.datagun import jobs as local_datagun_jobs
 from teamster.kippmiami.datagun import schedules as local_datagun_schedules
-from teamster.kippnewark.powerschool.db import assets as ps_db_assets
+from teamster.kippmiami.powerschool.db import assets as ps_db_assets
 
 CODE_LOCATION = "kippmiami"
 
