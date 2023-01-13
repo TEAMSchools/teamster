@@ -1,0 +1,9 @@
+assets:
+  - asset_name: test_datagun_gsheet
+    query_config:
+      type: test
+      value:
+        SELECT n AS n0, n + 1 AS n1, n + 2 AS n2, n + 3 AS n3, n + 4 AS n4 FROM
+        gabby.utilities.row_generator_smallint WHERE n <= 5
+    file_config:
+      stem: test_gsheet

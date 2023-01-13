@@ -41,7 +41,9 @@ defs = Definitions(
     ],
     resources={
         "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files(["src/teamster/kippcamden/resources/config/io.yaml"])
+            config_from_files(
+                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
+            )
         ),
         "gcs": gcs_resource.configured(
             config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
@@ -56,7 +58,7 @@ defs = Definitions(
         ),
         "sftp_cpn": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/kippcamden/resources/config/sftp_cpn.yaml"]
+                [f"src/teamster/{CODE_LOCATION}/resources/config/sftp_cpn.yaml"]
             )
         ),
         "ps_db": oracle.configured(
