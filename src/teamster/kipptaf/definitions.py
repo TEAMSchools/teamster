@@ -17,14 +17,10 @@ from teamster.kipptaf.datagun import assets as local_datagun_assets
 from teamster.kipptaf.datagun import jobs as local_datagun_jobs
 from teamster.kipptaf.datagun import schedules as local_datagun_schedules
 
-CODE_LOCATION = "kipptaf"
-
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=(
-        load_assets_from_modules(
-            modules=[local_datagun_assets], group_name=f"datagun_{CODE_LOCATION}"
-        )
+    assets=load_assets_from_modules(
+        modules=[local_datagun_assets], group_name="datagun"
     ),
     jobs=[
         obj
