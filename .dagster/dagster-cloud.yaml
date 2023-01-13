@@ -1,4 +1,15 @@
 locations:
+  - location_name: test
+    code_source:
+      python_file: src/teamster/test/definitions.py
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-test/teamster-test
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - test
   - location_name: kippnewark
     code_source:
       python_file: src/teamster/kippnewark/definitions.py
