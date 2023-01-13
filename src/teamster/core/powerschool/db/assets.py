@@ -22,17 +22,12 @@ def construct_sql(context, table_name, columns, where):
         end_datetime = start_datetime + timedelta(days=1)
 
         constructed_sql_where = (
-            f"COALESCE( {where_column}, "
-            f"TO_TIMESTAMP_TZ( "
-            f"'{partition_start_date.isoformat(timespec='microseconds')}' ,"
-            " 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM' )"
-            " ) >= "
-            f"TO_TIMESTAMP_TZ( '{start_datetime.isoformat(timespec='microseconds')}' ,"
-            " 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM' )"
-            f" AND {where_column}"
-            " < "
-            f"TO_TIMESTAMP_TZ( '{end_datetime.isoformat(timespec='microseconds')}' , "
-            " 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM' )"
+            f"{where_column} >= TO_TIMESTAMP_TZ('"
+            f"{start_datetime.isoformat(timespec='microseconds')}"
+            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
+            f"{where_column} < TO_TIMESTAMP_TZ('"
+            f"{end_datetime.isoformat(timespec='microseconds')}"
+            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
         )
 
         sql = (
