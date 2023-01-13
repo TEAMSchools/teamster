@@ -157,9 +157,9 @@ dagster-k8s==0.17.9 \
 dagster-pandas==0.17.9 \
     --hash=sha256:3b9835528a2e9f1532b7dd06b768e0a28d5b2cf1719978f6c32d603c8fbb6dab \
     --hash=sha256:c658b54fe69783cba0799ec1d9463ecdd0132b42fceb8868c4848d7ccf715959
-dagster-ssh==0.17.9 \
-    --hash=sha256:3f91d4475cd7cc1677e2b25d7df7f32403948b6ecd7c169c16d161ebd06cde36 \
-    --hash=sha256:bcf91a7720025c6aa171768f31d3a1546a26b13b79e5fd81827769bceedcb508
+dagster-ssh==0.17.10 \
+    --hash=sha256:4748ec4ca726a41fc17320543f6a0188324b1a4c410f483e4925b84b4381e95a \
+    --hash=sha256:4b1c95c530e1f3bcc0fd9e7bf7da5d273207dda87a9955a799c6b3f597460cdc
 db-dtypes==1.0.5 \
     --hash=sha256:ab6782bf7a414dd7289ce4ba8ddea5ec44c1339d189c7738d7098efdfd148266 \
     --hash=sha256:ee68f30cbccf343124ef0abebc7f8cc9a74ef8ed7ee4ff61f586117e8040a9d6
