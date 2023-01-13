@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 
 from dagster import DailyPartitionsDefinition, asset
-from sqlalchemy import literal_column, select, table, text, union_all
-from sqlalchemy.sql.expression import CompoundSelect
+from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -21,51 +20,45 @@ def construct_sql(context, table_name, columns, where):
         start_datetime = context.partition_time_window.start
         end_datetime = start_datetime + timedelta(days=1)
 
-        constructed_sql_where = (
-            f"{where_column} >= TO_TIMESTAMP_TZ('"
-            f"{start_datetime.isoformat(timespec='microseconds')}"
-            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
-            f"{where_column} < TO_TIMESTAMP_TZ('"
-            f"{end_datetime.isoformat(timespec='microseconds')}"
-            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
-        )
-
-        sql = (
-            select(*[literal_column(col) for col in columns])
-            .select_from(table(table_name))
-            .where(text(constructed_sql_where))
-        )
-
         if start_datetime == partition_start_date:
-            union_sql = (
-                select(*[literal_column(col) for col in columns])
-                .select_from(table(table_name))
-                .where(text(f"{where_column} IS NULL"))
+            constructed_sql_where = (
+                f"{where_column} < TO_TIMESTAMP_TZ('"
+                f"{end_datetime.isoformat(timespec='microseconds')}"
+                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') OR "
+                f"{where_column} IS NULL"
             )
-            sql = union_all(sql, union_sql)
+        else:
+            constructed_sql_where = (
+                f"{where_column} >= TO_TIMESTAMP_TZ('"
+                f"{start_datetime.isoformat(timespec='microseconds')}"
+                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
+                f"{where_column} < TO_TIMESTAMP_TZ('"
+                f"{end_datetime.isoformat(timespec='microseconds')}"
+                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+            )
 
-    return sql
+    return (
+        select(*[literal_column(col) for col in columns])
+        .select_from(table(table_name))
+        .where(text(constructed_sql_where))
+    )
 
 
 def count(context, sql):
-    if isinstance(sql, CompoundSelect):
-        context.log.info("CompoundSelect: cannot get count")
-        return 1
-    else:
-        [(count,)] = context.resources.ps_db.execute_query(
-            query=text(
-                (
-                    "SELECT COUNT(*) "
-                    f"FROM {sql.get_final_froms()[0].name} "
-                    f"WHERE {sql.whereclause.text}"
-                )
-            ),
-            partition_size=1,
-            output_fmt=None,
-        )
+    [(count,)] = context.resources.ps_db.execute_query(
+        query=text(
+            (
+                "SELECT COUNT(*) "
+                f"FROM {sql.get_final_froms()[0].name} "
+                f"WHERE {sql.whereclause.text}"
+            )
+        ),
+        partition_size=1,
+        output_fmt=None,
+    )
 
-        context.log.info(f"Found {count} rows")
-        return count
+    context.log.info(f"Found {count} rows")
+    return count
 
 
 def extract(context, sql, partition_size, output_fmt):
