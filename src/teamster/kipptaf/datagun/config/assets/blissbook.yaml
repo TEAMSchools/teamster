@@ -1,0 +1,14 @@
+assets:
+  - asset_name: members_csv
+    key_prefix: blissbook
+    query_config:
+      type: schema
+      value:
+        table:
+          name: blissbook_employee_list
+          schema: extracts
+    file_config:
+      stem: members
+      suffix: csv
+    destination_config:
+      name: blissbook

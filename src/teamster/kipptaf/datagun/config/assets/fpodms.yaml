@@ -1,0 +1,15 @@
+assets:
+  - asset_name: students_json
+    key_prefix: fpodms
+    query_config:
+      type: schema
+      value:
+        table:
+          name: fpodms_students
+          schema: extracts
+    file_config:
+      stem: students
+      suffix: json
+    destination_config:
+      name: pythonanywhere
+      path: sftp/fpodms

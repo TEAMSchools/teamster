@@ -2,7 +2,7 @@ import dagster._check as check
 import google.auth
 import gspread
 from dagster import Field, String, StringSource, resource
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster_gcp.gcs.file_manager import GCSFileManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
 
@@ -75,13 +75,13 @@ class GoogleSheets(object):
 
     def open_spreadsheet(self, title, create=False):
         try:
-            return self.client.open(title=title, folder_id=self.folder_id)
+            spreadsheet = self.client.open(title=title, folder_id=self.folder_id)
+            self.log.info(f"Opened: '{spreadsheet.title}' from {spreadsheet.url}.")
+            return spreadsheet
         except gspread.exceptions.SpreadsheetNotFound as xc:
             if create:
                 spreadsheet = self.create_spreadsheet(title=title)
-                self.log.info(
-                    f"Created Spreadsheet '{spreadsheet.title}' at {spreadsheet.url}."
-                )
+                self.log.info(f"Created: '{spreadsheet.title}' at {spreadsheet.url}.")
                 return spreadsheet
             else:
                 raise xc
@@ -123,7 +123,7 @@ class GoogleSheets(object):
         # resize worksheet
         worksheet_area = worksheet.row_count * worksheet.col_count
         if worksheet_area != data_area:
-            self.log.info(f"Resizing worksheet area to {nrows}x{ncols}.")
+            self.log.debug(f"Resizing worksheet area to {nrows}x{ncols}.")
             worksheet.resize(rows=nrows, cols=ncols)
 
         # resize named range
@@ -131,7 +131,7 @@ class GoogleSheets(object):
             start_cell = gspread.utils.rowcol_to_a1(1, 1)
             end_cell = gspread.utils.rowcol_to_a1(nrows, ncols)
 
-            self.log.info(
+            self.log.debug(
                 f"Resizing named range '{range_name}' to {start_cell}:{end_cell}."
             )
             worksheet.delete_named_range(named_range_id=named_range_id)
@@ -139,7 +139,7 @@ class GoogleSheets(object):
                 name=f"{start_cell}:{end_cell}", range_name=range_name
             )
 
-        self.log.info(f"Clearing '{range_name}' values.")
+        self.log.debug(f"Clearing '{range_name}' values.")
         worksheet.batch_clear([range_name])
 
         self.log.info(f"Updating '{range_name}': {data_area} cells.")

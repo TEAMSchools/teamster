@@ -1,0 +1,27 @@
+assets:
+  - asset_name: teachers_csv
+    key_prefix: razkids
+    query_config:
+      type: schema
+      value:
+        table:
+          name: razkids_teachers
+          schema: extracts
+    file_config:
+      stem: teachers
+      suffix: csv
+    destination_config:
+      name: razkids
+  - asset_name: students_csv
+    key_prefix: razkids
+    query_config:
+      type: schema
+      value:
+        table:
+          name: razkids_students
+          schema: extracts
+    file_config:
+      stem: students
+      suffix: csv
+    destination_config:
+      name: razkids

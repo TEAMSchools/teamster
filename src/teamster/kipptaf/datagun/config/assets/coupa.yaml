@@ -1,0 +1,15 @@
+assets:
+  - asset_name: users_csv
+    key_prefix: coupa
+    query_config:
+      type: schema
+      value:
+        table:
+          name: coupa_users
+          schema: extracts
+    file_config:
+      stem: users_{today}
+      suffix: csv
+    destination_config:
+      name: coupa
+      path: /Incoming/Users

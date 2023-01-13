@@ -1,0 +1,79 @@
+assets:
+  - asset_name: enrollments_csv
+    key_prefix: clever
+    query_config:
+      type: schema
+      value:
+        table:
+          name: clever_enrollments
+          schema: extracts
+    file_config:
+      stem: enrollments
+      suffix: csv
+    destination_config:
+      name: clever
+  - asset_name: teachers_csv
+    key_prefix: clever
+    query_config:
+      type: schema
+      value:
+        table:
+          name: clever_teachers
+          schema: extracts
+    file_config:
+      stem: teachers
+      suffix: csv
+    destination_config:
+      name: clever
+  - asset_name: students_csv
+    key_prefix: clever
+    query_config:
+      type: schema
+      value:
+        table:
+          name: clever_students
+          schema: extracts
+    file_config:
+      stem: students
+      suffix: csv
+    destination_config:
+      name: clever
+  - asset_name: staff_csv
+    key_prefix: clever
+    query_config:
+      type: schema
+      value:
+        table:
+          name: clever_staff
+          schema: extracts
+    file_config:
+      stem: staff
+      suffix: csv
+    destination_config:
+      name: clever
+  - asset_name: sections_csv
+    key_prefix: clever
+    query_config:
+      type: schema
+      value:
+        table:
+          name: clever_sections
+          schema: extracts
+    file_config:
+      stem: sections
+      suffix: csv
+    destination_config:
+      name: clever
+  - asset_name: schools_csv
+    key_prefix: clever
+    query_config:
+      type: schema
+      value:
+        table:
+          name: clever_schools
+          schema: extracts
+    file_config:
+      stem: schools
+      suffix: csv
+    destination_config:
+      name: clever

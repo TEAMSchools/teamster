@@ -15,13 +15,22 @@ sudo pdm self update
 # update trunk
 trunk upgrade -y --no-progress
 
-# save github codespace secrets to .env files
-for branch in $(git for-each-ref --format='%(refname:short)' refs/**/origin/kipp*); do
-  branch_name=$(basename -- "${branch}")
-  branch_name_clean=$(echo "${branch_name^^}" | tr -cd '[:alnum:]')
+# save KIPP* github codespace secrets to .env files
+for envvar in $(compgen -A variable | grep "^KIPP"); do
+  envvar_lower="${envvar,,}"
 
-  if [ -n "${!branch_name_clean}" ]; then
-    mkdir -p "env/${branch_name}"
-    echo "${!branch_name_clean}" >"./env/${branch_name}/.env"
+  if [[ ${envvar_lower} != *"_"* ]]; then
+    mkdir -p "./env/${envvar_lower}"
+    echo "${!envvar}" >"./env/${envvar_lower}/.env"
+  else
+    IFS='_' read -ra VAR <<<"${envvar_lower}"
+    fpath=""
+    for i in "${VAR[@]}"; do
+      fpath+="${i}/"
+    done
+
+    mkdir -p -- "./env/${fpath%/*}"
+    echo "${!envvar}" >"./env/${fpath}rsa-private-key"
   fi
+
 done
