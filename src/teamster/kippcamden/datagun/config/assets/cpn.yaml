@@ -1,0 +1,31 @@
+assets:
+  - asset_name: cpn_attendance_csv
+    key_prefix: cpn
+    query_config:
+      type: schema
+      value:
+        table:
+          name: cpn_attendance
+          schema: extracts
+        where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+    file_config:
+      stem: cpn_attendance
+      suffix: csv
+    destination_config:
+      name: cpn
+      path: /Data
+  - asset_name: cpn_demographic_csv
+    key_prefix: cpn
+    query_config:
+      type: schema
+      value:
+        table:
+          name: cpn_demographic
+          schema: extracts
+        where: "[School Year] = gabby.utilities.GLOBAL_ACADEMIC_YEAR()"
+    file_config:
+      stem: cpn_demographic
+      suffix: csv
+    destination_config:
+      name: cpn
+      path: /Data

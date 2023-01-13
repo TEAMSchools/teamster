@@ -2,10 +2,26 @@ dagsterCloud:
   deployment: prod
   branchDeployments: true
 
+dagsterCloudAgent:
+  resources:
+    limits:
+      cpu: 250m
+      memory: 0.5Gi
+    requests:
+      cpu: 250m
+      memory: 0.5Gi
+
 workspace:
   serverTTL:
     fullDeployments:
       enabled: true
-      ttlSeconds: 900 # 15 min
+      ttlSeconds: 600 # 10 min
     branchDeployments:
-      ttlSeconds: 900 # 15 min
+      ttlSeconds: 600 # 10 min
+  resources:
+    limits:
+      cpu: 250m
+      memory: 0.5Gi
+    requests:
+      cpu: 250m
+      memory: 0.5Gi

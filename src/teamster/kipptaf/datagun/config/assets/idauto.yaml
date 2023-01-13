@@ -1,0 +1,17 @@
+assets:
+  - asset_name: AD_csv
+    key_prefix: idauto
+    query_config:
+      type: schema
+      value:
+        table:
+          name: idauto_staff_roster
+          schema: extracts
+    file_config:
+      stem: AD
+      suffix: csv
+      encoding: latin1
+      format:
+        quoting: 1
+    destination_config:
+      name: kipptaf

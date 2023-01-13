@@ -1,0 +1,6 @@
+remote_host:
+  env: KTAF_SFTP_HOST
+username:
+  env: KTAF_SFTP_USERNAME
+password:
+  env: KTAF_SFTP_PASSWORD

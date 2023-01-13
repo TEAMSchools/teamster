@@ -1,0 +1,64 @@
+locations:
+  - location_name: test
+    code_source:
+      python_file: src/teamster/test/definitions.py
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-test/teamster-test
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - test
+  - location_name: kippnewark
+    code_source:
+      python_file: src/teamster/kippnewark/definitions.py
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippnewark/teamster-kippnewark
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - kippnewark
+  - location_name: kippcamden
+    code_source:
+      python_file: src/teamster/kippcamden/definitions.py
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - kippcamden
+  - location_name: kippmiami
+    code_source:
+      python_file: src/teamster/kippmiami/definitions.py
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - kippmiami
+  - location_name: kipptaf
+    code_source:
+      python_file: src/teamster/kipptaf/definitions.py
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - kipptaf
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: kipptaf-ssh-keys
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: /etc/secret-volume

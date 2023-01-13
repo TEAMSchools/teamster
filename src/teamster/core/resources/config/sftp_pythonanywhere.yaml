@@ -1,0 +1,6 @@
+remote_host:
+  env: PYTHONANYWHERE_SFTP_HOST
+username:
+  env: PYTHONANYWHERE_SFTP_USERNAME
+password:
+  env: PYTHONANYWHERE_SFTP_PASSWORD

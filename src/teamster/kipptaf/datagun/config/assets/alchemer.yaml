@@ -1,0 +1,15 @@
+assets:
+  - asset_name: contacts_json
+    key_prefix: alchemer
+    query_config:
+      type: schema
+      value:
+        table:
+          name: alchemer_contacts
+          schema: extracts
+    file_config:
+      stem: contacts
+      suffix: json
+    destination_config:
+      name: pythonanywhere
+      path: sftp/alchemer

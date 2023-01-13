@@ -6,7 +6,7 @@ from datetime import datetime
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
@@ -66,7 +66,7 @@ class SqlAlchemyEngine(object):
 
                     output_obj.append(tmp_file_path)
 
-                self.log.info(f"Retrieved {len_data} rows.")
+                self.log.info(f"Retrieved {len_data} rows")
             else:
                 self.log.debug("Retrieving rows from all partitions")
                 pt_rows = [rows for pt in partitions for rows in pt]
@@ -79,7 +79,7 @@ class SqlAlchemyEngine(object):
                 output_obj = [row for row in pt_rows]
             del pt_rows
 
-            self.log.info(f"Retrieved {len(output_obj)} rows.")
+            self.log.info(f"Retrieved {len(output_obj)} rows")
 
         if output_fmt == "json":
             return json.dumps(obj=output_obj, cls=CustomJSONEncoder)

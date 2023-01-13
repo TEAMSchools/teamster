@@ -1,0 +1,151 @@
+assets:
+  - asset_name: courses_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_courses
+          schema: extracts
+    file_config:
+      stem: courses
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: enrollment_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_enrollment
+          schema: extracts
+    file_config:
+      stem: enrollment
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: mastschd_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_mastschd
+          schema: extracts
+    file_config:
+      stem: mastschd
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: roles_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_roles
+          schema: extracts
+    file_config:
+      stem: roles
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: roster_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_roster
+          schema: extracts
+    file_config:
+      stem: roster
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: users_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_users
+          schema: extracts
+    file_config:
+      stem: users
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: terms_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_terms
+          schema: extracts
+    file_config:
+      stem: terms
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: student_portal_accounts_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_student_portal_accounts
+          schema: extracts
+    file_config:
+      stem: student_portal_accounts
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: studemo_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_studemo
+          schema: extracts
+    file_config:
+      stem: studemo
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
+  - asset_name: sites_txt
+    key_prefix: illuminate
+    query_config:
+      type: schema
+      value:
+        table:
+          name: illuminate_sites
+          schema: extracts
+    file_config:
+      stem: sites
+      suffix: txt
+      format:
+        sep: "\t"
+    destination_config:
+      name: illuminate
