@@ -108,12 +108,13 @@ def load_gsheet(context, data, file_stem):
 
 
 def sftp_extract_asset_factory(
-    asset_name, key_prefix, query_config, file_config, destination_config
+    asset_name, key_prefix, query_config, file_config, destination_config, op_tags={}
 ):
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
         required_resource_keys={"warehouse", f"sftp_{destination_config['name']}"},
+        op_tags=op_tags,
     )
     def sftp_extract(context):
         file_suffix = file_config["suffix"]
@@ -153,11 +154,12 @@ def sftp_extract_asset_factory(
     return sftp_extract
 
 
-def gsheet_extract_asset_factory(asset_name, query_config, file_config):
+def gsheet_extract_asset_factory(asset_name, query_config, file_config, op_tags={}):
     @asset(
         name=asset_name,
         key_prefix="gsheets",
         required_resource_keys={"warehouse", "gsheets"},
+        op_tags=op_tags,
     )
     def gsheet_extract(context):
         file_stem = file_config["stem"].format(

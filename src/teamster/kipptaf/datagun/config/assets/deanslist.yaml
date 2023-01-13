@@ -51,6 +51,12 @@ assets:
       suffix: json
     destination_config:
       name: deanslist
+    op_tags:
+      execution:
+        config:
+          resources:
+            limits:
+              memory: 1.0Gi
   - asset_name: deanslist_instructional_tech_json
     key_prefix: deanslist
     query_config:
@@ -194,3 +200,9 @@ assets:
       suffix: json
     destination_config:
       name: deanslist
+    op_tags:
+      execution:
+        config:
+          resources:
+            limits:
+              memory: 1.0Gi
