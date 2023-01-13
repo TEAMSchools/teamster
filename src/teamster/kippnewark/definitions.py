@@ -17,11 +17,15 @@ from teamster.kippnewark.datagun import jobs as local_datagun_jobs
 from teamster.kippnewark.datagun import schedules as local_datagun_schedules
 from teamster.kippnewark.powerschool.db import assets as ps_db_assets
 
+CODE_LOCATION = "kippnewark"
+
 defs = Definitions(
     executor=k8s_job_executor,
     assets=(
         load_assets_from_modules(
-            modules=[ps_db_assets], group_name="powerschool", key_prefix="powerschool"
+            modules=[ps_db_assets],
+            group_name="powerschool",
+            key_prefix=f"powerschool_{CODE_LOCATION}",
         )
         + load_assets_from_modules(modules=[local_datagun_assets], group_name="datagun")
     ),
