@@ -138,11 +138,7 @@ def generate_powerschool_assets(partition_start_date=None):
         "calendar_day",
         "spenrollments",
     ]:
-        assets.append(
-            table_asset_factory(
-                asset_name=table_name, partition_start_date=partition_start_date
-            )
-        )
+        assets.append(table_asset_factory(asset_name=table_name))
 
     # table-specific partition
     assets.append(
