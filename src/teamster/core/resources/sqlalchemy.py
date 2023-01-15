@@ -31,11 +31,11 @@ class SqlAlchemyEngine(object):
             self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
 
-            self.log.debug([col for col in result.cursor.description])
-            self.log.debug(
-                [col.type for col in result.context.compiled.statement.columns()]
-            )
-            parsed_schema = parse_schema({})
+            try:
+                self.log.debug([col for col in result.cursor.description])
+                self.log.debug(result.context.compiled.statement.columns)
+            except Exception:
+                pass
 
             if output is None:
                 pass
@@ -66,6 +66,8 @@ class SqlAlchemyEngine(object):
                     data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
                 )
                 self.log.debug(f"Saving results to {data_file_path}")
+
+                parsed_schema = parse_schema({})
 
                 len_data = 0
                 for i, pt in enumerate(partitions):
