@@ -58,17 +58,17 @@ class SqlAlchemyEngine(object):
                 data_dir.mkdir(parents=True, exist_ok=True)
 
                 now_timestamp = str(datetime.datetime.now().timestamp())
-                data_file_path = (
-                    data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
-                )
-                self.log.debug(f"Saving results to {data_file_path}")
+                output_data = data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
+                self.log.debug(f"Saving results to {output_data}")
 
                 # python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html
                 avro_schema_fields = []
                 for col in result_cursor_descr:
+                    # TODO: refactor based on db type
                     avro_schema_fields.append(
                         {"name": col[0], "type": AVRO_TYPES.get(col[1], ["null"])}
                     )
+                self.log.debug(avro_schema_fields)
 
                 avro_schema = parse_schema(
                     {"type": "record", "name": "data", "fields": avro_schema_fields}
@@ -84,10 +84,10 @@ class SqlAlchemyEngine(object):
 
                     self.log.debug(f"Saving partition {i}")
                     if i == 0:
-                        with open(data_file_path, "wb") as f:
+                        with open(output_data, "wb") as f:
                             writer(f, avro_schema, data)
                     else:
-                        with open(data_file_path, "a+b") as f:
+                        with open(output_data, "a+b") as f:
                             writer(f, avro_schema, data)
                     del data
 
