@@ -31,8 +31,10 @@ class SqlAlchemyEngine(object):
             self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
 
-            res_types = [col.type for col in result.context.compiled.statement.columns]
-            self.log.debug(res_types)
+            self.log.debug([col for col in result.cursor.description])
+            self.log.debug(
+                [col.type for col in result.context.compiled.statement.columns()]
+            )
             parsed_schema = parse_schema({})
 
             if output is None:
