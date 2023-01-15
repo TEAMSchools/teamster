@@ -63,8 +63,8 @@ def count(context, sql):
         partition_size=1,
         output=None,
     )
-
     context.log.info(f"Found {count} rows")
+
     return count
 
 
