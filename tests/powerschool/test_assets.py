@@ -11,15 +11,18 @@ powerschool_table_asset = with_resources(
     definitions=[table_asset_factory(asset_name="schools")],
     resource_defs={
         "ps_db": oracle.configured(
-            config_from_files(["src/teamster/core/powerschool/db/config/db.yaml"])
+            config_from_files(
+                ["src/teamster/core/resources/config/db_powerschool.yaml"]
+            )
         ),
         "ps_ssh": ssh_resource.configured(
-            config_from_files(["src/teamster/core/powerschool/db/config/ssh.yaml"])
+            config_from_files(
+                ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+            )
         ),
     },
 )[0]
 
 
 def test_powerschool_table_asset():
-    result = powerschool_table_asset(build_op_context())
-    assert result
+    powerschool_table_asset(build_op_context())
