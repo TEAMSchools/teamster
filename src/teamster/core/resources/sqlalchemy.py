@@ -31,10 +31,11 @@ class SqlAlchemyEngine(object):
         with self.engine.connect(**connect_kwargs) as conn:
             self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
-
             if output is None:
                 pass
             else:
+                result_cursor_descr = result.cursor.description
+
                 self.log.debug("Staging result mappings")
                 result = result.mappings()
 
@@ -49,11 +50,10 @@ class SqlAlchemyEngine(object):
                 output_data = [
                     dict(row) if output in ["dict", "json"] else row for row in pt_rows
                 ]
-
                 del pt_rows
+
                 self.log.info(f"Retrieved {len(output_data)} rows")
             elif output == "avro":
-
                 data_dir = pathlib.Path("data").absolute()
                 data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -65,7 +65,7 @@ class SqlAlchemyEngine(object):
 
                 # python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html
                 avro_schema_fields = []
-                for col in result.cursor.description:
+                for col in result_cursor_descr:
                     avro_schema_fields.append(
                         {"name": col[0], "type": AVRO_TYPES.get(col[1], ["null"])}
                     )
