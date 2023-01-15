@@ -1,7 +1,7 @@
+import datetime
 import json
 import pathlib
 import sys
-from datetime import datetime
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
@@ -9,6 +9,7 @@ from dagster._utils.merger import merge_dicts
 from fastavro import parse_schema, writer
 from sqlalchemy.engine import URL, create_engine
 
+from teamster.core.powerschool.db.config.schema import AVRO_TYPES
 from teamster.core.utils.classes import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb
@@ -31,17 +32,6 @@ class SqlAlchemyEngine(object):
             self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
 
-            try:
-                for col in result.cursor.description:
-                    try:
-                        self.log.debug(col)
-                        col_name, db_type, z, y, x, w, v = col
-                        self.log.debug(col_name, db_type.as_generic())
-                    except Exception as e:
-                        self.log.debug(e)
-            except Exception as e:
-                self.log.debug(e)
-
             if output is None:
                 pass
             else:
@@ -63,16 +53,26 @@ class SqlAlchemyEngine(object):
                 del pt_rows
                 self.log.info(f"Retrieved {len(output_data)} rows")
             elif output == "avro":
+
                 data_dir = pathlib.Path("data").absolute()
                 data_dir.mkdir(parents=True, exist_ok=True)
 
-                now_timestamp = str(datetime.now().timestamp())
+                now_timestamp = str(datetime.datetime.now().timestamp())
                 data_file_path = (
                     data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
                 )
                 self.log.debug(f"Saving results to {data_file_path}")
 
-                parsed_schema = parse_schema({})
+                # python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html
+                avro_schema_fields = []
+                for col in result.cursor.description:
+                    avro_schema_fields.append(
+                        {"name": col[0], "type": AVRO_TYPES.get(col[1], ["null"])}
+                    )
+
+                avro_schema = parse_schema(
+                    {"type": "record", "name": "data", "fields": avro_schema_fields}
+                )
 
                 len_data = 0
                 for i, pt in enumerate(partitions):
@@ -85,10 +85,10 @@ class SqlAlchemyEngine(object):
                     self.log.debug(f"Saving partition {i}")
                     if i == 0:
                         with open(data_file_path, "wb") as f:
-                            writer(f, parsed_schema, data)
+                            writer(f, avro_schema, data)
                     else:
                         with open(data_file_path, "a+b") as f:
-                            writer(f, parsed_schema, data)
+                            writer(f, avro_schema, data)
                     del data
 
                 self.log.info(f"Retrieved {len_data} rows")
