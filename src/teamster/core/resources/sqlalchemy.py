@@ -33,7 +33,7 @@ class SqlAlchemyEngine(object):
 
             try:
                 for col in result.cursor.description:
-                    print(col[0], col[1].as_generic())
+                    context.log.debug(col[0], col[1].as_generic())
             except Exception:
                 pass
 
