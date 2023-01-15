@@ -33,9 +33,14 @@ class SqlAlchemyEngine(object):
 
             try:
                 for col in result.cursor.description:
-                    self.log.debug(col[0], col[1].as_generic())
-            except Exception:
-                pass
+                    try:
+                        self.log.debug(col)
+                        col_name, db_type, z, y, x, w, v = col
+                        self.log.debug(col_name, db_type.as_generic())
+                    except Exception as e:
+                        self.log.debug(e)
+            except Exception as e:
+                self.log.debug(e)
 
             if output is None:
                 pass
