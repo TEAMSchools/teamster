@@ -15,6 +15,7 @@ dependencies = [
   "pyodbc>=4.0.34",
   "gspread>=5.6.2",
   "oracledb>=1.1.1",
+  "fastavro>=1.7.0",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }
@@ -31,13 +32,12 @@ build-backend = "pdm.pep517.api"
 dev = ["pytest"]
 
 [tool.pdm.scripts]
-_.env_file = "env/.env"
 post_lock = { shell = "pdm export -f requirements -o requirements.txt", help = "Export the locked packages set to requirements.txt" }
 clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
 docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
-test = { shell = "pdm run pytest", help = "Run tests with the default Python" }
+test = { shell = "pdm run pytest", env_file = "env/test/.env", help = "Run tests with the default Python" }
 location-init = { shell = "bash .pdm/scripts/location-init.sh", help = "Create a new branch for a Dagster Code Location" }
 gcloud-init = { shell = "bash .pdm/scripts/gcloud-init.sh", help = "Set up GCP" }
 k8s-secret = { shell = "bash .pdm/scripts/k8s-secret.sh", help = "Update k8s secret for branch" }

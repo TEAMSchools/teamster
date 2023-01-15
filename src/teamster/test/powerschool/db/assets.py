@@ -1,29 +1,13 @@
-from teamster.core.powerschool.db.assets import (
-    generate_powerschool_assets,
-    table_asset_factory,
-)
+from dagster import materialize
+
+from teamster.core.powerschool.db.assets import table_asset_factory
 
 PARTITIONS_START_DATE = "2002-07-01T00:00:00.000000-0400"
 
-core_ps_db_assets = generate_powerschool_assets(
-    partition_start_date=PARTITIONS_START_DATE
-)
+cc = table_asset_factory(asset_name="cc", partition_start_date=PARTITIONS_START_DATE)
 
-local_ps_db_assets = []
-for table_name in [
-    "s_nj_crs_x",
-    "s_nj_ren_x",
-    "s_nj_stu_x",
-    "s_nj_usr_x",
-    "u_clg_et_stu",
-    "u_clg_et_stu_alt",
-    "u_def_ext_students",
-    "u_studentsuserfields",
-]:
-    local_ps_db_assets.append(
-        table_asset_factory(
-            asset_name=table_name,
-            where={"column": "whenmodified"},
-            partition_start_date=PARTITIONS_START_DATE,
-        )
-    )
+
+def test_powerschool_table_asset():
+    result = materialize(assets=[cc])
+
+    assert result.success

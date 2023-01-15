@@ -1,15 +1,12 @@
 remote_host:
   env: PS_SSH_HOST
-remote_port:
-  env: PS_SSH_PORT
+remote_port: 1521
 username:
   env: PS_SSH_USERNAME
 password:
   env: PS_SSH_PASSWORD
 tunnel:
-  remote_bind_port:
-    env: PS_SSH_REMOTE_BIND_PORT
+  remote_bind_port: 1521
   remote_bind_host:
     env: PS_SSH_REMOTE_BIND_HOST
-  local_bind_port:
-    env: PS_DB_PORT
+  local_bind_port: 1521

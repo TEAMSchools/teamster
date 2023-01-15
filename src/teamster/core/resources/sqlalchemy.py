@@ -1,4 +1,3 @@
-import gzip
 import json
 import pathlib
 import sys
@@ -7,6 +6,7 @@ from datetime import datetime
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils.merger import merge_dicts
+from fastavro import parse_schema, writer
 from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
@@ -25,66 +25,69 @@ class SqlAlchemyEngine(object):
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
-    def execute_query(self, query, partition_size, output_fmt, connect_kwargs={}):
+    def execute_query(self, query, partition_size, output, connect_kwargs={}):
         self.log.debug("Opening connection to engine")
         with self.engine.connect(**connect_kwargs) as conn:
             self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
+            self.log.debug(result.cursor.description)
 
-            if output_fmt in ["dict", "json", "file"]:
-                self.log.debug("Staging result mappings")
-                result_stg = result.mappings()
+            if output is None:
+                pass
             else:
-                result_stg = result
+                self.log.debug("Staging result mappings")
+                result = result.mappings()
 
             self.log.debug("Partitioning results")
-            partitions = result_stg.partitions(size=partition_size)
+            partitions = result.partitions(size=partition_size)
 
-            if output_fmt == "file":
-                tmp_dir = pathlib.Path("data").absolute()
-                tmp_dir.mkdir(parents=True, exist_ok=True)
+            if output in ["dict", "json"] or output is None:
+                self.log.debug("Retrieving rows from all partitions")
+                pt_rows = [rows for pt in partitions for rows in pt]
+
+                self.log.debug("Unpacking partition rows")
+                output_data = [
+                    dict(row) if output in ["dict", "json"] else row for row in pt_rows
+                ]
+
+                del pt_rows
+                self.log.info(f"Retrieved {len(output_data)} rows")
+            elif output == "avro":
+                data_dir = pathlib.Path("data").absolute()
+                data_dir.mkdir(parents=True, exist_ok=True)
+
+                now_timestamp = str(datetime.now().timestamp())
+                data_file_path = (
+                    data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
+                )
+                self.log.debug(f"Saving results to {data_file_path}")
+
+                schema = {}
+                parsed_schema = parse_schema(schema)
 
                 len_data = 0
-                output_obj = []
                 for i, pt in enumerate(partitions):
                     self.log.debug(f"Retrieving rows from partition {i}")
-
-                    now_ts = str(datetime.now().timestamp())
-                    tmp_file_path = tmp_dir / f"{now_ts.replace('.', '_')}.json.gz"
-
                     data = [dict(row) for row in pt]
                     del pt
 
                     len_data += len(data)
 
-                    self.log.debug(f"Saving data to {tmp_file_path}")
-                    with gzip.open(tmp_file_path, "wb") as gz:
-                        gz.write(
-                            json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
-                        )
+                    self.log.debug(f"Saving partition {i}")
+                    if i == 0:
+                        with open(data_file_path, "wb") as f:
+                            writer(f, parsed_schema, data)
+                    else:
+                        with open(data_file_path, "a+b") as f:
+                            writer(f, parsed_schema, data)
                     del data
 
-                    output_obj.append(tmp_file_path)
-
                 self.log.info(f"Retrieved {len_data} rows")
-            else:
-                self.log.debug("Retrieving rows from all partitions")
-                pt_rows = [rows for pt in partitions for rows in pt]
 
-        if output_fmt != "file":
-            self.log.debug("Unpacking partition rows")
-            if output_fmt in ["dict", "json"]:
-                output_obj = [dict(row) for row in pt_rows]
-            else:
-                output_obj = [row for row in pt_rows]
-            del pt_rows
-
-            self.log.info(f"Retrieved {len(output_obj)} rows")
-
-        if output_fmt == "json":
-            return json.dumps(obj=output_obj, cls=CustomJSONEncoder)
+        if output == "json":
+            return json.dumps(obj=output_data, cls=CustomJSONEncoder)
         else:
-            return output_obj
+            return output_data
 
 
 class MSSQLEngine(SqlAlchemyEngine):
