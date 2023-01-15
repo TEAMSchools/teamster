@@ -30,7 +30,10 @@ class SqlAlchemyEngine(object):
         with self.engine.connect(**connect_kwargs) as conn:
             self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
-            self.log.debug(result.cursor.description)
+
+            res_types = [col.type for col in result.context.compiled.statement.columns]
+            self.log.debug(res_types)
+            parsed_schema = parse_schema({})
 
             if output is None:
                 pass
@@ -61,9 +64,6 @@ class SqlAlchemyEngine(object):
                     data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
                 )
                 self.log.debug(f"Saving results to {data_file_path}")
-
-                schema = {}
-                parsed_schema = parse_schema(schema)
 
                 len_data = 0
                 for i, pt in enumerate(partitions):
