@@ -64,9 +64,13 @@ class SqlAlchemyEngine(object):
                 # python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html
                 avro_schema_fields = []
                 for col in result_cursor_descr:
+                    self.log.debug(col)
                     # TODO: refactor based on db type
                     avro_schema_fields.append(
-                        {"name": col[0], "type": AVRO_TYPES.get(col[1], ["null"])}
+                        {
+                            "name": col[0].lower(),
+                            "type": AVRO_TYPES.get(col[1].name, ["null"]),
+                        }
                     )
                 self.log.debug(avro_schema_fields)
 
