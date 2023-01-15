@@ -47,16 +47,19 @@ def construct_sql(context, table_name, columns, where):
 
 
 def count(context, sql):
-    [(count,)] = context.resources.ps_db.execute_query(
-        query=text(
+    if sql.whereclause.text != "":
+        query = text(
             (
                 "SELECT COUNT(*) "
                 f"FROM {sql.get_final_froms()[0].name} "
                 f"WHERE {sql.whereclause.text}"
-                if sql.whereclause.text != ""
-                else ""
             )
-        ),
+        )
+    else:
+        query = text("SELECT COUNT(*) " f"FROM {sql.get_final_froms()[0].name}")
+
+    [(count,)] = context.resources.ps_db.execute_query(
+        query=query,
         partition_size=1,
         output=None,
     )
