@@ -30,7 +30,7 @@ def extract(context, sql, partition_size):
         sql.whereclause.text = sql.whereclause.text.format(today=TODAY.isoformat())
 
     return context.resources.warehouse.execute_query(
-        query=sql, partition_size=partition_size, output_fmt="dict"
+        query=sql, partition_size=partition_size, output="dict"
     )
 
 
