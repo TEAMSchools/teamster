@@ -8,9 +8,9 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 def construct_sql(context, table_name, columns, where):
     if not where:
-        constructed_sql_where = ""
+        constructed_where = ""
     elif isinstance(where, str):
-        constructed_sql_where = where
+        constructed_where = where
     elif context.has_partition_key:
         where_column = where["column"]
         partition_start_date = datetime.strptime(
@@ -21,14 +21,14 @@ def construct_sql(context, table_name, columns, where):
         end_datetime = start_datetime + timedelta(days=1)
 
         if start_datetime == partition_start_date:
-            constructed_sql_where = (
+            constructed_where = (
                 f"{where_column} < TO_TIMESTAMP_TZ('"
                 f"{end_datetime.isoformat(timespec='microseconds')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') OR "
                 f"{where_column} IS NULL"
             )
         else:
-            constructed_sql_where = (
+            constructed_where = (
                 f"{where_column} >= TO_TIMESTAMP_TZ('"
                 f"{start_datetime.isoformat(timespec='microseconds')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
@@ -36,11 +36,13 @@ def construct_sql(context, table_name, columns, where):
                 f"{end_datetime.isoformat(timespec='microseconds')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
             )
+    else:
+        constructed_where = ""
 
     return (
         select(*[literal_column(col) for col in columns])
         .select_from(table(table_name))
-        .where(text(constructed_sql_where))
+        .where(text(constructed_where))
     )
 
 
@@ -51,26 +53,28 @@ def count(context, sql):
                 "SELECT COUNT(*) "
                 f"FROM {sql.get_final_froms()[0].name} "
                 f"WHERE {sql.whereclause.text}"
+                if sql.whereclause.text != ""
+                else ""
             )
         ),
         partition_size=1,
-        output_fmt=None,
+        output=None,
     )
 
     context.log.info(f"Found {count} rows")
     return count
 
 
-def extract(context, sql, partition_size, output_fmt):
+def extract(context, sql, partition_size, output):
     data = context.resources.ps_db.execute_query(
         query=sql,
         partition_size=partition_size,
-        output_fmt=output_fmt,
+        output=output,
     )
     return data
 
 
-def table_asset_factory(asset_name, partition_start_date, columns=["*"], where={}):
+def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], where={}):
     if partition_start_date is not None:
         where["partition_start_date"] = partition_start_date
         daily_partitions_def = DailyPartitionsDefinition(
@@ -92,8 +96,9 @@ def table_asset_factory(asset_name, partition_start_date, columns=["*"], where={
             context=context, table_name=asset_name, columns=columns, where=where
         )
 
-        context.log.info("Starting SSH tunnel")
         ssh_tunnel = context.resources.ps_ssh.get_tunnel()
+
+        context.log.info("Starting SSH tunnel")
         ssh_tunnel.start()
 
         row_count = count(context=context, sql=sql)
@@ -102,7 +107,7 @@ def table_asset_factory(asset_name, partition_start_date, columns=["*"], where={
                 context=context,
                 sql=sql,
                 partition_size=100000,
-                output_fmt="dict",
+                output="avro",
             )
         else:
             data = None

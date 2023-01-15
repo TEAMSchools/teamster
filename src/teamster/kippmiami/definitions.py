@@ -57,10 +57,14 @@ defs = Definitions(
             )
         ),
         "ps_db": oracle.configured(
-            config_from_files(["src/teamster/core/powerschool/db/config/db.yaml"])
+            config_from_files(
+                ["src/teamster/core/resources/config/db_powerschool.yaml"]
+            )
         ),
         "ps_ssh": ssh_resource.configured(
-            config_from_files(["src/teamster/core/powerschool/db/config/ssh.yaml"])
+            config_from_files(
+                ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+            )
         ),
     },
 )
