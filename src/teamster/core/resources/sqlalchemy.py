@@ -32,8 +32,8 @@ class SqlAlchemyEngine(object):
             result = conn.execute(statement=query)
 
             try:
-                self.log.debug([col for col in result.cursor.description])
-                self.log.debug(result.context.compiled.statement.columns)
+                for col in result.cursor.description:
+                    print(col[0], col[1].as_generic())
             except Exception:
                 pass
 
