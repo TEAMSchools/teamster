@@ -1,10 +1,61 @@
-import dagster._check as check
 import google.auth
 import gspread
-from dagster import Field, String, StringSource, resource
+from dagster import Field, String, StringSource
+from dagster import _check as check
+from dagster import io_manager, resource
+from dagster._utils.backoff import backoff
 from dagster._utils.merger import merge_dicts
 from dagster_gcp.gcs.file_manager import GCSFileManager
+from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
+from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
+
+DEFAULT_LEASE_DURATION = 60  # One minute
+
+
+class FilenameGCSIOManager(PickledObjectGCSIOManager):
+    def handle_output(self, context, filename):
+        if isinstance(context.dagster_type.typing_type, type(None)):
+            check.invariant(
+                filename is None,
+                (
+                    "Output had Nothing type or 'None' annotation, but handle_output received"
+                    f" value that was not None and was of type {type(filename)}."
+                ),
+            )
+            return None
+
+        key = self._get_path(context)
+        context.log.debug(
+            f"Uploading {filename} to GCS object at: {self._uri_for_key(key)}"
+        )
+
+        if self._has_object(key):
+            context.log.warning(f"Removing existing GCS key: {key}")
+            self._rm_object(key)
+
+        backoff(
+            self.bucket_obj.blob(key).upload_from_filename,
+            args=[filename],
+            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+        )
+
+
+@io_manager(
+    config_schema={
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+    },
+    required_resource_keys={"gcs"},
+)
+def gcs_filename_io_manager(init_context):
+    client = init_context.resources.gcs
+    filename_io_manager = FilenameGCSIOManager(
+        init_context.resource_config["gcs_bucket"],
+        client,
+        init_context.resource_config["gcs_prefix"],
+    )
+    return filename_io_manager
 
 
 class GCSFileManager(GCSFileManager):
