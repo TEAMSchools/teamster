@@ -111,13 +111,13 @@ class SqlAlchemyEngine(object):
         with self.engine.connect(**connect_kwargs) as conn:
             self.log.info(f"Executing query:\n{query}")
             result = conn.execute(statement=query)
-            if output is None:
-                pass
-            else:
-                result_cursor_descr = result.cursor.description
 
+            result_cursor_descr = result.cursor.description
+            if output in ["dict", "json"]:
                 self.log.debug("Staging result mappings")
                 result = result.mappings()
+            else:
+                pass
 
             self.log.debug("Partitioning results")
             partitions = result.partitions(size=partition_size)
@@ -144,7 +144,6 @@ class SqlAlchemyEngine(object):
                 # python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html
                 avro_schema_fields = []
                 for col in result_cursor_descr:
-                    self.log.debug(col)
                     # TODO: refactor based on db type
                     avro_schema_fields.append(
                         {
@@ -169,10 +168,14 @@ class SqlAlchemyEngine(object):
                     self.log.debug(f"Saving partition {i}")
                     if i == 0:
                         with open(output_data, "wb") as f:
-                            writer(f, avro_schema, data)
+                            writer(
+                                fo=f, schema=avro_schema, records=data, codec="snappy"
+                            )
                     else:
                         with open(output_data, "a+b") as f:
-                            writer(f, avro_schema, data)
+                            writer(
+                                fo=f, schema=avro_schema, records=data, codec="snappy"
+                            )
                     del data
 
                 self.log.info(f"Retrieved {len_data} rows")

@@ -91,7 +91,7 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
     @asset(
         name=asset_name,
         partitions_def=daily_partitions_def,
-        required_resource_keys={"ps_db", "ps_ssh"},
+        required_resource_keys={"ps_io", "ps_db", "ps_ssh"},
         output_required=False,
     )
     def ps_table(context):
