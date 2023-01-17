@@ -7,9 +7,7 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def construct_sql(context, table_name, columns, where):
-    if not where:
-        constructed_where = ""
-    elif isinstance(where, str):
+    if isinstance(where, str):
         constructed_where = where
     elif context.has_partition_key:
         where_column = where["column"]
@@ -47,34 +45,20 @@ def construct_sql(context, table_name, columns, where):
 
 
 def count(context, sql):
-    if sql.whereclause.text != "":
-        query = text(
-            (
-                "SELECT COUNT(*) "
-                f"FROM {sql.get_final_froms()[0].name} "
-                f"WHERE {sql.whereclause.text}"
-            )
-        )
+    query_text = f"SELECT COUNT(*) FROM {sql.get_final_froms()[0].name}"
+
+    if sql.whereclause.text == "":
+        query = text(query_text)
     else:
-        query = text("SELECT COUNT(*) " f"FROM {sql.get_final_froms()[0].name}")
+        query = text(f"{query_text} WHERE {sql.whereclause.text}")
 
     [(count,)] = context.resources.ps_db.execute_query(
         query=query,
         partition_size=1,
         output=None,
     )
-    context.log.info(f"Found {count} rows")
 
     return count
-
-
-def extract(context, sql, partition_size, output):
-    data = context.resources.ps_db.execute_query(
-        query=sql,
-        partition_size=partition_size,
-        output=output,
-    )
-    return data
 
 
 def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], where={}):
@@ -95,7 +79,7 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
         output_required=False,
         io_manager_key="ps_io",
     )
-    def ps_table(context):
+    def powerschool_table(context):
         sql = construct_sql(
             context=context, table_name=asset_name, columns=columns, where=where
         )
@@ -106,12 +90,11 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
         ssh_tunnel.start()
 
         row_count = count(context=context, sql=sql)
+        context.log.info(f"Found {row_count} rows")
+
         if row_count > 0:
-            data = extract(
-                context=context,
-                sql=sql,
-                partition_size=100000,
-                output="avro",
+            data = context.resources.ps_db.execute_query(
+                query=sql, partition_size=100000, output="avro"
             )
         else:
             data = None
@@ -121,7 +104,7 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
 
         return data
 
-    return ps_table
+    return powerschool_table
 
 
 def generate_powerschool_assets(partition_start_date=None):
