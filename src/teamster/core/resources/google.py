@@ -15,12 +15,14 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 
 class FilenameGCSIOManager(PickledObjectGCSIOManager):
     def handle_output(self, context, filename):
-        if isinstance(context.dagster_type.typing_type, type(None)):
+        context.log.debug(context.dagster_type.typing_type)
+        if context.dagster_type.typing_type == type(None):
             check.invariant(
                 filename is None,
                 (
-                    "Output had Nothing type or 'None' annotation, but handle_output received"
-                    f" value that was not None and was of type {type(filename)}."
+                    "Output had Nothing type or 'None' annotation, but handle_output "
+                    "received value that was not None and was of type "
+                    f"{type(filename)}."
                 ),
             )
             return None
