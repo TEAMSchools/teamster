@@ -5,7 +5,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import (
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.resources.google import google_sheets
+from teamster.core.resources.google import gcs_filename_io_manager, google_sheets
 from teamster.core.resources.sqlalchemy import mssql, oracle
 from teamster.core.resources.ssh import ssh_resource
 from teamster.test.datagun import assets as local_datagun_assets
@@ -49,6 +49,11 @@ defs = Definitions(
         "sftp_test": ssh_resource.configured(
             config_from_files(
                 ["src/teamster/core/resources/config/sftp_pythonanywhere.yaml"]
+            )
+        ),
+        "ps_io": gcs_filename_io_manager.configured(
+            config_from_files(
+                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
             )
         ),
         "ps_db": oracle.configured(

@@ -144,17 +144,22 @@ class SqlAlchemyEngine(object):
                 # python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html
                 avro_schema_fields = []
                 for col in result_cursor_descr:
-                    # TODO: refactor based on db type
                     avro_schema_fields.append(
                         {
                             "name": col[0].lower(),
-                            "type": AVRO_TYPES.get(col[1].name, ["null"]),
+                            "type": AVRO_TYPES.get(
+                                col[1].name, ["null"]
+                            ),  # TODO: refactor based on db type
                         }
                     )
                 self.log.debug(avro_schema_fields)
 
                 avro_schema = parse_schema(
-                    {"type": "record", "name": "data", "fields": avro_schema_fields}
+                    {
+                        "type": "record",
+                        "name": query.get_final_froms()[0].name,
+                        "fields": avro_schema_fields,
+                    }
                 )
 
                 len_data = 0
