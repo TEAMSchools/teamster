@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import DailyPartitionsDefinition, Output, asset
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -102,7 +102,7 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
         context.log.info("Stopping SSH tunnel")
         ssh_tunnel.stop()
 
-        return data
+        return Output(value=data)
 
     return powerschool_table
 

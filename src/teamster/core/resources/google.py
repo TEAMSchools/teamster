@@ -16,7 +16,7 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 class FilenameGCSIOManager(PickledObjectGCSIOManager):
     def handle_output(self, context, filename):
         context.log.debug(context.dagster_type.typing_type)
-        if context.dagster_type.typing_type == type(None):
+        if isinstance(context.dagster_type.typing_type, None):
             check.invariant(
                 filename is None,
                 (
