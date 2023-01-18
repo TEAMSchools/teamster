@@ -59,13 +59,7 @@ actions:
   disabled:
     - commitlint
   enabled:
-    - post-checkout
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
-  definitions:
-    - id: post-checkout
-      triggers:
-        - git_hooks: [post-checkout]
-      run: bash .trunk/scripts/post-checkout.sh

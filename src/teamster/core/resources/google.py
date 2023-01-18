@@ -1,6 +1,9 @@
+from datetime import datetime
+from typing import Union
+
 import google.auth
 import gspread
-from dagster import Field, String, StringSource
+from dagster import Field, InputContext, OutputContext, String, StringSource
 from dagster import _check as check
 from dagster import io_manager, resource
 from dagster._utils.backoff import backoff
@@ -14,9 +17,27 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 
 
 class FilenameGCSIOManager(PickledObjectGCSIOManager):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        if context.has_asset_key:
+            path = context.get_asset_identifier()
+            if context.has_asset_partitions:
+                asset_partition_key = datetime.strptime(
+                    path.pop(-1), "%Y-%m-%dT%H:%M:%S.%f%z"
+                )
+                path.append(f"dt={asset_partition_key.date()}")
+                path.append(asset_partition_key.strftime("%H"))
+        else:
+            parts = context.get_identifier()
+            run_id = parts[0]
+            output_parts = parts[1:]
+
+            path = ["storage", run_id, "files", *output_parts]
+
+        return "/".join([self.prefix, *path])
+
     def handle_output(self, context, filename):
         context.log.debug(context.dagster_type.typing_type)
-        if isinstance(context.dagster_type.typing_type, None):
+        if isinstance(context.dagster_type.typing_type, type(None)):
             check.invariant(
                 filename is None,
                 (
