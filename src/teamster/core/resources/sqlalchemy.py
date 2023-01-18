@@ -26,7 +26,7 @@ AVRO_TYPES = {
         "float",
         "long",
         "double",
-        {"type": "bytes", "logicalType": "decimal"},
+        {"type": "bytes", "logicalType": "decimal", "precision": 31},
     ],
     "DB_TYPE_BINARY_FLOAT": [
         "null",
@@ -35,7 +35,7 @@ AVRO_TYPES = {
         "float",
         "long",
         "double",
-        {"type": "bytes", "logicalType": "decimal"},
+        {"type": "bytes", "logicalType": "decimal", "precision": 31},
     ],
     "DB_TYPE_BINARY_INTEGER": [
         "null",
@@ -44,7 +44,7 @@ AVRO_TYPES = {
         "float",
         "long",
         "double",
-        {"type": "bytes", "logicalType": "decimal"},
+        {"type": "bytes", "logicalType": "decimal", "precision": 31},
     ],
     "DB_TYPE_NUMBER": [
         "null",
@@ -53,7 +53,7 @@ AVRO_TYPES = {
         "float",
         "long",
         "double",
-        {"type": "bytes", "logicalType": "decimal"},
+        {"type": "bytes", "logicalType": "decimal", "precision": 31},
     ],
     "DB_TYPE_BLOB": ["null", "bytes", "string"],
     "DB_TYPE_CHAR": ["null", "bytes", "string"],
