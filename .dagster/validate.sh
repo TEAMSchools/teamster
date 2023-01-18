@@ -7,6 +7,6 @@ else
   set -o allexport
   # shellcheck source=/dev/null
   source env/"${1}"/.env
-  python -c "from teamster.${1}.definitions import defs"
+  python -m teamster."${1}".definitions
   set +o allexport
 fi
