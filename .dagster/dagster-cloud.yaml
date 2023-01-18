@@ -1,7 +1,6 @@
 locations:
   - location_name: test
     code_source:
-      # python_file: src/teamster/test/definitions.py
       module_name: teamster.test.definitions
     build:
       directory: ./
@@ -13,7 +12,6 @@ locations:
           - test
   - location_name: kippnewark
     code_source:
-      # python_file: src/teamster/kippnewark/definitions.py
       module_name: teamster.kippnewark.definitions
     build:
       directory: ./
@@ -37,7 +35,6 @@ locations:
           - kippcamden
   - location_name: kippmiami
     code_source:
-      # python_file: src/teamster/kippmiami/definitions.py
       module_name: teamster.kippmiami.definitions
     build:
       directory: ./
@@ -49,7 +46,6 @@ locations:
           - kippmiami
   - location_name: kipptaf
     code_source:
-      # python_file: src/teamster/kipptaf/definitions.py
       module_name: teamster.kipptaf.definitions
     build:
       directory: ./
