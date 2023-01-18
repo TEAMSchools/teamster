@@ -13,12 +13,12 @@ from dagster_k8s import k8s_job_executor
 from teamster.core.resources.google import gcs_filename_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
 from teamster.core.resources.ssh import ssh_resource
-from teamster.kippmiami.datagun import assets as local_datagun_assets
-from teamster.kippmiami.datagun import jobs as local_datagun_jobs
-from teamster.kippmiami.datagun import schedules as local_datagun_schedules
-from teamster.kippmiami.powerschool.db import assets as ps_db_assets
 
-CODE_LOCATION = "kippmiami"
+from . import CODE_LOCATION
+from .datagun import assets as local_datagun_assets
+from .datagun import jobs as local_datagun_jobs
+from .datagun import schedules as local_datagun_schedules
+from .powerschool.db import assets as ps_db_assets
 
 defs = Definitions(
     executor=k8s_job_executor,

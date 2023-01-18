@@ -1,24 +1,19 @@
 from datetime import datetime, timedelta
 
-from dagster import DailyPartitionsDefinition, Output, asset
+from dagster import HourlyPartitionsDefinition, Output, asset
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-def construct_sql(context, table_name, columns, where):
-    if isinstance(where, str):
-        constructed_where = where
-    elif context.has_partition_key:
-        where_column = where["column"]
-        partition_start_date = datetime.strptime(
-            where["partition_start_date"], "%Y-%m-%dT%H:%M:%S.%f%z"
-        )
-
+def construct_sql(context, table_name, columns, where_column, partition_start_date):
+    if context.has_partition_key:
         start_datetime = context.partition_time_window.start
         end_datetime = start_datetime + timedelta(days=1)
 
-        if start_datetime == partition_start_date:
+        if start_datetime == datetime.strptime(
+            partition_start_date, "%Y-%m-%dT%H:%M:%S.%f%z"
+        ):
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP_TZ('"
                 f"{end_datetime.isoformat(timespec='microseconds')}"
@@ -61,10 +56,11 @@ def count(context, sql):
     return count
 
 
-def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], where={}):
+def table_asset_factory(
+    asset_name, partition_start_date=None, columns=["*"], where_column=""
+):
     if partition_start_date is not None:
-        where["partition_start_date"] = partition_start_date
-        daily_partitions_def = DailyPartitionsDefinition(
+        daily_partitions_def = HourlyPartitionsDefinition(
             start_date=partition_start_date,
             timezone=str(LOCAL_TIME_ZONE),
             fmt="%Y-%m-%dT%H:%M:%S.%f%z",
@@ -81,7 +77,11 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
     )
     def powerschool_table(context):
         sql = construct_sql(
-            context=context, table_name=asset_name, columns=columns, where=where
+            context=context,
+            table_name=asset_name,
+            columns=columns,
+            where_column=where_column,
+            partition_start_date=partition_start_date,
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel()
@@ -103,98 +103,3 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
         ssh_tunnel.stop()
 
     return powerschool_table
-
-
-def generate_powerschool_assets(partition_start_date=None):
-    assets = []
-
-    # not partitionable
-    for table_name in [
-        "attendance_conversion_items",
-        "gen",
-        "test",
-        "testscore",
-        "attendance_code",
-        "bell_schedule",
-        "cycle_day",
-        "fte",
-        "period",
-        "reenrollments",
-        "calendar_day",
-        "spenrollments",
-    ]:
-        assets.append(table_asset_factory(asset_name=table_name))
-
-    # table-specific partition
-    assets.append(
-        table_asset_factory(
-            asset_name="log",
-            where={"column": "entry_date"},
-            partition_start_date=partition_start_date,
-        )
-    )
-
-    # transaction_date
-    for table_name in [
-        "attendance",
-        "cc",
-        "courses",
-        "pgfinalgrades",
-        "prefs",
-        "schools",
-        "sections",
-        "storedgrades",
-        "students",
-        "termbins",
-        "terms",
-    ]:
-        assets.append(
-            table_asset_factory(
-                asset_name=table_name,
-                where={"column": "transaction_date"},
-                partition_start_date=partition_start_date,
-            )
-        )
-
-    # whenmodified
-    for table_name in [
-        "assignmentcategoryassoc",
-        "assignmentscore",
-        "assignmentsection",
-        "codeset",
-        "districtteachercategory",
-        "emailaddress",
-        "gradecalcformulaweight",
-        "gradecalcschoolassoc",
-        "gradecalculationtype",
-        "gradeformulaset",
-        "gradescaleitem",
-        "gradeschoolconfig",
-        "gradeschoolformulaassoc",
-        "gradesectionconfig",
-        "originalcontactmap",
-        "person",
-        "personaddress",
-        "personaddressassoc",
-        "personemailaddressassoc",
-        "personphonenumberassoc",
-        "phonenumber",
-        "roledef",
-        "schoolstaff",
-        "sectionteacher",
-        "studentcontactassoc",
-        "studentcontactdetail",
-        "studentcorefields",
-        "studentrace",
-        "teachercategory",
-        "users",
-    ]:
-        assets.append(
-            table_asset_factory(
-                asset_name=table_name,
-                where={"column": "whenmodified"},
-                partition_start_date=partition_start_date,
-            )
-        )
-
-    return assets
