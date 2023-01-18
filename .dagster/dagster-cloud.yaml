@@ -1,7 +1,8 @@
 locations:
   - location_name: test
     code_source:
-      python_file: src/teamster/test/definitions.py
+      # python_file: src/teamster/test/definitions.py
+      module_name: teamster.test
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-test/teamster-test
@@ -12,7 +13,8 @@ locations:
           - test
   - location_name: kippnewark
     code_source:
-      python_file: src/teamster/kippnewark/definitions.py
+      # python_file: src/teamster/kippnewark/definitions.py
+      module_name: teamster.kippnewark
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippnewark/teamster-kippnewark
@@ -23,7 +25,8 @@ locations:
           - kippnewark
   - location_name: kippcamden
     code_source:
-      python_file: src/teamster/kippcamden/definitions.py
+      # python_file: src/teamster/kippcamden/definitions.py
+      module_name: teamster.kippcamden
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
@@ -34,7 +37,8 @@ locations:
           - kippcamden
   - location_name: kippmiami
     code_source:
-      python_file: src/teamster/kippmiami/definitions.py
+      # python_file: src/teamster/kippmiami/definitions.py
+      module_name: teamster.kippmiami
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
@@ -45,7 +49,8 @@ locations:
           - kippmiami
   - location_name: kipptaf
     code_source:
-      python_file: src/teamster/kipptaf/definitions.py
+      # python_file: src/teamster/kipptaf/definitions.py
+      module_name: teamster.kipptaf
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
