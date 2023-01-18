@@ -96,13 +96,11 @@ def table_asset_factory(asset_name, partition_start_date=None, columns=["*"], wh
             data = context.resources.ps_db.execute_query(
                 query=sql, partition_size=100000, output="avro"
             )
-        else:
-            data = None
+
+            yield Output(value=data, metadata={"records": row_count})
 
         context.log.info("Stopping SSH tunnel")
         ssh_tunnel.stop()
-
-        return Output(value=data)
 
     return powerschool_table
 
