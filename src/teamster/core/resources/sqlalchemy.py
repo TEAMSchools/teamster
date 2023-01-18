@@ -13,7 +13,7 @@ from teamster.core.utils.classes import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb
 
-AVRO_TYPES = {
+ORACLE_AVRO_SCHEMA_TYPES = {
     "DB_TYPE_BFILE": ["null"],
     "DB_TYPE_INTERVAL_YM": ["null"],
     "DB_TYPE_CURSOR": ["null"],
@@ -147,7 +147,7 @@ class SqlAlchemyEngine(object):
                     avro_schema_fields.append(
                         {
                             "name": col[0].lower(),
-                            "type": AVRO_TYPES.get(
+                            "type": ORACLE_AVRO_SCHEMA_TYPES.get(
                                 col[1].name, ["null"]
                             ),  # TODO: refactor based on db type
                         }
