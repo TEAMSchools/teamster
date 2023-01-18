@@ -1,25 +1,12 @@
-from teamster.core.powerschool.db.assets import (
-    generate_powerschool_assets,
-    table_asset_factory,
-)
+from dagster import config_from_files
 
-PARTITIONS_START_DATE = "2018-07-01T00:00:00.000000-0400"
+from teamster.core.powerschool.db.assets import table_asset_factory
 
-core_ps_db_assets = generate_powerschool_assets(
-    partition_start_date=PARTITIONS_START_DATE
-)
+from ... import CODE_LOCATION
 
-local_ps_db_assets = []
-for table_name in [
-    "u_clg_et_stu",
-    "u_clg_et_stu_alt",
-    "u_def_ext_students",
-    "u_studentsuserfields",
-]:
-    local_ps_db_assets.append(
-        table_asset_factory(
-            asset_name=table_name,
-            where={"column": "whenmodified"},
-            partition_start_date=PARTITIONS_START_DATE,
-        )
-    )
+ps_db_assets = [
+    table_asset_factory(**cfg)
+    for cfg in config_from_files(
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets.yaml"]
+    )["assets"]
+]
