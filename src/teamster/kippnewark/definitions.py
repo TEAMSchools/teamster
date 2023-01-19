@@ -26,7 +26,7 @@ defs = Definitions(
         load_assets_from_modules(
             modules=[ps_db_assets],
             group_name="powerschool",
-            key_prefix=f"powerschool_{CODE_LOCATION}",
+            key_prefix=["powerschool", "{CODE_LOCATION}"],
         )
         + load_assets_from_modules(modules=[local_datagun_assets], group_name="datagun")
     ),
