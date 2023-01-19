@@ -3,14 +3,17 @@ from typing import Union
 
 import google.auth
 import gspread
-from dagster import Field, InputContext, OutputContext, String, StringSource
-from dagster import _check as check
-from dagster import io_manager, resource
+from dagster import (
+    Field,
+    InputContext,
+    OutputContext,
+    String,
+    StringSource,
+    io_manager,
+    resource,
+)
 from dagster._utils.backoff import backoff
-from dagster._utils.merger import merge_dicts
-from dagster_gcp.gcs.file_manager import GCSFileManager
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
-from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 
 DEFAULT_LEASE_DURATION = 60  # One minute
@@ -70,57 +73,6 @@ def gcs_filename_io_manager(init_context):
         init_context.resource_config["gcs_prefix"],
     )
     return filename_io_manager
-
-
-class GCSFileManager(GCSFileManager):
-    def __init__(self, logger, client, gcs_bucket, gcs_base_key):
-        self.log = logger
-
-        super().__init__(client, gcs_bucket, gcs_base_key)
-
-    def blob_exists(self, ext=None, key=None):
-        key = check.opt_str_param(key, "key")
-
-        gcs_key = f"{self._gcs_base_key}/{key}"
-
-        blobs = self._client.list_blobs(
-            bucket_or_name=self._gcs_bucket,
-            prefix=gcs_key,
-            delimiter="/",
-        )
-        next(blobs, None)  # force list_blobs result to make API call (lazy loading)
-        blob_prefixes = blobs.prefixes
-
-        return True if gcs_key + "/" in blob_prefixes else False
-
-    def download_as_bytes(self, file_handle):
-        bucket_obj = self._client.bucket(file_handle.gcs_bucket)
-        return bucket_obj.blob(file_handle.gcs_key).download_as_bytes()
-
-
-@resource(
-    merge_dicts(
-        GCS_CLIENT_CONFIG,
-        {
-            "gcs_bucket": Field(StringSource),
-            "gcs_prefix": Field(
-                StringSource, is_required=False, default_value="dagster"
-            ),
-        },
-    )
-)
-def gcs_file_manager(context):
-    """FileManager that provides abstract access to GCS.
-
-    Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
-    """
-    gcs_client = _gcs_client_from_config(context.resource_config)
-    return GCSFileManager(
-        logger=context.log,
-        client=gcs_client,
-        gcs_bucket=context.resource_config["gcs_bucket"],
-        gcs_base_key=context.resource_config["gcs_prefix"],
-    )
 
 
 class GoogleSheets(object):

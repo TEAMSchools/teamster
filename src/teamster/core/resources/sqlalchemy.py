@@ -132,7 +132,7 @@ class SqlAlchemyEngine(object):
                 ]
                 del pt_rows
 
-                self.log.info(f"Retrieved {len(output_data)} rows")
+                self.log.debug(f"Retrieved {len(output_data)} rows")
             elif output == "avro":
                 data_dir = pathlib.Path("data").absolute()
                 data_dir.mkdir(parents=True, exist_ok=True)
