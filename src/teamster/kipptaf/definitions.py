@@ -52,9 +52,7 @@ defs = Definitions(
             )
         ),
         "gsheets": google_sheets.configured(
-            config_from_files(
-                [f"src/teamster/{CODE_LOCATION}/resources/config/gsheets.yaml"]
-            )
+            config_from_files(["src/teamster/core/resources/config/gsheets.yaml"])
         ),
         "sftp_blissbook": ssh_resource.configured(
             config_from_files(
