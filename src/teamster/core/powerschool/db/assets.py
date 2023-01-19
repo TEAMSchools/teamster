@@ -94,11 +94,13 @@ def table_asset_factory(
         context.log.info(f"Found {row_count} rows")
 
         if row_count > 0:
-            data = context.resources.ps_db.execute_query(
+            filename = context.resources.ps_db.execute_query(
                 query=sql, partition_size=100000, output="avro"
             )
+        else:
+            filename = None
 
-            yield Output(value=data, metadata={"records": row_count})
+        yield Output(value=filename, metadata={"records": row_count})
 
         context.log.info("Stopping SSH tunnel")
         ssh_tunnel.stop()

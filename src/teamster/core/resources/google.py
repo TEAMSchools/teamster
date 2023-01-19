@@ -36,16 +36,7 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
         return "/".join([self.prefix, *path])
 
     def handle_output(self, context, filename):
-        context.log.debug(context.dagster_type.typing_type)
-        if isinstance(context.dagster_type.typing_type, type(None)):
-            check.invariant(
-                filename is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output "
-                    "received value that was not None and was of type "
-                    f"{type(filename)}."
-                ),
-            )
+        if filename is None:
             return None
 
         key = self._get_path(context)
