@@ -17,5 +17,3 @@ ps_db_partitioned_assets = [
         [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-partitioned.yaml"]
     )["assets"]
 ]
-
-__all__ = ps_db_assets + ps_db_partitioned_assets
