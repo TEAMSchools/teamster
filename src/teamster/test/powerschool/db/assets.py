@@ -1,13 +1,19 @@
-from dagster import materialize
+from dagster import config_from_files
 
 from teamster.core.powerschool.db.assets import table_asset_factory
 
-PARTITIONS_START_DATE = "2002-07-01T00:00:00.000000-0400"
+from ... import CODE_LOCATION
 
-cc = table_asset_factory(asset_name="cc", partition_start_date=PARTITIONS_START_DATE)
+ps_db_assets = [
+    table_asset_factory(**cfg, code_location=CODE_LOCATION)
+    for cfg in config_from_files(
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets.yaml"]
+    )["assets"]
+]
 
-
-def test_powerschool_table_asset():
-    result = materialize(assets=[cc])
-
-    assert result.success
+ps_db_partitioned_assets = [
+    table_asset_factory(**cfg, code_location=CODE_LOCATION)
+    for cfg in config_from_files(
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-partitioned.yaml"]
+    )["assets"]
+]

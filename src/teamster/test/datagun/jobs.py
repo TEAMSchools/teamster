@@ -6,3 +6,5 @@ test_extract_assets_job = define_asset_job(
     name="test_extract_assets_job",
     selection=AssetSelection.assets(*sftp_extract_assets, *gsheet_extract_assets),
 )
+
+__all__ = [test_extract_assets_job]
