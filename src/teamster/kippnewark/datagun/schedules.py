@@ -17,3 +17,5 @@ nps_extract_assets_schedule = ScheduleDefinition(
     cron_schedule="0 0 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
+
+__all__ = [powerschool_extract_assets_schedule, nps_extract_assets_schedule]

@@ -1,6 +1,6 @@
 from dagster import AssetSelection, define_asset_job
 
-from teamster.kipptaf.datagun.assets import (
+from .assets import (
     adp_extract_assets,
     alchemer_extract_assets,
     blissbook_extract_assets,
@@ -104,3 +104,23 @@ gsheet_extract_assets_job = define_asset_job(
     name="gsheet_extract_assets_job",
     selection=AssetSelection.assets(*gsheet_extract_assets),
 )
+
+__all__ = [
+    adp_extract_assets_job,
+    alchemer_extract_assets_job,
+    blissbook_extract_assets_job,
+    clever_extract_assets_job,
+    coupa_extract_assets_job,
+    deanslist_extract_assets_job,
+    egencia_extract_assets_job,
+    fpodms_extract_assets_job,
+    gam_extract_assets_job,
+    gsheet_extract_assets_job,
+    idauto_extract_assets_job,
+    illuminate_extract_assets_job,
+    littlesis_extract_assets_job,
+    njdoe_extract_assets_job,
+    razkids_extract_assets_job,
+    read180_extract_assets_job,
+    whetstone_extract_assets_job,
+]

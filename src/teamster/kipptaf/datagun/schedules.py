@@ -1,7 +1,8 @@
 from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-from teamster.kipptaf.datagun.jobs import (
+
+from .jobs import (
     adp_extract_assets_job,
     alchemer_extract_assets_job,
     blissbook_extract_assets_job,
@@ -123,3 +124,23 @@ alchemer_extract_assets_schedule = ScheduleDefinition(
     cron_schedule="30 2 * * *",
     execution_timezone=str(LOCAL_TIME_ZONE),
 )
+
+__all__ = [
+    adp_extract_assets_schedule,
+    alchemer_extract_assets_schedule,
+    blissbook_extract_assets_schedule,
+    clever_extract_assets_schedule,
+    coupa_extract_assets_schedule,
+    deanslist_extract_assets_schedule,
+    egencia_extract_assets_schedule,
+    fpodms_extract_assets_schedule,
+    gam_extract_assets_schedule,
+    gsheet_extract_assets_schedule,
+    idauto_extract_assets_schedule,
+    illuminate_extract_assets_schedule,
+    littlesis_extract_assets_schedule,
+    njdoe_extract_assets_schedule,
+    razkids_extract_assets_schedule,
+    read180_extract_assets_schedule,
+    whetstone_extract_assets_schedule,
+]
