@@ -40,7 +40,9 @@ assets:
       name: pythonanywhere
       path: sftp/powerschool/kippmiami
   - asset_name: powerschool_autocomm_students_easyiep_txt
-    key_prefix: powerschool_kippmiami
+    key_prefix:
+      - powerschool
+      - kippmiami
     query_config:
       type: schema
       value:
