@@ -74,6 +74,7 @@ def table_asset_factory(
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
         io_manager_key="ps_io",
+        op_tags={"resource": "powerschool"},
     )
     def powerschool_table(context):
         sql = construct_sql(
