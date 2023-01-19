@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dagster import HourlyPartitionsDefinition, Output, asset
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.utils.variables import LOCAL_TIME_ZONE, TODAY
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def construct_sql(context, table_name, columns, where_column, partition_start_date):
@@ -60,9 +60,6 @@ def table_asset_factory(
     asset_name, code_location, partition_start_date=None, columns=["*"], where_column=""
 ):
     if partition_start_date is not None:
-        # temp start_date
-        partition_start_date = TODAY.isoformat(timespec="microseconds")
-
         hourly_partitions_def = HourlyPartitionsDefinition(
             start_date=partition_start_date,
             timezone=str(LOCAL_TIME_ZONE),
@@ -78,7 +75,6 @@ def table_asset_factory(
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
         io_manager_key="ps_io",
-        op_tags={"resource": "powerschool"},
     )
     def powerschool_table(context):
         sql = construct_sql(

@@ -183,7 +183,7 @@ class SqlAlchemyEngine(object):
                             )
                     del data
 
-                self.log.info(f"Retrieved {len_data} rows")
+                self.log.debug(f"Retrieved {len_data} rows")
 
         if output == "json":
             return json.dumps(obj=output_data, cls=CustomJSONEncoder)
