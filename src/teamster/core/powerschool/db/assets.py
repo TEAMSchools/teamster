@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Optional
 
-from dagster import HourlyPartitionsDefinition, Output, asset
+from dagster import FreshnessPolicy, HourlyPartitionsDefinition, Output, asset
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -39,7 +41,7 @@ def construct_sql(context, table_name, columns, where_column, partition_start_da
     )
 
 
-def count(context, sql):
+def count(context, sql) -> int:
     query_text = f"SELECT COUNT(*) FROM {sql.get_final_froms()[0].name}"
 
     if sql.whereclause.text == "":
@@ -57,7 +59,12 @@ def count(context, sql):
 
 
 def table_asset_factory(
-    asset_name, code_location, partition_start_date=None, columns=["*"], where_column=""
+    asset_name,
+    code_location,
+    partition_start_date=None,
+    freshness_policy=None,
+    columns=["*"],
+    where_column="",
 ):
     if partition_start_date is not None:
         hourly_partitions_def = HourlyPartitionsDefinition(
@@ -68,15 +75,19 @@ def table_asset_factory(
     else:
         hourly_partitions_def = None
 
+    if freshness_policy is not None:
+        freshness_policy = FreshnessPolicy(**freshness_policy)
+
     @asset(
         name=asset_name,
         key_prefix=["powerschool", code_location],
         partitions_def=hourly_partitions_def,
+        freshness_policy=freshness_policy,
+        io_manager_key="ps_io",
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
-        io_manager_key="ps_io",
     )
-    def powerschool_table(context):
+    def powerschool_table(context) -> Optional[Path]:
         sql = construct_sql(
             context=context,
             table_name=asset_name,
