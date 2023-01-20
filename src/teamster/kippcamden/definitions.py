@@ -1,18 +1,11 @@
-from dagster import (
-    AssetSelection,
-    Definitions,
-    build_asset_reconciliation_sensor,
-    config_from_files,
-    load_assets_from_modules,
-)
+from dagster import Definitions, config_from_files, load_assets_from_modules
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.resources.google import gcs_filename_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
 from teamster.core.resources.ssh import ssh_resource
-
-from . import CODE_LOCATION, datagun, powerschool
+from teamster.kippcamden import CODE_LOCATION, datagun, powerschool
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -21,8 +14,8 @@ defs = Definitions(
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
     ),
     jobs=datagun.jobs.__all__ + powerschool.jobs.__all__,
-    schedules=datagun.schedules.__all__,  # + powerschool.schedules.__all__,
-    sensors=[build_asset_reconciliation_sensor(asset_selection=AssetSelection.all())],
+    schedules=datagun.schedules.__all__,
+    sensors=powerschool.sensors.__all__,
     resources={
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(

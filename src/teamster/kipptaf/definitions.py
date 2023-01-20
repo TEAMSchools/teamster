@@ -5,8 +5,7 @@ from dagster_k8s import k8s_job_executor
 from teamster.core.resources.google import google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 from teamster.core.resources.ssh import ssh_resource
-
-from . import CODE_LOCATION, datagun
+from teamster.kipptaf import CODE_LOCATION, datagun
 
 defs = Definitions(
     executor=k8s_job_executor,
