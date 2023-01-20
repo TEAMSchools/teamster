@@ -122,13 +122,11 @@ class SqlAlchemyEngine(object):
             self.log.debug("Partitioning results")
             partitions = result.partitions(size=partition_size)
 
-            n_partitions = len(partitions)
-            self.log.debug(f"Retrieving rows from {n_partitions} partitions")
-
             if output in ["dict", "json"] or output is None:
+                self.log.debug("Retrieving rows from all partitions")
                 pt_rows = [rows for pt in partitions for rows in pt]
 
-                self.log.debug("Unpacking all partition rows")
+                self.log.debug("Unpacking partition rows")
                 output_data = [
                     dict(row) if output in ["dict", "json"] else row for row in pt_rows
                 ]
@@ -166,16 +164,13 @@ class SqlAlchemyEngine(object):
 
                 len_data = 0
                 for i, pt in enumerate(partitions):
-                    self.log.debug(
-                        f"Unpacking rows from partition {i + 1}/{n_partitions}"
-                    )
-
+                    self.log.debug(f"Retrieving rows from partition {i}")
                     data = [dict(row) for row in pt]
                     del pt
 
                     len_data += len(data)
 
-                    self.log.debug(f"Saving partition {i + 1}")
+                    self.log.debug(f"Saving partition {i}")
                     if i == 0:
                         with open(output_data, "wb") as f:
                             writer(
