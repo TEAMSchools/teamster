@@ -8,10 +8,10 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 def construct_sql(context, table_name, columns, where_column, partition_start_date):
     if context.has_partition_key:
-        start_datetime = context.partition_time_window.start
-        end_datetime = start_datetime + timedelta(hours=1)
+        end_datetime = context.partition_time_window.start
+        start_datetime = end_datetime - timedelta(hours=1)
 
-        if start_datetime == datetime.strptime(
+        if end_datetime == datetime.strptime(
             partition_start_date, "%Y-%m-%dT%H:%M:%S.%f%z"
         ):
             constructed_where = (
