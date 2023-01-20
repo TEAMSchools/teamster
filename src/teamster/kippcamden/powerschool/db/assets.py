@@ -20,3 +20,10 @@ ps_db_partitioned_assets = [
         [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-partitioned.yaml"]
     )["assets"]
 ]
+
+ps_assignment_assets = [
+    table_asset_factory(**cfg, code_location=CODE_LOCATION, where_column="whenmodified")
+    for cfg in config_from_files(
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-assignment.yaml"]
+    )["assets"]
+]
