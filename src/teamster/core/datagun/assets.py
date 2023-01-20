@@ -10,7 +10,7 @@ from teamster.core.utils.classes import CustomJSONEncoder
 from teamster.core.utils.variables import NOW, TODAY
 
 
-def construct_sql(context, query_type, query_value):
+def construct_sql(query_type, query_value):
     if query_type == "text":
         return text(query_value)
     elif query_type == "file":
@@ -25,9 +25,7 @@ def construct_sql(context, query_type, query_value):
         )
 
 
-def transform(context, data, file_suffix, file_encoding=None, file_format=None):
-    context.log.info(f"Transforming data to {file_suffix}")
-
+def transform(data, file_suffix, file_encoding=None, file_format=None):
     if file_suffix == "json":
         return json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
     elif file_suffix == "json.gz":
@@ -114,9 +112,7 @@ def sftp_extract_asset_factory(
         )
 
         sql = construct_sql(
-            context=context,
-            query_type=query_config["type"],
-            query_value=query_config["value"],
+            query_type=query_config["type"], query_value=query_config["value"]
         )
 
         data = context.resources.warehouse.execute_query(
@@ -126,8 +122,8 @@ def sftp_extract_asset_factory(
         )
 
         if data:
+            context.log.info(f"Transforming data to {file_suffix}")
             transformed_data = transform(
-                context=context,
                 data=data,
                 file_suffix=file_suffix,
                 file_encoding=file_config.get("encoding", "utf-8"),
@@ -157,9 +153,7 @@ def gsheet_extract_asset_factory(asset_name, query_config, file_config, op_tags=
         )
 
         sql = construct_sql(
-            context=context,
-            query_type=query_config["type"],
-            query_value=query_config["value"],
+            query_type=query_config["type"], query_value=query_config["value"]
         )
 
         data = context.resources.warehouse.execute_query(
@@ -169,9 +163,8 @@ def gsheet_extract_asset_factory(asset_name, query_config, file_config, op_tags=
         )
 
         if data:
-            transformed_data = transform(
-                context=context, data=data, file_suffix="gsheet"
-            )
+            context.log.info("Transforming data to gsheet")
+            transformed_data = transform(data=data, file_suffix="gsheet")
 
             load_gsheet(context=context, data=transformed_data, file_stem=file_stem)
 
