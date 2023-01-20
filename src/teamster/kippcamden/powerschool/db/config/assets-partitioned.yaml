@@ -23,34 +23,34 @@ assets:
   - asset_name: terms
     where_column: transaction_date
   # whenmodified
-  - asset_name: assignmentcategoryassoc
-    where_column: whenmodified
-  - asset_name: assignmentscore
-    where_column: whenmodified
-  - asset_name: assignmentsection
-    where_column: whenmodified
+  # - asset_name: assignmentcategoryassoc
+  #   where_column: whenmodified
+  # - asset_name: assignmentscore
+  #   where_column: whenmodified
+  # - asset_name: assignmentsection
+  #   where_column: whenmodified
   - asset_name: codeset
     where_column: whenmodified
-  - asset_name: districtteachercategory
-    where_column: whenmodified
+  # - asset_name: districtteachercategory
+  #   where_column: whenmodified
   - asset_name: emailaddress
     where_column: whenmodified
-  - asset_name: gradecalcformulaweight
-    where_column: whenmodified
-  - asset_name: gradecalcschoolassoc
-    where_column: whenmodified
-  - asset_name: gradecalculationtype
-    where_column: whenmodified
-  - asset_name: gradeformulaset
-    where_column: whenmodified
+  # - asset_name: gradecalcformulaweight
+  #   where_column: whenmodified
+  # - asset_name: gradecalcschoolassoc
+  #   where_column: whenmodified
+  # - asset_name: gradecalculationtype
+  #   where_column: whenmodified
+  # - asset_name: gradeformulaset
+  #   where_column: whenmodified
   - asset_name: gradescaleitem
     where_column: whenmodified
-  - asset_name: gradeschoolconfig
-    where_column: whenmodified
-  - asset_name: gradeschoolformulaassoc
-    where_column: whenmodified
-  - asset_name: gradesectionconfig
-    where_column: whenmodified
+  # - asset_name: gradeschoolconfig
+  #   where_column: whenmodified
+  # - asset_name: gradeschoolformulaassoc
+  #   where_column: whenmodified
+  # - asset_name: gradesectionconfig
+  #   where_column: whenmodified
   - asset_name: originalcontactmap
     where_column: whenmodified
   - asset_name: person
@@ -79,8 +79,8 @@ assets:
     where_column: whenmodified
   - asset_name: studentrace
     where_column: whenmodified
-  - asset_name: teachercategory
-    where_column: whenmodified
+  # - asset_name: teachercategory
+  #   where_column: whenmodified
   - asset_name: users
     where_column: whenmodified
   # custom extensions
