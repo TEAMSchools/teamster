@@ -1,8 +1,7 @@
 from dagster import config_from_files
 
 from teamster.core.powerschool.db.assets import table_asset_factory
-
-from ... import CODE_LOCATION
+from teamster.test import CODE_LOCATION
 
 ps_db_assets = [
     table_asset_factory(**cfg, code_location=CODE_LOCATION)

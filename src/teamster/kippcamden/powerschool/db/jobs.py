@@ -1,8 +1,8 @@
 from dagster import AssetSelection, HourlyPartitionsDefinition, define_asset_job
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
+from teamster.kippcamden import POWERSCHOOL_PARTITION_START_DATE
 
-from ... import POWERSCHOOL_PARTITION_START_DATE
 from .assets import ps_db_assets, ps_db_partitioned_assets
 
 ps_db_asset_job = define_asset_job(
