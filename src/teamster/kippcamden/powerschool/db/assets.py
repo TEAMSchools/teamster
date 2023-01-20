@@ -27,3 +27,17 @@ ps_assignment_assets = [
         [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-assignment.yaml"]
     )["assets"]
 ]
+
+ps_contacts_assets = [
+    table_asset_factory(**cfg, code_location=CODE_LOCATION, where_column="whenmodified")
+    for cfg in config_from_files(
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-contacts.yaml"]
+    )["assets"]
+]
+
+ps_custom_assets = [
+    table_asset_factory(**cfg, code_location=CODE_LOCATION, where_column="whenmodified")
+    for cfg in config_from_files(
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-custom.yaml"]
+    )["assets"]
+]

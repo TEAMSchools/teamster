@@ -13,7 +13,7 @@ defs = Definitions(
         load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
     ),
-    jobs=datagun.jobs.__all__ + powerschool.jobs.__all__,
+    jobs=datagun.jobs.__all__,
     schedules=datagun.schedules.__all__,
     sensors=powerschool.sensors.__all__,
     resources={
