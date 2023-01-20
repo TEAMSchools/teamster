@@ -31,6 +31,7 @@ ps_transactiondate_assets = [
         **cfg,
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
+        where_column="transaction_date",
     )
     for cfg in config_from_files(
         [
