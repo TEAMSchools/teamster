@@ -228,9 +228,9 @@ cryptography==39.0.0 \
 dagster==1.1.11 \
     --hash=sha256:281b6091e755a842fb999b08c433c7812488b2866dcf1f6dc4a8a988c521b289 \
     --hash=sha256:e3c51ac70eceee47718d8204a4ffa4b722709a62d7642269e9559eb71156fbd1
-dagster-cloud==1.1.11 \
-    --hash=sha256:5f0e464ce9aa98c770d4e9e649b32b5a8032f5ff52f2307be6362b01a796adb5 \
-    --hash=sha256:f44a5a6c8e3e6e61ee82b1caf1515a713bbec0f0b4ab78bac41fe5a380a4fc8b
+dagster-cloud==1.1.12 \
+    --hash=sha256:74717eeabf4985c65a836407dcffce9f83f8f500886b8458d8856367df718188 \
+    --hash=sha256:c2442fe1fe20fe6d56a85d0fa310dcfb09afd3908d493191ee00d4651952e0a3
 dagster-cloud-cli==1.1.11 \
     --hash=sha256:1cfe6067542a2039d55dea66dca17ba72a7f45279b56d4ea79f475a3da48c7dd \
     --hash=sha256:7f12ea95dc8a9fb95f9f7e4ddc64851e7963c7ea7a4996a7a15486eeac45069d
