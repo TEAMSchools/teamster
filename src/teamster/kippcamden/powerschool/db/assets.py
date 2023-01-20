@@ -10,14 +10,30 @@ ps_daily_assets = [
     )["assets"]
 ]
 
-ps_hourly_assets = [
+ps_misc_assets = [
     table_asset_factory(
         **cfg,
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
     )
     for cfg in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-hourly.yaml"]
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-misc.yaml"]
+    )["assets"]
+]
+
+ps_transactiondate_assets = [
+    table_asset_factory(
+        **cfg,
+        code_location=CODE_LOCATION,
+        partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
+    )
+    for cfg in config_from_files(
+        [
+            (
+                f"src/teamster/{CODE_LOCATION}/powerschool/db/config/"
+                "assets-transactiondate.yaml"
+            )
+        ]
     )["assets"]
 ]
 
