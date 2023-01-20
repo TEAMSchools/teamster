@@ -17,8 +17,20 @@ ps_assignment_assets_sensor = build_asset_reconciliation_sensor(
     name="ps_assignment_assets_sensor",
 )
 
+ps_contacts_assets_sensor = build_asset_reconciliation_sensor(
+    asset_selection=AssetSelection.assets(*assets.ps_contacts_assets),
+    name="ps_contacts_assets_sensor",
+)
+
+ps_custom_assets_sensor = build_asset_reconciliation_sensor(
+    asset_selection=AssetSelection.assets(*assets.ps_custom_assets),
+    name="ps_custom_assets_sensor",
+)
+
 __all__ = [
     ps_db_assets_sensor,
     ps_db_partitioned_assets_sensor,
     ps_assignment_assets_sensor,
+    ps_custom_assets_sensor,
+    ps_contacts_assets_sensor,
 ]
