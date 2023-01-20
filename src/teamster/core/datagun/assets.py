@@ -21,41 +21,32 @@ def construct_sql(context, query_type, query_value):
         return (
             select(*[literal_column(col) for col in query_value.get("select", ["*"])])
             .select_from(table(**query_value["table"]))
-            .where(text(query_value.get("where", "")))
+            .where(text(query_value.get("where", "").format(today=TODAY.isoformat())))
         )
-
-
-def extract(context, sql, partition_size):
-    if hasattr(sql, "whereclause"):
-        sql.whereclause.text = sql.whereclause.text.format(today=TODAY.isoformat())
-
-    return context.resources.warehouse.execute_query(
-        query=sql, partition_size=partition_size, output="dict"
-    )
 
 
 def transform(context, data, file_suffix, file_encoding=None, file_format=None):
     context.log.info(f"Transforming data to {file_suffix}")
-    if file_suffix == "gsheet":
-        df = pd.DataFrame(data=data)
 
+    if file_suffix == "json":
+        return json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
+    elif file_suffix == "json.gz":
+        return gzip.compress(
+            json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
+        )
+
+    df = pd.DataFrame(data=data)
+    if file_suffix in ["csv", "txt", "tsv"]:
+        return df.to_csv(index=False, encoding=file_encoding, **file_format).encode(
+            file_encoding
+        )
+    elif file_suffix == "gsheet":
         df_json = df.to_json(orient="split", date_format="iso", index=False)
 
         df_dict = json.loads(df_json)
         df_dict["shape"] = df.shape
 
         return df_dict
-    elif file_suffix == "json":
-        return json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
-    elif file_suffix == "json.gz":
-        return gzip.compress(
-            json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
-        )
-    elif file_suffix in ["csv", "txt", "tsv"]:
-        df = pd.DataFrame(data=data)
-        return df.to_csv(index=False, encoding=file_encoding, **file_format).encode(
-            file_encoding
-        )
 
 
 def load_sftp(context, data, file_name, destination_config):
@@ -121,7 +112,6 @@ def sftp_extract_asset_factory(
         file_stem = file_config["stem"].format(
             today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
         )
-        file_name = f"{file_stem}.{file_suffix}"
 
         sql = construct_sql(
             context=context,
@@ -129,16 +119,16 @@ def sftp_extract_asset_factory(
             query_value=query_config["value"],
         )
 
-        extract_data = extract(
-            context=context,
-            sql=sql,
+        data = context.resources.warehouse.execute_query(
+            query=sql,
             partition_size=query_config.get("partition_size", 100000),
+            output="dict",
         )
 
-        if extract_data:
+        if data:
             transformed_data = transform(
                 context=context,
-                data=extract_data,
+                data=data,
                 file_suffix=file_suffix,
                 file_encoding=file_config.get("encoding", "utf-8"),
                 file_format=file_config.get("format", {}),
@@ -147,7 +137,7 @@ def sftp_extract_asset_factory(
             load_sftp(
                 context=context,
                 data=transformed_data,
-                file_name=file_name,
+                file_name=f"{file_stem}.{file_suffix}",
                 destination_config=destination_config,
             )
 
@@ -172,15 +162,15 @@ def gsheet_extract_asset_factory(asset_name, query_config, file_config, op_tags=
             query_value=query_config["value"],
         )
 
-        extract_data = extract(
-            context=context,
-            sql=sql,
+        data = context.resources.warehouse.execute_query(
+            query=sql,
             partition_size=query_config.get("partition_size", 100000),
+            output="dict",
         )
 
-        if extract_data:
+        if data:
             transformed_data = transform(
-                context=context, data=extract_data, file_suffix="gsheet"
+                context=context, data=data, file_suffix="gsheet"
             )
 
             load_gsheet(context=context, data=transformed_data, file_stem=file_stem)
