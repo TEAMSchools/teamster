@@ -1,4 +1,10 @@
-from dagster import Definitions, config_from_files, load_assets_from_modules
+from dagster import (
+    AssetSelection,
+    Definitions,
+    build_asset_reconciliation_sensor,
+    config_from_files,
+    load_assets_from_modules,
+)
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
 
@@ -15,7 +21,8 @@ defs = Definitions(
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
     ),
     jobs=datagun.jobs.__all__ + powerschool.jobs.__all__,
-    schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
+    schedules=datagun.schedules.__all__,  # + powerschool.schedules.__all__,
+    sensors=[build_asset_reconciliation_sensor(asset_selection=AssetSelection.all())],
     resources={
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(
