@@ -1,24 +1,13 @@
 assets:
   # transaction_date
   - asset_name: attendance
-    where_column: transaction_date
   - asset_name: cc
-    where_column: transaction_date
   - asset_name: courses
-    where_column: transaction_date
   - asset_name: pgfinalgrades
-    where_column: transaction_date
   - asset_name: prefs
-    where_column: transaction_date
   - asset_name: schools
-    where_column: transaction_date
   - asset_name: sections
-    where_column: transaction_date
   - asset_name: storedgrades
-    where_column: transaction_date
   - asset_name: students
-    where_column: transaction_date
   - asset_name: termbins
-    where_column: transaction_date
   - asset_name: terms
-    where_column: transaction_date
