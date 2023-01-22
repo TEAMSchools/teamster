@@ -31,7 +31,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: .dagster/dagster-cloud.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-branch.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
