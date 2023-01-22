@@ -39,7 +39,7 @@ ORACLE_AVRO_SCHEMA_TYPES = {
     "DB_TYPE_LONG_RAW": ["null", "bytes"],
     "DB_TYPE_NCHAR": ["null", "string"],
     "DB_TYPE_NCLOB": ["null"],
-    "DB_TYPE_NUMBER": ["null", "double"],
+    "DB_TYPE_NUMBER": ["null", "int"],
     "DB_TYPE_NVARCHAR": ["null", "string"],
     "DB_TYPE_OBJECT": ["null"],
     "DB_TYPE_RAW": ["null", "bytes"],
