@@ -1,3 +1,3 @@
-from .db import assets
+from .db import assets, sensors
 
-__all__ = [assets]
+__all__ = [assets, sensors]

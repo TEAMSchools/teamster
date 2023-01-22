@@ -14,6 +14,8 @@ defs = Definitions(
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
     ),
     jobs=datagun.jobs.__all__,
+    # schedules=datagun.schedules.__all__,
+    sensors=powerschool.sensors.__all__,
     resources={
         "sftp_test": ssh_resource.configured(
             config_from_files(
