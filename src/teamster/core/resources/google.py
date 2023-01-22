@@ -24,11 +24,13 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
         if context.has_asset_key:
             path = context.get_asset_identifier()
             if context.has_asset_partitions:
-                asset_partition_key = datetime.strptime(
+                asset_partition_key = datetime.çstrptime(
                     path.pop(-1), "%Y-%m-%dT%H:%M:%S.%f%z"
                 )
                 path.append(f"dt={asset_partition_key.date()}")
                 path.append(asset_partition_key.strftime("%H"))
+            else:
+                path.append(path[-1])
         else:
             parts = context.get_identifier()
             run_id = parts[0]
