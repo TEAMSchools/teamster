@@ -13,34 +13,37 @@ from teamster.core.utils.classes import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb
 
+# https://cx-oracle.readthedocs.io/en/latest/user_guide/sql_execution.html#defaultfetchtypes
+# https://python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html#id2
 ORACLE_AVRO_SCHEMA_TYPES = {
     "DB_TYPE_BFILE": ["null"],
-    "DB_TYPE_INTERVAL_YM": ["null"],
-    "DB_TYPE_CURSOR": ["null"],
-    "DB_TYPE_OBJECT": ["null"],
-    "DB_TYPE_BOOLEAN": ["null", "boolean"],
     "DB_TYPE_BINARY_DOUBLE": ["null", "double"],
     "DB_TYPE_BINARY_FLOAT": ["null", "float"],
     "DB_TYPE_BINARY_INTEGER": ["null", "int"],
-    "DB_TYPE_LONG": ["null", "long"],
-    "DB_TYPE_NUMBER": ["null", "double"],
-    "DB_TYPE_BLOB": ["null", "bytes"],
+    "DB_TYPE_BLOB": ["null"],
+    "DB_TYPE_BOOLEAN": ["null", "boolean"],
     "DB_TYPE_CHAR": ["null", "string"],
-    "DB_TYPE_LONG_RAW": ["null", "bytes"],
-    "DB_TYPE_NCHAR": ["null", "string"],
-    "DB_TYPE_NVARCHAR": ["null", "string"],
-    "DB_TYPE_RAW": ["null", "bytes"],
-    "DB_TYPE_ROWID": ["null", "string"],
-    "DB_TYPE_UROWID": ["null", "string"],
-    "DB_TYPE_VARCHAR": ["null", "string"],
-    "DB_TYPE_CLOB": ["null", "bytes"],
-    "DB_TYPE_NCLOB": ["null", "bytes"],
-    "DB_TYPE_JSON": ["null", {"type": "bytes", "logicalType": "json"}],
+    "DB_TYPE_CLOB": ["null"],
+    "DB_TYPE_CURSOR": ["null"],
+    "DB_TYPE_DATE": ["null", {"type": "int", "logicalType": "date"}],
     "DB_TYPE_INTERVAL_DS": [
         "null",
         {"type": "fixed", "name": "datetime.timedelta", "logicalType": "duration"},
     ],
-    "DB_TYPE_DATE": ["null", {"type": "int", "logicalType": "date"}],
+    "DB_TYPE_INTERVAL_YM": [
+        "null",
+        {"type": "fixed", "name": "datetime.timedelta", "logicalType": "duration"},
+    ],
+    "DB_TYPE_JSON": ["null", {"type": "bytes", "logicalType": "json"}],
+    "DB_TYPE_LONG_RAW": ["null", "bytes"],
+    "DB_TYPE_LONG": ["null", "long"],
+    "DB_TYPE_NCHAR": ["null", "string"],
+    "DB_TYPE_NCLOB": ["null"],
+    "DB_TYPE_NUMBER": ["null", "double"],
+    "DB_TYPE_NVARCHAR": ["null", "string"],
+    "DB_TYPE_OBJECT": ["null"],
+    "DB_TYPE_RAW": ["null", "bytes"],
+    "DB_TYPE_ROWID": ["null", "string"],
     "DB_TYPE_TIMESTAMP": ["null", {"type": "long", "logicalType": "timestamp-micros"}],
     "DB_TYPE_TIMESTAMP_LTZ": [
         "null",
@@ -50,6 +53,8 @@ ORACLE_AVRO_SCHEMA_TYPES = {
         "null",
         {"type": "long", "logicalType": "timestamp-micros"},
     ],
+    "DB_TYPE_UROWID": ["null", "string"],
+    "DB_TYPE_VARCHAR": ["null", "string"],
 }
 
 
@@ -99,7 +104,6 @@ class SqlAlchemyEngine(object):
                 output_data = data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
                 self.log.debug(f"Saving results to {output_data}")
 
-                # python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html
                 avro_schema_fields = []
                 for col in result_cursor_descr:
                     avro_schema_fields.append(
