@@ -41,7 +41,7 @@ docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to
 test = { shell = "pdm run pytest", env_file = "env/test/.env", help = "Run tests with the default Python" }
 location-init = { shell = "bash .pdm/scripts/location-init.sh", help = "Create a new branch for a Dagster Code Location" }
 gcloud-init = { shell = "bash .pdm/scripts/gcloud-init.sh", help = "Set up GCP" }
-k8s-secret = { shell = "bash .pdm/scripts/k8s-secret.sh", help = "Update k8s secret for branch" }
+secrets = { shell = "bash .pdm/scripts/k8s-secret.sh", help = "Update k8s secret for branch" }
 helm-install = { shell = "bash .helm/scripts/install.sh", help = "Update Dagster Cloud Agent via Helm" }
 merge = { shell = "bash .pdm/scripts/merge.sh", help = "Merge main branch into location branches" }
 open-pr = { shell = "bash .pdm/scripts/open-pr.sh", help = "Open a pull request for all staging branches" }

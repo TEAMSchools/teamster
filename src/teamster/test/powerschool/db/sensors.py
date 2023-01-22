@@ -1,6 +1,6 @@
 from dagster import AssetSelection, build_asset_reconciliation_sensor
 
-from teamster.kippnewark.powerschool.db import assets
+from teamster.test.powerschool.db import assets
 
 ps_daily_assets_sensor = build_asset_reconciliation_sensor(
     asset_selection=AssetSelection.assets(*assets.ps_daily_assets),
