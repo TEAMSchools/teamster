@@ -29,6 +29,8 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
                 )
                 path.append(f"dt={asset_partition_key.date()}")
                 path.append(asset_partition_key.strftime("%H"))
+            else:
+                path.append(path[-1])
         else:
             parts = context.get_identifier()
             run_id = parts[0]
