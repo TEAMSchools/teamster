@@ -24,7 +24,7 @@ lint:
     - shfmt@3.5.0
     - actionlint@1.6.23
     - flake8@6.0.0
-    - gitleaks@8.15.2
+    - gitleaks@8.15.3
     - isort@5.11.4
     - black@22.12.0
   definitions:
