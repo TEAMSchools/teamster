@@ -14,7 +14,6 @@ from teamster.core.utils.classes import CustomJSONEncoder
 sys.modules["cx_Oracle"] = oracledb
 
 # https://cx-oracle.readthedocs.io/en/latest/user_guide/sql_execution.html#defaultfetchtypes
-# https://python-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html#id2
 ORACLE_AVRO_SCHEMA_TYPES = {
     "DB_TYPE_BFILE": ["null"],
     "DB_TYPE_BINARY_DOUBLE": ["null", "double"],
@@ -39,7 +38,12 @@ ORACLE_AVRO_SCHEMA_TYPES = {
     "DB_TYPE_LONG_RAW": ["null", "bytes"],
     "DB_TYPE_NCHAR": ["null", "string"],
     "DB_TYPE_NCLOB": ["null"],
-    "DB_TYPE_NUMBER": ["null", "int", "double"],
+    "DB_TYPE_NUMBER": [
+        "null",
+        "int",
+        "double",
+        {"type": "bytes", "logicalType": "decimal", "precision": 40, "scale": 40},
+    ],
     "DB_TYPE_NVARCHAR": ["null", "string"],
     "DB_TYPE_OBJECT": ["null"],
     "DB_TYPE_RAW": ["null", "bytes"],
