@@ -68,4 +68,5 @@ __all__ = [
     ps_contacts_assets_sensor,
     ps_misc_assets_sensor,
     ps_transactiondate_assets_sensor,
+    ps_incremental_sensor,
 ]
