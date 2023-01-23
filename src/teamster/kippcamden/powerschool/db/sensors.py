@@ -54,6 +54,7 @@ def ps_incremental_sensor(context):
         asset_selection=asset_selection,
         instance=context.instance,
         cursor=cursor,
+        run_tags=None,
     )
 
     context.log.info(updated_cursor.serialize())
