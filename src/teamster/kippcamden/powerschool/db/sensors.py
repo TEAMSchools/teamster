@@ -39,7 +39,7 @@ ps_custom_assets_sensor = build_asset_reconciliation_sensor(
 asset_selection = AssetSelection.assets(*assets.ps_assignment_assets)
 
 
-@sensor(asset_selection=asset_selection, minimum_interval_seconds=3600)
+@sensor(asset_selection=asset_selection)
 def ps_incremental_sensor(context):
     cursor = (
         AssetReconciliationCursor.from_serialized(
@@ -48,15 +48,15 @@ def ps_incremental_sensor(context):
         if context.cursor
         else AssetReconciliationCursor.empty()
     )
-    context.log.info(cursor)
 
-    # run_requests, updated_cursor = reconcile(
-    #     repository_def=context.repository_def,
-    #     asset_selection=asset_selection,
-    #     instance=context.instance,
-    #     cursor=cursor,
-    # )
+    run_requests, updated_cursor = reconcile(
+        repository_def=context.repository_def,
+        asset_selection=asset_selection,
+        instance=context.instance,
+        cursor=cursor,
+    )
 
+    context.log.info(updated_cursor.serialize())
     # context.update_cursor(updated_cursor.serialize())
     # return run_requests
 
