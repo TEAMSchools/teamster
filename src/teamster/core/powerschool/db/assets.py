@@ -58,7 +58,7 @@ def count(context, sql) -> int:
     return count
 
 
-def table_asset_factory(
+def build_powerschool_table_asset(
     asset_name,
     code_location,
     partition_start_date=None,
@@ -87,7 +87,7 @@ def table_asset_factory(
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
-    def powerschool_table(context) -> Optional[Path]:
+    def _asset(context) -> Optional[Path]:
         sql = construct_sql(
             context=context,
             table_name=asset_name,
@@ -116,4 +116,4 @@ def table_asset_factory(
         context.log.info("Stopping SSH tunnel")
         ssh_tunnel.stop()
 
-    return powerschool_table
+    return _asset

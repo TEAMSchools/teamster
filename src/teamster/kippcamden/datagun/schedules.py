@@ -1,8 +1,10 @@
 from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-
-from .jobs import cpn_extract_assets_job, powerschool_extract_assets_job
+from teamster.kippcamden.datagun.jobs import (
+    cpn_extract_assets_job,
+    powerschool_extract_assets_job,
+)
 
 powerschool_extract_assets_schedule = ScheduleDefinition(
     job=powerschool_extract_assets_job,

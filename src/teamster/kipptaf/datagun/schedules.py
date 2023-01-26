@@ -1,8 +1,7 @@
 from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-
-from .jobs import (
+from teamster.kipptaf.datagun.jobs import (
     adp_extract_assets_job,
     alchemer_extract_assets_job,
     blissbook_extract_assets_job,
