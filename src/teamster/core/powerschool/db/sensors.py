@@ -1,9 +1,12 @@
-from dagster import build_resources, sensor
+from dagster import build_resources, config_from_files, sensor
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
 )
 from sqlalchemy import text
+
+from teamster.core.resources.sqlalchemy import oracle
+from teamster.core.resources.ssh import ssh_resource
 
 
 def build_powerschool_incremental_sensor(name, asset_selection, where_col):
@@ -29,7 +32,20 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_col):
             updated_cursor.materialized_or_requested_root_partitions_by_asset_key
         )
 
-        with build_resources({"ps_db", "ps_ssh"}) as resources:
+        with build_resources(
+            {
+                "ps_db": oracle.configured(
+                    config_from_files(
+                        ["src/teamster/core/resources/config/db_powerschool.yaml"]
+                    )
+                ),
+                "ps_ssh": ssh_resource.configured(
+                    config_from_files(
+                        ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+                    )
+                ),
+            }
+        ) as resources:
             ssh_tunnel = resources.ps_ssh.get_tunnel()
 
             context.log.debug("Starting SSH tunnel")
