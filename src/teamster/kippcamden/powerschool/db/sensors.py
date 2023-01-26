@@ -6,7 +6,7 @@ from teamster.kippcamden.powerschool.db import assets
 ps_incremental_sensor = build_powerschool_incremental_sensor(
     name="ps_incremental_sensor",
     asset_selection=AssetSelection.assets(*assets.ps_transactiondate_assets),
-    where_col="transaction_date",
+    where_column="transaction_date",
 )
 
 ps_daily_assets_sensor = build_asset_reconciliation_sensor(
