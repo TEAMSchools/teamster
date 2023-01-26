@@ -34,12 +34,16 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
                 "ps_ssh": ssh_resource,
             },
             resource_config={
-                "ps_db": config_from_files(
-                    ["src/teamster/core/resources/config/db_powerschool.yaml"]
-                ),
-                "ps_ssh": config_from_files(
-                    ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
-                ),
+                "ps_db": {
+                    "config": config_from_files(
+                        ["src/teamster/core/resources/config/db_powerschool.yaml"]
+                    )
+                },
+                "ps_ssh": {
+                    "config": config_from_files(
+                        ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+                    )
+                },
             },
         ) as resources:
             ssh_tunnel = resources.ps_ssh.get_tunnel()
