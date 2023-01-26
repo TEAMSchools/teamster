@@ -29,23 +29,23 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
         )
 
         with build_resources(
-            {
-                "ps_db": oracle.configured(
-                    config_from_files(
-                        ["src/teamster/core/resources/config/db_powerschool.yaml"]
-                    )
+            resources={
+                "ps_db": oracle,
+                "ps_ssh": ssh_resource,
+            },
+            resource_config={
+                "ps_db": config_from_files(
+                    ["src/teamster/core/resources/config/db_powerschool.yaml"]
                 ),
-                "ps_ssh": ssh_resource.configured(
-                    config_from_files(
-                        ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
-                    )
+                "ps_ssh": config_from_files(
+                    ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
                 ),
-            }
+            },
         ) as resources:
-            # ssh_tunnel = resources.ps_ssh.get_tunnel()
+            ssh_tunnel = resources.ps_ssh.get_tunnel()
 
-            # context.log.debug("Starting SSH tunnel")
-            # ssh_tunnel.start()
+            context.log.debug("Starting SSH tunnel")
+            ssh_tunnel.start()
 
             asset_keys = {}
             for (
@@ -81,8 +81,8 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
 
         context.log.debug(asset_keys)
 
-        # context.log.debug("Stopping SSH tunnel")
-        # ssh_tunnel.stop()
+        context.log.debug("Stopping SSH tunnel")
+        ssh_tunnel.stop()
 
         # context.update_cursor(updated_cursor.serialize())
         # return run_requests
