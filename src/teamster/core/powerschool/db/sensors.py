@@ -9,7 +9,7 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
 
-def build_powerschool_incremental_sensor(name, asset_selection, where_col):
+def build_powerschool_incremental_sensor(name, asset_selection, where_column):
     @sensor(name=name, asset_selection=asset_selection)
     def _sensor(context):
         cursor = (
@@ -26,10 +26,6 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_col):
             instance=context.instance,
             cursor=cursor,
             run_tags=None,
-        )
-        context.log.info(updated_cursor)
-        context.log.debug(
-            updated_cursor.materialized_or_requested_root_partitions_by_asset_key
         )
 
         with build_resources(
@@ -51,33 +47,41 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_col):
             # context.log.debug("Starting SSH tunnel")
             # ssh_tunnel.start()
 
-            # asset_keys = {}
+            asset_keys = {}
             for (
                 asset_key,
                 time_window_partitions_subset,
             ) in (
                 updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
             ):
-                context.log.info(asset_key)
                 for window in time_window_partitions_subset._included_time_windows:
                     context.log.info(window.start)
                     context.log.info(window.end)
-        # for tw in v["time_windows"]:
-        #     query = text(
-        #         f"SELECT COUNT(*) FROM {k.split('/')[-1]} WHERE {where_col}"
-        #     )
+                    query = text(
+                        (
+                            "SELECT COUNT(*) "
+                            f"FROM {asset_key[-1]} "
+                            f"{where_column} >= TO_TIMESTAMP_TZ('"
+                            f"{window.start.isoformat(timespec='microseconds')}"
+                            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
+                            f"{where_column} < TO_TIMESTAMP_TZ('"
+                            f"{window.end.isoformat(timespec='microseconds')}"
+                            "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+                        )
+                    )
+                    context.log.info(query)
 
-        #     [(count,)] = context.resources.ps_db.execute_query(
-        #         query=query,
-        #         partition_size=1,
-        #         output=None,
-        #     )
+                    # [(count,)] = resources.ps_db.execute_query(
+                    #     query=query,
+                    #     partition_size=1,
+                    #     output=None,
+                    # )
 
-        #     context.log.info(f"Found {count} rows")
-        #     if count > 0:
-        #         asset_keys[k] = v
+                    # context.log.info(f"Found {count} rows")
+                    # if count > 0:
+                    #     asset_keys[asset_key] = time_window_partitions_subset
 
-        # context.log.debug(asset_keys)
+        context.log.debug(asset_keys)
 
         # context.log.debug("Stopping SSH tunnel")
         # ssh_tunnel.stop()
