@@ -32,52 +32,52 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_col):
             updated_cursor.materialized_or_requested_root_partitions_by_asset_key
         )
 
-        with build_resources(
-            {
-                "ps_db": oracle.configured(
-                    config_from_files(
-                        ["src/teamster/core/resources/config/db_powerschool.yaml"]
-                    )
-                ),
-                "ps_ssh": ssh_resource.configured(
-                    config_from_files(
-                        ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
-                    )
-                ),
-            }
-        ) as resources:
-            # ssh_tunnel = resources.ps_ssh.get_tunnel()
+        # with build_resources(
+        #     {
+        #         "ps_db": oracle.configured(
+        #             config_from_files(
+        #                 ["src/teamster/core/resources/config/db_powerschool.yaml"]
+        #             )
+        #         ),
+        #         "ps_ssh": ssh_resource.configured(
+        #             config_from_files(
+        #                 ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+        #             )
+        #         ),
+        #     }
+        # ) as resources:
+        # ssh_tunnel = resources.ps_ssh.get_tunnel()
 
-            # context.log.debug("Starting SSH tunnel")
-            # ssh_tunnel.start()
+        # context.log.debug("Starting SSH tunnel")
+        # ssh_tunnel.start()
 
-            asset_keys = {}
-            for (
-                k,
-                v,
-            ) in (
-                updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
-            ):
-                context.log.debug(k, v)
-                # for tw in v["time_windows"]:
-                #     query = text(
-                #         f"SELECT COUNT(*) FROM {k.split('/')[-1]} WHERE {where_col}"
-                #     )
+        # asset_keys = {}
+        # for (
+        #     k,
+        #     v,
+        # ) in (
+        #     updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
+        # ):
+        #     context.log.debug(k, v)
+        # for tw in v["time_windows"]:
+        #     query = text(
+        #         f"SELECT COUNT(*) FROM {k.split('/')[-1]} WHERE {where_col}"
+        #     )
 
-                #     [(count,)] = context.resources.ps_db.execute_query(
-                #         query=query,
-                #         partition_size=1,
-                #         output=None,
-                #     )
+        #     [(count,)] = context.resources.ps_db.execute_query(
+        #         query=query,
+        #         partition_size=1,
+        #         output=None,
+        #     )
 
-                #     context.log.info(f"Found {count} rows")
-                #     if count > 0:
-                #         asset_keys[k] = v
+        #     context.log.info(f"Found {count} rows")
+        #     if count > 0:
+        #         asset_keys[k] = v
 
-            # context.log.debug(asset_keys)
+        # context.log.debug(asset_keys)
 
-            # context.log.debug("Stopping SSH tunnel")
-            # ssh_tunnel.stop()
+        # context.log.debug("Stopping SSH tunnel")
+        # ssh_tunnel.stop()
 
         # context.update_cursor(updated_cursor.serialize())
         # return run_requests
