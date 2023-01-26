@@ -53,7 +53,8 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
             context.log.debug("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            asset_keys = {}
+            asset_keys = []
+            run_requests_filtered = []
             for (
                 asset_key,
                 time_window_partitions_subset,
@@ -74,7 +75,6 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
                             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
                         )
                     )
-                    context.log.info(query)
 
                     [(count,)] = resources.ps_db.execute_query(
                         query=query,
@@ -83,12 +83,15 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
                     )
 
                     context.log.info(f"Found {count} rows")
-                    # if count > 0:
-                    if count is not None:
-                        asset_keys[asset_key] = time_window_partitions_subset
+                    if count > 0:
+                        asset_keys.append(asset_key)
+                        for rr in run_requests:
+                            if asset_key in rr.asset_selection:
+                                run_requests_filtered.append(rr)
 
-        context.log.debug(asset_keys)
-        context.log.debug(run_requests)
+        context.log.info(asset_keys)
+        context.log.info(run_requests)
+        context.log.info(run_requests_filtered)
 
         context.log.debug("Stopping SSH tunnel")
         ssh_tunnel.stop()
