@@ -1,11 +1,11 @@
 from dagster import config_from_files
 
-from teamster.core.powerschool.db.assets import table_asset_factory
+from teamster.core.powerschool.db.assets import build_powerschool_table_asset
 from teamster.kippmiami import CODE_LOCATION, POWERSCHOOL_PARTITION_START_DATE
 
 # TODO: rename to something like "full" or "non-partition"
 ps_daily_assets = [
-    table_asset_factory(
+    build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
         freshness_policy={"maximum_lag_minutes": 0, "cron_schedule": "0 0 * * *"},
@@ -16,7 +16,7 @@ ps_daily_assets = [
 ]
 
 ps_misc_assets = [
-    table_asset_factory(
+    build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
@@ -27,7 +27,7 @@ ps_misc_assets = [
 ]
 
 ps_transactiondate_assets = [
-    table_asset_factory(
+    build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
@@ -44,7 +44,7 @@ ps_transactiondate_assets = [
 ]
 
 ps_assignment_assets = [
-    table_asset_factory(
+    build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
@@ -56,7 +56,7 @@ ps_assignment_assets = [
 ]
 
 ps_contacts_assets = [
-    table_asset_factory(
+    build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
@@ -68,7 +68,7 @@ ps_contacts_assets = [
 ]
 
 ps_custom_assets = [
-    table_asset_factory(
+    build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
