@@ -32,33 +32,36 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_col):
             updated_cursor.materialized_or_requested_root_partitions_by_asset_key
         )
 
-        # with build_resources(
-        #     {
-        #         "ps_db": oracle.configured(
-        #             config_from_files(
-        #                 ["src/teamster/core/resources/config/db_powerschool.yaml"]
-        #             )
-        #         ),
-        #         "ps_ssh": ssh_resource.configured(
-        #             config_from_files(
-        #                 ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
-        #             )
-        #         ),
-        #     }
-        # ) as resources:
-        # ssh_tunnel = resources.ps_ssh.get_tunnel()
+        with build_resources(
+            {
+                "ps_db": oracle.configured(
+                    config_from_files(
+                        ["src/teamster/core/resources/config/db_powerschool.yaml"]
+                    )
+                ),
+                "ps_ssh": ssh_resource.configured(
+                    config_from_files(
+                        ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+                    )
+                ),
+            }
+        ) as resources:
+            # ssh_tunnel = resources.ps_ssh.get_tunnel()
 
-        # context.log.debug("Starting SSH tunnel")
-        # ssh_tunnel.start()
+            # context.log.debug("Starting SSH tunnel")
+            # ssh_tunnel.start()
 
-        # asset_keys = {}
-        # for (
-        #     k,
-        #     v,
-        # ) in (
-        #     updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
-        # ):
-        #     context.log.debug(k, v)
+            # asset_keys = {}
+            for (
+                asset_key,
+                time_window_partitions_subset,
+            ) in (
+                updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
+            ):
+                context.log.info(asset_key)
+                for window in time_window_partitions_subset._included_time_windows:
+                    context.log.info(window.start)
+                    context.log.info(window.end)
         # for tw in v["time_windows"]:
         #     query = text(
         #         f"SELECT COUNT(*) FROM {k.split('/')[-1]} WHERE {where_col}"
