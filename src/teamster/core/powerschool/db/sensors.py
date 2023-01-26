@@ -83,7 +83,8 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
                     )
 
                     context.log.info(f"Found {count} rows")
-                    if count > 0:
+                    # if count > 0:
+                    if count is not None:
                         asset_keys[asset_key] = time_window_partitions_subset
 
         context.log.debug(asset_keys)
