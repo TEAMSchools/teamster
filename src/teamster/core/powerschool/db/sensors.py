@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from dagster import build_resources, config_from_files, sensor
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
@@ -59,6 +61,7 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
                 updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
             ):
                 for window in time_window_partitions_subset._included_time_windows:
+                    window_end = window.end - timedelta(days=1)
                     query = text(
                         (
                             "SELECT COUNT(*) "
@@ -67,28 +70,28 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
                             f"{window.start.isoformat(timespec='microseconds')}"
                             "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
                             f"{where_column} < TO_TIMESTAMP_TZ('"
-                            f"{window.end.isoformat(timespec='microseconds')}"
+                            f"{window_end.isoformat(timespec='microseconds')}"
                             "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
                         )
                     )
                     context.log.info(query)
 
-                    # [(count,)] = resources.ps_db.execute_query(
-                    #     query=query,
-                    #     partition_size=1,
-                    #     output=None,
-                    # )
+                    [(count,)] = resources.ps_db.execute_query(
+                        query=query,
+                        partition_size=1,
+                        output=None,
+                    )
 
-                    # context.log.info(f"Found {count} rows")
-                    # if count > 0:
-                    #     asset_keys[asset_key] = time_window_partitions_subset
+                    context.log.info(f"Found {count} rows")
+                    if count > 0:
+                        asset_keys[asset_key] = time_window_partitions_subset
 
         context.log.debug(asset_keys)
+        context.log.debug(run_requests)
 
         context.log.debug("Stopping SSH tunnel")
         ssh_tunnel.stop()
 
-        # context.update_cursor(updated_cursor.serialize())
         # return run_requests
 
     return _sensor
