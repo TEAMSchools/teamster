@@ -46,10 +46,10 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_col):
                 ),
             }
         ) as resources:
-            ssh_tunnel = resources.ps_ssh.get_tunnel()
+            # ssh_tunnel = resources.ps_ssh.get_tunnel()
 
-            context.log.debug("Starting SSH tunnel")
-            ssh_tunnel.start()
+            # context.log.debug("Starting SSH tunnel")
+            # ssh_tunnel.start()
 
             asset_keys = {}
             for (
@@ -76,8 +76,8 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_col):
 
             # context.log.debug(asset_keys)
 
-            context.log.debug("Stopping SSH tunnel")
-            ssh_tunnel.stop()
+            # context.log.debug("Stopping SSH tunnel")
+            # ssh_tunnel.stop()
 
         # context.update_cursor(updated_cursor.serialize())
         # return run_requests
