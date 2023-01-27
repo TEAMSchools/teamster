@@ -108,10 +108,7 @@ def build_powerschool_table_asset(
             filename = context.resources.ps_db.execute_query(
                 query=sql, partition_size=100000, output="avro"
             )
-        else:
-            filename = None
-
-        yield Output(value=filename, metadata={"records": row_count})
+            yield Output(value=filename, metadata={"records": row_count})
 
         context.log.info("Stopping SSH tunnel")
         ssh_tunnel.stop()

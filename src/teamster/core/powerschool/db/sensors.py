@@ -23,7 +23,6 @@ def build_powerschool_incremental_sensor(
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
-        context.log.info(cursor)
 
         run_requests, updated_cursor = reconcile(
             repository_def=context.repository_def,
@@ -32,7 +31,6 @@ def build_powerschool_incremental_sensor(
             cursor=cursor,
             run_tags=run_tags,
         )
-        context.log.info(updated_cursor)
 
         with build_resources(
             resources={
@@ -77,12 +75,14 @@ def build_powerschool_incremental_sensor(
                             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
                         )
                     )
+                    context.log.debug(query)
 
                     [(count,)] = resources.ps_db.execute_query(
                         query=query,
                         partition_size=1,
                         output=None,
                     )
+                    context.log.debug(f"count: {count}")
 
                     if count > 0:
                         asset_keys_filtered[asset_key] = time_window_partitions_subset
@@ -94,7 +94,6 @@ def build_powerschool_incremental_sensor(
             materialized_or_requested_root_asset_keys=set(),
             materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
         )
-        context.log.info(cursor_filtered)
 
         run_requests, updated_cursor = reconcile(
             repository_def=context.repository_def,
@@ -103,8 +102,8 @@ def build_powerschool_incremental_sensor(
             cursor=cursor_filtered,
             run_tags=run_tags,
         )
-        context.log.info(run_requests)
 
+        context.update_cursor(cursor_filtered.serialize())
         return run_requests
 
     return _sensor
