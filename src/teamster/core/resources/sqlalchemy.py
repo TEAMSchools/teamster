@@ -30,6 +30,7 @@ ORACLE_AVRO_SCHEMA_TYPES = {
     "DB_TYPE_JSON": ["null", {"type": "bytes", "logicalType": "json"}],
     "DB_TYPE_LONG": ["null", "string"],
     "DB_TYPE_LONG_RAW": ["null", "bytes"],
+    "DB_TYPE_LONG_NVARCHAR": ["null", "string"],
     "DB_TYPE_NCHAR": ["null", "string"],
     "DB_TYPE_NCLOB": ["null", "string"],
     "DB_TYPE_NUMBER": [
@@ -108,9 +109,8 @@ class SqlAlchemyEngine(object):
                     avro_schema_fields.append(
                         {
                             "name": col[0].lower(),
-                            "type": ORACLE_AVRO_SCHEMA_TYPES.get(
-                                col[1].name, ["null"]
-                            ),  # TODO: refactor based on db type
+                            # TODO: refactor based on db type
+                            "type": ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name),
                         }
                     )
                 self.log.debug(avro_schema_fields)
