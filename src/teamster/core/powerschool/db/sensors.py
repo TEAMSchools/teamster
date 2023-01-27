@@ -23,6 +23,7 @@ def build_powerschool_incremental_sensor(
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
+        context.log.info(cursor)
 
         run_requests, updated_cursor = reconcile(
             repository_def=context.repository_def,
@@ -31,6 +32,7 @@ def build_powerschool_incremental_sensor(
             cursor=cursor,
             run_tags=run_tags,
         )
+        context.log.info(updated_cursor)
 
         with build_resources(
             resources={
@@ -100,6 +102,6 @@ def build_powerschool_incremental_sensor(
         )
         context.log.info(run_requests)
 
-        return run_requests
+        # return run_requests
 
     return _sensor
