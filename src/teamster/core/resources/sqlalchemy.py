@@ -74,7 +74,7 @@ class SqlAlchemyEngine(object):
             result = conn.execute(statement=query)
 
             result_cursor_descr = result.cursor.description
-            if output in ["dict", "json"]:
+            if output in ["dict", "json", "avro"]:
                 self.log.debug("Staging result mappings")
                 result = result.mappings()
             else:
@@ -125,7 +125,7 @@ class SqlAlchemyEngine(object):
                 len_data = 0
                 for i, pt in enumerate(partitions):
                     self.log.debug(f"Retrieving rows from partition {i}")
-                    data = [row for row in pt]
+                    data = [dict(row) for row in pt]
                     del pt
 
                     len_data += len(data)
