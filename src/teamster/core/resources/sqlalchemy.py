@@ -104,6 +104,7 @@ class SqlAlchemyEngine(object):
 
                 avro_schema_fields = []
                 for col in result_cursor_descr:
+                    self.log.debug(col)
                     avro_schema_fields.append(
                         {
                             "name": col[0].lower(),
