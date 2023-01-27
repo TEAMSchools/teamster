@@ -53,8 +53,6 @@ def build_powerschool_incremental_sensor(
             },
         ) as resources:
             ssh_tunnel = resources.ps_ssh.get_tunnel()
-
-            context.log.debug("Starting SSH tunnel")
             ssh_tunnel.start()
 
             asset_keys_filtered = {}
@@ -88,20 +86,20 @@ def build_powerschool_incremental_sensor(
                     if count > 0:
                         asset_keys_filtered[asset_key] = time_window_partitions_subset
 
-        context.log.debug("Stopping SSH tunnel")
         ssh_tunnel.stop()
 
-        context.log.info(asset_keys_filtered)
+        cursor_filtered = AssetReconciliationCursor(
+            latest_storage_id=updated_cursor.latest_storage_id,
+            materialized_or_requested_root_asset_keys=set(),
+            materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
+        )
+        context.log.info(cursor_filtered)
 
         run_requests, updated_cursor = reconcile(
             repository_def=context.repository_def,
             asset_selection=AssetSelection.keys(*asset_keys_filtered),
             instance=context.instance,
-            cursor=AssetReconciliationCursor(
-                latest_storage_id=updated_cursor.latest_storage_id,
-                materialized_or_requested_root_asset_keys=set(),
-                materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
-            ),
+            cursor=cursor_filtered,
             run_tags=run_tags,
         )
         context.log.info(run_requests)
