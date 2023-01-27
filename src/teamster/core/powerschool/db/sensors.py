@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from dagster import AssetSelection, build_resources, config_from_files, sensor
 from dagster._core.definitions.asset_reconciliation_sensor import (
@@ -62,21 +62,15 @@ def build_powerschool_incremental_sensor(
             ) in (
                 updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
             ):
-                context.log.info(time_window_partitions_subset.get_partition_keys())
-                context.log.info(
-                    time_window_partitions_subset.get_partition_keys_not_in_subset()
-                )
-                context.log.info(
-                    time_window_partitions_subset.get_partition_key_ranges()
-                )
-                for window in time_window_partitions_subset._included_time_windows:
-                    window_end = window.start + timedelta(hours=1)
+                for pk in time_window_partitions_subset.get_partition_keys():
+                    window_end = datetime.strptime(pk, "%Y-%m-%dT%H:%M:%S.%f%z")
+                    window_start = window_end - timedelta(hours=1)
                     query = text(
                         (
                             "SELECT COUNT(*) "
                             f"FROM {asset_key.path[-1]} "
                             f"WHERE {where_column} >= TO_TIMESTAMP_TZ("
-                            f"'{window.start.isoformat(timespec='microseconds')}', "
+                            f"'{window_start.isoformat(timespec='microseconds')}', "
                             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') "
                             f"AND {where_column} < TO_TIMESTAMP_TZ("
                             f"'{window_end.isoformat(timespec='microseconds')}', "
