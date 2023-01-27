@@ -82,18 +82,16 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
                     )
 
                     if count > 0:
-                        for rr in run_requests:
-                            if asset_key in rr.asset_selection:
-                                asset_selection_filtered.append(rr)
+                        asset_selection_filtered.append(asset_selection)
 
         context.log.debug("Stopping SSH tunnel")
         ssh_tunnel.stop()
 
         context.log.info(asset_selection_filtered)
+        for rr in run_requests:
+            rr.asset_selection = asset_selection_filtered
 
-        run_requests.asset_selection = asset_selection_filtered
         context.log.info(run_requests)
-
         return run_requests
 
     return _sensor
