@@ -3,7 +3,7 @@ assets:
   - asset_name: attendance
   - asset_name: cc
   - asset_name: courses
-  - asset_name: pgfinalgrades
+  # - asset_name: pgfinalgrades
   - asset_name: prefs
   - asset_name: schools
   - asset_name: sections
