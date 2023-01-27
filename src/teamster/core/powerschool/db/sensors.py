@@ -11,7 +11,9 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
 
 
-def build_powerschool_incremental_sensor(name, asset_selection, where_column):
+def build_powerschool_incremental_sensor(
+    name, asset_selection, where_column, run_tags=None
+):
     @sensor(name=name, asset_selection=asset_selection)
     def _sensor(context):
         cursor = (
@@ -27,7 +29,7 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
             asset_selection=asset_selection,
             instance=context.instance,
             cursor=cursor,
-            run_tags=None,
+            run_tags=run_tags,
         )
 
         with build_resources(
@@ -88,10 +90,16 @@ def build_powerschool_incremental_sensor(name, asset_selection, where_column):
         ssh_tunnel.stop()
 
         context.log.info(asset_selection_filtered)
-        for rr in run_requests:
-            rr.asset_selection = asset_selection_filtered
 
+        run_requests, updated_cursor = reconcile(
+            repository_def=context.repository_def,
+            asset_selection=asset_selection_filtered,
+            instance=context.instance,
+            cursor=cursor,
+            run_tags=run_tags,
+        )
         context.log.info(run_requests)
+
         return run_requests
 
     return _sensor
