@@ -1,7 +1,6 @@
 import datetime
 import json
 import pathlib
-import sys
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
@@ -10,8 +9,6 @@ from fastavro import parse_schema, writer
 from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
-
-sys.modules["cx_Oracle"] = oracledb
 
 # https://cx-oracle.readthedocs.io/en/latest/user_guide/sql_execution.html#defaultfetchtypes
 ORACLE_AVRO_SCHEMA_TYPES = {
