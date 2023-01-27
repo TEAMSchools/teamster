@@ -223,7 +223,7 @@ summary = "Backport of PEP 654 (exception groups)"
 
 [[package]]
 name = "fastavro"
-version = "1.7.0"
+version = "1.7.1"
 requires_python = ">=3.7"
 summary = "Fast read/write of AVRO files"
 
@@ -924,7 +924,7 @@ summary = "WebSocket client for Python with low level API options"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:d765633ce97d4960fbc34d47f59946b3c2e063cd8ab149dca877286e7d378cb2"
+content_hash = "sha256:b041ff6731d480da5c8059da5e9713e76b02ed3af897c4632ca93ef7d441bd7c"
 
 [metadata.files]
 "alembic 1.9.2" = [
@@ -1207,28 +1207,28 @@ content_hash = "sha256:d765633ce97d4960fbc34d47f59946b3c2e063cd8ab149dca877286e7
     {url = "https://files.pythonhosted.org/packages/15/ab/dd27fb742b19a9d020338deb9ab9a28796524081bca880ac33c172c9a8f6/exceptiongroup-1.1.0.tar.gz", hash = "sha256:bcb67d800a4497e1b404c2dd44fca47d3b7a5e5433dbab67f96c1a685cdfdf23"},
     {url = "https://files.pythonhosted.org/packages/e8/14/9c6a7e5f12294ccd6975a45e02899ed25468cd7c2c86f3d9725f387f9f5f/exceptiongroup-1.1.0-py3-none-any.whl", hash = "sha256:327cbda3da756e2de031a3107b81ab7b3770a602c4d16ca618298c526f4bec1e"},
 ]
-"fastavro 1.7.0" = [
-    {url = "https://files.pythonhosted.org/packages/23/77/437bd494784d949697d202407d2a86800349e68dff26e1a3f329b9733d61/fastavro-1.7.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7aab162f02e64bf82d0282430a3c6ec7a36982b1c5d479e7dcc278e6d62a84b8"},
-    {url = "https://files.pythonhosted.org/packages/26/cf/5d439794e02c243b7ebe8c21124cb3e94aa324051ba71f7c49cedd942e76/fastavro-1.7.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f7348d318858203bd108e6bcde177d8a6f0590b52bc624d815f26fb6c37029bb"},
-    {url = "https://files.pythonhosted.org/packages/28/fd/2ff4026464e0a231a126836e7affcbf0eefab6a304ba6f73f2d7df4b89d8/fastavro-1.7.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:ab3387a06e272980fa034f5c62f7063977b77df6416d3d30a4d3b49cc8827566"},
-    {url = "https://files.pythonhosted.org/packages/2e/cc/2aeebd088903960ffe490772d11946a2e49b3fc6c745a4b1a97ee22c5185/fastavro-1.7.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a7e35b94b692f8cca0096c89abf1937efed66252dea0b3b3165babfb3c289fb7"},
-    {url = "https://files.pythonhosted.org/packages/3a/eb/63fa25d0474e9d126ecb38e04c53d01079ed47455550a14427290cbcfdf8/fastavro-1.7.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:216132bc54da19e97e1531dd69c86282408d4c797749d83b01b3a00862a180de"},
-    {url = "https://files.pythonhosted.org/packages/3b/bf/c6d785458cb587d90c6f85ed726d8b59c077eea1fb9426a5b43000a1416f/fastavro-1.7.0-cp37-cp37m-win_amd64.whl", hash = "sha256:749206f1cec3d7429546e49db5708f4571497d35181b6b334c4844133f230515"},
-    {url = "https://files.pythonhosted.org/packages/4c/0e/4c501bd23fbe287723e35e831d314a249f04b560513c9301c2fa94bf85f5/fastavro-1.7.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7c664302f94064adeb93403c61c74e07b9710526403eba3b59169f99bb99c55c"},
-    {url = "https://files.pythonhosted.org/packages/4f/0f/c352ce8760045f51527d200712ce55203a57d442a239436e92e2103b535d/fastavro-1.7.0-cp310-cp310-win_amd64.whl", hash = "sha256:54b60e79506a456bcfc940560fa2c73a7a8e3ddc58a1ae4d94fdd99f6b02aef0"},
-    {url = "https://files.pythonhosted.org/packages/5b/ba/e2a17dea09fef7b26d8541fa162179f99a180f201c6fc3f957120e88f5a6/fastavro-1.7.0-cp311-cp311-win_amd64.whl", hash = "sha256:63d0d2a2bb3e85d006c834633be51b105a50b0dc7cc8423b06f30601b532adf4"},
-    {url = "https://files.pythonhosted.org/packages/5b/bc/d614a31abde6bed4559ad373b58e2029f88e6219823429377d59f2b22c2a/fastavro-1.7.0-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:91cc9be740abca894082af4fe3ab9db057d4e5fa783cfa9a94c02ec041bf4346"},
-    {url = "https://files.pythonhosted.org/packages/5d/a4/b94f6ae1fdb2bdb5470d0f7a562c3e35cbed4753a2847e63563f03ae9b89/fastavro-1.7.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c20cf6cd8098bb93c2cffd53d03ccea1dcf9ec594a5c83963acf29a2882f8693"},
-    {url = "https://files.pythonhosted.org/packages/63/91/e54fee1025283064a5a011693beffbfbc6300245f7d69c609eecd99e5686/fastavro-1.7.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7df57d31cb58770a9066790250e9f4ec91242c69e1dc62ea732a6fb2406a8f96"},
-    {url = "https://files.pythonhosted.org/packages/a1/84/f0c3aa921fe1d22d30d42ec42a7b11630f909a72801472da1f8a9e7a6544/fastavro-1.7.0-cp39-cp39-win_amd64.whl", hash = "sha256:492e8902063aa1c73170e11c18495fcaa86b71eae3513ef83ba438ca02b16b34"},
-    {url = "https://files.pythonhosted.org/packages/b4/5b/5a28f635f44bd76c772c2f342deeee7a4de1eb595a460c3f5806bd00beed/fastavro-1.7.0-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:a0ebd5c1269085179de4b3f072de274fb66a471ecbc5245bd8684e6f94943c2f"},
-    {url = "https://files.pythonhosted.org/packages/dc/cd/c06dcb6bde9a33a954b51d554d99bbae3c86df752cdecddb6cf07a857860/fastavro-1.7.0-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:a07a3245049529d6d9028d664361cc4990e74d035d2303875295e2f7b97eba09"},
-    {url = "https://files.pythonhosted.org/packages/e2/20/463775c7b84e5dc275f236b77167e0c3f04358a5599c3b28458fe7147b5d/fastavro-1.7.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:202424a5a7831b773f0f2cc2f82e89ed1726051fd5994f13dc678514144e10d4"},
-    {url = "https://files.pythonhosted.org/packages/e9/49/5b04610c010bc015dfa394d7072b8717691d0031fb8f5fcc0be533f387b8/fastavro-1.7.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:4da6d83abd04a804310667f8d1fc23d44e9ed91ed9a9bc9c1fcd906e0c403b12"},
-    {url = "https://files.pythonhosted.org/packages/f0/c6/6d58c3c7a0be5d1826ed0ce9c870afcdfdf1f39a5f5e6b2ad397502dfe3d/fastavro-1.7.0-cp38-cp38-win_amd64.whl", hash = "sha256:601f8c2ec166bd721f4b12eafe195dd1373d3f8dce4fe2425abd2df3e3968ac7"},
-    {url = "https://files.pythonhosted.org/packages/f1/99/2a5484fa65c6411d32be7d283b0b069e4c3d39ec995766941a4601dd126e/fastavro-1.7.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9e4463b00242e4baf52d499aeefab46a26d9dd18d808d4219cd4d21089da540e"},
-    {url = "https://files.pythonhosted.org/packages/f5/34/c33c65671c97fb792242ac6114fe451eea24ed2b6450321206fb8a05e1ec/fastavro-1.7.0.tar.gz", hash = "sha256:4b1205f46489b4032d3155c1ab44d9824be0c7454df98d3a5bd22b78b98f23c8"},
-    {url = "https://files.pythonhosted.org/packages/fd/66/d88d20d7b1c6d277d323b4243fb15f65c48c61c1d2254cff274e145d283f/fastavro-1.7.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b905634b5763ca08c9f7b51486e2c3ae7907f5d9bc48208c69b16ccbe8455e90"},
+"fastavro 1.7.1" = [
+    {url = "https://files.pythonhosted.org/packages/01/13/655a08c6ad303037e14a2ab54bff8866380d1d928d605d109fb647be0c4b/fastavro-1.7.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:11159cf23f5ff4b752b028a77bd2a7941599932527e8a6512779e25b0503f037"},
+    {url = "https://files.pythonhosted.org/packages/0b/92/e3644667f340e21620257edd6a39149584bfc881724f45443d1f3fb3fa71/fastavro-1.7.1-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:8ad522c7f2c7791cfe54a7e87af8ac09634872f4fdeef28deec97fab8de38b24"},
+    {url = "https://files.pythonhosted.org/packages/2c/ea/20e6967c79d44644a3ab22efaf0857fae30dbec101c0d5a203e3d8b5a171/fastavro-1.7.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6f233a1d0d95265f81a25c274f55017bd39d9b8f7f1387a4235bf8e01841a9ff"},
+    {url = "https://files.pythonhosted.org/packages/3c/25/11ed2051ce5b9f9924ebe0f72d53e822e348818a1836ef82b069ad3e56bb/fastavro-1.7.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e15e8163581983f07a3156902761cf746bbe1e646abd9553cc9a1cede6e23ae9"},
+    {url = "https://files.pythonhosted.org/packages/40/d5/6b99841e89de22a3dde576b69c01e06aa385cd194e77e13a3915a0dec0b6/fastavro-1.7.1-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:5ff701d6b228218a3d9c09b392205dd0899afa501a4f14724bef0ce13a719700"},
+    {url = "https://files.pythonhosted.org/packages/44/35/032cd3341aec2138f8671dcac635efea6dce9d4af6e0b7741fb3cf8790af/fastavro-1.7.1-cp310-cp310-macosx_11_0_x86_64.whl", hash = "sha256:f8f7f11af8c2c074341217d6247b7ba09cadcd55f899e046c14e3a44afa5fc95"},
+    {url = "https://files.pythonhosted.org/packages/46/1c/aff517b62e87a9363f11bd4d71e66a340c4f7abbdf5b96068e6fed5026c6/fastavro-1.7.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:86ce89743711355eee7d3fec34847de1ab574f4567aa4a667e966711bb2e0cd9"},
+    {url = "https://files.pythonhosted.org/packages/56/89/6783876e9de2bcaa5316462d796785acd9e8488b7de870910ff0a0b1d716/fastavro-1.7.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:8b671a97e864e4c024061c0d6f93f2768ba0595f917317ca4fe3e99dca6fcf3d"},
+    {url = "https://files.pythonhosted.org/packages/63/bb/ce0308c597205dc298a55d0c3cefd817a85aa194663f4f8d117f44de2571/fastavro-1.7.1-cp311-cp311-win_amd64.whl", hash = "sha256:31c924ed2fdad56182b543941cdec9cc384443cc3ca9462e0580afeb4dc64f4b"},
+    {url = "https://files.pythonhosted.org/packages/67/87/d8ccce14a9c85065562fb51e89fe92e8f767ed45ea43554d467e79fb094c/fastavro-1.7.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4f7a744569b4b44ea1f4f87e7ea8298e1e2bf23779aa6ef255b95f9f38faad48"},
+    {url = "https://files.pythonhosted.org/packages/76/d0/31fe2068b0b3edd3714eeaadec8de667894cada20d3834fba99c68f5dfb5/fastavro-1.7.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:980ce7fdccf328d287e8b789f4e3b422f64c84ed9cd81c05dd7c560c3d8076b1"},
+    {url = "https://files.pythonhosted.org/packages/7f/45/e6a71cd73a3670b387c0281ad27f93ce855d776c669dcf72cc055d26afa1/fastavro-1.7.1-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:a107a8b333628c0f8a2ece5d5a57c69923719a139b106ace4050206250df4b13"},
+    {url = "https://files.pythonhosted.org/packages/8e/a0/0c88ce093849cb0e753b4e2fc9007501697e0b5ed1ed01683c1e4ab6bf42/fastavro-1.7.1-cp39-cp39-win_amd64.whl", hash = "sha256:4d56cc05ceb1c9f4de19c1f330a4f140af3b944834d63cd0e11517deaea21ee1"},
+    {url = "https://files.pythonhosted.org/packages/99/5b/faf43a073b210ce12cd20273e514fea74627487c995c06855d7ebde73dd9/fastavro-1.7.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5cb2d8ea7b21493bb18ff7c68401edbc663bbd8a57016d6cf2c4b0a2dc4464e7"},
+    {url = "https://files.pythonhosted.org/packages/a1/05/f11aa9d22a410ec56c867d4b403e69e8cbdcff42ea40da3994d78145c8fb/fastavro-1.7.1-cp310-cp310-win_amd64.whl", hash = "sha256:2e3f5ae42e033dbb6e0efa788c4b8a4e5a59bc2b9cb83f717b6d85176727faed"},
+    {url = "https://files.pythonhosted.org/packages/ac/17/68e71e40ec98b9b753f52159574549a9be1c0fe084aa9fa9655cac647b8f/fastavro-1.7.1-cp38-cp38-win_amd64.whl", hash = "sha256:a5f104bc5b4986bbbcab170918c4d8ffa4f8efa3ebe8ec190954178630074d5a"},
+    {url = "https://files.pythonhosted.org/packages/b8/8d/57aab0b45ec833ec988849cc3255435aefd5642e9eb3273745b539947ed2/fastavro-1.7.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e9be910ca1645e0e5c4192d667cfdfa58dff4f8690db5af1ae33602643d41a78"},
+    {url = "https://files.pythonhosted.org/packages/c3/1d/3ca21d7ec943de6a8a55ed5463d0e444164a77835411f6f7a31f7ad91774/fastavro-1.7.1-cp37-cp37m-win_amd64.whl", hash = "sha256:b793252a6325341890bbbbdca2804d4db3d5d29ff7f15a58fcf84dda440808fa"},
+    {url = "https://files.pythonhosted.org/packages/c5/57/a0c82084bb105265d3807342614b7549535574911bdc2c3bde974523774d/fastavro-1.7.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:182671595683054ec234beec03f485b5c889c21c08e429577ae7929480703409"},
+    {url = "https://files.pythonhosted.org/packages/c6/78/99bdb63ba0b399b9a7f890173f0a9360aa7263c22d81569106838a5f6651/fastavro-1.7.1-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:74fe0fb24a489e2fd567775935eb55a461fc6c4da8b5e3467245752ac2098284"},
+    {url = "https://files.pythonhosted.org/packages/fb/4e/e0383cf8ebae9ad613d22e21f85e438c8b34c73f9d3db01e3c5118248107/fastavro-1.7.1.tar.gz", hash = "sha256:4b8bcae4ed6343af186e638061cdfbc5331cdb5e026d055099c91d4f07be838c"},
 ]
 "fiql-parser 0.15" = [
     {url = "https://files.pythonhosted.org/packages/98/f2/2440cd95fb14fb38eaf1e6431606ff51859f34265a33619ad94284f56a38/fiql-parser-0.15.tar.gz", hash = "sha256:6473a04af33234d4c95e9c4ed40450ee24d34ba34f074656304308b70149cdec"},
