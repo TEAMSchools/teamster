@@ -62,8 +62,15 @@ def build_powerschool_incremental_sensor(
             ) in (
                 updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
             ):
+                context.log.info(time_window_partitions_subset.get_partition_keys())
+                context.log.info(
+                    time_window_partitions_subset.get_partition_keys_not_in_subset()
+                )
+                context.log.info(
+                    time_window_partitions_subset.get_partition_key_ranges()
+                )
                 for window in time_window_partitions_subset._included_time_windows:
-                    window_end = window.end - timedelta(days=1)
+                    window_end = window.start + timedelta(hours=1)
                     query = text(
                         (
                             "SELECT COUNT(*) "
