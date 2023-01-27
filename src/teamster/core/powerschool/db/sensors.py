@@ -14,7 +14,7 @@ from teamster.core.resources.ssh import ssh_resource
 def build_powerschool_incremental_sensor(
     name, asset_selection, where_column, run_tags=None
 ):
-    @sensor(name=name, asset_selection=asset_selection, minimum_interval_seconds=3600)
+    @sensor(name=name, asset_selection=asset_selection, minimum_interval_seconds=60)
     def _sensor(context):
         cursor = (
             AssetReconciliationCursor.from_serialized(
