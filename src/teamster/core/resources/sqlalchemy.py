@@ -125,7 +125,7 @@ class SqlAlchemyEngine(object):
                 len_data = 0
                 for i, pt in enumerate(partitions):
                     self.log.debug(f"Retrieving rows from partition {i}")
-                    data = [dict(row) for row in pt]
+                    data = [row for row in pt]
                     del pt
 
                     len_data += len(data)
