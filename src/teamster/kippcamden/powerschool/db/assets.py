@@ -78,3 +78,12 @@ ps_custom_assets = [
         [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-custom.yaml"]
     )["assets"]
 ]
+
+ps_test_assets = [
+    build_powerschool_table_asset(
+        asset_name="pgfinalgrades",
+        code_location=CODE_LOCATION,
+        partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
+        where_column="transaction_date",
+    )
+]
