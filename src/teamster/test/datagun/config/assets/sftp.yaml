@@ -3,7 +3,7 @@ assets:
     key_prefix: test
     query_config:
       type: file
-      value: src/teamster/core/datagun/config/sql/test.sql
+      value: src/teamster/test/datagun/config/sql/test.sql
     file_config:
       stem: json-test-{now}
       suffix: json.gz
