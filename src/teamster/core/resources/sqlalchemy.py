@@ -11,7 +11,7 @@ from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
 
-sys.modules["cx_Oracle"] = oracledb
+# sys.modules["cx_Oracle"] = oracledb
 
 # https://cx-oracle.readthedocs.io/en/latest/user_guide/sql_execution.html#defaultfetchtypes
 ORACLE_AVRO_SCHEMA_TYPES = {
