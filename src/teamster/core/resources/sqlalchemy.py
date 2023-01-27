@@ -1,7 +1,6 @@
 import datetime
 import json
 import pathlib
-import sys
 
 import oracledb
 from dagster import Field, IntSource, Permissive, StringSource, resource
@@ -10,6 +9,9 @@ from fastavro import parse_schema, writer
 from sqlalchemy.engine import URL, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
+
+# import sys
+
 
 # sys.modules["cx_Oracle"] = oracledb
 
