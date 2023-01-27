@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from dagster import build_resources, config_from_files, sensor
+from dagster import AssetSelection, build_resources, config_from_files, sensor
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
@@ -55,7 +55,7 @@ def build_powerschool_incremental_sensor(
             context.log.debug("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            asset_selection_filtered = []
+            asset_keys_filtered = []
             for (
                 asset_key,
                 time_window_partitions_subset,
@@ -84,16 +84,16 @@ def build_powerschool_incremental_sensor(
                     )
 
                     if count > 0:
-                        asset_selection_filtered.append(asset_selection)
+                        asset_keys_filtered.append(asset_key)
 
         context.log.debug("Stopping SSH tunnel")
         ssh_tunnel.stop()
 
-        context.log.info(asset_selection_filtered)
+        context.log.info(asset_keys_filtered)
 
         run_requests, updated_cursor = reconcile(
             repository_def=context.repository_def,
-            asset_selection=asset_selection_filtered,
+            asset_selection=AssetSelection.keys(*asset_keys_filtered),
             instance=context.instance,
             cursor=cursor,
             run_tags=run_tags,
