@@ -25,6 +25,7 @@ git commit -m "Initial PDM commit"
 git push
 
 # export GCP service account key to file
+mkdir -p ./env
 echo "${GCP_SERVICE_ACCOUNT_KEY}" >env/service-account.json
 
 # authenticate gcloud
@@ -44,7 +45,7 @@ gcloud container clusters get-credentials dagster-cloud
 
 echo "
 
-# postCreat.sh
+# postCreate.sh
 GCP_PROJECT_ID=\"$(jq -r .project_id env/service-account.json)\"
 export GCP_PROJECT_ID
 
