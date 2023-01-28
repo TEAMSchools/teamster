@@ -81,7 +81,7 @@ ps_custom_assets = [
 
 ps_test_assets = [
     build_powerschool_table_asset(
-        asset_name="pgfinalgrades",
+        asset_name="cc",
         code_location=CODE_LOCATION,
         partition_start_date=POWERSCHOOL_PARTITION_START_DATE,
         where_column="transaction_date",
