@@ -63,18 +63,32 @@ def build_powerschool_incremental_sensor(
                     window_end = pendulum.parse(text=pk).in_timezone(tz="Etc/UTC")
 
                     window_start = window_end.subtract(hours=1)
-
                     query = text(
-                        (
-                            f"SELECT COUNT(*), MAX({where_column}) "
-                            f"FROM {asset_key.path[-1]} "
-                            f"WHERE {where_column} >= TO_TIMESTAMP("
-                            f"'{window_start.isoformat(timespec='microseconds')}', "
-                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
-                            f"AND {where_column} < TO_TIMESTAMP("
-                            f"'{window_end.isoformat(timespec='microseconds')}', "
-                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-                        )
+                        f"""
+                        SELECT
+                            COUNT(*),
+                            MAX({where_column})
+                        FROM {asset_key.path[-1]}
+                        WHERE
+                            {where_column} >= TO_TIMESTAMP(
+                                '{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}',
+                                'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'
+                            )
+                            AND {where_column} < TO_TIMESTAMP(
+                                '{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}',
+                                'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'
+                            )
+                        """
+                        # (
+                        #     f"SELECT COUNT(*), MAX({where_column}) "
+                        #     f"FROM {asset_key.path[-1]} "
+                        #     f"WHERE {where_column} >= TO_TIMESTAMP("
+                        #     f"'{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
+                        #     "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
+                        #     f"AND {where_column} < TO_TIMESTAMP("
+                        #     f"'{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
+                        #     "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                        # )
                     )
                     context.log.debug(query)
 
