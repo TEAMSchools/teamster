@@ -37,13 +37,13 @@ def filter_asset_partitions(
     sql_string: str,
 ) -> AbstractSet[AssetKeyPartitionKey]:
     asset_keys_filtered = set()
-    for asset_key, partition_key in asset_partitions:
-        window_start = pendulum.parse(text=partition_key, tz=LOCAL_TIME_ZONE.name)
+    for akpk in asset_partitions:
+        window_start = pendulum.parse(text=akpk.partition_key, tz=LOCAL_TIME_ZONE.name)
         window_end = window_start.add(hours=1)
 
         query = text(
             sql_string.format(
-                table_name=asset_key.path[-1],
+                table_name=akpk.asset_key.path[-1],
                 window_start=window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS"),
                 window_end=window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS"),
             )
@@ -57,7 +57,7 @@ def filter_asset_partitions(
         )
         context.log.debug(f"count: {count}")
         if count > 0:
-            asset_keys_filtered[asset_key] = partition_key
+            asset_keys_filtered.add(akpk)
 
     return asset_keys_filtered
 
