@@ -37,6 +37,7 @@ def filter_asset_partitions(
     sql_string: str,
 ) -> AbstractSet[AssetKeyPartitionKey]:
     asset_keys_filtered = set()
+
     for akpk in asset_partitions:
         window_start = pendulum.parse(text=akpk.partition_key, tz=LOCAL_TIME_ZONE.name)
         window_end = window_start.add(hours=1)
@@ -55,9 +56,15 @@ def filter_asset_partitions(
             partition_size=1,
             output=None,
         )
+
         context.log.debug(f"count: {count}")
         if count > 0:
             asset_keys_filtered.add(akpk)
+
+        # clean up
+        del query
+        del count
+        del akpk
 
     return asset_keys_filtered
 
@@ -118,26 +125,28 @@ def reconcile(
         ssh_tunnel = resources.ps_ssh.get_tunnel()
         ssh_tunnel.start()
 
-        asset_partitions_to_reconcile_filtered = filter_asset_partitions(
-            context=context,
-            resources=resources,
-            asset_partitions=asset_partitions_to_reconcile,
-            sql_string=sql_string,
-        )
-        asset_partitions_to_reconcile_for_freshness_filtered = filter_asset_partitions(
-            context=context,
-            resources=resources,
-            asset_partitions=asset_partitions_to_reconcile_for_freshness,
-            sql_string=sql_string,
-        )
+        asset_partitions_filtered = set()
+        for ap in [
+            asset_partitions_to_reconcile,
+            asset_partitions_to_reconcile_for_freshness,
+        ]:
+            asset_partitions = filter_asset_partitions(
+                context=context,
+                resources=resources,
+                asset_partitions=ap,
+                sql_string=sql_string,
+            )
+
+            asset_partitions_filtered.union(asset_partitions)
+            del asset_partitions
 
         ssh_tunnel.stop()
+        del ssh_tunnel
 
     run_requests = build_run_requests(
-        asset_partitions_to_reconcile_filtered
-        | asset_partitions_to_reconcile_for_freshness_filtered,
-        asset_graph,
-        run_tags,
+        asset_partitions=asset_partitions_filtered,
+        asset_graph=asset_graph,
+        run_tags=run_tags,
     )
 
     return run_requests, cursor.with_updates(
