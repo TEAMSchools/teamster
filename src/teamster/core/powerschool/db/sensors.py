@@ -1,10 +1,5 @@
 # import pendulum
-from dagster import (
-    MultiAssetSensorEvaluationContext,
-    build_resources,
-    config_from_files,
-    multi_asset_sensor,
-)
+from dagster import build_resources, config_from_files, multi_asset_sensor
 
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
