@@ -19,17 +19,17 @@ def construct_sql(context, table_name, columns, where_column, partition_start_da
         ):
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP('"
-                f"{end_datetime.isoformat(timespec='microseconds')}"
+                f"{end_datetime.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') OR "
                 f"{where_column} IS NULL"
             )
         else:
             constructed_where = (
                 f"{where_column} >= TO_TIMESTAMP('"
-                f"{start_datetime.isoformat(timespec='microseconds')}"
+                f"{start_datetime.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
                 f"{where_column} < TO_TIMESTAMP('"
-                f"{end_datetime.isoformat(timespec='microseconds')}"
+                f"{end_datetime.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
     else:
