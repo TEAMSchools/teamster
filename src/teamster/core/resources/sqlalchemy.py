@@ -1,8 +1,8 @@
-import datetime
 import json
 import pathlib
 
 import oracledb
+import pendulum
 from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils.merger import merge_dicts
 from fastavro import parse_schema, writer
@@ -99,7 +99,7 @@ class SqlAlchemyEngine(object):
                 data_dir = pathlib.Path("data").absolute()
                 data_dir.mkdir(parents=True, exist_ok=True)
 
-                now_timestamp = str(datetime.datetime.now().timestamp())
+                now_timestamp = str(pendulum.now().timestamp())
                 output_data = data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
                 self.log.debug(f"Saving results to {output_data}")
 
