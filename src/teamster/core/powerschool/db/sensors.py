@@ -100,7 +100,7 @@ def build_powerschool_incremental_sensor(
             repository_def=context.repository_def,
             asset_selection=AssetSelection.keys(*asset_keys_filtered),
             instance=context.instance,
-            cursor=updated_cursor,
+            cursor=cursor,
             run_tags=run_tags,
         )
 
