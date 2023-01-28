@@ -1,6 +1,8 @@
 assets:
   - asset_name: AD_csv
-    key_prefix: idauto
+    key_prefix:
+      - datagun
+      - idauto
     query_config:
       type: schema
       value:

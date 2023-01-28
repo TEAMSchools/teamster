@@ -1,6 +1,8 @@
 assets:
   - asset_name: workers_json
-    key_prefix: adp
+    key_prefix:
+      - datagun
+      - adp
     query_config:
       type: schema
       value:

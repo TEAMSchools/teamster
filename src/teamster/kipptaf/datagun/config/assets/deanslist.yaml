@@ -1,6 +1,8 @@
 assets:
   - asset_name: deanslist_college_admission_tests_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -13,7 +15,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_designations_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -26,7 +30,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_transcript_grades_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -45,7 +51,9 @@ assets:
             limits:
               memory: 1.0Gi
   - asset_name: deanslist_finalgrades_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -64,7 +72,9 @@ assets:
             limits:
               memory: 1.0Gi
   - asset_name: deanslist_instructional_tech_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -77,7 +87,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_iready_diagnostics_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -90,7 +102,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_iready_lessons_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -103,7 +117,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_missing_assignments_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -116,7 +132,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_mod_standards_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -129,7 +147,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_promo_status_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -142,7 +162,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_reading_levels_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -155,7 +177,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_sight_words_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -168,7 +192,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_state_test_scores_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -181,7 +207,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_student_misc_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:
@@ -194,7 +222,9 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_transcript_gpas_json
-    key_prefix: deanslist
+    key_prefix:
+      - datagun
+      - deanslist
     query_config:
       type: schema
       value:

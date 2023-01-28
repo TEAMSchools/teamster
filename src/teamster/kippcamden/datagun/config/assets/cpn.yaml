@@ -1,6 +1,8 @@
 assets:
   - asset_name: cpn_attendance_csv
-    key_prefix: cpn
+    key_prefix:
+      - datagun
+      - cpn
     query_config:
       type: schema
       value:

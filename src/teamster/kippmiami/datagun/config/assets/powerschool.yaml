@@ -1,6 +1,7 @@
 assets:
   - asset_name: powerschool_autocomm_students_accessaccounts_txt
     key_prefix:
+      - datagun
       - powerschool
       - kippmiami
     query_config:

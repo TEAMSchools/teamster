@@ -1,6 +1,8 @@
 assets:
   - asset_name: littlesis_extract_csv
-    key_prefix: littlesis
+    key_prefix:
+      - datagun
+      - littlesis
     query_config:
       type: schema
       value:
