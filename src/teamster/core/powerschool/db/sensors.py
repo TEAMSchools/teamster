@@ -22,9 +22,7 @@ from teamster.core.resources.ssh import ssh_resource
 def build_powerschool_incremental_sensor(
     name, asset_selection, where_column, run_tags=None
 ):
-    @multi_asset_sensor(
-        name=name, asset_selection=asset_selection, minimum_interval_seconds=60
-    )
+    @multi_asset_sensor(name=name, asset_selection=asset_selection)
     def _sensor(context: MultiAssetSensorEvaluationContext):
         context.log.info(context.asset_keys)
 
@@ -55,8 +53,6 @@ def build_powerschool_incremental_sensor(
             ssh_tunnel = resources.ps_ssh.get_tunnel()
             ssh_tunnel.start()
 
-            # asset_partitions = []
-            # asset_keys_filtered = {}
             for (
                 asset_key,
                 event_log_record,
@@ -64,61 +60,7 @@ def build_powerschool_incremental_sensor(
                 context.log.info(asset_key)
                 context.log.info(event_log_record)
 
-                # for pk in time_window_partitions_subset.get_partition_keys():
-                #     window_start = pendulum.parse(text=pk, tz=LOCAL_TIME_ZONE.name)
-                #     window_end = window_start.add(hours=1)
-
-                #     query = text(
-                #         (
-                #             f"SELECT COUNT(*) "
-                #             f"FROM {asset_key.path[-1]} "
-                #             f"WHERE {where_column} >= TO_TIMESTAMP("
-                #             f"'{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
-                #             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
-                #             f"AND {where_column} < TO_TIMESTAMP("
-                #             f"'{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
-                #             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-                #         )
-                #     )
-                #     context.log.debug(query)
-
-                #     [(count,)] = resources.ps_db.execute_query(
-                #         query=query,
-                #         partition_size=1,
-                #         output=None,
-                #     )
-                #     context.log.debug(f"count: {count}")
-
-                #     if count > 0:
-                #         asset_partitions.append(
-                #             AssetKeyPartitionKey(asset_key=asset_key, partition_key=pk)
-                #         )
-                #         asset_keys_filtered[asset_key] = time_window_partitions_subset
-
         ssh_tunnel.stop()
-
-        # cursor_filtered = AssetReconciliationCursor(
-        #     latest_storage_id=updated_cursor.latest_storage_id,
-        #     materialized_or_requested_root_asset_keys=set(),
-        #     materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
-        # )
-
-        # run_requests = build_run_requests(
-        #     asset_partitions=asset_partitions,
-        #     asset_graph=context.repository_def.asset_graph,
-        #     run_tags=run_tags,
-        # )
-
-        # run_requests, updated_cursor = reconcile(
-        #     repository_def=context.repository_def,
-        #     asset_selection=AssetSelection.keys(*asset_keys_filtered),
-        #     instance=context.instance,
-        #     cursor=cursor,
-        #     run_tags=run_tags,
-        # )
-
-        # context.update_cursor(cursor_filtered.serialize())
-        # return run_requests
 
     return _sensor
 
