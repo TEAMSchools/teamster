@@ -10,26 +10,27 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 def construct_sql(context, table_name, columns, where_column, partition_start_date):
     if partition_start_date is not None:
-        end_datetime = context.partition_time_window.start.in_timezone(tz="Etc/UTC")
-
-        start_datetime = end_datetime.subtract(hours=1)
+        window_start = context.partition_time_window.start.in_timezone(
+            tz=LOCAL_TIME_ZONE.name
+        )
+        window_end = window_start.add(hours=1)
 
         if context.partition_time_window.start == pendulum.parse(
             text=partition_start_date
         ):
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP('"
-                f"{end_datetime.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
+                f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') OR "
                 f"{where_column} IS NULL"
             )
         else:
             constructed_where = (
                 f"{where_column} >= TO_TIMESTAMP('"
-                f"{start_datetime.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
+                f"{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
                 f"{where_column} < TO_TIMESTAMP('"
-                f"{end_datetime.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
+                f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
                 "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
     else:

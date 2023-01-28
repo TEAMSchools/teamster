@@ -8,6 +8,7 @@ from sqlalchemy import text
 
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def build_powerschool_incremental_sensor(
@@ -60,35 +61,22 @@ def build_powerschool_incremental_sensor(
                 updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
             ):
                 for pk in time_window_partitions_subset.get_partition_keys():
-                    window_end = pendulum.parse(text=pk).in_timezone(tz="Etc/UTC")
+                    window_start = pendulum.parse(text=pk).in_timezone(
+                        tz=LOCAL_TIME_ZONE.name
+                    )
+                    window_end = window_start.add(hours=1)
 
-                    window_start = window_end.subtract(hours=1)
                     query = text(
-                        f"""
-                        SELECT
-                            COUNT(*),
-                            MAX({where_column})
-                        FROM {asset_key.path[-1]}
-                        WHERE
-                            {where_column} >= TO_TIMESTAMP(
-                                '{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}',
-                                'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'
-                            )
-                            AND {where_column} < TO_TIMESTAMP(
-                                '{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}',
-                                'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'
-                            )
-                        """
-                        # (
-                        #     f"SELECT COUNT(*), MAX({where_column}) "
-                        #     f"FROM {asset_key.path[-1]} "
-                        #     f"WHERE {where_column} >= TO_TIMESTAMP("
-                        #     f"'{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
-                        #     "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
-                        #     f"AND {where_column} < TO_TIMESTAMP("
-                        #     f"'{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
-                        #     "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-                        # )
+                        (
+                            f"SELECT COUNT(*), MAX({where_column}) "
+                            f"FROM {asset_key.path[-1]} "
+                            f"WHERE {where_column} >= TO_TIMESTAMP("
+                            f"'{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
+                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
+                            f"AND {where_column} < TO_TIMESTAMP("
+                            f"'{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
+                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                        )
                     )
                     context.log.debug(query)
 
