@@ -39,7 +39,7 @@ def build_powerschool_incremental_sensor(
                 context.log.info(bar)
                 foo.append(bar)
 
-            if all(bar):
+            if all(foo):
                 # run_requests.append(
                 #     downstream_daily_job.run_request_for_partition(partition)
                 # )
