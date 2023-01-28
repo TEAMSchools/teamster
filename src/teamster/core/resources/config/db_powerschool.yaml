@@ -1,5 +1,5 @@
 dialect: oracle
-driver: oracledb
+driver: cx_oracle
 username: PSNAVIGATOR
 host: localhost
 database: PSPRODDB
