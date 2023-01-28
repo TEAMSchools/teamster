@@ -1,9 +1,11 @@
 import pendulum
-from dagster import AssetSelection, build_resources, config_from_files, sensor
+from dagster import build_resources, config_from_files, sensor
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
+    build_run_requests,
     reconcile,
 )
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from sqlalchemy import text
 
 from teamster.core.resources.sqlalchemy import oracle
@@ -53,6 +55,7 @@ def build_powerschool_incremental_sensor(
             ssh_tunnel = resources.ps_ssh.get_tunnel()
             ssh_tunnel.start()
 
+            asset_partitions = []
             asset_keys_filtered = {}
             for (
                 asset_key,
@@ -86,25 +89,34 @@ def build_powerschool_incremental_sensor(
                     context.log.debug(f"count: {count}")
 
                     if count > 0:
+                        asset_partitions.append(
+                            AssetKeyPartitionKey(asset_key=asset_key, partition_key=pk)
+                        )
                         asset_keys_filtered[asset_key] = time_window_partitions_subset
 
         ssh_tunnel.stop()
 
-        # cursor_filtered = AssetReconciliationCursor(
-        #     latest_storage_id=updated_cursor.latest_storage_id,
-        #     materialized_or_requested_root_asset_keys=set(),
-        #     materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
-        # )
+        cursor_filtered = AssetReconciliationCursor(
+            latest_storage_id=updated_cursor.latest_storage_id,
+            materialized_or_requested_root_asset_keys=set(),
+            materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
+        )
 
-        run_requests, updated_cursor = reconcile(
-            repository_def=context.repository_def,
-            asset_selection=AssetSelection.keys(*asset_keys_filtered),
-            instance=context.instance,
-            cursor=cursor,
+        run_requests = build_run_requests(
+            asset_partitions=asset_partitions,
+            asset_graph=context.repository_def.asset_graph,
             run_tags=run_tags,
         )
 
-        context.update_cursor(updated_cursor.serialize())
+        # run_requests, updated_cursor = reconcile(
+        #     repository_def=context.repository_def,
+        #     asset_selection=AssetSelection.keys(*asset_keys_filtered),
+        #     instance=context.instance,
+        #     cursor=cursor,
+        #     run_tags=run_tags,
+        # )
+
+        context.update_cursor(cursor_filtered.serialize())
         return run_requests
 
     return _sensor
