@@ -18,19 +18,19 @@ def construct_sql(context, table_name, columns, where_column, partition_start_da
             text=partition_start_date
         ):
             constructed_where = (
-                f"{where_column} < TO_TIMESTAMP_TZ('"
+                f"{where_column} < TO_TIMESTAMP('"
                 f"{end_datetime.isoformat(timespec='microseconds')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') OR "
+                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') OR "
                 f"{where_column} IS NULL"
             )
         else:
             constructed_where = (
-                f"{where_column} >= TO_TIMESTAMP_TZ('"
+                f"{where_column} >= TO_TIMESTAMP('"
                 f"{start_datetime.isoformat(timespec='microseconds')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') AND "
-                f"{where_column} < TO_TIMESTAMP_TZ('"
+                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
+                f"{where_column} < TO_TIMESTAMP('"
                 f"{end_datetime.isoformat(timespec='microseconds')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM')"
+                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
     else:
         constructed_where = ""
@@ -71,7 +71,7 @@ def build_powerschool_table_asset(
         hourly_partitions_def = HourlyPartitionsDefinition(
             start_date=partition_start_date,
             timezone=LOCAL_TIME_ZONE.name,
-            fmt="%Y-%m-%dT%H:%M:%S.%f%z",
+            fmt="%Y-%m-%dT%H:%M:%S.%f",
         )
     else:
         hourly_partitions_def = None
