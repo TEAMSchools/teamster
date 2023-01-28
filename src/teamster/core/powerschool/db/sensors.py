@@ -66,7 +66,7 @@ def build_powerschool_incremental_sensor(
 
                     query = text(
                         (
-                            "SELECT COUNT(*), CURRENT_TIMESTAMP "
+                            f"SELECT COUNT(*), MAX({where_column}) "
                             f"FROM {asset_key.path[-1]} "
                             f"WHERE {where_column} >= TO_TIMESTAMP_TZ("
                             f"'{window_start.isoformat(timespec='microseconds')}', "
@@ -78,12 +78,12 @@ def build_powerschool_incremental_sensor(
                     )
                     context.log.debug(query)
 
-                    [(count, current_timestamp)] = resources.ps_db.execute_query(
+                    [(count, max_where)] = resources.ps_db.execute_query(
                         query=query,
                         partition_size=1,
                         output=None,
                     )
-                    context.log.debug(current_timestamp)
+                    context.log.debug(max_where)
                     context.log.debug(f"count: {count}")
 
                     if count > 0:
