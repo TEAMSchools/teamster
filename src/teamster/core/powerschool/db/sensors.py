@@ -26,10 +26,13 @@ def build_powerschool_incremental_sensor(
         name=name, asset_selection=asset_selection, minimum_interval_seconds=60
     )
     def _sensor(context: MultiAssetSensorEvaluationContext):
+        context.log.info(context.asset_keys)
+
         trailing_unconsumed_events = {
             ak: context.get_trailing_unconsumed_events(asset_key=ak)
             for ak in context.asset_keys
         }
+        context.log.info(trailing_unconsumed_events)
 
         with build_resources(
             resources={
