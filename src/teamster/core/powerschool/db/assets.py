@@ -10,13 +10,11 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 def construct_sql(context, table_name, columns, where_column, partition_start_date):
     if partition_start_date is not None:
-        window_start = context.partition_time_window.start.in_timezone(
-            tz=LOCAL_TIME_ZONE.name
-        )
+        window_start = context.partition_time_window.start
         window_end = window_start.add(hours=1)
 
         if context.partition_time_window.start == pendulum.parse(
-            text=partition_start_date
+            text=partition_start_date, tz=LOCAL_TIME_ZONE.name
         ):
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP('"
