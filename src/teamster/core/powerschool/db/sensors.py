@@ -23,7 +23,7 @@ def build_powerschool_incremental_sensor(
     name, asset_selection, where_column, run_tags=None
 ):
     @multi_asset_sensor(name=name, asset_selection=asset_selection)
-    def _sensor(context: MultiAssetSensorEvaluationContext):
+    def _sensor(context):
         context.log.info(context.asset_keys)
 
         trailing_unconsumed_events = {
