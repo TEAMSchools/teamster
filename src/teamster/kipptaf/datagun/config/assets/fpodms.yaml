@@ -1,6 +1,8 @@
 assets:
   - asset_name: students_json
-    key_prefix: fpodms
+    key_prefix:
+      - datagun
+      - fpodms
     query_config:
       type: schema
       value:

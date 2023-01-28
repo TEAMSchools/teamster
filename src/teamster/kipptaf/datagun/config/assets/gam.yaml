@@ -1,6 +1,8 @@
 assets:
   - asset_name: users_students_json
-    key_prefix: gam
+    key_prefix:
+      - datagun
+      - gam
     query_config:
       type: schema
       value:
@@ -14,7 +16,9 @@ assets:
       name: pythonanywhere
       path: sftp/gam
   - asset_name: users_admins_json
-    key_prefix: gam
+    key_prefix:
+      - datagun
+      - gam
     query_config:
       type: schema
       value:

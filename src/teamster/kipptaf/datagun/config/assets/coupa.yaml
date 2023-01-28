@@ -1,6 +1,8 @@
 assets:
   - asset_name: users_csv
-    key_prefix: coupa
+    key_prefix:
+      - datagun
+      - coupa
     query_config:
       type: schema
       value:

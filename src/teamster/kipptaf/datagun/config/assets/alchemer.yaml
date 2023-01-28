@@ -1,6 +1,8 @@
 assets:
   - asset_name: contacts_json
-    key_prefix: alchemer
+    key_prefix:
+      - datagun
+      - alchemer
     query_config:
       type: schema
       value:

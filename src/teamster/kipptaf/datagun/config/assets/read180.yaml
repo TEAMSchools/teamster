@@ -1,6 +1,8 @@
 assets:
   - asset_name: teachers_csv
-    key_prefix: read180
+    key_prefix:
+      - datagun
+      - read180
     query_config:
       type: schema
       value:
@@ -14,7 +16,9 @@ assets:
       name: read180
       path: /uploads
   - asset_name: students_csv
-    key_prefix: read180
+    key_prefix:
+      - datagun
+      - read180
     query_config:
       type: schema
       value:

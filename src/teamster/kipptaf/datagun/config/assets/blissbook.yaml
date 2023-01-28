@@ -1,6 +1,8 @@
 assets:
   - asset_name: members_csv
-    key_prefix: blissbook
+    key_prefix:
+      - datagun
+      - blissbook
     query_config:
       type: schema
       value:
