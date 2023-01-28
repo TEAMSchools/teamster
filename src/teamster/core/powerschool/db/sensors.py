@@ -66,7 +66,7 @@ def build_powerschool_incremental_sensor(
 
                     query = text(
                         (
-                            f"SELECT COUNT(*), MAX({where_column}) "
+                            f"SELECT COUNT(*) "
                             f"FROM {asset_key.path[-1]} "
                             f"WHERE {where_column} >= TO_TIMESTAMP("
                             f"'{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}', "
@@ -78,12 +78,11 @@ def build_powerschool_incremental_sensor(
                     )
                     context.log.debug(query)
 
-                    [(count, max_where)] = resources.ps_db.execute_query(
+                    [(count,)] = resources.ps_db.execute_query(
                         query=query,
                         partition_size=1,
                         output=None,
                     )
-                    context.log.debug(max_where)
                     context.log.debug(f"count: {count}")
 
                     if count > 0:
@@ -91,21 +90,21 @@ def build_powerschool_incremental_sensor(
 
         ssh_tunnel.stop()
 
-        cursor_filtered = AssetReconciliationCursor(
-            latest_storage_id=updated_cursor.latest_storage_id,
-            materialized_or_requested_root_asset_keys=set(),
-            materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
-        )
+        # cursor_filtered = AssetReconciliationCursor(
+        #     latest_storage_id=updated_cursor.latest_storage_id,
+        #     materialized_or_requested_root_asset_keys=set(),
+        #     materialized_or_requested_root_partitions_by_asset_key=asset_keys_filtered,
+        # )
 
         run_requests, updated_cursor = reconcile(
             repository_def=context.repository_def,
             asset_selection=AssetSelection.keys(*asset_keys_filtered),
             instance=context.instance,
-            cursor=cursor_filtered,
+            cursor=updated_cursor,
             run_tags=run_tags,
         )
 
-        context.update_cursor(cursor_filtered.serialize())
+        context.update_cursor(updated_cursor.serialize())
         return run_requests
 
     return _sensor
