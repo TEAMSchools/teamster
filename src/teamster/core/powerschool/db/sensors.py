@@ -197,9 +197,6 @@ def build_powerschool_incremental_sensor(
         )
 
         context.update_cursor(updated_cursor.serialize())
-
-        # return run_requests
-        context.log.info(run_requests)
-        return []
+        return run_requests
 
     return _sensor
