@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-
+import pendulum
 from dagster import AssetSelection, build_resources, config_from_files, sensor
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
@@ -61,12 +60,13 @@ def build_powerschool_incremental_sensor(
                 updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
             ):
                 for pk in time_window_partitions_subset.get_partition_keys():
-                    window_end = datetime.strptime(pk, "%Y-%m-%dT%H:%M:%S.%f%z")
-                    window_start = window_end - timedelta(hours=1)
+                    window_end = pendulum.parse(text=pk).in_timezone(tz="Etc/UTC")
+
+                    window_start = window_end.subtract(hours=1)
+
                     query = text(
                         (
                             "SELECT COUNT(*), CURRENT_TIMESTAMP "
-                            f"FROM {asset_key.path[-1]} "
                             f"WHERE {where_column} >= TO_TIMESTAMP_TZ("
                             f"'{window_start.isoformat(timespec='microseconds')}', "
                             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') "

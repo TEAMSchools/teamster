@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+import pendulum
 from dagster import FreshnessPolicy, HourlyPartitionsDefinition, Output, asset
 from sqlalchemy import literal_column, select, table, text
 
@@ -11,10 +11,10 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 def construct_sql(context, table_name, columns, where_column, partition_start_date):
     if partition_start_date is not None:
         end_datetime = context.partition_time_window.start
-        start_datetime = end_datetime - timedelta(hours=1)
+        start_datetime = end_datetime.subtract(hours=1)
 
-        if end_datetime == datetime.strptime(
-            partition_start_date, "%Y-%m-%dT%H:%M:%S.%f%z"
+        if end_datetime == pendulum.from_format(
+            string=partition_start_date, fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ"
         ):
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP_TZ('"
@@ -69,7 +69,7 @@ def build_powerschool_table_asset(
     if partition_start_date is not None:
         hourly_partitions_def = HourlyPartitionsDefinition(
             start_date=partition_start_date,
-            timezone=str(LOCAL_TIME_ZONE),
+            timezone=LOCAL_TIME_ZONE.name,
             fmt="%Y-%m-%dT%H:%M:%S.%f%z",
         )
     else:

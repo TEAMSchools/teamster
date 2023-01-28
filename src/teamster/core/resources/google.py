@@ -1,8 +1,8 @@
-from datetime import datetime
 from typing import Union
 
 import google.auth
 import gspread
+import pendulum
 from dagster import (
     Field,
     InputContext,
@@ -24,11 +24,9 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
         if context.has_asset_key:
             path = context.get_asset_identifier()
             if context.has_asset_partitions:
-                asset_partition_key = datetime.strptime(
-                    path.pop(-1), "%Y-%m-%dT%H:%M:%S.%f%z"
-                )
+                asset_partition_key = pendulum.parse(text=path.pop(-1))
                 path.append(f"dt={asset_partition_key.date()}")
-                path.append(asset_partition_key.strftime("%H"))
+                path.append(asset_partition_key.format(fmt="HH"))
         else:
             parts = context.get_identifier()
             run_id = parts[0]
