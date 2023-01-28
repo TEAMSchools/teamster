@@ -1,4 +1,4 @@
-from typing import Generator, Mapping, Optional
+from typing import AbstractSet, Generator, Mapping, Optional
 
 import dagster._check as check
 import pendulum
@@ -33,11 +33,11 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 def filter_asset_partitions(
     context: SensorEvaluationContext,
     resources: Generator[Resources, None, None],
-    asset_partitions: set(AssetKeyPartitionKey),
+    asset_partitions: AbstractSet[AssetKeyPartitionKey],
     sql_string: str,
-) -> set(AssetKeyPartitionKey):
-    asset_keys_filtered = {}
-    for asset_key, partition_key in asset_partitions.items():
+) -> AbstractSet[AssetKeyPartitionKey]:
+    asset_keys_filtered = set()
+    for asset_key, partition_key in asset_partitions:
         window_start = pendulum.parse(text=partition_key, tz=LOCAL_TIME_ZONE.name)
         window_end = window_start.add(hours=1)
 
