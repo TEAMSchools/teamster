@@ -3,8 +3,8 @@ from dagster import AssetSelection, build_asset_reconciliation_sensor
 from teamster.core.powerschool.db.sensors import build_powerschool_incremental_sensor
 from teamster.kippcamden.powerschool.db import assets
 
-ps_incremental_sensor = build_powerschool_incremental_sensor(
-    name="ps_incremental_sensor",
+foo = build_powerschool_incremental_sensor(
+    name="foo",
     asset_selection=AssetSelection.assets(*assets.ps_test_assets),
     where_column="transaction_date",
 )
@@ -46,5 +46,5 @@ __all__ = [
     ps_contacts_assets_sensor,
     ps_misc_assets_sensor,
     ps_transactiondate_assets_sensor,
-    ps_incremental_sensor,
+    foo,
 ]
