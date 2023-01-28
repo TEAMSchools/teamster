@@ -1,13 +1,11 @@
 # import pendulum
-from dagster import (
+from dagster import (  # build_resources,; config_from_files,
     MultiAssetSensorEvaluationContext,
-    build_resources,
-    config_from_files,
     multi_asset_sensor,
 )
 
-from teamster.core.resources.sqlalchemy import oracle
-from teamster.core.resources.ssh import ssh_resource
+# from teamster.core.resources.sqlalchemy import oracle
+# from teamster.core.resources.ssh import ssh_resource
 
 # from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -24,15 +22,47 @@ def build_powerschool_incremental_sensor(
 ):
     @multi_asset_sensor(name=name, asset_selection=asset_selection)
     def _sensor(context: MultiAssetSensorEvaluationContext):
-        context.log.info(context.asset_keys)
-        context.log.info(
+        materialization_records = (
             context.latest_materialization_records_by_partition_and_asset()
         )
-        materialization_records = {
-            ak: context.materialization_records_for_key(asset_key=ak, limit=24)
-            for ak in context.asset_keys
-        }
         context.log.info(materialization_records)
+
+        run_requests = []
+        for partition, materializations_by_asset in materialization_records.items():
+            context.log.info(partition)
+            context.log.info(materializations_by_asset)
+
+            foo = []
+            for asset_key in context.asset_keys:
+                context.log.info(asset_key)
+                bar = context.all_partitions_materialized(asset_key, [partition])
+                context.log.info(bar)
+                foo.append(bar)
+
+            if all(bar):
+                # run_requests.append(
+                #     downstream_daily_job.run_request_for_partition(partition)
+                # )
+                for asset_key, materialization in materializations_by_asset.items():
+                    context.log.info(asset_key)
+                    context.log.info(materialization)
+                    if asset_key in context.asset_keys:
+                        context.advance_cursor({asset_key: materialization})
+
+        return run_requests
+
+        # materialization_records = {
+        #     ak: context.materialization_records_for_key(asset_key=ak, limit=25)
+        #     for ak in context.asset_keys
+        # }
+        # context.log.info(materialization_records)
+
+        for (
+            asset_key,
+            event_log_record,
+        ) in materialization_records.items():
+            context.log.info(asset_key)
+            context.log.info(event_log_record)
 
         trailing_unconsumed_events = {
             ak: context.get_trailing_unconsumed_events(asset_key=ak)
@@ -40,35 +70,28 @@ def build_powerschool_incremental_sensor(
         }
         context.log.info(trailing_unconsumed_events)
 
-        with build_resources(
-            resources={
-                "ps_db": oracle,
-                "ps_ssh": ssh_resource,
-            },
-            resource_config={
-                "ps_db": {
-                    "config": config_from_files(
-                        ["src/teamster/core/resources/config/db_powerschool.yaml"]
-                    )
-                },
-                "ps_ssh": {
-                    "config": config_from_files(
-                        ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
-                    )
-                },
-            },
-        ) as resources:
-            ssh_tunnel = resources.ps_ssh.get_tunnel()
-            ssh_tunnel.start()
+        # with build_resources(
+        #     resources={
+        #         "ps_db": oracle,
+        #         "ps_ssh": ssh_resource,
+        #     },
+        #     resource_config={
+        #         "ps_db": {
+        #             "config": config_from_files(
+        #                 ["src/teamster/core/resources/config/db_powerschool.yaml"]
+        #             )
+        #         },
+        #         "ps_ssh": {
+        #             "config": config_from_files(
+        #                 ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+        #             )
+        #         },
+        #     },
+        # ) as resources:
+        #     ssh_tunnel = resources.ps_ssh.get_tunnel()
+        #     ssh_tunnel.start()
 
-            for (
-                asset_key,
-                event_log_record,
-            ) in trailing_unconsumed_events.items():
-                context.log.info(asset_key)
-                context.log.info(event_log_record)
-
-        ssh_tunnel.stop()
+        # ssh_tunnel.stop()
 
     return _sensor
 
