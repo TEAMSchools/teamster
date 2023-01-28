@@ -67,6 +67,7 @@ def build_powerschool_incremental_sensor(
                     query = text(
                         (
                             "SELECT COUNT(*), CURRENT_TIMESTAMP "
+                            f"FROM {asset_key.path[-1]} "
                             f"WHERE {where_column} >= TO_TIMESTAMP_TZ("
                             f"'{window_start.isoformat(timespec='microseconds')}', "
                             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6TZH:TZM') "
