@@ -1,5 +1,10 @@
 # import pendulum
-from dagster import build_resources, config_from_files, multi_asset_sensor
+from dagster import (
+    MultiAssetSensorEvaluationContext,
+    build_resources,
+    config_from_files,
+    multi_asset_sensor,
+)
 
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.resources.ssh import ssh_resource
@@ -18,8 +23,16 @@ def build_powerschool_incremental_sensor(
     name, asset_selection, where_column, run_tags=None
 ):
     @multi_asset_sensor(name=name, asset_selection=asset_selection)
-    def _sensor(context):
+    def _sensor(context: MultiAssetSensorEvaluationContext):
         context.log.info(context.asset_keys)
+        context.log.info(
+            context.latest_materialization_records_by_partition_and_asset()
+        )
+        materialization_records = {
+            ak: context.materialization_records_for_key(asset_key=ak, limit=24)
+            for ak in context.asset_keys
+        }
+        context.log.info(materialization_records)
 
         trailing_unconsumed_events = {
             ak: context.get_trailing_unconsumed_events(asset_key=ak)
