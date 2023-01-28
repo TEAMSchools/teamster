@@ -61,9 +61,7 @@ def build_powerschool_incremental_sensor(
                 updated_cursor.materialized_or_requested_root_partitions_by_asset_key.items()
             ):
                 for pk in time_window_partitions_subset.get_partition_keys():
-                    window_start = pendulum.parse(text=pk).in_timezone(
-                        tz=LOCAL_TIME_ZONE.name
-                    )
+                    window_start = pendulum.parse(text=pk, tz=LOCAL_TIME_ZONE.name)
                     window_end = window_start.add(hours=1)
 
                     query = text(
