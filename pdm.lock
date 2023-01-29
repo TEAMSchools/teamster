@@ -923,7 +923,7 @@ summary = "WebSocket client for Python with low level API options"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:7c64a95a046b4a6ec5b7a608ec2ec9af08603a0f00be642ceb44ec6ec6102219"
+content_hash = "sha256:64251cb71fdf29b40cee73e8b594835efc28dfff5d099cc90155648dbd7d04ca"
 
 [metadata.files]
 "alembic 1.9.2" = [
