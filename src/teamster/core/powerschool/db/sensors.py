@@ -40,9 +40,10 @@ def filter_asset_partitions(
     asset_keys_filtered = set()
 
     for akpk in asset_partitions:
+        context.log.debug(akpk)
+
         window_start = pendulum.parse(text=akpk.partition_key, tz=LOCAL_TIME_ZONE.name)
         window_end = window_start.add(hours=1)
-
         query = text(
             sql_string.format(
                 table_name=akpk.asset_key.path[-1],
@@ -51,7 +52,6 @@ def filter_asset_partitions(
             )
         )
 
-        context.log.debug(query)
         [(count,)] = resources.ps_db.execute_query(
             query=query,
             partition_size=1,
@@ -203,6 +203,7 @@ def build_powerschool_incremental_sensor(
         context.update_cursor(updated_cursor.serialize())
         gc.collect()
 
+        context.log.debug(run_requests)
         return run_requests
 
     return _sensor
