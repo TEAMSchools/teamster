@@ -125,22 +125,23 @@ def reconcile(
             local_port=1521,
         )
 
-        ssh_tunnel.start()
+        try:
+            ssh_tunnel.start()
 
-        reconcile_filtered = filter_asset_partitions(
-            context=context,
-            resources=resources,
-            asset_partitions=asset_partitions_to_reconcile,
-            sql_string=sql_string,
-        )
-        reconcile_for_freshness_filtered = filter_asset_partitions(
-            context=context,
-            resources=resources,
-            asset_partitions=asset_partitions_to_reconcile_for_freshness,
-            sql_string=sql_string,
-        )
-
-        ssh_tunnel.stop()
+            reconcile_filtered = filter_asset_partitions(
+                context=context,
+                resources=resources,
+                asset_partitions=asset_partitions_to_reconcile,
+                sql_string=sql_string,
+            )
+            reconcile_for_freshness_filtered = filter_asset_partitions(
+                context=context,
+                resources=resources,
+                asset_partitions=asset_partitions_to_reconcile_for_freshness,
+                sql_string=sql_string,
+            )
+        finally:
+            ssh_tunnel.stop()
 
     run_requests = build_run_requests(
         asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
