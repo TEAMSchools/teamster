@@ -92,9 +92,6 @@ class SqlAlchemyEngine(object):
                 self.log.debug("Retrieving rows from all partitions")
                 pt_rows = [rows for pt in partitions for rows in pt]
 
-                del partitions, pt
-                gc.collect()
-
                 self.log.debug("Unpacking partition rows")
                 output_data = [
                     dict(row) if output in ["dict", "json"] else row for row in pt_rows
@@ -156,9 +153,6 @@ class SqlAlchemyEngine(object):
 
                     del data
                     gc.collect()
-
-                del partitions
-                gc.collect()
 
                 self.log.debug(f"Retrieved {len_data} rows")
 
