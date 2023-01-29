@@ -136,12 +136,17 @@ def reconcile(
                 asset_partitions=ap,
                 sql_string=sql_string,
             )
+            del ap
 
             asset_partitions_filtered.union(asset_partitions)
             del asset_partitions
 
+        del asset_partitions_to_reconcile
+        del asset_partitions_to_reconcile_for_freshness
+
         ssh_tunnel.stop()
-        del ssh_tunnel
+
+    del resources
 
     run_requests = build_run_requests(
         asset_partitions=asset_partitions_filtered,
