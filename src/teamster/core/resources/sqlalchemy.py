@@ -1,3 +1,4 @@
+import gc
 import json
 import pathlib
 import sys
@@ -65,8 +66,8 @@ class SqlAlchemyEngine(object):
         self.log = logger
 
         engine_keys = ["arraysize", "connect_args"]
-        engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
         url_kwargs = {k: v for k, v in kwargs.items() if k not in engine_keys}
+        engine_kwargs = {k: v for k, v in kwargs.items() if k in engine_keys}
 
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **url_kwargs)
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
@@ -86,20 +87,21 @@ class SqlAlchemyEngine(object):
 
             self.log.debug("Partitioning results")
             partitions = result.partitions(size=partition_size)
-            del result
 
             if output in ["dict", "json"] or output is None:
-                del result_cursor_descr
-
                 self.log.debug("Retrieving rows from all partitions")
                 pt_rows = [rows for pt in partitions for rows in pt]
-                del partitions
+
+                del partitions, pt
+                gc.collect()
 
                 self.log.debug("Unpacking partition rows")
                 output_data = [
                     dict(row) if output in ["dict", "json"] else row for row in pt_rows
                 ]
+
                 del pt_rows
+                gc.collect()
 
                 self.log.debug(f"Retrieved {len(output_data)} rows")
             elif output == "avro":
@@ -120,7 +122,6 @@ class SqlAlchemyEngine(object):
                             "type": ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name),
                         }
                     )
-                del result_cursor_descr
                 self.log.debug(avro_schema_fields)
 
                 avro_schema = parse_schema(
@@ -135,7 +136,9 @@ class SqlAlchemyEngine(object):
                 for i, pt in enumerate(partitions):
                     self.log.debug(f"Retrieving rows from partition {i}")
                     data = [dict(row) for row in pt]
+
                     del pt
+                    gc.collect()
 
                     len_data += len(data)
 
@@ -150,8 +153,12 @@ class SqlAlchemyEngine(object):
                             writer(
                                 fo=f, schema=avro_schema, records=data, codec="snappy"
                             )
+
                     del data
+                    gc.collect()
+
                 del partitions
+                gc.collect()
 
                 self.log.debug(f"Retrieved {len_data} rows")
 
