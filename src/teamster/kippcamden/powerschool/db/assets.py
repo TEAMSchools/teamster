@@ -5,11 +5,7 @@ from teamster.kippcamden import CODE_LOCATION, POWERSCHOOL_PARTITION_START_DATE
 
 # TODO: rename to something like "full" or "non-partition"
 ps_daily_assets = [
-    build_powerschool_table_asset(
-        **cfg,
-        code_location=CODE_LOCATION,
-        freshness_policy={"maximum_lag_minutes": 0, "cron_schedule": "0 0 * * *"},
-    )
+    build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
     for cfg in config_from_files(
         [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-daily.yaml"]
     )["assets"]
