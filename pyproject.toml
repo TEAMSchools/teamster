@@ -6,18 +6,17 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 dependencies = [
-  "dagster~=1.1",
-  "dagster-cloud~=1.1",
-  "dagster-gcp~=0.17",
-  "dagster-ssh~=0.17",
-  "dagster-k8s~=0.17",
-  "powerschool~=4.0",
-  "pyodbc~=4.0",
-  "gspread~=5.7",
-  "oracledb~=1.2",
-  "fastavro~=1.7",
-  "python-snappy~=0.6",
-  "psutil~=5.9",
+  "dagster>=1.1.14",
+  "dagster-cloud>=1.1.14",
+  "dagster-gcp>=0.17.14",
+  "dagster-ssh>=0.17.14",
+  "dagster-k8s>=0.17.14",
+  "powerschool>=4.0.1",
+  "pyodbc>=4.0.35",
+  "gspread>=5.7.2",
+  "oracledb>=1.2.2",
+  "fastavro>=1.7.1",
+  "python-snappy>=0.6.1",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }
