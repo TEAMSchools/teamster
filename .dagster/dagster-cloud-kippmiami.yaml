@@ -1,0 +1,12 @@
+locations:
+  - location_name: kippmiami
+    code_source:
+      module_name: teamster.kippmiami.definitions
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - kippmiami

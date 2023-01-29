@@ -1,13 +1,17 @@
-name: Hybrid Branch Deployment
+name: Hybrid Prod Deployment
 
 on:
-  pull_request:
+  workflow_dispatch: null
+  push:
     branches:
       - main
-    types:
-      - opened
-      - synchronize
-      - reopened
+    paths:
+      - Dockerfile
+      - .github/workflows/prod-deploy.yaml
+      - .dagster/dagster-cloud.yaml
+      - requirements.txt
+      - src/teamster/core/**
+      - src/teamster/kippmiami/**
 
 concurrency:
   # Cancel in-progress runs on same branch
@@ -31,7 +35,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-branch.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-kippmiami.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
@@ -46,7 +50,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      pull-requests: write
 
     steps:
       # https://github.com/actions/checkout
@@ -78,7 +81,7 @@ jobs:
 
       # https://github.com/dagster-io/dagster-cloud-action
       - name: Build and deploy to Dagster Cloud hybrid
-        uses: dagster-io/dagster-cloud-action/actions/hybrid_branch_deploy@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/hybrid_prod_deploy@v0.1
         with:
           organization_id: ${{ secrets.DAGSTER_ORGANIZATION_ID }}
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
