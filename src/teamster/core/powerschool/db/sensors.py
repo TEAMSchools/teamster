@@ -1,4 +1,4 @@
-import gc
+# import gc
 import os
 from typing import AbstractSet, Generator, Mapping, Optional
 
@@ -207,7 +207,7 @@ def build_powerschool_incremental_sensor(
         )
 
         context.update_cursor(updated_cursor.serialize())
-        gc.collect()
+        # gc.collect()
 
         return run_requests
 
