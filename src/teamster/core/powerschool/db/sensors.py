@@ -119,24 +119,28 @@ def reconcile(
             },
         },
     ) as resources:
-        with resources.ps_ssh.get_tunnel(
+        ssh_tunnel = resources.ps_ssh.get_tunnel(
             remote_port=1521,
             remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
             local_port=1521,
-        ).start():
+        )
 
-            reconcile_filtered = filter_asset_partitions(
-                context=context,
-                resources=resources,
-                asset_partitions=asset_partitions_to_reconcile,
-                sql_string=sql_string,
-            )
-            reconcile_for_freshness_filtered = filter_asset_partitions(
-                context=context,
-                resources=resources,
-                asset_partitions=asset_partitions_to_reconcile_for_freshness,
-                sql_string=sql_string,
-            )
+        ssh_tunnel.start()
+
+        reconcile_filtered = filter_asset_partitions(
+            context=context,
+            resources=resources,
+            asset_partitions=asset_partitions_to_reconcile,
+            sql_string=sql_string,
+        )
+        reconcile_for_freshness_filtered = filter_asset_partitions(
+            context=context,
+            resources=resources,
+            asset_partitions=asset_partitions_to_reconcile_for_freshness,
+            sql_string=sql_string,
+        )
+
+        ssh_tunnel.stop()
 
     run_requests = build_run_requests(
         asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,

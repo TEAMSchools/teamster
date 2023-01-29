@@ -92,22 +92,25 @@ def build_powerschool_table_asset(
             partition_start_date=partition_start_date,
         )
 
-        context.log.info("Starting SSH tunnel")
-        with context.resources.ps_ssh.get_tunnel(
+        ssh_tunnel = context.resources.ps_ssh.get_tunnel(
             remote_port=1521,
             remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
             local_port=1521,
-        ).start():
+        )
 
-            row_count = count(context=context, sql=sql)
-            context.log.info(f"Found {row_count} rows")
+        context.log.info("Starting SSH tunnel")
+        ssh_tunnel.start()
 
-            if row_count > 0:
-                filename = context.resources.ps_db.execute_query(
-                    query=sql, partition_size=100000, output="avro"
-                )
-                yield Output(value=filename, metadata={"records": row_count})
+        row_count = count(context=context, sql=sql)
+        context.log.info(f"Found {row_count} rows")
 
-            context.log.info("Stopping SSH tunnel")
+        if row_count > 0:
+            filename = context.resources.ps_db.execute_query(
+                query=sql, partition_size=100000, output="avro"
+            )
+            yield Output(value=filename, metadata={"records": row_count})
+
+        context.log.info("Stopping SSH tunnel")
+        ssh_tunnel.start()
 
     return _asset
