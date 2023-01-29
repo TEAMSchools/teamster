@@ -1,3 +1,4 @@
+import gc
 from typing import AbstractSet, Generator, Mapping, Optional
 
 import dagster._check as check
@@ -200,6 +201,8 @@ def build_powerschool_incremental_sensor(
         )
 
         context.update_cursor(updated_cursor.serialize())
+        gc.collect()
+
         return run_requests
 
     return _sensor
