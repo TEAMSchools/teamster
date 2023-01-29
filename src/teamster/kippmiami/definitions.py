@@ -1,10 +1,10 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 from dagster_k8s import k8s_job_executor
+from dagster_ssh import ssh_resource
 
 from teamster.core.resources.google import gcs_filename_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
-from teamster.core.resources.ssh import ssh_resource
 from teamster.kippmiami import CODE_LOCATION, datagun, powerschool
 
 defs = Definitions(

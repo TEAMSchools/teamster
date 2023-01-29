@@ -1,4 +1,5 @@
 import gc
+import os
 from typing import AbstractSet, Generator, Mapping, Optional
 
 import dagster._check as check
@@ -24,10 +25,10 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._core.definitions.utils import check_valid_name
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster_ssh import ssh_resource
 from sqlalchemy import text
 
 from teamster.core.resources.sqlalchemy import oracle
-from teamster.core.resources.ssh import ssh_resource
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
@@ -118,23 +119,24 @@ def reconcile(
             },
         },
     ) as resources:
-        ssh_tunnel = resources.ps_ssh.get_tunnel()
-        ssh_tunnel.start()
+        with resources.ps_ssh.get_tunnel(
+            remote_port=1521,
+            remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
+            local_port=1521,
+        ).start():
 
-        reconcile_filtered = filter_asset_partitions(
-            context=context,
-            resources=resources,
-            asset_partitions=asset_partitions_to_reconcile,
-            sql_string=sql_string,
-        )
-        reconcile_for_freshness_filtered = filter_asset_partitions(
-            context=context,
-            resources=resources,
-            asset_partitions=asset_partitions_to_reconcile_for_freshness,
-            sql_string=sql_string,
-        )
-
-        ssh_tunnel.stop()
+            reconcile_filtered = filter_asset_partitions(
+                context=context,
+                resources=resources,
+                asset_partitions=asset_partitions_to_reconcile,
+                sql_string=sql_string,
+            )
+            reconcile_for_freshness_filtered = filter_asset_partitions(
+                context=context,
+                resources=resources,
+                asset_partitions=asset_partitions_to_reconcile_for_freshness,
+                sql_string=sql_string,
+            )
 
     run_requests = build_run_requests(
         asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
