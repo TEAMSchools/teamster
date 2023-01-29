@@ -2,7 +2,6 @@ from typing import AbstractSet, Generator, Mapping, Optional
 
 import dagster._check as check
 import pendulum
-import psutil
 from dagster import (
     AssetSelection,
     DagsterInstance,
@@ -50,7 +49,6 @@ def filter_asset_partitions(
                 window_end=window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS"),
             )
         )
-        del window_start, window_end
 
         context.log.debug(query)
         [(count,)] = resources.ps_db.execute_query(
@@ -58,14 +56,11 @@ def filter_asset_partitions(
             partition_size=1,
             output=None,
         )
-        del query
 
         context.log.debug(f"count: {count}")
         if count > 0:
             asset_keys_filtered.add(akpk)
-        del count, akpk
 
-    del asset_partitions
     return asset_keys_filtered
 
 
@@ -80,7 +75,6 @@ def reconcile(
     sql_string: str,
 ):
     instance_queryer = CachingInstanceQueryer(instance=instance)
-
     asset_graph = repository_def.asset_graph
 
     (
@@ -137,24 +131,16 @@ def reconcile(
                 asset_partitions=ap,
                 sql_string=sql_string,
             )
-            del ap
 
             asset_partitions_filtered.union(asset_partitions)
-            del asset_partitions
-
-        del asset_partitions_to_reconcile, asset_partitions_to_reconcile_for_freshness
 
         ssh_tunnel.stop()
-        del ssh_tunnel
-
-    del resources
 
     run_requests = build_run_requests(
         asset_partitions=asset_partitions_filtered,
         asset_graph=asset_graph,
         run_tags=run_tags,
     )
-    del asset_partitions_filtered
 
     return run_requests, cursor.with_updates(
         latest_storage_id=latest_storage_id,
@@ -195,7 +181,6 @@ def build_powerschool_incremental_sensor(
         default_status=default_status,
     )
     def _sensor(context: SensorEvaluationContext):
-        context.log.info(psutil.virtual_memory().percent)
         cursor = (
             AssetReconciliationCursor.from_serialized(
                 context.cursor, context.repository_def.asset_graph
@@ -204,7 +189,6 @@ def build_powerschool_incremental_sensor(
             else AssetReconciliationCursor.empty()
         )
 
-        context.log.info(psutil.virtual_memory().percent)
         run_requests, updated_cursor = reconcile(
             context=context,
             repository_def=context.repository_def,
@@ -215,10 +199,7 @@ def build_powerschool_incremental_sensor(
             sql_string=sql_string,
         )
 
-        context.log.info(psutil.virtual_memory().percent)
         context.update_cursor(updated_cursor.serialize())
-
-        context.log.info(psutil.virtual_memory().percent)
         return run_requests
 
     return _sensor
