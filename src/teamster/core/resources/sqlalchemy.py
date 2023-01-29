@@ -86,8 +86,11 @@ class SqlAlchemyEngine(object):
 
             self.log.debug("Partitioning results")
             partitions = result.partitions(size=partition_size)
+            del result
 
             if output in ["dict", "json"] or output is None:
+                del result_cursor_descr
+
                 self.log.debug("Retrieving rows from all partitions")
                 pt_rows = [rows for pt in partitions for rows in pt]
                 del partitions
@@ -117,6 +120,7 @@ class SqlAlchemyEngine(object):
                             "type": ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name),
                         }
                     )
+                del result_cursor_descr
                 self.log.debug(avro_schema_fields)
 
                 avro_schema = parse_schema(
