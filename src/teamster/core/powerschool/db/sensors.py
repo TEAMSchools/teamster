@@ -49,6 +49,8 @@ def filter_asset_partitions(
                 window_end=window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS"),
             )
         )
+        del window_start
+        del window_end
 
         context.log.debug(query)
         [(count,)] = resources.ps_db.execute_query(
@@ -56,16 +58,15 @@ def filter_asset_partitions(
             partition_size=1,
             output=None,
         )
+        del query
 
         context.log.debug(f"count: {count}")
         if count > 0:
             asset_keys_filtered.add(akpk)
-
-        # clean up
-        del query
         del count
         del akpk
 
+    del asset_partitions
     return asset_keys_filtered
 
 
@@ -145,6 +146,7 @@ def reconcile(
         del asset_partitions_to_reconcile_for_freshness
 
         ssh_tunnel.stop()
+        del ssh_tunnel
 
     del resources
 
@@ -153,6 +155,7 @@ def reconcile(
         asset_graph=asset_graph,
         run_tags=run_tags,
     )
+    del asset_partitions_filtered
 
     return run_requests, cursor.with_updates(
         latest_storage_id=latest_storage_id,
