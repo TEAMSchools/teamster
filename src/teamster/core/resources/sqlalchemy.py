@@ -90,6 +90,7 @@ class SqlAlchemyEngine(object):
             if output in ["dict", "json"] or output is None:
                 self.log.debug("Retrieving rows from all partitions")
                 pt_rows = [rows for pt in partitions for rows in pt]
+                del partitions
 
                 self.log.debug("Unpacking partition rows")
                 output_data = [
@@ -146,6 +147,7 @@ class SqlAlchemyEngine(object):
                                 fo=f, schema=avro_schema, records=data, codec="snappy"
                             )
                     del data
+                del partitions
 
                 self.log.debug(f"Retrieved {len_data} rows")
 
