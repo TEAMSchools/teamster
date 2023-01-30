@@ -76,12 +76,15 @@ def filter_asset_partitions(
         asset_partitions, key=lambda x: x.partition_key, reverse=True
     )
 
+    asset_keys_checked = []
     asset_keys_filtered = set()
     for akpk in asset_partitions_sorted:
         context.log.debug(akpk)
-        if akpk.asset_key in [akf.asset_key for akf in asset_keys_filtered]:
+        if akpk.asset_key in [ak for ak in asset_keys_checked]:
             context.log.debug("Skipping")
             continue
+        else:
+            asset_keys_checked.append(akpk.asset_key)
 
         window_start = pendulum.parse(text=akpk.partition_key, tz=LOCAL_TIME_ZONE.name)
         window_end = window_start.add(hours=1)
