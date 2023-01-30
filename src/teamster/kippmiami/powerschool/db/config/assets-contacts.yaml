@@ -1,11 +1,11 @@
 assets:
-  - asset_name: emailaddress
-  - asset_name: originalcontactmap
   - asset_name: person
-  - asset_name: personaddress
   - asset_name: personaddressassoc
   - asset_name: personemailaddressassoc
   - asset_name: personphonenumberassoc
+  - asset_name: personaddress
+  - asset_name: emailaddress
   - asset_name: phonenumber
   - asset_name: studentcontactassoc
+  - asset_name: originalcontactmap
   - asset_name: studentcontactdetail
