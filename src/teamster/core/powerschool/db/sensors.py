@@ -102,8 +102,20 @@ def filter_asset_partitions(
                 output=None,
             )
         except exc.OperationalError as e:
-            context.log.exception(e)
-            continue
+            context.log.error(e)
+
+            # wait 1 sec and try again once
+            time.sleep(1)
+            try:
+                context.log.debug("Retrying")
+                [(count,)] = resources.ps_db.execute_query(
+                    query=query,
+                    partition_size=1,
+                    output=None,
+                )
+            except Exception as e:
+                context.log.error(e)
+                continue
 
         context.log.debug(f"count: {count}")
         if count > 0:
