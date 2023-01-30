@@ -33,7 +33,7 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-@sensor(minimum_interval_seconds=55)
+@sensor(minimum_interval_seconds=50)
 def powerschool_ssh_tunnel(context: SensorEvaluationContext):
     with build_resources(
         resources={"ps_ssh": ssh_resource},
@@ -61,7 +61,7 @@ def powerschool_ssh_tunnel(context: SensorEvaluationContext):
             ssh_tunnel.start()
 
         try:
-            time.sleep(55)
+            time.sleep(50)
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
@@ -137,37 +137,15 @@ def reconcile(
     )
 
     with build_resources(
-        resources={
-            "ps_db": oracle,
-            # "ps_ssh": ssh_resource,
-        },
+        resources={"ps_db": oracle},
         resource_config={
             "ps_db": {
                 "config": config_from_files(
                     ["src/teamster/core/resources/config/db_powerschool.yaml"]
                 )
-            },
-            # "ps_ssh": {
-            #     "config": config_from_files(
-            #         ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
-            #     )
-            # },
+            }
         },
     ) as resources:
-        # ssh_tunnel: SSHTunnelForwarder = resources.ps_ssh.get_tunnel(
-        #     remote_port=1521,
-        #     remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
-        #     local_port=1521,
-        # )
-
-        # try:
-        #     ssh_tunnel.check_tunnels()
-        #     context.log.debug(f"tunnel_is_up: {ssh_tunnel.tunnel_is_up}")
-        #     if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
-        #         context.log.info("Tunnel is up")
-        #     else:
-        #         ssh_tunnel.start()
-
         reconcile_filtered = filter_asset_partitions(
             context=context,
             resources=resources,
@@ -194,12 +172,6 @@ def reconcile(
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
         )
-        # except HandlerSSHTunnelForwarderError as xc:
-        #     context.log.error(xc)
-        #     run_requests = []
-        #     return run_requests, cursor
-        # finally:
-        #     ssh_tunnel.stop()
 
 
 # based on dagster.build_asset_reconciliation_sensor
