@@ -81,7 +81,6 @@ def build_powerschool_table_asset(
         partitions_def=hourly_partitions_def,
         io_manager_key="ps_io",
         required_resource_keys={"ps_db", "ps_ssh"},
-        output_required=False,
     )
     def _asset(context) -> Optional[Path]:
         sql = construct_sql(
@@ -105,13 +104,13 @@ def build_powerschool_table_asset(
             row_count = count(context=context, sql=sql)
             context.log.info(f"Found {row_count} rows")
 
-            if row_count > 0:
-                filename = context.resources.ps_db.execute_query(
-                    query=sql, partition_size=100000, output="avro"
-                )
-                yield Output(value=filename, metadata={"records": row_count})
+            filename = context.resources.ps_db.execute_query(
+                query=sql, partition_size=100000, output="avro"
+            )
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
+
+        return Output(value=filename, metadata={"records": row_count})
 
     return _asset
