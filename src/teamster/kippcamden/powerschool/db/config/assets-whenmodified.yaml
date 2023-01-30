@@ -1,5 +1,13 @@
-# whenmodified
 assets:
+  # uncategorized
+  - asset_name: codeset
+  - asset_name: gradescaleitem
+  - asset_name: roledef
+  - asset_name: users
+  - asset_name: schoolstaff
+  - asset_name: sectionteacher
+  - asset_name: studentcorefields
+  - asset_name: studentrace
   # assignments
   - asset_name: assignmentcategoryassoc
   - asset_name: assignmentscore
@@ -13,15 +21,6 @@ assets:
   - asset_name: gradeschoolconfig
   - asset_name: gradesectionconfig
   - asset_name: gradeschoolformulaassoc
-  #
-  - asset_name: codeset
-  - asset_name: gradescaleitem
-  - asset_name: roledef
-  - asset_name: users
-  - asset_name: schoolstaff
-  - asset_name: sectionteacher
-  - asset_name: studentcorefields
-  - asset_name: studentrace
   # contacts
   - asset_name: person
   - asset_name: personaddressassoc
