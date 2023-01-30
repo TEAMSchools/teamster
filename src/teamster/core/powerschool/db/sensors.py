@@ -34,7 +34,7 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-@sensor(minimum_interval_seconds=50)
+@sensor(minimum_interval_seconds=30)
 def powerschool_ssh_tunnel(context: SensorEvaluationContext):
     with build_resources(
         resources={"ps_ssh": ssh_resource},
@@ -62,7 +62,7 @@ def powerschool_ssh_tunnel(context: SensorEvaluationContext):
             ssh_tunnel.start()
 
         try:
-            time.sleep(50)
+            time.sleep(35)
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
@@ -149,11 +149,11 @@ def reconcile(
             }
         },
     ) as resources:
-        # run ssh tunnel on system
-        subprocess.run(
-            ["bash", "src/teamster/core/powerschool/db/scripts/ssh_tunnel.sh"],
-            capture_output=True,
-        )
+        # # run ssh tunnel on system
+        # subprocess.run(
+        #     ["bash", "src/teamster/core/powerschool/db/scripts/ssh_tunnel.sh"],
+        #     capture_output=True,
+        # )
 
         reconcile_filtered = filter_asset_partitions(
             context=context,
