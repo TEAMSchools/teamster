@@ -26,6 +26,7 @@ from dagster._core.definitions.utils import check_valid_name
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_ssh import ssh_resource
 from sqlalchemy import text
+from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -118,13 +119,15 @@ def reconcile(
             },
         },
     ) as resources:
-        ssh_tunnel = resources.ps_ssh.get_tunnel(
+        ssh_tunnel: SSHTunnelForwarder = resources.ps_ssh.get_tunnel(
             remote_port=1521,
             remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
             local_port=1521,
         )
 
         try:
+            ssh_tunnel.check_tunnels()
+            context.log.debug(ssh_tunnel.tunnel_is_up)
             ssh_tunnel.start()
 
             reconcile_filtered = filter_asset_partitions(
