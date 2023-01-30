@@ -148,12 +148,10 @@ def reconcile(
         },
     ) as resources:
         # run ssh tunnel on system
-        result = subprocess.run(
+        subprocess.run(
             ["bash", "src/teamster/core/powerschool/db/scripts/ssh_tunnel.sh"],
             capture_output=True,
         )
-        context.log.info(result.stdout)
-        context.log.info(result.stderr)
 
         reconcile_filtered = filter_asset_partitions(
             context=context,
