@@ -1,4 +1,4 @@
-name: Hybrid Branch Deployment
+name: test - Hybrid Branch Deployment
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ on:
 
 concurrency:
   # Cancel in-progress runs on same branch
-  group: ${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -1,4 +1,4 @@
-name: Hybrid Prod Deployment
+name: kippnewark - Hybrid Prod Deployment
 
 on:
   workflow_dispatch: null
@@ -15,7 +15,7 @@ on:
 
 concurrency:
   # Cancel in-progress runs on same branch
-  group: ${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
