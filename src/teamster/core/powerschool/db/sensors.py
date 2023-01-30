@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 from typing import AbstractSet, Generator, Mapping, Optional
 
@@ -146,6 +147,14 @@ def reconcile(
             }
         },
     ) as resources:
+        # run ssh tunnel on system
+        result = subprocess.run(
+            ["bash", "src/teamster/core/powerschool/db/scripts/ssh_tunnel.sh"],
+            capture_output=True,
+        )
+        context.log.info(result.stdout)
+        context.log.info(result.stderr)
+
         reconcile_filtered = filter_asset_partitions(
             context=context,
             resources=resources,
@@ -159,19 +168,19 @@ def reconcile(
             sql_string=sql_string,
         )
 
-        run_requests = build_run_requests(
-            asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
-            asset_graph=asset_graph,
-            run_tags=run_tags,
-        )
+    run_requests = build_run_requests(
+        asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
+        asset_graph=asset_graph,
+        run_tags=run_tags,
+    )
 
-        return run_requests, cursor.with_updates(
-            latest_storage_id=latest_storage_id,
-            run_requests=run_requests,
-            asset_graph=repository_def.asset_graph,
-            newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
-            newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-        )
+    return run_requests, cursor.with_updates(
+        latest_storage_id=latest_storage_id,
+        run_requests=run_requests,
+        asset_graph=repository_def.asset_graph,
+        newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
+        newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
+    )
 
 
 # based on dagster.build_asset_reconciliation_sensor
