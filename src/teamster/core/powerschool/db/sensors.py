@@ -1,6 +1,4 @@
 import os
-
-# import subprocess
 import time
 from typing import AbstractSet, Generator, Mapping, Optional
 
@@ -17,11 +15,10 @@ from dagster import (
     config_from_files,
     sensor,
 )
-from dagster._core.definitions.asset_reconciliation_sensor import (
+from dagster._core.definitions.asset_reconciliation_sensor import (  # determine_asset_partitions_to_reconcile_for_freshness,
     AssetReconciliationCursor,
     build_run_requests,
     determine_asset_partitions_to_reconcile,
-    determine_asset_partitions_to_reconcile_for_freshness,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.scoped_resources_builder import Resources
@@ -75,10 +72,16 @@ def filter_asset_partitions(
     asset_partitions: AbstractSet[AssetKeyPartitionKey],
     sql_string: str,
 ) -> AbstractSet[AssetKeyPartitionKey]:
-    asset_keys_filtered = set()
+    asset_partitions_sorted = sorted(
+        asset_partitions, key=lambda x: x.partition_key, reverse=True
+    )
 
-    for akpk in asset_partitions:
+    asset_keys_filtered = set()
+    for akpk in asset_partitions_sorted:
         context.log.debug(akpk)
+        if akpk.asset_key in [akf.asset_key for akf in asset_keys_filtered]:
+            context.log.debug("Skipping")
+            continue
 
         window_start = pendulum.parse(text=akpk.partition_key, tz=LOCAL_TIME_ZONE.name)
         window_end = window_start.add(hours=1)
@@ -100,8 +103,6 @@ def filter_asset_partitions(
         if count > 0:
             asset_keys_filtered.add(akpk)
 
-        break
-
     return asset_keys_filtered
 
 
@@ -118,14 +119,14 @@ def reconcile(
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
 
-    (
-        asset_partitions_to_reconcile_for_freshness,
-        eventual_asset_partitions_to_reconcile_for_freshness,
-    ) = determine_asset_partitions_to_reconcile_for_freshness(
-        instance_queryer=instance_queryer,
-        asset_graph=asset_graph,
-        target_asset_selection=asset_selection,
-    )
+    # (
+    #     asset_partitions_to_reconcile_for_freshness,
+    #     eventual_asset_partitions_to_reconcile_for_freshness,
+    # ) = determine_asset_partitions_to_reconcile_for_freshness(
+    #     instance_queryer=instance_queryer,
+    #     asset_graph=asset_graph,
+    #     target_asset_selection=asset_selection,
+    # )
 
     (
         asset_partitions_to_reconcile,
@@ -137,7 +138,8 @@ def reconcile(
         asset_graph=asset_graph,
         cursor=cursor,
         target_asset_selection=asset_selection,
-        eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
+        eventual_asset_partitions_to_reconcile_for_freshness=set(),
+        # eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
     )
 
     with build_resources(
@@ -150,12 +152,6 @@ def reconcile(
             }
         },
     ) as resources:
-        # # run ssh tunnel on system
-        # subprocess.run(
-        #     ["bash", "src/teamster/core/powerschool/db/scripts/ssh_tunnel.sh"],
-        #     capture_output=True,
-        # )
-
         reconcile_filtered = filter_asset_partitions(
             context=context,
             resources=resources,
