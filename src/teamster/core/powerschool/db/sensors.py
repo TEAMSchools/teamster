@@ -60,7 +60,7 @@ def powerschool_ssh_tunnel(context: SensorEvaluationContext):
             ssh_tunnel.start()
 
         try:
-            time.sleep(60)
+            time.sleep(55)
         except HandlerSSHTunnelForwarderError as xc:
             context.log.error(xc)
             ssh_tunnel.restart()
