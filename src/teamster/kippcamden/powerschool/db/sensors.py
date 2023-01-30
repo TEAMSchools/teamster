@@ -9,23 +9,7 @@ from teamster.kippcamden.powerschool.db import assets
 whenmodified_sensors = [
     build_powerschool_incremental_sensor(
         name="ps_whenmodified_sensor",
-        asset_selection=AssetSelection.assets(
-            *[
-                a
-                for a in assets.whenmodified_assets
-                if a.asset_key[-1]
-                in [
-                    "codeset",
-                    "gradescaleitem",
-                    "roledef",
-                    "users",
-                    "schoolstaff",
-                    "sectionteacher",
-                    "studentcorefields",
-                    "studentrace",
-                ]
-            ]
-        ),
+        asset_selection=AssetSelection.assets(*assets.whenmodified_assets),
         where_column="whenmodified",
         minimum_interval_seconds=60,
     )
