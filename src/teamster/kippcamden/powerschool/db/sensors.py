@@ -1,6 +1,9 @@
 from dagster import AssetSelection
 
-from teamster.core.powerschool.db.sensors import build_powerschool_incremental_sensor
+from teamster.core.powerschool.db.sensors import (
+    build_powerschool_incremental_sensor,
+    powerschool_ssh_tunnel,
+)
 from teamster.kippcamden.powerschool.db import assets
 
 whenmodified_incremental_sensors = [
@@ -22,4 +25,8 @@ transactiondate_incremental_sensors = [
     for a in assets.transactiondate_assets
 ]
 
-__all__ = whenmodified_incremental_sensors + transactiondate_incremental_sensors
+__all__ = (
+    whenmodified_incremental_sensors
+    + transactiondate_incremental_sensors
+    + [powerschool_ssh_tunnel]
+)

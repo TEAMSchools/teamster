@@ -1,4 +1,5 @@
 import os
+import time
 from typing import AbstractSet, Generator, Mapping, Optional
 
 import dagster._check as check
@@ -30,6 +31,41 @@ from sshtunnel import HandlerSSHTunnelForwarderError, SSHTunnelForwarder
 
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
+
+
+@sensor(minimum_interval_seconds=60)
+def powerschool_ssh_tunnel(context: SensorEvaluationContext):
+    with build_resources(
+        resources={"ps_ssh": ssh_resource},
+        resource_config={
+            "ps_ssh": {
+                "config": config_from_files(
+                    ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+                )
+            }
+        },
+    ) as resources:
+        ssh_tunnel: SSHTunnelForwarder = resources.ps_ssh.get_tunnel(
+            remote_port=1521,
+            remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
+            local_port=1521,
+        )
+        ssh_tunnel.check_tunnels()
+        context.log.debug(f"tunnel_is_up: {ssh_tunnel.tunnel_is_up}")
+
+        if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
+            context.log.info("Tunnel is up")
+        else:
+            context.log.info("Starting SSH Tunnel")
+            ssh_tunnel.start()
+
+        try:
+            time.sleep(60)
+        except HandlerSSHTunnelForwarderError as xc:
+            context.log.error(xc)
+            ssh_tunnel.restart()
+        finally:
+            ssh_tunnel.stop()
 
 
 def filter_asset_partitions(
@@ -104,7 +140,7 @@ def reconcile(
     with build_resources(
         resources={
             "ps_db": oracle,
-            "ps_ssh": ssh_resource,
+            # "ps_ssh": ssh_resource,
         },
         resource_config={
             "ps_db": {
@@ -112,59 +148,59 @@ def reconcile(
                     ["src/teamster/core/resources/config/db_powerschool.yaml"]
                 )
             },
-            "ps_ssh": {
-                "config": config_from_files(
-                    ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
-                )
-            },
+            # "ps_ssh": {
+            #     "config": config_from_files(
+            #         ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+            #     )
+            # },
         },
     ) as resources:
-        ssh_tunnel: SSHTunnelForwarder = resources.ps_ssh.get_tunnel(
-            remote_port=1521,
-            remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
-            local_port=1521,
+        # ssh_tunnel: SSHTunnelForwarder = resources.ps_ssh.get_tunnel(
+        #     remote_port=1521,
+        #     remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
+        #     local_port=1521,
+        # )
+
+        # try:
+        #     ssh_tunnel.check_tunnels()
+        #     context.log.debug(f"tunnel_is_up: {ssh_tunnel.tunnel_is_up}")
+        #     if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
+        #         context.log.info("Tunnel is up")
+        #     else:
+        #         ssh_tunnel.start()
+
+        reconcile_filtered = filter_asset_partitions(
+            context=context,
+            resources=resources,
+            asset_partitions=asset_partitions_to_reconcile,
+            sql_string=sql_string,
+        )
+        reconcile_for_freshness_filtered = filter_asset_partitions(
+            context=context,
+            resources=resources,
+            asset_partitions=asset_partitions_to_reconcile_for_freshness,
+            sql_string=sql_string,
         )
 
-        try:
-            ssh_tunnel.check_tunnels()
-            context.log.debug(f"tunnel_is_up: {ssh_tunnel.tunnel_is_up}")
-            if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
-                context.log.info("Tunnel is up")
-            else:
-                ssh_tunnel.start()
+        run_requests = build_run_requests(
+            asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
+            asset_graph=asset_graph,
+            run_tags=run_tags,
+        )
 
-            reconcile_filtered = filter_asset_partitions(
-                context=context,
-                resources=resources,
-                asset_partitions=asset_partitions_to_reconcile,
-                sql_string=sql_string,
-            )
-            reconcile_for_freshness_filtered = filter_asset_partitions(
-                context=context,
-                resources=resources,
-                asset_partitions=asset_partitions_to_reconcile_for_freshness,
-                sql_string=sql_string,
-            )
-
-            run_requests = build_run_requests(
-                asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
-                asset_graph=asset_graph,
-                run_tags=run_tags,
-            )
-
-            return run_requests, cursor.with_updates(
-                latest_storage_id=latest_storage_id,
-                run_requests=run_requests,
-                asset_graph=repository_def.asset_graph,
-                newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
-                newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-            )
-        except HandlerSSHTunnelForwarderError as xc:
-            context.log.error(xc)
-            run_requests = []
-            return run_requests, cursor
-        finally:
-            ssh_tunnel.stop()
+        return run_requests, cursor.with_updates(
+            latest_storage_id=latest_storage_id,
+            run_requests=run_requests,
+            asset_graph=repository_def.asset_graph,
+            newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
+            newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
+        )
+        # except HandlerSSHTunnelForwarderError as xc:
+        #     context.log.error(xc)
+        #     run_requests = []
+        #     return run_requests, cursor
+        # finally:
+        #     ssh_tunnel.stop()
 
 
 # based on dagster.build_asset_reconciliation_sensor
