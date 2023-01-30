@@ -17,7 +17,9 @@ assets:
       name: cpn
       path: /Data
   - asset_name: cpn_demographic_csv
-    key_prefix: cpn
+    key_prefix:
+      - datagun
+      - cpn
     query_config:
       type: schema
       value:
