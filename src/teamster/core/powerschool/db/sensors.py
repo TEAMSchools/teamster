@@ -99,6 +99,8 @@ def filter_asset_partitions(
         if count > 0:
             asset_keys_filtered.add(akpk)
 
+        break
+
     return asset_keys_filtered
 
 
@@ -159,15 +161,15 @@ def reconcile(
             asset_partitions=asset_partitions_to_reconcile,
             sql_string=sql_string,
         )
-        reconcile_for_freshness_filtered = filter_asset_partitions(
-            context=context,
-            resources=resources,
-            asset_partitions=asset_partitions_to_reconcile_for_freshness,
-            sql_string=sql_string,
-        )
+        # reconcile_for_freshness_filtered = filter_asset_partitions(
+        #     context=context,
+        #     resources=resources,
+        #     asset_partitions=asset_partitions_to_reconcile_for_freshness,
+        #     sql_string=sql_string,
+        # )
 
     run_requests = build_run_requests(
-        asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
+        asset_partitions=reconcile_filtered,  # | reconcile_for_freshness_filtered,
         asset_graph=asset_graph,
         run_tags=run_tags,
     )
