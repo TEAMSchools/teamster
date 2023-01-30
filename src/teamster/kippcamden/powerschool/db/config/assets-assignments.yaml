@@ -1,0 +1,13 @@
+assets:
+  - asset_name: assignmentcategoryassoc
+  - asset_name: assignmentscore
+  - asset_name: assignmentsection
+  - asset_name: teachercategory
+  - asset_name: districtteachercategory
+  - asset_name: gradecalcformulaweight
+  - asset_name: gradecalcschoolassoc
+  - asset_name: gradecalculationtype
+  - asset_name: gradeformulaset
+  - asset_name: gradeschoolconfig
+  - asset_name: gradesectionconfig
+  - asset_name: gradeschoolformulaassoc
