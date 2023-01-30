@@ -1,8 +1,7 @@
 from dagster import config_from_files
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
-from teamster.kippcamden import CODE_LOCATION
-from teamster.kippcamden.powerschool import PARTITION_START_DATE
+from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
 
 # # TODO: rename to something like "full" or "non-partition"
 # ps_daily_assets = [
@@ -78,7 +77,7 @@ ps_test_assets = [
     build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
-        partition_start_date=PARTITION_START_DATE,
+        partition_start_date=PS_PARTITION_START_DATE,
         where_column="whenmodified",
     )
     for cfg in config_from_files(
