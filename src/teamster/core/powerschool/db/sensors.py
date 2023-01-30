@@ -27,13 +27,13 @@ from dagster._core.definitions.utils import check_valid_name
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_ssh import ssh_resource
 from sqlalchemy import text
-from sshtunnel import HandlerSSHTunnelForwarderError, SSHTunnelForwarder
+from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-@sensor(minimum_interval_seconds=60)
+@sensor(minimum_interval_seconds=55)
 def powerschool_ssh_tunnel(context: SensorEvaluationContext):
     with build_resources(
         resources={"ps_ssh": ssh_resource},
@@ -55,15 +55,13 @@ def powerschool_ssh_tunnel(context: SensorEvaluationContext):
 
         if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
             context.log.info("Tunnel is up")
+            ssh_tunnel.restart()
         else:
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
         try:
-            time.sleep(57)
-        except HandlerSSHTunnelForwarderError as xc:
-            context.log.error(xc)
-            ssh_tunnel.restart()
+            time.sleep(55)
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
