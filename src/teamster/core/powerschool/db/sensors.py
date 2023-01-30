@@ -25,7 +25,7 @@ from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._core.definitions.utils import check_valid_name
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_ssh import ssh_resource
-from sqlalchemy import text
+from sqlalchemy import exc, text
 from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.resources.sqlalchemy import oracle
@@ -95,11 +95,15 @@ def filter_asset_partitions(
             )
         )
 
-        [(count,)] = resources.ps_db.execute_query(
-            query=query,
-            partition_size=1,
-            output=None,
-        )
+        try:
+            [(count,)] = resources.ps_db.execute_query(
+                query=query,
+                partition_size=1,
+                output=None,
+            )
+        except exc.OperationalError as e:
+            context.log.exception(e)
+            continue
 
         context.log.debug(f"count: {count}")
         if count > 0:
