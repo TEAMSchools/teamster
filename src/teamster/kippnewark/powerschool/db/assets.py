@@ -1,7 +1,7 @@
 from dagster import config_from_files
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
-from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
+from teamster.kippnewark import CODE_LOCATION, PS_PARTITION_START_DATE
 
 nonpartition_assets = [
     build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)

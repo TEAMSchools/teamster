@@ -4,7 +4,7 @@ from teamster.core.powerschool.db.sensors import (
     build_powerschool_incremental_sensor,
     powerschool_ssh_tunnel,
 )
-from teamster.kippcamden.powerschool.db import assets
+from teamster.kippmiami.powerschool.db import assets
 
 assignments_sensor = build_powerschool_incremental_sensor(
     name="ps_assignments_sensor",
