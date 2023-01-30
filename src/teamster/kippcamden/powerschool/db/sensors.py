@@ -6,28 +6,18 @@ from teamster.core.powerschool.db.sensors import (
 )
 from teamster.kippcamden.powerschool.db import assets
 
-whenmodified_incremental_sensors = [
-    build_powerschool_incremental_sensor(
-        name=a.key.to_python_identifier(),
-        asset_selection=AssetSelection.assets(a),
-        where_column="whenmodified",
-        minimum_interval_seconds=60,
-    )
-    for a in assets.whenmodified_assets
-]
-
-transactiondate_incremental_sensors = [
-    build_powerschool_incremental_sensor(
-        name=a.key.to_python_identifier(),
-        asset_selection=AssetSelection.assets(a),
-        where_column="transaction_date",
-        minimum_interval_seconds=60,
-    )
-    for a in assets.transactiondate_assets
-]
-
-__all__ = (
-    whenmodified_incremental_sensors
-    + transactiondate_incremental_sensors
-    + [powerschool_ssh_tunnel]
+whenmodified_sensor = build_powerschool_incremental_sensor(
+    name="ps_whenmodified_sensor",
+    asset_selection=AssetSelection.assets(*assets.whenmodified_assets),
+    where_column="whenmodified",
+    minimum_interval_seconds=60,
 )
+
+transactiondate_sensor = build_powerschool_incremental_sensor(
+    name="ps_transactiondate_sensor",
+    asset_selection=AssetSelection.assets(*assets.transactiondate_assets),
+    where_column="transaction_date",
+    minimum_interval_seconds=60,
+)
+
+__all__ = [whenmodified_sensor, transactiondate_sensor, powerschool_ssh_tunnel]
