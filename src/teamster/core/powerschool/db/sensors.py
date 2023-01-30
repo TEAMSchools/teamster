@@ -127,8 +127,9 @@ def reconcile(
 
         try:
             ssh_tunnel.check_tunnels()
+            context.log.debug(f"tunnel_is_up: {ssh_tunnel.tunnel_is_up}")
             if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
-                pass
+                context.log.info("Tunnel is up")
             else:
                 ssh_tunnel.start()
 
@@ -159,9 +160,8 @@ def reconcile(
                 newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
             )
         except HandlerSSHTunnelForwarderError as xc:
-            context.log.debug(xc)
+            context.log.error(xc)
             run_requests = []
-
             return run_requests, cursor
         finally:
             ssh_tunnel.stop()

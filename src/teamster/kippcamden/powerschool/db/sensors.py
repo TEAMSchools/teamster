@@ -18,7 +18,6 @@ transactiondate_incremental_sensors = [
         name=a.key.to_python_identifier(),
         asset_selection=AssetSelection.assets(a),
         where_column="transaction_date",
-        minimum_interval_seconds=60,
     )
     for a in assets.transactiondate_assets
 ]
