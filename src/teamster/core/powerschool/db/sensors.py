@@ -15,7 +15,7 @@ from dagster import (
     config_from_files,
     sensor,
 )
-from dagster._core.definitions.asset_reconciliation_sensor import (  # determine_asset_partitions_to_reconcile_for_freshness,
+from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     build_run_requests,
     determine_asset_partitions_to_reconcile,
@@ -32,7 +32,7 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-@sensor(minimum_interval_seconds=30)
+@sensor(minimum_interval_seconds=60)
 def powerschool_ssh_tunnel(context: SensorEvaluationContext):
     with build_resources(
         resources={"ps_ssh": ssh_resource},
@@ -60,7 +60,7 @@ def powerschool_ssh_tunnel(context: SensorEvaluationContext):
             ssh_tunnel.start()
 
         try:
-            time.sleep(35)
+            time.sleep(55)
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
@@ -79,11 +79,10 @@ def filter_asset_partitions(
     asset_keys_checked = []
     asset_keys_filtered = set()
     for akpk in asset_partitions_sorted:
-        context.log.debug(akpk)
         if akpk.asset_key in [ak for ak in asset_keys_checked]:
-            context.log.debug("Skipping")
             continue
         else:
+            context.log.debug(akpk)
             asset_keys_checked.append(akpk.asset_key)
 
         window_start = pendulum.parse(text=akpk.partition_key, tz=LOCAL_TIME_ZONE.name)
@@ -122,15 +121,6 @@ def reconcile(
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
 
-    # (
-    #     asset_partitions_to_reconcile_for_freshness,
-    #     eventual_asset_partitions_to_reconcile_for_freshness,
-    # ) = determine_asset_partitions_to_reconcile_for_freshness(
-    #     instance_queryer=instance_queryer,
-    #     asset_graph=asset_graph,
-    #     target_asset_selection=asset_selection,
-    # )
-
     (
         asset_partitions_to_reconcile,
         newly_materialized_root_asset_keys,
@@ -142,7 +132,6 @@ def reconcile(
         cursor=cursor,
         target_asset_selection=asset_selection,
         eventual_asset_partitions_to_reconcile_for_freshness=set(),
-        # eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
     )
 
     with build_resources(
@@ -161,15 +150,9 @@ def reconcile(
             asset_partitions=asset_partitions_to_reconcile,
             sql_string=sql_string,
         )
-        # reconcile_for_freshness_filtered = filter_asset_partitions(
-        #     context=context,
-        #     resources=resources,
-        #     asset_partitions=asset_partitions_to_reconcile_for_freshness,
-        #     sql_string=sql_string,
-        # )
 
     run_requests = build_run_requests(
-        asset_partitions=reconcile_filtered,  # | reconcile_for_freshness_filtered,
+        asset_partitions=reconcile_filtered,
         asset_graph=asset_graph,
         run_tags=run_tags,
     )
