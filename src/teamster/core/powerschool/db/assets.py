@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 import pendulum
 from dagster import AssetsDefinition, HourlyPartitionsDefinition, Output, asset
@@ -82,7 +81,7 @@ def build_powerschool_table_asset(
         io_manager_key="ps_io",
         required_resource_keys={"ps_db", "ps_ssh"},
     )
-    def _asset(context) -> Optional[Path]:
+    def _asset(context) -> Path:
         sql = construct_sql(
             context=context,
             table_name=asset_name,
@@ -104,7 +103,7 @@ def build_powerschool_table_asset(
             row_count = count(context=context, sql=sql)
             context.log.info(f"Found {row_count} rows")
 
-            filename = context.resources.ps_db.execute_query(
+            filename: Path = context.resources.ps_db.execute_query(
                 query=sql, partition_size=100000, output="avro"
             )
         finally:

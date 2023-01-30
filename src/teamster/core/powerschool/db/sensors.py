@@ -144,6 +144,20 @@ def reconcile(
                 asset_partitions=asset_partitions_to_reconcile_for_freshness,
                 sql_string=sql_string,
             )
+
+            run_requests = build_run_requests(
+                asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
+                asset_graph=asset_graph,
+                run_tags=run_tags,
+            )
+
+            return run_requests, cursor.with_updates(
+                latest_storage_id=latest_storage_id,
+                run_requests=run_requests,
+                asset_graph=repository_def.asset_graph,
+                newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
+                newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
+            )
         except HandlerSSHTunnelForwarderError:
             reconcile(
                 context=context,
@@ -156,20 +170,6 @@ def reconcile(
             )
         finally:
             ssh_tunnel.stop()
-
-    run_requests = build_run_requests(
-        asset_partitions=reconcile_filtered | reconcile_for_freshness_filtered,
-        asset_graph=asset_graph,
-        run_tags=run_tags,
-    )
-
-    return run_requests, cursor.with_updates(
-        latest_storage_id=latest_storage_id,
-        run_requests=run_requests,
-        asset_graph=repository_def.asset_graph,
-        newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
-        newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-    )
 
 
 # based on dagster.build_asset_reconciliation_sensor
