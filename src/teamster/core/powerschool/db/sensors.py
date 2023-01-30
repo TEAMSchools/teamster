@@ -158,16 +158,11 @@ def reconcile(
                 newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
                 newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
             )
-        except HandlerSSHTunnelForwarderError:
-            reconcile(
-                context=context,
-                repository_def=repository_def,
-                asset_selection=asset_selection,
-                instance=instance,
-                cursor=cursor,
-                run_tags=run_tags,
-                sql_string=sql_string,
-            )
+        except HandlerSSHTunnelForwarderError as xc:
+            context.log.debug(xc)
+            run_requests = []
+
+            return run_requests, cursor
         finally:
             ssh_tunnel.stop()
 
