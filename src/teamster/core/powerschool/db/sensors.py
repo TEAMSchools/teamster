@@ -56,15 +56,16 @@ def powerschool_ssh_tunnel(context: SensorEvaluationContext):
         if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
             context.log.info("Tunnel is up")
         else:
-            context.log.info("Starting SSH Tunnel")
+            context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
         try:
-            time.sleep(55)
+            time.sleep(59)
         except HandlerSSHTunnelForwarderError as xc:
             context.log.error(xc)
             ssh_tunnel.restart()
         finally:
+            context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
 
 
