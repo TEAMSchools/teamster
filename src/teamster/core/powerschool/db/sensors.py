@@ -126,9 +126,9 @@ def reconcile(
         )
 
         try:
+            ssh_tunnel.start()
             ssh_tunnel.check_tunnels()
             context.log.debug(ssh_tunnel.tunnel_is_up)
-            ssh_tunnel.start()
 
             reconcile_filtered = filter_asset_partitions(
                 context=context,
