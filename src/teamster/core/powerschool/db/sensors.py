@@ -32,7 +32,7 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-@sensor(minimum_interval_seconds=60)
+@sensor(minimum_interval_seconds=55)
 def powerschool_ssh_tunnel(context: SensorEvaluationContext):
     with build_resources(
         resources={"ps_ssh": ssh_resource},
