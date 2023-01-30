@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import pendulum
-from dagster import HourlyPartitionsDefinition, Output, asset
+from dagster import AssetsDefinition, HourlyPartitionsDefinition, Output, asset
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -65,7 +65,7 @@ def build_powerschool_table_asset(
     partition_start_date=None,
     columns=["*"],
     where_column="",
-):
+) -> AssetsDefinition:
     if partition_start_date is not None:
         hourly_partitions_def = HourlyPartitionsDefinition(
             start_date=partition_start_date,
