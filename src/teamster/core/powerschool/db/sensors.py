@@ -101,7 +101,7 @@ def filter_asset_partitions(
                 partition_size=1,
                 output=None,
             )
-        except (exc.OperationalError, exc.DatabaseError) as e:
+        except (exc.OperationalError, exc.DatabaseError, exc.ResourceClosedError) as e:
             context.log.error(e)
 
             # wait 1 sec and try again once
