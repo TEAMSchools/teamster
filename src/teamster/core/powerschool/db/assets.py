@@ -105,8 +105,11 @@ def build_powerschool_table_asset(
                 query=sql, partition_size=100000, output="avro"
             )
 
-            with open(file=file_path, mode="rb") as fo:
-                num_records = sum(block.num_records for block in block_reader(fo))
+            try:
+                with open(file=file_path, mode="rb") as fo:
+                    num_records = sum(block.num_records for block in block_reader(fo))
+            except FileNotFoundError:
+                num_records = 0
             context.log.info(f"Found {num_records} records")
 
             if num_records > 0:
