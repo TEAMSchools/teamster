@@ -64,6 +64,7 @@ def build_powerschool_table_asset(
     partition_start_date=None,
     columns=["*"],
     where_column="",
+    op_tags={},
 ) -> AssetsDefinition:
     if partition_start_date is not None:
         hourly_partitions_def = HourlyPartitionsDefinition(
@@ -78,6 +79,7 @@ def build_powerschool_table_asset(
         name=asset_name,
         key_prefix=["powerschool", code_location],
         partitions_def=hourly_partitions_def,
+        op_tags=op_tags,
         io_manager_key="ps_io",
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
