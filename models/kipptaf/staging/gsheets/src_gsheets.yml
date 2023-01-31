@@ -1,0 +1,33 @@
+version: 2
+
+sources:
+  - name: act
+    schema: kipptaf-gsheets
+    tables:
+      - name: scale_score_key
+        external:
+          location: https://docs.google.com/spreadsheets/d/1QeVG9COJCTlRSPwjM9OQH7ofsAJcs7RxHe3WIE7nhW4
+          options:
+            format: GOOGLE_SHEETS
+            sheet_range: bq_act_scale_score_key
+  - name: assessments
+    schema: kipptaf-gsheets
+    tables:
+      - name: fsa_iready_crosswalk
+        external:
+          location: https://docs.google.com/spreadsheets/d/1oBT61hVQVTS8QsiMqXaxH5IgPEw9xFdac6z0t_iygj8
+          options:
+            format: GOOGLE_SHEETS
+            sheet_range: bq_fsa_iready_crosswalk
+      - name: scopes
+        external:
+          location: https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+          options:
+            format: GOOGLE_SHEETS
+            sheet_range: bq_scopes
+      - name: subjects
+        external:
+          location: https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+          options:
+            format: GOOGLE_SHEETS
+            sheet_range: bq_subjects
