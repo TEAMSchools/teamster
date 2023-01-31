@@ -56,7 +56,6 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
         )
 
     def load_input(self, context):
-        context.log.info("hello from the io manager")
         return context
 
 

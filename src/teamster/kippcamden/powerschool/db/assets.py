@@ -79,8 +79,7 @@ assignmentcategoryassoc = assignments_assets[0]
     # required_resource_keys={"bq", "dbt"}
 )
 def dbt_external_table_asset(context, assignmentcategoryassoc):
-    context.log.info(context)
-    context.log.info(assignmentcategoryassoc)
+    context.log.info(vars(assignmentcategoryassoc))
     # # 1. parse input asset
     # code_location = ""
     # asset_key = []
