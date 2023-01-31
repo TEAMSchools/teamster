@@ -1,17 +1,19 @@
-from dagster import AssetsDefinition, OpExecutionContext, asset
+from dagster import InputContext, OpExecutionContext, asset
 from dagster_dbt import DbtCliResource
 from google.cloud import bigquery
 
 
 @asset(required_resource_keys={"bq", "dbt"})
-def dbt_external_table_asset():
-    upstream_asset.get_partition_mapping_for_input()
+def dbt_external_table_asset(
+    context: OpExecutionContext, upstream_output: InputContext
+):
+    upstream_output.partition_key
     # 1. parse input asset
     code_location = ""
     asset_key = []
     schema_name = asset_key[0]
     table_name = asset_key[-1]
-    partition_key = ""
+    # partition_key = ""
 
     # 2. create dataset, if not exists
     bq: bigquery.Client = context.resources.bq
