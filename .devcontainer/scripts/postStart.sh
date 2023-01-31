@@ -34,3 +34,6 @@ for envvar in $(compgen -A variable | grep "^KIPP"); do
   fi
 
 done
+
+mkdir -p ./env/test
+echo "${TEST}" >./env/test/.env

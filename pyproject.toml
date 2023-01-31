@@ -17,6 +17,7 @@ dependencies = [
   "oracledb>=1.2.2",
   "fastavro>=1.7.1",
   "python-snappy>=0.6.1",
+  "dagster-dbt>=0.17.14",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }

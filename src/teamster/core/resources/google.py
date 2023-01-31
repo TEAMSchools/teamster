@@ -55,6 +55,9 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
         )
 
+    def load_input(self, context):
+        return context
+
 
 @io_manager(
     config_schema={
