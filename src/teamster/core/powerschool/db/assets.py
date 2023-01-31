@@ -2,6 +2,7 @@ import os
 
 import pendulum
 from dagster import AssetsDefinition, HourlyPartitionsDefinition, Output, asset
+from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -100,14 +101,16 @@ def build_powerschool_table_asset(
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            row_count = count(context=context, sql=sql)
-            context.log.info(f"Found {row_count} rows")
+            file_path = context.resources.ps_db.execute_query(
+                query=sql, partition_size=100000, output="avro"
+            )
 
-            if row_count > 0:
-                filename = context.resources.ps_db.execute_query(
-                    query=sql, partition_size=100000, output="avro"
-                )
-                yield Output(value=filename, metadata={"records": row_count})
+            with open(file=file_path, mode="rb") as fo:
+                num_records = sum(block.num_records for block in block_reader(fo))
+            context.log.info(f"Found {num_records} records")
+
+            if num_records > 0:
+                yield Output(value=file_path, metadata={"records": num_records})
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
