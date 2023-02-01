@@ -1,9 +1,9 @@
 assets:
   - asset_name: powerschool_autocomm_students_accessaccounts_txt
     key_prefix:
+      - kippnewark
       - datagun
       - powerschool
-      - kippnewark
     query_config:
       type: schema
       value:
@@ -22,9 +22,9 @@ assets:
       path: sftp/powerschool/kippnewark
   - asset_name: powerschool_autocomm_teachers_accounts_txt
     key_prefix:
+      - kippnewark
       - datagun
       - powerschool
-      - kippnewark
     query_config:
       type: schema
       value:
@@ -43,9 +43,9 @@ assets:
       path: sftp/powerschool/kippnewark
   - asset_name: powerschool_autocomm_students_easyiep_txt
     key_prefix:
+      - kippnewark
       - datagun
       - powerschool
-      - kippnewark
     query_config:
       type: schema
       value:

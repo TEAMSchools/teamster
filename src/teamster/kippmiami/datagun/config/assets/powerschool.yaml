@@ -1,9 +1,9 @@
 assets:
   - asset_name: powerschool_autocomm_students_accessaccounts_txt
     key_prefix:
+      - kippmiami
       - datagun
       - powerschool
-      - kippmiami
     query_config:
       type: schema
       value:
@@ -22,8 +22,9 @@ assets:
       path: sftp/powerschool/kippmiami
   - asset_name: powerschool_autocomm_teachers_accounts_txt
     key_prefix:
-      - powerschool
       - kippmiami
+      - datagun
+      - powerschool
     query_config:
       type: schema
       value:
@@ -42,8 +43,9 @@ assets:
       path: sftp/powerschool/kippmiami
   - asset_name: powerschool_autocomm_students_easyiep_txt
     key_prefix:
-      - powerschool
       - kippmiami
+      - datagun
+      - powerschool
     query_config:
       type: schema
       value:

@@ -1,6 +1,7 @@
 assets:
   - asset_name: teachers_csv
     key_prefix:
+      - kipptaf
       - datagun
       - read180
     query_config:
@@ -17,6 +18,7 @@ assets:
       path: /uploads
   - asset_name: students_csv
     key_prefix:
+      - kipptaf
       - datagun
       - read180
     query_config:

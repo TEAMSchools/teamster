@@ -1,6 +1,7 @@
 assets:
   - asset_name: cpn_attendance_csv
     key_prefix:
+      - kippcamden
       - datagun
       - cpn
     query_config:
@@ -18,6 +19,7 @@ assets:
       path: /Data
   - asset_name: cpn_demographic_csv
     key_prefix:
+      - kippcamden
       - datagun
       - cpn
     query_config:
