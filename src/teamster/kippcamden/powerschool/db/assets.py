@@ -83,11 +83,11 @@ assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
-    partitions_def=HourlyPartitionsDefinition(
-        start_date=PS_PARTITION_START_DATE,
-        timezone=LOCAL_TIME_ZONE.name,
-        fmt="%Y-%m-%dT%H:%M:%S.%f",
-    )
+    # partitions_def=HourlyPartitionsDefinition(
+    #     start_date=PS_PARTITION_START_DATE,
+    #     timezone=LOCAL_TIME_ZONE.name,
+    #     fmt="%Y-%m-%dT%H:%M:%S.%f",
+    # )
     # required_resource_keys={"bq", "dbt"}
 )
 def dbt_external_table_asset(
@@ -95,13 +95,8 @@ def dbt_external_table_asset(
 ):
     context.log.info(assignmentcategoryassoc.name)
     context.log.info(assignmentcategoryassoc.asset_key)
-    context.log.info(vars(assignmentcategoryassoc.upstream_output))
     try:
         context.log.info(assignmentcategoryassoc.partition_key)
-    except:
-        pass
-    try:
-        context.log.info(assignmentcategoryassoc.asset_partition_key)
     except:
         pass
     try:
