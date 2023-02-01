@@ -1,4 +1,4 @@
-from dagster import asset, config_from_files
+from dagster import InputContext, OpExecutionContext, asset, config_from_files
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
 from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
@@ -78,8 +78,24 @@ assignmentcategoryassoc = assignments_assets[0]
 @asset(
     # required_resource_keys={"bq", "dbt"}
 )
-def dbt_external_table_asset(context, assignmentcategoryassoc):
-    context.log.info(vars(assignmentcategoryassoc))
+def dbt_external_table_asset(
+    context: OpExecutionContext, assignmentcategoryassoc: InputContext
+):
+    context.log.info(assignmentcategoryassoc.name)
+    context.log.info(assignmentcategoryassoc.asset_key)
+    try:
+        context.log.info(assignmentcategoryassoc.partition_key)
+    except:
+        pass
+    try:
+        context.log.info(assignmentcategoryassoc.asset_partition_key)
+    except:
+        pass
+    try:
+        context.log.info(assignmentcategoryassoc.get_asset_identifier())
+    except:
+        pass
+
     # # 1. parse input asset
     # code_location = ""
     # asset_key = []
@@ -102,3 +118,14 @@ def dbt_external_table_asset(context, assignmentcategoryassoc):
     # )
 
     # 4. run merge using partition key
+
+
+{
+    "_name": "assignmentcategoryassoc",
+    "_solid_def": "<dagster._core.definitions.op_definition.OpDefinition object at 0x7ff71eb32f80>",
+    "_upstream_output": "<dagster._core.execution.context.output.OutputContext object at 0x7ff71ea79d50>",
+    "_step_context": "<dagster._core.execution.context.system.StepExecutionContext object at 0x7ff71ea79300>",
+    "_asset_key": "AssetKey(['powerschool', 'kippcamden', 'assignmentcategoryassoc'])",
+    "_partition_key": None,
+    "_asset_partitions_subset": "<dagster._core.definitions.time_window_partitions.TimeWindowPartitionsSubset object at 0x7ff73ab65780>",
+}
