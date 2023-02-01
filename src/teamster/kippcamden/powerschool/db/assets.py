@@ -83,6 +83,7 @@ def dbt_external_table_asset(
 ):
     context.log.info(assignmentcategoryassoc.name)
     context.log.info(assignmentcategoryassoc.asset_key)
+    context.log.info(vars(assignmentcategoryassoc.upstream_output))
     try:
         context.log.info(assignmentcategoryassoc.partition_key)
     except:
