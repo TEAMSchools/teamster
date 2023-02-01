@@ -1,4 +1,5 @@
 from typing import Union
+from urllib.parse import urlparse
 
 import google.auth
 import gspread
@@ -19,7 +20,7 @@ from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyReq
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
-class FilenameGCSIOManager(PickledObjectGCSIOManager):
+class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_key:
             path = context.get_asset_identifier()
@@ -56,7 +57,11 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
         )
 
     def load_input(self, context):
-        return context
+        if isinstance(context.dagster_type.typing_type, type(None)):
+            return None
+
+        key = self._get_path(context)
+        return urlparse(self._uri_for_key(key))
 
 
 @io_manager(
@@ -66,9 +71,9 @@ class FilenameGCSIOManager(PickledObjectGCSIOManager):
     },
     required_resource_keys={"gcs"},
 )
-def gcs_filename_io_manager(init_context):
+def gcs_filepath_io_manager(init_context):
     client = init_context.resources.gcs
-    filename_io_manager = FilenameGCSIOManager(
+    filename_io_manager = FilepathGCSIOManager(
         init_context.resource_config["gcs_bucket"],
         client,
         init_context.resource_config["gcs_prefix"],
