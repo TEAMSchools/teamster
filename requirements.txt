@@ -623,9 +623,9 @@ MarkupSafe==2.1.2 \
     --hash=sha256:f1cd098434e83e656abf198f103a8207a8187c0fc110306691a2e94a78d0abb2 \
     --hash=sha256:f2bfb563d0211ce16b63c7cb9395d2c682a23187f54c3d79bfec33e6705473c6 \
     --hash=sha256:f8ffb705ffcf5ddd0e80b65ddf7bed7ee4f5a441ea7d3419e861a12eaf41af58
-mashumaro==3.0.4 \
-    --hash=sha256:6d221e09df2d884afda19325d5412dc9b1274be9ba1c3e57c12a8977320c7e07 \
-    --hash=sha256:72b97b7660b7a4de1df2466a52543e6439f968cd081ce55aae899bc375b1f53d
+mashumaro==3.3.1 \
+    --hash=sha256:74ae7704e4ac8813ff701909aa8d96a405156dc2e1e3fd34ac07db7f0823a54a \
+    --hash=sha256:997ed0a4ce64967b96ff65f5ca76b8e5e459a4ec7a6a0f73625a067004a801c9
 minimal-snowplow-tracker==0.0.2 \
     --hash=sha256:acabf7572db0e7f5cbf6983d495eef54081f71be392330eb3aadb9ccb39daaa4
 msgpack==1.0.4 \
