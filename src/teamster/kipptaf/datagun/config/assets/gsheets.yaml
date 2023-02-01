@@ -1,6 +1,7 @@
 assets:
   - asset_name: next_year_status
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -13,6 +14,7 @@ assets:
       stem: gsheets_next_year_status
   - asset_name: dlm_roster
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -25,6 +27,7 @@ assets:
       stem: gsheets_dlm_roster
   - asset_name: ar_reading_log
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -37,6 +40,7 @@ assets:
       stem: gsheets_ar_reading_log
   - asset_name: staff_roster
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -49,6 +53,7 @@ assets:
       stem: gsheets_staff_roster
   - asset_name: student_roster
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -61,6 +66,7 @@ assets:
       stem: gsheets_student_roster
   - asset_name: student_contact_info
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -73,6 +79,7 @@ assets:
       stem: gsheets_student_contact_info
   - asset_name: survey_completion
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -85,6 +92,7 @@ assets:
       stem: gsheets_survey_completion
   - asset_name: student_logins
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -97,6 +105,7 @@ assets:
       stem: gsheets_student_logins
   - asset_name: ktc_undermatch_analyis
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -109,6 +118,7 @@ assets:
       stem: gsheets_ktc_undermatch_analyis
   - asset_name: pm_assignment_roster
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -121,6 +131,7 @@ assets:
       stem: gsheets_pm_assignment_roster
   - asset_name: kfwd_contacts
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:
@@ -133,6 +144,7 @@ assets:
       stem: gsheets_kfwd_contacts
   - asset_name: battleboard
     key_prefix:
+      - kipptaf
       - datagun
       - gsheets
     query_config:

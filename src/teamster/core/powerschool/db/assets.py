@@ -77,7 +77,7 @@ def build_powerschool_table_asset(
 
     @asset(
         name=asset_name,
-        key_prefix=["powerschool", code_location],
+        key_prefix=[code_location, "powerschool"],
         partitions_def=hourly_partitions_def,
         op_tags=op_tags,
         io_manager_key="ps_io",

@@ -1,6 +1,7 @@
 assets:
   - asset_name: users_students_json
     key_prefix:
+      - kipptaf
       - datagun
       - gam
     query_config:
@@ -17,6 +18,7 @@ assets:
       path: sftp/gam
   - asset_name: users_admins_json
     key_prefix:
+      - kipptaf
       - datagun
       - gam
     query_config:

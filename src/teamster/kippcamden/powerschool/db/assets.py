@@ -1,13 +1,6 @@
-from dagster import (
-    HourlyPartitionsDefinition,
-    InputContext,
-    OpExecutionContext,
-    asset,
-    config_from_files,
-)
+from dagster import InputContext, OpExecutionContext, asset, config_from_files
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
 
 nonpartition_assets = [
@@ -83,6 +76,7 @@ assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
+    key_prefix=["kippcamden", "dbt", "powerschool"]
     # partitions_def=HourlyPartitionsDefinition(
     #     start_date=PS_PARTITION_START_DATE,
     #     timezone=LOCAL_TIME_ZONE.name,
@@ -90,19 +84,11 @@ assignmentcategoryassoc = assignments_assets[0]
     # )
     # required_resource_keys={"bq", "dbt"}
 )
-def dbt_external_table_asset(
+def assignmentcategoryassoc(
     context: OpExecutionContext, assignmentcategoryassoc: InputContext
 ):
-    context.log.info(assignmentcategoryassoc.name)
     context.log.info(assignmentcategoryassoc.asset_key)
-    try:
-        context.log.info(assignmentcategoryassoc.partition_key)
-    except:
-        pass
-    try:
-        context.log.info(assignmentcategoryassoc.get_asset_identifier())
-    except:
-        pass
+    context.log.info(assignmentcategoryassoc.partition_key)
 
     # # 1. parse input asset
     # code_location = ""

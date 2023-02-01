@@ -1,6 +1,7 @@
 assets:
   - asset_name: users_csv
     key_prefix:
+      - kipptaf
       - datagun
       - egencia
     query_config:

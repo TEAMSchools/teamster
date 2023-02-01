@@ -1,6 +1,7 @@
 assets:
   - asset_name: littlesis_extract_csv
     key_prefix:
+      - kipptaf
       - datagun
       - littlesis
     query_config:

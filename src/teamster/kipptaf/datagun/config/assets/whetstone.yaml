@@ -1,6 +1,7 @@
 assets:
   - asset_name: users_json
     key_prefix:
+      - kipptaf
       - datagun
       - whetstone
     query_config:

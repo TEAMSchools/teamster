@@ -1,6 +1,7 @@
 assets:
   - asset_name: courses_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -18,6 +19,7 @@ assets:
       name: illuminate
   - asset_name: enrollment_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -35,6 +37,7 @@ assets:
       name: illuminate
   - asset_name: mastschd_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -52,6 +55,7 @@ assets:
       name: illuminate
   - asset_name: roles_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -69,6 +73,7 @@ assets:
       name: illuminate
   - asset_name: roster_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -86,6 +91,7 @@ assets:
       name: illuminate
   - asset_name: users_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -103,6 +109,7 @@ assets:
       name: illuminate
   - asset_name: terms_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -120,6 +127,7 @@ assets:
       name: illuminate
   - asset_name: student_portal_accounts_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -137,6 +145,7 @@ assets:
       name: illuminate
   - asset_name: studemo_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
@@ -154,6 +163,7 @@ assets:
       name: illuminate
   - asset_name: sites_txt
     key_prefix:
+      - kipptaf
       - datagun
       - illuminate
     query_config:
