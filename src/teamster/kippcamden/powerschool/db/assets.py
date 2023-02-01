@@ -84,7 +84,7 @@ assignmentcategoryassoc = assignments_assets[0]
     # )
     # required_resource_keys={"bq", "dbt"}
 )
-def assignmentcategoryassoc(
+def assignmentcategoryassoc_dbt(
     context: OpExecutionContext, assignmentcategoryassoc: InputContext
 ):
     context.log.info(assignmentcategoryassoc.asset_key)
