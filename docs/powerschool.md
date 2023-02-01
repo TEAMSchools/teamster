@@ -7,7 +7,7 @@
      config:
        resources:
          limits:
-           cpu: 500m
+           cpu: 750m
            memory: 1.0Gi
    ```
 3. Run backfill for all other missing parititions from today
