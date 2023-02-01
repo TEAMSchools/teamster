@@ -1,6 +1,13 @@
-from dagster import InputContext, OpExecutionContext, asset, config_from_files
+from dagster import (
+    HourlyPartitionsDefinition,
+    InputContext,
+    OpExecutionContext,
+    asset,
+    config_from_files,
+)
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
 
 nonpartition_assets = [
@@ -76,6 +83,11 @@ assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
+    partitions_def=HourlyPartitionsDefinition(
+        start_date=PS_PARTITION_START_DATE,
+        timezone=LOCAL_TIME_ZONE.name,
+        fmt="%Y-%m-%dT%H:%M:%S.%f",
+    )
     # required_resource_keys={"bq", "dbt"}
 )
 def dbt_external_table_asset(
@@ -119,14 +131,3 @@ def dbt_external_table_asset(
     # )
 
     # 4. run merge using partition key
-
-
-{
-    "_name": "assignmentcategoryassoc",
-    "_solid_def": "<dagster._core.definitions.op_definition.OpDefinition object at 0x7ff71eb32f80>",
-    "_upstream_output": "<dagster._core.execution.context.output.OutputContext object at 0x7ff71ea79d50>",
-    "_step_context": "<dagster._core.execution.context.system.StepExecutionContext object at 0x7ff71ea79300>",
-    "_asset_key": "AssetKey(['powerschool', 'kippcamden', 'assignmentcategoryassoc'])",
-    "_partition_key": None,
-    "_asset_partitions_subset": "<dagster._core.definitions.time_window_partitions.TimeWindowPartitionsSubset object at 0x7ff73ab65780>",
-}
