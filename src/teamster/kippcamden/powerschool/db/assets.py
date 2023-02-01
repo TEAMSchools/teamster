@@ -1,4 +1,9 @@
-from dagster import InputContext, OpExecutionContext, asset, config_from_files
+import pathlib
+from urllib.parse import ParseResult
+
+from dagster import OpExecutionContext, asset, config_from_files
+from dagster_dbt import DbtCliResource
+from google.cloud import bigquery
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
 from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
@@ -72,6 +77,7 @@ whenmodified_assets = [
     )["assets"]
 ]
 
+
 assignmentcategoryassoc = assignments_assets[0]
 
 
@@ -85,23 +91,23 @@ assignmentcategoryassoc = assignments_assets[0]
     # required_resource_keys={"bq", "dbt"}
 )
 def assignmentcategoryassoc_dbt(
-    context: OpExecutionContext, assignmentcategoryassoc: InputContext
+    context: OpExecutionContext, assignmentcategoryassoc: ParseResult
 ):
-    context.log.info(assignmentcategoryassoc.asset_key)
-    context.log.info(assignmentcategoryassoc.partition_key)
+    context.log.info(assignmentcategoryassoc)
+    file_path = pathlib.Path(assignmentcategoryassoc.path)
 
-    # # 1. parse input asset
-    # code_location = ""
-    # asset_key = []
-    # schema_name = asset_key[0]
-    # table_name = asset_key[-1]
-    # partition_key = ""
+    code_location = file_path[2]
+    schema_name = file_path[3]
+    table_name = file_path[4]
+    context.log.info(code_location)
+    context.log.info(schema_name)
+    context.log.info(table_name)
 
-    # # 2. create dataset, if not exists
+    # create BigQuery dataset, if not exists
     # bq: bigquery.Client = context.resources.bq
     # bq.create_dataset(dataset=f"{code_location}_{schema_name}", exists_ok=True)
 
-    # # 3. dbt run-operation stage_external_sources
+    # dbt run-operation stage_external_sources
     # dbt: DbtCliResource = context.resources.dbt
     # dbt.run_operation(
     #     macro="stage_external_sources",

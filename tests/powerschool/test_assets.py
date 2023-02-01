@@ -3,7 +3,7 @@ from dagster_gcp.gcs import gcs_resource
 from dagster_ssh import ssh_resource
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
-from teamster.core.resources.google import gcs_filename_io_manager
+from teamster.core.resources.google import gcs_filepath_io_manager
 from teamster.core.resources.sqlalchemy import oracle
 
 CODE_LOCATION = "test"
@@ -27,7 +27,7 @@ powerschool_table_asset = with_resources(
                 ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
             )
         ),
-        "ps_io": gcs_filename_io_manager.configured(
+        "ps_io": gcs_filepath_io_manager.configured(
             config_from_files(
                 [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
             )
