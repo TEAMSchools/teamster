@@ -5,7 +5,7 @@ from dagster_ssh import ssh_resource
 
 from teamster.core.resources.google import gcs_filepath_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
-from teamster.kippcamden import CODE_LOCATION, datagun, dbt, powerschool
+from teamster.kippcamden import CODE_LOCATION, datagun, powerschool
 
 defs = Definitions(
     executor=k8s_job_executor,
