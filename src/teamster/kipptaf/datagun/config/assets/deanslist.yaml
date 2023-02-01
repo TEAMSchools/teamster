@@ -131,6 +131,21 @@ assets:
       suffix: json
     destination_config:
       name: deanslist
+  - asset_name: deanslist_mod_assessment_json
+    key_prefix:
+      - datagun
+      - deanslist
+    query_config:
+      type: schema
+      value:
+        table:
+          name: deanslist_mod_assessment
+          schema: extracts
+    file_config:
+      stem: deanslist_mod_assessment
+      suffix: json
+    destination_config:
+      name: deanslist
   - asset_name: deanslist_mod_standards_json
     key_prefix:
       - datagun
