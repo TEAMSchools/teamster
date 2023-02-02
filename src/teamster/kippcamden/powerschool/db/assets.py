@@ -110,9 +110,9 @@ def assignmentcategoryassoc_dbt(
     dataset = f"{code_location}_{schema_name}"
 
     # create BigQuery dataset, if not exists
-    bq: bigquery.Client = context.resources.warehouse_bq
-    context.log.debug(f"Creating dataset {dataset}")
-    bq.create_dataset(dataset=dataset, exists_ok=True)
+    # bq: bigquery.Client = context.resources.warehouse_bq
+    # context.log.debug(f"Creating dataset {dataset}")
+    # bq.create_dataset(dataset=dataset, exists_ok=True)
 
     # dbt run-operation stage_external_sources
     dbt_cli: DbtCliResource = context.resources.dbt_cli
