@@ -1,4 +1,5 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
+from dagster_dbt import dbt_cli_resource
 from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_k8s import k8s_job_executor
@@ -18,6 +19,7 @@ defs = Definitions(
     schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
     sensors=powerschool.sensors.__all__,
     resources={
+        "dbt_cli": dbt_cli_resource,
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(
                 [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
