@@ -31,10 +31,13 @@ WORKDIR /root/app
 COPY requirements.txt ./requirements.txt
 COPY pyproject.toml ./pyproject.toml
 
-# install project
+# install project reqs
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy project files into container
+# install project
 COPY src/teamster ./src/teamster
-COPY teamster-dbt ./dbt
 RUN pip install --no-cache-dir .
+
+# install dbt deps
+COPY teamster-dbt ./dbt
+RUN dbt deps --project-dir dbt
