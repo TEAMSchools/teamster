@@ -12,6 +12,7 @@ on:
       - .dagster/dagster-cloud-kippnewark.yaml
       - src/teamster/core/**
       - src/teamster/kippnewark/**
+      - teamster-dbt/**
 
 concurrency:
   # Cancel in-progress runs on same branch
