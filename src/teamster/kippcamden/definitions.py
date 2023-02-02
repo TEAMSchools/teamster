@@ -12,7 +12,6 @@ defs = Definitions(
     assets=(
         load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
-        # + load_assets_from_modules(modules=[dbt.assets], group_name="dbt")
     ),
     jobs=datagun.jobs.__all__,
     schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
