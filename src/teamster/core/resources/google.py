@@ -61,7 +61,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             return None
 
         context.log.info(context.asset_key.path)
-        context.log.info(context.asset_partition_key)
+        context.log.info(context.asset_partition_keys)
         key = self._get_path(context)
         return urlparse(self._uri_for_key(key))
 
