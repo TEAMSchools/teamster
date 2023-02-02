@@ -1,5 +1,6 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
-from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_gcp import bigquery_resource, gcs_resource
+from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
@@ -27,6 +28,9 @@ defs = Definitions(
         ),
         "warehouse": mssql.configured(
             config_from_files(["src/teamster/core/resources/config/warehouse.yaml"])
+        ),
+        "warehouse_bq": bigquery_resource.configured(
+            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files(

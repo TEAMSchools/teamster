@@ -23,11 +23,14 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_key:
-            path = context.get_asset_identifier()
+            path = context.asset_key.path
+
             if context.has_asset_partitions:
-                asset_partition_key = pendulum.parse(text=path.pop(-1))
-                path.append(f"dt={asset_partition_key.date()}")
-                path.append(asset_partition_key.format(fmt="HH"))
+                asset_partition_key_datetime = pendulum.parse(
+                    text=context.asset_partition_key
+                )
+                path.append(f"dt={asset_partition_key_datetime.date()}")
+                path.append(asset_partition_key_datetime.format(fmt="HH"))
         else:
             parts = context.get_identifier()
             run_id = parts[0]
@@ -60,8 +63,6 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
-        context.log.info(context.asset_key.path)
-        context.log.info(context.asset_partition_keys)
         key = self._get_path(context)
         return urlparse(self._uri_for_key(key))
 

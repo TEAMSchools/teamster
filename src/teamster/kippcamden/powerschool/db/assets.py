@@ -1,11 +1,17 @@
 import pathlib
 from urllib.parse import ParseResult
 
-from dagster import OpExecutionContext, asset, config_from_files
+from dagster import (
+    HourlyPartitionsDefinition,
+    OpExecutionContext,
+    asset,
+    config_from_files,
+)
 from dagster_dbt import DbtCliResource
 from google.cloud import bigquery
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
 
 nonpartition_assets = [
@@ -82,13 +88,16 @@ assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
-    key_prefix=["kippcamden", "dbt", "powerschool"]
-    # partitions_def=HourlyPartitionsDefinition(
-    #     start_date=PS_PARTITION_START_DATE,
-    #     timezone=LOCAL_TIME_ZONE.name,
-    #     fmt="%Y-%m-%dT%H:%M:%S.%f",
-    # )
-    # required_resource_keys={"bq", "dbt"}
+    key_prefix=["kippcamden", "dbt", "powerschool"],
+    partitions_def=HourlyPartitionsDefinition(
+        start_date=PS_PARTITION_START_DATE,
+        timezone=LOCAL_TIME_ZONE.name,
+        fmt="%Y-%m-%dT%H:%M:%S.%f",
+    ),
+    required_resource_keys={
+        "warehouse_bq",
+        # "dbt"
+    },
 )
 def assignmentcategoryassoc_dbt(
     context: OpExecutionContext, assignmentcategoryassoc: ParseResult
@@ -104,8 +113,8 @@ def assignmentcategoryassoc_dbt(
     context.log.info(table_name)
 
     # create BigQuery dataset, if not exists
-    # bq: bigquery.Client = context.resources.bq
-    # bq.create_dataset(dataset=f"{code_location}_{schema_name}", exists_ok=True)
+    bq: bigquery.Client = context.resources.warehouse_bq
+    bq.create_dataset(dataset=f"{code_location}_{schema_name}", exists_ok=True)
 
     # dbt run-operation stage_external_sources
     # dbt: DbtCliResource = context.resources.dbt
