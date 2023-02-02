@@ -36,4 +36,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # copy project files into container
 COPY src/teamster ./src/teamster
+COPY teamster-dbt ./dbt
 RUN pip install --no-cache-dir .
