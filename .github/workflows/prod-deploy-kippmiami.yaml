@@ -12,6 +12,7 @@ on:
       - .dagster/dagster-cloud-kippmiami.yaml
       - src/teamster/core/**
       - src/teamster/kippmiami/**
+      - teamster-dbt/**
 
 concurrency:
   # Cancel in-progress runs on same branch
