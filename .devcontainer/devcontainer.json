@@ -10,5 +10,17 @@
     "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
-  "postStartCommand": "bash .devcontainer/scripts/postStart.sh"
+  "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+        "TEAMSchools/teamster-dbt": {
+          "permissions": {
+            "contents": "write"
+          }
+        }
+      }
+    }
+  }
+    
 }
