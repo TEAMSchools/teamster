@@ -56,10 +56,12 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
         )
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
+        context.log.info(context.asset_key.path)
+        context.log.info(context.asset_partition_key)
         key = self._get_path(context)
         return urlparse(self._uri_for_key(key))
 
