@@ -102,18 +102,18 @@ assignmentcategoryassoc = assignments_assets[0]
 def assignmentcategoryassoc_dbt(
     context: OpExecutionContext, assignmentcategoryassoc: ParseResult
 ):
-    context.log.info(assignmentcategoryassoc)
-    file_path = pathlib.Path(assignmentcategoryassoc.path)
+    file_path_parts = pathlib.Path(assignmentcategoryassoc.path).parts
 
-    code_location = file_path[2]
-    schema_name = file_path[3]
-    table_name = file_path[4]
+    code_location = file_path_parts[2]
+    schema_name = file_path_parts[3]
+    table_name = file_path_parts[4]
     context.log.info(code_location)
     context.log.info(schema_name)
     context.log.info(table_name)
 
     # create BigQuery dataset, if not exists
     bq: bigquery.Client = context.resources.warehouse_bq
+    context.log.debug(f"Creating dataset {code_location}_{schema_name}")
     bq.create_dataset(dataset=f"{code_location}_{schema_name}", exists_ok=True)
 
     # dbt run-operation stage_external_sources
