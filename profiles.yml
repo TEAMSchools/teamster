@@ -3,18 +3,8 @@ teamster:
   outputs:
     prod:
       type: bigquery
-      method: service-account-json
+      method: service-account
       project: teamster-332318
-      dataset: dagster_dbt
+      dataset: teamster_dbt
       threads: 1
-      keyfile_json:
-        type: service_account
-        project_id: teamster-332318
-        private_key_id: "{{ env_var('DBT_ENV_SECRET_PRIVATE_KEY_ID') }}"
-        private_key: "{{ env_var('DBT_ENV_SECRET_PRIVATE_KEY') }}"
-        client_email: dbt-user@teamster-332318.iam.gserviceaccount.com
-        client_id: "{{ env_var('DBT_ENV_SECRET_CLIENT_ID') }}"
-        auth_uri: https://accounts.google.com/o/oauth2/auth
-        token_uri: https://oauth2.googleapis.com/token
-        auth_provider_x509_cert_url: https://www.googleapis.com/oauth2/v1/certs
-        client_x509_cert_url: https://www.googleapis.com/robot/v1/metadata/x509/dbt-user%40teamster-332318.iam.gserviceaccount.com
+      keyfile: /etc/secret-volume/dbt-user-creds.json
