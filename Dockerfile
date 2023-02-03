@@ -40,4 +40,4 @@ RUN pip install --no-cache-dir .
 
 # install dbt deps
 COPY teamster-dbt ./dbt
-RUN dbt deps --project-dir dbt
+RUN dbt deps --project-dir teamster-dbt
