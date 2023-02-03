@@ -14,15 +14,15 @@ defs = Definitions(
     assets=(
         load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
-        + load_assets_from_modules(modules=[dbt.assets], group_name="dbt")
+        + load_assets_from_modules(modules=[dbt.assets])
     ),
     jobs=datagun.jobs.__all__,
     schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
     sensors=powerschool.sensors.__all__,
     resources={
-        "dbt_cli": dbt_cli_resource.configured(
-            {"project_dir": "dbt", "profiles_dir": "dbt"}
-        ),
+        # "dbt_cli": dbt_cli_resource.configured(
+        #     {"project_dir": "dbt", "profiles_dir": "dbt"}
+        # ),
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(
                 [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
