@@ -8,7 +8,7 @@ from google.cloud import bigquery
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden import PS_PARTITION_START_DATE
-from teamster.kippcamden.powerschool.db.assets import assignments_assets
+from teamster.kippcamden.powerschool.db.assets import assignmentcategoryassoc
 
 dbt_assets = load_assets_from_dbt_project(
     project_dir="teamster-dbt",
@@ -16,8 +16,6 @@ dbt_assets = load_assets_from_dbt_project(
     key_prefix="dbt",
     source_key_prefix="dbt",
 )
-
-assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
