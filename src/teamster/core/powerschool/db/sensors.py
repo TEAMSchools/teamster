@@ -230,6 +230,7 @@ def build_powerschool_incremental_sensor(
         )
 
         run_requests, updated_cursor = reconcile(
+            context=context,
             repository_def=context.repository_def,
             asset_selection=asset_selection,
             instance=context.instance,
