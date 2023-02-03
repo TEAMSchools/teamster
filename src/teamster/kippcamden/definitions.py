@@ -7,16 +7,14 @@ from dagster_ssh import ssh_resource
 
 from teamster.core.resources.google import gcs_filepath_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
-from teamster.kippcamden import CODE_LOCATION, datagun, powerschool
-from teamster.kippcamden.dbt.assets import assignmentcategoryassoc, dbt_assets
+from teamster.kippcamden import CODE_LOCATION, datagun, dbt, powerschool
 
 defs = Definitions(
     executor=k8s_job_executor,
     assets=(
         load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
-        + dbt_assets
-        + [assignmentcategoryassoc]
+        + load_assets_from_modules(modules=[dbt.assets], group_name="dbt")
     ),
     jobs=datagun.jobs.__all__,
     schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
