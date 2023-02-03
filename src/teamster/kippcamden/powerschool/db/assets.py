@@ -90,6 +90,8 @@ assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
+    name="assignmentcategoryassoc",
+    key_prefix=["kippcamden_powerschool"],
     partitions_def=HourlyPartitionsDefinition(
         start_date=PS_PARTITION_START_DATE,
         timezone=LOCAL_TIME_ZONE.name,
@@ -97,7 +99,7 @@ assignmentcategoryassoc = assignments_assets[0]
     ),
     required_resource_keys={"warehouse_bq", "dbt"},
 )
-def assignmentcategoryassoc(
+def src_assignmentcategoryassoc(
     context: OpExecutionContext, assignmentcategoryassoc: ParseResult
 ):
     file_path_parts = pathlib.Path(assignmentcategoryassoc.path).parts
