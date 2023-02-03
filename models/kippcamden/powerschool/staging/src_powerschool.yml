@@ -1,7 +1,7 @@
 version: 2
 
 sources:
-  - name: src_kippcamden_powerschool
+  - name: kippcamden_powerschool
     tables:
       - name: src_assignmentcategoryassoc
         external:
