@@ -85,6 +85,12 @@ whenmodified_assets = [
     )["assets"]
 ]
 
+assignmentcategoryassoc = build_powerschool_table_asset(
+    asset_name="assignmentcategoryassoc",
+    code_location=CODE_LOCATION,
+    partition_start_date=PS_PARTITION_START_DATE,
+    where_column="whenmodified",
+)
 
 # assignmentcategoryassoc = assignments_assets[0]
 
