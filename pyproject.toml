@@ -41,7 +41,7 @@ docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
 test = { shell = "pdm run pytest", env_file = "env/test/.env", help = "Run tests with the default Python" }
-secrets = { shell = "bash .pdm/scripts/k8s-secret.sh", help = "Update k8s secret for branch" }
+secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret for branch" }
 helm-install = { shell = "bash .helm/scripts/install.sh", help = "Update Dagster Cloud Agent via Helm" }
 validate = { shell = "bash .dagster/validate.sh", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
