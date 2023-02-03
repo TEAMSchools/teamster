@@ -4,10 +4,12 @@ from urllib.parse import ParseResult
 from dagster import (
     HourlyPartitionsDefinition,
     OpExecutionContext,
+    Output,
     asset,
     config_from_files,
 )
 from dagster_dbt import DbtCliResource
+from dagster_dbt.utils import generate_materializations
 from google.cloud import bigquery
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
@@ -84,42 +86,47 @@ whenmodified_assets = [
 ]
 
 
-assignmentcategoryassoc = assignments_assets[0]
+# assignmentcategoryassoc = assignments_assets[0]
 
 
-@asset(
-    key_prefix=["kippcamden", "dbt", "powerschool"],
-    partitions_def=HourlyPartitionsDefinition(
-        start_date=PS_PARTITION_START_DATE,
-        timezone=LOCAL_TIME_ZONE.name,
-        fmt="%Y-%m-%dT%H:%M:%S.%f",
-    ),
-    required_resource_keys={"warehouse_bq", "dbt_cli"},
-)
-def assignmentcategoryassoc_dbt(
-    context: OpExecutionContext, assignmentcategoryassoc: ParseResult
-):
-    context.log.debug(assignmentcategoryassoc.geturl())
+# @asset(
+#     key_prefix=["kippcamden", "dbt", "powerschool"],
+#     partitions_def=HourlyPartitionsDefinition(
+#         start_date=PS_PARTITION_START_DATE,
+#         timezone=LOCAL_TIME_ZONE.name,
+#         fmt="%Y-%m-%dT%H:%M:%S.%f",
+#     ),
+#     required_resource_keys={"warehouse_bq", "dbt_cli"},
+# )
+# def stg_assignmentcategoryassoc(
+#     context: OpExecutionContext, assignmentcategoryassoc: ParseResult
+# ):
+#     context.log.debug(assignmentcategoryassoc.geturl())
 
-    file_path_parts = pathlib.Path(assignmentcategoryassoc.path).parts
+#     file_path_parts = pathlib.Path(assignmentcategoryassoc.path).parts
 
-    code_location = file_path_parts[2]
-    schema_name = file_path_parts[3]
-    table_name = file_path_parts[4]
+#     code_location = file_path_parts[2]
+#     schema_name = file_path_parts[3]
+#     table_name = file_path_parts[4]
 
-    dataset = f"{code_location}_{schema_name}"
+#     dataset = f"{code_location}_{schema_name}"
 
-    # create BigQuery dataset, if not exists
-    bq: bigquery.Client = context.resources.warehouse_bq
-    context.log.debug(f"Creating dataset {dataset}")
-    bq.create_dataset(dataset=dataset, exists_ok=True)
+#     # create BigQuery dataset, if not exists
+#     bq: bigquery.Client = context.resources.warehouse_bq
+#     context.log.debug(f"Creating dataset {dataset}")
+#     bq.create_dataset(dataset=dataset, exists_ok=True)
 
-    # dbt run-operation stage_external_sources
-    dbt_cli: DbtCliResource = context.resources.dbt_cli
-    dbt_cli.run_operation(
-        macro="stage_external_sources",
-        args={"select": f"{dataset}.{table_name}"},
-        vars={"ext_full_refresh": True},
-    )
+#     # dbt run-operation stage_external_sources
+#     dbt_cli: DbtCliResource = context.resources.dbt_cli
 
-    # 4. run merge using partition key
+#     dbt_cli.run_operation(
+#         macro="stage_external_sources",
+#         args={"select": f"{dataset}.{table_name}"},
+#         vars={"ext_full_refresh": True},
+#     )
+
+#     # run merge using partition key
+
+#     # # yield materializations
+#     # for materialization in generate_materializations(merge_output):
+#     #     yield Output(materialization)
