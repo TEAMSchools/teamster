@@ -21,7 +21,7 @@ assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
-    key_prefix=["kippcamden", "dbt", "powerschool"],
+    key_prefix=["dbt", "kippcamden_powerschool"],
     partitions_def=HourlyPartitionsDefinition(
         start_date=PS_PARTITION_START_DATE,
         timezone=LOCAL_TIME_ZONE.name,
