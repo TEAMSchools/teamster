@@ -20,7 +20,7 @@ defs = Definitions(
     sensors=powerschool.sensors.__all__,
     resources={
         "dbt_cli": dbt_cli_resource.configured(
-            {"project_dir": "dbt", "profiles_dir": "dbt"}
+            {"project_dir": "dbt", "profiles_dir": "dbt", "json_log_format": False}
         ),
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(
