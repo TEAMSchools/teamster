@@ -90,7 +90,7 @@ assignmentcategoryassoc = assignments_assets[0]
 
 
 @asset(
-    name="assignmentcategoryassoc",
+    name="src_assignmentcategoryassoc",
     key_prefix=["kippcamden_powerschool"],
     partitions_def=HourlyPartitionsDefinition(
         start_date=PS_PARTITION_START_DATE,
