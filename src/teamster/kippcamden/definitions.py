@@ -20,9 +20,9 @@ defs = Definitions(
     schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
     sensors=powerschool.sensors.__all__,
     resources={
-        # "dbt_cli": dbt_cli_resource.configured(
-        #     {"project_dir": "dbt", "profiles_dir": "dbt"}
-        # ),
+        "dbt": dbt_cli_resource.configured(
+            {"project_dir": "dbt", "profiles_dir": "dbt"}
+        ),
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(
                 [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
