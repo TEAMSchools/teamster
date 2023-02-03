@@ -124,7 +124,7 @@ def assignmentcategoryassoc_dbt(
     dbt_cli.cli(
         command="run-operation stage_external_sources",
         args=f"'{{select: {dataset}.{table_name}}}'",
-        vars="'{ext_full_refresh: true}'",
+        vars={"ext_full_refresh": True},
     )
 
     # 4. run merge using partition key
