@@ -23,7 +23,6 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._core.definitions.utils import check_valid_name
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_ssh import ssh_resource
 from sqlalchemy import exc, text
 from sshtunnel import SSHTunnelForwarder
@@ -134,8 +133,18 @@ def reconcile(
     run_tags: Optional[Mapping[str, str]],
     sql_string: str,
 ):
+    from dagster._utils.caching_instance_queryer import (  # expensive import
+        CachingInstanceQueryer,
+    )
+
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
+
+    # fetch some data in advance to batch together some queries
+    instance_queryer.prefetch_for_keys(
+        list(asset_selection.upstream(depth=1).resolve(asset_graph)),
+        after_cursor=cursor.latest_storage_id,
+    )
 
     (
         asset_partitions_to_reconcile,
@@ -221,7 +230,6 @@ def build_powerschool_incremental_sensor(
         )
 
         run_requests, updated_cursor = reconcile(
-            context=context,
             repository_def=context.repository_def,
             asset_selection=asset_selection,
             instance=context.instance,
