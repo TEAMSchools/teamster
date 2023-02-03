@@ -39,5 +39,5 @@ COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
 
 # install dbt deps
-COPY teamster-dbt ./dbt
+COPY teamster-dbt ./teamster-dbt
 RUN dbt deps --project-dir teamster-dbt
