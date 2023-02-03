@@ -27,7 +27,7 @@ with
                 partition by assignmentcategoryassocid.int_value
                 order by _file_name desc
             ) as rn
-        from {{ source("kippcamden_powerschool", "assignmentcategoryassoc") }}
+        from {{ source("kippcamden_powerschool", "src_assignmentcategoryassoc") }}
         {% if is_incremental() %}
         where _file_name > (select max(_file_name) from {{ this }})
         {% endif %}
