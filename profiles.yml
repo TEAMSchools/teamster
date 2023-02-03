@@ -7,4 +7,4 @@ teamster:
       project: teamster-332318
       dataset: teamster_dbt
       threads: 1
-      keyfile: /etc/secret-volume/dbt-user-creds.json
+      keyfile: /etc/secret-volume/dbt-user-creds
