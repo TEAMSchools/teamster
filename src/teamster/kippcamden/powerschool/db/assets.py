@@ -125,5 +125,5 @@ def src_assignmentcategoryassoc(
     )
 
     # yield materializations
-    for materialization in generate_materializations(dbt_output):
-        yield Output(materialization)
+    materialization = generate_materializations(dbt_output=dbt_output)
+    yield Output(materialization)
