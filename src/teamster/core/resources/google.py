@@ -1,3 +1,4 @@
+import copy
 from typing import Union
 from urllib.parse import urlparse
 
@@ -23,7 +24,7 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_key:
-            path = context.asset_key.path
+            path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
                 asset_partition_key_datetime = pendulum.parse(
