@@ -9,7 +9,6 @@ from dagster import (
     config_from_files,
 )
 from dagster_dbt import DbtCliResource
-from dagster_dbt.utils import generate_materializations
 from google.cloud import bigquery
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
@@ -124,12 +123,4 @@ def src_assignmentcategoryassoc(
         vars={"ext_full_refresh": True},
     )
 
-    # yield materializations
-    context.log.info(dbt_output.result)
-    materializations = generate_materializations(dbt_output=dbt_output)
-    context.log.info(materializations)
-    for materialization in materializations:
-        context.log.info(materialization)
-        yield materialization
-
-    yield Output(dbt_output)
+    return Output(dbt_output)
