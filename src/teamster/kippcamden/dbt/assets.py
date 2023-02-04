@@ -15,7 +15,9 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden import PS_PARTITION_START_DATE
 
 dbt_assets = load_assets_from_dbt_project(
-    project_dir="teamster-dbt", profiles_dir="teamster-dbt"
+    project_dir="teamster-dbt",
+    profiles_dir="teamster-dbt",
+    key_prefix=["kippcamden", "dbt"],
 )
 
 
@@ -26,7 +28,7 @@ dbt_assets = load_assets_from_dbt_project(
             key=["kippcamden", "powerschool", "assignmentcategoryassoc"]
         )
     },
-    # key_prefix=["kippcamden_powerschool"],
+    key_prefix=["kippcamden", "dbt", "kippcamden_powerschool"],
     partitions_def=HourlyPartitionsDefinition(
         start_date=PS_PARTITION_START_DATE,
         timezone=LOCAL_TIME_ZONE.name,
