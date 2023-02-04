@@ -17,7 +17,7 @@ from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
 dbt_assets = load_assets_from_dbt_project(
     project_dir="teamster-dbt",
     profiles_dir="teamster-dbt",
-    select=CODE_LOCATION,
+    select=f"{CODE_LOCATION}/powerschool",
     key_prefix=[CODE_LOCATION, "dbt"],
     source_key_prefix=[CODE_LOCATION, "dbt"],
 )
