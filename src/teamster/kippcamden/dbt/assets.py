@@ -18,6 +18,7 @@ dbt_assets = load_assets_from_dbt_project(
     project_dir="teamster-dbt",
     profiles_dir="teamster-dbt",
     key_prefix=["kippcamden", "dbt"],
+    source_key_prefix=["kippcamden", "dbt"],
 )
 
 
