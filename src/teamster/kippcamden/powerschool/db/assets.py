@@ -120,7 +120,7 @@ def src_assignmentcategoryassoc(
 
     dbt_output = dbt.run_operation(
         macro="stage_external_sources",
-        args={"select": f"{dataset}.{table_name}"},
+        args={"select": f"{dataset}.src_{table_name}"},
         vars={"ext_full_refresh": True},
     )
 
