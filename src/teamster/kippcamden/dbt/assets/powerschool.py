@@ -7,7 +7,7 @@ from teamster.kippcamden.powerschool.db.assets import whenmodified_assets
 dbt_assets = load_assets_from_dbt_project(
     project_dir="teamster-dbt",
     profiles_dir="teamster-dbt",
-    select=f"{CODE_LOCATION}",
+    select="stg_assignmentcategoryassoc",
     key_prefix=[CODE_LOCATION, "dbt"],
     source_key_prefix=[CODE_LOCATION, "dbt"],
 )

@@ -1,3 +1,3 @@
-from teamster.kippcamden.dbt.assets import powerschool
+from teamster.kippcamden.dbt import assets
 
-__all__ = powerschool.__all__
+__all__ = [assets]
