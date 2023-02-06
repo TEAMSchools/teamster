@@ -5,6 +5,5 @@ teamster:
       type: bigquery
       method: service-account
       project: teamster-332318
-      dataset: teamster_dbt
       threads: 1
       keyfile: /etc/secret-volume/dbt-user-creds
