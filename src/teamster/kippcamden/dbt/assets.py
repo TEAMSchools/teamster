@@ -14,13 +14,13 @@ from google.cloud import bigquery
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
 
-dbt_assets = load_assets_from_dbt_project(
-    project_dir="teamster-dbt",
-    profiles_dir="teamster-dbt",
-    select=f"{CODE_LOCATION}",
-    key_prefix=[CODE_LOCATION, "dbt"],
-    source_key_prefix=[CODE_LOCATION, "dbt"],
-)
+# dbt_assets = load_assets_from_dbt_project(
+#     project_dir="teamster-dbt",
+#     profiles_dir="teamster-dbt",
+#     select=f"{CODE_LOCATION}",
+#     key_prefix=[CODE_LOCATION, "dbt"],
+#     source_key_prefix=[CODE_LOCATION, "dbt"],
+# )
 
 
 @asset(
@@ -31,11 +31,11 @@ dbt_assets = load_assets_from_dbt_project(
         )
     },
     key_prefix=[CODE_LOCATION, "dbt", f"{CODE_LOCATION}_powerschool"],
-    partitions_def=HourlyPartitionsDefinition(
-        start_date=PS_PARTITION_START_DATE,
-        timezone=LOCAL_TIME_ZONE.name,
-        fmt="%Y-%m-%dT%H:%M:%S.%f",
-    ),
+    # partitions_def=HourlyPartitionsDefinition(
+    #     start_date=PS_PARTITION_START_DATE,
+    #     timezone=LOCAL_TIME_ZONE.name,
+    #     fmt="%Y-%m-%dT%H:%M:%S.%f",
+    # ),
     required_resource_keys={"warehouse_bq", "dbt"},
 )
 def src_assignmentcategoryassoc(context: OpExecutionContext, upstream: ParseResult):
