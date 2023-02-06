@@ -39,9 +39,7 @@ dbt_assets = load_assets_from_dbt_project(
     # ),
     required_resource_keys={"warehouse_bq", "dbt"},
 )
-def src_assignmentcategoryassoc(
-    context: OpExecutionContext, upstream: Sequence[ParseResult]
-):
+def src_assignmentcategoryassoc(context: OpExecutionContext, upstream):
     context.log.debug(upstream)
     file_path_parts = pathlib.Path(upstream[-1].path).parts
 
