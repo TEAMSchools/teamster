@@ -22,11 +22,13 @@ with
             whomodifiedid.int_value as whomodifiedid,
             whomodifiedtype,
             transaction_date,
-            executionid
+            executionid,
         from {{ source("kippcamden_powerschool", "src_assignmentcategoryassoc") }}
         {% if is_incremental() %}
         -- TODO: parameterize this string
-        where _file_name = 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentcategoryassoc/{{ var("_file_name") }}'
+        where
+            _file_name
+            = 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentcategoryassoc/{{ var("_file_name") }}'
         {% endif %}
     ),
 
