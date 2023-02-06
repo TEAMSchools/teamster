@@ -2,6 +2,7 @@ from dagster_dbt import load_assets_from_dbt_project
 
 from teamster.core.dbt.assets import build_dbt_external_source_asset
 from teamster.kippcamden import CODE_LOCATION
+from teamster.kippcamden.powerschool.db.assets import whenmodified_assets
 
 dbt_assets = load_assets_from_dbt_project(
     project_dir="teamster-dbt",
@@ -11,8 +12,6 @@ dbt_assets = load_assets_from_dbt_project(
     source_key_prefix=[CODE_LOCATION, "dbt"],
 )
 
-src_assignmentcategoryassoc = build_dbt_external_source_asset(
-    asset_name="assignmentcategoryassoc",
-    code_location=CODE_LOCATION,
-    source_system="powerschool",
-)
+src_assignmentcategoryassoc = build_dbt_external_source_asset(whenmodified_assets[0])
+
+__all__ = dbt_assets + [src_assignmentcategoryassoc]
