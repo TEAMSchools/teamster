@@ -1,27 +1,25 @@
 import os
 
-import pendulum
+# import pendulum
 from dagster import (
     AssetsDefinition,
-    HourlyPartitionsDefinition,
     OpExecutionContext,
     Output,
+    TimeWindowPartitionsDefinition,
     asset,
 )
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
+# from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-def construct_sql(context, table_name, columns, where_column, partition_start_date):
-    if partition_start_date is not None:
+def construct_sql(context, table_name, columns, where_column, partitions_def_start):
+    if partitions_def_start is not None:
         window_start = context.partition_time_window.start
         window_end = window_start.add(hours=1)
 
-        if context.partition_time_window.start == pendulum.parse(
-            text=partition_start_date, tz=LOCAL_TIME_ZONE.name
-        ):
+        if context.partition_time_window.start == partitions_def_start:
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP('"
                 f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
@@ -67,24 +65,24 @@ def count(context, sql) -> int:
 def build_powerschool_table_asset(
     asset_name,
     code_location,
-    partition_start_date=None,
+    partitions_def: TimeWindowPartitionsDefinition = None,
     columns=["*"],
     where_column="",
     op_tags={},
 ) -> AssetsDefinition:
-    if partition_start_date is not None:
-        hourly_partitions_def = HourlyPartitionsDefinition(
-            start_date=partition_start_date,
-            timezone=LOCAL_TIME_ZONE.name,
-            fmt="%Y-%m-%dT%H:%M:%S.%f",
-        )
-    else:
-        hourly_partitions_def = None
+    # if partition_start_date is not None:
+    #     hourly_partitions_def = HourlyPartitionsDefinition(
+    #         start_date=partition_start_date,
+    #         timezone=LOCAL_TIME_ZONE.name,
+    #         fmt="%Y-%m-%dT%H:%M:%S.%f",
+    #     )
+    # else:
+    #     hourly_partitions_def = None
 
     @asset(
         name=asset_name,
         key_prefix=[code_location, "powerschool"],
-        partitions_def=hourly_partitions_def,
+        partitions_def=partitions_def,
         op_tags=op_tags,
         io_manager_key="ps_io",
         required_resource_keys={"ps_db", "ps_ssh"},
@@ -96,7 +94,7 @@ def build_powerschool_table_asset(
             table_name=asset_name,
             columns=columns,
             where_column=where_column,
-            partition_start_date=partition_start_date,
+            partitions_def_start=partitions_def.start,
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(

@@ -32,6 +32,6 @@ def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
             vars={"ext_full_refresh": True},
         )
 
-        return Output(dbt_output)
+        return Output(upstream, metadata=dbt_output.result)
 
     return _asset
