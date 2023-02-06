@@ -14,8 +14,6 @@ def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
         partitions_def=asset_definition.partitions_def,
     )
     def _asset(context: OpExecutionContext, upstream):
-        context.log.info(upstream)
-
         dataset = f"{code_location}_{source_system}"
 
         # create BigQuery dataset, if not exists

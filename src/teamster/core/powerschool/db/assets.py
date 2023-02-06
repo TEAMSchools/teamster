@@ -1,6 +1,5 @@
 import os
 
-# import pendulum
 from dagster import (
     AssetsDefinition,
     OpExecutionContext,
@@ -10,8 +9,6 @@ from dagster import (
 )
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
-
-# from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def construct_sql(context, table_name, columns, where_column, partitions_def_start):
@@ -70,15 +67,6 @@ def build_powerschool_table_asset(
     where_column="",
     op_tags={},
 ) -> AssetsDefinition:
-    # if partition_start_date is not None:
-    #     hourly_partitions_def = HourlyPartitionsDefinition(
-    #         start_date=partition_start_date,
-    #         timezone=LOCAL_TIME_ZONE.name,
-    #         fmt="%Y-%m-%dT%H:%M:%S.%f",
-    #     )
-    # else:
-    #     hourly_partitions_def = None
-
     @asset(
         name=asset_name,
         key_prefix=[code_location, "powerschool"],
