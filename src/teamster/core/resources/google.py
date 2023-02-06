@@ -52,7 +52,11 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
         if filename is None:
             return None
 
-        key = self._get_path(context)
+        if context.has_asset_key and context.has_asset_partitions:
+            key = self._get_paths(context)[0]
+        else:
+            key = self._get_path(context)
+
         context.log.debug(
             f"Uploading {filename} to GCS object at: {self._uri_for_key(key)}"
         )
