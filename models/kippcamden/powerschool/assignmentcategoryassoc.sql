@@ -25,7 +25,8 @@ with
             executionid
         from {{ source("kippcamden_powerschool", "src_assignmentcategoryassoc") }}
         {% if is_incremental() %}
-        where _file_name = '{{ var("_file_name") }}'
+        -- TODO: parameterize this string
+        where _file_name = 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentcategoryassoc/{{ var("_file_name") }}'
         {% endif %}
     ),
 
