@@ -1,4 +1,5 @@
 import pathlib
+from typing import Sequence
 from urllib.parse import ParseResult
 
 from dagster import (
@@ -14,13 +15,13 @@ from google.cloud import bigquery
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
 
-# dbt_assets = load_assets_from_dbt_project(
-#     project_dir="teamster-dbt",
-#     profiles_dir="teamster-dbt",
-#     select=f"{CODE_LOCATION}",
-#     key_prefix=[CODE_LOCATION, "dbt"],
-#     source_key_prefix=[CODE_LOCATION, "dbt"],
-# )
+dbt_assets = load_assets_from_dbt_project(
+    project_dir="teamster-dbt",
+    profiles_dir="teamster-dbt",
+    select=f"{CODE_LOCATION}",
+    key_prefix=[CODE_LOCATION, "dbt"],
+    source_key_prefix=[CODE_LOCATION, "dbt"],
+)
 
 
 @asset(
@@ -38,8 +39,11 @@ from teamster.kippcamden import CODE_LOCATION, PS_PARTITION_START_DATE
     # ),
     required_resource_keys={"warehouse_bq", "dbt"},
 )
-def src_assignmentcategoryassoc(context: OpExecutionContext, upstream: ParseResult):
-    file_path_parts = pathlib.Path(upstream.path).parts
+def src_assignmentcategoryassoc(
+    context: OpExecutionContext, upstream: Sequence[ParseResult]
+):
+    context.log.debug(upstream)
+    file_path_parts = pathlib.Path(upstream[-1].path).parts
 
     code_location = file_path_parts[2]
     schema_name = file_path_parts[3]
