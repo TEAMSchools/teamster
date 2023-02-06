@@ -24,14 +24,7 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_key:
-            path = copy.deepcopy(context.asset_key.path)
-
-            if context.has_asset_partitions:
-                asset_partition_key_datetime = pendulum.parse(
-                    text=context.asset_partition_key
-                )
-                path.append(f"dt={asset_partition_key_datetime.date()}")
-                path.append(asset_partition_key_datetime.format(fmt="HH"))
+            path = context.get_asset_identifier()
         else:
             parts = context.get_identifier()
             run_id = parts[0]
@@ -40,6 +33,20 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             path = ["storage", run_id, "files", *output_parts]
 
         return "/".join([self.prefix, *path])
+
+    def _get_paths(self, context: Union[InputContext, OutputContext]) -> list:
+        paths = []
+        for apk in context.asset_partition_keys:
+            path = copy.deepcopy(context.asset_key.path)
+
+            apk_datetime = pendulum.parse(text=apk)
+
+            path.append(f"dt={apk_datetime.date()}")
+            path.append(apk_datetime.format(fmt="HH"))
+
+            paths.append("/".join([self.prefix, *path]))
+
+        return paths
 
     def handle_output(self, context, filename):
         if filename is None:
@@ -64,8 +71,13 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
-        key = self._get_path(context)
-        return urlparse(self._uri_for_key(key))
+        if context.has_asset_key and context.has_asset_partitions:
+            return [
+                urlparse(self._uri_for_key(key)) for key in self._get_paths(context)
+            ]
+        else:
+            key = self._get_path(context)
+            return [urlparse(self._uri_for_key(key))]
 
 
 @io_manager(
