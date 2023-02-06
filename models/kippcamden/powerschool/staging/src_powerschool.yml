@@ -5,374 +5,423 @@ sources:
     tables:
       - name: src_assignmentcategoryassoc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentcategoryassoc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentcategoryassoc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentcategoryassoc/
             format: AVRO
             enable_logical_types: true
       - name: src_assignmentscore
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentscore/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentscore/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentscore/
             format: AVRO
             enable_logical_types: true
       - name: src_assignmentsection
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentsection/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentsection/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentsection/
             format: AVRO
             enable_logical_types: true
       - name: src_attendance
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/attendance/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/attendance/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/attendance/
             format: AVRO
             enable_logical_types: true
       - name: src_cc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/cc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/cc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/cc/
             format: AVRO
             enable_logical_types: true
       - name: src_codeset
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/codeset/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/codeset/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/codeset/
             format: AVRO
             enable_logical_types: true
       - name: src_courses
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/courses/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/courses/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/courses/
             format: AVRO
             enable_logical_types: true
       - name: src_districtteachercategory
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/districtteachercategory/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/districtteachercategory/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/districtteachercategory/
             format: AVRO
             enable_logical_types: true
       - name: src_emailaddress
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/emailaddress/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/emailaddress/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/emailaddress/
             format: AVRO
             enable_logical_types: true
       - name: src_gradecalcformulaweight
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalcformulaweight/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalcformulaweight/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalcformulaweight/
             format: AVRO
             enable_logical_types: true
       - name: src_gradecalcschoolassoc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalcschoolassoc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalcschoolassoc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalcschoolassoc/
             format: AVRO
             enable_logical_types: true
       - name: src_gradecalculationtype
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalculationtype/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalculationtype/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradecalculationtype/
             format: AVRO
             enable_logical_types: true
       - name: src_gradeformulaset
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeformulaset/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeformulaset/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeformulaset/
             format: AVRO
             enable_logical_types: true
       - name: src_gradescaleitem
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradescaleitem/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradescaleitem/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradescaleitem/
             format: AVRO
             enable_logical_types: true
       - name: src_gradeschoolconfig
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeschoolconfig/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeschoolconfig/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeschoolconfig/
             format: AVRO
             enable_logical_types: true
       - name: src_gradeschoolformulaassoc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeschoolformulaassoc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeschoolformulaassoc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradeschoolformulaassoc/
             format: AVRO
             enable_logical_types: true
       - name: src_gradesectionconfig
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradesectionconfig/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradesectionconfig/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gradesectionconfig/
             format: AVRO
             enable_logical_types: true
       - name: src_originalcontactmap
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/originalcontactmap/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/originalcontactmap/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/originalcontactmap/
             format: AVRO
             enable_logical_types: true
       - name: src_person
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/person/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/person/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/person/
             format: AVRO
             enable_logical_types: true
       - name: src_personaddress
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/personaddress/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personaddress/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personaddress/
             format: AVRO
             enable_logical_types: true
       - name: src_personaddressassoc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/personaddressassoc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personaddressassoc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personaddressassoc/
             format: AVRO
             enable_logical_types: true
       - name: src_personemailaddressassoc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/personemailaddressassoc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personemailaddressassoc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personemailaddressassoc/
             format: AVRO
             enable_logical_types: true
       - name: src_personphonenumberassoc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/personphonenumberassoc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personphonenumberassoc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/personphonenumberassoc/
             format: AVRO
             enable_logical_types: true
       - name: src_pgfinalgrades
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/pgfinalgrades/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/pgfinalgrades/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/pgfinalgrades/
             format: AVRO
             enable_logical_types: true
       - name: src_phonenumber
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/phonenumber/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/phonenumber/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/phonenumber/
             format: AVRO
             enable_logical_types: true
       - name: src_prefs
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/prefs/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/prefs/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/prefs/
             format: AVRO
             enable_logical_types: true
       - name: src_roledef
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/roledef/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/roledef/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/roledef/
             format: AVRO
             enable_logical_types: true
       - name: src_s_nj_crs_x
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_crs_x/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_crs_x/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_crs_x/
             format: AVRO
             enable_logical_types: true
       - name: src_s_nj_ren_x
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_ren_x/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_ren_x/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_ren_x/
             format: AVRO
             enable_logical_types: true
       - name: src_s_nj_stu_x
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_stu_x/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_stu_x/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_stu_x/
             format: AVRO
             enable_logical_types: true
       - name: src_s_nj_usr_x
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_usr_x/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_usr_x/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/s_nj_usr_x/
             format: AVRO
             enable_logical_types: true
       - name: src_schools
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/schools/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/schools/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/schools/
             format: AVRO
             enable_logical_types: true
       - name: src_schoolstaff
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/schoolstaff/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/schoolstaff/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/schoolstaff/
             format: AVRO
             enable_logical_types: true
       - name: src_sections
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/sections/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/sections/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/sections/
             format: AVRO
             enable_logical_types: true
       - name: src_sectionteacher
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/sectionteacher/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/sectionteacher/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/sectionteacher/
             format: AVRO
             enable_logical_types: true
       - name: src_storedgrades
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/storedgrades/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/storedgrades/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/storedgrades/
             format: AVRO
             enable_logical_types: true
       - name: src_studentcontactassoc
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcontactassoc/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcontactassoc/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcontactassoc/
             format: AVRO
             enable_logical_types: true
       - name: src_studentcontactdetail
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcontactdetail/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcontactdetail/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcontactdetail/
             format: AVRO
             enable_logical_types: true
       - name: src_studentcorefields
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcorefields/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcorefields/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentcorefields/
             format: AVRO
             enable_logical_types: true
       - name: src_studentrace
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentrace/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentrace/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/studentrace/
             format: AVRO
             enable_logical_types: true
       - name: src_students
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/students/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/students/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/students/
             format: AVRO
             enable_logical_types: true
       - name: src_teachercategory
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/teachercategory/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/teachercategory/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/teachercategory/
             format: AVRO
             enable_logical_types: true
       - name: src_termbins
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/termbins/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/termbins/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/termbins/
             format: AVRO
             enable_logical_types: true
       - name: src_terms
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/terms/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/terms/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/terms/
             format: AVRO
             enable_logical_types: true
       - name: src_u_clg_et_stu
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_clg_et_stu/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_clg_et_stu/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_clg_et_stu/
             format: AVRO
             enable_logical_types: true
       - name: src_u_clg_et_stu_alt
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_clg_et_stu_alt/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_clg_et_stu_alt/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_clg_et_stu_alt/
             format: AVRO
             enable_logical_types: true
       - name: src_u_def_ext_students
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_def_ext_students/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_def_ext_students/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_def_ext_students/
             format: AVRO
             enable_logical_types: true
       - name: src_u_studentsuserfields
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_studentsuserfields/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_studentsuserfields/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/u_studentsuserfields/
             format: AVRO
             enable_logical_types: true
       - name: src_users
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/users/*'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/users/*
           options:
+            hive_partition_uri_prefix: gs://teamster-kippcamden/dagster/kippcamden/powerschool/users/
             format: AVRO
             enable_logical_types: true
       # not-partitionable
       - name: src_attendance_code
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/attendance_code'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/attendance_code
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_attendance_conversion_items
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/attendance_conversion_items'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/attendance_conversion_items
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_bell_schedule
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/bell_schedule'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/bell_schedule
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_calendar_day
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/calendar_day'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/calendar_day
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_cycle_day
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/cycle_day'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/cycle_day
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_fte
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/fte'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/fte
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_gen
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/gen'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/gen
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_log
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/log'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/log
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_period
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/period'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/period
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_reenrollments
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/reenrollments'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/reenrollments
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_spenrollments
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/spenrollments'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/spenrollments
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_test
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/test'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/test
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_testscore
         external:
-          location: 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/testscore'
+          location: gs://teamster-kippcamden/dagster/kippcamden/powerschool/testscore
           options:
             format: AVRO
             enable_logical_types: true
