@@ -1,7 +1,13 @@
 import os
 
 import pendulum
-from dagster import AssetsDefinition, HourlyPartitionsDefinition, Output, asset
+from dagster import (
+    AssetsDefinition,
+    HourlyPartitionsDefinition,
+    OpExecutionContext,
+    Output,
+    asset,
+)
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
@@ -84,7 +90,7 @@ def build_powerschool_table_asset(
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
-    def _asset(context):
+    def _asset(context: OpExecutionContext):
         sql = construct_sql(
             context=context,
             table_name=asset_name,

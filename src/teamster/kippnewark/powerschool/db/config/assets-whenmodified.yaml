@@ -1,10 +1,45 @@
 assets:
-  # uncategorized
+  - asset_name: assignmentcategoryassoc
+  - asset_name: assignmentscore
+  - asset_name: assignmentsection
   - asset_name: codeset
+  - asset_name: districtteachercategory
+  - asset_name: emailaddress
+  - asset_name: gradecalcformulaweight
+  - asset_name: gradecalcschoolassoc
+  - asset_name: gradecalculationtype
+  - asset_name: gradeformulaset
   - asset_name: gradescaleitem
+  - asset_name: gradeschoolconfig
+  - asset_name: gradeschoolformulaassoc
+  - asset_name: gradesectionconfig
+  - asset_name: originalcontactmap
+  - asset_name: person
+  - asset_name: personaddress
+  - asset_name: personaddressassoc
+  - asset_name: personemailaddressassoc
+  - asset_name: personphonenumberassoc
+  - asset_name: phonenumber
   - asset_name: roledef
-  - asset_name: users
+  - asset_name: s_nj_crs_x
+  - asset_name: s_nj_ren_x
+  - asset_name: s_nj_stu_x
+  - asset_name: s_nj_usr_x
   - asset_name: schoolstaff
   - asset_name: sectionteacher
+  - asset_name: studentcontactassoc
+  - asset_name: studentcontactdetail
   - asset_name: studentcorefields
   - asset_name: studentrace
+  - asset_name: teachercategory
+  - asset_name: u_clg_et_stu
+  - asset_name: u_clg_et_stu_alt
+  - asset_name: u_def_ext_students
+  - asset_name: u_studentsuserfields
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
+  - asset_name: users
