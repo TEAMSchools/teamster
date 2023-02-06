@@ -22,69 +22,35 @@ with
             whomodifiedid.int_value as whomodifiedid,
             whomodifiedtype,
             transaction_date,
-            executionid,
-            row_number() over (
-                partition by assignmentcategoryassocid.int_value
-                order by _file_name desc
-            ) as rn
+            executionid
         from {{ source("kippcamden_powerschool", "src_assignmentcategoryassoc") }}
         {% if is_incremental() %}
-        where _file_name > (select max(_file_name) from {{ this }})
+        where _file_name = '{{ var("_file_name") }}'
         {% endif %}
     ),
 
     updates as (
         select *
         from using_clause
+        {% if is_incremental() %}
         where
-            rn = 1
-            {% if is_incremental() %}
-            and assignmentcategoryassocid
+            assignmentcategoryassocid
             in (select assignmentcategoryassocid from {{ this }})
-            {% endif %}
+        {% endif %}
     ),
 
     inserts as (
         select *
         from using_clause
         where
-            rn = 1
-            and assignmentcategoryassocid
+            assignmentcategoryassocid
             not in (select assignmentcategoryassocid from updates)
     )
 
-select
-    assignmentcategoryassocid,
-    assignmentsectionid,
-    teachercategoryid,
-    yearid,
-    isprimary,
-    whocreated,
-    whencreated,
-    whomodified,
-    whenmodified,
-    ip_address,
-    whomodifiedid,
-    whomodifiedtype,
-    transaction_date,
-    executionid,
+select *
 from updates
 
 union all
 
-select
-    assignmentcategoryassocid,
-    assignmentsectionid,
-    teachercategoryid,
-    yearid,
-    isprimary,
-    whocreated,
-    whencreated,
-    whomodified,
-    whenmodified,
-    ip_address,
-    whomodifiedid,
-    whomodifiedtype,
-    transaction_date,
-    executionid,
+select *
 from inserts
