@@ -16,5 +16,5 @@ sudo pdm self update
 trunk upgrade -y --no-progress
 
 # set up dbt env
-mkdir -p /etc/secret-volume
-echo "${DBT_USER_CREDS}" >/etc/secret-volume/dbt-user-creds
+mkdir -p ~/.dbt
+echo "${DBT_USER_CREDS}" >~/.dbt/dbt-user-creds
