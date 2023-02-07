@@ -23,30 +23,63 @@ with
             whomodifiedtype,
             transaction_date,
             executionid,
+            row_number() over (
+                partition by assignmentcategoryassocid.int_value
+                order by _file_name desc
+            ) as rn,
         from {{ source("kippcamden_powerschool", "src_assignmentcategoryassoc") }}
         {% if is_incremental() %}
-        -- TODO: parameterize this string
         where
             _file_name
-            = 'gs://teamster-kippcamden/dagster/kippcamden/powerschool/assignmentcategoryassoc/{{ var("_file_name") }}'
+            = 'gs://teamster-{{ var("code_location") }}/dagster/{{ var("code_location") }}/powerschool/assignmentcategoryassoc/{{ var("_file_name") }}'
         {% endif %}
     ),
 
     updates as (
-        select *
+        select
+            assignmentcategoryassocid,
+            assignmentsectionid,
+            teachercategoryid,
+            yearid,
+            isprimary,
+            whocreated,
+            whencreated,
+            whomodified,
+            whenmodified,
+            ip_address,
+            whomodifiedid,
+            whomodifiedtype,
+            transaction_date,
+            executionid,
         from using_clause
-        {% if is_incremental() %}
         where
-            assignmentcategoryassocid
+            rn = 1
+            {% if is_incremental() %}
+            and assignmentcategoryassocid
             in (select assignmentcategoryassocid from {{ this }})
-        {% endif %}
+            {% endif %}
     ),
 
     inserts as (
-        select *
+        select
+            assignmentcategoryassocid,
+            assignmentsectionid,
+            teachercategoryid,
+            yearid,
+            isprimary,
+            whocreated,
+            whencreated,
+            whomodified,
+            whenmodified,
+            ip_address,
+            whomodifiedid,
+            whomodifiedtype,
+            transaction_date,
+            executionid,
         from using_clause
         where
-            assignmentcategoryassocid
+            rn = 1
+            and assignmentcategoryassocid
             not in (select assignmentcategoryassocid from updates)
     )
 
