@@ -5,88 +5,80 @@
         unique_key="assignmentcategoryassocid",
     )
 }}
+{%- set source_name = "kippcamden_powerschool" -%}
+{%- set table_name = "src_assignmentcategoryassoc" -%}
+
+{%- set unique_key = config.get("unique_key") -%}
+{%- set star = dbt_utils.star(
+    from=source(source_name, table_name),
+    except=["dt"],
+) -%}
 
 with
     using_clause as (
         select
+            _file_name,
+            /* column transformations */
             assignmentcategoryassocid.int_value as assignmentcategoryassocid,
             assignmentsectionid.int_value as assignmentsectionid,
             teachercategoryid.int_value as teachercategoryid,
             yearid.int_value as yearid,
             isprimary.int_value as isprimary,
-            whocreated,
-            whencreated,
-            whomodified,
-            whenmodified,
-            ip_address,
             whomodifiedid.int_value as whomodifiedid,
-            whomodifiedtype,
-            transaction_date,
-            executionid,
-            row_number() over (
-                partition by assignmentcategoryassocid.int_value
-                order by _file_name desc
-            ) as rn,
-        from {{ source("kippcamden_powerschool", "src_assignmentcategoryassoc") }}
+            /* exclude transformed columns */
+            {{
+                dbt_utils.star(
+                    from=source(source_name, table_name),
+                    except=[
+                        "dt",
+                        "assignmentcategoryassocid",
+                        "assignmentsectionid",
+                        "teachercategoryid",
+                        "yearid",
+                        "isprimary",
+                        "whomodifiedid",
+                    ],
+                )
+            }},
+        from {{ source(source_name, table_name) }}
         {% if is_incremental() %}
         where
             _file_name
-            = 'gs://teamster-{{ var("code_location") }}/dagster/{{ var("code_location") }}/powerschool/assignmentcategoryassoc/{{ var("_file_name") }}'
+            = 'gs://teamster-{{ var("code_location") }}'
+            + '/dagster/{{ var("code_location") }}'
+            + '/powerschool/{{ this.identifier }}'
+            + '/{{ var("_file_name") }}'
         {% endif %}
     ),
 
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="using_clause",
+                partition_by=unique_key,
+                order_by="_file_name desc",
+            )
+        }}
+    ),
+
     updates as (
-        select
-            assignmentcategoryassocid,
-            assignmentsectionid,
-            teachercategoryid,
-            yearid,
-            isprimary,
-            whocreated,
-            whencreated,
-            whomodified,
-            whenmodified,
-            ip_address,
-            whomodifiedid,
-            whomodifiedtype,
-            transaction_date,
-            executionid,
-        from using_clause
-        where
-            rn = 1
-            {% if is_incremental() %}
-            and assignmentcategoryassocid
-            in (select assignmentcategoryassocid from {{ this }})
-            {% endif %}
+        select *
+        from deduplicate
+        {% if is_incremental() %}
+        where {{ unique_key }} in (select {{ unique_key }} from {{ this }})
+        {% endif %}
     ),
 
     inserts as (
-        select
-            assignmentcategoryassocid,
-            assignmentsectionid,
-            teachercategoryid,
-            yearid,
-            isprimary,
-            whocreated,
-            whencreated,
-            whomodified,
-            whenmodified,
-            ip_address,
-            whomodifiedid,
-            whomodifiedtype,
-            transaction_date,
-            executionid,
-        from using_clause
-        where
-            rn = 1
-            and assignmentcategoryassocid
-            not in (select assignmentcategoryassocid from updates)
+        select *
+        from deduplicate
+        where {{ unique_key }} not in (select {{ unique_key }} from updates)
     )
 
-select *
+select {{ star }}
 from updates
 
 union all
 
-select *
+select {{ star }}
 from inserts
