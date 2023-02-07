@@ -15,7 +15,8 @@ def partition_key_to_vars(partition_key):
         "_file_name": (
             f"dt={partition_key_datetime.date()}/"
             f"{partition_key_datetime.format(fmt='HH')}"
-        )
+        ),
+        "code_location": CODE_LOCATION,
     }
 
 
