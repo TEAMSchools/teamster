@@ -1,14 +1,15 @@
+{%- set unique_key = "assignmentcategoryassocid" -%}
+
 {{
     config(
         materialized="incremental",
         incremental_strategy="merge",
-        unique_key="assignmentcategoryassocid",
+        unique_key=unique_key,
     )
 }}
-{%- set source_name = "kippcamden_powerschool" -%}
-{%- set table_name = "src_assignmentcategoryassoc" -%}
 
-{%- set unique_key = config.get("unique_key") -%}
+{%- set source_name = config.get("schema") -%}
+{%- set table_name = "src_" + this.name -%}
 {%- set star = dbt_utils.star(
     from=source(source_name, table_name),
     except=["dt"],
