@@ -1,0 +1,10 @@
+[sqlfluff]
+templater = jinja
+dialect = bigquery
+exclude_rules = L003
+
+[sqlfluff:templater:dbt]
+profiles_dir = .
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
