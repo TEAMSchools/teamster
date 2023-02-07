@@ -5,7 +5,7 @@ sources:
     tables:
       - name: assignmentcategoryassoc
         external:
-          location: 'gs://teamster-kippmiami/dagster/powerschool/kippmiami/assignmentcategoryassoc/*'
+          location: "gs://teamster-kippmiami/dagster/powerschool/kippmiami/assignmentcategoryassoc/*"
           options:
             format: AVRO
             enable_logical_types: true

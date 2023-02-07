@@ -28,7 +28,7 @@ lint:
             run: ${plugin}/linters/sqlfluff/sqlfluff_to_sarif.py
             runtime: python
           read_output_from: stdout
-          run: sqlfluff lint ${target} --format json --nofail --config .trunk/config/.sqlfluff
+          run: sqlfluff lint ${target} --format json --nofail --config .trunk/configs/.sqlfluff
 runtimes:
   enabled:
     - python@3.10.8
