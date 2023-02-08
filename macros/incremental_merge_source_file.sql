@@ -1,25 +1,16 @@
-{%- macro incremental_merge(
-    code_location, system_name, model_name, unique_key, transform_cols=[]
+{%- macro incremental_merge_source_file(
+    source_name, model_name, file_uri, unique_key, transform_cols=[]
 ) -%}
 
-{%- set source_name = code_location ~ "_" ~ system_name -%}
 {%- set table_name = "src_" ~ model_name -%}
 {%- set from_source = source(source_name, table_name) -%}
 {%- set star = dbt_utils.star(from=from_source, except=["dt"]) -%}
 {%- set star_except = dbt_utils.star(
     from=from_source, except=transform_cols | map(attribute="name") | list
 ) -%}
-{%- set file_uri = (
-    "gs://teamster-"
-    ~ code_location
-    ~ "/dagster/"
-    ~ code_location
-    ~ "/"
-    ~ system_name
-    ~ "/"
-    ~ table_name
-    ~ "/"
-    ~ var("_file_name")
+{%- set star = dbt_utils.star(from=from_source, except=["dt"]) -%}
+{%- set star_except = dbt_utils.star(
+    from=from_source, except=transform_cols | map(attribute="name") | list
 ) -%}
 
 {{
