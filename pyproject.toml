@@ -10,3 +10,6 @@ authors = [
 dependencies = ["dbt-bigquery>=1.4.0", "sqlfluff-templater-dbt>=1.4.5"]
 requires-python = ">=3.10"
 license = { text = "MIT" }
+
+[tool.pdm.scripts]
+scaffold_models = { shell = "python .pdm/scripts/scaffold_models.py" }
