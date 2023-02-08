@@ -6,11 +6,8 @@
 {%- set from_source = source(source_name, table_name) -%}
 {%- set star = dbt_utils.star(from=from_source, except=["dt"]) -%}
 {%- set star_except = dbt_utils.star(
-    from=from_source, except=transform_cols | map(attribute="name") | list
-) -%}
-{%- set star = dbt_utils.star(from=from_source, except=["dt"]) -%}
-{%- set star_except = dbt_utils.star(
-    from=from_source, except=transform_cols | map(attribute="name") | list
+    from=from_source,
+    except=transform_cols | map(attribute="name") | as_native,
 ) -%}
 
 {{
@@ -30,7 +27,7 @@ with
             {{ col.name }}.{{ col.type }} as {{ col.name }},
             {% endfor -%}
             /* remaining columns */
-            {{ star_except }}
+            {{ star_except | indent(width=10) }}
         from {{ from_source }}
         {% if is_incremental() -%} where _file_name = '{{ file_uri }}' {%- endif %}
     ),
@@ -59,12 +56,14 @@ with
         where {{ unique_key }} not in (select {{ unique_key }} from updates)
     )
 
-select {{ star }}
+select  --
+    {{ star | indent(width=2) }}
 from updates
 
 union all
 
-select {{ star }}
+select  --
+    {{ star | indent(width=2) }}
 from inserts
 
 {% endmacro %}
