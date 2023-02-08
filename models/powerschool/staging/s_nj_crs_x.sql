@@ -10,7 +10,7 @@
         file_uri=get_gcs_uri(
             code_location, source_name, model_name, var("partition_path")
         ),
-        unique_key="",
+        unique_key="coursesdcid",
         transform_cols=[
             {"name": "coursesdcid", "type": "int_value"},
             {"name": "exclude_course_submission_tf", "type": "int_value"},

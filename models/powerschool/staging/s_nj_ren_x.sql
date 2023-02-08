@@ -10,7 +10,7 @@
         file_uri=get_gcs_uri(
             code_location, source_name, model_name, var("partition_path")
         ),
-        unique_key="",
+        unique_key="reenrollmentsdcid",
         transform_cols=[
             {"name": "reenrollmentsdcid", "type": "int_value"},
             {"name": "lep_tf", "type": "int_value"},

@@ -10,7 +10,7 @@
         file_uri=get_gcs_uri(
             code_location, source_name, model_name, var("partition_path")
         ),
-        unique_key="",
+        unique_key="studentsdcid",
         transform_cols=[
             {"name": "studentsdcid", "type": "int_value"},
             {"name": "lep_completion_date_refused", "type": "int_value"},

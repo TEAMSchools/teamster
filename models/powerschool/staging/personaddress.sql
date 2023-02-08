@@ -10,7 +10,7 @@
         file_uri=get_gcs_uri(
             code_location, source_name, model_name, var("partition_path")
         ),
-        unique_key="",
+        unique_key="personaddressid",
         transform_cols=[
             {"name": "personaddressid", "type": "int_value"},
             {"name": "statescodesetid", "type": "int_value"},
