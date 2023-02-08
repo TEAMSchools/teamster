@@ -17,7 +17,7 @@
             {"name": "yearid", "type": "int_value"},
             {"name": "noofdays", "type": "int_value"},
             {"name": "schoolid", "type": "int_value"},
-            {"name": "yearlycredithrs", "type": "int_value"},
+            {"name": "yearlycredithrs", "type": "double_value"},
             {"name": "termsinyear", "type": "int_value"},
             {"name": "portion", "type": "int_value"},
             {"name": "autobuildbin", "type": "int_value"},

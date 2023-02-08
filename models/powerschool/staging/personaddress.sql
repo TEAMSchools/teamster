@@ -15,8 +15,8 @@
             {"name": "personaddressid", "type": "int_value"},
             {"name": "statescodesetid", "type": "int_value"},
             {"name": "countrycodesetid", "type": "int_value"},
-            {"name": "geocodelatitude", "type": "int_value"},
-            {"name": "geocodelongitude", "type": "int_value"},
+            {"name": "geocodelatitude", "type": "bytes_decimal_value"},
+            {"name": "geocodelongitude", "type": "bytes_decimal_value"},
         ],
     )
 }}
