@@ -6,8 +6,7 @@
 {%- set from_source = source(source_name, table_name) -%}
 {%- set star = dbt_utils.star(from=from_source, except=["dt"]) -%}
 {%- set star_except = dbt_utils.star(
-    from=from_source,
-    except=transform_cols | map(attribute="name") | as_native,
+    from=from_source, except=transform_cols | map(attribute="name")
 ) -%}
 
 {{
