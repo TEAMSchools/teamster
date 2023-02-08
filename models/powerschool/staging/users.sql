@@ -20,7 +20,7 @@
             {"name": "allowloginend", "type": "int_value"},
             {"name": "psaccess", "type": "int_value"},
             {"name": "groupvalue", "type": "int_value"},
-            {"name": "lunch_id", "type": "int_value"},
+            {"name": "lunch_id", "type": "double_value"},
             {"name": "supportcontact", "type": "int_value"},
             {"name": "wm_tier", "type": "int_value"},
             {"name": "wm_createtime", "type": "int_value"},

@@ -17,7 +17,7 @@
             {"name": "teachercategoryid", "type": "int_value"},
             {"name": "districtteachercategoryid", "type": "int_value"},
             {"name": "assignmentid", "type": "int_value"},
-            {"name": "weight", "type": "int_value"},
+            {"name": "weight", "type": "bytes_decimal_value"},
         ],
     )
 }}

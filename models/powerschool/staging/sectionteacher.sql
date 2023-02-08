@@ -16,7 +16,7 @@
             {"name": "teacherid", "type": "int_value"},
             {"name": "sectionid", "type": "int_value"},
             {"name": "roleid", "type": "int_value"},
-            {"name": "allocation", "type": "int_value"},
+            {"name": "allocation", "type": "bytes_decimal_value"},
             {"name": "priorityorder", "type": "int_value"},
             {"name": "whomodifiedid", "type": "int_value"},
         ],
