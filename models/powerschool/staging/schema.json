@@ -1,0 +1,527 @@
+[
+  {
+    "table_name": "src_attendance_code",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "yearid",
+        "type": "int_value"
+      },
+      {
+        "name": "course_credit_points",
+        "type": "int_value"
+      },
+      {
+        "name": "assignment_filter_yn",
+        "type": "int_value"
+      },
+      {
+        "name": "calculate_ada_yn",
+        "type": "int_value"
+      },
+      {
+        "name": "calculate_adm_yn",
+        "type": "int_value"
+      },
+      {
+        "name": "sortorder",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_attendance_conversion_items",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "attendance_conversion_id",
+        "type": "int_value"
+      },
+      {
+        "name": "input_value",
+        "type": "int_value"
+      },
+      {
+        "name": "attendance_value",
+        "type": "int_value"
+      },
+      {
+        "name": "fteid",
+        "type": "int_value"
+      },
+      {
+        "name": "unused",
+        "type": "int_value"
+      },
+      {
+        "name": "daypartid",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_bell_schedule",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "year_id",
+        "type": "int_value"
+      },
+      {
+        "name": "attendance_conversion_id",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_calendar_day",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "a",
+        "type": "int_value"
+      },
+      {
+        "name": "b",
+        "type": "int_value"
+      },
+      {
+        "name": "c",
+        "type": "int_value"
+      },
+      {
+        "name": "d",
+        "type": "int_value"
+      },
+      {
+        "name": "e",
+        "type": "int_value"
+      },
+      {
+        "name": "f",
+        "type": "int_value"
+      },
+      {
+        "name": "insession",
+        "type": "int_value"
+      },
+      {
+        "name": "membershipvalue",
+        "type": "int_value"
+      },
+      {
+        "name": "cycle_day_id",
+        "type": "int_value"
+      },
+      {
+        "name": "bell_schedule_id",
+        "type": "int_value"
+      },
+      {
+        "name": "week_num",
+        "type": "int_value"
+      },
+      {
+        "name": "whomodifiedid",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_cycle_day",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "year_id",
+        "type": "int_value"
+      },
+      {
+        "name": "day_number",
+        "type": "int_value"
+      },
+      {
+        "name": "sortorder",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_fte",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "yearid",
+        "type": "int_value"
+      },
+      {
+        "name": "fte_value",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_gen",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "valueli",
+        "type": "int_value"
+      },
+      {
+        "name": "valueli2",
+        "type": "int_value"
+      },
+      {
+        "name": "valuer",
+        "type": "int_value"
+      },
+      {
+        "name": "sortorder",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "valueli3",
+        "type": "int_value"
+      },
+      {
+        "name": "valuer2",
+        "type": "int_value"
+      },
+      {
+        "name": "time1",
+        "type": "int_value"
+      },
+      {
+        "name": "time2",
+        "type": "int_value"
+      },
+      {
+        "name": "spedindicator",
+        "type": "int_value"
+      },
+      {
+        "name": "valueli4",
+        "type": "int_value"
+      },
+      {
+        "name": "yearid",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_log",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "studentid",
+        "type": "int_value"
+      },
+      {
+        "name": "teacherid",
+        "type": "int_value"
+      },
+      {
+        "name": "entry_time",
+        "type": "int_value"
+      },
+      {
+        "name": "category",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "logtypeid",
+        "type": "int_value"
+      },
+      {
+        "name": "student_number",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_felonyflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_likelyinjuryflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_schoolrulesvioflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_policeinvolvedflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_hearingofficerflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_gangrelatedflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_hatecrimeflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_alcoholrelatedflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_drugrelatedflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_weaponrelatedflag",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_moneylossvalue",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_durationassigned",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_durationactual",
+        "type": "int_value"
+      },
+      {
+        "name": "discipline_sequence",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_period",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "year_id",
+        "type": "int_value"
+      },
+      {
+        "name": "period_number",
+        "type": "int_value"
+      },
+      {
+        "name": "sort_order",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_reenrollments",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "studentid",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "grade_level",
+        "type": "int_value"
+      },
+      {
+        "name": "type",
+        "type": "int_value"
+      },
+      {
+        "name": "enrollmentcode",
+        "type": "int_value"
+      },
+      {
+        "name": "fulltimeequiv_obsolete",
+        "type": "int_value"
+      },
+      {
+        "name": "membershipshare",
+        "type": "int_value"
+      },
+      {
+        "name": "tuitionpayer",
+        "type": "int_value"
+      },
+      {
+        "name": "fteid",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_spenrollments",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "programid",
+        "type": "int_value"
+      },
+      {
+        "name": "schoolid",
+        "type": "int_value"
+      },
+      {
+        "name": "gradelevel",
+        "type": "int_value"
+      },
+      {
+        "name": "studentid",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_test",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "test_type",
+        "type": "int_value"
+      }
+    ]
+  },
+  {
+    "table_name": "src_testscore",
+    "transform_cols": [
+      {
+        "name": "dcid",
+        "type": "int_value"
+      },
+      {
+        "name": "id",
+        "type": "int_value"
+      },
+      {
+        "name": "testid",
+        "type": "int_value"
+      },
+      {
+        "name": "sortorder",
+        "type": "int_value"
+      }
+    ]
+  }
+]

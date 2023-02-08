@@ -2,24 +2,14 @@
 
 {%- set source_name = model.fqn[1] -%}
 {%- set model_name = this.identifier -%}
-{%- set file_uri = (
-    "gs://teamster-"
-    ~ code_location
-    ~ "/dagster/"
-    ~ code_location
-    ~ "/"
-    ~ source_name
-    ~ "/"
-    ~ model_name
-    ~ "/"
-    ~ var("partition")
-) -%}
 
 {{
     incremental_merge_source_file(
         source_name=source_name,
         model_name=model_name,
-        file_uri=file_uri,
+        file_uri=get_gcs_uri(
+            code_location, source_name, model_name, var("partition_path")
+        ),
         unique_key="assignmentcategoryassocid",
         transform_cols=[
             {"name": "assignmentcategoryassocid", "type": "int_value"},
