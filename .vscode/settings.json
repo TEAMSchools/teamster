@@ -36,5 +36,6 @@
   "[yaml]": {
     "editor.defaultFormatter": "trunk.io"
   },
-  "python.analysis.typeCheckingMode": "off"
+  "python.analysis.typeCheckingMode": "off",
+  "dbt.queryLimit": 500
 }
