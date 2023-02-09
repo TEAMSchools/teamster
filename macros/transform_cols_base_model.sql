@@ -1,7 +1,5 @@
-{%- macro transform_cols_base_model(source_name, model_name, transform_cols=[]) -%}
+{%- macro transform_cols_base_model(from_source, transform_cols=[]) -%}
 
-{%- set table_name = "src_" ~ model_name -%}
-{%- set from_source = source(source_name, table_name) -%}
 {%- set star_except = dbt_utils.star(
     from=from_source, except=transform_cols | map(attribute="name")
 ) -%}
