@@ -28,3 +28,4 @@ models:
       +schema: powerschool
       staging:
         +schema: powerschool
+        +materialized: table
