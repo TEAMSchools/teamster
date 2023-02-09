@@ -1,10 +1,8 @@
 {{
     incremental_merge_source_file(
-        from_source=source(
-            var("code_location"), this.identifier | replace("stg", "src")
-        ),
+        from_source=source("powerschool", this.identifier | replace("stg", "src")),
         file_uri=get_gcs_uri(
-            code_location=var("code_location"),
+            code_location="powerschool",
             system_name="powerschool",
             model_name=this.identifier | replace("stg_powerschool__", ""),
             partition_path=var("partition_path"),
