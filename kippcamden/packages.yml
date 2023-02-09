@@ -1,2 +1,4 @@
 packages:
-  - local: ../packages/powerschool
+  - git: "https://github.com/TEAMSchools/teamster-dbt"
+    revision: main
+    subdirectory: "packages/powerschool"

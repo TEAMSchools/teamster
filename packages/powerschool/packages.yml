@@ -1,2 +1,4 @@
 packages:
-  - local: ../utils
+  - git: "https://github.com/TEAMSchools/teamster-dbt"
+    revision: main
+    subdirectory: "packages/utils"
