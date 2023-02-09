@@ -1,5 +1,14 @@
 [sqlfluff]
 templater = dbt
+dialect = bigquery
+exclude_rules = L003
 
 [sqlfluff:templater:dbt]
 profiles_dir = .
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+
+[sqlfluff:templater:dbt:context]
+code_location = foo
+_file_name = /path/to/file
