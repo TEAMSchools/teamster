@@ -1,5 +1,5 @@
 {{
-    transform_cols_base_model(
+    teamster_utils.transform_cols_base_model(
         from_source=source("powerschool", this.identifier | replace("stg", "src")),
         transform_cols=[
             {"name": "dcid", "type": "int_value"},
