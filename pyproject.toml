@@ -7,10 +7,9 @@ description = ""
 authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
-dependencies = ["dbt-bigquery>=1.4.0", "sqlfluff-templater-dbt>=1.4.5"]
+dependencies = ["dbt-bigquery>=1.4.0"]
 requires-python = ">=3.10"
 license = { text = "MIT" }
 
 [tool.pdm.scripts]
 scaffold_models = { shell = "python .pdm/scripts/scaffold_models.py" }
-stage_external_sources = { shell = "dbt run-operation stage_external_sources --vars 'ext_full_refresh: true' --args " }
