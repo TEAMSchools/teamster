@@ -1,9 +1,7 @@
 {%- macro incremental_merge_source_file(
-    source_name, model_name, file_uri, unique_key, transform_cols=[]
+    from_source, file_uri, unique_key, transform_cols=[]
 ) -%}
 
-{%- set table_name = "src_" ~ model_name -%}
-{%- set from_source = source(source_name, table_name) -%}
 {%- set star = dbt_utils.star(from=from_source, except=["dt"]) -%}
 {%- set star_except = dbt_utils.star(
     from=from_source, except=transform_cols | map(attribute="name")
