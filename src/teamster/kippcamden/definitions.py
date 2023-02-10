@@ -23,7 +23,7 @@ defs = Definitions(
         "dbt": dbt_cli_resource.configured(
             {
                 "project-dir": f"teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": "teamster-dbt",
+                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
             }
         ),
         "io_manager": gcs_pickle_io_manager.configured(

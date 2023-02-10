@@ -15,20 +15,18 @@ def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
         partitions_def=asset_definition.partitions_def,
     )
     def _asset(context: OpExecutionContext, upstream):
-        dataset = f"{code_location}_{source_system}"
-
         # create BigQuery dataset, if not exists
         bq: bigquery.Client = context.resources.warehouse_bq
-        context.log.debug(f"Creating dataset {dataset}")
-        bq.create_dataset(dataset=dataset, exists_ok=True)
+        context.log.debug(f"Creating dataset {code_location}")
+        bq.create_dataset(dataset=code_location, exists_ok=True)
 
         # dbt run-operation stage_external_sources
         dbt: DbtCliResource = context.resources.dbt
 
         dbt_output = dbt.run_operation(
             macro="stage_external_sources",
-            args={"select": f"{dataset}.src_{source_system}__{asset_name}"},
-            vars={"ext_full_refresh": True},
+            args={"select": f"src_{source_system}__{asset_name}"},
+            vars="ext_full_refresh: true",
         )
 
         return Output(upstream, metadata=dbt_output.result)
