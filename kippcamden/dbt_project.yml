@@ -25,5 +25,4 @@ clean-targets: # directories to be removed by `dbt clean`
 # models:
 
 vars:
-  code_location: kippcamden
   powerschool_schema: kippcamden

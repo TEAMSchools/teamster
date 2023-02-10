@@ -1,17 +1,16 @@
-{% macro get_gcs_uri(code_location, system_name, model_name, partition_path) %}
+{% macro get_gcs_uri(partition_path) %}
 
 {{
     return(
         "gs://teamster-"
-        ~ code_location
+        ~ project_name
         ~ "/dagster/"
-        ~ code_location
+        ~ project_name
         ~ "/"
-        ~ system_name
+        ~ model.package_name
         ~ "/"
-        ~ model_name
-        ~ "/"
-        ~ partition_path
+        ~ model.name
+        | replace("stg_" ~ model.package_name ~ "__", "") ~ "/" ~ partition_path,
     )
 }}
 
