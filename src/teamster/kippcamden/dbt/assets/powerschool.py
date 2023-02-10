@@ -8,6 +8,7 @@ from teamster.kippcamden import CODE_LOCATION
 from teamster.kippcamden.powerschool.db.assets import (
     all_assets,
     hourly_partitions_def,
+    nonpartition_assets,
     partition_assets,
 )
 
@@ -27,6 +28,16 @@ src_assets = [build_dbt_external_source_asset(a) for a in all_assets]
 with open(file="teamster-dbt/kippcamden/target/manifest.json") as f:
     manifest_json = json.load(f)
 
+nonpartition_stg_assets = [
+    load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        select=f"stg_powerschool__{a.key.path[-1]}+",
+        key_prefix=[CODE_LOCATION, "dbt", "powerschool"],
+        source_key_prefix=[CODE_LOCATION, "dbt"],
+    )
+    for a in nonpartition_assets
+]
+
 incremental_stg_assets = [
     load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
@@ -39,6 +50,8 @@ incremental_stg_assets = [
     for a in partition_assets
 ]
 
-__all__ = src_assets + [
-    asset for asset_list in incremental_stg_assets for asset in asset_list
-]
+__all__ = (
+    src_assets
+    + [asset for asset_list in incremental_stg_assets for asset in asset_list]
+    + [asset for asset_list in nonpartition_stg_assets for asset in asset_list]
+)
