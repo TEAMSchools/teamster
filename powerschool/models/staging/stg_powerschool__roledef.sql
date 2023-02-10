@@ -7,7 +7,7 @@
             model_name=this.identifier | replace("stg_powerschool__", ""),
             partition_path=var("partition_path"),
         ),
-        unique_key="",
+        unique_key="id",
         transform_cols=[
             {"name": "id", "type": "int_value"},
             {"name": "rolemoduleid", "type": "int_value"},
