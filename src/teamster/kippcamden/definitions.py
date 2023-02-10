@@ -20,24 +20,13 @@ defs = Definitions(
     schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
     sensors=powerschool.sensors.__all__ + dbt.sensors.__all__,
     resources={
-        "dbt": dbt_cli_resource.configured(
-            {
-                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
-            }
-        ),
-        "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files(
-                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
-            )
-        ),
-        "gcs": gcs_resource.configured(
-            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
-        ),
         "warehouse": mssql.configured(
             config_from_files(["src/teamster/core/resources/config/warehouse.yaml"])
         ),
         "warehouse_bq": bigquery_resource.configured(
+            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
+        ),
+        "gcs": gcs_resource.configured(
             config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
@@ -45,14 +34,9 @@ defs = Definitions(
                 ["src/teamster/core/resources/config/sftp_pythonanywhere.yaml"]
             )
         ),
-        "sftp_cpn": ssh_resource.configured(
+        "ps_ssh": ssh_resource.configured(
             config_from_files(
-                [f"src/teamster/{CODE_LOCATION}/resources/config/sftp_cpn.yaml"]
-            )
-        ),
-        "ps_io": gcs_filepath_io_manager.configured(
-            config_from_files(
-                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
+                ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
             )
         ),
         "ps_db": oracle.configured(
@@ -60,9 +44,25 @@ defs = Definitions(
                 ["src/teamster/core/resources/config/db_powerschool.yaml"]
             )
         ),
-        "ps_ssh": ssh_resource.configured(
+        "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(
-                ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
+            )
+        ),
+        "dbt": dbt_cli_resource.configured(
+            {
+                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
+            }
+        ),
+        "ps_io": gcs_filepath_io_manager.configured(
+            config_from_files(
+                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
+            )
+        ),
+        "sftp_cpn": ssh_resource.configured(
+            config_from_files(
+                [f"src/teamster/{CODE_LOCATION}/resources/config/sftp_cpn.yaml"]
             )
         ),
     },

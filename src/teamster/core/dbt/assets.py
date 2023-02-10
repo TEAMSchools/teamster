@@ -8,12 +8,12 @@ from google.cloud import bigquery
 
 
 def build_external_source_asset(asset_definition: AssetsDefinition):
-    code_location, source_system, asset_name = asset_definition.key.path
+    code_location, package_name, asset_name = asset_definition.key.path
 
     @asset(
-        name=f"src_{source_system}__{asset_name}",
-        ins={"upstream": AssetIn(key=[code_location, source_system, asset_name])},
-        key_prefix=[code_location, "dbt", source_system],
+        name=f"src_{package_name}__{asset_name}",
+        ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
+        key_prefix=[code_location, "dbt", package_name],
         group_name="staging",
         required_resource_keys={"warehouse_bq", "dbt"},
         partitions_def=asset_definition.partitions_def,
@@ -29,7 +29,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
 
         dbt_output = dbt.run_operation(
             macro="stage_external_sources",
-            args={"select": f"{source_system}.src_{source_system}__{asset_name}"},
+            args={"select": f"{package_name}.src_{package_name}__{asset_name}"},
             vars={"ext_full_refresh": True},
         )
 
