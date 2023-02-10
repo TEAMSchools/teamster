@@ -45,4 +45,4 @@ secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret fo
 helm-install = { shell = "bash .helm/scripts/install.sh", help = "Update Dagster Cloud Agent via Helm" }
 validate = { shell = "bash .dagster/validate.sh", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
-_.env_file = "env/test/.env"
+dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }

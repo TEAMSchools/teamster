@@ -20,7 +20,7 @@ gcloud projects \
 # by adding an IAM policy binding between the two service accounts.
 # This binding allows the Kubernetes service account to act as the IAM service account.
 gcloud iam service-accounts \
-  add-iam-policy-binding user-cloud-dagster-cloud-agent@"${GCP_PROJECT_ID}".iam.gserviceaccount.com \
+  add-iam-policy-binding "user-cloud-dagster-cloud-agent@${GCP_PROJECT_ID}.iam.gserviceaccount.com" \
   --role roles/iam.workloadIdentityUser \
   --member "serviceAccount:${GCP_PROJECT_ID}.svc.id.goog[dagster-cloud/user-cloud-dagster-cloud-agent]"
 

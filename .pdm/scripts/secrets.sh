@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ -z ${1} ]]; then
-  echo "Location name is required"
+  echo "Code Location is required"
   exit 1
 else
   kubectl create secret generic "${1}" \
