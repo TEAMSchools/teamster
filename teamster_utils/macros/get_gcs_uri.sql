@@ -2,9 +2,7 @@
 
 {{
     return(
-        "gs://"
-        ~ project_name
-        ~ "-"
+        "gs://teamster-"
         ~ code_location
         ~ "/dagster/"
         ~ code_location
