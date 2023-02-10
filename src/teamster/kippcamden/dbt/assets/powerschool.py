@@ -24,18 +24,18 @@ ps_db_assets = transactiondate_assets + whenmodified_assets
 
 src_assets = [build_dbt_external_source_asset(a) for a in ps_db_assets]
 
-# incremental_assets = [
-#     load_assets_from_dbt_project(
-#         project_dir="teamster-dbt/kippcamden",
-#         profiles_dir="teamster-dbt",
-#         select=f"stg_powerschool__{a.key.path[-1]}+",
-#         key_prefix=[CODE_LOCATION, "dbt"],
-#         source_key_prefix=[CODE_LOCATION, "dbt"],
-#         partitions_def=hourly_partitions_def,
-#         partition_key_to_vars_fn=partition_key_to_vars,
-#     )
-#     for a in ps_db_assets
-# ]
+incremental_assets = [
+    load_assets_from_dbt_project(
+        project_dir="teamster-dbt/kippcamden",
+        profiles_dir="teamster-dbt",
+        select=f"stg_powerschool__{a.key.path[-1]}+",
+        key_prefix=[CODE_LOCATION, "dbt"],
+        source_key_prefix=[CODE_LOCATION, "dbt"],
+        partitions_def=hourly_partitions_def,
+        partition_key_to_vars_fn=partition_key_to_vars,
+    )
+    for a in ps_db_assets
+]
 
 
-__all__ = src_assets  # + incremental_assets
+__all__ = src_assets + incremental_assets
