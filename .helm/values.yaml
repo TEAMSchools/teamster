@@ -203,9 +203,11 @@ workspace:
   # If not set, defaults to 30 seconds.
   imagePullGracePeriod: ~
 
-  # Specifies the timeout when waiting for a code server to be ready.
+  # Specifies the timeout in seconds the agent should use when waiting for a code server to be
+  # ready after the Kubernetes deployment is created. If not set, defaults to 180 seconds.
   #
-  # If not set, defaults to 60 seconds.
+  # This timeout should be increased if your code locations can take more than 3 minutes to load
+  # your Dagster definitions.
   serverProcessStartupTimeout: ~
 
   # Override the default K8s scheduler
