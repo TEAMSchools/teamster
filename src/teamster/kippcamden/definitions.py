@@ -22,8 +22,8 @@ defs = Definitions(
     resources={
         "dbt": dbt_cli_resource.configured(
             {
-                "project_dir": f"teamster-dbt/{CODE_LOCATION}",
-                "profiles_dir": "teamster-dbt",
+                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": "teamster-dbt",
             }
         ),
         "io_manager": gcs_pickle_io_manager.configured(
