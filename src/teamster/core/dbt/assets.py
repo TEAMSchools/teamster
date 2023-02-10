@@ -1,9 +1,13 @@
+import json
+from typing import Sequence
+
+import pendulum
 from dagster import AssetIn, AssetsDefinition, OpExecutionContext, Output, asset
-from dagster_dbt import DbtCliResource
+from dagster_dbt import DbtCliResource, load_assets_from_dbt_manifest
 from google.cloud import bigquery
 
 
-def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
+def build_external_source_asset(asset_definition: AssetsDefinition):
     code_location, source_system, asset_name = asset_definition.key.path
 
     @asset(
@@ -32,3 +36,39 @@ def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
         return Output(upstream, metadata=dbt_output.result)
 
     return _asset
+
+
+def partition_key_to_vars(partition_key):
+    partition_key_datetime = pendulum.parser.parse(text=partition_key)
+    return {
+        "partition_path": (
+            f"dt={partition_key_datetime.date()}/"
+            f"{partition_key_datetime.format(fmt='HH')}"
+        )
+    }
+
+
+def build_staging_assets(
+    manifest_json_path,
+    key_prefix,
+    assets: Sequence[AssetsDefinition],
+    partitions_def=None,
+):
+    with open(file=manifest_json_path) as f:
+        manifest_json = json.load(f)
+
+    _assets = [
+        load_assets_from_dbt_manifest(
+            manifest_json=manifest_json,
+            select=f"stg_{key_prefix[-1]}__{a.key.path[-1]}+",
+            key_prefix=key_prefix,
+            source_key_prefix=key_prefix[:2],
+            partitions_def=partitions_def,
+            partition_key_to_vars_fn=(
+                partition_key_to_vars if partitions_def is not None else None
+            ),
+        )
+        for a in assets
+    ]
+
+    return [s for sublist in _assets for s in sublist]
