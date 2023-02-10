@@ -18,7 +18,7 @@ defs = Definitions(
     ),
     jobs=datagun.jobs.__all__,
     schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
-    sensors=powerschool.sensors.__all__,
+    sensors=powerschool.sensors.__all__ + dbt.sensors.__all__,
     resources={
         "dbt": dbt_cli_resource.configured(
             {"project_dir": "teamster-dbt", "profiles_dir": "teamster-dbt"}
