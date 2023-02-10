@@ -33,8 +33,8 @@ incremental_stg_assets = [
     load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         select=f"stg_powerschool__{a.key.path[-1]}+",
-        key_prefix=[CODE_LOCATION, "dbt"],
-        source_key_prefix=[CODE_LOCATION, "dbt"],
+        key_prefix=[CODE_LOCATION, "dbt", "powerschool"],
+        source_key_prefix=[CODE_LOCATION, "dbt", "powerschool"],
         partitions_def=hourly_partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars,
     )
