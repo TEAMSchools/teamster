@@ -42,3 +42,6 @@ whenmodified_assets = [
         [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-whenmodified.yaml"]
     )["assets"]
 ]
+
+partition_assets = transactiondate_assets + whenmodified_assets
+all_assets = partition_assets + nonpartition_assets

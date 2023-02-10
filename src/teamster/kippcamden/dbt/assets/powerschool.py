@@ -6,9 +6,9 @@ from dagster_dbt import load_assets_from_dbt_manifest
 from teamster.core.dbt.assets import build_dbt_external_source_asset
 from teamster.kippcamden import CODE_LOCATION
 from teamster.kippcamden.powerschool.db.assets import (
+    all_assets,
     hourly_partitions_def,
-    transactiondate_assets,
-    whenmodified_assets,
+    partition_assets,
 )
 
 
@@ -22,9 +22,7 @@ def partition_key_to_vars(partition_key):
     }
 
 
-ps_db_assets = transactiondate_assets + whenmodified_assets
-
-src_assets = [build_dbt_external_source_asset(a) for a in ps_db_assets]
+src_assets = [build_dbt_external_source_asset(a) for a in all_assets]
 
 with open(file="teamster-dbt/kippcamden/target/manifest.json") as f:
     manifest_json = json.load(f)
@@ -38,7 +36,7 @@ incremental_stg_assets = [
         partitions_def=hourly_partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars,
     )
-    for a in ps_db_assets
+    for a in partition_assets
 ]
 
 __all__ = src_assets + [
