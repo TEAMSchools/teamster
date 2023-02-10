@@ -41,4 +41,6 @@ RUN pip install --no-cache-dir .
 # install dbt deps
 COPY teamster-dbt ./teamster-dbt
 RUN dbt deps --project-dir teamster-dbt/kippcamden \
-    && dbt list --project-dir teamster-dbt/kippcamden --profiles-dir teamster-dbt
+    && dbt list \
+        --project-dir teamster-dbt/kippcamden \
+        --profiles-dir teamster-dbt/kippcamden
