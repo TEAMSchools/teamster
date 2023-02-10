@@ -1,10 +1,10 @@
-teamster:
-  target: prod
+kippnewark:
+  target: kippnewark
   outputs:
-    prod:
+    kippnewark:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: dbt
+      schema: kippnewark
       threads: 1
       keyfile: /etc/secret-volume/dbt-user-creds
