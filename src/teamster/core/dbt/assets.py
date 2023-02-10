@@ -7,7 +7,7 @@ def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
     code_location, source_system, asset_name = asset_definition.key.path
 
     @asset(
-        name=f"src_{asset_name}",
+        name=f"src_{source_system}__{asset_name}",
         ins={"upstream": AssetIn(key=[code_location, source_system, asset_name])},
         key_prefix=[code_location, "dbt", f"{code_location}_{source_system}"],
         required_resource_keys={"warehouse_bq", "dbt"},
@@ -26,7 +26,7 @@ def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
 
         dbt_output = dbt.run_operation(
             macro="stage_external_sources",
-            args={"select": f"{dataset}.src_{asset_name}"},
+            args={"select": f"{dataset}.src_{source_system}__{asset_name}"},
             vars={"ext_full_refresh": True},
         )
 

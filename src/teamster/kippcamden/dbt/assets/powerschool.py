@@ -5,6 +5,7 @@ from teamster.core.dbt.assets import build_dbt_external_source_asset
 from teamster.kippcamden import CODE_LOCATION
 from teamster.kippcamden.powerschool.db.assets import (
     hourly_partitions_def,
+    transactiondate_assets,
     whenmodified_assets,
 )
 
@@ -15,21 +16,26 @@ def partition_key_to_vars(partition_key):
         "_file_name": (
             f"dt={partition_key_datetime.date()}/"
             f"{partition_key_datetime.format(fmt='HH')}"
-        ),
-        "code_location": CODE_LOCATION,
+        )
     }
 
 
-assignmentcategoryassoc = load_assets_from_dbt_project(
-    project_dir="teamster-dbt",
-    profiles_dir="teamster-dbt",
-    select="assignmentcategoryassoc+",
-    key_prefix=[CODE_LOCATION, "dbt"],
-    source_key_prefix=[CODE_LOCATION, "dbt"],
-    partitions_def=hourly_partitions_def,
-    partition_key_to_vars_fn=partition_key_to_vars,
-)
+ps_db_assets = transactiondate_assets + whenmodified_assets
 
-src_assignmentcategoryassoc = build_dbt_external_source_asset(whenmodified_assets[0])
+src_assets = [build_dbt_external_source_asset(a) for a in ps_db_assets]
 
-__all__ = assignmentcategoryassoc + [src_assignmentcategoryassoc]
+# incremental_assets = [
+#     load_assets_from_dbt_project(
+#         project_dir="teamster-dbt/kippcamden",
+#         profiles_dir="teamster-dbt",
+#         select=f"stg_powerschool__{a.key.path[-1]}+",
+#         key_prefix=[CODE_LOCATION, "dbt"],
+#         source_key_prefix=[CODE_LOCATION, "dbt"],
+#         partitions_def=hourly_partitions_def,
+#         partition_key_to_vars_fn=partition_key_to_vars,
+#     )
+#     for a in ps_db_assets
+# ]
+
+
+__all__ = src_assets  # + incremental_assets
