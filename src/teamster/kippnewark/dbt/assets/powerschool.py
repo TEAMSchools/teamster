@@ -1,6 +1,6 @@
 from teamster.core.dbt.assets import build_external_source_asset, build_staging_assets
-from teamster.kippcamden import CODE_LOCATION
-from teamster.kippcamden.powerschool.db.assets import (
+from teamster.kippnewark import CODE_LOCATION
+from teamster.kippnewark.powerschool.db.assets import (
     all_assets,
     hourly_partitions_def,
     nonpartition_assets,
