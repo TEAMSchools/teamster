@@ -9,7 +9,7 @@ def build_dbt_external_source_asset(asset_definition: AssetsDefinition):
     @asset(
         name=f"src_{source_system}__{asset_name}",
         ins={"upstream": AssetIn(key=[code_location, source_system, asset_name])},
-        key_prefix=[code_location, "dbt", f"{code_location}_{source_system}"],
+        key_prefix=[code_location, "dbt", source_system],
         required_resource_keys={"warehouse_bq", "dbt"},
         partitions_def=asset_definition.partitions_def,
     )
