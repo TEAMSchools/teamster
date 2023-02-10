@@ -1,430 +1,430 @@
 version: 2
 
 sources:
-  - name: powerschool
+  - name: "{{ project_name }}"
     schema: "{{ var('powerschool_schema', 'powerschool') }}"
     database: "{% if target.type != 'spark' %}{{ var('powerschool_database', target.database) }}{% endif %}"
 
     tables:
       - name: src_powerschool__assignmentcategoryassoc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/assignmentcategoryassoc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/assignmentcategoryassoc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/assignmentcategoryassoc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/assignmentcategoryassoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentscore
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/assignmentscore/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/assignmentscore/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/assignmentscore/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/assignmentscore/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentsection
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/assignmentsection/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/assignmentsection/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/assignmentsection/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/assignmentsection/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/attendance/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/attendance/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__cc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/cc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/cc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/cc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/cc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__codeset
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/codeset/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/codeset/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/codeset/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/codeset/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__courses
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/courses/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/courses/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/courses/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/courses/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__districtteachercategory
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/districtteachercategory/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/districtteachercategory/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/districtteachercategory/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/districtteachercategory/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__emailaddress
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/emailaddress/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/emailaddress/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/emailaddress/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/emailaddress/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcformulaweight
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradecalcformulaweight/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradecalcformulaweight/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradecalcformulaweight/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradecalcformulaweight/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcschoolassoc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradecalcschoolassoc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradecalcschoolassoc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradecalcschoolassoc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradecalcschoolassoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalculationtype
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradecalculationtype/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradecalculationtype/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradecalculationtype/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradecalculationtype/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeformulaset
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradeformulaset/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradeformulaset/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradeformulaset/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradeformulaset/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradescaleitem
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradescaleitem/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradescaleitem/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradescaleitem/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradescaleitem/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolconfig
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradeschoolconfig/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradeschoolconfig/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradeschoolconfig/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradeschoolconfig/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolformulaassoc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradeschoolformulaassoc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradeschoolformulaassoc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradeschoolformulaassoc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradeschoolformulaassoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradesectionconfig
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradesectionconfig/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradesectionconfig/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gradesectionconfig/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gradesectionconfig/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__originalcontactmap
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/originalcontactmap/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/originalcontactmap/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/originalcontactmap/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/originalcontactmap/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__person
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/person/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/person/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/person/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/person/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddress
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personaddress/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personaddress/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personaddress/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personaddress/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddressassoc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personaddressassoc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personaddressassoc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personaddressassoc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personaddressassoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personemailaddressassoc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personemailaddressassoc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personemailaddressassoc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personemailaddressassoc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personemailaddressassoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personphonenumberassoc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personphonenumberassoc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personphonenumberassoc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/personphonenumberassoc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/personphonenumberassoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__pgfinalgrades
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/pgfinalgrades/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/pgfinalgrades/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/pgfinalgrades/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/pgfinalgrades/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__phonenumber
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/phonenumber/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/phonenumber/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/phonenumber/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/phonenumber/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__prefs
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/prefs/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/prefs/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/prefs/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/prefs/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__roledef
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/roledef/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/roledef/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/roledef/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/roledef/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_crs_x
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_crs_x/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_crs_x/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_crs_x/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_crs_x/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_ren_x
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_ren_x/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_ren_x/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_ren_x/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_ren_x/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_stu_x
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_stu_x/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_stu_x/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_stu_x/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_stu_x/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_usr_x
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_usr_x/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_usr_x/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/s_nj_usr_x/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/s_nj_usr_x/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schools
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/schools/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/schools/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/schools/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/schools/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schoolstaff
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/schoolstaff/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/schoolstaff/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/schoolstaff/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/schoolstaff/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sections
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/sections/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/sections/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/sections/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/sections/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sectionteacher
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/sectionteacher/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/sectionteacher/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/sectionteacher/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/sectionteacher/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__storedgrades
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/storedgrades/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/storedgrades/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/storedgrades/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/storedgrades/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactassoc
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentcontactassoc/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentcontactassoc/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentcontactassoc/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentcontactassoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactdetail
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentcontactdetail/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentcontactdetail/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentcontactdetail/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentcontactdetail/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcorefields
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentcorefields/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentcorefields/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentcorefields/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentcorefields/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentrace
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentrace/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentrace/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/studentrace/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/studentrace/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__students
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/students/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/students/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/students/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/students/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__teachercategory
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/teachercategory/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/teachercategory/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/teachercategory/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/teachercategory/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__termbins
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/termbins/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/termbins/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/termbins/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/termbins/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__terms
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/terms/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/terms/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/terms/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/terms/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_clg_et_stu/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_clg_et_stu/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_clg_et_stu/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_clg_et_stu/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu_alt
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_clg_et_stu_alt/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_clg_et_stu_alt/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_clg_et_stu_alt/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_clg_et_stu_alt/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_def_ext_students
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_def_ext_students/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_def_ext_students/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_def_ext_students/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_def_ext_students/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_studentsuserfields
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_studentsuserfields/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_studentsuserfields/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/u_studentsuserfields/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/u_studentsuserfields/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__users
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/users/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/users/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/users/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/users/"
             format: AVRO
             enable_logical_types: true
       # not-partitionable
       - name: src_powerschool__attendance_code
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/attendance_code"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance_code"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance_conversion_items
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/attendance_conversion_items"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance_conversion_items"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__bell_schedule
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/bell_schedule"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/bell_schedule"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__calendar_day
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/calendar_day"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/calendar_day"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__cycle_day
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/cycle_day"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/cycle_day"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__fte
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/fte"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/fte"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gen
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/gen"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gen"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__log
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/log"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/log"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__period
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/period"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/period"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__reenrollments
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/reenrollments"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/reenrollments"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__spenrollments
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/spenrollments"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/spenrollments"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__test
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/test"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/test"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__testscore
         external:
-          location: "gs://teamster-{{ var('code_location') }}/dagster/{{ var('code_location') }}/powerschool/testscore"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/testscore"
           options:
             format: AVRO
             enable_logical_types: true
