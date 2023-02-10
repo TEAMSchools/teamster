@@ -21,7 +21,10 @@ defs = Definitions(
     sensors=powerschool.sensors.__all__ + dbt.sensors.__all__,
     resources={
         "dbt": dbt_cli_resource.configured(
-            {"project_dir": "teamster-dbt", "profiles_dir": "teamster-dbt"}
+            {
+                "project_dir": f"teamster-dbt/{CODE_LOCATION}",
+                "profiles_dir": "teamster-dbt",
+            }
         ),
         "io_manager": gcs_pickle_io_manager.configured(
             config_from_files(
