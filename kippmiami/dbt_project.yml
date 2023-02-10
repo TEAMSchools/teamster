@@ -1,9 +1,9 @@
-name: "kippcamden"
+name: "kippmiami"
 version: "1.0.0"
 config-version: 2
 
 # This setting configures which "profile" dbt uses for this project.
-profile: "kippcamden"
+profile: "kippmiami"
 
 # These configurations specify where dbt should look for different types of files.
 # The `source-paths` config, for example, states that models in this project can be
@@ -22,8 +22,23 @@ clean-targets: # directories to be removed by `dbt clean`
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
-# models:
+models:
+  powerschool:
+    staging:
+      # disable extensions here
+      stg_powerschool__s_nj_crs_x:
+        +enabled: false
+      stg_powerschool__s_nj_ren_x:
+        +enabled: false
+      stg_powerschool__s_nj_stu_x:
+        +enabled: false
+      stg_powerschool__s_nj_usr_x:
+        +enabled: false
+      stg_powerschool__u_def_ext_students:
+        +enabled: false
+      stg_powerschool__u_studentsuserfields:
+        +enabled: false
 
 vars:
-  code_location: kippcamden
-  powerschool_schema: kippcamden
+  code_location: kippmiami
+  powerschool_schema: kippmiami
