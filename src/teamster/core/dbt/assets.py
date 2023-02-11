@@ -12,11 +12,12 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
 
     @asset(
         name=f"src_{package_name}__{asset_name}",
-        ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
         key_prefix=[code_location, "dbt", package_name],
-        group_name="staging",
+        ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
         required_resource_keys={"warehouse_bq", "dbt"},
+        compute_kind="dbt",
         partitions_def=asset_definition.partitions_def,
+        group_name="staging",
     )
     def _asset(context: OpExecutionContext, upstream):
         # create BigQuery dataset, if not exists
