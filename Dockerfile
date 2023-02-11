@@ -44,12 +44,14 @@ RUN dbt clean --project-dir teamster-dbt/kippcamden \
     && dbt deps --project-dir teamster-dbt/kippcamden \
     && dbt list \
         --project-dir teamster-dbt/kippcamden \
-        --profiles-dir teamster-dbt/kippcamden \
+        --profiles-dir teamster-dbt/kippcamden
+
 RUN dbt clean --project-dir teamster-dbt/kippmiami \
     && dbt deps --project-dir teamster-dbt/kippmiami \
     && dbt list \
         --project-dir teamster-dbt/kippmiami \
-        --profiles-dir teamster-dbt/kippmiami \
+        --profiles-dir teamster-dbt/kippmiami
+        
 RUN dbt clean --project-dir teamster-dbt/kippnewark \
     && dbt deps --project-dir teamster-dbt/kippnewark \
     && dbt list \
