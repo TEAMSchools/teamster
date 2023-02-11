@@ -10,14 +10,14 @@ whenmodified_sensor = build_powerschool_incremental_sensor(
     name="ps_whenmodified_sensor",
     asset_selection=AssetSelection.assets(*assets.whenmodified_assets),
     where_column="whenmodified",
-    minimum_interval_seconds=90,
+    minimum_interval_seconds=300,
 )
 
 transactiondate_sensor = build_powerschool_incremental_sensor(
     name="ps_transactiondate_sensor",
     asset_selection=AssetSelection.assets(*assets.transactiondate_assets),
     where_column="transaction_date",
-    minimum_interval_seconds=90,
+    minimum_interval_seconds=300,
 )
 
 __all__ = [powerschool_ssh_tunnel, whenmodified_sensor, transactiondate_sensor]
