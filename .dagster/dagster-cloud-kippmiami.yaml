@@ -10,3 +10,11 @@ locations:
       k8s:
         env_secrets:
           - kippmiami
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: dbt-user-creds
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: /etc/secret-volume
