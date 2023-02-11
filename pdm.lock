@@ -31,6 +31,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "beautifulsoup4"
+version = "4.11.2"
+requires_python = ">=3.6.0"
+summary = "Screen-scraping library"
+dependencies = [
+    "soupsieve>1.2",
+]
+
+[[package]]
 name = "betterproto"
 version = "1.2.5"
 requires_python = ">=3.6"
@@ -544,6 +553,12 @@ requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python 2 and 3 compatibility utilities"
 
 [[package]]
+name = "soupsieve"
+version = "2.3.2.post1"
+requires_python = ">=3.6"
+summary = "A modern CSS selector implementation for Beautiful Soup."
+
+[[package]]
 name = "sqlparse"
 version = "0.4.3"
 requires_python = ">=3.5"
@@ -582,7 +597,7 @@ dependencies = [
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:b8faecac0a7a021353c1e77e86792cb47ce0123a00e2f264bd7559a2b1925c2f"
+content_hash = "sha256:37078f55b1ecc86f3f425113835f7d10b0cae4b70ad79732f2f5c0dd1e628faa"
 
 [metadata.files]
 "agate 1.6.3" = [
@@ -596,6 +611,10 @@ content_hash = "sha256:b8faecac0a7a021353c1e77e86792cb47ce0123a00e2f264bd7559a2b
 "babel 2.11.0" = [
     {url = "https://files.pythonhosted.org/packages/92/f7/86301a69926e11cd52f73396d169554d09b20b1723a040c2dcc1559ef588/Babel-2.11.0-py3-none-any.whl", hash = "sha256:1ad3eca1c885218f6dce2ab67291178944f810a10a9b5f3cb8382a5a232b64fe"},
     {url = "https://files.pythonhosted.org/packages/ff/80/45b42203ecc32c8de281f52e3ec81cb5e4ef16127e9e8543089d8b1649fb/Babel-2.11.0.tar.gz", hash = "sha256:5ef4b3226b0180dedded4229651c8b0e1a3a6a2837d45a073272f313e4cf97f6"},
+]
+"beautifulsoup4 4.11.2" = [
+    {url = "https://files.pythonhosted.org/packages/75/f8/de84282681c5a8307f3fff67b64641627b2652752d49d9222b77400d02b8/beautifulsoup4-4.11.2.tar.gz", hash = "sha256:bc4bdda6717de5a2987436fb8d72f45dc90dd856bdfd512a1314ce90349a0106"},
+    {url = "https://files.pythonhosted.org/packages/c6/ee/16d6f808f5668317d7c23f942091fbc694bcded6aa39678e5167f61b2ba0/beautifulsoup4-4.11.2-py3-none-any.whl", hash = "sha256:0e79446b10b3ecb499c1556f7e228a53e64a2bfcebd455f370d8927cb5b59e39"},
 ]
 "betterproto 1.2.5" = [
     {url = "https://files.pythonhosted.org/packages/ff/2e/abfed7a721928e14aeb900182ff695be474c4ee5f07ef0874cc5ecd5b0b1/betterproto-1.2.5.tar.gz", hash = "sha256:74a3ab34646054f674d236d1229ba8182dc2eae86feb249b8590ef496ce9803d"},
@@ -1355,6 +1374,10 @@ content_hash = "sha256:b8faecac0a7a021353c1e77e86792cb47ce0123a00e2f264bd7559a2b
 "six 1.16.0" = [
     {url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
     {url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
+]
+"soupsieve 2.3.2.post1" = [
+    {url = "https://files.pythonhosted.org/packages/16/e3/4ad79882b92617e3a4a0df1960d6bce08edfb637737ac5c3f3ba29022e25/soupsieve-2.3.2.post1-py3-none-any.whl", hash = "sha256:3b2503d3c7084a42b1ebd08116e5f81aadfaea95863628c80a3b774a11b7c759"},
+    {url = "https://files.pythonhosted.org/packages/f3/03/bac179d539362319b4779a00764e95f7542f4920084163db6b0fd4742d38/soupsieve-2.3.2.post1.tar.gz", hash = "sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d"},
 ]
 "sqlparse 0.4.3" = [
     {url = "https://files.pythonhosted.org/packages/97/d3/31dd2c3e48fc2060819f4acb0686248250a0f2326356306b38a42e059144/sqlparse-0.4.3-py3-none-any.whl", hash = "sha256:0323c0ec29cd52bceabc1b4d9d579e311f3e4961b98d174201d5622a23b85e34"},
