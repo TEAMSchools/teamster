@@ -37,25 +37,27 @@ for child in children:
 
     # parse columns table
     cols_table_tag = soup.find("table")
+    columns = []
     if cols_table_tag:
         dfs = pandas.read_html(str(cols_table_tag))
 
         # convert table to dict
         cols_table = dfs[0]
         cols = cols_table.to_dict(orient="records")
+
         for col in cols:
-            columns = {
-                "name": col["Column Name"].lower(),
-                "description": col["Description"],
-                "meta": {
-                    "Initial Version": (
-                        col.get("Initial Version") or col.get("Initial Versoin")
-                    ),
-                    "Oracle Data Type": col.get("Data Type") or col.get("Type"),
-                },
-            }
-    else:
-        columns = None
+            columns.append(
+                {
+                    "name": col["Column Name"].lower(),
+                    "description": col["Description"],
+                    "meta": {
+                        "Initial Version": (
+                            col.get("Initial Version") or col.get("Initial Versoin")
+                        ),
+                        "Oracle Data Type": col.get("Data Type") or col.get("Type"),
+                    },
+                }
+            )
 
     title_match = re.match(r"^([\w\s\$]+)(,\s\d+|\s)?\(?(.*)?$", child["title"])
     table_name, table_id, table_version = title_match.groups()
