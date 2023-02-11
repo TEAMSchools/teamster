@@ -24,6 +24,12 @@ assets:
   - asset_name: s_nj_crs_x
   - asset_name: s_nj_ren_x
   - asset_name: s_nj_stu_x
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
   - asset_name: s_nj_usr_x
   - asset_name: schoolstaff
   - asset_name: sectionteacher
