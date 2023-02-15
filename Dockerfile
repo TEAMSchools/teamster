@@ -28,11 +28,11 @@ RUN apt-get update \
 
 # copy requirements files into container
 WORKDIR /root/app
-COPY requirements.txt ./requirements.txt
+# COPY requirements.txt ./requirements.txt
 COPY pyproject.toml ./pyproject.toml
 
 # install project reqs
-RUN pip install --no-cache-dir -r requirements.txt
+# RUN pip install --no-cache-dir -r requirements.txt
 
 # install project
 COPY src/teamster ./src/teamster
