@@ -26,16 +26,12 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# copy requirements files into container
+# copy project files into container
 WORKDIR /root/app
-# COPY requirements.txt ./requirements.txt
 COPY pyproject.toml ./pyproject.toml
-
-# install project reqs
-# RUN pip install --no-cache-dir -r requirements.txt
+COPY src/teamster ./src/teamster
 
 # install project
-COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
 
 # install dbt
