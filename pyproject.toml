@@ -12,7 +12,6 @@ dependencies = [
   "dagster-ssh>=0.17.15",
   "dagster-k8s>=0.17.15",
   "dagster-dbt>=0.17.15",
-  "powerschool>=4.0.1",
   "pyodbc>=4.0.35",
   "gspread>=5.7.2",
   "oracledb>=1.2.2",
