@@ -7,7 +7,6 @@ authors = [
 ]
 dependencies = [
   "dagster>=1.1.15",
-  "dagster-cloud>=1.1.15",
   "dagster-gcp>=0.17.15",
   "dagster-ssh>=0.17.15",
   "dagster-k8s>=0.17.15",
