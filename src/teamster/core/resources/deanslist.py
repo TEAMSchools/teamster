@@ -1,4 +1,4 @@
-from dagster import Field, InitResourceContext, Map, String, StringSource, resource
+from dagster import Field, InitResourceContext, Int, Map, StringSource, resource
 from requests import Session
 
 
@@ -64,7 +64,7 @@ class DeansList(Session):
 @resource(
     config_schema={
         "subdomain": StringSource,
-        "api_key_map": Map(key_type=String, inner_type=StringSource),
+        "api_key_map": Map(key_type=Int, inner_type=StringSource),
         "api_version": Field(
             config=StringSource, default_value="v1", is_required=False
         ),
