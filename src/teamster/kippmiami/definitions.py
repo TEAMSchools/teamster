@@ -55,7 +55,7 @@ defs = Definitions(
                 "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
             }
         ),
-        "ps_io": gcs_filepath_io_manager.configured(
+        "gcs_fp_io": gcs_filepath_io_manager.configured(
             config_from_files(
                 [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
             )

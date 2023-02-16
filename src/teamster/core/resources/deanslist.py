@@ -1,4 +1,4 @@
-from dagster import Field, InitResourceContext, Int, Map, StringSource, resource
+from dagster import Field, InitResourceContext, Map, String, StringSource, resource
 from requests import Session
 
 
@@ -24,21 +24,47 @@ class DeansList(Session):
         else:
             return f"{self.base_url}/{self.api_version}/{endpoint}"
 
+    def _parse_response_json(self, response_json):
+        row_count = response_json.get("rowcount")
+        deleted_row_count = response_json.get("deleted_rowcount", 0)
+
+        if row_count is not None:
+            total_row_count = row_count + deleted_row_count
+        else:
+            total_row_count = None
+
+        data = response_json.get("data") or response_json
+        deleted_data = response_json.get("deleted_data", [])
+        for d in deleted_data:
+            d["is_deleted"] = 1
+
+        all_data = data + deleted_data
+
+        return total_row_count, all_data
+
+    def _get_url_json(self, url, params):
+        response = self.get(url=url, params=params)
+
+        total_row_count, all_data = self._parse_response_json(response.json())
+
+        return total_row_count, all_data
+
     def get_endpoint(self, endpoint, school_id, *args, **kwargs):
         url = self._get_url(endpoint, args)
 
         self.log.info(f"GET: {url}\nPARAMS: {kwargs}")
 
         params = kwargs.update(apikey=self.api_key_map[school_id])
-        response = self.get(url=url, params=params)
 
-        return response.json()
+        total_row_count, all_data = self._get_url_json(url=url, params=params)
+
+        return total_row_count, all_data
 
 
 @resource(
     config_schema={
         "subdomain": StringSource,
-        "api_key_map": Map({Int: StringSource}),
+        "api_key_map": Map(key_type=String, inner_type=StringSource),
         "api_version": Field(
             config=StringSource, default_value="v1", is_required=False
         ),

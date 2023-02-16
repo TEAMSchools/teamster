@@ -79,7 +79,7 @@ def build_powerschool_table_asset(
         key_prefix=[code_location, "powerschool"],
         partitions_def=partitions_def,
         op_tags=op_tags,
-        io_manager_key="ps_io",
+        io_manager_key="gcs_fp_io",
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
