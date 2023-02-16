@@ -4,7 +4,11 @@ from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.resources.deanslist import deanslist_resource
-from teamster.core.resources.google import gcs_filepath_io_manager, google_sheets
+from teamster.core.resources.google import (
+    gcs_avro_io_manager,
+    gcs_filepath_io_manager,
+    google_sheets,
+)
 from teamster.core.resources.sqlalchemy import mssql, oracle
 from teamster.test import CODE_LOCATION, datagun, deanslist, powerschool
 
@@ -59,6 +63,11 @@ defs = Definitions(
                     "src/teamster/core/resources/config/deanslist.yaml",
                     f"src/teamster/{CODE_LOCATION}/resources/config/deanslist.yaml",
                 ]
+            )
+        ),
+        "gcs_avro_io": gcs_avro_io_manager.configured(
+            config_from_files(
+                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
             )
         ),
     },
