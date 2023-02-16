@@ -1,0 +1,11 @@
+api_key_map:
+  120:
+    env: DL_APIKEY_120
+  126:
+    env: DL_APIKEY_126
+  130:
+    env: DL_APIKEY_130
+  473:
+    env: DL_APIKEY_473
+  652:
+    env: DL_APIKEY_652

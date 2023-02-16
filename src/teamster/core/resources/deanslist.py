@@ -1,4 +1,4 @@
-from dagster import Field, InitResourceContext, Int, Map, String, StringSource, resource
+from dagster import Field, InitResourceContext, Int, Map, StringSource, resource
 from requests import Session
 
 
@@ -24,7 +24,7 @@ class DeansList(Session):
         else:
             return f"{self.base_url}/{self.api_version}/{endpoint}"
 
-    def get_endpoint_json(self, endpoint, school_id, *args, **kwargs):
+    def get_endpoint(self, endpoint, school_id, *args, **kwargs):
         url = self._get_url(endpoint, args)
 
         self.log.info(f"GET: {url}\nPARAMS: {kwargs}")
@@ -38,7 +38,7 @@ class DeansList(Session):
 @resource(
     config_schema={
         "subdomain": StringSource,
-        "api_key_map": Map({"school_id": Int, "api_key": String}),
+        "api_key_map": Map({Int: StringSource}),
         "api_version": Field(
             config=StringSource, default_value="v1", is_required=False
         ),
