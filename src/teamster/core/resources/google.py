@@ -152,7 +152,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         df = pandas.DataFrame(obj)
 
         context.log.debug(f"Saving output to Avro file: {file_path}")
-        pandavro.to_avro(file_path_or_buffer=file_path, df=df, codec="snappy")
+        pandavro.to_avro(file_path_or_buffer=str(file_path), df=df, codec="snappy")
 
         context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
         backoff(
