@@ -49,7 +49,7 @@ class DeansList(Session):
         return total_row_count, all_data
 
     def get_endpoint(self, endpoint, school_id, *args, **kwargs):
-        url = self._get_url(endpoint, args)
+        url = self._get_url(endpoint, *args)
 
         self.log.info(f"GET: {url}\nPARAMS: {kwargs}")
 
