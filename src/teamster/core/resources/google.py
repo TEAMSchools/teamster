@@ -145,7 +145,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             context.log.warning(f"Removing existing GCS key: {key}")
             self._rm_object(key)
 
-        file_path = pathlib.Path(key)
+        file_path = pathlib.Path(key) / "data.avro"
         file_path.mkdir(parents=True, exist_ok=True)
 
         context.log.debug("Creating DataFrame for output")
