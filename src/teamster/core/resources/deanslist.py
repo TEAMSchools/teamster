@@ -44,6 +44,7 @@ class DeansList(Session):
 
     def _get_url_json(self, url, params):
         response = self.get(url=url, params=params)
+        response.raise_for_status()
 
         total_row_count, all_data = self._parse_response_json(response.json())
 
