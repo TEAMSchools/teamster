@@ -17,3 +17,14 @@ class CustomJSONEncoder(json.JSONEncoder):
             return o.isoformat()
         else:
             return super().default(o)
+
+
+class FiscalYear:
+    def __init__(self, datetime, start_month) -> None:
+        self.fiscal_year = (
+            (datetime.year + 1) if datetime.month >= start_month else datetime.year
+        )
+        self.start = pendulum.date(
+            year=(self.fiscal_year - 1), month=start_month, day=1
+        )
+        self.end = self.start.add(years=1).subtract(days=1)
