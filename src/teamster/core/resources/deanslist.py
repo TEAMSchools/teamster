@@ -17,9 +17,7 @@ class DeansList(Session):
         self.base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
     def _get_url(self, endpoint, *args):
-        if endpoint in ["behavior", "users"]:
-            return f"{self.base_url}/{endpoint}"
-        elif args is not None:
+        if args is not None:
             return f"{self.base_url}/{self.api_version}/{endpoint}{'/'.join(args)}"
         else:
             return f"{self.base_url}/{self.api_version}/{endpoint}"
