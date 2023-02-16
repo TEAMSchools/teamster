@@ -1,5 +1,9 @@
 assets:
   - asset_name: test_datagun_gsheet
+    key_prefix:
+      - test
+      - datagun
+      - gsheets
     query_config:
       type: text
       value:
