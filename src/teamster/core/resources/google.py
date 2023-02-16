@@ -1,19 +1,16 @@
 import copy
+import pathlib
 from typing import Union
 from urllib.parse import urlparse
 
 import google.auth
 import gspread
+import pandas
+import pandavro
 import pendulum
-from dagster import (
-    Field,
-    InputContext,
-    OutputContext,
-    String,
-    StringSource,
-    io_manager,
-    resource,
-)
+from dagster import Field, InputContext, OutputContext, String, StringSource
+from dagster import _check as check
+from dagster import io_manager, resource
 from dagster._utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
@@ -99,6 +96,97 @@ def gcs_filepath_io_manager(init_context):
         init_context.resource_config["gcs_prefix"],
     )
     return filename_io_manager
+
+
+class AvroGCSIOManager(PickledObjectGCSIOManager):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        if context.has_asset_key:
+            path = context.get_asset_identifier()
+        else:
+            parts = context.get_identifier()
+            run_id = parts[0]
+            output_parts = parts[1:]
+
+            path = ["storage", run_id, "files", *output_parts]
+
+        return "/".join([self.prefix, *path])
+
+    def _get_paths(self, context: Union[InputContext, OutputContext]) -> list:
+        paths = []
+        for apk in context.asset_partition_keys:
+            path = copy.deepcopy(context.asset_key.path)
+
+            apk_datetime = pendulum.parse(text=apk)
+
+            path.append(f"dt={apk_datetime.date()}")
+            path.append(apk_datetime.format(fmt="HH"))
+
+            paths.append("/".join([self.prefix, *path]))
+
+        return paths
+
+    def handle_output(self, context, obj):
+        if isinstance(context.dagster_type.typing_type, type(None)):
+            check.invariant(
+                obj is None,
+                (
+                    "Output had Nothing type or 'None' annotation, but handle_output received"
+                    f" value that was not None and was of type {type(obj)}."
+                ),
+            )
+            return None
+
+        if context.has_asset_key and context.has_asset_partitions:
+            key = self._get_paths(context)[0]
+        else:
+            key = self._get_path(context)
+
+        if self._has_object(key):
+            context.log.warning(f"Removing existing GCS key: {key}")
+            self._rm_object(key)
+
+        file_path = pathlib.Path(key)
+        file_path.mkdir(parents=True, exist_ok=True)
+
+        context.log.debug("Creating DataFrame for output")
+        df = pandas.DataFrame(obj)
+
+        context.log.debug(f"Saving output to Avro file: {file_path}")
+        pandavro.to_avro(file_path_or_buffer=file_path, df=df, codec="snappy")
+
+        context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
+        backoff(
+            self.bucket_obj.blob(key).upload_from_filename,
+            args=[file_path],
+            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+        )
+
+    def load_input(self, context: InputContext):
+        if isinstance(context.dagster_type.typing_type, type(None)):
+            return None
+
+        if context.has_asset_key and context.has_asset_partitions:
+            return [
+                urlparse(self._uri_for_key(key)) for key in self._get_paths(context)
+            ]
+        else:
+            key = self._get_path(context)
+            return [urlparse(self._uri_for_key(key))]
+
+
+@io_manager(
+    config_schema={
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+    },
+    required_resource_keys={"gcs"},
+)
+def gcs_avro_io_manager(init_context):
+    return AvroGCSIOManager(
+        bucket=init_context.resource_config["gcs_bucket"],
+        client=init_context.resources.gcs,
+        prefix=init_context.resource_config["gcs_prefix"],
+    )
 
 
 class GoogleSheets(object):
