@@ -18,6 +18,7 @@ dependencies = [
   "python-snappy>=0.6.1",
   "dbt-bigquery>=1.3.0",
   "dagster-cloud>=1.1.18",
+  "pandavro>=1.6.0",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }
@@ -38,7 +39,7 @@ clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, 
 docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
-test = { shell = "pdm run pytest", env_file = "env/test/.env", help = "Run tests with the default Python" }
+test = { shell = "pdm run pytest -s", env_file = "env/test/.env", help = "Run tests with the default Python" }
 secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret for branch" }
 helm-install = { shell = "bash .helm/scripts/install.sh", help = "Update Dagster Cloud Agent via Helm" }
 validate = { shell = "bash .dagster/validate.sh", help = "Validate Dagster imports and configs" }

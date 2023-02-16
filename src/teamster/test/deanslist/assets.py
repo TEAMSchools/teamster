@@ -10,6 +10,7 @@ from teamster.core.resources.deanslist import DeansList
     name="users",
     key_prefix=["test", "deanslist"],
     required_resource_keys={"deanslist"},
+    io_manager_key="gcs_avro_io",
     op_tags={},
     # partitions_def=...,
     output_required=False,
@@ -26,7 +27,5 @@ def users(context: OpExecutionContext):
         IncludeInactive="Y",
     )
 
-    context.log.debug(all_data[0])
-
     if total_row_count is not None:
-        return Output(value=all_data, metadata={"row_count": total_row_count})
+        return Output(value=all_data, metadata={"records": total_row_count})

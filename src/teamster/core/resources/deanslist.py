@@ -17,8 +17,14 @@ class DeansList(Session):
         self.base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
     def _get_url(self, endpoint, *args):
-        if args is not None:
-            return f"{self.base_url}/{self.api_version}/{endpoint}{'/'.join(args)}"
+        if endpoint in ["behavior", "users"]:
+            return (
+                f"{self.base_url}/beta/export/get-{endpoint}"
+                f"{'-data' if endpoint == 'behavior' else ''}"
+                ".php"
+            )
+        elif args:
+            return f"{self.base_url}/{self.api_version}/{endpoint}/{'/'.join(args)}"
         else:
             return f"{self.base_url}/{self.api_version}/{endpoint}"
 
@@ -53,9 +59,9 @@ class DeansList(Session):
 
         self.log.info(f"GET: {url}\nPARAMS: {kwargs}")
 
-        params = kwargs.update(apikey=self.api_key_map[school_id])
+        kwargs["apikey"] = self.api_key_map[school_id]
 
-        total_row_count, all_data = self._get_url_json(url=url, params=params)
+        total_row_count, all_data = self._get_url_json(url=url, params=kwargs)
 
         return total_row_count, all_data
 
