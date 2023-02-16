@@ -26,12 +26,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# copy project files into container
 WORKDIR /root/app
-COPY pyproject.toml ./pyproject.toml
-COPY src/teamster ./src/teamster
 
-# install project
+# install dependencies
+COPY pyproject.toml ./pyproject.toml
 RUN pip install --no-cache-dir .
 
 # install dbt
@@ -53,3 +51,7 @@ RUN dbt clean --project-dir teamster-dbt/kippnewark \
     && dbt list \
         --project-dir teamster-dbt/kippnewark \
         --profiles-dir teamster-dbt/kippnewark
+
+# install project
+COPY src/teamster ./src/teamster
+RUN pip install --no-cache-dir .
