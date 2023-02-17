@@ -783,18 +783,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pandavro"
-version = "1.6.0"
-requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-summary = "The interface between Avro and pandas DataFrame"
-dependencies = [
-    "fastavro>=0.14.11",
-    "numpy>=1.7.0",
-    "pandas>=1.1.5",
-    "six>=1.9",
-]
-
-[[package]]
 name = "paramiko"
 version = "3.0.0"
 requires_python = ">=3.6"
@@ -1238,7 +1226,7 @@ dependencies = [
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:4c9d18e642649c7068e6543f3dd696f2c05b2c98bae2e53781c77d047cb08c7b"
+content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef48923234b13"
 
 [metadata.files]
 "agate 1.6.3" = [
@@ -2195,9 +2183,6 @@ content_hash = "sha256:4c9d18e642649c7068e6543f3dd696f2c05b2c98bae2e53781c77d047
     {url = "https://files.pythonhosted.org/packages/da/6d/1235da14daddaa6e47f74ba0c255358f0ce7a6ee05da8bf8eb49161aa6b5/pandas-1.5.3-cp311-cp311-win_amd64.whl", hash = "sha256:bc4c368f42b551bf72fac35c5128963a171b40dce866fb066540eeaf46faa003"},
     {url = "https://files.pythonhosted.org/packages/e1/4d/3eb96e53a9208350ee21615f850c4be9a246d32bf1d34cd36682cb58c3b7/pandas-1.5.3-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9f69c4029613de47816b1bb30ff5ac778686688751a5e9c99ad8c7031f6508e5"},
     {url = "https://files.pythonhosted.org/packages/e2/24/a26af514113fd5eca2d8fe41ba4f22f70dfe6afefde4a6beb6a203570935/pandas-1.5.3-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:6973549c01ca91ec96199e940495219c887ea815b2083722821f1d7abfa2b4dc"},
-]
-"pandavro 1.6.0" = [
-    {url = "https://files.pythonhosted.org/packages/d2/8e/670a2340ea2532522da7a0ae99712315256912a66661e0d80b0d10671ade/pandavro-1.6.0.tar.gz", hash = "sha256:d098da34529fbb20de5fd1a6f231918d1b60941b25bea5dc87897ef0d472cb6f"},
 ]
 "paramiko 3.0.0" = [
     {url = "https://files.pythonhosted.org/packages/3b/6b/554c00e5e68cd573bda345322a4e895e22686e94c7fa51848cd0e0442a71/paramiko-3.0.0.tar.gz", hash = "sha256:fedc9b1dd43bc1d45f67f1ceca10bc336605427a46dcdf8dec6bfea3edf57965"},
