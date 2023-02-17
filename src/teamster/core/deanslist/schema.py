@@ -1,4 +1,5 @@
 DATE_RECORD_SCHEMA = {
+    "name": "date",
     "type": "record",
     "fields": [
         {"name": "date", "type": "int", "logicalType": "time-micros"},
@@ -7,11 +8,34 @@ DATE_RECORD_SCHEMA = {
     ],
 }
 
+ENROLLMENT_RECORD_SCHEMA = {
+    "name": "enrollment",
+    "type": "record",
+    "fields": [
+        {"name": "EnrollmentID", "type": ["null", "string"]},
+        {"name": "AcademicYearID", "type": ["null", "string"]},
+        {"name": "YearName", "type": ["null", "string"]},
+        {"name": "StartDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "EndDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "GradeLevelID", "type": ["null", "string"]},
+        {"name": "GradeLevelName", "type": ["null", "string"]},
+        {"name": "DepartmentID", "type": ["null", "string"]},
+        {"name": "DepartmentName", "type": ["null", "string"]},
+        {"name": "BehaviorPlanID", "type": ["null", "string"]},
+        {"name": "BehaviorPlanName", "type": ["null", "string"]},
+        {"name": "CreateByName", "type": ["null", "string"]},
+        {"name": "CreateDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "TermByName", "type": ["null", "string"]},
+        {"name": "TermDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "GradeLevelKey", "type": ["null", "string"]},
+    ],
+}
+
 AVRO_SCHEMA = {
     "users": [
-        {"name": "DLSchoolID", "type": ["null", "int"]},
+        {"name": "DLSchoolID", "type": ["null", "string"]},
         {"name": "SchoolName", "type": ["null", "string"]},
-        {"name": "DLUserID", "type": ["null", "int"]},
+        {"name": "DLUserID", "type": ["null", "string"]},
         {"name": "FirstName", "type": ["null", "string"]},
         {"name": "MiddleName", "type": ["null", "string"]},
         {"name": "LastName", "type": ["null", "string"]},
@@ -37,7 +61,7 @@ AVRO_SCHEMA = {
         {"name": "EnrollmentStatus", "type": ["null", "string"]},
         {"name": "BehaviorPlan", "type": ["null"]},
         {"name": "BirthDate", "type": ["null", {"type": "int", "logicalType": "date"}]},
-        {"name": "Enrollment", "type": ["null"]},
+        {"name": "Enrollment", "type": ["null", ENROLLMENT_RECORD_SCHEMA]},
         {"name": "HomeLanguageID", "type": ["null", "int"]},
         {"name": "HomeLanguage", "type": ["null", "string"]},
         {"name": "HomeroomID", "type": ["null", "int"]},
@@ -55,7 +79,7 @@ AVRO_SCHEMA = {
         {"name": "Notes", "type": ["null", {"type": "array"}]},
     ],
     "lists": [
-        {"name": "ListID", "type": ["null", "int"]},
+        {"name": "ListID", "type": ["null", "string"]},
         {"name": "ListName", "type": ["null", "string"]},
         {"name": "IsDated", "type": ["null", "boolean"]},
     ],
@@ -67,8 +91,8 @@ AVRO_SCHEMA = {
         {"name": "TermTypeID", "type": ["null", "int"]},
         {"name": "TermType", "type": ["null", "string"]},
         {"name": "TermName", "type": ["null", "string"]},
-        {"name": "StartDate", **DATE_RECORD_SCHEMA},
-        {"name": "EndDate", **DATE_RECORD_SCHEMA},
+        {"name": "StartDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "EndDate", "type": ["null", DATE_RECORD_SCHEMA]},
     ],
     "rosters": [
         {"name": "RosterID", "type": ["null", "int"]},
@@ -81,7 +105,7 @@ AVRO_SCHEMA = {
         {"name": "TakeClassAttendance", "type": ["null", "string"]},
         {"name": "CollectHW", "type": ["null", "string"]},
         {"name": "MarkerColor", "type": ["null", "string"]},
-        {"name": "SISKey", "type": ["null", "string "]},
+        {"name": "SISKey", "type": ["null", "string"]},
         {"name": "SecondaryIntegrationID", "type": ["null", "string"]},
         {"name": "ScreenSetID", "type": ["null", "int"]},
         {"name": "StudentCount", "type": ["null", "int"]},
