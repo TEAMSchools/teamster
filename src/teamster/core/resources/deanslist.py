@@ -29,13 +29,10 @@ class DeansList(Session):
             return f"{self.base_url}/{self.api_version}/{endpoint}"
 
     def _parse_response_json(self, response_json):
-        row_count = response_json.get("rowcount")
+        row_count = response_json.get("rowcount", 0)
         deleted_row_count = response_json.get("deleted_rowcount", 0)
 
-        if row_count is not None:
-            total_row_count = row_count + deleted_row_count
-        else:
-            total_row_count = None
+        total_row_count = row_count + deleted_row_count
 
         data = response_json.get("data") or response_json
         deleted_data = response_json.get("deleted_data", [])
@@ -57,7 +54,7 @@ class DeansList(Session):
     def get_endpoint(self, endpoint, school_id, *args, **kwargs):
         url = self._get_url(endpoint, *args)
 
-        self.log.info(f"GET: {url}\nPARAMS: {kwargs}")
+        self.log.info(f"GET: {url}\nSCHOOL_ID: {school_id}\nPARAMS: {kwargs}")
 
         kwargs["apikey"] = self.api_key_map[school_id]
 

@@ -8,7 +8,7 @@ from teamster.test.deanslist import assets
 CODE_LOCATION = "test"
 
 deanslist_endpoint_asset = with_resources(
-    definitions=[assets.users],
+    definitions=[*assets.nonpartition_assets],
     resource_defs={
         "deanslist": deanslist_resource.configured(
             config_from_files(

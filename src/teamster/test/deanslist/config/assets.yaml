@@ -1,0 +1,18 @@
+school_ids:
+  - 120
+  - 126
+  - 130
+  - 473
+  - 652
+endpoints:
+  - asset_name: users
+    params:
+      IncludeInactive: Y
+  - asset_name: students
+    params:
+      IncludeUnenrolled: Y
+  - asset_name: lists
+  - asset_name: terms
+  - asset_name: rosters
+    params:
+      show_inactive: Y
