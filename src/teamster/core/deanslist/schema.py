@@ -1,14 +1,12 @@
-def get_date_record_schema(name):
-    return {
-        "name": name,
-        "type": ["null", "record"],
-        "fields": [
-            {"name": "date", "type": "int", "logicalType": "time-micros"},
-            {"name": "timezone_type", "type": "int"},
-            {"name": "timezone", "type": "string"},
-        ],
-    }
-
+DATE_RECORD_SCHEMA = {
+    "name": "date-record",
+    "type": "record",
+    "fields": [
+        {"name": "date", "type": "int", "logicalType": "time-micros"},
+        {"name": "timezone_type", "type": "int"},
+        {"name": "timezone", "type": "string"},
+    ],
+}
 
 ENROLLMENT_RECORD_SCHEMA = {
     "name": "enrollment",
@@ -17,10 +15,8 @@ ENROLLMENT_RECORD_SCHEMA = {
         {"name": "EnrollmentID", "type": ["null", "string"]},
         {"name": "AcademicYearID", "type": ["null", "string"]},
         {"name": "YearName", "type": ["null", "string"]},
-        get_date_record_schema("StartDate"),
-        get_date_record_schema("EndDate"),
-        # {"name": "StartDate", "type": ["null", DATE_RECORD_SCHEMA]},
-        # {"name": "EndDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "StartDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "EndDate", "type": ["null", DATE_RECORD_SCHEMA]},
         {"name": "GradeLevelID", "type": ["null", "string"]},
         {"name": "GradeLevelName", "type": ["null", "string"]},
         {"name": "DepartmentID", "type": ["null", "string"]},
@@ -28,15 +24,12 @@ ENROLLMENT_RECORD_SCHEMA = {
         {"name": "BehaviorPlanID", "type": ["null", "string"]},
         {"name": "BehaviorPlanName", "type": ["null", "string"]},
         {"name": "CreateByName", "type": ["null", "string"]},
-        # {"name": "CreateDate", "type": ["null", DATE_RECORD_SCHEMA]},
-        get_date_record_schema("CreateDate"),
+        {"name": "CreateDate", "type": ["null", DATE_RECORD_SCHEMA]},
         {"name": "TermByName", "type": ["null", "string"]},
-        # {"name": "TermDate", "type": ["null", DATE_RECORD_SCHEMA]},
-        get_date_record_schema("TermDate"),
+        {"name": "TermDate", "type": ["null", DATE_RECORD_SCHEMA]},
         {"name": "GradeLevelKey", "type": ["null", "string"]},
     ],
 }
-
 
 AVRO_SCHEMA = {
     "users": [
@@ -98,10 +91,8 @@ AVRO_SCHEMA = {
         {"name": "TermTypeID", "type": ["null", "int"]},
         {"name": "TermType", "type": ["null", "string"]},
         {"name": "TermName", "type": ["null", "string"]},
-        # {"name": "StartDate", "type": ["null", DATE_RECORD_SCHEMA]},
-        # {"name": "EndDate", "type": ["null", DATE_RECORD_SCHEMA]},
-        get_date_record_schema("StartDate"),
-        get_date_record_schema("EndDate"),
+        {"name": "StartDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "EndDate", "type": ["null", DATE_RECORD_SCHEMA]},
     ],
     "rosters": [
         {"name": "RosterID", "type": ["null", "string"]},
