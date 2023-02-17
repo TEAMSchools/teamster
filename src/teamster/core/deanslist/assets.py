@@ -46,6 +46,6 @@ def build_deanslist_endpoint_asset(
             all_data.extend(data)
 
         if total_row_count is not None:
-            return Output(value=all_data, metadata={"records": total_row_count})
+            yield Output(value=(all_data, {}), metadata={"records": total_row_count})
 
     return _asset

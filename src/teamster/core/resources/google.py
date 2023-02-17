@@ -126,12 +126,14 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         return paths
 
     def handle_output(self, context, obj):
+        data, schema = obj
+
         if isinstance(context.dagster_type.typing_type, type(None)):
             check.invariant(
-                obj is None,
+                data is None,
                 (
-                    "Output had Nothing type or 'None' annotation, but handle_output received"
-                    f" value that was not None and was of type {type(obj)}."
+                    "Output had Nothing type or 'None' annotation, but handle_output "
+                    f"received value that was not None and was of type {type(data)}."
                 ),
             )
             return None
@@ -149,7 +151,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         context.log.debug("Creating DataFrame for output")
-        df = pandas.DataFrame(obj)
+        df = pandas.DataFrame(data)
 
         context.log.debug(f"Saving output to Avro file: {file_path}")
         pandavro.to_avro(file_path_or_buffer=str(file_path), df=df, codec="snappy")
