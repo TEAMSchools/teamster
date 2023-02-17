@@ -15,9 +15,10 @@ from teamster.core.resources.deanslist import DeansList
 def build_deanslist_endpoint_asset(
     asset_name,
     code_location,
+    school_ids,
     partitions_def: TimeWindowPartitionsDefinition = None,
     op_tags={},
-    **kwargs,
+    params={},
 ) -> AssetsDefinition:
     @asset(
         name=asset_name,
@@ -33,12 +34,16 @@ def build_deanslist_endpoint_asset(
         # fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
 
         dl: DeansList = context.resources.deanslist
-        total_row_count, all_data = dl.get_endpoint(
-            # TODO: factory-ize this by endpoint/school_id
-            endpoint=asset_name,
-            school_id=120,
-            **kwargs,
-        )
+
+        total_row_count = 0
+        all_data = []
+        for school_id in school_ids:
+            row_count, data = dl.get_endpoint(
+                endpoint=asset_name, school_id=school_id, **params
+            )
+
+            total_row_count += row_count
+            all_data.extend(data)
 
         if total_row_count is not None:
             return Output(value=all_data, metadata={"records": total_row_count})

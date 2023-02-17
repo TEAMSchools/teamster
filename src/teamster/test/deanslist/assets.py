@@ -1,31 +1,16 @@
-# import pendulum
-from dagster import OpExecutionContext, Output, asset
+from dagster import config_from_files
 
-from teamster.core.resources.deanslist import DeansList
+from teamster.core.deanslist.assets import build_deanslist_endpoint_asset
+from teamster.test import CODE_LOCATION
 
-# from teamster.core.utils.classes import FiscalYear
-
-
-@asset(
-    name="users",
-    key_prefix=["test", "deanslist"],
-    required_resource_keys={"deanslist"},
-    io_manager_key="gcs_avro_io",
-    op_tags={},
-    # partitions_def=...,
-    output_required=False,
+config = config_from_files(
+    [f"src/teamster/{CODE_LOCATION}/deanslist/config/assets.yaml"]
 )
-def users(context: OpExecutionContext):
-    # partition_key = pendulum.parser.parse(context.partition_key)
-    # fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
+school_ids = config["school_ids"]
 
-    dl: DeansList = context.resources.deanslist
-    total_row_count, all_data = dl.get_endpoint(
-        # TODO: factory-ize this by endpoint/school_id
-        endpoint="users",
-        school_id=120,
-        IncludeInactive="Y",
+nonpartition_assets = [
+    build_deanslist_endpoint_asset(
+        code_location=CODE_LOCATION, school_ids=school_ids, **endpoint
     )
-
-    if total_row_count is not None:
-        return Output(value=all_data, metadata={"records": total_row_count})
+    for endpoint in config["endpoints"]
+]
