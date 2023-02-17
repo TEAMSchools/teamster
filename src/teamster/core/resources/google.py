@@ -132,6 +132,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
     def handle_output(self, context, obj):
         records, schema = obj
+        self.log.debug(records[:10])
 
         if context.has_asset_key and context.has_asset_partitions:
             key = self._get_paths(context)[0]
@@ -146,7 +147,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
         context.log.debug(f"Saving output to Avro file: {file_path}")
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open(mode="w") as fo:
+        with file_path.open(mode="wb") as fo:
             fastavro.writer(
                 fo=fo,
                 schema=fastavro.parse_schema(schema),
