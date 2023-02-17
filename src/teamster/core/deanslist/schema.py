@@ -64,7 +64,7 @@ AVRO_SCHEMA = {
         {"name": "BehaviorPlan", "type": ["null"]},
         {
             "name": "BirthDate",
-            "type": ["null", {"type": "long", "logicalType": "timestamp-micros"}],
+            "type": ["string", {"type": "long", "logicalType": "timestamp-micros"}],
         },
         {"name": "Enrollment", "type": ["null", ENROLLMENT_RECORD_SCHEMA]},
         {"name": "HomeLanguageID", "type": ["null", "string"]},
