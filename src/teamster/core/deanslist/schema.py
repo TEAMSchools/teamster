@@ -1,3 +1,12 @@
+DATE_RECORD_SCHEMA = {
+    "type": "record",
+    "fields": [
+        {"name": "date", "type": "int", "logicalType": "time-micros"},
+        {"name": "timezone_type", "type": "int"},
+        {"name": "timezone", "type": "string"},
+    ],
+}
+
 AVRO_SCHEMA = {
     "users": [
         {"name": "DLSchoolID", "type": ["null", "int"]},
@@ -28,10 +37,7 @@ AVRO_SCHEMA = {
         {"name": "EnrollmentStatus", "type": ["null", "string"]},
         {"name": "BehaviorPlan", "type": ["null"]},
         {"name": "BirthDate", "type": ["null", {"type": "int", "logicalType": "date"}]},
-        {
-            "name": "Enrollment",
-            "type": ["null", {"type": "bytes", "logicalType": "json"}],
-        },
+        {"name": "Enrollment", "type": ["null"]},
         {"name": "HomeLanguageID", "type": ["null", "int"]},
         {"name": "HomeLanguage", "type": ["null", "string"]},
         {"name": "HomeroomID", "type": ["null", "int"]},
@@ -47,6 +53,38 @@ AVRO_SCHEMA = {
         {"name": "DLPS_ValidationCode", "type": ["null", "string"]},
         {"name": "Parents", "type": ["null", {"type": "array"}]},
         {"name": "Notes", "type": ["null", {"type": "array"}]},
+    ],
+    "lists": [
+        {"name": "ListID", "type": ["null", "int"]},
+        {"name": "ListName", "type": ["null", "string"]},
+        {"name": "IsDated", "type": ["null", "boolean"]},
+    ],
+    "terms": [
+        {"name": "TermID", "type": ["null", "int"]},
+        {"name": "AcademicYearID", "type": ["null", "int"]},
+        {"name": "AcademicYearName", "type": ["null", "string"]},
+        {"name": "SchoolID", "type": ["null", "int"]},
+        {"name": "TermTypeID", "type": ["null", "int"]},
+        {"name": "TermType", "type": ["null", "string"]},
+        {"name": "TermName", "type": ["null", "string"]},
+        {"name": "StartDate", "type": ["null", DATE_RECORD_SCHEMA]},
+        {"name": "EndDate", "type": ["null", DATE_RECORD_SCHEMA]},
+    ],
+    "rosters": [
+        {"name": "RosterID", "type": ["null", "int"]},
+        {"name": "RosterName", "type": ["null", "string"]},
+        {"name": "RosterTypeID", "type": ["null", "int"]},
+        {"name": "RosterType", "type": ["null", "string"]},
+        {"name": "MasterID", "type": ["null", "int"]},
+        {"name": "MasterName", "type": ["null", "string"]},
+        {"name": "TakeAttendance", "type": ["null", "string"]},
+        {"name": "TakeClassAttendance", "type": ["null", "string"]},
+        {"name": "CollectHW", "type": ["null", "string"]},
+        {"name": "MarkerColor", "type": ["null", "string"]},
+        {"name": "SISKey", "type": ["null", "string "]},
+        {"name": "SecondaryIntegrationID", "type": ["null", "string "]},
+        {"name": "ScreenSetID", "type": ["null", "int"]},
+        {"name": "StudentCount", "type": ["null", "int"]},
     ],
 }
 

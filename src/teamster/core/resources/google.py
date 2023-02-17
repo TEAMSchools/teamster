@@ -3,14 +3,19 @@ import pathlib
 from typing import Union
 from urllib.parse import urlparse
 
+import fastavro
 import google.auth
 import gspread
-import pandas
-import pandavro
 import pendulum
-from dagster import Field, InputContext, OutputContext, String, StringSource
-from dagster import _check as check
-from dagster import io_manager, resource
+from dagster import (
+    Field,
+    InputContext,
+    OutputContext,
+    String,
+    StringSource,
+    io_manager,
+    resource,
+)
 from dagster._utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
@@ -126,17 +131,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         return paths
 
     def handle_output(self, context, obj):
-        data, schema = obj
-
-        if isinstance(context.dagster_type.typing_type, type(None)):
-            check.invariant(
-                data is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output "
-                    f"received value that was not None and was of type {type(data)}."
-                ),
-            )
-            return None
+        records, schema = obj
 
         if context.has_asset_key and context.has_asset_partitions:
             key = self._get_paths(context)[0]
@@ -148,13 +143,16 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             self._rm_object(key)
 
         file_path = pathlib.Path(key)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-
-        context.log.debug("Creating DataFrame for output")
-        df = pandas.DataFrame(data)
 
         context.log.debug(f"Saving output to Avro file: {file_path}")
-        pandavro.to_avro(file_path_or_buffer=str(file_path), df=df, codec="snappy")
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open(mode="w") as fo:
+            fastavro.writer(
+                fo=fo,
+                schema=fastavro.parse_schema(schema),
+                records=records,
+                codec="snappy",
+            )
 
         context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
         backoff(
