@@ -132,7 +132,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
     def handle_output(self, context, obj):
         records, schema = obj
-        self.log.debug(records[:10])
+        context.log.debug(records[:10])
 
         if context.has_asset_key and context.has_asset_partitions:
             key = self._get_paths(context)[0]
