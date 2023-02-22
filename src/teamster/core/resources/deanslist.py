@@ -34,13 +34,11 @@ class DeansList(Session):
 
         total_row_count = row_count + deleted_row_count
 
-        data = response_json.get("data") or response_json
+        data = response_json.get("data", [])
         deleted_data = response_json.get("deleted_data", [])
         for d in deleted_data:
             d["is_deleted"] = 1
 
-        self.log.debug(data)
-        self.log.debug(deleted_data)
         all_data = data + deleted_data
 
         return total_row_count, all_data

@@ -150,6 +150,7 @@ AVRO_SCHEMA = {
             "name": "DL_LASTUPDATE",
             "type": ["null", {"type": "string", "logicalType": "timestamp-micros"}],
         },
+        {"name": "is_deleted", "type": ["null", "int"]},
     ],
 }
 
