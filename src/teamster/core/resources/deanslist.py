@@ -39,6 +39,8 @@ class DeansList(Session):
         for d in deleted_data:
             d["is_deleted"] = 1
 
+        self.log.debug(data)
+        self.log.debug(deleted_data)
         all_data = data + deleted_data
 
         return total_row_count, all_data
