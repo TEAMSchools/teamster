@@ -1,7 +1,7 @@
 endpoints:
   - asset_name: behavior
     params:
-      StartDate: "{fiscal_year_start}"
-      EndDate: "{fiscal_year_end}"
+      sdt: "{fiscal_year_start}"
+      edt: "{fiscal_year_end}"
       UpdatedSince: "{partition_key}"
       IncludeDeleted: Y
