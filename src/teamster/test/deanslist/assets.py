@@ -23,7 +23,10 @@ nonpartition_assets = [
 
 partition_assets = [
     build_deanslist_endpoint_asset(
-        code_location=CODE_LOCATION, school_ids=school_ids, **endpoint
+        code_location=CODE_LOCATION,
+        school_ids=school_ids,
+        partitions_def=daily_partitions_def,
+        **endpoint,
     )
     for endpoint in config_from_files(
         [f"src/teamster/{CODE_LOCATION}/deanslist/config/partition-assets.yaml"]
