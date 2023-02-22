@@ -1,4 +1,4 @@
-# import pendulum
+import pendulum
 from dagster import (
     AssetsDefinition,
     OpExecutionContext,
@@ -9,8 +9,7 @@ from dagster import (
 
 from teamster.core.deanslist.schema import get_avro_schema
 from teamster.core.resources.deanslist import DeansList
-
-# from teamster.core.utils.classes import FiscalYear
+from teamster.core.utils.classes import FiscalYear
 
 
 def build_deanslist_endpoint_asset(
@@ -31,8 +30,18 @@ def build_deanslist_endpoint_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext):
-        # partition_key = pendulum.parser.parse(context.partition_key)
-        # fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
+        if partitions_def is not None:
+            partition_key = pendulum.parser.parse(context.partition_key)
+
+            fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
+
+            for k, v in params.items():
+                if isinstance(v, str):
+                    params[k] = v.format(
+                        fiscal_year_start=fiscal_year.start.to_date_string(),
+                        fiscal_year_end=fiscal_year.end.to_date_string(),
+                        partition_key=partition_key.to_date_string(),
+                    )
 
         dl: DeansList = context.resources.deanslist
 
