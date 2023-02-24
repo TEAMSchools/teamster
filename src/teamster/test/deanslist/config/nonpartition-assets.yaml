@@ -2,7 +2,7 @@ endpoints:
   - asset_name: users
     api_version: beta
     params:
-      IncludeInactive: Y
+      show_inactive: Y
   - asset_name: lists
     api_version: v1
   - asset_name: terms

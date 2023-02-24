@@ -240,9 +240,18 @@ INCIDENTS = {
         {"name": "UpdateBy", "type": ["null", "int"]},
         {"name": "UpdateFirst", "type": ["null", "string"]},
         {"name": "UpdateLast", "type": ["null", "string"]},
-        {"name": "Penalties", "type": ["null", PENALTY_RECORD]},
-        {"name": "Actions", "type": ["null", ACTION_RECORD]},
-        {"name": "Custom_Fields", "type": ["null", CUSTOM_FIELD_RECORD]},
+        {
+            "name": "Penalties",
+            "type": ["null", {"type": "array", "items": PENALTY_RECORD}],
+        },
+        {
+            "name": "Actions",
+            "type": ["null", {"type": "array", "items": ACTION_RECORD}],
+        },
+        {
+            "name": "Custom_Fields",
+            "type": ["null", {"type": "array", "items": CUSTOM_FIELD_RECORD}],
+        },
     ]
 }
 
