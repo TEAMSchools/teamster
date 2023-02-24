@@ -17,10 +17,10 @@ class DeansList(Session):
         self.base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
     def _get_url(self, endpoint, *args):
-        if endpoint in ["behavior", "users"]:
+        if self.api_version == "beta":
             return (
-                f"{self.base_url}/beta/export/get-{endpoint}"
-                f"{'-data' if endpoint == 'behavior' else ''}"
+                f"{self.base_url}/{self.api_version}/export/get-{endpoint}"
+                f"{'-data' if endpoint in ['behavior', 'homework', 'comm'] else ''}"
                 ".php"
             )
         elif args:
