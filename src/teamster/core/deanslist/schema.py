@@ -146,7 +146,7 @@ ROSTER_ASSIGNMENTS = {
     ]
 }
 
-PENALTY = {
+PENALTY_RECORD = {
     "name": "penalty-record",
     "type": "record",
     "fields": [
@@ -165,7 +165,7 @@ PENALTY = {
     ],
 }
 
-ACTION = {
+ACTION_RECORD = {
     "name": "action-record",
     "type": "record",
     "fields": [
@@ -183,7 +183,7 @@ ACTION = {
     ],
 }
 
-CUSTOM_FIELD = {
+CUSTOM_FIELD_RECORD = {
     "name": "custom-field-record",
     "type": "record",
     "fields": [
@@ -240,9 +240,9 @@ INCIDENTS = {
         {"name": "UpdateBy", "type": ["null", "int"]},
         {"name": "UpdateFirst", "type": ["null", "string"]},
         {"name": "UpdateLast", "type": ["null", "string"]},
-        {"name": "Penalties", "type": ["null", PENALTY]},
-        {"name": "Actions", "type": ["null", ACTION]},
-        {"name": "Custom_Fields", "type": ["null", CUSTOM_FIELD]},
+        {"name": "Penalties", "type": ["null", PENALTY_RECORD]},
+        {"name": "Actions", "type": ["null", ACTION_RECORD]},
+        {"name": "Custom_Fields", "type": ["null", CUSTOM_FIELD_RECORD]},
     ]
 }
 
@@ -298,22 +298,24 @@ TERMS = {
     ]
 }
 
-ROSTERS = [
-    {"name": "RosterID", "type": ["null", "string"]},
-    {"name": "RosterName", "type": ["null", "string"]},
-    {"name": "RosterTypeID", "type": ["null", "string"]},
-    {"name": "RosterType", "type": ["null", "string"]},
-    {"name": "MasterID", "type": ["null", "string"]},
-    {"name": "MasterName", "type": ["null", "string"]},
-    {"name": "TakeAttendance", "type": ["null", "string"]},
-    {"name": "TakeClassAttendance", "type": ["null", "string"]},
-    {"name": "CollectHW", "type": ["null", "string"]},
-    {"name": "MarkerColor", "type": ["null", "string"]},
-    {"name": "SISKey", "type": ["null", "string"]},
-    {"name": "SecondaryIntegrationID", "type": ["null", "string"]},
-    {"name": "ScreenSetID", "type": ["null", "string"]},
-    {"name": "StudentCount", "type": ["null", "string"]},
-]
+ROSTERS = {
+    "v1": [
+        {"name": "RosterID", "type": ["null", "string"]},
+        {"name": "RosterName", "type": ["null", "string"]},
+        {"name": "RosterTypeID", "type": ["null", "string"]},
+        {"name": "RosterType", "type": ["null", "string"]},
+        {"name": "MasterID", "type": ["null", "string"]},
+        {"name": "MasterName", "type": ["null", "string"]},
+        {"name": "TakeAttendance", "type": ["null", "string"]},
+        {"name": "TakeClassAttendance", "type": ["null", "string"]},
+        {"name": "CollectHW", "type": ["null", "string"]},
+        {"name": "MarkerColor", "type": ["null", "string"]},
+        {"name": "SISKey", "type": ["null", "string"]},
+        {"name": "SecondaryIntegrationID", "type": ["null", "string"]},
+        {"name": "ScreenSetID", "type": ["null", "string"]},
+        {"name": "StudentCount", "type": ["null", "string"]},
+    ]
+}
 
 ENROLLMENT = {
     "name": "enrollment-record",

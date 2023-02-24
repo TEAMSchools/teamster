@@ -1,12 +1,13 @@
 endpoints:
   - asset_name: users
+    api_version: beta
     params:
       IncludeInactive: Y
-  - asset_name: students
-    params:
-      IncludeUnenrolled: Y
   - asset_name: lists
+    api_version: v1
   - asset_name: terms
+    api_version: v1
   - asset_name: rosters
+    api_version: v1
     params:
       show_inactive: Y

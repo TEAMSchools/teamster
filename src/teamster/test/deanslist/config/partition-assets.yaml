@@ -1,5 +1,6 @@
 endpoints:
   - asset_name: behavior
+    api_version: beta
     params:
       sdt: "{fiscal_year_start}"
       edt: "{fiscal_year_end}"

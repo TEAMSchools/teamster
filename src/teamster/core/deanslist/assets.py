@@ -15,6 +15,7 @@ from teamster.core.utils.classes import FiscalYear
 def build_deanslist_endpoint_asset(
     asset_name,
     code_location,
+    api_version,
     school_ids,
     partitions_def: TimeWindowPartitionsDefinition = None,
     op_tags={},
@@ -49,7 +50,10 @@ def build_deanslist_endpoint_asset(
         all_data = []
         for school_id in school_ids:
             row_count, data = dl.get_endpoint(
-                endpoint=asset_name, school_id=school_id, **params
+                api_version=api_version,
+                endpoint=asset_name,
+                school_id=school_id,
+                **params,
             )
 
             total_row_count += row_count
