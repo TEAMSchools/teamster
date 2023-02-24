@@ -12,21 +12,20 @@ class DeansList(Session):
 
         self.log = logger
         self.subdomain = resource_config["subdomain"]
-        self.api_version = resource_config["api_version"]
         self.api_key_map = resource_config["api_key_map"]
         self.base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
-    def _get_url(self, endpoint, *args):
-        if self.api_version == "beta":
+    def _get_url(self, api_version, endpoint, *args):
+        if api_version == "beta":
             return (
-                f"{self.base_url}/{self.api_version}/export/get-{endpoint}"
+                f"{self.base_url}/{api_version}/export/get-{endpoint}"
                 f"{'-data' if endpoint in ['behavior', 'homework', 'comm'] else ''}"
                 ".php"
             )
         elif args:
-            return f"{self.base_url}/{self.api_version}/{endpoint}/{'/'.join(args)}"
+            return f"{self.base_url}/{api_version}/{endpoint}/{'/'.join(args)}"
         else:
-            return f"{self.base_url}/{self.api_version}/{endpoint}"
+            return f"{self.base_url}/{api_version}/{endpoint}"
 
     def _parse_response_json(self, response_json):
         row_count = response_json.get("rowcount", 0)
@@ -51,8 +50,8 @@ class DeansList(Session):
 
         return total_row_count, all_data
 
-    def get_endpoint(self, endpoint, school_id, *args, **kwargs):
-        url = self._get_url(endpoint, *args)
+    def get_endpoint(self, api_version, endpoint, school_id, *args, **kwargs):
+        url = self._get_url(api_version=api_version, endpoint=endpoint, *args)
 
         self.log.info(f"GET: {url}\nSCHOOL_ID: {school_id}\nPARAMS: {kwargs}")
 
