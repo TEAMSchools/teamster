@@ -79,13 +79,13 @@ HOMEWORK = {
 
 COMM = {
     "beta": [
-        {"name": "DLSchoolID", "type": ["null", "int"]},
+        {"name": "DLSchoolID", "type": ["null", "string"]},
         {"name": "SchoolName", "type": ["null", "string"]},
-        {"name": "DLCallLogID", "type": ["null", "int"]},
-        {"name": "DLStudentID", "type": ["null", "int"]},
+        {"name": "DLCallLogID", "type": ["null", "string"]},
+        {"name": "DLStudentID", "type": ["null", "string"]},
         {"name": "StudentSchoolID", "type": ["null", "string"]},
         {"name": "SecondaryStudentID", "type": ["null", "string"]},
-        {"name": "DLUserID", "type": ["null", "int"]},
+        {"name": "DLUserID", "type": ["null", "string"]},
         {"name": "UserSchoolID", "type": ["null", "string"]},
         {"name": "CommWith", "type": ["null", "string"]},
         {"name": "CallType", "type": ["null", "string"]},
@@ -97,17 +97,28 @@ COMM = {
         {"name": "MailingAddress", "type": ["null", "string"]},
         {"name": "ThirdParty", "type": ["null", "string"]},
         {"name": "Email", "type": ["null", "string"]},
-        {"name": "CallDateTime", "type": ["null"]},
+        {
+            "name": "CallDateTime",
+            "type": ["null", {"type": "string", "logicalType": "timestamp-micros"}],
+        },
         {"name": "CallTopic", "type": ["null", "string"]},
         {"name": "Response", "type": ["null", "string"]},
-        {"name": "FollowupID", "type": ["null", "int"]},
-        {"name": "FollowupBy", "type": ["null", "int"]},
-        {"name": "FollowupInitTS", "type": ["null"]},
+        {"name": "FollowupID", "type": ["null", "string"]},
+        {"name": "FollowupBy", "type": ["null", "string"]},
+        {"name": "FollowupInitTS", "type": ["null", "string"]},
         {"name": "FollowupRequest", "type": ["null", "string"]},
-        {"name": "FollowupCloseTS", "type": ["null"]},
+        {"name": "FollowupCloseTS", "type": ["null", "string"]},
         {"name": "FollowupOutstanding", "type": ["null", "string"]},
         {"name": "FollowupResponse", "type": ["null", "string"]},
         {"name": "IsActive", "type": ["null", "string"]},
+        {"name": "UserFirstName", "type": ["null", "string"]},
+        {"name": "UserLastName", "type": ["null", "string"]},
+        {"name": "SourceType", "type": ["null", "string"]},
+        {"name": "SourceID", "type": ["null", "string"]},
+        {
+            "name": "DL_LASTUPDATE",
+            "type": ["null", {"type": "string", "logicalType": "timestamp-micros"}],
+        },
     ]
 }
 
