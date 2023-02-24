@@ -11,3 +11,5 @@ endpoints:
     api_version: v1
     params:
       show_inactive: Y
+  - asset_name: roster-assignments
+    api_version: beta
