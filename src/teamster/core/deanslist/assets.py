@@ -61,7 +61,7 @@ def build_deanslist_endpoint_asset(
 
         if total_row_count is not None:
             yield Output(
-                value=(all_data, get_avro_schema(asset_name)),
+                value=(all_data, get_avro_schema(name=asset_name, version=api_version)),
                 metadata={"records": total_row_count},
             )
 
