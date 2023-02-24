@@ -392,14 +392,17 @@ STUDENTS = [
 ]
 
 AVRO_FIELDS = {
-    "users": USERS,
-    "students": STUDENTS,
-    "lists": LISTS,
-    "terms": TERMS,
-    "rosters": ROSTERS,
     "behavior": BEHAVIOR,
     "homework": HOMEWORK,
     "comm": COMM,
+    "users": USERS,
+    "roster-assignments": ROSTER_ASSIGNMENTS,
+    "incidents": INCIDENTS,
+    "followups": FOLLOWUPS,
+    "lists": LISTS,
+    "terms": TERMS,
+    "rosters": ROSTERS,
+    "students": STUDENTS,
 }
 
 
