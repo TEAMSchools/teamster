@@ -3,9 +3,9 @@ from collections import namedtuple
 import pendulum
 from dagster import (
     AssetsDefinition,
+    MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
-    TimeWindowPartitionsDefinition,
     asset,
 )
 
@@ -18,8 +18,8 @@ def build_deanslist_endpoint_asset(
     asset_name,
     code_location,
     api_version,
-    school_ids,
-    partitions_def: TimeWindowPartitionsDefinition = None,
+    # school_ids,
+    partitions_def: MultiPartitionsDefinition = None,
     inception_date=None,
     op_tags={},
     params={},
@@ -34,19 +34,24 @@ def build_deanslist_endpoint_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext):
-        if partitions_def is not None:
-            partition_key = pendulum.parser.parse(context.partition_key)
+        school_partition = context.partition_key.keys_by_dimension["school"]
+        time_window_partition = context.partition_key.keys_by_dimension.get(
+            "time_window"
+        )
+
+        if time_window_partition is not None:
+            time_window_partition = pendulum.parser.parse(time_window_partition)
 
             if (
                 context.partition_time_window.start.date()
                 == partitions_def.start.date()
             ):
                 FY = namedtuple("FiscalYear", ["start", "end"])
-                fiscal_year = FY(start=inception_date, end=partition_key)
+                fiscal_year = FY(start=inception_date, end=time_window_partition)
                 modified_date = inception_date
             else:
-                fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
-                modified_date = partition_key
+                fiscal_year = FiscalYear(datetime=time_window_partition, start_month=7)
+                modified_date = time_window_partition
 
             for k, v in params.items():
                 if isinstance(v, str):
@@ -58,23 +63,24 @@ def build_deanslist_endpoint_asset(
 
         dl: DeansList = context.resources.deanslist
 
-        total_row_count = 0
-        all_data = []
-        for school_id in school_ids:
-            row_count, data = dl.get_endpoint(
-                api_version=api_version,
-                endpoint=asset_name,
-                school_id=school_id,
-                **params,
-            )
+        # total_row_count = 0
+        # all_data = []
+        # for school_id in school_ids:
+        row_count, data = dl.get_endpoint(
+            api_version=api_version,
+            endpoint=asset_name,
+            school_id=int(school_partition),
+            **params,
+        )
 
-            total_row_count += row_count
-            all_data.extend(data)
+        # total_row_count += row_count
+        # all_data.extend(data)
 
-        if total_row_count is not None:
+        # if total_row_count > 0:
+        if row_count > 0:
             yield Output(
-                value=(all_data, get_avro_schema(name=asset_name, version=api_version)),
-                metadata={"records": total_row_count},
+                value=(data, get_avro_schema(name=asset_name, version=api_version)),
+                metadata={"records": row_count},
             )
 
     return _asset
