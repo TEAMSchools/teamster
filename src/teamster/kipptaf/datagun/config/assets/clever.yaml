@@ -1,3 +1,7 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - clever
 assets:
   - asset_name: enrollments_csv
     query_config:
@@ -71,7 +75,3 @@ assets:
       suffix: csv
     destination_config:
       name: clever
-key_prefix:
-  - kipptaf
-  - datagun
-  - clever

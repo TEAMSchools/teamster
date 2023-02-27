@@ -1,3 +1,7 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - adp
 assets:
   - asset_name: workers_json
     query_config:
@@ -12,7 +16,3 @@ assets:
     destination_config:
       name: pythonanywhere
       path: sftp/adp
-key_prefix:
-  - kipptaf
-  - datagun
-  - adp

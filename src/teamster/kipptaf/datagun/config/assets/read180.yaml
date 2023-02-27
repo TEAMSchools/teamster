@@ -1,9 +1,9 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - read180
 assets:
   - asset_name: teachers_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - read180
     query_config:
       type: schema
       value:
@@ -17,10 +17,6 @@ assets:
       name: read180
       path: /uploads
   - asset_name: students_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - read180
     query_config:
       type: schema
       value:

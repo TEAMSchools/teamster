@@ -1,9 +1,9 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - egencia
 assets:
   - asset_name: users_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - egencia
     query_config:
       type: file
       value: src/teamster/kipptaf/datagun/config/sql/egencia_users.sql
