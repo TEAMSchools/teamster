@@ -1,3 +1,4 @@
+import pendulum
 from dagster import DailyPartitionsDefinition, config_from_files
 
 from teamster.core.deanslist.assets import build_deanslist_endpoint_asset
@@ -26,6 +27,7 @@ partition_assets = [
         code_location=CODE_LOCATION,
         school_ids=school_ids,
         partitions_def=daily_partitions_def,
+        inception_date=pendulum.date(2016, 7, 1),
         **endpoint,
     )
     for endpoint in config_from_files(
