@@ -1,3 +1,7 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - blissbook
 assets:
   - asset_name: members_csv
     query_config:
@@ -11,7 +15,3 @@ assets:
       suffix: csv
     destination_config:
       name: blissbook
-key_prefix:
-  - kipptaf
-  - datagun
-  - blissbook

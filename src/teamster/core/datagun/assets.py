@@ -181,9 +181,16 @@ def generate_extract_assets(code_location, name, extract_type):
     assets = []
     for cfg in config_from_files(
         [f"src/teamster/{code_location}/datagun/config/assets/{name}.yaml"]
-    )["assets"]:
+    ):
+        key_prefix = cfg["key_prefix"]
+        asset_cfg = cfg["assets"]
         if extract_type == "sftp":
-            assets.append(sftp_extract_asset_factory(**cfg))
+            assets.append(
+                sftp_extract_asset_factory(key_prefix=key_prefix, **asset_cfg)
+            )
         elif extract_type == "gsheet":
-            assets.append(gsheet_extract_asset_factory(**cfg))
+            assets.append(
+                gsheet_extract_asset_factory(key_prefix=key_prefix, **asset_cfg)
+            )
+
     return assets
