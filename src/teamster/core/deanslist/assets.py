@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import pendulum
 from dagster import (
     AssetsDefinition,
@@ -34,14 +36,20 @@ def build_deanslist_endpoint_asset(
         if partitions_def is not None:
             partition_key = pendulum.parser.parse(context.partition_key)
 
-            fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
+            if context.partition_time_window.start == partitions_def.start:
+                FY = namedtuple("FiscalYear", ["start", "end"])
+                start_date = pendulum.date(2022, 7, 1)
+                fiscal_year = FY(start=start_date, end=partition_key)
+                partition_key = start_date
+            else:
+                fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
 
             for k, v in params.items():
                 if isinstance(v, str):
                     params[k] = v.format(
-                        fiscal_year_start=fiscal_year.start.to_date_string(),
-                        fiscal_year_end=fiscal_year.end.to_date_string(),
-                        partition_key=partition_key.to_date_string(),
+                        start_date=fiscal_year.start.to_date_string(),
+                        end_date=fiscal_year.end.to_date_string(),
+                        modified_date=partition_key.to_date_string(),
                     )
 
         dl: DeansList = context.resources.deanslist
