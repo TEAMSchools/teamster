@@ -20,6 +20,7 @@ def build_deanslist_endpoint_asset(
     api_version,
     school_ids,
     partitions_def: TimeWindowPartitionsDefinition = None,
+    inception_date=None,
     op_tags={},
     params={},
 ) -> AssetsDefinition:
@@ -36,15 +37,13 @@ def build_deanslist_endpoint_asset(
         if partitions_def is not None:
             partition_key = pendulum.parser.parse(context.partition_key)
 
-            context.log.debug(context.partition_time_window.start)
-            context.log.debug(partitions_def.start)
             if (
                 context.partition_time_window.start.date()
                 == partitions_def.start.date()
             ):
                 FY = namedtuple("FiscalYear", ["start", "end"])
-                fiscal_year = FY(start=pendulum.date(2002, 7, 1), end=partition_key)
-                modified_date = pendulum.date(2002, 7, 1)
+                fiscal_year = FY(start=inception_date, end=partition_key)
+                modified_date = inception_date
             else:
                 fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
                 modified_date = partition_key
