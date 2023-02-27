@@ -41,7 +41,7 @@ def build_deanslist_endpoint_asset(
             date_partition = pendulum.parser.parse(date_partition)
             date_partition_def = [
                 pd.partitions_def
-                for pd in partitions_def.partitions_defs()
+                for pd in partitions_def.partitions_defs
                 if pd.name == "date"
             ][0]
 
