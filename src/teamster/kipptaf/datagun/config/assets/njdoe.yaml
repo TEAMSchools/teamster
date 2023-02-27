@@ -1,9 +1,9 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - njdoe
 assets:
   - asset_name: bgcheck_audit_json
-    key_prefix:
-      - kipptaf
-      - datagun
-      - njdoe
     query_config:
       type: schema
       value:

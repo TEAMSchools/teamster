@@ -1,9 +1,9 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - adp
 assets:
   - asset_name: workers_json
-    key_prefix:
-      - kipptaf
-      - datagun
-      - adp
     query_config:
       type: schema
       value:

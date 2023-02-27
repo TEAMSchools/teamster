@@ -1,9 +1,9 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - fpodms
 assets:
   - asset_name: students_json
-    key_prefix:
-      - kipptaf
-      - datagun
-      - fpodms
     query_config:
       type: schema
       value:
