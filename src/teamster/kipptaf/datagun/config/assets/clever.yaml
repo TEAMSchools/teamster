@@ -1,9 +1,5 @@
 assets:
   - asset_name: enrollments_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - clever
     query_config:
       type: schema
       value:
@@ -16,10 +12,6 @@ assets:
     destination_config:
       name: clever
   - asset_name: teachers_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - clever
     query_config:
       type: schema
       value:
@@ -32,10 +24,6 @@ assets:
     destination_config:
       name: clever
   - asset_name: students_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - clever
     query_config:
       type: schema
       value:
@@ -48,10 +36,6 @@ assets:
     destination_config:
       name: clever
   - asset_name: staff_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - clever
     query_config:
       type: schema
       value:
@@ -64,10 +48,6 @@ assets:
     destination_config:
       name: clever
   - asset_name: sections_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - clever
     query_config:
       type: schema
       value:
@@ -80,10 +60,6 @@ assets:
     destination_config:
       name: clever
   - asset_name: schools_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - clever
     query_config:
       type: schema
       value:
@@ -95,3 +71,7 @@ assets:
       suffix: csv
     destination_config:
       name: clever
+key_prefix:
+  - kipptaf
+  - datagun
+  - clever
