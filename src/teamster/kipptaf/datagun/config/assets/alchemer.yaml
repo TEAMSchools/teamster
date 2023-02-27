@@ -1,9 +1,5 @@
 assets:
   - asset_name: contacts_json
-    key_prefix:
-      - kipptaf
-      - datagun
-      - alchemer
     query_config:
       type: schema
       value:
@@ -16,3 +12,7 @@ assets:
     destination_config:
       name: pythonanywhere
       path: sftp/alchemer
+key_prefix:
+  - kipptaf
+  - datagun
+  - alchemer
