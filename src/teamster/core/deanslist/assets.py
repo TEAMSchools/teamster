@@ -39,16 +39,17 @@ def build_deanslist_endpoint_asset(
             if context.partition_time_window.start == partitions_def.start:
                 FY = namedtuple("FiscalYear", ["start", "end"])
                 fiscal_year = FY(start=pendulum.date(2022, 7, 1), end=partition_key)
-                partition_key = pendulum.date(2022, 7, 1)
+                modified_date = pendulum.date(2022, 7, 1)
             else:
                 fiscal_year = FiscalYear(datetime=partition_key, start_month=7)
+                modified_date = partition_key
 
             for k, v in params.items():
                 if isinstance(v, str):
                     params[k] = v.format(
                         start_date=fiscal_year.start.to_date_string(),
                         end_date=fiscal_year.end.to_date_string(),
-                        modified_date=partition_key.to_date_string(),
+                        modified_date=modified_date.to_date_string(),
                     )
 
         dl: DeansList = context.resources.deanslist
