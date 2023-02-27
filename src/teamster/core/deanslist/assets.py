@@ -35,23 +35,23 @@ def build_deanslist_endpoint_asset(
     )
     def _asset(context: OpExecutionContext):
         school_partition = context.partition_key.keys_by_dimension["school"]
-        time_window_partition = context.partition_key.keys_by_dimension.get(
-            "time_window"
-        )
+        date_partition = context.partition_key.keys_by_dimension.get("date")
 
-        if time_window_partition is not None:
-            time_window_partition = pendulum.parser.parse(time_window_partition)
+        if date_partition is not None:
+            date_partition = pendulum.parser.parse(date_partition)
+            date_partition_def = [
+                pd.partitions_def
+                for pd in partitions_def.partitions_defs()
+                if pd.name == "date"
+            ][0]
 
-            if (
-                context.partition_time_window.start.date()
-                == partitions_def.start.date()
-            ):
+            if date_partition.start.date() == date_partition_def.start.date():
                 FY = namedtuple("FiscalYear", ["start", "end"])
-                fiscal_year = FY(start=inception_date, end=time_window_partition)
+                fiscal_year = FY(start=inception_date, end=date_partition)
                 modified_date = inception_date
             else:
-                fiscal_year = FiscalYear(datetime=time_window_partition, start_month=7)
-                modified_date = time_window_partition
+                fiscal_year = FiscalYear(datetime=date_partition, start_month=7)
+                modified_date = date_partition
 
             for k, v in params.items():
                 if isinstance(v, str):

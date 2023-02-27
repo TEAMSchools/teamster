@@ -17,7 +17,7 @@ school_ids = config_from_files(
 static_partitions_def = StaticPartitionsDefinition(school_ids)
 multi_partitions_def = MultiPartitionsDefinition(
     partitions_defs={
-        "time_window": DailyPartitionsDefinition(
+        "date": DailyPartitionsDefinition(
             start_date="2023-02-01", timezone=LOCAL_TIME_ZONE.name
         ),
         "school": static_partitions_def,
