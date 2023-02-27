@@ -1,9 +1,9 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - razkids
 assets:
   - asset_name: teachers_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - razkids
     query_config:
       type: schema
       value:
@@ -16,10 +16,6 @@ assets:
     destination_config:
       name: razkids
   - asset_name: students_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - razkids
     query_config:
       type: schema
       value:

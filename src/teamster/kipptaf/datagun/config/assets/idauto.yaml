@@ -1,9 +1,9 @@
+key_prefix:
+  - kipptaf
+  - datagun
+  - idauto
 assets:
   - asset_name: AD_csv
-    key_prefix:
-      - kipptaf
-      - datagun
-      - idauto
     query_config:
       type: schema
       value:
