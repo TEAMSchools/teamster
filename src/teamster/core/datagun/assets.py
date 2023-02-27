@@ -3,7 +3,7 @@ import json
 import pathlib
 
 import pandas as pd
-from dagster import asset, config_from_files
+from dagster import OpExecutionContext, asset, config_from_files
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.classes import CustomJSONEncoder
@@ -66,21 +66,25 @@ def load_sftp(context, data, file_name, destination_config):
             destination_filepath = pathlib.Path(sftp.getcwd()) / file_name
 
         # confirm destination_filepath dir exists or create it
-        try:
-            sftp.stat(str(destination_filepath.parent))
-        except IOError:
-            dir_path = pathlib.Path("/")
-            for dir in destination_filepath.parent.parts:
-                dir_path = dir_path / dir
-                try:
-                    sftp.stat(str(dir_path))
-                except IOError:
-                    context.log.info(f"Creating directory: {dir_path}")
-                    sftp.mkdir(str(dir_path))
+        context.log.debug(destination_filepath)
+
+        destination_dir = destination_filepath.parent
+        if str(destination_dir) != "/":
+            try:
+                sftp.stat(str(destination_dir))
+            except IOError:
+                path = pathlib.Path("/")
+                for dir_parts in destination_dir.parts:
+                    path = path / dir_parts
+                    try:
+                        sftp.stat(str(path))
+                    except IOError:
+                        context.log.info(f"Creating directory: {path}")
+                        sftp.mkdir(str(path))
 
         # if destination_path given, chdir after confirming
         if destination_path:
-            sftp.chdir(str(destination_filepath.parent))
+            sftp.chdir(str(destination_dir))
 
         context.log.info(f"Saving file to {destination_filepath}")
         with sftp.file(file_name, "w") as f:
@@ -149,7 +153,7 @@ def gsheet_extract_asset_factory(
         required_resource_keys={"warehouse", "gsheets"},
         op_tags=op_tags,
     )
-    def gsheet_extract(context):
+    def gsheet_extract(context: OpExecutionContext):
         file_stem = file_config["stem"].format(
             today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
         )
