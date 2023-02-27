@@ -38,7 +38,10 @@ def build_deanslist_endpoint_asset(
 
             context.log.debug(context.partition_time_window.start)
             context.log.debug(partitions_def.start)
-            if context.partition_time_window.start == partitions_def.start:
+            if (
+                context.partition_time_window.start.date()
+                == partitions_def.start.date()
+            ):
                 FY = namedtuple("FiscalYear", ["start", "end"])
                 fiscal_year = FY(start=pendulum.date(2002, 7, 1), end=partition_key)
                 modified_date = pendulum.date(2002, 7, 1)
