@@ -66,8 +66,9 @@ def load_sftp(context, data, file_name, destination_config):
             destination_filepath = pathlib.Path(sftp.getcwd()) / file_name
 
         # confirm destination_filepath dir exists or create it
-        destination_dir = destination_filepath.parent
+        context.log.debug(destination_filepath)
 
+        destination_dir = destination_filepath.parent
         if destination_dir != "/":
             try:
                 sftp.stat(str(destination_dir))
