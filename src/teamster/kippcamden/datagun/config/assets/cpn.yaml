@@ -1,9 +1,9 @@
+key_prefix:
+  - kippcamden
+  - datagun
+  - cpn
 assets:
   - asset_name: cpn_attendance_csv
-    key_prefix:
-      - kippcamden
-      - datagun
-      - cpn
     query_config:
       type: schema
       value:
@@ -18,10 +18,6 @@ assets:
       name: cpn
       path: /Data
   - asset_name: cpn_demographic_csv
-    key_prefix:
-      - kippcamden
-      - datagun
-      - cpn
     query_config:
       type: schema
       value:

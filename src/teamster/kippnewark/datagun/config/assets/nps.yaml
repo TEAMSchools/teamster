@@ -1,9 +1,9 @@
+key_prefix:
+  - kippnewark
+  - datagun
+  - nps
 assets:
   - asset_name: kipp_newark_student_data_txt
-    key_prefix:
-      - kippnewark
-      - datagun
-      - nps
     query_config:
       type: schema
       value:

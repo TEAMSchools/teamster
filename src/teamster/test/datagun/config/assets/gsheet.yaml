@@ -1,3 +1,4 @@
+key_prefix: test
 assets:
   - asset_name: test_datagun_gsheet
     query_config:
