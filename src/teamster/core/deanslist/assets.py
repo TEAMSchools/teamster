@@ -45,7 +45,7 @@ def build_deanslist_endpoint_asset(
                 if pd.name == "date"
             ][0]
 
-            if date_partition.start.date() == date_partition_def.start.date():
+            if date_partition.date() == date_partition_def.start.date():
                 FY = namedtuple("FiscalYear", ["start", "end"])
                 fiscal_year = FY(start=inception_date, end=date_partition)
                 modified_date = inception_date
