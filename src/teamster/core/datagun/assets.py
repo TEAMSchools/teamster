@@ -67,21 +67,19 @@ def load_sftp(context, data, file_name, destination_config):
 
         # confirm destination_filepath dir exists or create it
         destination_dir = destination_filepath.parent
-        try:
-            sftp.stat(str(destination_dir))
-        except IOError as e:
-            context.log.error(e)
 
-            dir_path = pathlib.Path("/")
-            for dir in destination_dir.parts:
-                dir_path = dir_path / dir
-                try:
-                    sftp.stat(str(dir_path))
-                except IOError as e:
-                    context.log.error(e)
-
-                    context.log.info(f"Creating directory: {dir_path}")
-                    sftp.mkdir(str(dir_path))
+        if destination_dir != "/":
+            try:
+                sftp.stat(str(destination_dir))
+            except IOError:
+                dir_path = pathlib.Path("/")
+                for dir in destination_dir.parts:
+                    dir_path = dir_path / dir
+                    try:
+                        sftp.stat(str(dir_path))
+                    except IOError:
+                        context.log.info(f"Creating directory: {dir_path}")
+                        sftp.mkdir(str(dir_path))
 
         # if destination_path given, chdir after confirming
         if destination_path:
