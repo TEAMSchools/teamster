@@ -142,6 +142,19 @@ assets:
           schema: extracts
     file_config:
       stem: gsheets_kfwd_contacts
+  - asset_name: kippfwd_enrollment_verification
+    key_prefix:
+      - kipptaf
+      - datagun
+      - gsheets
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_kippfwd_enrollment_verification
+          schema: extracts
+    file_config:
+      stem: gsheets_kippfwd_enrollment_verification
   - asset_name: battleboard
     key_prefix:
       - kipptaf
