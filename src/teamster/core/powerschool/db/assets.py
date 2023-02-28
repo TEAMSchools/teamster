@@ -24,8 +24,8 @@ def construct_sql(
         window_end_fmt = window_start.add(hours=1).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
         context.log.debug(window_start_fmt)
-        context.log.debug(partitions_def.start.isoformat())
-        if window_start_fmt == partitions_def.start.isoformat():
+        context.log.debug(partitions_def.start.isoformat(timespec="microseconds"))
+        if window_start_fmt == partitions_def.start.isoformat(timespec="microseconds"):
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP("
                 f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
