@@ -92,7 +92,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _parse_partition_key_date(self, partition_key):
         pk_datetime = pendulum.parse(text=partition_key)
-        pk_fiscal_year = FiscalYear(pk_datetime)
+        pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
 
         return [
             f"fiscal_year={pk_fiscal_year.fiscal_year}",
