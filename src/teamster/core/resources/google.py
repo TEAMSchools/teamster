@@ -26,7 +26,7 @@ from teamster.core.utils.classes import FiscalYear
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
-def _parse_partition_key_date(partition_key):
+def parse_partition_key_date(partition_key):
     pk_datetime = pendulum.parse(text=partition_key)
     pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
 
@@ -43,11 +43,11 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
             for dimension, key in context.partition_key.keys_by_dimension.items():
                 if dimension == "date":
-                    path.extend(_parse_partition_key_date(key))
+                    path.extend(parse_partition_key_date(key))
                 else:
                     path.append(f"_partition_{dimension}={key}")
         elif context.has_asset_partitions:
-            path = self._parse_partition_key_date(context.partition_key)
+            path = parse_partition_key_date(context.partition_key)
         elif context.has_asset_key:
             path = context.get_asset_identifier()
         else:
@@ -95,11 +95,11 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
             for dimension, key in context.partition_key.keys_by_dimension.items():
                 if dimension == "date":
-                    path.extend(_parse_partition_key_date(key))
+                    path.extend(parse_partition_key_date(key))
                 else:
                     path.append(f"_partition_{dimension}={key}")
         elif context.has_asset_partitions:
-            path = self._parse_partition_key_date(context.partition_key)
+            path = parse_partition_key_date(context.partition_key)
         elif context.has_asset_key:
             path = context.get_asset_identifier()
         else:
