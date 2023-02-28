@@ -18,7 +18,6 @@ def build_deanslist_endpoint_asset(
     asset_name,
     code_location,
     api_version,
-    # school_ids,
     partitions_def: MultiPartitionsDefinition = None,
     inception_date=None,
     op_tags={},
@@ -63,9 +62,6 @@ def build_deanslist_endpoint_asset(
 
         dl: DeansList = context.resources.deanslist
 
-        # total_row_count = 0
-        # all_data = []
-        # for school_id in school_ids:
         row_count, data = dl.get_endpoint(
             api_version=api_version,
             endpoint=asset_name,
@@ -73,10 +69,6 @@ def build_deanslist_endpoint_asset(
             **params,
         )
 
-        # total_row_count += row_count
-        # all_data.extend(data)
-
-        # if total_row_count > 0:
         if row_count > 0:
             yield Output(
                 value=(data, get_avro_schema(name=asset_name, version=api_version)),

@@ -12,32 +12,34 @@ from sqlalchemy import literal_column, select, table, text
 
 
 def construct_sql(
-    context: OpExecutionContext, table_name, columns, where_column, partitions_def
+    context: OpExecutionContext,
+    table_name,
+    columns,
+    where_column,
+    partitions_def: TimeWindowPartitionsDefinition,
 ):
     if partitions_def is not None:
         window_start = context.partition_time_window.start
-        window_end = window_start.add(hours=1)
+        window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+        window_end_fmt = window_start.add(hours=1).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
-        context.log.debug(window_start.to_datetime_string())
-        context.log.debug(partitions_def.start.to_datetime_string())
-        if (
-            window_start.to_datetime_string()
-            == partitions_def.start.to_datetime_string()
-        ):
+        context.log.debug(window_start_fmt)
+        context.log.debug(partitions_def.start.isoformat())
+        if window_start_fmt == partitions_def.start.isoformat():
             constructed_where = (
-                f"{where_column} < TO_TIMESTAMP('"
-                f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') OR "
+                f"{where_column} < TO_TIMESTAMP("
+                f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
+                ") OR "
                 f"{where_column} IS NULL"
             )
         else:
             constructed_where = (
-                f"{where_column} >= TO_TIMESTAMP('"
-                f"{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
-                f"{where_column} < TO_TIMESTAMP('"
-                f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                f"{where_column} >= TO_TIMESTAMP("
+                f"'{window_start}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
+                ") AND "
+                f"{where_column} < TO_TIMESTAMP("
+                f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
+                ")"
             )
     else:
         constructed_where = ""
