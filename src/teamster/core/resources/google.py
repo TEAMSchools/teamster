@@ -95,9 +95,9 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
 
         return [
-            f"fiscal_year={pk_fiscal_year.fiscal_year}",
-            f"date={pk_datetime.to_date_string()}",
-            f"hour={pk_datetime.format('HH')}",
+            f"_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
+            f"_partition_date={pk_datetime.to_date_string()}",
+            f"_partition_hour={pk_datetime.format('HH')}",
         ]
 
     def _get_path(self, context) -> str:
@@ -107,7 +107,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
                 if dimension == "date":
                     path.extend(self._parse_partition_key_date(key))
                 else:
-                    path.append(f"{dimension}={key}")
+                    path.append(f"_partition_{dimension}={key}")
         elif context.has_asset_partitions:
             path = self._parse_partition_key_date(context.partition_key)
         elif context.has_asset_key:
