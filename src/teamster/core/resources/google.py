@@ -26,7 +26,7 @@ from teamster.core.utils.classes import FiscalYear
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
-def _parse_partition_key_date(self, partition_key):
+def _parse_partition_key_date(partition_key):
     pk_datetime = pendulum.parse(text=partition_key)
     pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
 
