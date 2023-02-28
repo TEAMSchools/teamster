@@ -110,8 +110,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context) -> str:
         if isinstance(context.partition_key, MultiPartitionKey):
             path = [
-                f"{k}={d}"
-                for k, d in context.asset_partition_keys.keys_by_dimension.items()
+                f"{k}={d}" for k, d in context.partition_key.keys_by_dimension.items()
             ]
             path.append("data.avro")
         elif context.has_asset_partitions:

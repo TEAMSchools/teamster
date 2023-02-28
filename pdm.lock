@@ -33,12 +33,9 @@ summary = "Classes Without Boilerplate"
 
 [[package]]
 name = "babel"
-version = "2.11.0"
-requires_python = ">=3.6"
+version = "2.12.1"
+requires_python = ">=3.7"
 summary = "Internationalization utilities"
-dependencies = [
-    "pytz>=2015.7",
-]
 
 [[package]]
 name = "bcrypt"
@@ -273,7 +270,7 @@ dependencies = [
 
 [[package]]
 name = "dbt-core"
-version = "1.4.3"
+version = "1.4.4"
 requires_python = ">=3.7.2"
 summary = "With dbt, data analysts and engineers can build analytics the way engineers build applications."
 dependencies = [
@@ -293,6 +290,7 @@ dependencies = [
     "networkx<3,>=2.3; python_version >= \"3.8\"",
     "packaging>20.9",
     "pathspec<0.11,>=0.9",
+    "pytz>=2015.7",
     "pyyaml>=6.0",
     "requests<3.0.0",
     "sqlparse<0.5,>=0.2.3",
@@ -854,7 +852,7 @@ summary = "plugin and hook calling mechanisms for python"
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.37"
+version = "3.0.38"
 requires_python = ">=3.7.0"
 summary = "Library for building powerful interactive command lines in Python"
 dependencies = [
@@ -1223,7 +1221,7 @@ summary = "HTTP library with thread-safe connection pooling, file post, and more
 
 [[package]]
 name = "watchdog"
-version = "2.3.0"
+version = "2.3.1"
 requires_python = ">=3.6"
 summary = "Filesystem events monitoring"
 
@@ -1264,9 +1262,9 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/21/31/3f468da74c7de4fcf9b25591e682856389b3400b4b62f201e65f15ea3e07/attrs-22.2.0.tar.gz", hash = "sha256:c9227bfc2f01993c03f68db37d1d15c9690188323c067c641f1a35ca58185f99"},
     {url = "https://files.pythonhosted.org/packages/fb/6e/6f83bf616d2becdf333a1640f1d463fef3150e2e926b7010cb0f81c95e88/attrs-22.2.0-py3-none-any.whl", hash = "sha256:29e95c7f6778868dbd49170f98f8818f78f3dc5e0e37c0b1f474e3561b240836"},
 ]
-"babel 2.11.0" = [
-    {url = "https://files.pythonhosted.org/packages/92/f7/86301a69926e11cd52f73396d169554d09b20b1723a040c2dcc1559ef588/Babel-2.11.0-py3-none-any.whl", hash = "sha256:1ad3eca1c885218f6dce2ab67291178944f810a10a9b5f3cb8382a5a232b64fe"},
-    {url = "https://files.pythonhosted.org/packages/ff/80/45b42203ecc32c8de281f52e3ec81cb5e4ef16127e9e8543089d8b1649fb/Babel-2.11.0.tar.gz", hash = "sha256:5ef4b3226b0180dedded4229651c8b0e1a3a6a2837d45a073272f313e4cf97f6"},
+"babel 2.12.1" = [
+    {url = "https://files.pythonhosted.org/packages/ba/42/54426ba5d7aeebde9f4aaba9884596eb2fe02b413ad77d62ef0b0422e205/Babel-2.12.1.tar.gz", hash = "sha256:cc2d99999cd01d44420ae725a21c9e3711b3aadc7976d6147f622d8581963455"},
+    {url = "https://files.pythonhosted.org/packages/df/c4/1088865e0246d7ecf56d819a233ab2b72f7d6ab043965ef327d0731b5434/Babel-2.12.1-py3-none-any.whl", hash = "sha256:b4246fb7677d3b98f501a39d43396d3cafdc8eadb045f4a31be01863f655c610"},
 ]
 "bcrypt 4.0.1" = [
     {url = "https://files.pythonhosted.org/packages/13/68/f3184c1f15581ebd936125b4da04cba0995f97ecd5ee8f4262c8ebba2646/bcrypt-4.0.1-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:705b2cea8a9ed3d55b4491887ceadb0106acf7c6387699fca771af56b1cdeeda"},
@@ -1543,9 +1541,9 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/12/b3/adb7263f2a618eaa7a53b646095e1567358d169ba096c593aa7215851676/dbt-bigquery-1.4.1.tar.gz", hash = "sha256:dd8de3951c2e93a36fbb4b1cb6132a45050d8fac723efe47165b2fb18f8a0a21"},
     {url = "https://files.pythonhosted.org/packages/5d/39/b7a3eacc4c7db481fe85bc06bdd5d7044bde8dfef5e6fe84e3f7044eab14/dbt_bigquery-1.4.1-py3-none-any.whl", hash = "sha256:68063b1c7141552a63c1377225e4f57d2837265d4c780724fe53dc3aeb4a056b"},
 ]
-"dbt-core 1.4.3" = [
-    {url = "https://files.pythonhosted.org/packages/83/9e/a811b8a021cefcdbee1e215ec9973fec11d873f9b835f1cc92b4acd28002/dbt-core-1.4.3.tar.gz", hash = "sha256:d2230dd2793049ff2666628ce5d3811e5099cf4b8da18eb8f299d7e39f44bd0f"},
-    {url = "https://files.pythonhosted.org/packages/c5/2d/1e66b6cc562c8fc74c6a6af50ef06809d1951ce3484491160248f56c8e9c/dbt_core-1.4.3-py3-none-any.whl", hash = "sha256:7f49a13f9b86e7a0d886cda874509951af8daddb4f9a8d4b4b57fc78a664e191"},
+"dbt-core 1.4.4" = [
+    {url = "https://files.pythonhosted.org/packages/00/2f/7177e523f9f213443e419940da96d90f6119de6bfd2485d47da81531f986/dbt_core-1.4.4-py3-none-any.whl", hash = "sha256:278ddc90f85fd5c0508194b7ac7b194cc7d98b4d66c92de0ca531f6ad44dc16b"},
+    {url = "https://files.pythonhosted.org/packages/9a/65/fd7c8cc629c9ebb4af1a95340d390088adc8e1e71544ae122bebbf5209a5/dbt-core-1.4.4.tar.gz", hash = "sha256:7bc228013772322d3aaf8e06506a53c21b20e85f6db272b1bd6b055e85608842"},
 ]
 "dbt-extractor 0.4.1" = [
     {url = "https://files.pythonhosted.org/packages/1c/bd/d14a9011a2d023f00154af4c61819b1927a94b4bdadda3fd81e5a4c7436c/dbt_extractor-0.4.1-cp36-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:037907a7c7ae0391045d81338ca77ddaef899a91d80f09958f09fe374594e19b"},
@@ -2254,9 +2252,9 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/9e/01/f38e2ff29715251cf25532b9082a1589ab7e4f571ced434f98d0139336dc/pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
     {url = "https://files.pythonhosted.org/packages/a1/16/db2d7de3474b6e37cbb9c008965ee63835bba517e22cdb8c35b5116b5ce1/pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
-"prompt-toolkit 3.0.37" = [
-    {url = "https://files.pythonhosted.org/packages/20/58/bbc8510ed1774ea2879b9996d2783d461c3c612904e230ff6954ce23c694/prompt_toolkit-3.0.37.tar.gz", hash = "sha256:d5d73d4b5eb1a92ba884a88962b157f49b71e06c4348b417dd622b25cdd3800b"},
-    {url = "https://files.pythonhosted.org/packages/6b/f8/1bb04f1ed50ceffa077ad762911c10aa27defdea6094e1f78ed5cbae1d81/prompt_toolkit-3.0.37-py3-none-any.whl", hash = "sha256:6a2948ec427dfcc7c983027b1044b355db6aaa8be374f54ad2015471f7d81c5b"},
+"prompt-toolkit 3.0.38" = [
+    {url = "https://files.pythonhosted.org/packages/4b/bb/75cdcd356f57d17b295aba121494c2333d26bfff1a837e6199b8b83c415a/prompt_toolkit-3.0.38.tar.gz", hash = "sha256:23ac5d50538a9a38c8bde05fecb47d0b403ecd0662857a86f886f798563d5b9b"},
+    {url = "https://files.pythonhosted.org/packages/87/3f/1f5a0ff475ae6481f4b0d45d4d911824d3218b94ee2a97a8cb84e5569836/prompt_toolkit-3.0.38-py3-none-any.whl", hash = "sha256:45ea77a2f7c60418850331366c81cf6b5b9cf4c7fd34616f733c5427e6abbb1f"},
 ]
 "proto-plus 1.22.2" = [
     {url = "https://files.pythonhosted.org/packages/38/ab/d5916bd1a56dfc2c9c268effd12a635ef7bbb2c9dc9b0270da72122afabb/proto-plus-1.22.2.tar.gz", hash = "sha256:0e8cda3d5a634d9895b75c573c9352c16486cb75deb0e078b5fda34db4243165"},
@@ -2731,35 +2729,35 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/c5/52/fe421fb7364aa738b3506a2d99e4f3a56e079c0a798e9f4fa5e14c60922f/urllib3-1.26.14.tar.gz", hash = "sha256:076907bf8fd355cde77728471316625a4d2f7e713c125f51953bb5b3eecf4f72"},
     {url = "https://files.pythonhosted.org/packages/fe/ca/466766e20b767ddb9b951202542310cba37ea5f2d792dae7589f1741af58/urllib3-1.26.14-py2.py3-none-any.whl", hash = "sha256:75edcdc2f7d85b137124a6c3c9fc3933cdeaa12ecb9a6a959f22797a0feca7e1"},
 ]
-"watchdog 2.3.0" = [
-    {url = "https://files.pythonhosted.org/packages/15/5f/2a8f6de534f37f72f9863bee3ed4486b0bb961ada27c286a73f680a42fa0/watchdog-2.3.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:a4b9bece40d46bf6fb8621817ea7d903eae2b9b3ebac55a51ed50354a79061a8"},
-    {url = "https://files.pythonhosted.org/packages/2c/83/fd546dbc7bbb3e0f1ef67f9b643772589ac3f8d03dfb0833bfd08229b9c6/watchdog-2.3.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:4e648df44a4c6ea6da4d9eb6722745c986b9d70268f25ae60f140082d7c8908e"},
-    {url = "https://files.pythonhosted.org/packages/30/f7/f4c709738f90093fb373e1d1e8a92e7eed7bf76cfcb0de01cfe9c13e2a66/watchdog-2.3.0-py3-none-manylinux2014_ppc64.whl", hash = "sha256:aa4773160b9cb21ba369cb42d59a947087330b3a02480173033a6a6cc137a510"},
-    {url = "https://files.pythonhosted.org/packages/35/33/8867a4798dc687e5db7040c7827e1c21188b6c20fc9495c2f684b4d8ae82/watchdog-2.3.0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:139262f678b4e6a7013261c772059bca358441de04fb0e0087489a34db9e3db0"},
-    {url = "https://files.pythonhosted.org/packages/35/43/9e9574124a5ad06a750cab5dd136d029292c9cdd4c6aff046cee8f048562/watchdog-2.3.0-py3-none-manylinux2014_s390x.whl", hash = "sha256:45c13e7e6eea1013da419bf9aa9a8f5df7bbf3e5edce40bc6df84130febf39d5"},
-    {url = "https://files.pythonhosted.org/packages/37/9a/1f557da8043665ab9ff90ecfa82ed3bdbf1278d6bbf7570a45fd9c4016ca/watchdog-2.3.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9e651b4874477c1bf239417d43818bbfd047aaf641b029fa60d6f5109ede0db0"},
-    {url = "https://files.pythonhosted.org/packages/38/a5/e734c6ca5a7c874b2bf767e1dc7fce2119cfe655157be72cbd66bbd0db09/watchdog-2.3.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:8a214955769d2ef0f7aaa82f31863e3bdf6b083ce1b5f1c2e85cab0f66fba024"},
-    {url = "https://files.pythonhosted.org/packages/3b/21/5fb0a410258319c95a57ddcab5a5f9cf7153599574b7f2b189dee959862d/watchdog-2.3.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:0f7d759299ce21a3d2a77e18d430c24811369c3432453701790acc6ff45a7101"},
-    {url = "https://files.pythonhosted.org/packages/63/0d/a2d6bbdaf7ed3106c08fec63c8c52ae2954be12a6ed89aabdc8724a2c922/watchdog-2.3.0-py3-none-win32.whl", hash = "sha256:8863913ea2c3f256d18c33d84546518636e391cd8f50d209b9a31221e0f7d3fd"},
-    {url = "https://files.pythonhosted.org/packages/6b/83/c75ebd2b910ad5c05dd36ba2aa90ac606ce57d4a6096dc7cdb078e157482/watchdog-2.3.0-py3-none-manylinux2014_ppc64le.whl", hash = "sha256:982f5416a2817003172994d865285dd6a2b3836f033cd3fa87d1a62096a162cc"},
-    {url = "https://files.pythonhosted.org/packages/6d/d4/573e671e9b6ccd85116e45d5ec0a147718886366c183f9d536b5129a4a63/watchdog-2.3.0-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:43d76d7888b26850b908208bb82383a193e8b0f25d0abaa84452f191b4acdea4"},
-    {url = "https://files.pythonhosted.org/packages/84/21/8bc45bc78cd19fdb677953667a620571eb335c9816e3e31a0d6e3d6cafc2/watchdog-2.3.0-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:3fa1572f5a2f6d17d4d860edbc04488fef31b007c25c2f3b11203fb8179b7c67"},
-    {url = "https://files.pythonhosted.org/packages/8b/c2/b04ec91b447b9d34703f16d574215e4a7019496c3402899db7d9a35db0fb/watchdog-2.3.0-py3-none-manylinux2014_armv7l.whl", hash = "sha256:00f93782c67042d9525ec51628330b5faf5fb84bcb7ebaac05ea8528cfb20bba"},
-    {url = "https://files.pythonhosted.org/packages/97/33/15911a569ab457f2b5957bf35799a35dfb01bf528e0a03fe140b57fbd115/watchdog-2.3.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:242e57253e84a736e6777ba756c48cf6a68d3d90cb9e01bd6bfd371a949ace3a"},
-    {url = "https://files.pythonhosted.org/packages/9c/7b/40a3746a9d748bc8dca805faccf95e427271c2fdeb88a3c402f135004853/watchdog-2.3.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:3fa74b0ef4825f9112932675a002296cb2d3d3e400d7a44c32fafd1ecc83ada0"},
-    {url = "https://files.pythonhosted.org/packages/a4/59/dc9a8d393dc7d669331c2644405fc531df36004608cb0481ae2064d82bb0/watchdog-2.3.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:ebe756f788cb130fdc5c150ea8a4fda39cb4ee3a5873a345607c8b84fecf018b"},
-    {url = "https://files.pythonhosted.org/packages/af/75/bcf697f8d8fb76b32a73434129de19bae1952df9005ea3a9a587faae6443/watchdog-2.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:c1b3962e5463a848ba2a342cb66c80251dca27a102933b8f38d231d2a9e5a543"},
-    {url = "https://files.pythonhosted.org/packages/b6/a0/bd2745231d42eeae6e7bd823cdb34bd5b68344c2f636f4faa11b5f9308ec/watchdog-2.3.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:a623de186477e9e05f8461087f856412eae5cd005cc4bcb232ed5c6f9a8709f5"},
-    {url = "https://files.pythonhosted.org/packages/bd/24/bb8e0fc590a9b13cca9bb640fe9e63155cdb2579b8d6c626a964c23d4c9e/watchdog-2.3.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:473164a2de473f708ca194a992466eeefff73b58273bbb88e089c5a5a98fcda1"},
-    {url = "https://files.pythonhosted.org/packages/be/70/5b249f88d4c4fa5235ef524c8591f2d186c611bb93946643eaca301936b5/watchdog-2.3.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:15bf5b165d7a6b48265411dad74fb0d33053f8270eb6575faad0e016035cf9f7"},
-    {url = "https://files.pythonhosted.org/packages/c1/d0/cd7661148127d5dda9bffeb70777541a70623be1abdc9463e0a82aaca33d/watchdog-2.3.0-py3-none-manylinux2014_x86_64.whl", hash = "sha256:7767a3da3307d9cf597832f692702441a97c259e5d0d560f2e57c43ad0d191d2"},
-    {url = "https://files.pythonhosted.org/packages/c2/87/5d651cb0aab9a42b13e9a557021b6498ea45fc9f72ba6b37bbdbcffe907c/watchdog-2.3.0-py3-none-win_amd64.whl", hash = "sha256:6d79b5954db8f41d6a7f5763042b988f7a4afd40b7d141456061fa7c5b7f2159"},
-    {url = "https://files.pythonhosted.org/packages/ce/8b/90c2611473594857c3548ad895dc8ca3dde0d5240b4f3ef01eb6c5bbeef9/watchdog-2.3.0-py3-none-win_ia64.whl", hash = "sha256:a3559ee82a10976de1ec544b6ebe3b4aa398d491860a283d80ec0f550076d068"},
-    {url = "https://files.pythonhosted.org/packages/cf/b0/4bc82402b2ef7aea5c14c6665222d6cb97ff4997d693e70d2ae45315e8f1/watchdog-2.3.0-py3-none-manylinux2014_i686.whl", hash = "sha256:f1a655f4a49f9232311b9967f42cc2eaf43fd4903f3bed850dd4570fda5d5eff"},
-    {url = "https://files.pythonhosted.org/packages/d1/77/6451ac9c31630bab57e4dcd25e701c379547ccc0974d7d6d94b97e46ca7f/watchdog-2.3.0.tar.gz", hash = "sha256:9d39effe6909be898ba3e7286a9e9b17a6a9f734fb1ef9dde3e9bb68715fca39"},
-    {url = "https://files.pythonhosted.org/packages/d6/a9/c5ce07886321f043fcf58a72f20096cf72113b05d204a8efa06f5006f1e2/watchdog-2.3.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d04662017efd00a014cff9068708e085d67f2fac43f48bbbb95a7f97490487f3"},
-    {url = "https://files.pythonhosted.org/packages/e3/cc/3c5e4a97d67d6e7ae360891fc59db6c5faa8154c19b74cddc99cc4d027ca/watchdog-2.3.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:1d9c656495172873bf1ddc7e39e80055fcdd21c4608cf68f23a28116dcba0b43"},
-    {url = "https://files.pythonhosted.org/packages/ee/ed/b47a369557d46e1dd336bf91733fba97416dbfa56e859606ed77876f78b3/watchdog-2.3.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:5ddbbe87f9ed726940d174076da030cd01ec45433ef2b1b2e6094c84f2af17f1"},
+"watchdog 2.3.1" = [
+    {url = "https://files.pythonhosted.org/packages/05/72/b7d506e9a67ade08cc9f5b79f6191e8c2ef8eafcae20b8f6d1f84c65ce8d/watchdog-2.3.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:ea5d86d1bcf4a9d24610aa2f6f25492f441960cf04aed2bd9a97db439b643a7b"},
+    {url = "https://files.pythonhosted.org/packages/15/ab/8fe9a2d0aab954b6669e1c500131782704b2653ece48c9dacb982cc601fe/watchdog-2.3.1-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:03f342a9432fe08107defbe8e405a2cb922c5d00c4c6c168c68b633c64ce6190"},
+    {url = "https://files.pythonhosted.org/packages/1e/68/1efdedc26132a6f65712654c56f09b3c2f98e1b6e9178b94c2ffeed04271/watchdog-2.3.1-py3-none-manylinux2014_i686.whl", hash = "sha256:7a1876f660e32027a1a46f8a0fa5747ad4fcf86cb451860eae61a26e102c8c79"},
+    {url = "https://files.pythonhosted.org/packages/2d/bf/0a52a562812b2e856bee283aa547944d52d4145eee1d55511ccbe3280a5a/watchdog-2.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:564e7739abd4bd348aeafbf71cc006b6c0ccda3160c7053c4a53b67d14091d42"},
+    {url = "https://files.pythonhosted.org/packages/4c/0c/9952176a2d8a775be3a2f360bf1be97e9ebc6c82b05592600dff1e53e607/watchdog-2.3.1-py3-none-win_ia64.whl", hash = "sha256:4109cccf214b7e3462e8403ab1e5b17b302ecce6c103eb2fc3afa534a7f27b96"},
+    {url = "https://files.pythonhosted.org/packages/4d/9b/25e1250d65295124d3b0600e578fe5b901d1c626bbcbb33539aee873f95d/watchdog-2.3.1-py3-none-manylinux2014_ppc64.whl", hash = "sha256:2caf77ae137935c1466f8cefd4a3aec7017b6969f425d086e6a528241cba7256"},
+    {url = "https://files.pythonhosted.org/packages/51/45/c030859e146a823ddbd193921459690899c9d99f84ac620b00937c47db86/watchdog-2.3.1-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:3d2dbcf1acd96e7a9c9aefed201c47c8e311075105d94ce5e899f118155709fd"},
+    {url = "https://files.pythonhosted.org/packages/62/21/033cb33d76f00dd3032d5542d6ae79e9d349c67eb7895de48fecda542be2/watchdog-2.3.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:6f5d0f7eac86807275eba40b577c671b306f6f335ba63a5c5a348da151aba0fc"},
+    {url = "https://files.pythonhosted.org/packages/6e/d5/061443b2cc73ca32a533b008df5fb130e5e44e450f7d87b724aac303c720/watchdog-2.3.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:95ad708a9454050a46f741ba5e2f3468655ea22da1114e4c40b8cbdaca572565"},
+    {url = "https://files.pythonhosted.org/packages/72/10/be6189e00e5e2d93bd82703cc0eb07cb4c7037e447e72d2f02f641c9ada4/watchdog-2.3.1-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:85bf2263290591b7c5fa01140601b64c831be88084de41efbcba6ea289874f44"},
+    {url = "https://files.pythonhosted.org/packages/73/fc/c0baded1c537122611aac5fded8a6436af6b1460744cb3fa802678088877/watchdog-2.3.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:efe3252137392a471a2174d721e1037a0e6a5da7beb72a021e662b7000a9903f"},
+    {url = "https://files.pythonhosted.org/packages/74/6e/ba47e5856aaf8df80d689519d1f3097f310976708515a67aa2eccf8ce615/watchdog-2.3.1-py3-none-manylinux2014_ppc64le.whl", hash = "sha256:53f3e95081280898d9e4fc51c5c69017715929e4eea1ab45801d5e903dd518ad"},
+    {url = "https://files.pythonhosted.org/packages/76/11/6651e259e27c10d4ec1c88c5ea4bf641b3782f98764525c425562099a814/watchdog-2.3.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:5b848c71ef2b15d0ef02f69da8cc120d335cec0ed82a3fa7779e27a5a8527225"},
+    {url = "https://files.pythonhosted.org/packages/79/21/ffd41427b724a6468c6c5c7f083f8e59948eabe2538538e3a15ff15c33cb/watchdog-2.3.1-py3-none-manylinux2014_x86_64.whl", hash = "sha256:8a4d484e846dcd75e96b96d80d80445302621be40e293bfdf34a631cab3b33dc"},
+    {url = "https://files.pythonhosted.org/packages/92/2a/cfa6e32f200b304f647374eff1779cd66f7f714d152d3e84f2f813d2ddd9/watchdog-2.3.1-py3-none-win32.whl", hash = "sha256:a74155398434937ac2780fd257c045954de5b11b5c52fc844e2199ce3eecf4cf"},
+    {url = "https://files.pythonhosted.org/packages/a5/17/a31fc6b90ff861a27debd0650bfbca17e074fdc3e037f392872fad76c726/watchdog-2.3.1.tar.gz", hash = "sha256:d9f9ed26ed22a9d331820a8432c3680707ea8b54121ddcc9dc7d9f2ceeb36906"},
+    {url = "https://files.pythonhosted.org/packages/b1/ea/84ea18b982d2c03085b3ca03c08d975afadbe75ef1db015fe8de2e21052b/watchdog-2.3.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:8f2df370cd8e4e18499dd0bfdef476431bcc396108b97195d9448d90924e3131"},
+    {url = "https://files.pythonhosted.org/packages/b2/f1/0aadffdba6ffec3a209c3ebfd81ba0a87b8569147fa974236b4115eb02ac/watchdog-2.3.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:0d9878be36d2b9271e3abaa6f4f051b363ff54dbbe7e7df1af3c920e4311ee43"},
+    {url = "https://files.pythonhosted.org/packages/be/fc/fb45f9d64ec043bd92b2c3e36754d68a09991e670d53ad39060a0be0ae03/watchdog-2.3.1-py3-none-manylinux2014_armv7l.whl", hash = "sha256:0e1dd6d449267cc7d6935d7fe27ee0426af6ee16578eed93bacb1be9ff824d2d"},
+    {url = "https://files.pythonhosted.org/packages/c4/08/ede6b9c674c429f80c79e00ceb457bc3d01f18f4f71e7e7e986604b39c16/watchdog-2.3.1-py3-none-manylinux2014_aarch64.whl", hash = "sha256:7a596f9415a378d0339681efc08d2249e48975daae391d58f2e22a3673b977cf"},
+    {url = "https://files.pythonhosted.org/packages/c6/b4/5b4a76b566d1e55a1b90b183775e8b502fe0aefb076128778843f223e392/watchdog-2.3.1-py3-none-win_amd64.whl", hash = "sha256:5defe4f0918a2a1a4afbe4dbb967f743ac3a93d546ea4674567806375b024adb"},
+    {url = "https://files.pythonhosted.org/packages/c7/1d/052f751f9b8de2a5d7d11954eb533221351300ea810da934defaeacd12c0/watchdog-2.3.1-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:4cd61f98cb37143206818cb1786d2438626aa78d682a8f2ecee239055a9771d5"},
+    {url = "https://files.pythonhosted.org/packages/d1/5b/0451ca41393aab9246294431c0aaab81efa3a53d2e8c1b1596f5f7a8035c/watchdog-2.3.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:a073c91a6ef0dda488087669586768195c3080c66866144880f03445ca23ef16"},
+    {url = "https://files.pythonhosted.org/packages/d6/8d/ebdd845d3cee8ca1802a89b5c7fda18f5b8c85e74e632a53145971514958/watchdog-2.3.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:91fd146d723392b3e6eb1ac21f122fcce149a194a2ba0a82c5e4d0ee29cd954c"},
+    {url = "https://files.pythonhosted.org/packages/dd/5c/4bd82db65cee7287359abc1369a06a40b2e3d100d5e84b97d5019ab9fc27/watchdog-2.3.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:aa8b028750b43e80eea9946d01925168eeadb488dfdef1d82be4b1e28067f375"},
+    {url = "https://files.pythonhosted.org/packages/f4/2d/ad35f33b7bfeac899bc31aaf12f4ee7fa53cc2710ad1274654c1dd63a6f1/watchdog-2.3.1-py3-none-manylinux2014_s390x.whl", hash = "sha256:9da7acb9af7e4a272089bd2af0171d23e0d6271385c51d4d9bde91fe918c53ed"},
+    {url = "https://files.pythonhosted.org/packages/f4/e4/a6270a3c28872d46e53cbae034715ff80c18856167091f548aa93ad2d92b/watchdog-2.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:964fd236cd443933268ae49b59706569c8b741073dbfd7ca705492bae9d39aab"},
+    {url = "https://files.pythonhosted.org/packages/fb/3a/ad9bf1927f344bbd161359d22771020748c4c82ea4dd45abcfe46e084655/watchdog-2.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d1f1200d4ec53b88bf04ab636f9133cb703eb19768a39351cee649de21a33697"},
 ]
 "wcwidth 0.2.6" = [
     {url = "https://files.pythonhosted.org/packages/20/f4/c0584a25144ce20bfcf1aecd041768b8c762c1eb0aa77502a3f0baa83f11/wcwidth-0.2.6-py2.py3-none-any.whl", hash = "sha256:795b138f6875577cd91bba52baf9e445cd5118fd32723b460e30a0af30ea230e"},
