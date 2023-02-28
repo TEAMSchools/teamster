@@ -62,7 +62,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
         return "/".join([self.prefix, *path])
 
     def handle_output(self, context: OutputContext, file_path: pathlib.Path):
-        key = f"{self._get_path(context)}.{file_path.suffix}"
+        key = self._get_path(context)
 
         context.log.debug(
             f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
@@ -111,7 +111,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
             path = ["storage", run_id, "files", *output_parts]
 
-        path.append("data.avro")
+        path.append("data")
         return "/".join([self.prefix, *path])
 
     def handle_output(self, context: OutputContext, obj):
