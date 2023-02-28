@@ -35,7 +35,7 @@ def construct_sql(
         else:
             constructed_where = (
                 f"{where_column} >= TO_TIMESTAMP("
-                f"'{window_start}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
+                f"'{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
                 ") AND "
                 f"{where_column} < TO_TIMESTAMP("
                 f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
