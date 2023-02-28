@@ -89,43 +89,29 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             return [urlparse(self._uri_for_key(key))]
 
 
-@io_manager(
-    config_schema={
-        "gcs_bucket": Field(StringSource),
-        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-    },
-    required_resource_keys={"gcs"},
-)
-def gcs_filepath_io_manager(init_context):
-    client = init_context.resources.gcs
-    filename_io_manager = FilepathGCSIOManager(
-        init_context.resource_config["gcs_bucket"],
-        client,
-        init_context.resource_config["gcs_prefix"],
-    )
-    return filename_io_manager
-
-
 class AvroGCSIOManager(PickledObjectGCSIOManager):
+    def _parse_partition_key_date(self, partition_key):
+        pk_datetime = pendulum.parse(text=partition_key)
+        pk_fiscal_year = FiscalYear(pk_datetime)
+
+        return [
+            f"fiscal_year={pk_fiscal_year.fiscal_year}",
+            f"date={pk_datetime.to_date_string()}",
+            f"hour={pk_datetime.format('HH')}",
+        ]
+
     def _get_path(self, context) -> str:
         if isinstance(context.partition_key, MultiPartitionKey):
-            path = [
-                f"{k}={d}" for k, d in context.partition_key.keys_by_dimension.items()
-            ]
-            path.append("data.avro")
+            path = []
+            for dimension, key in context.partition_key.keys_by_dimension.items():
+                if dimension == "date":
+                    path.extend(self._parse_partition_key_date(key))
+                else:
+                    path.append(f"{dimension}={key}")
         elif context.has_asset_partitions:
-            pk_datetime = pendulum.parse(text=context.partition_key)
-            pk_fiscal_year = FiscalYear(pk_datetime)
-
-            path = [
-                f"fiscal_year={pk_fiscal_year.fiscal_year}",
-                f"date={pk_datetime.to_date_string()}",
-                f"hour={pk_datetime.format('HH')}",
-                "data.avro",
-            ]
+            path = self._parse_partition_key_date(context.partition_key)
         elif context.has_asset_key:
             path = context.get_asset_identifier()
-            path.append("data.avro")
         else:
             parts = context.get_identifier()
             run_id = parts[0]
@@ -133,17 +119,8 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
             path = ["storage", run_id, "files", *output_parts]
 
+        path.append("data.avro")
         return "/".join([self.prefix, *path])
-
-    # def _get_paths(self, context) -> list:
-    #     paths = []
-    #     for apk in context.asset_partition_keys:
-    #         path = copy.deepcopy(context.asset_key.path)
-    #         apk_datetime = pendulum.parse(text=apk)
-    #         path.append(f"dt={apk_datetime.date()}")
-    #         path.append(apk_datetime.format(fmt="HH"))
-    #         paths.append("/".join([self.prefix, *path]))
-    #     return paths
 
     def handle_output(self, context: OutputContext, obj):
         records, schema = obj
@@ -184,21 +161,6 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         else:
             key = self._get_path(context)
             return [urlparse(self._uri_for_key(key))]
-
-
-@io_manager(
-    config_schema={
-        "gcs_bucket": Field(StringSource),
-        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-    },
-    required_resource_keys={"gcs"},
-)
-def gcs_avro_io_manager(init_context):
-    return AvroGCSIOManager(
-        bucket=init_context.resource_config["gcs_bucket"],
-        client=init_context.resources.gcs,
-        prefix=init_context.resource_config["gcs_prefix"],
-    )
 
 
 class GoogleSheets(object):
@@ -287,6 +249,38 @@ class GoogleSheets(object):
 
         self.log.info(f"Updating '{range_name}': {data_area} cells.")
         worksheet.update(range_name, [data["columns"]] + data["data"])
+
+
+@io_manager(
+    config_schema={
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+    },
+    required_resource_keys={"gcs"},
+)
+def gcs_filepath_io_manager(init_context):
+    client = init_context.resources.gcs
+    filename_io_manager = FilepathGCSIOManager(
+        init_context.resource_config["gcs_bucket"],
+        client,
+        init_context.resource_config["gcs_prefix"],
+    )
+    return filename_io_manager
+
+
+@io_manager(
+    config_schema={
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+    },
+    required_resource_keys={"gcs"},
+)
+def gcs_avro_io_manager(init_context):
+    return AvroGCSIOManager(
+        bucket=init_context.resource_config["gcs_bucket"],
+        client=init_context.resources.gcs,
+        prefix=init_context.resource_config["gcs_prefix"],
+    )
 
 
 @resource(config_schema={"folder_id": Field(String)})
