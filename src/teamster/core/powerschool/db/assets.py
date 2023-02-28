@@ -18,9 +18,12 @@ def construct_sql(
         window_start = context.partition_time_window.start
         window_end = window_start.add(hours=1)
 
-        context.log.debug(window_start)
-        context.log.debug(partitions_def.start)
-        if window_start == partitions_def.start:
+        context.log.debug(window_start.to_datetime_string())
+        context.log.debug(partitions_def.start.to_datetime_string())
+        if (
+            window_start.to_datetime_string()
+            == partitions_def.start.to_datetime_string()
+        ):
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP('"
                 f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
