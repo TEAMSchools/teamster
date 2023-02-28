@@ -58,13 +58,14 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
             path = ["storage", run_id, "files", *output_parts]
 
+        path.append("data")
         return "/".join([self.prefix, *path])
 
-    def handle_output(self, context: OutputContext, filename):
-        key = self._get_path(context)
+    def handle_output(self, context: OutputContext, file_path: pathlib.Path):
+        key = f"{self._get_path(context)}.{file_path.suffix}"
 
         context.log.debug(
-            f"Uploading {filename} to GCS object at: {self._uri_for_key(key)}"
+            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
         )
 
         if self._has_object(key):
@@ -73,7 +74,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
         backoff(
             self.bucket_obj.blob(key).upload_from_filename,
-            args=[filename],
+            args=[file_path],
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
         )
 
