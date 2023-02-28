@@ -47,7 +47,8 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
                 else:
                     path.append(f"_partition_{dimension}={key}")
         elif context.has_asset_partitions:
-            path = parse_partition_key_date(context.partition_key)
+            path = copy.deepcopy(context.asset_key.path)
+            path.extend(parse_partition_key_date(context.partition_key))
         elif context.has_asset_key:
             path = context.get_asset_identifier()
         else:
