@@ -12,13 +12,15 @@ from sqlalchemy import literal_column, select, table, text
 
 
 def construct_sql(
-    context: OpExecutionContext, table_name, columns, where_column, partitions_def_start
+    context: OpExecutionContext, table_name, columns, where_column, partitions_def
 ):
-    if partitions_def_start is not None:
+    if partitions_def is not None:
         window_start = context.partition_time_window.start
         window_end = window_start.add(hours=1)
 
-        if context.partition_time_window.start == partitions_def_start:
+        context.log.debug(window_start)
+        context.log.debug(partitions_def.start)
+        if window_start == partitions_def.start:
             constructed_where = (
                 f"{where_column} < TO_TIMESTAMP('"
                 f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
@@ -69,11 +71,6 @@ def build_powerschool_table_asset(
     where_column="",
     op_tags={},
 ) -> AssetsDefinition:
-    if partitions_def is not None:
-        partitions_def_start = partitions_def.start
-    else:
-        partitions_def_start = None
-
     @asset(
         name=asset_name,
         key_prefix=[code_location, "powerschool"],
@@ -89,7 +86,7 @@ def build_powerschool_table_asset(
             table_name=asset_name,
             columns=columns,
             where_column=where_column,
-            partitions_def_start=partitions_def_start,
+            partitions_def=partitions_def,
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(

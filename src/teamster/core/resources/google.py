@@ -26,9 +26,29 @@ from teamster.core.utils.classes import FiscalYear
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
+def _parse_partition_key_date(self, partition_key):
+    pk_datetime = pendulum.parse(text=partition_key)
+    pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
+
+    return [
+        f"_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
+        f"_partition_date={pk_datetime.to_date_string()}",
+        f"_partition_hour={pk_datetime.format('HH')}",
+    ]
+
+
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        if context.has_asset_key:
+        if isinstance(context.partition_key, MultiPartitionKey):
+            path = copy.deepcopy(context.asset_key.path)
+            for dimension, key in context.partition_key.keys_by_dimension.items():
+                if dimension == "date":
+                    path.extend(_parse_partition_key_date(key))
+                else:
+                    path.append(f"_partition_{dimension}={key}")
+        elif context.has_asset_partitions:
+            path = self._parse_partition_key_date(context.partition_key)
+        elif context.has_asset_key:
             path = context.get_asset_identifier()
         else:
             parts = context.get_identifier()
@@ -39,28 +59,8 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
         return "/".join([self.prefix, *path])
 
-    def _get_paths(self, context: Union[InputContext, OutputContext]) -> list:
-        paths = []
-        for apk in context.asset_partition_keys:
-            path = copy.deepcopy(context.asset_key.path)
-
-            apk_datetime = pendulum.parse(text=apk)
-
-            path.append(f"dt={apk_datetime.date()}")
-            path.append(apk_datetime.format(fmt="HH"))
-
-            paths.append("/".join([self.prefix, *path]))
-
-        return paths
-
     def handle_output(self, context: OutputContext, filename):
-        if filename is None:
-            return None
-
-        if context.has_asset_key and context.has_asset_partitions:
-            key = self._get_paths(context)[0]
-        else:
-            key = self._get_path(context)
+        key = self._get_path(context)
 
         context.log.debug(
             f"Uploading {filename} to GCS object at: {self._uri_for_key(key)}"
@@ -90,22 +90,12 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
-    def _parse_partition_key_date(self, partition_key):
-        pk_datetime = pendulum.parse(text=partition_key)
-        pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
-
-        return [
-            f"_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
-            f"_partition_date={pk_datetime.to_date_string()}",
-            f"_partition_hour={pk_datetime.format('HH')}",
-        ]
-
-    def _get_path(self, context) -> str:
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if isinstance(context.partition_key, MultiPartitionKey):
-            path = []
+            path = copy.deepcopy(context.asset_key.path)
             for dimension, key in context.partition_key.keys_by_dimension.items():
                 if dimension == "date":
-                    path.extend(self._parse_partition_key_date(key))
+                    path.extend(_parse_partition_key_date(key))
                 else:
                     path.append(f"_partition_{dimension}={key}")
         elif context.has_asset_partitions:
