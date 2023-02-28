@@ -10,6 +10,7 @@ import pendulum
 from dagster import (
     Field,
     InputContext,
+    MultiPartitionKey,
     OutputContext,
     String,
     StringSource,
@@ -19,6 +20,8 @@ from dagster import (
 from dagster._utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
+
+from teamster.core.utils.classes import FiscalYear
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 
@@ -50,7 +53,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
         return paths
 
-    def handle_output(self, context, filename):
+    def handle_output(self, context: OutputContext, filename):
         if filename is None:
             return None
 
@@ -105,8 +108,25 @@ def gcs_filepath_io_manager(init_context):
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context) -> str:
-        if context.has_asset_key:
+        if isinstance(context.partition_key, MultiPartitionKey):
+            path = [
+                f"{k}={d}"
+                for k, d in context.asset_partition_keys.keys_by_dimension.items()
+            ]
+            path.append("data.avro")
+        elif context.has_asset_partitions:
+            pk_datetime = pendulum.parse(text=context.partition_key)
+            pk_fiscal_year = FiscalYear(pk_datetime)
+
+            path = [
+                f"fiscal_year={pk_fiscal_year.fiscal_year}",
+                f"date={pk_datetime.to_date_string()}",
+                f"hour={pk_datetime.format('HH')}",
+                "data.avro",
+            ]
+        elif context.has_asset_key:
             path = context.get_asset_identifier()
+            path.append("data.avro")
         else:
             parts = context.get_identifier()
             run_id = parts[0]
@@ -116,28 +136,20 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
         return "/".join([self.prefix, *path])
 
-    def _get_paths(self, context) -> list:
-        paths = []
-        for apk in context.asset_partition_keys:
-            path = copy.deepcopy(context.asset_key.path)
-
-            apk_datetime = pendulum.parse(text=apk)
-
-            path.append(f"dt={apk_datetime.date()}")
-            path.append(apk_datetime.format(fmt="HH"))
-
-            paths.append("/".join([self.prefix, *path]))
-
-        return paths
+    # def _get_paths(self, context) -> list:
+    #     paths = []
+    #     for apk in context.asset_partition_keys:
+    #         path = copy.deepcopy(context.asset_key.path)
+    #         apk_datetime = pendulum.parse(text=apk)
+    #         path.append(f"dt={apk_datetime.date()}")
+    #         path.append(apk_datetime.format(fmt="HH"))
+    #         paths.append("/".join([self.prefix, *path]))
+    #     return paths
 
     def handle_output(self, context: OutputContext, obj):
         records, schema = obj
 
-        if context.has_asset_partitions:
-            context.log.debug(context.partition_key)
-            key = self._get_paths(context.partition_key)
-        else:
-            key = self._get_path(context)
+        key = self._get_path(context)
 
         if self._has_object(key):
             context.log.warning(f"Removing existing GCS key: {key}")
