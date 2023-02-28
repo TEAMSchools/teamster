@@ -36,7 +36,7 @@ class DeansList(Session):
         data = response_json.get("data", [])
         deleted_data = response_json.get("deleted_data", [])
         for d in deleted_data:
-            d["is_deleted"] = 1
+            d["is_deleted"] = True
 
         all_data = data + deleted_data
 
