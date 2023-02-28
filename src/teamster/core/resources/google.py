@@ -104,7 +104,7 @@ def gcs_filepath_io_manager(init_context):
 
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+    def _get_path(self, context) -> str:
         if context.has_asset_key:
             path = context.get_asset_identifier()
         else:
@@ -116,7 +116,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
         return "/".join([self.prefix, *path])
 
-    def _get_paths(self, context: Union[InputContext, OutputContext]) -> list:
+    def _get_paths(self, context) -> list:
         paths = []
         for apk in context.asset_partition_keys:
             path = copy.deepcopy(context.asset_key.path)
@@ -130,12 +130,12 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
         return paths
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         records, schema = obj
-        context.log.debug(records[:10])
 
-        if context.has_asset_key and context.has_asset_partitions:
-            key = self._get_paths(context)[0]
+        if context.has_asset_partitions:
+            context.log.debug(context.partition_key)
+            key = self._get_paths(context.partition_key)
         else:
             key = self._get_path(context)
 
