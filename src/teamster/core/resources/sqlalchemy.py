@@ -73,6 +73,8 @@ class SqlAlchemyEngine(object):
         self.engine = create_engine(url=self.connection_url, **engine_kwargs)
 
     def execute_query(self, query, partition_size, output, connect_kwargs={}):
+        # TODO: add file_format param, refactor output logic
+
         self.log.debug("Opening connection to engine")
         with self.engine.connect(**connect_kwargs) as conn:
             self.log.info(f"Executing query:\n{query}")
@@ -141,12 +143,12 @@ class SqlAlchemyEngine(object):
 
                     self.log.debug(f"Saving partition {i}")
                     if i == 0:
-                        with open(output_data, "wb") as f:
+                        with output_data.open("wb") as f:
                             writer(
                                 fo=f, schema=avro_schema, records=data, codec="snappy"
                             )
                     else:
-                        with open(output_data, "a+b") as f:
+                        with output_data.open("a+b") as f:
                             writer(
                                 fo=f, schema=avro_schema, records=data, codec="snappy"
                             )
