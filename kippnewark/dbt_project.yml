@@ -25,5 +25,4 @@ clean-targets: # directories to be removed by `dbt clean`
 # models:
 
 vars:
-  code_location: kippnewark
-  powerschool_schema: kippnewark
+  powerschool_schema: kippnewark_powerschool
