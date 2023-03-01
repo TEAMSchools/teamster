@@ -100,8 +100,11 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             else:
                 path = copy.deepcopy(context.asset_key.path)
                 path.extend(parse_partition_key_date(context.partition_key))
+
+            path.append("data")
         elif context.has_asset_key:
-            path = context.get_asset_identifier()
+            path = copy.deepcopy(context.asset_key.path)
+            path.append("data")
         else:
             parts = context.get_identifier()
             run_id = parts[0]
@@ -109,7 +112,6 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
             path = ["storage", run_id, "files", *output_parts]
 
-        path.append("data")
         return "/".join([self.prefix, *path])
 
     def handle_output(self, context: OutputContext, obj):
