@@ -39,16 +39,17 @@ def parse_partition_key_date(partition_key):
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        if isinstance(context.partition_key, MultiPartitionKey):
-            path = copy.deepcopy(context.asset_key.path)
-            for dimension, key in context.partition_key.keys_by_dimension.items():
-                if dimension == "date":
-                    path.extend(parse_partition_key_date(key))
-                else:
-                    path.append(f"_partition_{dimension}={key}")
-        elif context.has_asset_partitions:
-            path = copy.deepcopy(context.asset_key.path)
-            path.extend(parse_partition_key_date(context.partition_key))
+        if context.has_asset_partitions:
+            if isinstance(context.partition_key, MultiPartitionKey):
+                path = copy.deepcopy(context.asset_key.path)
+                for dimension, key in context.partition_key.keys_by_dimension.items():
+                    if dimension == "date":
+                        path.extend(parse_partition_key_date(key))
+                    else:
+                        path.append(f"_partition_{dimension}={key}")
+            else:
+                path = copy.deepcopy(context.asset_key.path)
+                path.extend(parse_partition_key_date(context.partition_key))
         elif context.has_asset_key:
             path = context.get_asset_identifier()
         else:
@@ -88,15 +89,17 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        if isinstance(context.partition_key, MultiPartitionKey):
-            path = copy.deepcopy(context.asset_key.path)
-            for dimension, key in context.partition_key.keys_by_dimension.items():
-                if dimension == "date":
-                    path.extend(parse_partition_key_date(key))
-                else:
-                    path.append(f"_partition_{dimension}={key}")
-        elif context.has_asset_partitions:
-            path = parse_partition_key_date(context.partition_key)
+        if context.has_asset_partitions:
+            if isinstance(context.partition_key, MultiPartitionKey):
+                path = copy.deepcopy(context.asset_key.path)
+                for dimension, key in context.partition_key.keys_by_dimension.items():
+                    if dimension == "date":
+                        path.extend(parse_partition_key_date(key))
+                    else:
+                        path.append(f"_partition_{dimension}={key}")
+            else:
+                path = copy.deepcopy(context.asset_key.path)
+                path.extend(parse_partition_key_date(context.partition_key))
         elif context.has_asset_key:
             path = context.get_asset_identifier()
         else:
