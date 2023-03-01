@@ -1,13 +1,16 @@
 import copy
+import pathlib
 from typing import Union
 from urllib.parse import urlparse
 
+import fastavro
 import google.auth
 import gspread
 import pendulum
 from dagster import (
     Field,
     InputContext,
+    MultiPartitionKey,
     OutputContext,
     String,
     StringSource,
@@ -18,12 +21,35 @@ from dagster._utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 
+from teamster.core.utils.classes import FiscalYear
+
 DEFAULT_LEASE_DURATION = 60  # One minute
+
+
+def parse_partition_key_date(partition_key):
+    pk_datetime = pendulum.parse(text=partition_key)
+    pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
+
+    return [
+        f"_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
+        f"_partition_date={pk_datetime.to_date_string()}",
+        f"_partition_hour={pk_datetime.format('HH')}",
+    ]
 
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        if context.has_asset_key:
+        if isinstance(context.partition_key, MultiPartitionKey):
+            path = copy.deepcopy(context.asset_key.path)
+            for dimension, key in context.partition_key.keys_by_dimension.items():
+                if dimension == "date":
+                    path.extend(parse_partition_key_date(key))
+                else:
+                    path.append(f"_partition_{dimension}={key}")
+        elif context.has_asset_partitions:
+            path = copy.deepcopy(context.asset_key.path)
+            path.extend(parse_partition_key_date(context.partition_key))
+        elif context.has_asset_key:
             path = context.get_asset_identifier()
         else:
             parts = context.get_identifier()
@@ -32,33 +58,14 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
             path = ["storage", run_id, "files", *output_parts]
 
+        path.append("data")
         return "/".join([self.prefix, *path])
 
-    def _get_paths(self, context: Union[InputContext, OutputContext]) -> list:
-        paths = []
-        for apk in context.asset_partition_keys:
-            path = copy.deepcopy(context.asset_key.path)
-
-            apk_datetime = pendulum.parse(text=apk)
-
-            path.append(f"dt={apk_datetime.date()}")
-            path.append(apk_datetime.format(fmt="HH"))
-
-            paths.append("/".join([self.prefix, *path]))
-
-        return paths
-
-    def handle_output(self, context, filename):
-        if filename is None:
-            return None
-
-        if context.has_asset_key and context.has_asset_partitions:
-            key = self._get_paths(context)[0]
-        else:
-            key = self._get_path(context)
+    def handle_output(self, context: OutputContext, file_path: pathlib.Path):
+        key = self._get_path(context)
 
         context.log.debug(
-            f"Uploading {filename} to GCS object at: {self._uri_for_key(key)}"
+            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
         )
 
         if self._has_object(key):
@@ -67,7 +74,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
         backoff(
             self.bucket_obj.blob(key).upload_from_filename,
-            args=[filename],
+            args=[file_path],
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
         )
 
@@ -84,21 +91,68 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             return [urlparse(self._uri_for_key(key))]
 
 
-@io_manager(
-    config_schema={
-        "gcs_bucket": Field(StringSource),
-        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-    },
-    required_resource_keys={"gcs"},
-)
-def gcs_filepath_io_manager(init_context):
-    client = init_context.resources.gcs
-    filename_io_manager = FilepathGCSIOManager(
-        init_context.resource_config["gcs_bucket"],
-        client,
-        init_context.resource_config["gcs_prefix"],
-    )
-    return filename_io_manager
+class AvroGCSIOManager(PickledObjectGCSIOManager):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        if isinstance(context.partition_key, MultiPartitionKey):
+            path = copy.deepcopy(context.asset_key.path)
+            for dimension, key in context.partition_key.keys_by_dimension.items():
+                if dimension == "date":
+                    path.extend(parse_partition_key_date(key))
+                else:
+                    path.append(f"_partition_{dimension}={key}")
+        elif context.has_asset_partitions:
+            path = parse_partition_key_date(context.partition_key)
+        elif context.has_asset_key:
+            path = context.get_asset_identifier()
+        else:
+            parts = context.get_identifier()
+            run_id = parts[0]
+            output_parts = parts[1:]
+
+            path = ["storage", run_id, "files", *output_parts]
+
+        path.append("data")
+        return "/".join([self.prefix, *path])
+
+    def handle_output(self, context: OutputContext, obj):
+        records, schema = obj
+
+        key = self._get_path(context)
+
+        if self._has_object(key):
+            context.log.warning(f"Removing existing GCS key: {key}")
+            self._rm_object(key)
+
+        file_path = pathlib.Path(key)
+
+        context.log.debug(f"Saving output to Avro file: {file_path}")
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open(mode="wb") as fo:
+            fastavro.writer(
+                fo=fo,
+                schema=fastavro.parse_schema(schema),
+                records=records,
+                codec="snappy",
+            )
+
+        context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
+        backoff(
+            self.bucket_obj.blob(key).upload_from_filename,
+            args=[file_path],
+            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+        )
+
+    def load_input(self, context: InputContext):
+        if isinstance(context.dagster_type.typing_type, type(None)):
+            return None
+
+        if context.has_asset_key and context.has_asset_partitions:
+            return [
+                urlparse(self._uri_for_key(key)) for key in self._get_paths(context)
+            ]
+        else:
+            key = self._get_path(context)
+            return [urlparse(self._uri_for_key(key))]
 
 
 class GoogleSheets(object):
@@ -187,6 +241,38 @@ class GoogleSheets(object):
 
         self.log.info(f"Updating '{range_name}': {data_area} cells.")
         worksheet.update(range_name, [data["columns"]] + data["data"])
+
+
+@io_manager(
+    config_schema={
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+    },
+    required_resource_keys={"gcs"},
+)
+def gcs_filepath_io_manager(init_context):
+    client = init_context.resources.gcs
+    filename_io_manager = FilepathGCSIOManager(
+        init_context.resource_config["gcs_bucket"],
+        client,
+        init_context.resource_config["gcs_prefix"],
+    )
+    return filename_io_manager
+
+
+@io_manager(
+    config_schema={
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+    },
+    required_resource_keys={"gcs"},
+)
+def gcs_avro_io_manager(init_context):
+    return AvroGCSIOManager(
+        bucket=init_context.resource_config["gcs_bucket"],
+        client=init_context.resources.gcs,
+        prefix=init_context.resource_config["gcs_prefix"],
+    )
 
 
 @resource(config_schema={"folder_id": Field(String)})

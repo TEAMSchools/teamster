@@ -12,27 +12,32 @@ from sqlalchemy import literal_column, select, table, text
 
 
 def construct_sql(
-    context: OpExecutionContext, table_name, columns, where_column, partitions_def_start
+    context: OpExecutionContext,
+    table_name,
+    columns,
+    where_column,
+    partitions_def: TimeWindowPartitionsDefinition,
 ):
-    if partitions_def_start is not None:
+    if partitions_def is not None:
         window_start = context.partition_time_window.start
-        window_end = window_start.add(hours=1)
+        window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+        window_end_fmt = window_start.add(hours=1).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
-        if context.partition_time_window.start == partitions_def_start:
+        if window_start_fmt == partitions_def.start.isoformat(timespec="microseconds"):
             constructed_where = (
-                f"{where_column} < TO_TIMESTAMP('"
-                f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') OR "
+                f"{where_column} < TO_TIMESTAMP("
+                f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
+                ") OR "
                 f"{where_column} IS NULL"
             )
         else:
             constructed_where = (
-                f"{where_column} >= TO_TIMESTAMP('"
-                f"{window_start.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
-                f"{where_column} < TO_TIMESTAMP('"
-                f"{window_end.format('YYYY-MM-DDTHH:mm:ss.SSSSSS')}"
-                "', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                f"{where_column} >= TO_TIMESTAMP("
+                f"'{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
+                ") AND "
+                f"{where_column} < TO_TIMESTAMP("
+                f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
+                ")"
             )
     else:
         constructed_where = ""
@@ -69,17 +74,12 @@ def build_powerschool_table_asset(
     where_column="",
     op_tags={},
 ) -> AssetsDefinition:
-    if partitions_def is not None:
-        partitions_def_start = partitions_def.start
-    else:
-        partitions_def_start = None
-
     @asset(
         name=asset_name,
         key_prefix=[code_location, "powerschool"],
         partitions_def=partitions_def,
         op_tags=op_tags,
-        io_manager_key="ps_io",
+        io_manager_key="gcs_fp_io",
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
     )
@@ -89,7 +89,7 @@ def build_powerschool_table_asset(
             table_name=asset_name,
             columns=columns,
             where_column=where_column,
-            partitions_def_start=partitions_def_start,
+            partitions_def=partitions_def,
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(

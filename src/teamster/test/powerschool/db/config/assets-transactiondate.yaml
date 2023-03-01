@@ -1,5 +1,4 @@
 assets:
-  # transaction_date
   - asset_name: attendance
   - asset_name: cc
   - asset_name: courses

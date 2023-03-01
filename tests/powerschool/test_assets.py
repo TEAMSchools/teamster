@@ -27,7 +27,7 @@ powerschool_table_asset = with_resources(
                 ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
             )
         ),
-        "ps_io": gcs_filepath_io_manager.configured(
+        "gcs_fp_io": gcs_filepath_io_manager.configured(
             config_from_files(
                 [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
             )

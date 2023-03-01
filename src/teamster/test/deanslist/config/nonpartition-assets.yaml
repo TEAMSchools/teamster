@@ -1,0 +1,15 @@
+endpoints:
+  - asset_name: users
+    api_version: beta
+    params:
+      show_inactive: Y
+  - asset_name: lists
+    api_version: v1
+  - asset_name: terms
+    api_version: v1
+  - asset_name: rosters
+    api_version: v1
+    params:
+      show_inactive: Y
+  - asset_name: roster-assignments
+    api_version: beta
