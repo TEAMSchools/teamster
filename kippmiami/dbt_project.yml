@@ -40,5 +40,4 @@ models:
         +enabled: false
 
 vars:
-  code_location: kippmiami
-  powerschool_schema: kippmiami
+  powerschool_schema: kippmiami_powerschool
