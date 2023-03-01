@@ -8,7 +8,6 @@ daily_partitions_def = DailyPartitionsDefinition(
     start_date="2023-02-28T00:00:00.000000",
     timezone=LOCAL_TIME_ZONE.name,
     fmt="%Y-%m-%dT%H:%M:%S.%f",
-    hour_offset=24,
 )
 
 nonpartition_assets = [
