@@ -1,3 +1,3 @@
-from teamster.test.powerschool.db import assets, sensors
+from teamster.test.powerschool.db import assets
 
-__all__ = [assets, sensors]
+__all__ = [assets]

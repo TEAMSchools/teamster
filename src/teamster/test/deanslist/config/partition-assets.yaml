@@ -1,0 +1,33 @@
+endpoints:
+  - asset_name: behavior
+    api_version: beta
+    params:
+      sdt: "{start_date}"
+      edt: "{end_date}"
+      UpdatedSince: "{modified_date}"
+      IncludeDeleted: Y
+  - asset_name: homework
+    api_version: beta
+    params:
+      sdt: "{start_date}"
+      edt: "{end_date}"
+      UpdatedSince: "{modified_date}"
+      IncludeDeleted: Y
+  - asset_name: comm
+    api_version: beta
+    params:
+      UpdatedSince: "{modified_date}"
+      IncludeDeleted: Y
+      IncludePrevEnrollments: Y
+  - asset_name: incidents
+    api_version: v1
+    params:
+      StartDate: "{start_date}"
+      EndDate: "{end_date}"
+      UpdatedSince: "{modified_date}"
+      IncludeDeleted: Y
+      cf: Y
+  - asset_name: followups
+    api_version: v1
+    params:
+      UpdatedSince: "{modified_date}"

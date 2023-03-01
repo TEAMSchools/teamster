@@ -1,6 +1,7 @@
 name: test - Hybrid Branch Deployment
 
 on:
+  workflow_dispatch: null
   pull_request:
     branches:
       - main

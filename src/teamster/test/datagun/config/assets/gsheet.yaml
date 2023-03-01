@@ -1,4 +1,7 @@
-key_prefix: test
+key_prefix:
+  - test
+  - datagun
+  - gsheets
 assets:
   - asset_name: test_datagun_gsheet
     query_config:
