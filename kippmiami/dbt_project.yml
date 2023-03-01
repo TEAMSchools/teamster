@@ -25,6 +25,7 @@ clean-targets: # directories to be removed by `dbt clean`
 models:
   powerschool:
     staging:
+      +schema: powerschool
       # disable extensions here
       stg_powerschool__s_nj_crs_x:
         +enabled: false
