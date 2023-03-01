@@ -1,10 +1,10 @@
-from dagster import HourlyPartitionsDefinition, config_from_files
+from dagster import DailyPartitionsDefinition, config_from_files
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippmiami import CODE_LOCATION
 
-hourly_partitions_def = HourlyPartitionsDefinition(
+daily_partitions_def = DailyPartitionsDefinition(
     start_date="2023-02-01T00:00:00.000000",
     timezone=LOCAL_TIME_ZONE.name,
     fmt="%Y-%m-%dT%H:%M:%S.%f",
@@ -21,7 +21,7 @@ transactiondate_assets = [
     build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
-        partitions_def=hourly_partitions_def,
+        partitions_def=daily_partitions_def,
         where_column="transaction_date",
     )
     for cfg in config_from_files(
@@ -35,7 +35,7 @@ whenmodified_assets = [
     build_powerschool_table_asset(
         **cfg,
         code_location=CODE_LOCATION,
-        partitions_def=hourly_partitions_def,
+        partitions_def=daily_partitions_def,
         where_column="whenmodified",
     )
     for cfg in config_from_files(

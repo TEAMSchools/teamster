@@ -85,7 +85,7 @@ def filter_asset_partitions(
             asset_keys_checked.append(akpk.asset_key)
 
         window_start = pendulum.parse(text=akpk.partition_key, tz=LOCAL_TIME_ZONE.name)
-        window_end = window_start.add(hours=1)
+        window_end = window_start.add(days=1)
         query = text(
             sql_string.format(
                 table_name=akpk.asset_key.path[-1],

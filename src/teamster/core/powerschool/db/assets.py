@@ -21,7 +21,7 @@ def construct_sql(
     if partitions_def is not None:
         window_start = context.partition_time_window.start
         window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-        window_end_fmt = window_start.add(hours=1).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+        window_end_fmt = window_start.add(days=1).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
         if window_start_fmt == partitions_def.start.isoformat(timespec="microseconds"):
             constructed_where = (
