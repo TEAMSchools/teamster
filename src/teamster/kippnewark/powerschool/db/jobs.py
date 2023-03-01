@@ -1,6 +1,6 @@
 from dagster import AssetSelection, define_asset_job
 
-from teamster.kippnewark.powerschool.db.assets import nonpartition_assets
+from teamster.test.powerschool.db.assets import nonpartition_assets
 
 nonpartition_assets_job = define_asset_job(
     name="nonpartition_assets_job",
