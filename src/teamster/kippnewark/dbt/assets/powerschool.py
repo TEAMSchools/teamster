@@ -8,7 +8,7 @@ from teamster.kippnewark.powerschool.db.assets import (
 )
 
 manifest_json_path = f"teamster-dbt/{CODE_LOCATION}/target/manifest.json"
-key_prefix = [CODE_LOCATION, "dbt", "powerschool"]
+key_prefix = [CODE_LOCATION, "dbt"]
 
 src_assets = [build_external_source_asset(a) for a in all_assets]
 
