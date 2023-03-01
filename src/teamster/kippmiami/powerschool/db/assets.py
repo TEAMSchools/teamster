@@ -5,7 +5,7 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippmiami import CODE_LOCATION
 
 daily_partitions_def = DailyPartitionsDefinition(
-    start_date="2023-02-01T00:00:00.000000",
+    start_date="2023-03-01T00:00:00.000000",
     timezone=LOCAL_TIME_ZONE.name,
     fmt="%Y-%m-%dT%H:%M:%S.%f",
 )
