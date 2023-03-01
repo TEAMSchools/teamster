@@ -2,9 +2,9 @@ import os
 
 from dagster import (
     AssetsDefinition,
+    DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
-    TimeWindowPartitionsDefinition,
     asset,
 )
 from fastavro import block_reader
@@ -16,10 +16,10 @@ def construct_sql(
     table_name,
     columns,
     where_column,
-    partitions_def: TimeWindowPartitionsDefinition,
+    partitions_def: DynamicPartitionsDefinition,
 ):
     if partitions_def is not None:
-        window_start = context.partition_time_window.start
+        window_start = context.partition_key
         window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
         window_end_fmt = window_start.add(days=1).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
@@ -69,7 +69,7 @@ def count(context, sql) -> int:
 def build_powerschool_table_asset(
     asset_name,
     code_location,
-    partitions_def: TimeWindowPartitionsDefinition = None,
+    partitions_def=None,
     columns=["*"],
     where_column="",
     op_tags={},
