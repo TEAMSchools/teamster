@@ -60,7 +60,7 @@ def build_staging_assets(
     _assets = [
         load_assets_from_dbt_manifest(
             manifest_json=manifest_json,
-            select=f"stg_{key_prefix[-1]}__{a.key.path[-1]}+",
+            select=f"stg_{a.key.path[-2]}__{a.key.path[-1]}+",
             key_prefix=key_prefix,
             source_key_prefix=key_prefix[:2],
             partitions_def=partitions_def,
