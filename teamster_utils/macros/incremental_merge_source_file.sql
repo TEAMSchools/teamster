@@ -2,8 +2,12 @@
 
 {%- set from_source = source(model.package_name, model.name | replace("stg", "src")) -%}
 {%- set star = dbt_utils.star(
-    from=from_source, 
-    except=["_partition_fiscal_year", "_partition_date", "_partition_hour"]
+    from=from_source,
+    except=[
+        "_dagster_partition_fiscal_year",
+        "_dagster_partition_date",
+        "_dagster_partition_hour",
+    ],
 ) -%}
 {%- set star_except = dbt_utils.star(
     from=from_source, except=transform_cols | map(attribute="name")
