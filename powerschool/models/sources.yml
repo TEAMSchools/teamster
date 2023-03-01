@@ -352,79 +352,79 @@ sources:
       # not-partitionable
       - name: src_powerschool__attendance_code
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance_code"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance_code/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance_conversion_items
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance_conversion_items"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/attendance_conversion_items/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__bell_schedule
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/bell_schedule"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/bell_schedule/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__calendar_day
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/calendar_day"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/calendar_day/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__cycle_day
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/cycle_day"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/cycle_day/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__fte
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/fte"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/fte/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gen
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gen"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/gen/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__log
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/log"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/log/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__period
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/period"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/period/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__reenrollments
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/reenrollments"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/reenrollments/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__spenrollments
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/spenrollments"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/spenrollments/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__test
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/test"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/test/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__testscore
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/testscore"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/powerschool/testscore/*"
           options:
             format: AVRO
             enable_logical_types: true
