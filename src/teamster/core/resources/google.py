@@ -82,13 +82,8 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
-        if context.has_asset_key and context.has_asset_partitions:
-            return [
-                urlparse(self._uri_for_key(key)) for key in self._get_paths(context)
-            ]
-        else:
-            key = self._get_path(context)
-            return [urlparse(self._uri_for_key(key))]
+        key = self._get_path(context)
+        return [urlparse(self._uri_for_key(key))]
 
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
@@ -146,13 +141,8 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
-        if context.has_asset_key and context.has_asset_partitions:
-            return [
-                urlparse(self._uri_for_key(key)) for key in self._get_paths(context)
-            ]
-        else:
-            key = self._get_path(context)
-            return [urlparse(self._uri_for_key(key))]
+        key = self._get_path(context)
+        return [urlparse(self._uri_for_key(key))]
 
 
 class GoogleSheets(object):
