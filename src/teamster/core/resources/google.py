@@ -31,9 +31,9 @@ def parse_partition_key_date(partition_key):
     pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
 
     return [
-        f"_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
-        f"_partition_date={pk_datetime.to_date_string()}",
-        f"_partition_hour={pk_datetime.format('HH')}",
+        f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
+        f"_dagster_partition_date={pk_datetime.to_date_string()}",
+        f"_dagster_partition_hour={pk_datetime.format('HH')}",
     ]
 
 
@@ -46,7 +46,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
                     if dimension == "date":
                         path.extend(parse_partition_key_date(key))
                     else:
-                        path.append(f"_partition_{dimension}={key}")
+                        path.append(f"_dagster_partition_{dimension}={key}")
             else:
                 path = copy.deepcopy(context.asset_key.path)
                 path.extend(parse_partition_key_date(context.partition_key))
@@ -96,7 +96,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
                     if dimension == "date":
                         path.extend(parse_partition_key_date(key))
                     else:
-                        path.append(f"_partition_{dimension}={key}")
+                        path.append(f"_dagster_partition_{dimension}={key}")
             else:
                 path = copy.deepcopy(context.asset_key.path)
                 path.extend(parse_partition_key_date(context.partition_key))
