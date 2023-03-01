@@ -21,10 +21,12 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         group_name="staging",
     )
     def _asset(context: OpExecutionContext, upstream):
+        dataset_name = f"{code_location}_{package_name}"
+
         # create BigQuery dataset, if not exists
         bq: bigquery.Client = context.resources.warehouse_bq
-        context.log.debug(f"Creating dataset {code_location}")
-        bq.create_dataset(dataset=code_location, exists_ok=True)
+        context.log.info(f"Creating dataset {dataset_name}")
+        bq.create_dataset(dataset=dataset_name, exists_ok=True)
 
         # dbt run-operation stage_external_sources
         dbt: DbtCliResource = context.resources.dbt
