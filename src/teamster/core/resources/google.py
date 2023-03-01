@@ -40,18 +40,20 @@ def parse_partition_key_date(partition_key):
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_partitions:
+            path = copy.deepcopy(context.asset_key.path)
             if isinstance(context.partition_key, MultiPartitionKey):
-                path = copy.deepcopy(context.asset_key.path)
                 for dimension, key in context.partition_key.keys_by_dimension.items():
                     if dimension == "date":
                         path.extend(parse_partition_key_date(key))
                     else:
                         path.append(f"_dagster_partition_{dimension}={key}")
             else:
-                path = copy.deepcopy(context.asset_key.path)
                 path.extend(parse_partition_key_date(context.partition_key))
+
+            path.append("data")
         elif context.has_asset_key:
-            path = context.get_asset_identifier()
+            path = copy.deepcopy(context.asset_key.path)
+            path.append("data")
         else:
             parts = context.get_identifier()
             run_id = parts[0]
@@ -59,7 +61,6 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
             path = ["storage", run_id, "files", *output_parts]
 
-        path.append("data")
         return "/".join([self.prefix, *path])
 
     def handle_output(self, context: OutputContext, file_path: pathlib.Path):
@@ -90,15 +91,14 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_partitions:
+            path = copy.deepcopy(context.asset_key.path)
             if isinstance(context.partition_key, MultiPartitionKey):
-                path = copy.deepcopy(context.asset_key.path)
                 for dimension, key in context.partition_key.keys_by_dimension.items():
                     if dimension == "date":
                         path.extend(parse_partition_key_date(key))
                     else:
                         path.append(f"_dagster_partition_{dimension}={key}")
             else:
-                path = copy.deepcopy(context.asset_key.path)
                 path.extend(parse_partition_key_date(context.partition_key))
 
             path.append("data")
