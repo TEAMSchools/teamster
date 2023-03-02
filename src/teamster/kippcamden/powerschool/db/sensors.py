@@ -107,7 +107,7 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
         try:
             for asset in asset_graph.assets:
                 context.log.info(asset)
-                context.lig.info(asset.metadata_by_key)
+                context.log.info(asset.metadata_by_key)
                 # count = get_asset_count(asset=asset, db=resources.db)
                 # context.log.debug(f"count: {count}")
                 # if count > 0:
