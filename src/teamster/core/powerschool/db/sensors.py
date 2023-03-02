@@ -149,7 +149,7 @@ def build_dynamic_parition_sensor(
 
                         cursor[asset_key_string] = window_end.timestamp()
             finally:
-                context.debug.info("Stopping SSH tunnel")
+                context.log.info("Stopping SSH tunnel")
                 ssh_tunnel.stop()
 
         context.update_cursor(json.dumps(cursor))
