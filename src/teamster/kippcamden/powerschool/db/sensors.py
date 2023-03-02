@@ -64,7 +64,7 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
         asset_key
         for asset_key in target_asset_selection.resolve(asset_graph.assets)
         if not cursor.was_previously_materialized_or_requested(asset_key)
-        and not context.instance.get_latest_materialization_event(asset=asset_key)
+        and not context.instance.get_latest_materialization_event(asset_key)
     )
     context.log.info(never_materialized_or_requested)
 
