@@ -57,7 +57,7 @@ def build_dynamic_parition_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext):
-        cursor = json.loads(context.cursor or {})
+        cursor = json.loads(context.cursor or "{}")
         asset_graph = context.repository_def.asset_graph
 
         # check if asset has ever been materialized or requested
@@ -109,7 +109,7 @@ def build_dynamic_parition_sensor(
                         .subtract(minutes=5)
                         .start_of("minute")
                     )
-                    asset_key_string = asset.key.to_python_string()
+                    asset_key_string = asset.key.to_python_identifier()
 
                     cursor_window_start = cursor.get(asset_key_string)
                     if cursor_window_start:
