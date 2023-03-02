@@ -8,11 +8,6 @@ from dagster import (
     config_from_files,
     sensor,
 )
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
-)
-
-# from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_ssh import ssh_resource
 from sqlalchemy import text
 
@@ -52,24 +47,17 @@ def get_asset_count(asset, db):
 
 @sensor(asset_selection=AssetSelection.assets(*assets.partition_assets))
 def test_dynamic_partition_sensor(context: SensorEvaluationContext):
-    target_asset_selection = AssetSelection.assets(*assets.partition_assets)
+    asset_selection = AssetSelection.assets(*assets.partition_assets)
 
-    # instance_queryer = CachingInstanceQueryer(instance=context.instance)
     asset_graph = context.repository_def.asset_graph
 
-    # check if asset has ever been materialized or requested
-    cursor = (
-        AssetReconciliationCursor.from_serialized(context.cursor, asset_graph)
-        if context.cursor
-        else AssetReconciliationCursor.empty()
-    )
+    target_assets = [a for a in asset_graph.assets if a.key in asset_selection._keys]
 
-    context.instance.get_latest_materialization_event
+    # check if asset has ever been materialized or requested
     never_materialized_or_requested = set(
         asset_key
-        for asset_key in target_asset_selection.resolve(asset_graph.assets)
-        if not cursor.was_previously_materialized_or_requested(asset_key)
-        and not context.instance.get_latest_materialization_event(asset_key)
+        for asset_key in asset_selection.resolve(asset_graph.assets)
+        if not context.instance.get_latest_materialization_event(asset_key)
     )
     context.log.info(never_materialized_or_requested)
 
@@ -105,14 +93,11 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
             ssh_tunnel.start()
 
         try:
-            for asset in asset_graph.assets:
-                context.log.info(asset)
-                context.log.info(asset.metadata_by_key)
-                # count = get_asset_count(asset=asset, db=resources.db)
-                # context.log.debug(f"count: {count}")
-                # if count > 0:
-                #     pass
-
+            for asset in target_assets:
+                count = get_asset_count(asset=asset, db=resources.db)
+                context.log.debug(f"count: {count}")
+                if count > 0:
+                    pass
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
