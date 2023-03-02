@@ -22,6 +22,8 @@ from teamster.kippcamden.powerschool.db import assets
 
 
 def get_asset_count(asset, db):
+    partition_column = asset.metadata_by_key[asset.key]["partition_column"]
+
     window_end = pendulum.now(tz=LOCAL_TIME_ZONE.name).start_of("hour")
     window_start = window_end.subtract(hours=24)
 
@@ -29,12 +31,14 @@ def get_asset_count(asset, db):
     window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
     query = text(
-        "SELECT COUNT(*) "
-        f"FROM {asset.asset_key.path[-1]} "
-        f"WHERE {asset.metadata['partition_column']} >= "
-        f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
-        f"AND {asset.metadata['partition_column']} < "
-        f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+        text=" ".join(
+            "SELECT COUNT(*)"
+            f"FROM {asset.asset_key.path[-1]}"
+            f"WHERE {partition_column} >="
+            f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+            f"AND {partition_column} <"
+            f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+        )
     )
 
     [(count,)] = db.execute_query(
@@ -71,14 +75,14 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
 
     # check if asset has any modified records from past X hours
     with build_resources(
-        resources={"ps_ssh": ssh_resource, "ps_db": oracle},
+        resources={"ssh": ssh_resource, "db": oracle},
         resource_config={
-            "ps_ssh": {
+            "ssh": {
                 "config": config_from_files(
                     ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
                 )
             },
-            "ps_db": {
+            "db": {
                 "config": config_from_files(
                     ["src/teamster/core/resources/config/db_powerschool.yaml"]
                 )
@@ -86,7 +90,7 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
         },
     ) as resources:
         ssh_port = 1521
-        ssh_tunnel = resources.ps_ssh.get_tunnel(
+        ssh_tunnel = resources.ssh.get_tunnel(
             remote_port=ssh_port,
             remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
             local_port=ssh_port,
@@ -104,7 +108,7 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
             for asset in asset_graph.assets:
                 context.log.info(asset)
 
-                count = get_asset_count(asset=asset, db=resources.ps_db)
+                count = get_asset_count(asset=asset, db=resources.db)
 
                 context.log.debug(f"count: {count}")
                 if count > 0:
