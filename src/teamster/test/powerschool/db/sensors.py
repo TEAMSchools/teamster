@@ -26,18 +26,12 @@ transactiondate_sensor = build_powerschool_incremental_sensor(
 )
 
 
-@sensor(
-    # name=name,
-    asset_selection=AssetSelection.assets(*assets.whenmodified_assets),
-    # minimum_interval_seconds=minimum_interval_seconds,
-    # description=description,
-    # default_status=default_status,
-)
+@sensor(asset_selection=AssetSelection.assets(*assets.whenmodified_assets))
 def test_dynamic_partition_sensor(context: SensorEvaluationContext):
+    asset_graph = context.repository_def.asset_graph
+
     cursor = (
-        AssetReconciliationCursor.from_serialized(
-            context.cursor, context.repository_def.asset_graph
-        )
+        AssetReconciliationCursor.from_serialized(context.cursor, asset_graph)
         if context.cursor
         else AssetReconciliationCursor.empty()
     )
@@ -50,7 +44,7 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
         instance_queryer=CachingInstanceQueryer(instance=context.instance),
         cursor=cursor,
         target_asset_selection=AssetSelection.assets(*assets.whenmodified_assets),
-        asset_graph=context.repository_def.asset_graph,
+        asset_graph=asset_graph,
     )
 
     context.log.info(never_materialized_or_requested_roots)
