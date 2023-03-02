@@ -2,6 +2,7 @@ import os
 
 from dagster import (
     AssetsDefinition,
+    DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
     TimeWindowPartitionsDefinition,
@@ -15,8 +16,8 @@ def construct_sql(
     context: OpExecutionContext,
     table_name,
     columns,
-    where_column,
-    partitions_def: TimeWindowPartitionsDefinition,
+    partition_column,
+    partitions_def: TimeWindowPartitionsDefinition | DynamicPartitionsDefinition,
 ):
     if partitions_def is not None:
         window_start = context.partition_time_window.start
@@ -25,17 +26,17 @@ def construct_sql(
 
         if window_start_fmt == partitions_def.start.isoformat(timespec="microseconds"):
             constructed_where = (
-                f"{where_column} < TO_TIMESTAMP("
+                f"{partition_column} < TO_TIMESTAMP("
                 f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
                 ") OR "
-                f"{where_column} IS NULL"
+                f"{partition_column} IS NULL"
             )
         else:
             constructed_where = (
-                f"{where_column} >= TO_TIMESTAMP("
+                f"{partition_column} >= TO_TIMESTAMP("
                 f"'{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
                 ") AND "
-                f"{where_column} < TO_TIMESTAMP("
+                f"{partition_column} < TO_TIMESTAMP("
                 f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6'"
                 ")"
             )
@@ -69,11 +70,13 @@ def count(context, sql) -> int:
 def build_powerschool_table_asset(
     asset_name,
     code_location,
-    partitions_def: TimeWindowPartitionsDefinition = None,
+    partitions_def: TimeWindowPartitionsDefinition | DynamicPartitionsDefinition = None,
     columns=["*"],
-    where_column="",
     op_tags={},
+    metadata={},
 ) -> AssetsDefinition:
+    partition_column = metadata.get("metadata")
+
     @asset(
         name=asset_name,
         key_prefix=[code_location, "powerschool"],
@@ -82,13 +85,14 @@ def build_powerschool_table_asset(
         io_manager_key="gcs_fp_io",
         required_resource_keys={"ps_db", "ps_ssh"},
         output_required=False,
+        metadata=metadata,
     )
     def _asset(context: OpExecutionContext):
         sql = construct_sql(
             context=context,
             table_name=asset_name,
             columns=columns,
-            where_column=where_column,
+            partition_column=partition_column,
             partitions_def=partitions_def,
         )
 

@@ -1,3 +1,4 @@
+partition_column: transaction_date
 assets:
   - asset_name: attendance
   - asset_name: cc
