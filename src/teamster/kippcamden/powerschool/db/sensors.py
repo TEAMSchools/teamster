@@ -16,6 +16,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 from dagster_ssh import ssh_resource
 from sqlalchemy import text
 
+from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from teamster.kippcamden.powerschool.db import assets
 
@@ -70,13 +71,18 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
 
     # check if asset has any modified records from past X hours
     with build_resources(
-        resources={"ps_ssh": ssh_resource},
+        resources={"ps_ssh": ssh_resource, "ps_db": oracle},
         resource_config={
             "ps_ssh": {
                 "config": config_from_files(
                     ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
                 )
-            }
+            },
+            "ps_db": {
+                "config": config_from_files(
+                    ["src/teamster/core/resources/config/db_powerschool.yaml"]
+                )
+            },
         },
     ) as resources:
         ssh_port = 1521
