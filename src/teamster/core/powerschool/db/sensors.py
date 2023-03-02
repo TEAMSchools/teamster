@@ -48,8 +48,8 @@ def get_asset_count(asset, db, window_start, window_end):
 def build_dynamic_parition_sensor(
     name,
     asset_selection,
-    partitions_def: DynamicPartitionsDefinition,
     minimum_interval_seconds=None,
+    partitions_def=DynamicPartitionsDefinition(name="partition_column"),
 ):
     @sensor(
         name=name,
@@ -139,6 +139,7 @@ def build_dynamic_parition_sensor(
                         asset_job = define_asset_job(
                             name=asset_key_string,
                             selection=[asset.key],
+                            partitions_def=partitions_def,
                         )
 
                         yield asset_job.run_request_for_partition(
