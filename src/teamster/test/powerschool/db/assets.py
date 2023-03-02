@@ -22,7 +22,7 @@ transactiondate_assets = [
         **cfg,
         code_location=CODE_LOCATION,
         partitions_def=hourly_partitions_def,
-        where_column="transaction_date",
+        partition_column="transaction_date",
     )
     for cfg in config_from_files(
         [
@@ -36,7 +36,7 @@ whenmodified_assets = [
         **cfg,
         code_location=CODE_LOCATION,
         partitions_def=hourly_partitions_def,
-        where_column="whenmodified",
+        partition_column="whenmodified",
     )
     for cfg in config_from_files(
         [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-whenmodified.yaml"]

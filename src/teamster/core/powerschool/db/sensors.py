@@ -190,7 +190,7 @@ def reconcile(
 def build_powerschool_incremental_sensor(
     name: str,
     asset_selection: AssetSelection,
-    where_column: str,
+    partition_column: str,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -202,9 +202,9 @@ def build_powerschool_incremental_sensor(
     sql_string = (
         "SELECT COUNT(*) "
         "FROM {table_name} "
-        f"WHERE {where_column} >= "
+        f"WHERE {partition_column} >= "
         "TO_TIMESTAMP('{window_start}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
-        f"AND {where_column} < "
+        f"AND {partition_column} < "
         "TO_TIMESTAMP('{window_end}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
     )
 
