@@ -3,7 +3,6 @@ import os
 
 import pendulum
 from dagster import (
-    DynamicPartitionsDefinition,
     SensorEvaluationContext,
     build_resources,
     config_from_files,
@@ -48,12 +47,18 @@ def get_asset_count(asset, db, window_start, window_end):
 def build_dynamic_parition_sensor(
     name,
     asset_selection,
+    partitions_def,
     minimum_interval_seconds=None,
-    partitions_def=DynamicPartitionsDefinition(name="partition_column"),
 ):
+    asset_job = define_asset_job(
+        name="powerschool_asset_dynamic_parition_job",
+        selection=asset_selection,
+        partitions_def=partitions_def,
+    )
+
     @sensor(
         name=name,
-        asset_selection=asset_selection,
+        job=asset_job,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext):
@@ -134,12 +139,6 @@ def build_dynamic_parition_sensor(
                         partitions_def.add_partitions(
                             partition_keys=[window_end.to_iso8601_string()],
                             instance=context.instance,
-                        )
-
-                        asset_job = define_asset_job(
-                            name=asset_key_string,
-                            selection=[asset.key],
-                            partitions_def=partitions_def,
                         )
 
                         yield asset_job.run_request_for_partition(
