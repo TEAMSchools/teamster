@@ -179,7 +179,7 @@ version = "1.1.20"
 summary = "UNKNOWN"
 dependencies = [
     "PyYAML>=5.1",
-    "github3.py",
+    "github3-py",
     "packaging<22,>=20.9",
     "questionary",
     "requests",
@@ -335,7 +335,7 @@ requires_python = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Clean single-source support for Python 3 and 2"
 
 [[package]]
-name = "github3.py"
+name = "github3-py"
 version = "3.2.0"
 requires_python = ">=3.6"
 summary = "Python wrapper for the GitHub API(http://developer.github.com/v3)"
@@ -1601,7 +1601,7 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
 "future 0.18.3" = [
     {url = "https://files.pythonhosted.org/packages/8f/2e/cf6accf7415237d6faeeebdc7832023c90e0282aa16fd3263db0eb4715ec/future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
 ]
-"github3.py 3.2.0" = [
+"github3-py 3.2.0" = [
     {url = "https://files.pythonhosted.org/packages/94/6d/76b2c72bad2de8f8966406dfdd26e05c951d6eec027fd3a383c2680a48bd/github3.py-3.2.0.tar.gz", hash = "sha256:09b72be1497d346b0968cde8360a0d6af79dc206d0149a63cd3ec86c65c377cc"},
     {url = "https://files.pythonhosted.org/packages/d3/2c/a6feede98828964a662970fe646020bbd1d5156fffe1424480ee601b48f1/github3.py-3.2.0-py2.py3-none-any.whl", hash = "sha256:a9016e40609c6f5cb9954dd188d08257dafd09c4da8c0e830a033fca00054b0d"},
 ]
