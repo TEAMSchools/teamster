@@ -1,5 +1,4 @@
 # import os
-
 from dagster import (  # build_resources,; config_from_files,
     AssetSelection,
     SensorEvaluationContext,
@@ -8,6 +7,7 @@ from dagster import (  # build_resources,; config_from_files,
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
 )
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from teamster.core.powerschool.db.sensors import (
     build_powerschool_incremental_sensor,
@@ -87,6 +87,7 @@ transactiondate_sensor = build_powerschool_incremental_sensor(
 def test_dynamic_partition_sensor(context: SensorEvaluationContext):
     target_asset_selection = AssetSelection.assets(*assets.whenmodified_assets)
 
+    instance_queryer = CachingInstanceQueryer(instance=context.instance)
     asset_graph = context.repository_def.asset_graph
 
     cursor = (
@@ -100,6 +101,7 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
         asset_key
         for asset_key in target_asset_selection.resolve(asset_graph.assets)
         if not cursor.was_previously_materialized_or_requested(asset_key)
+        and not instance_queryer.get_latest_materialization_record(asset_key, None)
     )
     context.log.info(never_materialized_or_requested)
 
