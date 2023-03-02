@@ -11,7 +11,8 @@ from dagster import (
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
 )
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+# from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_ssh import ssh_resource
 from sqlalchemy import text
 
@@ -48,7 +49,7 @@ def get_asset_count(asset, db):
 def test_dynamic_partition_sensor(context: SensorEvaluationContext):
     target_asset_selection = AssetSelection.assets(*assets.partition_assets)
 
-    instance_queryer = CachingInstanceQueryer(instance=context.instance)
+    # instance_queryer = CachingInstanceQueryer(instance=context.instance)
     asset_graph = context.repository_def.asset_graph
 
     # check if asset has ever been materialized or requested
