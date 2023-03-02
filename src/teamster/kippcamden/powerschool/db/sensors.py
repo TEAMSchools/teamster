@@ -1,7 +1,6 @@
 from dagster import AssetSelection, SensorEvaluationContext, sensor
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
-    find_never_materialized_or_requested_root_asset_partitions,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -47,20 +46,7 @@ def test_dynamic_partition_sensor(context: SensorEvaluationContext):
             if not instance_queryer.get_latest_materialization_record(asset, None):
                 never_materialized_or_requested.add(asset)
 
-    # (
-    #     never_materialized_or_requested_roots,
-    #     newly_materialized_root_asset_keys,
-    #     newly_materialized_root_partitions_by_asset_key,
-    # ) = find_never_materialized_or_requested_root_asset_partitions(
-    #     instance_queryer=CachingInstanceQueryer(instance=context.instance),
-    #     cursor=cursor,
-    #     target_asset_selection=AssetSelection.assets(*assets.whenmodified_assets),
-    #     asset_graph=asset_graph,
-    # )
-
     context.log.info(never_materialized_or_requested)
-    # context.log.info(newly_materialized_root_asset_keys)
-    # context.log.info(newly_materialized_root_partitions_by_asset_key)
 
 
 __all__ = [
