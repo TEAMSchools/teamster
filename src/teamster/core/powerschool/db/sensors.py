@@ -145,6 +145,7 @@ def build_dynamic_parition_sensor(
                         yield asset_job.run_request_for_partition(
                             run_key=f"{asset_key_string}_{window_start.int_timestamp}",
                             partition_key=window_end.to_iso8601_string(),
+                            instance=context.instance,
                         )
 
                         cursor[asset_key_string] = window_end.timestamp()
