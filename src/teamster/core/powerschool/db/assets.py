@@ -82,6 +82,8 @@ def build_powerschool_table_asset(
             "window_start": pendulum.DateTime,
             "window_end": pendulum.DateTime,
         }
+    else:
+        config_schema = None
 
     @asset(
         name=asset_name,
