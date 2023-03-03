@@ -84,7 +84,7 @@ def build_dynamic_parition_sensor(
         for asset in never_materialized:
             asset_key_string = asset.key.to_python_identifier()
             context.log.debug(asset_key_string)
-            context.log.debug("Resync")
+            context.log.debug("RESYNC")
 
             window_start = pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE)
             window_end = pendulum.now(tz=LOCAL_TIME_ZONE).start_of("day")
