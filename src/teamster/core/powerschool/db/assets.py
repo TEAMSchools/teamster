@@ -4,6 +4,7 @@ import pendulum
 from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
+    Field,
     OpExecutionContext,
     Output,
     asset,
@@ -65,16 +66,14 @@ def build_powerschool_table_asset(
 ) -> AssetsDefinition:
     partition_column = metadata.get("partition_column")
 
-    if partition_column is not None:
-        config_schema = {"window_start": str, "window_end": str}
-    else:
-        config_schema = None
-
     @asset(
         name=asset_name,
         key_prefix=[code_location, "powerschool"],
         partitions_def=partitions_def,
-        config_schema=config_schema,
+        config_schema={
+            "window_start": Field(str, is_required=False),
+            "window_end": Field(str, is_required=False),
+        },
         metadata=metadata,
         op_tags=op_tags,
         required_resource_keys={"ps_db", "ps_ssh"},
