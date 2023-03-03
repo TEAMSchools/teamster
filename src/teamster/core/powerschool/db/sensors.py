@@ -81,6 +81,8 @@ def build_dynamic_parition_sensor(
             asset = [a for a in asset_defs if a.key == asset_key][0]
 
             asset_key_string = asset.key.to_python_identifier()
+            context.log.debug(asset_key_string)
+            context.log.debug("Resync")
 
             partitions_def.add_partitions(
                 partition_keys=[window_start.to_iso8601_string()],
@@ -145,6 +147,7 @@ def build_dynamic_parition_sensor(
                         .start_of("minute")
                     )
                     asset_key_string = asset.key.to_python_identifier()
+                    context.log.debug(asset_key_string)
 
                     cursor_window_start = cursor.get(asset_key_string)
                     if cursor_window_start:
