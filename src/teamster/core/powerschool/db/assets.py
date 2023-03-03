@@ -71,8 +71,20 @@ def build_powerschool_table_asset(
         key_prefix=[code_location, "powerschool"],
         partitions_def=partitions_def,
         config_schema={
-            "window_start": Field(str, is_required=False),
-            "window_end": Field(str, is_required=False),
+            "window_start": Field(
+                str,
+                is_required=False,
+                default_value=pendulum.from_timestamp(0)
+                .replace(tzinfo=LOCAL_TIME_ZONE)
+                .to_iso8601_string(),
+            ),
+            "window_end": Field(
+                str,
+                is_required=False,
+                default_value=pendulum.from_timestamp(0)
+                .replace(tzinfo=LOCAL_TIME_ZONE)
+                .to_iso8601_string(),
+            ),
         },
         metadata=metadata,
         op_tags=op_tags,
