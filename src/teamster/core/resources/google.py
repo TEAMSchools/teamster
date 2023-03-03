@@ -34,6 +34,7 @@ def parse_partition_key_date(partition_key):
         f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
         f"_dagster_partition_date={pk_datetime.to_date_string()}",
         f"_dagster_partition_hour={pk_datetime.format('HH')}",
+        f"_dagster_partition_minute={pk_datetime.format('mm')}",
     ]
 
 
