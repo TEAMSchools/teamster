@@ -69,7 +69,7 @@ def build_powerschool_table_asset(
     op_tags={},
     metadata={},
 ) -> AssetsDefinition:
-    partition_column = metadata.get("metadata")
+    partition_column = metadata.get("partition_column")
 
     if partition_column is not None:
         config_schema = {"window_start": str, "window_end": str}
