@@ -67,7 +67,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def handle_output(self, context: OutputContext, file_path: pathlib.Path):
         key = self._get_path(context)
 
-        context.log.debug(
+        context.log.info(
             f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
         )
 
@@ -136,7 +136,9 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
                 codec="snappy",
             )
 
-        context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
+        context.log.info(
+            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
+        )
         backoff(
             self.bucket_obj.blob(key).upload_from_filename,
             args=[file_path],
