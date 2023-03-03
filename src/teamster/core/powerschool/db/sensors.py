@@ -122,6 +122,8 @@ def build_dynamic_parition_sensor(
                 cursor[asset.key.to_python_identifier()] = window_end.timestamp()
 
         # check if asset has any modified records from past X hours
+        run_request_data = []
+
         with build_resources(
             resources={"ssh": ssh_resource, "db": oracle},
             resource_config={
@@ -153,7 +155,6 @@ def build_dynamic_parition_sensor(
                 ssh_tunnel.start()
 
             try:
-                run_request_data = []
                 for asset in to_check:
                     asset_key_string = asset.key.to_python_identifier()
                     context.log.debug(asset_key_string)
@@ -197,35 +198,37 @@ def build_dynamic_parition_sensor(
                 context.log.info("Stopping SSH tunnel")
                 ssh_tunnel.stop()
 
-            window_ends = list(set([rr["window_end"] for rr in run_request_data]))
+        window_ends = list(set([rr["window_end"] for rr in run_request_data]))
 
-            partitions_def.add_partitions(
-                partition_keys=[we.to_iso8601_string() for we in window_ends],
-                instance=context.instance,
-            )
+        partitions_def.add_partitions(
+            partition_keys=[we.to_iso8601_string() for we in window_ends],
+            instance=context.instance,
+        )
 
-            for window_end in window_ends:
-                yield asset_job.run_request_for_partition(
-                    run_key=f"powerschool_dynamic_partition_{window_end.int_timestamp}",
-                    partition_key=window_end.to_iso8601_string(),
-                    run_config={
-                        "ops": {
-                            rr["asset"].key.to_python_identifier(): {
-                                "config": {
-                                    "window_start": (
-                                        rr["window_start"].to_iso8601_string()
-                                    ),
-                                    "window_end": (
-                                        rr["window_end"].to_iso8601_string()
-                                    ),
-                                }
+        for window_end in window_ends:
+            run_request_data_filtered = [
+                rr for rr in run_request_data if rr["window_end"] == window_end
+            ]
+
+            yield asset_job.run_request_for_partition(
+                run_key=f"powerschool_dynamic_partition_{window_end.int_timestamp}",
+                partition_key=window_end.to_iso8601_string(),
+                run_config={
+                    "ops": {
+                        rr["asset"].key.to_python_identifier(): {
+                            "config": {
+                                "window_start": (
+                                    rr["window_start"].to_iso8601_string()
+                                ),
+                                "window_end": (rr["window_end"].to_iso8601_string()),
                             }
-                            for rr in run_request_data
                         }
-                    },
-                    instance=context.instance,
-                    asset_selection=[rr["asset"].key for rr in run_request_data],
-                )
+                        for rr in run_request_data_filtered
+                    }
+                },
+                instance=context.instance,
+                asset_selection=[rr["asset"].key for rr in run_request_data_filtered],
+            )
 
         context.update_cursor(json.dumps(cursor))
 
