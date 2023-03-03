@@ -75,7 +75,7 @@ def build_dynamic_parition_sensor(
         )
 
         for asset_key in never_materialized:
-            window_start = pendulum.from_timestamp(0)
+            window_start = pendulum.from_timestamp(0, tz=LOCAL_TIME_ZONE.name)
             window_end = pendulum.now(tz=LOCAL_TIME_ZONE.name).start_of("day")
 
             asset = [a for a in asset_defs if a.key == asset_key][0]
@@ -91,8 +91,8 @@ def build_dynamic_parition_sensor(
                 run_key=f"{asset_key_string}_{window_start.int_timestamp}",
                 partition_key=window_start.to_iso8601_string(),
                 run_config={
-                    "window_start": window_start,
-                    "window_end": window_end,
+                    "window_start": window_start.to_iso8601_string(),
+                    "window_end": window_end.to_iso8601_string(),
                 },
                 instance=context.instance,
                 asset_selection=[asset.key],
@@ -169,8 +169,8 @@ def build_dynamic_parition_sensor(
                             run_key=f"{asset_key_string}_{window_start.int_timestamp}",
                             partition_key=window_end.to_iso8601_string(),
                             run_config={
-                                "window_start": window_start,
-                                "window_end": window_end,
+                                "window_start": window_start.to_iso8601_string(),
+                                "window_end": window_end.to_iso8601_string(),
                             },
                             instance=context.instance,
                             asset_selection=[asset.key],

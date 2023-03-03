@@ -12,13 +12,7 @@ from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 
-def construct_sql(
-    table_name,
-    columns,
-    partition_column,
-    window_start: pendulum.DateTime,
-    window_end: pendulum.DateTime,
-):
+def construct_sql(table_name, columns, partition_column, window_start, window_end):
     if partition_column is None:
         constructed_where = ""
     else:
@@ -78,10 +72,7 @@ def build_powerschool_table_asset(
     partition_column = metadata.get("metadata")
 
     if partition_column is not None:
-        config_schema = {
-            "window_start": pendulum.DateTime,
-            "window_end": pendulum.DateTime,
-        }
+        config_schema = {"window_start": str, "window_end": str}
     else:
         config_schema = None
 
@@ -101,8 +92,8 @@ def build_powerschool_table_asset(
             table_name=asset_name,
             columns=columns,
             partition_column=partition_column,
-            window_start=context.op_config.get("window_start"),
-            window_end=context.op_config.get("window_end"),
+            window_start=pendulum.parser.parse(context.op_config.get("window_start")),
+            window_end=pendulum.parser.parse(context.op_config.get("window_end")),
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(
