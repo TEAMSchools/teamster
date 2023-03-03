@@ -3,7 +3,9 @@ from dagster import DynamicPartitionsDefinition, config_from_files
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
 from teamster.kippnewark import CODE_LOCATION
 
-dynamic_partitions_def = DynamicPartitionsDefinition(name="partition_column")
+dynamic_partitions_def = DynamicPartitionsDefinition(
+    name=f"{CODE_LOCATION}_powerschool_partition_column"
+)
 
 nonpartition_assets = [
     build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
