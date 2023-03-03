@@ -1,24 +1,13 @@
-# from dagster import AssetSelection
+from dagster import AssetSelection
 
-# from teamster.core.powerschool.db.sensors import (
-#     build_powerschool_incremental_sensor,
-#     powerschool_ssh_tunnel,
-# )
-# from teamster.kippmiami.powerschool.db import assets
+from teamster.core.powerschool.db.sensors import build_dynamic_parition_sensor
+from teamster.kippmiami.powerschool.db import assets
 
-# whenmodified_sensor = build_powerschool_incremental_sensor(
-#     name="ps_whenmodified_sensor",
-#     asset_selection=AssetSelection.assets(*assets.whenmodified_assets),
-#     partition_column="whenmodified",
-#     minimum_interval_seconds=3600,
-# )
+powerschool_dynamic_partition_sensor = build_dynamic_parition_sensor(
+    name="powerschool_dynamic_partition_sensor",
+    asset_selection=AssetSelection.assets(*assets.partition_assets),
+    partitions_def=assets.dynamic_partitions_def,
+    minimum_interval_seconds=900,
+)
 
-# transactiondate_sensor = build_powerschool_incremental_sensor(
-#     name="ps_transactiondate_sensor",
-#     asset_selection=AssetSelection.assets(*assets.transactiondate_assets),
-#     partition_column="transaction_date",
-#     minimum_interval_seconds=3600,
-# )
-
-# __all__ = [powerschool_ssh_tunnel, whenmodified_sensor, transactiondate_sensor]
-__all__ = []
+__all__ = [powerschool_dynamic_partition_sensor]
