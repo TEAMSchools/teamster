@@ -2,6 +2,12 @@ partition_column: whenmodified
 assets:
   - asset_name: assignmentcategoryassoc
   - asset_name: assignmentscore
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
   - asset_name: assignmentsection
   - asset_name: codeset
   - asset_name: districtteachercategory
