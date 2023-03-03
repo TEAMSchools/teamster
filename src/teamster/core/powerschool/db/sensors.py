@@ -75,8 +75,8 @@ def build_dynamic_parition_sensor(
         )
 
         for asset_key in never_materialized:
-            window_start = pendulum.from_timestamp(0, tz=LOCAL_TIME_ZONE.name)
-            window_end = pendulum.now(tz=LOCAL_TIME_ZONE.name).start_of("day")
+            window_start = pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE)
+            window_end = pendulum.now(tz=LOCAL_TIME_ZONE).start_of("day")
 
             asset = [a for a in asset_defs if a.key == asset_key][0]
 
@@ -142,7 +142,7 @@ def build_dynamic_parition_sensor(
             try:
                 for asset in asset_defs:
                     window_end: pendulum.DateTime = (
-                        pendulum.now(tz=LOCAL_TIME_ZONE.name)
+                        pendulum.now(tz=LOCAL_TIME_ZONE)
                         .subtract(minutes=5)
                         .start_of("minute")
                     )
@@ -152,7 +152,7 @@ def build_dynamic_parition_sensor(
                     cursor_window_start = cursor.get(asset_key_string)
                     if cursor_window_start:
                         window_start = pendulum.from_timestamp(
-                            cursor_window_start, tz=LOCAL_TIME_ZONE.name
+                            cursor_window_start, tz=LOCAL_TIME_ZONE
                         )
                     else:
                         window_start: pendulum.DateTime = window_end.subtract(
