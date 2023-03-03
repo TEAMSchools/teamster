@@ -176,6 +176,12 @@ def build_dynamic_parition_sensor(
                         ).start_of("day")
                         cursor[asset_key_string] = window_start.timestamp()
 
+                    context.log.debug(
+                        (
+                            f"{window_start.to_iso8601_string()} - "
+                            f"{window_end.to_iso8601_string()}"
+                        )
+                    )
                     count = get_asset_count(
                         asset=asset,
                         db=resources.db,
@@ -195,7 +201,7 @@ def build_dynamic_parition_sensor(
 
                         cursor[asset_key_string] = window_end.timestamp()
             finally:
-                context.log.info("Stopping SSH tunnel")
+                context.log.debug("Stopping SSH tunnel")
                 ssh_tunnel.stop()
 
         window_ends = list(set([rr["window_end"] for rr in run_request_data]))

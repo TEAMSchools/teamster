@@ -27,7 +27,7 @@ assets:
   - asset_name: studentcontactassoc
   - asset_name: studentcontactdetail
   - asset_name: studentcorefields
-  - asset_name: studentrace
+  # - asset_name: studentrace
   - asset_name: teachercategory
   - asset_name: u_clg_et_stu
   - asset_name: u_clg_et_stu_alt
