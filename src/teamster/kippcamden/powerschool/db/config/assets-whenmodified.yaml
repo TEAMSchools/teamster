@@ -2,12 +2,6 @@ partition_column: whenmodified
 assets:
   - asset_name: assignmentcategoryassoc
   - asset_name: assignmentscore
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            limits:
-              memory: 1.0Gi
   - asset_name: assignmentsection
   - asset_name: codeset
   - asset_name: districtteachercategory
@@ -49,10 +43,4 @@ assets:
   - asset_name: u_clg_et_stu_alt
   - asset_name: u_def_ext_students
   - asset_name: u_studentsuserfields
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            limits:
-              memory: 1.0Gi
   - asset_name: users
