@@ -73,8 +73,6 @@ class SqlAlchemyEngine(object):
 
     def execute_query(self, query, partition_size, output, connect_kwargs={}):
         # TODO: add file_format param, refactor output logic
-        table_name = query.get_final_froms()[0].name
-
         self.log.debug("Opening connection to engine")
         with self.engine.connect(**connect_kwargs) as conn:
             self.log.info(f"Executing query:\n{query}")
@@ -104,9 +102,11 @@ class SqlAlchemyEngine(object):
 
                 self.log.debug(f"Retrieved {len(output_data)} rows")
             elif output == "avro":
-                data_dir = pathlib.Path("data").absolute()
-                data_dir.mkdir(parents=True, exist_ok=True)
+                table_name = query.get_final_froms()[0].name
 
+                data_dir = pathlib.Path("data").absolute()
+
+                data_dir.mkdir(parents=True, exist_ok=True)
                 output_data = data_dir / f"{table_name}.{output}"
                 self.log.debug(f"Saving results to {output_data}")
 
