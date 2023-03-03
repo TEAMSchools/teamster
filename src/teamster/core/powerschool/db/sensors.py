@@ -147,7 +147,7 @@ def build_dynamic_parition_sensor(
                         )
                     else:
                         window_start: pendulum.DateTime = window_end.subtract(
-                            days=1
+                            weeks=1
                         ).start_of("day")
                         cursor[asset_key_string] = window_start.timestamp()
 
