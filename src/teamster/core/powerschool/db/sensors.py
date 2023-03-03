@@ -100,7 +100,12 @@ def build_dynamic_parition_sensor(
                                 "window_end": window_end.to_iso8601_string(),
                             }
                         }
-                    }
+                    },
+                    "execution": {
+                        "config": {
+                            "resources": {"limits": {"cpu": "750m", "memory": "1.0Gi"}}
+                        }
+                    },
                 },
                 instance=context.instance,
                 asset_selection=[asset.key],
