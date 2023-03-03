@@ -175,10 +175,6 @@ def build_dynamic_parition_sensor(
                             run_key=f"{asset_key_string}_{window_start.int_timestamp}",
                             partition_key=window_end.to_iso8601_string(),
                             run_config={
-                                "window_start": window_start.to_iso8601_string(),
-                                "window_end": window_end.to_iso8601_string(),
-                            },
-                            run_config={
                                 "ops": {
                                     asset_key_string: {
                                         "config": {
