@@ -4,7 +4,6 @@ import pathlib
 import sys
 
 import oracledb
-import pendulum
 from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils.merger import merge_dicts
 from fastavro import parse_schema, writer
@@ -74,6 +73,7 @@ class SqlAlchemyEngine(object):
 
     def execute_query(self, query, partition_size, output, connect_kwargs={}):
         # TODO: add file_format param, refactor output logic
+        table_name = query.get_final_froms()[0].name
 
         self.log.debug("Opening connection to engine")
         with self.engine.connect(**connect_kwargs) as conn:
@@ -107,8 +107,7 @@ class SqlAlchemyEngine(object):
                 data_dir = pathlib.Path("data").absolute()
                 data_dir.mkdir(parents=True, exist_ok=True)
 
-                now_timestamp = str(pendulum.now().timestamp())
-                output_data = data_dir / f"{now_timestamp.replace('.', '_')}.{output}"
+                output_data = data_dir / f"{table_name}.{output}"
                 self.log.debug(f"Saving results to {output_data}")
 
                 avro_schema_fields = []
@@ -126,7 +125,7 @@ class SqlAlchemyEngine(object):
                 avro_schema = parse_schema(
                     {
                         "type": "record",
-                        "name": query.get_final_froms()[0].name,
+                        "name": table_name,
                         "fields": avro_schema_fields,
                     }
                 )
