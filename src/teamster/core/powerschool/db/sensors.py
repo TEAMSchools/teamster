@@ -81,9 +81,10 @@ def build_dynamic_parition_sensor(
             if context.instance.get_latest_materialization_event(asset.key)
         )
 
-        for asset in never_materialized:
-            asset_key_string = asset.key.to_python_identifier()
-            context.log.debug(asset_key_string)
+        if never_materialized:
+            context.log.debug(
+                [asset.key.to_python_identifier() for asset in never_materialized]
+            )
             context.log.debug("RESYNC")
 
             window_start = pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE)
@@ -95,16 +96,17 @@ def build_dynamic_parition_sensor(
             )
 
             yield asset_job.run_request_for_partition(
-                run_key=f"{asset_key_string}_{window_start.int_timestamp}",
+                run_key=f"powerschool_resync_{window_start.int_timestamp}",
                 partition_key=window_start.to_iso8601_string(),
                 run_config={
                     "ops": {
-                        asset_key_string: {
+                        asset.key.to_python_identifier(): {
                             "config": {
                                 "window_start": window_start.to_iso8601_string(),
                                 "window_end": window_end.to_iso8601_string(),
                             }
                         }
+                        for asset in never_materialized
                     },
                     "execution": {
                         "config": {
@@ -113,10 +115,11 @@ def build_dynamic_parition_sensor(
                     },
                 },
                 instance=context.instance,
-                asset_selection=[asset.key],
+                asset_selection=[asset.key for asset in never_materialized],
             )
 
-            cursor[asset_key_string] = window_end.timestamp()
+            for asset in never_materialized:
+                cursor[asset.key.to_python_identifier()] = window_end.timestamp()
 
         # check if asset has any modified records from past X hours
         with build_resources(
@@ -150,6 +153,7 @@ def build_dynamic_parition_sensor(
                 ssh_tunnel.start()
 
             try:
+                run_request_data = []
                 for asset in to_check:
                     asset_key_string = asset.key.to_python_identifier()
                     context.log.debug(asset_key_string)
@@ -180,36 +184,48 @@ def build_dynamic_parition_sensor(
 
                     context.log.debug(f"count: {count}")
                     if count > 0:
-                        partitions_def.add_partitions(
-                            partition_keys=[window_end.to_iso8601_string()],
-                            instance=context.instance,
-                        )
-
-                        yield asset_job.run_request_for_partition(
-                            run_key=f"{asset_key_string}_{window_start.int_timestamp}",
-                            partition_key=window_end.to_iso8601_string(),
-                            run_config={
-                                "ops": {
-                                    asset_key_string: {
-                                        "config": {
-                                            "window_start": (
-                                                window_start.to_iso8601_string()
-                                            ),
-                                            "window_end": (
-                                                window_end.to_iso8601_string()
-                                            ),
-                                        }
-                                    }
-                                }
-                            },
-                            instance=context.instance,
-                            asset_selection=[asset.key],
+                        run_request_data.append(
+                            {
+                                "asset": asset,
+                                "window_end": window_end,
+                                "window_start": window_start,
+                            }
                         )
 
                         cursor[asset_key_string] = window_end.timestamp()
             finally:
                 context.log.info("Stopping SSH tunnel")
                 ssh_tunnel.stop()
+
+            window_ends = list(set([rr["window_end"] for rr in run_request_data]))
+
+            partitions_def.add_partitions(
+                partition_keys=[we.to_iso8601_string() for we in window_ends],
+                instance=context.instance,
+            )
+
+            for window_end in window_ends:
+                yield asset_job.run_request_for_partition(
+                    run_key=f"powerschool_dynamic_partition_{window_end.int_timestamp}",
+                    partition_key=window_end.to_iso8601_string(),
+                    run_config={
+                        "ops": {
+                            rr["asset"].key.to_python_identifier(): {
+                                "config": {
+                                    "window_start": (
+                                        rr["window_start"].to_iso8601_string()
+                                    ),
+                                    "window_end": (
+                                        rr["window_end"].to_iso8601_string()
+                                    ),
+                                }
+                            }
+                            for rr in run_request_data
+                        }
+                    },
+                    instance=context.instance,
+                    asset_selection=[rr["asset"].key for rr in run_request_data],
+                )
 
         context.update_cursor(json.dumps(cursor))
 
