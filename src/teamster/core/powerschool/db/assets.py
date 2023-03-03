@@ -11,6 +11,8 @@ from dagster import (
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
+
 
 def construct_sql(table_name, columns, partition_column, window_start, window_end):
     if partition_column is None:
@@ -19,7 +21,7 @@ def construct_sql(table_name, columns, partition_column, window_start, window_en
         window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
         window_end_fmt = window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
-        if window_start == pendulum.from_timestamp(0):
+        if window_start == pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE):
             constructed_where = " ".join(
                 [
                     f"{partition_column} < TO_TIMESTAMP(",
