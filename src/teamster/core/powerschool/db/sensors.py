@@ -65,13 +65,40 @@ def build_dynamic_parition_sensor(
         cursor = json.loads(context.cursor or "{}")
         asset_graph = context.repository_def.asset_graph
 
+        asset_defs = [a for a in asset_graph.assets if a.key in asset_selection._keys]
+
         # check if asset has ever been materialized or requested
         never_materialized = set(
             asset_key
             for asset_key in asset_selection.resolve(asset_graph.assets)
             if not context.instance.get_latest_materialization_event(asset_key)
         )
-        context.log.info(never_materialized)
+
+        for asset_key in never_materialized:
+            window_start = pendulum.from_timestamp(0)
+            window_end = pendulum.now(tz=LOCAL_TIME_ZONE.name).start_of("day")
+
+            asset = [a for a in asset_defs if a.key == asset_key][0]
+
+            asset_key_string = asset.key.to_python_identifier()
+
+            partitions_def.add_partitions(
+                partition_keys=[window_start.to_iso8601_string()],
+                instance=context.instance,
+            )
+
+            yield asset_job.run_request_for_partition(
+                run_key=f"{asset_key_string}_{window_start.int_timestamp}",
+                partition_key=window_start.to_iso8601_string(),
+                run_config={
+                    "window_start": window_start,
+                    "window_end": window_end,
+                },
+                instance=context.instance,
+                asset_selection=[asset.key],
+            )
+
+            cursor[asset_key_string] = window_end.timestamp()
 
         # check if asset has any modified records from past X hours
         with build_resources(
@@ -105,9 +132,6 @@ def build_dynamic_parition_sensor(
                 ssh_tunnel.start()
 
             try:
-                asset_defs = [
-                    a for a in asset_graph.assets if a.key in asset_selection._keys
-                ]
                 for asset in asset_defs:
                     window_end: pendulum.DateTime = (
                         pendulum.now(tz=LOCAL_TIME_ZONE.name)
@@ -144,6 +168,10 @@ def build_dynamic_parition_sensor(
                         yield asset_job.run_request_for_partition(
                             run_key=f"{asset_key_string}_{window_start.int_timestamp}",
                             partition_key=window_end.to_iso8601_string(),
+                            run_config={
+                                "window_start": window_start,
+                                "window_end": window_end,
+                            },
                             instance=context.instance,
                             asset_selection=[asset.key],
                         )
