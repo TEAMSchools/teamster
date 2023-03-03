@@ -155,15 +155,15 @@ def build_dynamic_parition_sensor(
                 ssh_tunnel.start()
 
             try:
+                window_end: pendulum.DateTime = (
+                    pendulum.now(tz=LOCAL_TIME_ZONE)
+                    .subtract(minutes=5)  # 5 min grace period for PS lag
+                    .start_of("minute")
+                )
+
                 for asset in to_check:
                     asset_key_string = asset.key.to_python_identifier()
                     context.log.debug(asset_key_string)
-
-                    window_end: pendulum.DateTime = (
-                        pendulum.now(tz=LOCAL_TIME_ZONE)
-                        .subtract(minutes=5)  # 5 min grace period for PS lag
-                        .start_of("minute")
-                    )
 
                     cursor_window_start = cursor.get(asset_key_string)
                     if cursor_window_start:
