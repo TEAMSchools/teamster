@@ -63,26 +63,31 @@ def build_dynamic_parition_sensor(
     )
     def _sensor(context: SensorEvaluationContext):
         cursor = json.loads(context.cursor or "{}")
-        asset_graph = context.repository_def.asset_graph
+        asset_defs = [
+            a
+            for a in context.repository_def.asset_graph.assets
+            if a.key in asset_selection._keys
+        ]
 
-        asset_defs = [a for a in asset_graph.assets if a.key in asset_selection._keys]
-
-        # check if asset has ever been materialized or requested
+        # check if asset has ever been materialized
         never_materialized = set(
-            asset_key
-            for asset_key in asset_selection.resolve(asset_graph.assets)
-            if not context.instance.get_latest_materialization_event(asset_key)
+            asset
+            for asset in asset_defs
+            if not context.instance.get_latest_materialization_event(asset.key)
+        )
+        to_check = set(
+            asset
+            for asset in asset_defs
+            if context.instance.get_latest_materialization_event(asset.key)
         )
 
-        for asset_key in never_materialized:
-            window_start = pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE)
-            window_end = pendulum.now(tz=LOCAL_TIME_ZONE).start_of("day")
-
-            asset = [a for a in asset_defs if a.key == asset_key][0]
-
+        for asset in never_materialized:
             asset_key_string = asset.key.to_python_identifier()
             context.log.debug(asset_key_string)
             context.log.debug("Resync")
+
+            window_start = pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE)
+            window_end = pendulum.now(tz=LOCAL_TIME_ZONE).start_of("day")
 
             partitions_def.add_partitions(
                 partition_keys=[window_start.to_iso8601_string()],
@@ -145,14 +150,15 @@ def build_dynamic_parition_sensor(
                 ssh_tunnel.start()
 
             try:
-                for asset in asset_defs:
-                    window_end: pendulum.DateTime = (
-                        pendulum.now(tz=LOCAL_TIME_ZONE)
-                        .subtract(minutes=5)
-                        .start_of("minute")
-                    )
+                for asset in to_check:
                     asset_key_string = asset.key.to_python_identifier()
                     context.log.debug(asset_key_string)
+
+                    window_end: pendulum.DateTime = (
+                        pendulum.now(tz=LOCAL_TIME_ZONE)
+                        .subtract(minutes=5)  # 5 min grace period for PS lag
+                        .start_of("minute")
+                    )
 
                     cursor_window_start = cursor.get(asset_key_string)
                     if cursor_window_start:
@@ -161,7 +167,7 @@ def build_dynamic_parition_sensor(
                         )
                     else:
                         window_start: pendulum.DateTime = window_end.subtract(
-                            weeks=1
+                            weeks=1  # rewind 1 week in case of manual cursor reset
                         ).start_of("day")
                         cursor[asset_key_string] = window_start.timestamp()
 
