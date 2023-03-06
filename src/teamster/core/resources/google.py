@@ -23,13 +23,12 @@ from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyReq
 
 from teamster.core.utils.classes import FiscalYear
 
-DEFAULT_LEASE_DURATION = 60  # One minute
-
 
 def parse_date_partition_key(partition_key):
+    fiscal_year = FiscalYear(datetime=partition_key, start_month=7).fiscal_year
+
     return [
-        "_dagster_partition_fiscal_year="
-        + str(FiscalYear(datetime=partition_key, start_month=7).fiscal_year),
+        f"_dagster_partition_fiscal_year={fiscal_year}",
         f"_dagster_partition_date={partition_key.to_date_string()}",
         f"_dagster_partition_hour={partition_key.format('HH')}",
         f"_dagster_partition_minute={partition_key.format('mm')}",
