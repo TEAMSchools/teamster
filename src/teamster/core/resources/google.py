@@ -28,8 +28,8 @@ DEFAULT_LEASE_DURATION = 60  # One minute
 
 def parse_date_partition_key(partition_key):
     return [
-        "_dagster_partition_fiscal_year=",
-        str(FiscalYear(datetime=partition_key, start_month=7).fiscal_year),
+        "_dagster_partition_fiscal_year="
+        + str(FiscalYear(datetime=partition_key, start_month=7).fiscal_year),
         f"_dagster_partition_date={partition_key.to_date_string()}",
         f"_dagster_partition_hour={partition_key.format('HH')}",
         f"_dagster_partition_minute={partition_key.format('mm')}",
@@ -96,11 +96,15 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
+                context.log.debug(context.partition_key)
+                context.log.debug(context.asset_partition_keys)
                 if isinstance(context.partition_key, MultiPartitionKey):
                     for (
                         dimension,
                         key,
                     ) in context.partition_key.keys_by_dimension.items():
+                        context.log.debug(dimension)
+                        context.log.debug(key)
                         try:
                             path.extend(
                                 parse_date_partition_key(pendulum.parse(text=key))
