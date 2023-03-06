@@ -34,7 +34,9 @@ def build_deanslist_endpoint_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext):
-        if isinstance(context.partition_key, MultiPartitionsDefinition):
+        if isinstance(
+            context.asset_partitions_def_for_output(), MultiPartitionsDefinition
+        ):
             school_partition = context.partition_key.keys_by_dimension["school"]
             date_partition = pendulum.parser.parse(
                 context.partition_key.keys_by_dimension["date"]
