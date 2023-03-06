@@ -8,6 +8,7 @@ import google.auth
 import gspread
 import pendulum
 from dagster import (
+    DynamicPartitionsDefinition,
     Field,
     InputContext,
     MultiPartitionKey,
@@ -93,14 +94,18 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_partitions:
             path = copy.deepcopy(context.asset_key.path)
-            if isinstance(context.partition_key, MultiPartitionKey):
-                for dimension, key in context.partition_key.keys_by_dimension.items():
-                    if dimension == "date":
-                        path.extend(parse_partition_key_date(key))
-                    else:
-                        path.append(f"_dagster_partition_{dimension}={key}")
-            else:
-                path.extend(parse_partition_key_date(context.partition_key))
+            # if isinstance(context.partition_key, MultiPartitionKey):
+            #     for dimension, key in context.partition_key.keys_by_dimension.items():
+            #         if dimension == "date":
+            #             path.extend(parse_partition_key_date(key))
+            #         else:
+            #             path.append(f"_dagster_partition_{dimension}={key}")
+            partitions = context.asset_partitions_def.get_partitions()
+            for p in partitions:
+                if p.name == "date":
+                    path.extend(parse_partition_key_date(context.partition_key))
+                else:
+                    path.append(f"_dagster_partition_{p.name}={p.value}")
 
             path.append("data")
         elif context.has_asset_key:
