@@ -8,17 +8,22 @@ from dagster_ssh import ssh_resource
 from teamster.core.resources.deanslist import deanslist_resource
 from teamster.core.resources.google import gcs_avro_io_manager, gcs_filepath_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
-from teamster.kippmiami import CODE_LOCATION, datagun, dbt, powerschool
+from teamster.kippmiami import CODE_LOCATION, datagun, dbt, deanslist, powerschool
 
 defs = Definitions(
     executor=k8s_job_executor,
     assets=(
         load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
+        + load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist")
         + load_assets_from_modules(modules=[dbt.assets])
     ),
-    jobs=datagun.jobs.__all__,
-    schedules=datagun.schedules.__all__ + powerschool.schedules.__all__,
+    jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
+    schedules=(
+        datagun.schedules.__all__
+        + powerschool.schedules.__all__
+        + deanslist.schedules.__all__
+    ),
     sensors=powerschool.sensors.__all__ + dbt.sensors.__all__,
     resources={
         "warehouse": mssql.configured(
