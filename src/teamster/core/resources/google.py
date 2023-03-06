@@ -26,15 +26,13 @@ from teamster.core.utils.classes import FiscalYear
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
-def parse_partition_key_date(partition_key):
-    pk_datetime = pendulum.parse(text=partition_key)
-    pk_fiscal_year = FiscalYear(datetime=pk_datetime, start_month=7)
-
+def parse_date_partition_key(partition_key):
     return [
-        f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
-        f"_dagster_partition_date={pk_datetime.to_date_string()}",
-        f"_dagster_partition_hour={pk_datetime.format('HH')}",
-        f"_dagster_partition_minute={pk_datetime.format('mm')}",
+        "_dagster_partition_fiscal_year=",
+        str(FiscalYear(datetime=partition_key, start_month=7).fiscal_year),
+        f"_dagster_partition_date={partition_key.to_date_string()}",
+        f"_dagster_partition_hour={partition_key.format('HH')}",
+        f"_dagster_partition_minute={partition_key.format('mm')}",
     ]
 
 
@@ -42,14 +40,17 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_partitions:
             path = copy.deepcopy(context.asset_key.path)
+
             if isinstance(context.partition_key, MultiPartitionKey):
                 for dimension, key in context.partition_key.keys_by_dimension.items():
                     if dimension == "date":
-                        path.extend(parse_partition_key_date(key))
+                        path.extend(parse_date_partition_key(pendulum.parse(key)))
                     else:
                         path.append(f"_dagster_partition_{dimension}={key}")
             else:
-                path.extend(parse_partition_key_date(context.partition_key))
+                path.extend(
+                    parse_date_partition_key(pendulum.parse(context.partition_key))
+                )
 
             path.append("data")
         elif context.has_asset_key:
@@ -93,18 +94,14 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_partitions:
             path = copy.deepcopy(context.asset_key.path)
-            # if isinstance(context.partition_key, MultiPartitionKey):
-            #     for dimension, key in context.partition_key.keys_by_dimension.items():
-            #         if dimension == "date":
-            #             path.extend(parse_partition_key_date(key))
-            #         else:
-            #             path.append(f"_dagster_partition_{dimension}={key}")
-            partitions = context.asset_partitions_def.get_partitions()
-            for p in partitions:
-                if p.name == "date":
-                    path.extend(parse_partition_key_date(context.partition_key))
-                else:
-                    path.append(f"_dagster_partition_{p.name}={p.value}")
+
+            for partition_key in context.asset_partition_keys:
+                try:
+                    path.extend(
+                        parse_date_partition_key(pendulum.parse(text=partition_key))
+                    )
+                except pendulum.parsing.exceptions.ParserError:
+                    path.append(f"_dagster_partition_key={partition_key}")
 
             path.append("data")
         elif context.has_asset_key:
