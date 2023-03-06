@@ -33,11 +33,11 @@ def build_deanslist_endpoint_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext):
-        school_partition = context.partition_key.keys_by_dimension["school"]
-        date_partition = context.partition_key.keys_by_dimension.get("date")
-
-        if date_partition is not None:
-            date_partition = pendulum.parser.parse(date_partition)
+        if hasattr(context.partition_key, "keys_by_dimension"):
+            school_partition = context.partition_key.keys_by_dimension["school"]
+            date_partition = pendulum.parser.parse(
+                context.partition_key.keys_by_dimension["date"]
+            )
 
             if (
                 context.instance.get_latest_materialization_event(
@@ -59,6 +59,8 @@ def build_deanslist_endpoint_asset(
                         end_date=fiscal_year.end.to_date_string(),
                         modified_date=modified_date.to_date_string(),
                     )
+        else:
+            school_partition = context.partition_key
 
         dl: DeansList = context.resources.deanslist
 
