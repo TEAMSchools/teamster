@@ -87,7 +87,6 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
-                context.log.debug(context.asset_partition_key)
                 if isinstance(context.partition_key, MultiPartitionKey):
                     for (
                         dimension,
