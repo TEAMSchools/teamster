@@ -93,35 +93,26 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_key:
             path = copy.deepcopy(context.asset_key.path)
-            context.log.debug(path)
+
             if context.has_asset_partitions:
                 if isinstance(context.partition_key, MultiPartitionKey):
                     for (
                         dimension,
                         key,
                     ) in context.partition_key.keys_by_dimension.items():
-                        context.log.debug(f"{dimension}: {key}")
                         try:
-                            path.extend(
-                                parse_date_partition_key(pendulum.parse(text=key))
-                            )
-                            context.log.debug(f"multi - date - {path}")
+                            partition_key_parsed = pendulum.parse(text=key)
+                            path.extend(parse_date_partition_key(partition_key_parsed))
                         except pendulum.parsing.exceptions.ParserError:
                             path.append(f"_dagster_partition_{dimension}={key}")
-                            context.log.debug(f"multi - other - {path}")
                 else:
-                    for partition_key in context.asset_partition_keys:
-                        context.log.debug(partition_key)
-                        try:
-                            path.extend(
-                                parse_date_partition_key(
-                                    pendulum.parse(text=partition_key)
-                                )
-                            )
-                            context.log.debug(f"single - date - {path}")
-                        except pendulum.parsing.exceptions.ParserError:
-                            path.append(f"_dagster_partition_key={partition_key}")
-                            context.log.debug(f"single - other - {path}")
+                    try:
+                        partition_key_parsed = pendulum.parse(
+                            text=context.partition_key
+                        )
+                        path.extend(parse_date_partition_key(partition_key_parsed))
+                    except pendulum.parsing.exceptions.ParserError:
+                        path.append(f"_dagster_partition_key={context.partition_key}")
 
             path.append("data")
         else:
