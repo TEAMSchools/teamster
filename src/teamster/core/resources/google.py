@@ -92,20 +92,32 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        if context.has_asset_partitions:
+        if context.has_asset_key:
             path = copy.deepcopy(context.asset_key.path)
 
-            for partition_key in context.asset_partition_keys:
-                try:
-                    path.extend(
-                        parse_date_partition_key(pendulum.parse(text=partition_key))
-                    )
-                except pendulum.parsing.exceptions.ParserError:
-                    path.append(f"_dagster_partition_key={partition_key}")
+            if context.has_asset_partitions:
+                if isinstance(context.partition_key, MultiPartitionKey):
+                    for (
+                        dimension,
+                        key,
+                    ) in context.partition_key.keys_by_dimension.items():
+                        try:
+                            path.extend(
+                                parse_date_partition_key(pendulum.parse(text=key))
+                            )
+                        except pendulum.parsing.exceptions.ParserError:
+                            path.append(f"_dagster_partition_{dimension}={key}")
+                else:
+                    for partition_key in context.asset_partition_keys:
+                        try:
+                            path.extend(
+                                parse_date_partition_key(
+                                    pendulum.parse(text=partition_key)
+                                )
+                            )
+                        except pendulum.parsing.exceptions.ParserError:
+                            path.append(f"_dagster_partition_key={partition_key}")
 
-            path.append("data")
-        elif context.has_asset_key:
-            path = copy.deepcopy(context.asset_key.path)
             path.append("data")
         else:
             parts = context.get_identifier()
