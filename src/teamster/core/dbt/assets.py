@@ -44,8 +44,11 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
 
 
 def partition_key_to_vars(partition_key):
-    path = parse_date_partition_key(pendulum.parse(text=partition_key))
+    partition_key_parsed = pendulum.parse(text=partition_key)
+
+    path = parse_date_partition_key(partition_key_parsed)
     path.append("data")
+
     return {"partition_path": "/".join(path)}
 
 
