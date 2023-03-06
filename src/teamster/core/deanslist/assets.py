@@ -44,7 +44,7 @@ def build_deanslist_endpoint_asset(
 
             if (
                 context.instance.get_latest_materialization_event(
-                    context.selected_asset_keys[0]
+                    context.asset_key_for_output()
                 )
                 is None
             ):
