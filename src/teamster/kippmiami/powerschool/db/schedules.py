@@ -1,11 +1,10 @@
 from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-from teamster.kippmiami.powerschool.db.jobs import nonpartition_assets_job
+from teamster.kippmiami.powerschool.db import jobs
 
 powerschool_nonpartition_assets_job_schedule = ScheduleDefinition(
-    name="powerschool_nonpartition_assets_job_schedule",
-    job=nonpartition_assets_job,
+    job=jobs.powerschool_nonpartition_assets_job,
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE.name,
 )

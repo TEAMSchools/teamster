@@ -24,7 +24,7 @@ multi_partitions_def = MultiPartitionsDefinition(
     }
 )
 
-nonpartition_assets = [
+school_partition_assets = [
     build_deanslist_endpoint_asset(
         code_location=CODE_LOCATION,
         partitions_def=static_partitions_def,
@@ -35,7 +35,7 @@ nonpartition_assets = [
     )["endpoints"]
 ]
 
-partition_assets = [
+multi_partition_assets = [
     build_deanslist_endpoint_asset(
         code_location=CODE_LOCATION,
         partitions_def=multi_partitions_def,
