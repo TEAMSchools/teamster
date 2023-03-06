@@ -37,23 +37,14 @@ def parse_date_partition_key(partition_key):
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        if context.has_asset_partitions:
+        if context.has_asset_key:
             path = copy.deepcopy(context.asset_key.path)
 
-            if isinstance(context.partition_key, MultiPartitionKey):
-                for dimension, key in context.partition_key.keys_by_dimension.items():
-                    if dimension == "date":
-                        path.extend(parse_date_partition_key(pendulum.parse(key)))
-                    else:
-                        path.append(f"_dagster_partition_{dimension}={key}")
-            else:
+            if context.has_asset_partitions:
                 path.extend(
-                    parse_date_partition_key(pendulum.parse(context.partition_key))
+                    parse_date_partition_key(pendulum.parse(text=context.partition_key))
                 )
 
-            path.append("data")
-        elif context.has_asset_key:
-            path = copy.deepcopy(context.asset_key.path)
             path.append("data")
         else:
             parts = context.get_identifier()
@@ -67,13 +58,13 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def handle_output(self, context: OutputContext, file_path: pathlib.Path):
         key = self._get_path(context)
 
-        context.log.info(
-            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
-        )
-
         if self._has_object(key):
             context.log.warning(f"Removing existing GCS key: {key}")
             self._rm_object(key)
+
+        context.log.info(
+            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
+        )
 
         backoff(
             self.bucket_obj.blob(key).upload_from_filename,
@@ -86,6 +77,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             return None
 
         key = self._get_path(context)
+
         return [urlparse(self._uri_for_key(key))]
 
 
@@ -102,14 +94,17 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
                     ) in context.partition_key.keys_by_dimension.items():
                         try:
                             partition_key_parsed = pendulum.parse(text=key)
+
                             path.extend(parse_date_partition_key(partition_key_parsed))
                         except pendulum.parsing.exceptions.ParserError:
                             path.append(f"_dagster_partition_{dimension}={key}")
                 else:
                     try:
+                        context.log.debug(context.partition_key)
                         partition_key_parsed = pendulum.parse(
                             text=context.partition_key
                         )
+                        context.log.debug(partition_key_parsed)
                         path.extend(parse_date_partition_key(partition_key_parsed))
                     except pendulum.parsing.exceptions.ParserError:
                         path.append(f"_dagster_partition_key={context.partition_key}")
@@ -137,6 +132,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
         context.log.debug(f"Saving output to Avro file: {file_path}")
         file_path.parent.mkdir(parents=True, exist_ok=True)
+
         with file_path.open(mode="wb") as fo:
             fastavro.writer(
                 fo=fo,
@@ -148,6 +144,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         context.log.info(
             f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
         )
+
         backoff(
             self.bucket_obj.blob(key).upload_from_filename,
             args=[file_path],
@@ -159,6 +156,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             return None
 
         key = self._get_path(context)
+
         return [urlparse(self._uri_for_key(key))]
 
 
