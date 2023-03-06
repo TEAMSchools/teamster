@@ -186,21 +186,21 @@ class OracleEngine(SqlAlchemyEngine):
 
 
 SQLALCHEMY_ENGINE_CONFIG = {
-    "dialect": Field(StringSource),
-    "driver": Field(StringSource),
-    "username": Field(StringSource, is_required=False),
-    "password": Field(StringSource, is_required=False),
-    "host": Field(StringSource, is_required=False),
-    "port": Field(IntSource, is_required=False),
-    "database": Field(StringSource, is_required=False),
-    "connect_args": Field(Permissive(), is_required=False),
+    "dialect": Field(config=StringSource),
+    "driver": Field(config=StringSource),
+    "username": Field(config=StringSource, is_required=False),
+    "password": Field(config=StringSource, is_required=False),
+    "host": Field(config=StringSource, is_required=False),
+    "port": Field(config=IntSource, is_required=False),
+    "database": Field(config=StringSource, is_required=False),
+    "connect_args": Field(config=Permissive(), is_required=False),
 }
 
 
 @resource(
     config_schema=merge_dicts(
         SQLALCHEMY_ENGINE_CONFIG,
-        {"mssql_driver": Field(StringSource, is_required=True)},
+        {"mssql_driver": Field(config=StringSource, is_required=True)},
     )
 )
 def mssql(context):
@@ -211,9 +211,9 @@ def mssql(context):
     config_schema=merge_dicts(
         SQLALCHEMY_ENGINE_CONFIG,
         {
-            "version": Field(StringSource, is_required=True),
-            "prefetchrows": Field(IntSource, is_required=False),
-            "arraysize": Field(IntSource, is_required=False),
+            "version": Field(config=StringSource, is_required=True),
+            "prefetchrows": Field(config=IntSource, is_required=False),
+            "arraysize": Field(config=IntSource, is_required=False),
         },
     )
 )

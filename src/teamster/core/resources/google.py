@@ -243,8 +243,10 @@ class GoogleSheets(object):
 
 @io_manager(
     config_schema={
-        "gcs_bucket": Field(StringSource),
-        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+        "gcs_bucket": Field(config=StringSource),
+        "gcs_prefix": Field(
+            config=StringSource, is_required=False, default_value="dagster"
+        ),
     },
     required_resource_keys={"gcs"},
 )
@@ -260,8 +262,10 @@ def gcs_filepath_io_manager(init_context):
 
 @io_manager(
     config_schema={
-        "gcs_bucket": Field(StringSource),
-        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+        "gcs_bucket": Field(config=StringSource),
+        "gcs_prefix": Field(
+            config=StringSource, is_required=False, default_value="dagster"
+        ),
     },
     required_resource_keys={"gcs"},
 )
