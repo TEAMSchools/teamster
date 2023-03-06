@@ -6,6 +6,7 @@ from dagster import (
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
+    StaticPartitionsDefinition,
     asset,
 )
 
@@ -18,7 +19,7 @@ def build_deanslist_endpoint_asset(
     asset_name,
     code_location,
     api_version,
-    partitions_def: MultiPartitionsDefinition = None,
+    partitions_def: MultiPartitionsDefinition | StaticPartitionsDefinition = None,
     inception_date=None,
     op_tags={},
     params={},
@@ -33,7 +34,7 @@ def build_deanslist_endpoint_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext):
-        if hasattr(context.partition_key, "keys_by_dimension"):
+        if isinstance(context.partition_key, MultiPartitionsDefinition):
             school_partition = context.partition_key.keys_by_dimension["school"]
             date_partition = pendulum.parser.parse(
                 context.partition_key.keys_by_dimension["date"]
