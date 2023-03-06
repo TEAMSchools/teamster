@@ -1,3 +1,3 @@
-from teamster.test.deanslist import assets
+from teamster.kippnewark.deanslist import assets, jobs, schedules
 
-__all__ = [assets]
+__all__ = [assets, jobs, schedules]
