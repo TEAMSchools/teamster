@@ -72,14 +72,14 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         config_schema={
             "window_start": Field(
-                str,
+                config=str,
                 is_required=False,
                 default_value=pendulum.from_timestamp(0)
                 .replace(tzinfo=LOCAL_TIME_ZONE)
                 .to_iso8601_string(),
             ),
             "window_end": Field(
-                str,
+                config=str,
                 is_required=False,
                 default_value=pendulum.from_timestamp(0)
                 .replace(tzinfo=LOCAL_TIME_ZONE)

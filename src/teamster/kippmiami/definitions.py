@@ -5,7 +5,8 @@ from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
-from teamster.core.resources.google import gcs_filepath_io_manager
+from teamster.core.resources.deanslist import deanslist_resource
+from teamster.core.resources.google import gcs_avro_io_manager, gcs_filepath_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
 from teamster.kippmiami import CODE_LOCATION, datagun, dbt, powerschool
 
@@ -56,6 +57,19 @@ defs = Definitions(
             }
         ),
         "gcs_fp_io": gcs_filepath_io_manager.configured(
+            config_from_files(
+                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
+            )
+        ),
+        "deanslist": deanslist_resource.configured(
+            config_from_files(
+                [
+                    "src/teamster/core/resources/config/deanslist.yaml",
+                    f"src/teamster/{CODE_LOCATION}/resources/config/deanslist.yaml",
+                ]
+            )
+        ),
+        "gcs_avro_io": gcs_avro_io_manager.configured(
             config_from_files(
                 [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
             )

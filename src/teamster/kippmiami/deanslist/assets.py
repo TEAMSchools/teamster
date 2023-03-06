@@ -8,7 +8,7 @@ from dagster import (
 
 from teamster.core.deanslist.assets import build_deanslist_endpoint_asset
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-from teamster.test import CODE_LOCATION
+from teamster.kippmiami import CODE_LOCATION
 
 school_ids = config_from_files(
     [f"src/teamster/{CODE_LOCATION}/deanslist/config/school_ids.yaml"]
@@ -23,7 +23,6 @@ multi_partitions_def = MultiPartitionsDefinition(
         "school": static_partitions_def,
     }
 )
-
 
 nonpartition_assets = [
     build_deanslist_endpoint_asset(
@@ -40,7 +39,7 @@ partition_assets = [
     build_deanslist_endpoint_asset(
         code_location=CODE_LOCATION,
         partitions_def=multi_partitions_def,
-        inception_date=pendulum.date(2016, 7, 1),
+        inception_date=pendulum.date(2017, 7, 1),
         **endpoint,
     )
     for endpoint in config_from_files(
