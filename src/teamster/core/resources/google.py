@@ -87,27 +87,20 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
+                context.log.debug(context.asset_partition_key)
                 if isinstance(context.partition_key, MultiPartitionKey):
                     for (
                         dimension,
                         key,
                     ) in context.partition_key.keys_by_dimension.items():
-                        try:
-                            partition_key_parsed = pendulum.parse(text=key)
-
-                            path.extend(parse_date_partition_key(partition_key_parsed))
-                        except pendulum.parsing.exceptions.ParserError:
+                        if dimension == "date":
+                            path.extend(
+                                parse_date_partition_key(pendulum.parse(text=key))
+                            )
+                        else:
                             path.append(f"_dagster_partition_{dimension}={key}")
                 else:
-                    try:
-                        context.log.debug(context.partition_key)
-                        partition_key_parsed = pendulum.parse(
-                            text=context.partition_key
-                        )
-                        context.log.debug(partition_key_parsed)
-                        path.extend(parse_date_partition_key(partition_key_parsed))
-                    except pendulum.parsing.exceptions.ParserError:
-                        path.append(f"_dagster_partition_key={context.partition_key}")
+                    path.append(f"_dagster_partition_key={context.partition_key}")
 
             path.append("data")
         else:
