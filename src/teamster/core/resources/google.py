@@ -8,7 +8,6 @@ import google.auth
 import gspread
 import pendulum
 from dagster import (
-    DynamicPartitionsDefinition,
     Field,
     InputContext,
     MultiPartitionKey,
