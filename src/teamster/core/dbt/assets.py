@@ -1,11 +1,12 @@
 import json
 from typing import Sequence
 
+import pendulum
 from dagster import AssetIn, AssetsDefinition, OpExecutionContext, Output, asset
 from dagster_dbt import DbtCliResource, load_assets_from_dbt_manifest
 from google.cloud import bigquery
 
-from teamster.core.resources.google import parse_partition_key_date
+from teamster.core.resources.google import parse_date_partition_key
 
 
 def build_external_source_asset(asset_definition: AssetsDefinition):
@@ -43,7 +44,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
 
 
 def partition_key_to_vars(partition_key):
-    path = parse_partition_key_date(partition_key)
+    path = parse_date_partition_key(pendulum.parse(text=partition_key))
     path.append("data")
     return {"partition_path": "/".join(path)}
 
