@@ -24,10 +24,10 @@ defs = Definitions(
     jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
     schedules=(
         datagun.schedules.__all__
-        + powerschool.schedules.__all__
+        + powerschool.db.schedules.__all__
         + deanslist.schedules.__all__
     ),
-    sensors=powerschool.sensors.__all__ + dbt.sensors.__all__,
+    sensors=powerschool.db.sensors.__all__ + dbt.sensors.__all__,
     resources={
         "warehouse": mssql.configured(
             config_from_files(["src/teamster/core/resources/config/warehouse.yaml"])
