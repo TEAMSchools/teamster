@@ -1,9 +1,29 @@
 api_key_map:
-  280:
-    env: DL_APIKEY_280
-  381:
-    env: DL_APIKEY_381
-  472:
-    env: DL_APIKEY_472
-  525:
-    env: DL_APIKEY_525
+  121:
+    env: DL_APIKEY_121
+  122:
+    env: DL_APIKEY_122
+  123:
+    env: DL_APIKEY_123
+  124:
+    env: DL_APIKEY_124
+  125:
+    env: DL_APIKEY_125
+  127:
+    env: DL_APIKEY_127
+  128:
+    env: DL_APIKEY_128
+  129:
+    env: DL_APIKEY_129
+  378:
+    env: DL_APIKEY_378
+  379:
+    env: DL_APIKEY_379
+  380:
+    env: DL_APIKEY_380
+  522:
+    env: DL_APIKEY_522
+  523:
+    env: DL_APIKEY_523
+  524:
+    env: DL_APIKEY_524

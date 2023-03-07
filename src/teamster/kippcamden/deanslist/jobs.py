@@ -14,4 +14,7 @@ deanslist_multi_partition_assets_job = define_asset_job(
     partitions_def=assets.multi_partitions_def,
 )
 
-__all__ = [deanslist_school_partition_assets_job, deanslist_multi_partition_assets_job]
+__all__ = [
+    deanslist_school_partition_assets_job,
+    deanslist_multi_partition_assets_job,
+]
