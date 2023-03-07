@@ -1,3 +1,5 @@
-from teamster.kippcamden.powerschool.db import assets, schedules, sensors
+from . import db
 
-__all__ = [assets, sensors, schedules]
+__all__ = [
+    db,
+]
