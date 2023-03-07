@@ -10,16 +10,20 @@ from teamster.core.resources.google import (
     google_sheets,
 )
 from teamster.core.resources.sqlalchemy import mssql, oracle
-from teamster.test import CODE_LOCATION, datagun, deanslist, powerschool
+
+from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
 
 defs = Definitions(
     executor=k8s_job_executor,
     assets=(
-        load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
+        load_assets_from_modules(
+            modules=[powerschool.db.assets], group_name="powerschool"
+        )
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
         + load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist")
+        + load_assets_from_modules(modules=[dbt.assets])
     ),
-    jobs=datagun.jobs.__all__,
+    jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
     resources={
         "sftp_test": ssh_resource.configured(
             config_from_files(

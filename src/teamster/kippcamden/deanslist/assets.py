@@ -46,3 +46,8 @@ multi_partition_assets = [
         [f"src/teamster/{CODE_LOCATION}/deanslist/config/partition-assets.yaml"]
     )["endpoints"]
 ]
+
+__all__ = [
+    *school_partition_assets,
+    *multi_partition_assets,
+]

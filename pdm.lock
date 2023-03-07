@@ -17,7 +17,7 @@ dependencies = [
 
 [[package]]
 name = "alembic"
-version = "1.10.0"
+version = "1.10.1"
 requires_python = ">=3.7"
 summary = "A database migration tool for SQLAlchemy."
 dependencies = [
@@ -1256,9 +1256,9 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/90/95/6e3fe3ddcc64e5f7de7fd7cd14c26a588aeaa7aea2d58a3bb61a150cebd9/agate-1.6.3-py2.py3-none-any.whl", hash = "sha256:2d568fd68a8eb8b56c805a1299ba4bc30ca0434563be1bea309c9d1c1c8401f4"},
     {url = "https://files.pythonhosted.org/packages/ae/0e/34231b11f1b80463f64c5be7d7279de5a5609a47c59c0e34ba7016e4e333/agate-1.6.3.tar.gz", hash = "sha256:e0f2f813f7e12311a4cdccc97d6ba0a6781e9c1aa8eca0ab00d5931c0113a308"},
 ]
-"alembic 1.10.0" = [
-    {url = "https://files.pythonhosted.org/packages/0c/bc/74e2d4f23ff6a1b3245c0126d47610ead621e5b24df8a59a2669ee62989a/alembic-1.10.0.tar.gz", hash = "sha256:dd4718279975ea50d0602a3a00a9811bc9bb4b744ac9abf5fafbf52ac63b1f6a"},
-    {url = "https://files.pythonhosted.org/packages/1f/17/7c69f900c0d86f86739d24f17f6350bad70a96bc0bcde4d62e70da62f1d9/alembic-1.10.0-py3-none-any.whl", hash = "sha256:f9cc3fbf0a3c60f8de959bb5c195586618d7ce37e7033e3dfc59396b7889a5e1"},
+"alembic 1.10.1" = [
+    {url = "https://files.pythonhosted.org/packages/92/98/7c510ba6bd93cfd427222a023fdd38cf9aa7026f871749da0ff3cfd4f57b/alembic-1.10.1.tar.gz", hash = "sha256:afd5a30dca731aa92808c081272d05787195b42e04df687e81e8c5a950c68c7f"},
+    {url = "https://files.pythonhosted.org/packages/a1/3f/e63027061109b730d9793439da4ab8c5398be4ba7ee3e3d2baaab4579682/alembic-1.10.1-py3-none-any.whl", hash = "sha256:367370c74ccf4979e658c8404d8c9fac00907313dc8e9225b71eb9b2db77a3ec"},
 ]
 "attrs 22.2.0" = [
     {url = "https://files.pythonhosted.org/packages/21/31/3f468da74c7de4fcf9b25591e682856389b3400b4b62f201e65f15ea3e07/attrs-22.2.0.tar.gz", hash = "sha256:c9227bfc2f01993c03f68db37d1d15c9690188323c067c641f1a35ca58185f99"},
@@ -1443,6 +1443,7 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/f6/0f/de1c4030fd669e6719277043e3b0f152a83c118dd1020cf85b51d443d04a/charset_normalizer-3.1.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3747443b6a904001473370d7810aa19c3a180ccd52a7157aacc264a5ac79265e"},
     {url = "https://files.pythonhosted.org/packages/f8/ed/500609cb2457b002242b090c814549997424d72690ef3058cfdfca91f68b/charset_normalizer-3.1.0-cp38-cp38-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:78cacd03e79d009d95635e7d6ff12c21eb89b894c354bd2b2ed0b4763373693b"},
     {url = "https://files.pythonhosted.org/packages/fa/8e/2e5c742c3082bce3eea2ddd5b331d08050cda458bc362d71c48e07a44719/charset_normalizer-3.1.0-cp37-cp37m-musllinux_1_1_ppc64le.whl", hash = "sha256:04afa6387e2b282cf78ff3dbce20f0cc071c12dc8f685bd40960cc68644cfea6"},
+    {url = "https://files.pythonhosted.org/packages/ff/d7/8d757f8bd45be079d76309248845a04f09619a7b17d6dfc8c9ff6433cac2/charset-normalizer-3.1.0.tar.gz", hash = "sha256:34e0a2f9c370eb95597aae63bf85eb5e96826d81e3dcf88b8886012906f509b5"},
 ]
 "click 8.1.3" = [
     {url = "https://files.pythonhosted.org/packages/59/87/84326af34517fca8c58418d148f2403df25303e02736832403587318e9e8/click-8.1.3.tar.gz", hash = "sha256:7682dc8afb30297001674575ea00d1814d808d6a36af415a82bd481d37ba7b8e"},

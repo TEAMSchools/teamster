@@ -7,4 +7,6 @@ asset_reconciliation_sensor = build_asset_reconciliation_sensor(
     name="dbt_powerschool_asset_sensor",
 )
 
-__all__ = [asset_reconciliation_sensor]
+__all__ = [
+    asset_reconciliation_sensor,
+]
