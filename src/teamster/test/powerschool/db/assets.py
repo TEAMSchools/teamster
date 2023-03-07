@@ -15,9 +15,9 @@ nonpartition_assets = [
 ]
 
 partition_assets = []
-for foo in ["transactiondate", "whenmodified"]:
+for suffix in ["transactiondate", "whenmodified"]:
     config = config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-{foo}.yaml"]
+        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-{suffix}.yaml"]
     )
 
     partition_column = config["partition_column"]
@@ -31,4 +31,7 @@ for foo in ["transactiondate", "whenmodified"]:
             )
         )
 
-all_assets = partition_assets + nonpartition_assets
+__all__ = [
+    *partition_assets,
+    *nonpartition_assets,
+]

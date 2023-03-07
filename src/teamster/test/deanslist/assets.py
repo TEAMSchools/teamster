@@ -18,14 +18,13 @@ static_partitions_def = StaticPartitionsDefinition(school_ids)
 multi_partitions_def = MultiPartitionsDefinition(
     partitions_defs={
         "date": DailyPartitionsDefinition(
-            start_date="2023-03-01", timezone=LOCAL_TIME_ZONE.name
+            start_date="2023-03-06", timezone=LOCAL_TIME_ZONE.name, end_offset=1
         ),
         "school": static_partitions_def,
     }
 )
 
-
-nonpartition_assets = [
+school_partition_assets = [
     build_deanslist_endpoint_asset(
         code_location=CODE_LOCATION,
         partitions_def=static_partitions_def,
@@ -36,7 +35,7 @@ nonpartition_assets = [
     )["endpoints"]
 ]
 
-partition_assets = [
+multi_partition_assets = [
     build_deanslist_endpoint_asset(
         code_location=CODE_LOCATION,
         partitions_def=multi_partitions_def,
@@ -46,4 +45,9 @@ partition_assets = [
     for endpoint in config_from_files(
         [f"src/teamster/{CODE_LOCATION}/deanslist/config/partition-assets.yaml"]
     )["endpoints"]
+]
+
+__all__ = [
+    *school_partition_assets,
+    *multi_partition_assets,
 ]

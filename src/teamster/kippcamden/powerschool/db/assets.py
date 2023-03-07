@@ -31,4 +31,7 @@ for suffix in ["transactiondate", "whenmodified"]:
             )
         )
 
-all_assets = partition_assets + nonpartition_assets
+__all__ = [
+    *partition_assets,
+    *nonpartition_assets,
+]
