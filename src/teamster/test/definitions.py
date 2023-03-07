@@ -1,5 +1,7 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
-from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_dbt import dbt_cli_resource
+from dagster_gcp import bigquery_resource, gcs_resource
+from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
@@ -25,6 +27,15 @@ defs = Definitions(
     ),
     jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
     resources={
+        "dbt": dbt_cli_resource.configured(
+            {
+                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
+            }
+        ),
+        "warehouse_bq": bigquery_resource.configured(
+            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
+        ),
         "sftp_test": ssh_resource.configured(
             config_from_files(
                 ["src/teamster/core/resources/config/sftp_pythonanywhere.yaml"]
