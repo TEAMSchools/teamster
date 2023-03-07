@@ -42,13 +42,11 @@ def build_deanslist_endpoint_asset(
                 context.partition_key.keys_by_dimension["date"]
             )
 
-            context.log.debug(context.asset_key_for_output())
-            if (
-                context.instance.get_latest_materialization_event(
-                    context.asset_key_for_output()
-                )
-                is None
-            ):
+            foo = context.instance.get_latest_materialization_event(
+                context.asset_key_for_output()
+            )
+            context.log.debug(foo)
+            if foo is None:
                 FY = namedtuple("FiscalYear", ["start", "end"])
                 fiscal_year = FY(start=inception_date, end=date_partition)
                 modified_date = inception_date
