@@ -1,7 +1,8 @@
 from dagster import DynamicPartitionsDefinition, config_from_files
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
-from teamster.kippcamden import CODE_LOCATION
+
+from ... import CODE_LOCATION
 
 dynamic_partitions_def = DynamicPartitionsDefinition(
     name=f"{CODE_LOCATION}_powerschool_partition_column"

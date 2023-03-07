@@ -1,6 +1,6 @@
 from dagster import AssetSelection, define_asset_job
 
-from teamster.kippcamden.deanslist import assets
+from . import assets
 
 deanslist_school_partition_assets_job = define_asset_job(
     name="deanslist_school_partition_assets_job",

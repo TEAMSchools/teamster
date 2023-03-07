@@ -1,7 +1,8 @@
 from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-from teamster.kippcamden.powerschool.db import jobs
+
+from . import jobs
 
 powerschool_nonpartition_assets_job_schedule = ScheduleDefinition(
     job=jobs.powerschool_nonpartition_assets_job,
@@ -9,4 +10,6 @@ powerschool_nonpartition_assets_job_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIME_ZONE.name,
 )
 
-__all__ = [powerschool_nonpartition_assets_job_schedule]
+__all__ = [
+    powerschool_nonpartition_assets_job_schedule,
+]
