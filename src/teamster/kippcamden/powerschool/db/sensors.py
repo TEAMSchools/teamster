@@ -1,7 +1,8 @@
 from dagster import AssetSelection
 
 from teamster.core.powerschool.db.sensors import build_dynamic_parition_sensor
-from teamster.kippcamden.powerschool.db import assets
+
+from . import assets
 
 powerschool_dynamic_partition_sensor = build_dynamic_parition_sensor(
     name="powerschool_dynamic_partition_sensor",
@@ -10,4 +11,6 @@ powerschool_dynamic_partition_sensor = build_dynamic_parition_sensor(
     minimum_interval_seconds=900,
 )
 
-__all__ = [powerschool_dynamic_partition_sensor]
+__all__ = [
+    powerschool_dynamic_partition_sensor,
+]

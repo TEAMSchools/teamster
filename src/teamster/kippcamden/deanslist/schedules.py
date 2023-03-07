@@ -1,8 +1,9 @@
 from dagster import schedule
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-from teamster.kippcamden import CODE_LOCATION
-from teamster.kippcamden.deanslist import assets, jobs
+
+from .. import CODE_LOCATION
+from . import assets, jobs
 
 
 @schedule(

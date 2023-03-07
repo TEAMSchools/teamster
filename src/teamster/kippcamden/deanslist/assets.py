@@ -8,7 +8,8 @@ from dagster import (
 
 from teamster.core.deanslist.assets import build_deanslist_endpoint_asset
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-from teamster.kippcamden import CODE_LOCATION
+
+from .. import CODE_LOCATION
 
 school_ids = config_from_files(
     [f"src/teamster/{CODE_LOCATION}/deanslist/config/school_ids.yaml"]
