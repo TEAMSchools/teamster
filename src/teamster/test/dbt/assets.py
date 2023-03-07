@@ -1,7 +1,7 @@
 from teamster.core.dbt.assets import build_external_source_asset, build_staging_assets
 from teamster.test import CODE_LOCATION, deanslist, powerschool
 
-manifest_json_path = "teamster-dbt/kippcamden/target/manifest.json"  # use kippcamden
+manifest_json_path = f"teamster-dbt/{CODE_LOCATION}/target/manifest.json"
 key_prefix = [CODE_LOCATION, "dbt"]
 
 # powerschool
