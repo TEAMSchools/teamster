@@ -33,7 +33,7 @@ defs = Definitions(
                 "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
             }
         ),
-        "warehouse_bq": bigquery_resource.configured(
+        "bq": bigquery_resource.configured(
             config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
         ),
         "sftp_test": ssh_resource.configured(

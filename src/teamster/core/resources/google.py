@@ -25,6 +25,8 @@ from teamster.core.utils.classes import FiscalYear
 
 
 def parse_date_partition_key(partition_key):
+    partition_key = pendulum.parse(partition_key)
+
     fiscal_year = FiscalYear(datetime=partition_key, start_month=7).fiscal_year
 
     return [
@@ -41,11 +43,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
-                path.extend(
-                    parse_date_partition_key(
-                        pendulum.parse(text=context.asset_partition_key)
-                    )
-                )
+                path.extend(parse_date_partition_key(context.asset_partition_key))
 
             path.append("data")
         else:
@@ -95,9 +93,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
                         key,
                     ) in context.asset_partition_key.keys_by_dimension.items():
                         if dimension == "date":
-                            path.extend(
-                                parse_date_partition_key(pendulum.parse(text=key))
-                            )
+                            path.extend(parse_date_partition_key(key))
                         else:
                             path.append(f"_dagster_partition_{dimension}={key}")
                 else:
