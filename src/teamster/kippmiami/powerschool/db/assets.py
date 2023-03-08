@@ -1,11 +1,13 @@
 from dagster import DynamicPartitionsDefinition, config_from_files
 
 from teamster.core.powerschool.db.assets import build_powerschool_table_asset
-from teamster.kippmiami import CODE_LOCATION
+
+from ... import CODE_LOCATION
 
 dynamic_partitions_def = DynamicPartitionsDefinition(
-    name=f"{CODE_LOCATION}_powerschool_partition_column"
+    name=f"{CODE_LOCATION}_powerschool_dynamic_partitions"
 )
+
 nonpartition_assets = [
     build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
     for cfg in config_from_files(
@@ -30,4 +32,7 @@ for suffix in ["transactiondate", "whenmodified"]:
             )
         )
 
-all_assets = partition_assets + nonpartition_assets
+__all__ = [
+    *partition_assets,
+    *nonpartition_assets,
+]

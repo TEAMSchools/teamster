@@ -1,3 +1,6 @@
-from teamster.kippmiami.dbt import assets, sensors
+from . import assets, sensors
 
-__all__ = [assets, sensors]
+__all__ = [
+    assets,
+    sensors,
+]

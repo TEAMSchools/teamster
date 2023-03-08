@@ -44,14 +44,14 @@ def get_asset_count(asset, db, window_start, window_end):
     return count
 
 
-def build_dynamic_parition_sensor(
+def build_dynamic_partition_sensor(
     name,
     asset_selection,
     partitions_def,
     minimum_interval_seconds=None,
 ):
     asset_job = define_asset_job(
-        name="powerschool_asset_dynamic_parition_job",
+        name="powerschool_asset_dynamic_partition_job",
         selection=asset_selection,
         partitions_def=partitions_def,
     )

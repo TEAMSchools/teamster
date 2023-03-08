@@ -41,16 +41,15 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
     return _asset
 
 
-def partition_key_to_vars(partition_key):
-    path = parse_date_partition_key(partition_key)
-    path.append("data")
-
-    return {"partition_path": "/".join(path)}
-
-
 def build_staging_assets(
     manifest_json_path, key_prefix, assets: Sequence[AssetsDefinition]
 ):
+    def partition_key_to_vars(partition_key):
+        path = parse_date_partition_key(partition_key)
+        path.append("data")
+
+        return {"partition_path": "/".join(path)}
+
     with open(file=manifest_json_path) as f:
         manifest_json = json.load(f)
 
@@ -59,7 +58,7 @@ def build_staging_assets(
             manifest_json=manifest_json,
             select=f"stg_{asset.key.path[-2]}__{asset.key.path[-1]}+",
             key_prefix=key_prefix,
-            source_key_prefix=key_prefix[:2],
+            source_key_prefix=key_prefix,
             partitions_def=asset.partitions_def,
             partition_key_to_vars_fn=(
                 partition_key_to_vars if asset.partitions_def is not None else None

@@ -1,6 +1,6 @@
 from dagster import AssetSelection, define_asset_job
 
-from teamster.kipptaf.datagun import assets
+from . import assets
 
 adp_extract_assets_job = define_asset_job(
     name="datagun_adp_extract_assets_job",
