@@ -7,11 +7,15 @@
 
 select
     /* column transformations */
-    {% for col in transform_cols -%}
+    {% for col in transform_cols %}
+    {%- if col.transformation == "cast" -%}
+    cast({{ col.name }} as {{ col.type }}) as {{ col.name }},
+    {%- elif col.transformation == "extract" -%}
     {{ col.name }}.{{ col.type }} as {{ col.name }},
-    {% endfor -%}
+    {%- endif %}
+    {% endfor %}
     /* remaining columns */
-    {{ star_except | indent(width=2) }}
+    {{ star_except | indent(width=4) }}
 from {{ from_source }}
 
 {%- endmacro -%}

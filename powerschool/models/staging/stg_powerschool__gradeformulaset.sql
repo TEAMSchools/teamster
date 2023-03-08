@@ -3,11 +3,27 @@
         file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
         unique_key="gradeformulasetid",
         transform_cols=[
-            {"name": "gradeformulasetid", "type": "int_value"},
-            {"name": "yearid", "type": "int_value"},
-            {"name": "iscoursegradecalculated", "type": "int_value"},
-            {"name": "isreporttermsetupsame", "type": "int_value"},
-            {"name": "sectionsdcid", "type": "int_value"},
+            {
+                "name": "gradeformulasetid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "yearid", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "iscoursegradecalculated",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "isreporttermsetupsame",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "sectionsdcid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
         ],
     )
 }}

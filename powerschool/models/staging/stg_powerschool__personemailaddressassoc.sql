@@ -3,12 +3,32 @@
         file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
         unique_key="personemailaddressassocid",
         transform_cols=[
-            {"name": "personemailaddressassocid", "type": "int_value"},
-            {"name": "personid", "type": "int_value"},
-            {"name": "emailaddressid", "type": "int_value"},
-            {"name": "emailtypecodesetid", "type": "int_value"},
-            {"name": "isprimaryemailaddress", "type": "int_value"},
-            {"name": "emailaddresspriorityorder", "type": "int_value"},
+            {
+                "name": "personemailaddressassocid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "personid", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "emailaddressid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "emailtypecodesetid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "isprimaryemailaddress",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "emailaddresspriorityorder",
+                "transformation": "extract",
+                "type": "int_value",
+            },
         ],
     )
 }}

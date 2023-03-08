@@ -1,15 +1,18 @@
-{%- macro incremental_merge_source_file(file_uri, unique_key, transform_cols=[]) -%}
+{%- macro incremental_merge_source_file(
+    file_uri, unique_key, transform_cols=[], except_cols=[]
+) -%}
 
 {%- set from_source = source(model.package_name, model.name | replace("stg", "src")) -%}
-{%- set star = dbt_utils.star(
-    from=from_source,
-    except=[
+{%- set except_cols = except_cols.append(
+    [
         "_dagster_partition_fiscal_year",
         "_dagster_partition_date",
         "_dagster_partition_hour",
         "_dagster_partition_minute",
-    ],
+    ]
 ) -%}
+
+{%- set star = dbt_utils.star(from=from_source, except=except_cols) -%}
 {%- set star_except = dbt_utils.star(
     from=from_source, except=transform_cols | map(attribute="name")
 ) -%}
@@ -27,13 +30,17 @@ with
         select
             _file_name,
             /* column transformations */
-            {% for col in transform_cols -%}
+            {% for col in transform_cols %}
+            {%- if col.transformation == "cast" -%}
+            cast({{ col.name }} as {{ col.type }}) as {{ col.name }},
+            {%- elif col.transformation == "extract" -%}
             {{ col.name }}.{{ col.type }} as {{ col.name }},
-            {% endfor -%}
+            {%- endif %}
+            {% endfor %}
             /* remaining columns */
-            {{ star_except | indent(width=10) }}
+            {{- star_except | indent(width=12) }}
         from {{ from_source }}
-        {% if is_incremental() -%} where _file_name = '{{ file_uri }}' {%- endif %}
+        {% if is_incremental() -%} where _file_name in ('{{ file_uri }}') {%- endif %}
     ),
 
     deduplicate as (
@@ -61,13 +68,13 @@ with
     )
 
 select  --
-    {{ star | indent(width=2) }}
+    {{ star | indent(width=4) }}
 from updates
 
 union all
 
 select  --
-    {{ star | indent(width=2) }}
+    {{ star | indent(width=4) }}
 from inserts
 
 {% endmacro %}
