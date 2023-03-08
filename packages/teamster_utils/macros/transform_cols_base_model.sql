@@ -1,4 +1,4 @@
-{%- macro transform_cols_base_model(transform_cols=[]) -%}
+{%- macro transform_cols_base_model(transform_cols=[], except_cols=[]) -%}
 
 {%- set from_source = source(model.package_name, model.name | replace("stg", "src")) -%}
 {%- set except_cols = except_cols.append(
