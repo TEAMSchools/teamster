@@ -144,6 +144,8 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         )
 
     def load_input(self, context: InputContext):
+        context.log.debug(context.upstream_output.partition_key)
+
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
