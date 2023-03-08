@@ -200,7 +200,7 @@ CUSTOM_FIELD_RECORD = {
     "fields": [
         {"name": "CustomFieldID", "type": ["null", "string"]},
         {"name": "SourceType", "type": ["null", "string"]},
-        {"name": "NumValue", "type": ["null", "string"]},
+        {"name": "NumValue", "type": ["null", "int"]},
         {"name": "StringValue", "type": ["null", "string"]},
         {"name": "FieldType", "type": ["null", "string"]},
         {"name": "FieldName", "type": ["null", "string"]},
