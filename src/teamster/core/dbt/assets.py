@@ -18,12 +18,9 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
         required_resource_keys={"warehouse_bq", "dbt"},
         compute_kind="dbt",
-        # partitions_def=asset_definition.partitions_def,
         group_name="staging",
     )
     def _asset(context: OpExecutionContext, upstream):
-        context.log.debug(upstream)
-
         dataset_name = f"{code_location}_{package_name}"
 
         # create BigQuery dataset, if not exists
@@ -53,10 +50,7 @@ def partition_key_to_vars(partition_key):
 
 
 def build_staging_assets(
-    manifest_json_path,
-    key_prefix,
-    assets: Sequence[AssetsDefinition],
-    partitions_def=None,
+    manifest_json_path, key_prefix, assets: Sequence[AssetsDefinition]
 ):
     with open(file=manifest_json_path) as f:
         manifest_json = json.load(f)
@@ -67,9 +61,9 @@ def build_staging_assets(
             select=f"stg_{a.key.path[-2]}__{a.key.path[-1]}+",
             key_prefix=key_prefix,
             source_key_prefix=key_prefix[:2],
-            partitions_def=partitions_def,
+            partitions_def=a.partitions_def,
             partition_key_to_vars_fn=(
-                partition_key_to_vars if partitions_def is not None else None
+                partition_key_to_vars if a.partitions_def is not None else None
             ),
         )
         for a in assets
