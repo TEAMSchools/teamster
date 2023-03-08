@@ -41,9 +41,11 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
-                context.log.debug(context.asset_partitions_def)
+                context.log.debug(context.asset_partition_key)
                 path.extend(
-                    parse_date_partition_key(pendulum.parse(text=context.partition_key))
+                    parse_date_partition_key(
+                        pendulum.parse(text=context.asset_partition_key)
+                    )
                 )
 
             path.append("data")
