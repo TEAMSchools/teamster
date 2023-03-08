@@ -48,11 +48,11 @@ sources:
             hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/lists/"
             format: AVRO
             enable_logical_types: true
-      - name: src_deanslist__roster-assignments
+      - name: src_deanslist__roster_assignments
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/roster-assignments/*"
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/roster_assignments/*"
           options:
-            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/roster-assignments/"
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/roster_assignments/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__rosters
