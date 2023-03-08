@@ -14,18 +14,11 @@ else
 
 fi
 
-# kubectl create secret generic "kipptaf-ssh-keys" \
+# kubectl create secret generic "credential-files" \
 #   --save-config \
 #   --dry-run=client \
 #   --namespace=dagster-cloud \
-#   --from-file="egencia-privatekey=env/kipptaf/rsapk/egencia/rsa-private-key" \
-#   --output=yaml |
-#   kubectl apply -f -
-
-# kubectl create secret generic "dbt-user-creds" \
-#   --save-config \
-#   --dry-run=client \
-#   --namespace=dagster-cloud \
-#   --from-file="dbt-user-creds=env/dbt-user-creds.json" \
+#   --from-file="egencia=env/kipptaf/rsapk/egencia/rsa-private-key" \
+#   --from-file="dbt=env/dbt-user-creds.json" \
 #   --output=yaml |
 #   kubectl apply -f -
