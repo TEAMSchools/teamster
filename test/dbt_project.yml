@@ -26,7 +26,11 @@ models:
   powerschool:
     staging:
       +schema: powerschool
+  deanslist:
+    staging:
+      +schema: deanslist
 
 vars:
   powerschool_schema: test_powerschool
   deanslist_schema: test_deanslist
+  partition_path: foo
