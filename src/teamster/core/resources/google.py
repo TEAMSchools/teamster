@@ -41,6 +41,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
             path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
+                context.log.debug(context.asset_partitions_def)
                 path.extend(
                     parse_date_partition_key(pendulum.parse(text=context.partition_key))
                 )
@@ -73,8 +74,6 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
         )
 
     def load_input(self, context: InputContext):
-        context.log.debug(context.upstream_output.partition_key)
-
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
@@ -146,8 +145,6 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         )
 
     def load_input(self, context: InputContext):
-        context.log.debug(context.upstream_output.partition_key)
-
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
