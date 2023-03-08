@@ -1,7 +1,8 @@
 from dagster import ScheduleDefinition
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
-from teamster.kipptaf.datagun import jobs
+
+from . import jobs
 
 gsheet_extract_assets_schedule = ScheduleDefinition(
     job=jobs.gsheet_extract_assets_job,

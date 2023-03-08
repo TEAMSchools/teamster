@@ -1,10 +1,12 @@
 from dagster import AssetSelection, define_asset_job
 
-from teamster.kippmiami.powerschool.db.assets import nonpartition_assets
+from . import assets
 
 powerschool_nonpartition_assets_job = define_asset_job(
     name="powerschool_nonpartition_assets_job",
-    selection=AssetSelection.assets(*nonpartition_assets),
+    selection=AssetSelection.assets(*assets.nonpartition_assets),
 )
 
-__all__ = [powerschool_nonpartition_assets_job]
+__all__ = [
+    powerschool_nonpartition_assets_job,
+]
