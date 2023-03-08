@@ -3,14 +3,34 @@
         file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
         unique_key="dcid",
         transform_cols=[
-            {"name": "dcid", "type": "int_value"},
-            {"name": "id", "type": "int_value"},
-            {"name": "prefixcodesetid", "type": "int_value"},
-            {"name": "suffixcodesetid", "type": "int_value"},
-            {"name": "gendercodesetid", "type": "int_value"},
-            {"name": "statecontactnumber", "type": "int_value"},
-            {"name": "isactive", "type": "int_value"},
-            {"name": "excludefromstatereporting", "type": "int_value"},
+            {"name": "dcid", "transformation": "extract", "type": "int_value"},
+            {"name": "id", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "prefixcodesetid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "suffixcodesetid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "gendercodesetid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "statecontactnumber",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "isactive", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "excludefromstatereporting",
+                "transformation": "extract",
+                "type": "int_value",
+            },
         ],
     )
 }}

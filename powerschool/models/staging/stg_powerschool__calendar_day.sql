@@ -1,21 +1,37 @@
 {{
     teamster_utils.transform_cols_base_model(
         transform_cols=[
-            {"name": "dcid", "type": "int_value"},
-            {"name": "id", "type": "int_value"},
-            {"name": "schoolid", "type": "int_value"},
-            {"name": "a", "type": "int_value"},
-            {"name": "b", "type": "int_value"},
-            {"name": "c", "type": "int_value"},
-            {"name": "d", "type": "int_value"},
-            {"name": "e", "type": "int_value"},
-            {"name": "f", "type": "int_value"},
-            {"name": "insession", "type": "int_value"},
-            {"name": "membershipvalue", "type": "double_value"},
-            {"name": "cycle_day_id", "type": "int_value"},
-            {"name": "bell_schedule_id", "type": "int_value"},
-            {"name": "week_num", "type": "int_value"},
-            {"name": "whomodifiedid", "type": "int_value"},
+            {"name": "dcid", "transformation": "extract", "type": "int_value"},
+            {"name": "id", "transformation": "extract", "type": "int_value"},
+            {"name": "schoolid", "transformation": "extract", "type": "int_value"},
+            {"name": "a", "transformation": "extract", "type": "int_value"},
+            {"name": "b", "transformation": "extract", "type": "int_value"},
+            {"name": "c", "transformation": "extract", "type": "int_value"},
+            {"name": "d", "transformation": "extract", "type": "int_value"},
+            {"name": "e", "transformation": "extract", "type": "int_value"},
+            {"name": "f", "transformation": "extract", "type": "int_value"},
+            {"name": "insession", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "membershipvalue",
+                "transformation": "extract",
+                "type": "double_value",
+            },
+            {
+                "name": "cycle_day_id",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "bell_schedule_id",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "week_num", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "whomodifiedid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
         ],
     )
 }}

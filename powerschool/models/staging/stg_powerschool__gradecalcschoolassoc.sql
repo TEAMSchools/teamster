@@ -3,9 +3,17 @@
         file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
         unique_key="gradecalcschoolassocid",
         transform_cols=[
-            {"name": "gradecalcschoolassocid", "type": "int_value"},
-            {"name": "gradecalculationtypeid", "type": "int_value"},
-            {"name": "schoolsdcid", "type": "int_value"},
+            {
+                "name": "gradecalcschoolassocid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "gradecalculationtypeid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "schoolsdcid", "transformation": "extract", "type": "int_value"},
         ],
     )
 }}

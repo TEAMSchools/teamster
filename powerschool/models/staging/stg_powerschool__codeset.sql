@@ -3,13 +3,29 @@
         file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
         unique_key="codesetid",
         transform_cols=[
-            {"name": "codesetid", "type": "int_value"},
-            {"name": "parentcodesetid", "type": "int_value"},
-            {"name": "uidisplayorder", "type": "int_value"},
-            {"name": "isvisible", "type": "int_value"},
-            {"name": "ismodifiable", "type": "int_value"},
-            {"name": "isdeletable", "type": "int_value"},
-            {"name": "excludefromstatereporting", "type": "int_value"},
+            {"name": "codesetid", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "parentcodesetid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "uidisplayorder",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "isvisible", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "ismodifiable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "isdeletable", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "excludefromstatereporting",
+                "transformation": "extract",
+                "type": "int_value",
+            },
         ],
     )
 }}

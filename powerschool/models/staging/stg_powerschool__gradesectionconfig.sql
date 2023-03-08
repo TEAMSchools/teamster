@@ -3,23 +3,91 @@
         file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
         unique_key="gradesectionconfigid",
         transform_cols=[
-            {"name": "gradesectionconfigid", "type": "int_value"},
-            {"name": "sectionsdcid", "type": "int_value"},
-            {"name": "gradeformulasetid", "type": "int_value"},
-            {"name": "defaultdecimalcount", "type": "int_value"},
-            {"name": "iscalcformulaeditable", "type": "int_value"},
-            {"name": "isdropscoreeditable", "type": "int_value"},
-            {"name": "iscalcprecisioneditable", "type": "int_value"},
-            {"name": "isstndcalcmeteditable", "type": "int_value"},
-            {"name": "isstndrcntscoreeditable", "type": "int_value"},
-            {"name": "ishigherlvlstndeditable", "type": "int_value"},
-            {"name": "ishigherstndautocalc", "type": "int_value"},
-            {"name": "ishigherstndcalceditable", "type": "int_value"},
-            {"name": "iscalcsectionfromstndedit", "type": "int_value"},
-            {"name": "issectstndweighteditable", "type": "int_value"},
-            {"name": "minimumassignmentvalue", "type": "int_value"},
-            {"name": "isgradescaleteachereditable", "type": "int_value"},
-            {"name": "isusingpercentforstndautocalc", "type": "int_value"},
+            {
+                "name": "gradesectionconfigid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "sectionsdcid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "gradeformulasetid",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "defaultdecimalcount",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "iscalcformulaeditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "isdropscoreeditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "iscalcprecisioneditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "isstndcalcmeteditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "isstndrcntscoreeditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "ishigherlvlstndeditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "ishigherstndautocalc",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "ishigherstndcalceditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "iscalcsectionfromstndedit",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "issectstndweighteditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "minimumassignmentvalue",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "isgradescaleteachereditable",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {
+                "name": "isusingpercentforstndautocalc",
+                "transformation": "extract",
+                "type": "int_value",
+            },
         ],
     )
 }}

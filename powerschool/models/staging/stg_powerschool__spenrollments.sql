@@ -1,12 +1,12 @@
 {{
     teamster_utils.transform_cols_base_model(
         transform_cols=[
-            {"name": "dcid", "type": "int_value"},
-            {"name": "id", "type": "int_value"},
-            {"name": "programid", "type": "int_value"},
-            {"name": "schoolid", "type": "int_value"},
-            {"name": "gradelevel", "type": "int_value"},
-            {"name": "studentid", "type": "int_value"},
+            {"name": "dcid", "transformation": "extract", "type": "int_value"},
+            {"name": "id", "transformation": "extract", "type": "int_value"},
+            {"name": "programid", "transformation": "extract", "type": "int_value"},
+            {"name": "schoolid", "transformation": "extract", "type": "int_value"},
+            {"name": "gradelevel", "transformation": "extract", "type": "int_value"},
+            {"name": "studentid", "transformation": "extract", "type": "int_value"},
         ],
     )
 }}

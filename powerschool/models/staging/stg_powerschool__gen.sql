@@ -1,20 +1,24 @@
 {{
     teamster_utils.transform_cols_base_model(
         transform_cols=[
-            {"name": "dcid", "type": "int_value"},
-            {"name": "id", "type": "int_value"},
-            {"name": "valueli", "type": "int_value"},
-            {"name": "valueli2", "type": "int_value"},
-            {"name": "valuer", "type": "double_value"},
-            {"name": "sortorder", "type": "int_value"},
-            {"name": "schoolid", "type": "int_value"},
-            {"name": "valueli3", "type": "int_value"},
-            {"name": "valuer2", "type": "double_value"},
-            {"name": "time1", "type": "int_value"},
-            {"name": "time2", "type": "int_value"},
-            {"name": "spedindicator", "type": "int_value"},
-            {"name": "valueli4", "type": "int_value"},
-            {"name": "yearid", "type": "int_value"},
+            {"name": "dcid", "transformation": "extract", "type": "int_value"},
+            {"name": "id", "transformation": "extract", "type": "int_value"},
+            {"name": "valueli", "transformation": "extract", "type": "int_value"},
+            {"name": "valueli2", "transformation": "extract", "type": "int_value"},
+            {"name": "valuer", "transformation": "extract", "type": "double_value"},
+            {"name": "sortorder", "transformation": "extract", "type": "int_value"},
+            {"name": "schoolid", "transformation": "extract", "type": "int_value"},
+            {"name": "valueli3", "transformation": "extract", "type": "int_value"},
+            {"name": "valuer2", "transformation": "extract", "type": "double_value"},
+            {"name": "time1", "transformation": "extract", "type": "int_value"},
+            {"name": "time2", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "spedindicator",
+                "transformation": "extract",
+                "type": "int_value",
+            },
+            {"name": "valueli4", "transformation": "extract", "type": "int_value"},
+            {"name": "yearid", "transformation": "extract", "type": "int_value"},
         ],
     )
 }}

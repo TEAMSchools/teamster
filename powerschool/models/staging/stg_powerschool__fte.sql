@@ -1,11 +1,15 @@
 {{
     teamster_utils.transform_cols_base_model(
         transform_cols=[
-            {"name": "dcid", "type": "int_value"},
-            {"name": "id", "type": "int_value"},
-            {"name": "schoolid", "type": "int_value"},
-            {"name": "yearid", "type": "int_value"},
-            {"name": "fte_value", "type": "double_value"},
+            {"name": "dcid", "transformation": "extract", "type": "int_value"},
+            {"name": "id", "transformation": "extract", "type": "int_value"},
+            {"name": "schoolid", "transformation": "extract", "type": "int_value"},
+            {"name": "yearid", "transformation": "extract", "type": "int_value"},
+            {
+                "name": "fte_value",
+                "transformation": "extract",
+                "type": "double_value",
+            },
         ],
     )
 }}
