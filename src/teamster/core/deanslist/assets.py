@@ -25,7 +25,7 @@ def build_deanslist_endpoint_asset(
     params={},
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name,
+        name=asset_name.replace("-", "_"),
         key_prefix=[code_location, "deanslist"],
         partitions_def=partitions_def,
         op_tags=op_tags,
