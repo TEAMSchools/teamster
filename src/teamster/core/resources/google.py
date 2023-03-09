@@ -111,6 +111,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
                     path = copy.deepcopy(context.asset_key.path)
 
                     path.extend(self._get_asset_partition_path(key))
+                    path.append("data")
 
                     paths.append("/".join([self.prefix, *path]))
 
