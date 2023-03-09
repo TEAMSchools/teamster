@@ -467,4 +467,8 @@ AVRO_FIELDS = {
 
 
 def get_avro_schema(name, version):
-    return {"type": "record", "name": name, "fields": AVRO_FIELDS[name][version]}
+    return {
+        "type": "record",
+        "name": name.replace("-", "_"),
+        "fields": AVRO_FIELDS[name][version],
+    }
