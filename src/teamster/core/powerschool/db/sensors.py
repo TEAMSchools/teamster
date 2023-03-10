@@ -29,8 +29,6 @@ def get_asset_count(asset, db, window_start):
                 f"FROM {asset.asset_key.path[-1]}",
                 f"WHERE {partition_column} >=",
                 f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
-                # f"AND {partition_column} <",
-                # f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
             ]
         )
     )
@@ -101,10 +99,7 @@ def build_dynamic_partition_sensor(
                 run_config={
                     "ops": {
                         asset.key.to_python_identifier(): {
-                            "config": {
-                                "window_start": window_start.to_iso8601_string(),
-                                "window_end": window_end.to_iso8601_string(),
-                            }
+                            "config": {"window_start": window_start.to_iso8601_string()}
                         }
                         for asset in never_materialized
                     },
@@ -183,20 +178,13 @@ def build_dynamic_partition_sensor(
                         )
                     )
                     count = get_asset_count(
-                        asset=asset,
-                        db=resources.db,
-                        window_start=window_start,
-                        # window_end=window_end,
+                        asset=asset, db=resources.db, window_start=window_start
                     )
 
                     context.log.debug(f"count: {count}")
                     if count > 0:
                         run_request_data.append(
-                            {
-                                "asset": asset,
-                                # "window_end": window_end,
-                                "window_start": window_start,
-                            }
+                            {"asset": asset, "window_start": window_start}
                         )
 
                         cursor[asset_key_string] = window_end.timestamp()
@@ -223,10 +211,7 @@ def build_dynamic_partition_sensor(
                     "ops": {
                         rr["asset"].key.to_python_identifier(): {
                             "config": {
-                                "window_start": (
-                                    rr["window_start"].to_iso8601_string()
-                                ),
-                                # "window_end": (rr["window_end"].to_iso8601_string()),
+                                "window_start": (rr["window_start"].to_iso8601_string())
                             }
                         }
                         for rr in run_request_data_filtered
