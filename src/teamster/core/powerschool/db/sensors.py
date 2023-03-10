@@ -18,8 +18,6 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 def get_asset_count(asset, db, window_start):
     partition_column = asset.metadata_by_key[asset.key]["partition_column"]
-
-    # window_end_fmt = window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
     window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
     query = text(
@@ -33,11 +31,7 @@ def get_asset_count(asset, db, window_start):
         )
     )
 
-    [(count,)] = db.execute_query(
-        query=query,
-        partition_size=1,
-        output=None,
-    )
+    [(count,)] = db.execute_query(query=query, partition_size=1, output=None)
 
     return count
 
@@ -91,7 +85,7 @@ def build_dynamic_partition_sensor(
             )
             context.log.debug("RESYNC")
 
-            window_start = pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE)
+            window_start = pendulum.from_timestamp(0)
 
             partitions_def.add_partitions(
                 partition_keys=[window_start.to_iso8601_string()],

@@ -12,8 +12,10 @@ from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 
-def construct_sql(table_name, columns, partition_column, window_start):
-    if partition_column is None or window_start == "":
+def construct_sql(table_name, columns, partition_column, window_start=None):
+    if partition_column is None or window_start is None:
+        constructed_where = ""
+    elif window_start == pendulum.from_timestamp(0).to_iso8601_string():
         constructed_where = ""
     else:
         window_start = pendulum.from_format(
@@ -72,13 +74,11 @@ def build_powerschool_table_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext):
-        window_start = context.partition_key if partition_column else ""
-        context.log.debug(window_start)
         sql = construct_sql(
             table_name=asset_name,
             columns=columns,
             partition_column=partition_column,
-            window_start=context.partition_key if partition_column else "",
+            window_start=context.partition_key if partition_column else None,
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(
