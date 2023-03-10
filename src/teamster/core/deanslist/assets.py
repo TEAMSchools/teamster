@@ -25,7 +25,7 @@ def build_deanslist_endpoint_asset(
     params={},
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name,
+        name=asset_name.replace("-", "_"),
         key_prefix=[code_location, "deanslist"],
         partitions_def=partitions_def,
         op_tags=op_tags,
@@ -38,15 +38,27 @@ def build_deanslist_endpoint_asset(
             context.asset_partitions_def_for_output(), MultiPartitionsDefinition
         ):
             school_partition = context.partition_key.keys_by_dimension["school"]
-            date_partition = pendulum.parser.parse(
-                context.partition_key.keys_by_dimension["date"]
+            date_partition = pendulum.from_format(
+                string=context.partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
             )
 
-            foo = context.instance.get_latest_materialization_event(
-                context.asset_key_for_output()
+            asset_key = context.asset_key_for_output()
+
+            asset_materialization_counts = (
+                context.instance.get_materialization_count_by_partition(
+                    [asset_key]
+                ).get(asset_key, {})
             )
-            context.log.debug(foo)
-            if foo is None:
+
+            school_materialization_count = 0
+            for partition_key, count in asset_materialization_counts.items():
+                if school_partition == partition_key.split("|")[-1]:
+                    school_materialization_count += count
+
+            if (
+                school_materialization_count == 0
+                or school_materialization_count == context.retry_number
+            ):
                 FY = namedtuple("FiscalYear", ["start", "end"])
                 fiscal_year = FY(start=inception_date, end=date_partition)
                 modified_date = inception_date

@@ -1,5 +1,7 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
-from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_dbt import dbt_cli_resource
+from dagster_gcp import bigquery_resource, gcs_resource
+from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
@@ -10,17 +12,30 @@ from teamster.core.resources.google import (
     google_sheets,
 )
 from teamster.core.resources.sqlalchemy import mssql, oracle
-from teamster.test import CODE_LOCATION, datagun, deanslist, powerschool
+
+from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
 
 defs = Definitions(
     executor=k8s_job_executor,
     assets=(
-        load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
+        load_assets_from_modules(
+            modules=[powerschool.db.assets], group_name="powerschool"
+        )
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
         + load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist")
+        + load_assets_from_modules(modules=[dbt.assets])
     ),
-    jobs=datagun.jobs.__all__,
+    jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
     resources={
+        "dbt": dbt_cli_resource.configured(
+            {
+                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
+            }
+        ),
+        "bq": bigquery_resource.configured(
+            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
+        ),
         "sftp_test": ssh_resource.configured(
             config_from_files(
                 ["src/teamster/core/resources/config/sftp_pythonanywhere.yaml"]

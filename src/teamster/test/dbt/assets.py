@@ -10,7 +10,7 @@ dbt_src_assets = [
 dbt_stg_assets = build_staging_assets(
     manifest_json_path=f"teamster-dbt/{CODE_LOCATION}/target/manifest.json",
     key_prefix=[CODE_LOCATION, "dbt"],
-    assets=[*powerschool.db.assets.__all__],
+    assets=[*powerschool.db.assets.__all__, *deanslist.assets.__all__],
 )
 
 __all__ = [

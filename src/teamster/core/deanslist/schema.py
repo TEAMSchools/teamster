@@ -1,6 +1,6 @@
 def get_timestamp_record_schema(name):
     return {
-        "name": f"{name}-record",
+        "name": f"{name}_record",
         "type": "record",
         "fields": [
             {"name": "date", "type": "string", "logicalType": "timestamp-micros"},
@@ -158,7 +158,7 @@ ROSTER_ASSIGNMENTS = {
 }
 
 PENALTY_RECORD = {
-    "name": "penalty-record",
+    "name": "penalty_record",
     "type": "record",
     "fields": [
         {"name": "IncidentID", "type": ["null", "string"]},
@@ -185,7 +185,7 @@ PENALTY_RECORD = {
 }
 
 ACTION_RECORD = {
-    "name": "action-record",
+    "name": "action_record",
     "type": "record",
     "fields": [
         {"name": "SAID", "type": ["null", "string"]},
@@ -195,12 +195,12 @@ ACTION_RECORD = {
 }
 
 CUSTOM_FIELD_RECORD = {
-    "name": "custom-field-record",
+    "name": "custom_field_record",
     "type": "record",
     "fields": [
         {"name": "CustomFieldID", "type": ["null", "string"]},
         {"name": "SourceType", "type": ["null", "string"]},
-        {"name": "NumValue", "type": ["null", "string"]},
+        {"name": "NumValue", "type": ["null", "float"]},
         {"name": "StringValue", "type": ["null", "string"]},
         {"name": "FieldType", "type": ["null", "string"]},
         {"name": "FieldName", "type": ["null", "string"]},
@@ -387,7 +387,7 @@ ROSTERS = {
 }
 
 ENROLLMENT = {
-    "name": "enrollment-record",
+    "name": "enrollment_record",
     "type": "record",
     "fields": [
         {"name": "EnrollmentID", "type": ["null", "string"]},
@@ -467,4 +467,8 @@ AVRO_FIELDS = {
 
 
 def get_avro_schema(name, version):
-    return {"type": "record", "name": name, "fields": AVRO_FIELDS[name][version]}
+    return {
+        "type": "record",
+        "name": name.replace("-", "_"),
+        "fields": AVRO_FIELDS[name][version],
+    }

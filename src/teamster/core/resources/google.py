@@ -1,16 +1,13 @@
 import copy
 import pathlib
-from typing import Union
 from urllib.parse import urlparse
 
 import fastavro
 import google.auth
 import gspread
-import pendulum
 from dagster import (
     Field,
     InputContext,
-    MultiPartitionKey,
     OutputContext,
     String,
     StringSource,
@@ -21,135 +18,134 @@ from dagster._utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 
-from teamster.core.utils.classes import FiscalYear
-
-
-def parse_date_partition_key(partition_key):
-    fiscal_year = FiscalYear(datetime=partition_key, start_month=7).fiscal_year
-
-    return [
-        f"_dagster_partition_fiscal_year={fiscal_year}",
-        f"_dagster_partition_date={partition_key.to_date_string()}",
-        f"_dagster_partition_hour={partition_key.format('HH')}",
-        f"_dagster_partition_minute={partition_key.format('mm')}",
-    ]
+from teamster.core.utils.functions import parse_partition_key
 
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+    def _get_paths(self, context: InputContext | OutputContext) -> list:
         if context.has_asset_key:
-            path = copy.deepcopy(context.asset_key.path)
-
             if context.has_asset_partitions:
-                path.extend(
-                    parse_date_partition_key(pendulum.parse(text=context.partition_key))
-                )
+                paths = []
 
-            path.append("data")
+                for key in context.asset_partition_keys:
+                    path = copy.deepcopy(context.asset_key.path)
+
+                    path.extend(parse_partition_key(partition_key=key))
+                    path.append("data")
+
+                    paths.append("/".join([self.prefix, *path]))
+
+                return paths
+            else:
+                path = copy.deepcopy(context.asset_key.path)
+
+                path.append("data")
+
+                return ["/".join([self.prefix, *path])]
         else:
             parts = context.get_identifier()
+
             run_id = parts[0]
             output_parts = parts[1:]
 
             path = ["storage", run_id, "files", *output_parts]
 
-        return "/".join([self.prefix, *path])
+            return ["/".join([self.prefix, *path])]
 
     def handle_output(self, context: OutputContext, file_path: pathlib.Path):
-        key = self._get_path(context)
+        for path in self._get_paths(context):
+            if self._has_object(path):
+                context.log.warning(f"Removing existing GCS key: {path}")
+                self._rm_object(path)
 
-        if self._has_object(key):
-            context.log.warning(f"Removing existing GCS key: {key}")
-            self._rm_object(key)
+            context.log.info(
+                f"Uploading {file_path} to GCS object at: {self._uri_for_key(path)}"
+            )
 
-        context.log.info(
-            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
-        )
-
-        backoff(
-            self.bucket_obj.blob(key).upload_from_filename,
-            args=[file_path],
-            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-        )
+            backoff(
+                self.bucket_obj.blob(path).upload_from_filename,
+                args=[file_path],
+                retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+            )
 
     def load_input(self, context: InputContext):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
-        key = self._get_path(context)
+        paths = self._get_paths(context)
 
-        return [urlparse(self._uri_for_key(key))]
+        return [urlparse(self._uri_for_key(path)) for path in paths]
 
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+    def _get_paths(self, context: InputContext | OutputContext) -> list:
         if context.has_asset_key:
-            path = copy.deepcopy(context.asset_key.path)
-
             if context.has_asset_partitions:
-                if isinstance(context.partition_key, MultiPartitionKey):
-                    for (
-                        dimension,
-                        key,
-                    ) in context.partition_key.keys_by_dimension.items():
-                        if dimension == "date":
-                            path.extend(
-                                parse_date_partition_key(pendulum.parse(text=key))
-                            )
-                        else:
-                            path.append(f"_dagster_partition_{dimension}={key}")
-                else:
-                    path.append(f"_dagster_partition_key={context.partition_key}")
+                paths = []
 
-            path.append("data")
+                for key in context.asset_partition_keys:
+                    path = copy.deepcopy(context.asset_key.path)
+
+                    path.extend(parse_partition_key(partition_key=key))
+                    path.append("data")
+
+                    paths.append("/".join([self.prefix, *path]))
+
+                return paths
+            else:
+                path = copy.deepcopy(context.asset_key.path)
+
+                path.append("data")
+
+                return ["/".join([self.prefix, *path])]
         else:
             parts = context.get_identifier()
+
             run_id = parts[0]
             output_parts = parts[1:]
 
             path = ["storage", run_id, "files", *output_parts]
 
-        return "/".join([self.prefix, *path])
+            return ["/".join([self.prefix, *path])]
 
     def handle_output(self, context: OutputContext, obj):
         records, schema = obj
 
-        key = self._get_path(context)
+        for path in self._get_paths(context):
+            if self._has_object(path):
+                context.log.warning(f"Removing existing GCS key: {path}")
+                self._rm_object(path)
 
-        if self._has_object(key):
-            context.log.warning(f"Removing existing GCS key: {key}")
-            self._rm_object(key)
+            file_path = pathlib.Path(path)
 
-        file_path = pathlib.Path(key)
+            context.log.debug(f"Saving output to Avro file: {file_path}")
+            file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        context.log.debug(f"Saving output to Avro file: {file_path}")
-        file_path.parent.mkdir(parents=True, exist_ok=True)
+            with file_path.open(mode="wb") as fo:
+                fastavro.writer(
+                    fo=fo,
+                    schema=fastavro.parse_schema(schema),
+                    records=records,
+                    codec="snappy",
+                )
 
-        with file_path.open(mode="wb") as fo:
-            fastavro.writer(
-                fo=fo,
-                schema=fastavro.parse_schema(schema),
-                records=records,
-                codec="snappy",
+            context.log.info(
+                f"Uploading {file_path} to GCS object at: {self._uri_for_key(path)}"
             )
 
-        context.log.info(
-            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
-        )
-
-        backoff(
-            self.bucket_obj.blob(key).upload_from_filename,
-            args=[file_path],
-            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-        )
+            backoff(
+                self.bucket_obj.blob(path).upload_from_filename,
+                args=[file_path],
+                retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+            )
 
     def load_input(self, context: InputContext):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
-        key = self._get_path(context)
+        paths = self._get_paths(context)
 
-        return [urlparse(self._uri_for_key(key))]
+        return [urlparse(self._uri_for_key(path)) for path in paths]
 
 
 class GoogleSheets(object):
