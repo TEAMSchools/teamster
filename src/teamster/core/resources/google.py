@@ -22,49 +22,59 @@ from teamster.core.utils.functions import parse_partition_key
 
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
-    def _get_path(self, context: InputContext | OutputContext) -> str:
+    def _get_paths(self, context: InputContext | OutputContext) -> list:
         if context.has_asset_key:
-            path = copy.deepcopy(context.asset_key.path)
-
             if context.has_asset_partitions:
-                path.extend(
-                    parse_partition_key(partition_key=context.asset_partition_key)
-                )
+                paths = []
 
-            path.append("data")
+                for key in context.asset_partition_keys:
+                    path = copy.deepcopy(context.asset_key.path)
+
+                    path.extend(parse_partition_key(partition_key=key))
+                    path.append("data")
+
+                    paths.append("/".join([self.prefix, *path]))
+
+                return paths
+            else:
+                path = copy.deepcopy(context.asset_key.path)
+
+                path.append("data")
+
+                return ["/".join([self.prefix, *path])]
         else:
             parts = context.get_identifier()
+
             run_id = parts[0]
             output_parts = parts[1:]
 
             path = ["storage", run_id, "files", *output_parts]
 
-        return "/".join([self.prefix, *path])
+            return ["/".join([self.prefix, *path])]
 
     def handle_output(self, context: OutputContext, file_path: pathlib.Path):
-        key = self._get_path(context)
+        for path in self._get_paths(context):
+            if self._has_object(path):
+                context.log.warning(f"Removing existing GCS key: {path}")
+                self._rm_object(path)
 
-        if self._has_object(key):
-            context.log.warning(f"Removing existing GCS key: {key}")
-            self._rm_object(key)
+            context.log.info(
+                f"Uploading {file_path} to GCS object at: {self._uri_for_key(path)}"
+            )
 
-        context.log.info(
-            f"Uploading {file_path} to GCS object at: {self._uri_for_key(key)}"
-        )
-
-        backoff(
-            self.bucket_obj.blob(key).upload_from_filename,
-            args=[file_path],
-            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-        )
+            backoff(
+                self.bucket_obj.blob(path).upload_from_filename,
+                args=[file_path],
+                retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+            )
 
     def load_input(self, context: InputContext):
         if isinstance(context.dagster_type.typing_type, type(None)):
             return None
 
-        key = self._get_path(context)
+        paths = self._get_paths(context)
 
-        return [urlparse(self._uri_for_key(key))]
+        return [urlparse(self._uri_for_key(path)) for path in paths]
 
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
