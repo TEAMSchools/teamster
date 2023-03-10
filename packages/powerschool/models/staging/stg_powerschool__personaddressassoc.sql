@@ -5,24 +5,20 @@
         transform_cols=[
             {
                 "name": "personaddressassocid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "personid", "transformation": "extract", "type": "int_value"},
+            {"name": "personid", "extract": "int_value"},
             {
                 "name": "personaddressid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "addresstypecodesetid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "addresspriorityorder",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

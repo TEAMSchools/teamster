@@ -5,35 +5,29 @@
         transform_cols=[
             {
                 "name": "gradecalculationtypeid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "gradeformulasetid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "yearid", "transformation": "extract", "type": "int_value"},
-            {"name": "isnograde", "transformation": "extract", "type": "int_value"},
+            {"name": "yearid", "extract": "int_value"},
+            {"name": "isnograde", "extract": "int_value"},
             {
                 "name": "isdroplowstudentfavor",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "isalternatepointsused",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "iscalcformulaeditable",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "isdropscoreeditable",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

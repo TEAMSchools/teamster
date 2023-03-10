@@ -5,59 +5,48 @@
         transform_cols=[
             {
                 "name": "districtteachercategoryid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "isinfinalgrades",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "isactive", "transformation": "extract", "type": "int_value"},
+            {"name": "isactive", "extract": "int_value"},
             {
                 "name": "isusermodifiable",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "displayposition",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "defaultscoreentrypoints",
-                "transformation": "extract",
-                "type": "bytes_decimal_value",
+                "extract": "bytes_decimal_value",
             },
             {
                 "name": "defaultextracreditpoints",
-                "transformation": "extract",
-                "type": "bytes_decimal_value",
+                "extract": "bytes_decimal_value",
             },
             {
                 "name": "defaultweight",
-                "transformation": "extract",
-                "type": "bytes_decimal_value",
+                "extract": "bytes_decimal_value",
             },
             {
                 "name": "defaulttotalvalue",
-                "transformation": "extract",
-                "type": "bytes_decimal_value",
+                "extract": "bytes_decimal_value",
             },
             {
                 "name": "isdefaultpublishscores",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "defaultdaysbeforedue",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "whomodifiedid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

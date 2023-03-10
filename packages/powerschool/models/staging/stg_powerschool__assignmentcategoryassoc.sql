@@ -5,35 +5,27 @@
         transform_cols=[
             {
                 "name": "assignmentcategoryassocid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "assignmentsectionid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "teachercategoryid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "yearid",
-                "transformation": "extract",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "isprimary",
-                "transformation": "extract",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "whomodifiedid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

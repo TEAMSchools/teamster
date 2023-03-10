@@ -22,12 +22,11 @@ select
     /* column transformations */
     {% for col in transform_cols %}
     {%- set col_alias = col.alias or dbt_utils.slugify(col.name) -%}
-    {%- if col.transformation == "cast" -%}
-    cast({{ col.name }} as {{ col.type }}) as {{ col_alias }},
-    {%- elif col.transformation == "extract" -%}
-    {{ col.name }}.{{ col.type }} as {{ col_alias }},
-    {%- else -%} {{ col.name }} as {{ col_alias }},
-    {% endif %}
+    {%- if col.cast -%}
+    cast(
+        {%- endif -%}{{ col.name }}
+        {%- if col.extract -%}.{{ col.extract }} {% endif -%}
+    {%- if col.cast -%} as {{ col.type }}){%- endif -%} as {{ col_alias }},
     {% endfor %}
     /* remaining columns */
     {% for col in star_except %}

@@ -5,26 +5,22 @@
         transform_cols=[
             {
                 "name": "personphonenumberassocid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "personid", "transformation": "extract", "type": "int_value"},
+            {"name": "personid", "extract": "int_value"},
             {
                 "name": "phonenumberid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "phonetypecodesetid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "phonenumberpriorityorder",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "ispreferred", "transformation": "extract", "type": "int_value"},
+            {"name": "ispreferred", "extract": "int_value"},
         ],
     )
 }}

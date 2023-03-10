@@ -5,35 +5,29 @@
         transform_cols=[
             {
                 "name": "studentsdcid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "savings_529_optin",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "iep_registration_followup",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "lep_registration_followup",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "test_field", "transformation": "extract", "type": "int_value"},
+            {"name": "test_field", "extract": "int_value"},
             {
                 "name": "current_programid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "aup_yn_1718", "transformation": "extract", "type": "int_value"},
+            {"name": "aup_yn_1718", "extract": "int_value"},
             {
                 "name": "incorrect_region_grad_student",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )
