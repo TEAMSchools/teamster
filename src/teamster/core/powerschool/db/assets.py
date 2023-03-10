@@ -12,24 +12,20 @@ from dagster import (
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
-
 
 def construct_sql(table_name, columns, partition_column, window_start):
-    if partition_column is None:
-        constructed_where = ""
-    elif window_start == pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE):
+    if partition_column is None or window_start == "":
         constructed_where = ""
     else:
+        window_start = pendulum.from_format(
+            string=window_start, fmt="YYYY-MM-DDTHH:mm:ssZ"
+        )
+
         window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-        # window_end_fmt = window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-        constructed_where = " ".join(
-            [
-                f"{partition_column} >= TO_TIMESTAMP(",
-                f"'{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
-                # f"AND {partition_column} < TO_TIMESTAMP(",
-                # f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
-            ]
+
+        constructed_where = (
+            f"{partition_column} >= TO_TIMESTAMP('{window_start_fmt}'"
+            ", 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
 
     return (
@@ -71,20 +67,7 @@ def build_powerschool_table_asset(
         key_prefix=[code_location, "powerschool"],
         partitions_def=partitions_def,
         config_schema={
-            "window_start": Field(
-                config=str,
-                is_required=False,
-                default_value=pendulum.from_timestamp(0)
-                .replace(tzinfo=LOCAL_TIME_ZONE)
-                .to_iso8601_string(),
-            ),
-            # "window_end": Field(
-            #     config=str,
-            #     is_required=False,
-            #     default_value=pendulum.from_timestamp(0)
-            #     .replace(tzinfo=LOCAL_TIME_ZONE)
-            #     .to_iso8601_string(),
-            # ),
+            "window_start": Field(config=str, is_required=False, default_value="")
         },
         metadata=metadata,
         op_tags=op_tags,
@@ -97,14 +80,7 @@ def build_powerschool_table_asset(
             table_name=asset_name,
             columns=columns,
             partition_column=partition_column,
-            window_start=pendulum.from_format(
-                string=context.op_config.get("window_start"),
-                fmt="YYYY-MM-DDTHH:mm:ssZ",
-            ),
-            # window_end=pendulum.from_format(
-            #     string=context.op_config.get("window_end"),
-            #     fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
-            # ),
+            window_start=context.op_config["window_start"],
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(
