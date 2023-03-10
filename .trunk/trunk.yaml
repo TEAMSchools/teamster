@@ -1,6 +1,6 @@
 version: 0.1
 cli:
-  version: 1.5.1
+  version: 1.6.0
 plugins:
   sources:
     - id: trunk
@@ -23,6 +23,8 @@ lint:
     - prettier@2.8.4
     - shellcheck@0.9.0
     - shfmt@3.5.0
+    - sql-formatter@12.1.3
+    - sqlfluff@1.4.5
     - taplo@0.7.0
     - yamllint@1.29.0
 runtimes:
