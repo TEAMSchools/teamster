@@ -1,6 +1,5 @@
 import copy
 import pathlib
-from typing import Union
 from urllib.parse import urlparse
 
 import fastavro
@@ -41,7 +40,7 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
     def _get_asset_partition_path(self, asset_key):
         pass
 
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+    def _get_path(self, context: InputContext | OutputContext) -> str:
         if context.has_asset_key:
             path = copy.deepcopy(context.asset_key.path)
 
@@ -102,7 +101,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
 
         return path
 
-    def _get_paths(self, context: Union[InputContext, OutputContext]) -> list:
+    def _get_paths(self, context: InputContext | OutputContext) -> list:
         if context.has_asset_key:
             if context.has_asset_partitions:
                 paths = []
