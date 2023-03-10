@@ -11,23 +11,17 @@
             {"name": "e", "extract": "int_value"},
             {"name": "f", "extract": "int_value"},
             {"name": "insession", "extract": "int_value"},
-            {
-                "name": "membershipvalue",
-                "extract": "double_value",
-            },
-            {
-                "name": "cycle_day_id",
-                "extract": "int_value",
-            },
-            {
-                "name": "bell_schedule_id",
-                "extract": "int_value",
-            },
+            {"name": "membershipvalue", "extract": "double_value"},
+            {"name": "cycle_day_id", "extract": "int_value"},
+            {"name": "bell_schedule_id", "extract": "int_value"},
             {"name": "week_num", "extract": "int_value"},
-            {
-                "name": "whomodifiedid",
-                "extract": "int_value",
-            },
+            {"name": "whomodifiedid", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
         ],
     )
 }}

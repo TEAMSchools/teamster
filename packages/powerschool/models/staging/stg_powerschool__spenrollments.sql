@@ -8,5 +8,11 @@
             {"name": "gradelevel", "extract": "int_value"},
             {"name": "studentid", "extract": "int_value"},
         ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
 }}
