@@ -5,11 +5,9 @@ from urllib.parse import urlparse
 import fastavro
 import google.auth
 import gspread
-import pendulum
 from dagster import (
     Field,
     InputContext,
-    MultiPartitionKey,
     OutputContext,
     String,
     StringSource,
@@ -20,32 +18,18 @@ from dagster._utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 
-from teamster.core.utils.classes import FiscalYear
-
-
-def parse_date_partition_key(partition_key):
-    partition_key = pendulum.parse(partition_key)
-
-    fiscal_year = FiscalYear(datetime=partition_key, start_month=7).fiscal_year
-
-    return [
-        f"_dagster_partition_fiscal_year={fiscal_year}",
-        f"_dagster_partition_date={partition_key.to_date_string()}",
-        f"_dagster_partition_hour={partition_key.format('HH')}",
-        f"_dagster_partition_minute={partition_key.format('mm')}",
-    ]
+from teamster.core.utils.functions import parse_partition_key
 
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
-    def _get_asset_partition_path(self, asset_key):
-        pass
-
     def _get_path(self, context: InputContext | OutputContext) -> str:
         if context.has_asset_key:
             path = copy.deepcopy(context.asset_key.path)
 
             if context.has_asset_partitions:
-                path.extend(parse_date_partition_key(context.asset_partition_key))
+                path.extend(
+                    parse_partition_key(partition_key=context.asset_partition_key)
+                )
 
             path.append("data")
         else:
@@ -84,23 +68,6 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
 
 
 class AvroGCSIOManager(PickledObjectGCSIOManager):
-    def _get_asset_partition_path(self, asset_partition_key):
-        path = []
-
-        if isinstance(asset_partition_key, MultiPartitionKey):
-            for (
-                dimension,
-                key,
-            ) in asset_partition_key.keys_by_dimension.items():
-                if dimension == "date":
-                    path.extend(parse_date_partition_key(key))
-                else:
-                    path.append(f"_dagster_partition_{dimension}={key}")
-        else:
-            path.append(f"_dagster_partition_key={asset_partition_key}")
-
-        return path
-
     def _get_paths(self, context: InputContext | OutputContext) -> list:
         if context.has_asset_key:
             if context.has_asset_partitions:
@@ -109,7 +76,7 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
                 for key in context.asset_partition_keys:
                     path = copy.deepcopy(context.asset_key.path)
 
-                    path.extend(self._get_asset_partition_path(key))
+                    path.extend(parse_partition_key(partition_key=key))
                     path.append("data")
 
                     paths.append("/".join([self.prefix, *path]))
