@@ -99,7 +99,7 @@ def build_powerschool_table_asset(
             partition_column=partition_column,
             window_start=pendulum.from_format(
                 string=context.op_config.get("window_start"),
-                fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
+                fmt="YYYY-MM-DDTHH:mm:ssZ",
             ),
             # window_end=pendulum.from_format(
             #     string=context.op_config.get("window_end"),
