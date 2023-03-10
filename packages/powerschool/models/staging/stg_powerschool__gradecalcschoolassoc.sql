@@ -5,15 +5,13 @@
         transform_cols=[
             {
                 "name": "gradecalcschoolassocid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "gradecalculationtypeid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "schoolsdcid", "transformation": "extract", "type": "int_value"},
+            {"name": "schoolsdcid", "extract": "int_value"},
         ],
     )
 }}

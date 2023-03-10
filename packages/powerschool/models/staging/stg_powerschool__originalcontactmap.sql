@@ -5,13 +5,11 @@
         transform_cols=[
             {
                 "name": "originalcontactmapid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "studentcontactassocid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

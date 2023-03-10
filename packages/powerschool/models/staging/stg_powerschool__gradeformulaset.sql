@@ -5,24 +5,20 @@
         transform_cols=[
             {
                 "name": "gradeformulasetid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "yearid", "transformation": "extract", "type": "int_value"},
+            {"name": "yearid", "extract": "int_value"},
             {
                 "name": "iscoursegradecalculated",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "isreporttermsetupsame",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "sectionsdcid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

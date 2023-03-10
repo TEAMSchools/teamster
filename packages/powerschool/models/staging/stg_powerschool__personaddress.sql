@@ -5,28 +5,23 @@
         transform_cols=[
             {
                 "name": "personaddressid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "statescodesetid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "countrycodesetid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "geocodelatitude",
-                "transformation": "extract",
-                "type": "bytes_decimal_value",
+                "extract": "bytes_decimal_value",
             },
             {
                 "name": "geocodelongitude",
-                "transformation": "extract",
-                "type": "bytes_decimal_value",
+                "extract": "bytes_decimal_value",
             },
         ],
     )

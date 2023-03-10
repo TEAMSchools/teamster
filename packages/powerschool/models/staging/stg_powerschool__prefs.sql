@@ -3,15 +3,14 @@
         file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
         unique_key="dcid",
         transform_cols=[
-            {"name": "dcid", "transformation": "extract", "type": "int_value"},
-            {"name": "id", "transformation": "extract", "type": "int_value"},
-            {"name": "schoolid", "transformation": "extract", "type": "int_value"},
-            {"name": "yearid", "transformation": "extract", "type": "int_value"},
-            {"name": "userid", "transformation": "extract", "type": "int_value"},
+            {"name": "dcid", "extract": "int_value"},
+            {"name": "id", "extract": "int_value"},
+            {"name": "schoolid", "extract": "int_value"},
+            {"name": "yearid", "extract": "int_value"},
+            {"name": "userid", "extract": "int_value"},
             {
                 "name": "whomodifiedid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

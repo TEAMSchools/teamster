@@ -5,20 +5,17 @@
         transform_cols=[
             {
                 "name": "studentcontactassocid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "studentdcid", "transformation": "extract", "type": "int_value"},
-            {"name": "personid", "transformation": "extract", "type": "int_value"},
+            {"name": "studentdcid", "extract": "int_value"},
+            {"name": "personid", "extract": "int_value"},
             {
                 "name": "contactpriorityorder",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
             {
                 "name": "currreltypecodesetid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
         ],
     )

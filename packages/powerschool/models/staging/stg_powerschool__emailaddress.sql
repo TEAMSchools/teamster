@@ -5,8 +5,7 @@
         transform_cols=[
             {
                 "name": "emailaddressid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             }
         ],
     )

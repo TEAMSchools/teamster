@@ -5,10 +5,9 @@
         transform_cols=[
             {
                 "name": "phonenumberid",
-                "transformation": "extract",
-                "type": "int_value",
+                "extract": "int_value",
             },
-            {"name": "issms", "transformation": "extract", "type": "int_value"},
+            {"name": "issms", "extract": "int_value"},
         ],
     )
 }}
