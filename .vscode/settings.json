@@ -1,4 +1,5 @@
 {
+  "editor.renderWhitespace": "all",
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
   "editor.wordWrap": "bounded",
