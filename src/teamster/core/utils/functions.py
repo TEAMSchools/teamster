@@ -1,3 +1,47 @@
+import pendulum
+from dagster import MultiPartitionKey
+
+from teamster.core.utils.classes import FiscalYear
+
+
+def parse_partition_key(partition_key, dimension=None):
+    try:
+        partition_key = pendulum.from_format(
+            string=partition_key, fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ"
+        )
+
+        fiscal_year = FiscalYear(datetime=partition_key, start_month=7).fiscal_year
+
+        return [
+            f"_dagster_partition_fiscal_year={fiscal_year}",
+            f"_dagster_partition_date={partition_key.to_date_string()}",
+            f"_dagster_partition_hour={partition_key.format('HH')}",
+            f"_dagster_partition_minute={partition_key.format('mm')}",
+        ]
+    except ValueError:
+        if dimension is not None:
+            return [f"_dagster_partition_{dimension}={partition_key}"]
+        else:
+            return [f"_dagster_partition_key={partition_key}"]
+
+
+def partition_key_to_vars(partition_key):
+    path = []
+
+    if isinstance(partition_key, MultiPartitionKey):
+        for (
+            dimension,
+            key,
+        ) in partition_key.keys_by_dimension.items():
+            path.extend(parse_partition_key(partition_key=key, dimension=dimension))
+    else:
+        path.append(parse_partition_key(partition_key=key))
+
+    path.append("data")
+
+    return {"partition_path": "/".join(path)}
+
+
 def get_avro_type(value):
     if isinstance(value, bool):
         return ["boolean"]

@@ -4,7 +4,7 @@ from dagster import AssetIn, AssetsDefinition, OpExecutionContext, Output, asset
 from dagster_dbt import DbtCliResource, load_assets_from_dbt_manifest
 from google.cloud import bigquery
 
-from teamster.core.resources.google import parse_date_partition_key
+from teamster.core.utils.functions import partition_key_to_vars
 
 
 def build_external_source_asset(asset_definition: AssetsDefinition):
@@ -43,12 +43,6 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
 def build_staging_assets(
     manifest_json_path, key_prefix, assets: list[AssetsDefinition]
 ):
-    def partition_key_to_vars(partition_key):
-        path = parse_date_partition_key(partition_key)
-        path.append("data")
-
-        return {"partition_path": "/".join(path)}
-
     with open(file=manifest_json_path) as f:
         manifest_json = json.load(f)
 
