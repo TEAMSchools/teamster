@@ -42,8 +42,8 @@ def build_deanslist_endpoint_asset(
                 context.partition_key.keys_by_dimension["date"]
             )
 
-            foo = context.instance.get_latest_materialization_event(
-                context.asset_key_for_output()
+            foo = context.instance.get_materialization_count_by_partition(
+                [context.asset_key_for_output()]
             )
             context.log.debug(foo)
             if foo is None:
