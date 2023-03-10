@@ -46,12 +46,12 @@ def build_deanslist_endpoint_asset(
 
             materialization_count = (
                 context.instance.get_materialization_count_by_partition([asset_key])
-                .get(asset_key)
+                .get(asset_key, {})
                 .get(context.partition_key)
             )
             context.log.debug(materialization_count)
             if (
-                materialization_count == 0
+                materialization_count is None
                 or materialization_count == context.retry_number
             ):
                 FY = namedtuple("FiscalYear", ["start", "end"])
