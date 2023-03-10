@@ -4,7 +4,6 @@ import pendulum
 from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
-    Field,
     OpExecutionContext,
     Output,
     asset,
@@ -66,9 +65,6 @@ def build_powerschool_table_asset(
         name=asset_name,
         key_prefix=[code_location, "powerschool"],
         partitions_def=partitions_def,
-        config_schema={
-            "window_start": Field(config=str, is_required=False, default_value="")
-        },
         metadata=metadata,
         op_tags=op_tags,
         required_resource_keys={"ps_db", "ps_ssh"},
@@ -80,7 +76,7 @@ def build_powerschool_table_asset(
             table_name=asset_name,
             columns=columns,
             partition_column=partition_column,
-            window_start=context.op_config["window_start"],
+            window_start=context.partition_key if partition_column else "",
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(
