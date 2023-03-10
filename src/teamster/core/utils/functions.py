@@ -6,22 +6,31 @@ from teamster.core.utils.classes import FiscalYear
 
 def parse_partition_key(partition_key, dimension=None):
     try:
-        try:
-            partition_key = pendulum.from_format(
-                string=partition_key, fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ"
-            )
-        except ValueError:
-            partition_key = pendulum.from_format(string=partition_key, fmt="YYYY-MM-DD")
+        date_formats = iter(
+            ["YYYY-MM-DDTHH:mm:ss.SSSSSSZ", "YYYY-MM-DDTHH:mm:ssZ", "YYYY-MM-DD"]
+        )
 
-        fiscal_year = FiscalYear(datetime=partition_key, start_month=7).fiscal_year
+        while True:
+            try:
+                partition_key_parsed = pendulum.from_format(
+                    string=partition_key, fmt=next(date_formats)
+                )
+
+                break
+            except ValueError:
+                partition_key_parsed = None
+
+        fiscal_year = FiscalYear(
+            datetime=partition_key_parsed, start_month=7
+        ).fiscal_year
 
         return [
             f"_dagster_partition_fiscal_year={fiscal_year}",
-            f"_dagster_partition_date={partition_key.to_date_string()}",
-            f"_dagster_partition_hour={partition_key.format('HH')}",
-            f"_dagster_partition_minute={partition_key.format('mm')}",
+            f"_dagster_partition_date={partition_key_parsed.to_date_string()}",
+            f"_dagster_partition_hour={partition_key_parsed.format('HH')}",
+            f"_dagster_partition_minute={partition_key_parsed.format('mm')}",
         ]
-    except ValueError:
+    except StopIteration:
         if dimension is not None:
             return [f"_dagster_partition_{dimension}={partition_key}"]
         else:
