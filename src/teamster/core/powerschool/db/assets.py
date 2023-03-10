@@ -72,6 +72,8 @@ def build_powerschool_table_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext):
+        window_start = context.partition_key if partition_column else ""
+        context.log.debug(window_start)
         sql = construct_sql(
             table_name=asset_name,
             columns=columns,
