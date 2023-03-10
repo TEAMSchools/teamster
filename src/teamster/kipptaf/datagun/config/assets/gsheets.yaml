@@ -120,3 +120,12 @@ assets:
           schema: extracts
     file_config:
       stem: gsheets_battleboard
+  - asset_name: comp_events
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_comp_events
+          schema: extracts
+    file_config:
+      stem: gsheets_comp_events
