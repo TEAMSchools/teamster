@@ -38,21 +38,26 @@ def build_deanslist_endpoint_asset(
             context.asset_partitions_def_for_output(), MultiPartitionsDefinition
         ):
             school_partition = context.partition_key.keys_by_dimension["school"]
-            date_partition = pendulum.parser.parse(
-                context.partition_key.keys_by_dimension["date"]
+            date_partition = pendulum.from_format(
+                string=context.partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
             )
 
             asset_key = context.asset_key_for_output()
 
-            materialization_count = (
-                context.instance.get_materialization_count_by_partition([asset_key])
-                .get(asset_key, {})
-                .get(context.partition_key)
+            asset_materialization_counts = (
+                context.instance.get_materialization_count_by_partition(
+                    [asset_key]
+                ).get(asset_key, {})
             )
 
+            school_materialization_count = 0
+            for partition_key, count in asset_materialization_counts.items():
+                if school_partition == partition_key.split("|")[-1]:
+                    school_materialization_count += count
+
             if (
-                materialization_count is None
-                or materialization_count == context.retry_number
+                school_materialization_count == 0
+                or school_materialization_count == context.retry_number
             ):
                 FY = namedtuple("FiscalYear", ["start", "end"])
                 fiscal_year = FY(start=inception_date, end=date_partition)
