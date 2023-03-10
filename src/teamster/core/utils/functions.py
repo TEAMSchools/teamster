@@ -7,7 +7,13 @@ from teamster.core.utils.classes import FiscalYear
 def parse_partition_key(partition_key, dimension=None):
     try:
         date_formats = iter(
-            ["YYYY-MM-DDTHH:mm:ss.SSSSSSZ", "YYYY-MM-DDTHH:mm:ssZ", "YYYY-MM-DD"]
+            [
+                "YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
+                "YYYY-MM-DDTHH:mm:ssZ",
+                "YYYY-MM-DDTHH:mm:ss.SSSSSS[Z]",
+                "YYYY-MM-DDTHH:mm:ss[Z]",
+                "YYYY-MM-DD",
+            ]
         )
 
         while True:
