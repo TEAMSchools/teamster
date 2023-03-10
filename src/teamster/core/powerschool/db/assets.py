@@ -15,20 +15,20 @@ from sqlalchemy import literal_column, select, table, text
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-def construct_sql(table_name, columns, partition_column, window_start, window_end):
+def construct_sql(table_name, columns, partition_column, window_start):
     if partition_column is None:
         constructed_where = ""
     elif window_start == pendulum.from_timestamp(0).replace(tzinfo=LOCAL_TIME_ZONE):
         constructed_where = ""
     else:
         window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-        window_end_fmt = window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+        # window_end_fmt = window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
         constructed_where = " ".join(
             [
                 f"{partition_column} >= TO_TIMESTAMP(",
-                f"'{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND ",
-                f"{partition_column} < TO_TIMESTAMP(",
-                f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
+                f"'{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
+                # f"AND {partition_column} < TO_TIMESTAMP(",
+                # f"'{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
             ]
         )
 
@@ -78,13 +78,13 @@ def build_powerschool_table_asset(
                 .replace(tzinfo=LOCAL_TIME_ZONE)
                 .to_iso8601_string(),
             ),
-            "window_end": Field(
-                config=str,
-                is_required=False,
-                default_value=pendulum.from_timestamp(0)
-                .replace(tzinfo=LOCAL_TIME_ZONE)
-                .to_iso8601_string(),
-            ),
+            # "window_end": Field(
+            #     config=str,
+            #     is_required=False,
+            #     default_value=pendulum.from_timestamp(0)
+            #     .replace(tzinfo=LOCAL_TIME_ZONE)
+            #     .to_iso8601_string(),
+            # ),
         },
         metadata=metadata,
         op_tags=op_tags,
@@ -101,10 +101,10 @@ def build_powerschool_table_asset(
                 string=context.op_config.get("window_start"),
                 fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
             ),
-            window_end=pendulum.from_format(
-                string=context.op_config.get("window_end"),
-                fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
-            ),
+            # window_end=pendulum.from_format(
+            #     string=context.op_config.get("window_end"),
+            #     fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
+            # ),
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(

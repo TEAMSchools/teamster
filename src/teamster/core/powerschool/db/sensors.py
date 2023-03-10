@@ -16,10 +16,10 @@ from teamster.core.resources.sqlalchemy import oracle
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-def get_asset_count(asset, db, window_start, window_end):
+def get_asset_count(asset, db, window_start):
     partition_column = asset.metadata_by_key[asset.key]["partition_column"]
 
-    window_end_fmt = window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+    # window_end_fmt = window_end.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
     window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
     query = text(
@@ -29,8 +29,8 @@ def get_asset_count(asset, db, window_start, window_end):
                 f"FROM {asset.asset_key.path[-1]}",
                 f"WHERE {partition_column} >=",
                 f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
-                f"AND {partition_column} <",
-                f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
+                # f"AND {partition_column} <",
+                # f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
             ]
         )
     )
@@ -186,7 +186,7 @@ def build_dynamic_partition_sensor(
                         asset=asset,
                         db=resources.db,
                         window_start=window_start,
-                        window_end=window_end,
+                        # window_end=window_end,
                     )
 
                     context.log.debug(f"count: {count}")
@@ -194,7 +194,7 @@ def build_dynamic_partition_sensor(
                         run_request_data.append(
                             {
                                 "asset": asset,
-                                "window_end": window_end,
+                                # "window_end": window_end,
                                 "window_start": window_start,
                             }
                         )
@@ -226,7 +226,7 @@ def build_dynamic_partition_sensor(
                                 "window_start": (
                                     rr["window_start"].to_iso8601_string()
                                 ),
-                                "window_end": (rr["window_end"].to_iso8601_string()),
+                                # "window_end": (rr["window_end"].to_iso8601_string()),
                             }
                         }
                         for rr in run_request_data_filtered
