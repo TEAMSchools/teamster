@@ -1,10 +1,12 @@
 from dagster import AssetSelection, define_asset_job
 
-from teamster.test.datagun.assets import gsheet_extract_assets, sftp_extract_assets
+from . import assets
 
 test_extract_assets_job = define_asset_job(
-    name="test_extract_assets_job",
-    selection=AssetSelection.assets(*sftp_extract_assets, *gsheet_extract_assets),
+    name="datagun_test_extract_assets_job",
+    selection=AssetSelection.assets(*assets.__all__),
 )
 
-__all__ = [test_extract_assets_job]
+__all__ = [
+    test_extract_assets_job,
+]

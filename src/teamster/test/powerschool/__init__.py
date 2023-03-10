@@ -1,3 +1,5 @@
-from teamster.test.powerschool.db import assets
+from . import db
 
-__all__ = [assets]
+__all__ = [
+    db,
+]

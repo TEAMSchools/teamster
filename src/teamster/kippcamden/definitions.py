@@ -32,7 +32,7 @@ defs = Definitions(
         "warehouse": mssql.configured(
             config_from_files(["src/teamster/core/resources/config/warehouse.yaml"])
         ),
-        "warehouse_bq": bigquery_resource.configured(
+        "bq": bigquery_resource.configured(
             config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
         ),
         "gcs": gcs_resource.configured(

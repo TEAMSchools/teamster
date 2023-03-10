@@ -5,7 +5,7 @@ from teamster.core.powerschool.db.assets import build_powerschool_table_asset
 from ... import CODE_LOCATION
 
 dynamic_partitions_def = DynamicPartitionsDefinition(
-    name=f"{CODE_LOCATION}_powerschool_partition_column"
+    name=f"{CODE_LOCATION}_powerschool_dynamic_partitions"
 )
 
 nonpartition_assets = [

@@ -1,3 +1,6 @@
-from teamster.test.datagun import assets, jobs
+from . import assets, jobs
 
-__all__ = [assets, jobs]
+__all__ = [
+    assets,
+    jobs,
+]
