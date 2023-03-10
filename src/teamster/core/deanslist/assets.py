@@ -49,7 +49,7 @@ def build_deanslist_endpoint_asset(
                 .get(asset_key, {})
                 .get(context.partition_key)
             )
-            context.log.debug(materialization_count)
+
             if (
                 materialization_count is None
                 or materialization_count == context.retry_number
