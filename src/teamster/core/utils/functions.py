@@ -6,9 +6,12 @@ from teamster.core.utils.classes import FiscalYear
 
 def parse_partition_key(partition_key, dimension=None):
     try:
-        partition_key = pendulum.from_format(
-            string=partition_key, fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ"
-        )
+        try:
+            partition_key = pendulum.from_format(
+                string=partition_key, fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ"
+            )
+        except ValueError:
+            partition_key = pendulum.from_format(string=partition_key, fmt="YYYY-MM-DD")
 
         fiscal_year = FiscalYear(datetime=partition_key, start_month=7).fiscal_year
 
