@@ -97,8 +97,14 @@ def build_powerschool_table_asset(
             table_name=asset_name,
             columns=columns,
             partition_column=partition_column,
-            window_start=pendulum.parser.parse(context.op_config.get("window_start")),
-            window_end=pendulum.parser.parse(context.op_config.get("window_end")),
+            window_start=pendulum.from_format(
+                string=context.op_config.get("window_start"),
+                fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
+            ),
+            window_end=pendulum.from_format(
+                string=context.op_config.get("window_end"),
+                fmt="YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
+            ),
         )
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(
