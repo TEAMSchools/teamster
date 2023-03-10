@@ -53,7 +53,7 @@ def partition_key_to_vars(partition_key):
         ) in partition_key.keys_by_dimension.items():
             path.extend(parse_partition_key(partition_key=key, dimension=dimension))
     else:
-        path.append(parse_partition_key(partition_key=partition_key))
+        path.extend(parse_partition_key(partition_key=partition_key))
 
     path.append("data")
 
