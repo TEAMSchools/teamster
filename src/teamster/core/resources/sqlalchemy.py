@@ -4,6 +4,7 @@ import pathlib
 import sys
 
 import oracledb
+from cramjam import snappy
 from dagster import Field, IntSource, Permissive, StringSource, resource
 from dagster._utils.merger import merge_dicts
 from fastavro import parse_schema, writer
@@ -12,6 +13,7 @@ from sqlalchemy.engine import URL, create_engine
 from teamster.core.utils.classes import CustomJSONEncoder
 
 sys.modules["cx_Oracle"] = oracledb
+sys.modules["snappy"] = snappy
 
 # https://cx-oracle.readthedocs.io/en/latest/user_guide/sql_execution.html#defaultfetchtypes
 ORACLE_AVRO_SCHEMA_TYPES = {

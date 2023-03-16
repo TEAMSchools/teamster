@@ -1,10 +1,12 @@
 import copy
 import pathlib
+import sys
 from urllib.parse import urlparse
 
 import fastavro
 import google.auth
 import gspread
+from cramjam import snappy
 from dagster import (
     Field,
     InputContext,
@@ -19,6 +21,8 @@ from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 
 from teamster.core.utils.functions import parse_partition_key
+
+sys.modules["snappy"] = snappy
 
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
