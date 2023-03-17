@@ -1,9 +1,9 @@
-name: "test"
+name: "staging"
 version: "1.0.0"
 config-version: 2
 
 # This setting configures which "profile" dbt uses for this project.
-profile: "test"
+profile: "staging"
 
 # These configurations specify where dbt should look for different types of files.
 # The `source-paths` config, for example, states that models in this project can be
@@ -31,6 +31,6 @@ models:
       +schema: deanslist
 
 vars:
-  powerschool_schema: test_powerschool
-  deanslist_schema: test_deanslist
+  powerschool_schema: staging_powerschool
+  deanslist_schema: staging_deanslist
   partition_path: foo
