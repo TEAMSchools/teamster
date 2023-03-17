@@ -12,7 +12,7 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from .. import CODE_LOCATION
 
 school_ids = config_from_files(
-    [f"src/teamster/{CODE_LOCATION}/deanslist/config/school_ids.yaml"]
+    [f"src/teamster/{CODE_LOCATION}/config/assets/deanslist/school_ids.yaml"]
 )["school_ids"]
 
 static_partitions_def = StaticPartitionsDefinition(school_ids)
@@ -33,7 +33,9 @@ static_partition_assets = [
         **endpoint,
     )
     for endpoint in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/deanslist/config/static-partition-assets.yaml"]
+        [
+            f"src/teamster/{CODE_LOCATION}/config/assets/deanslist/static-partition-assets.yaml"
+        ]
     )["endpoints"]
 ]
 
@@ -45,7 +47,9 @@ multi_partition_assets = [
         **endpoint,
     )
     for endpoint in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/deanslist/config/multi-partition-assets.yaml"]
+        [
+            f"src/teamster/{CODE_LOCATION}/config/assets/deanslist/multi-partition-assets.yaml"
+        ]
     )["endpoints"]
 ]
 

@@ -15,21 +15,21 @@ powerschool_table_asset = with_resources(
     ],
     resource_defs={
         "gcs": gcs_resource.configured(
-            config_from_files(["src/teamster/core/resources/config/gcs.yaml"])
+            config_from_files(["src/teamster/core/config/resources/gcs.yaml"])
         ),
         "ps_db": oracle.configured(
             config_from_files(
-                ["src/teamster/core/resources/config/db_powerschool.yaml"]
+                ["src/teamster/core/config/resources/db_powerschool.yaml"]
             )
         ),
         "ps_ssh": ssh_resource.configured(
             config_from_files(
-                ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+                ["src/teamster/core/config/resources/ssh_powerschool.yaml"]
             )
         ),
         "gcs_fp_io": gcs_filepath_io_manager.configured(
             config_from_files(
-                [f"src/teamster/{CODE_LOCATION}/resources/config/io.yaml"]
+                [f"src/teamster/{CODE_LOCATION}/config/resources/io.yaml"]
             )
         ),
     },

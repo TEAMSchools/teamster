@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "dbt-bigquery"
-version = "1.4.2"
+version = "1.4.3"
 requires_python = ">=3.7"
 summary = "The Bigquery adapter plugin for dbt"
 dependencies = [
@@ -1519,9 +1519,9 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/1c/5b/4ebdcc8be6069d55fc90aefc58112ba2c4881e3a1a73c80bef404433aa03/db_dtypes-1.0.5-py2.py3-none-any.whl", hash = "sha256:ab6782bf7a414dd7289ce4ba8ddea5ec44c1339d189c7738d7098efdfd148266"},
     {url = "https://files.pythonhosted.org/packages/ab/bf/95a29fdc089d72376e6910dd7dd214ad13e7244819ee06f02218fe945a90/db-dtypes-1.0.5.tar.gz", hash = "sha256:ee68f30cbccf343124ef0abebc7f8cc9a74ef8ed7ee4ff61f586117e8040a9d6"},
 ]
-"dbt-bigquery 1.4.2" = [
-    {url = "https://files.pythonhosted.org/packages/23/ad/1ed91663e5304c984d8cf16aebebbc28e18175be57d974ceaeb0dfbf4b75/dbt-bigquery-1.4.2.tar.gz", hash = "sha256:e9e12e0839d53f5584ce7f54582f4b0ead928567d48e9e9bd2903624a9bad265"},
-    {url = "https://files.pythonhosted.org/packages/57/d5/338dd4be07e4c64e5d41d03604e0039cf5d48fb213f503901fdb0668df88/dbt_bigquery-1.4.2-py3-none-any.whl", hash = "sha256:2c87b52b95c11a3fa3dc5cda4337e38d666bd5d294d51fa6b39bbbb176c27c7f"},
+"dbt-bigquery 1.4.3" = [
+    {url = "https://files.pythonhosted.org/packages/96/57/0318403851f2f850503f7f11dbd956daa82ffc862a3ee7f4f6447592788c/dbt-bigquery-1.4.3.tar.gz", hash = "sha256:af85c41cdf7efd71eee9a460f5b51d8c59ca903efbd2c6974d1e159c3e871489"},
+    {url = "https://files.pythonhosted.org/packages/e5/1d/e0e1c568b76af20e7109d3be3ed6c59f8472ec03ec5f80d7ebf8167509a4/dbt_bigquery-1.4.3-py3-none-any.whl", hash = "sha256:7f6a7bf40492e68c2782410cf8e118321c4f3844c577d2e7c3c0b79acb307add"},
 ]
 "dbt-core 1.4.5" = [
     {url = "https://files.pythonhosted.org/packages/06/ac/fcf87c574bf75e8b91af4975cc2a04bbc0fc5fc8002e74abce08ebfd3796/dbt_core-1.4.5-py3-none-any.whl", hash = "sha256:361248e7a629d2746e18c31fa459afb607060fb8cb1e2a76706c36ce5ab9b534"},

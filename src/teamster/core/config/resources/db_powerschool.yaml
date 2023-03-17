@@ -1,0 +1,12 @@
+dialect: oracle
+driver: cx_oracle
+username: PSNAVIGATOR
+host: localhost
+database: PSPRODDB
+port: 1521
+password:
+  env: PS_DB_PASSWORD
+version:
+  env: PS_DB_VERSION
+prefetchrows: 100000
+arraysize: 100000

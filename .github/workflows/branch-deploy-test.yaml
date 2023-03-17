@@ -1,4 +1,4 @@
-name: test - Hybrid Branch Deployment
+name: staging - Hybrid Branch Deployment
 
 on:
   workflow_dispatch: null
@@ -32,7 +32,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-test.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-staging.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy

@@ -179,7 +179,7 @@ def gsheet_extract_asset_factory(
 
 def generate_extract_assets(code_location, name, extract_type):
     cfg = config_from_files(
-        [f"src/teamster/{code_location}/datagun/config/assets/{name}.yaml"]
+        [f"src/teamster/{code_location}/config/assets/datagun/{name}.yaml"]
     )
 
     assets = []

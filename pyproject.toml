@@ -40,7 +40,7 @@ docs-serve = { shell = "mkdocs serve", help = "Run the builtin development serve
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
 test = { shell = "pdm run pytest -s", env_file = "env/test/.env", help = "Run tests with the default Python" }
 secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret for branch" }
-helm-install = { shell = "bash .helm/scripts/install.sh", help = "Update Dagster Cloud Agent via Helm" }
+helm-install = { shell = "bash .pdm/scripts/helm-install.sh", help = "Update Dagster Cloud Agent via Helm" }
 validate = { shell = "bash .dagster/validate.sh", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
 dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
