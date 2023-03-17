@@ -1,4 +1,4 @@
-from dagster import schedule
+from dagster import build_schedule_from_partitioned_job, schedule
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -27,6 +27,11 @@ def deanslist_static_partition_assets_job_schedule():
         yield run_request
 
 
+deanslist_multi_partition_assets_job_schedule = build_schedule_from_partitioned_job(
+    job=jobs.deanslist_multi_partition_assets_job, hour_of_day=0, minute_of_hour=0
+)
+
 __all__ = [
     deanslist_static_partition_assets_job_schedule,
+    deanslist_multi_partition_assets_job_schedule,
 ]
