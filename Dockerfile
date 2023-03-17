@@ -34,11 +34,11 @@ RUN pip install --no-cache-dir .
 
 # install dbt
 COPY teamster-dbt ./teamster-dbt
-RUN dbt clean --project-dir teamster-dbt/test \
-    && dbt deps --project-dir teamster-dbt/test \
+RUN dbt clean --project-dir teamster-dbt/staging \
+    && dbt deps --project-dir teamster-dbt/staging \
     && dbt list \
-        --project-dir teamster-dbt/test \
-        --profiles-dir teamster-dbt/test
+        --project-dir teamster-dbt/staging \
+        --profiles-dir teamster-dbt/staging
 
 RUN dbt clean --project-dir teamster-dbt/kippcamden \
     && dbt deps --project-dir teamster-dbt/kippcamden \
