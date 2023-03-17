@@ -8,7 +8,6 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
-    - isort
     - flake8
     - sql-formatter
     - sqlfluff
@@ -17,6 +16,7 @@ lint:
       paths:
         - .helm/values.yaml
   enabled:
+    - isort@5.12.0
     - ruff@0.0.256
     - actionlint@1.6.23
     - black@23.1.0

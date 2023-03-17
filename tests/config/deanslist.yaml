@@ -1,0 +1,123 @@
+resource:
+  subdomain: kippnj
+  api_key_map:
+    120:
+      env: DL_APIKEY_120
+    126:
+      env: DL_APIKEY_126
+    130:
+      env: DL_APIKEY_130
+    473:
+      env: DL_APIKEY_473
+    652:
+      env: DL_APIKEY_652
+    280:
+      env: DL_APIKEY_280
+    381:
+      env: DL_APIKEY_381
+    472:
+      env: DL_APIKEY_472
+    525:
+      env: DL_APIKEY_525
+    121:
+      env: DL_APIKEY_121
+    122:
+      env: DL_APIKEY_122
+    123:
+      env: DL_APIKEY_123
+    124:
+      env: DL_APIKEY_124
+    125:
+      env: DL_APIKEY_125
+    127:
+      env: DL_APIKEY_127
+    128:
+      env: DL_APIKEY_128
+    129:
+      env: DL_APIKEY_129
+    378:
+      env: DL_APIKEY_378
+    379:
+      env: DL_APIKEY_379
+    380:
+      env: DL_APIKEY_380
+    522:
+      env: DL_APIKEY_522
+    523:
+      env: DL_APIKEY_523
+    524:
+      env: DL_APIKEY_524
+asset:
+  endpoints:
+    - asset_name: lists
+      api_version: v1
+    - asset_name: terms
+      api_version: v1
+    - asset_name: rosters
+      api_version: v1
+      params:
+        show_inactive: Y
+    - asset_name: users
+      api_version: beta
+      params:
+        show_inactive: Y
+    - asset_name: users
+      api_version: v1
+      params:
+        IncludeInactive: Y
+    - asset_name: roster-assignments
+      api_version: beta
+    - asset_name: behavior
+      api_version: beta
+      params:
+        sdt: "2022-07-01"
+        edt: "2023-06-30"
+        UpdatedSince: "2022-07-01"
+        IncludeDeleted: Y
+    - asset_name: behavior
+      api_version: v1
+      params:
+        StartDate: "2022-07-01"
+        EndDate: "2023-06-30"
+        UpdatedSince: "2022-07-01"
+        IncludeDeleted: Y
+    - asset_name: homework
+      api_version: beta
+      params:
+        sdt: "2022-07-01"
+        edt: "2023-06-30"
+        UpdatedSince: "2022-07-01"
+        IncludeDeleted: Y
+    - asset_name: homework
+      api_version: v1
+      params:
+        StartDate: "2022-07-01"
+        EndDate: "2023-06-30"
+        UpdatedSince: "2022-07-01"
+        IncludeDeleted: Y
+    - asset_name: comm
+      api_version: beta
+      params:
+        UpdatedSince: "2022-07-01"
+        IncludeDeleted: Y
+        IncludePrevEnrollments: Y
+    - asset_name: comm-log
+      api_version: v1
+      params:
+        UpdatedSince: "2022-07-01"
+        IncludeDeleted: Y
+        IncludePrevEnrollments: Y
+    - asset_name: incidents
+      api_version: v1
+      params:
+        StartDate: "2022-07-01"
+        EndDate: "2023-06-30"
+        UpdatedSince: "2022-07-01"
+        IncludeDeleted: Y
+        cf: Y
+    - asset_name: followups
+      api_version: v1
+      params:
+        UpdatedSince: "2022-07-01"
+    # - asset_name: roster-assignments
+    #   api_version: v1
