@@ -117,12 +117,12 @@ def build_dynamic_partition_sensor(
             resource_config={
                 "ssh": {
                     "config": config_from_files(
-                        ["src/teamster/core/resources/config/ssh_powerschool.yaml"]
+                        ["src/teamster/core/config/resources/ssh_powerschool.yaml"]
                     )
                 },
                 "db": {
                     "config": config_from_files(
-                        ["src/teamster/core/resources/config/db_powerschool.yaml"]
+                        ["src/teamster/core/config/resources/db_powerschool.yaml"]
                     )
                 },
             },

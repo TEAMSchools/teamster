@@ -58,4 +58,9 @@ export GCP_PROJECT_NUMER
 
 # do not write .pyc files on the import of source modules
 export PYTHONDONTWRITEBYTECODE=1
-" >>"${HOME}/.bashrc"
+" >>"${HOME}/.bashrc
+"
+
+# initialize dbt submodule
+git submodule init
+git submodule update

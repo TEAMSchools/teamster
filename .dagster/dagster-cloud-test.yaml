@@ -1,15 +1,15 @@
 locations:
-  - location_name: test
+  - location_name: staging
     code_source:
-      module_name: teamster.test.definitions
+      module_name: teamster.staging.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-test/teamster-test
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-staging/teamster-staging
     working_directory: /root/app
     container_context:
       k8s:
         env_secrets:
-          - test
+          - staging
         volumes:
           - name: secret-volume
             secret:

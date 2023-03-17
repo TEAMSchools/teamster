@@ -11,14 +11,19 @@ dynamic_partitions_def = DynamicPartitionsDefinition(
 nonpartition_assets = [
     build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
     for cfg in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-nonpartition.yaml"]
+        [
+            (
+                f"src/teamster/{CODE_LOCATION}/config/assets/powerschool/"
+                "assets-nonpartition.yaml"
+            )
+        ]
     )["assets"]
 ]
 
 partition_assets = []
 for suffix in ["transactiondate", "whenmodified"]:
     config = config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/powerschool/db/config/assets-{suffix}.yaml"]
+        [f"src/teamster/{CODE_LOCATION}/config/assets/powerschool/assets-{suffix}.yaml"]
     )
 
     partition_column = config["partition_column"]

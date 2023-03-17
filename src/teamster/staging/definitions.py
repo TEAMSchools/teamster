@@ -6,7 +6,11 @@ from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.resources.deanslist import deanslist_resource
-from teamster.core.resources.google import gcs_avro_io_manager, gcs_filepath_io_manager
+from teamster.core.resources.google import (
+    gcs_avro_io_manager,
+    gcs_filepath_io_manager,
+    google_sheets,
+)
 from teamster.core.resources.sqlalchemy import mssql, oracle
 
 from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
@@ -22,25 +26,30 @@ defs = Definitions(
         + load_assets_from_modules(modules=[dbt.assets])
     ),
     jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
-    schedules=(
-        datagun.schedules.__all__
-        + powerschool.db.schedules.__all__
-        + deanslist.schedules.__all__
-    ),
-    sensors=powerschool.db.sensors.__all__ + dbt.sensors.__all__,
     resources={
-        "warehouse": mssql.configured(
-            config_from_files(["src/teamster/core/config/resources/warehouse.yaml"])
+        "dbt": dbt_cli_resource.configured(
+            {
+                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
+            }
         ),
         "bq": bigquery_resource.configured(
             config_from_files(["src/teamster/core/config/resources/gcs.yaml"])
         ),
+        "sftp_staging": ssh_resource.configured(
+            config_from_files(
+                ["src/teamster/core/config/resources/sftp_pythonanywhere.yaml"]
+            )
+        ),
         "gcs": gcs_resource.configured(
             config_from_files(["src/teamster/core/config/resources/gcs.yaml"])
         ),
-        "sftp_pythonanywhere": ssh_resource.configured(
+        "warehouse": mssql.configured(
+            config_from_files(["src/teamster/core/config/resources/warehouse.yaml"])
+        ),
+        "ps_db": oracle.configured(
             config_from_files(
-                ["src/teamster/core/config/resources/sftp_pythonanywhere.yaml"]
+                ["src/teamster/core/config/resources/db_powerschool.yaml"]
             )
         ),
         "ps_ssh": ssh_resource.configured(
@@ -48,9 +57,9 @@ defs = Definitions(
                 ["src/teamster/core/config/resources/ssh_powerschool.yaml"]
             )
         ),
-        "ps_db": oracle.configured(
+        "gcs_fp_io": gcs_filepath_io_manager.configured(
             config_from_files(
-                ["src/teamster/core/config/resources/db_powerschool.yaml"]
+                [f"src/teamster/{CODE_LOCATION}/config/resources/io.yaml"]
             )
         ),
         "io_manager": gcs_pickle_io_manager.configured(
@@ -58,15 +67,9 @@ defs = Definitions(
                 [f"src/teamster/{CODE_LOCATION}/config/resources/io.yaml"]
             )
         ),
-        "dbt": dbt_cli_resource.configured(
-            {
-                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
-            }
-        ),
-        "gcs_fp_io": gcs_filepath_io_manager.configured(
+        "gsheets": google_sheets.configured(
             config_from_files(
-                [f"src/teamster/{CODE_LOCATION}/config/resources/io.yaml"]
+                [f"src/teamster/{CODE_LOCATION}/config/resources/gsheets.yaml"]
             )
         ),
         "deanslist": deanslist_resource.configured(
