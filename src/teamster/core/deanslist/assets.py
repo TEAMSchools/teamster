@@ -10,7 +10,7 @@ from dagster import (
     asset,
 )
 
-from teamster.core.deanslist.schema import get_avro_schema
+from teamster.core.deanslist.schema import ENDPOINT_FIELDS, get_avro_record_schema
 from teamster.core.resources.deanslist import DeansList
 from teamster.core.utils.classes import FiscalYear
 
@@ -87,7 +87,14 @@ def build_deanslist_endpoint_asset(
 
         if row_count > 0:
             yield Output(
-                value=(data, get_avro_schema(name=asset_name, version=api_version)),
+                value=(
+                    data,
+                    get_avro_record_schema(
+                        name=asset_name,
+                        fields=ENDPOINT_FIELDS[asset_name],
+                        version=api_version,
+                    ),
+                ),
                 metadata={"records": row_count},
             )
 
