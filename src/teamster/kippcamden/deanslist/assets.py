@@ -52,8 +52,8 @@ multi_partition_assets = [
             maximum_lag_minutes=1,
             cron_schedule="0 0 * * *",
             cron_schedule_timezone=LOCAL_TIME_ZONE.name,
-        )
-        ** endpoint,
+        ),
+        **endpoint,
     )
     for endpoint in config_from_files(
         [
