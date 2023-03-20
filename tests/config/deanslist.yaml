@@ -67,6 +67,7 @@ asset:
         IncludeInactive: Y
     - asset_name: roster-assignments
       api_version: beta
+    # multi
     - asset_name: behavior
       api_version: beta
       params:
