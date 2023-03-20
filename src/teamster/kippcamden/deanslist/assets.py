@@ -1,8 +1,9 @@
-import pendulum
-from dagster import (
-    DailyPartitionsDefinition,
+# import pendulum
+from dagster import (  # DailyPartitionsDefinition,
+    FreshnessPolicy,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
     config_from_files,
 )
 
@@ -19,8 +20,12 @@ static_partitions_def = StaticPartitionsDefinition(school_ids)
 
 multi_partitions_def = MultiPartitionsDefinition(
     partitions_defs={
-        "date": DailyPartitionsDefinition(
-            start_date="2023-03-20", timezone=LOCAL_TIME_ZONE.name, end_offset=1
+        "date": TimeWindowPartitionsDefinition(
+            cron_schedule="0 0 1 7 *",
+            start="2016-07-01",
+            fmt="%Y-%m-%d",
+            timezone=LOCAL_TIME_ZONE.name,
+            end_offset=1,
         ),
         "school": static_partitions_def,
     }
@@ -43,8 +48,12 @@ multi_partition_assets = [
     build_deanslist_endpoint_asset(
         code_location=CODE_LOCATION,
         partitions_def=multi_partitions_def,
-        inception_date=pendulum.date(2016, 7, 1),
-        **endpoint,
+        freshness_policy=FreshnessPolicy(
+            maximum_lag_minutes=1,
+            cron_schedule="0 0 * * *",
+            cron_schedule_timezone=LOCAL_TIME_ZONE.name,
+        )
+        ** endpoint,
     )
     for endpoint in config_from_files(
         [
