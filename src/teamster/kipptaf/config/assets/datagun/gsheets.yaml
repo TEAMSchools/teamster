@@ -129,3 +129,21 @@ assets:
           schema: extracts
     file_config:
       stem: gsheets_comp_events
+  - asset_name: collab_roster
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_collab_roster
+          schema: extracts
+    file_config:
+      stem: gsheets_collab_roster
+  - asset_name: collab_transition
+    query_config:
+      type: schema
+      value:
+        table:
+          name: gsheets_collab_transition
+          schema: extracts
+    file_config:
+      stem: gsheets_collab_transition
