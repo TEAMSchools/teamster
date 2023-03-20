@@ -20,6 +20,7 @@ def build_deanslist_endpoint_asset(
     code_location,
     api_version,
     partitions_def: MultiPartitionsDefinition | StaticPartitionsDefinition = None,
+    freshness_policy=None,
     inception_date=None,
     op_tags={},
     params={},
@@ -28,6 +29,7 @@ def build_deanslist_endpoint_asset(
         name=asset_name.replace("-", "_"),
         key_prefix=[code_location, "deanslist"],
         partitions_def=partitions_def,
+        freshness_policy=freshness_policy,
         op_tags=op_tags,
         required_resource_keys={"deanslist"},
         io_manager_key="gcs_avro_io",
@@ -37,12 +39,11 @@ def build_deanslist_endpoint_asset(
         if isinstance(
             context.asset_partitions_def_for_output(), MultiPartitionsDefinition
         ):
+            asset_key = context.asset_key_for_output()
             school_partition = context.partition_key.keys_by_dimension["school"]
             date_partition = pendulum.from_format(
                 string=context.partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
             )
-
-            asset_key = context.asset_key_for_output()
 
             asset_materialization_counts = (
                 context.instance.get_materialization_count_by_partition(

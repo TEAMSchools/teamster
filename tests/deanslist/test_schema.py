@@ -4,7 +4,7 @@ from fastavro import parse_schema, validation
 from teamster.core.deanslist.schema import ENDPOINT_FIELDS, get_avro_record_schema
 from teamster.core.resources.deanslist import DeansList, deanslist_resource
 
-TEST_SCHOOL_ID = 121
+TEST_SCHOOL_ID = 126
 
 config = config_from_files(["tests/config/deanslist.yaml"])
 resource_config = config["resource"]
