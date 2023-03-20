@@ -360,7 +360,7 @@ PENALTY_FIELDS = {
             "name": "EndDate",
             "type": ["null", {"type": "string", "logicalType": "date"}],
         },
-        {"name": "NumDays", "type": ["null", "int"]},
+        {"name": "NumDays", "type": ["null", "float"]},
         {"name": "NumPeriods", "type": ["null", "string"]},
         {"name": "IsSuspension", "type": ["null", "boolean"]},
         {"name": "SAID", "type": ["null", "string"]},
