@@ -11,9 +11,9 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 from .. import CODE_LOCATION
 
-school_ids = config_from_files(
-    [f"src/teamster/{CODE_LOCATION}/config/assets/deanslist/school_ids.yaml"]
-)["school_ids"]
+config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/deanslist"
+
+school_ids = config_from_files([f"{config_dir}/school_ids.yaml"])["school_ids"]
 
 static_partitions_def = StaticPartitionsDefinition(school_ids)
 
@@ -28,15 +28,11 @@ multi_partitions_def = MultiPartitionsDefinition(
 
 static_partition_assets = [
     build_deanslist_endpoint_asset(
-        code_location=CODE_LOCATION,
-        partitions_def=static_partitions_def,
-        **endpoint,
+        code_location=CODE_LOCATION, partitions_def=static_partitions_def, **endpoint
     )
-    for endpoint in config_from_files(
-        [
-            f"src/teamster/{CODE_LOCATION}/config/assets/deanslist/static-partition-assets.yaml"
-        ]
-    )["endpoints"]
+    for endpoint in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
+        "endpoints"
+    ]
 ]
 
 multi_partition_assets = [
@@ -46,11 +42,9 @@ multi_partition_assets = [
         inception_date=pendulum.date(2016, 7, 1),
         **endpoint,
     )
-    for endpoint in config_from_files(
-        [
-            f"src/teamster/{CODE_LOCATION}/config/assets/deanslist/multi-partition-assets.yaml"
-        ]
-    )["endpoints"]
+    for endpoint in config_from_files([f"{config_dir}/multi-partition-assets.yaml"])[
+        "endpoints"
+    ]
 ]
 
 __all__ = [
