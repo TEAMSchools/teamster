@@ -1,6 +1,5 @@
 # import pendulum
 from dagster import (  # DailyPartitionsDefinition,
-    FreshnessPolicy,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionsDefinition,
@@ -46,14 +45,7 @@ static_partition_assets = [
 
 multi_partition_assets = [
     build_deanslist_endpoint_asset(
-        code_location=CODE_LOCATION,
-        partitions_def=multi_partitions_def,
-        freshness_policy=FreshnessPolicy(
-            maximum_lag_minutes=1,
-            cron_schedule="0 0 * * *",
-            cron_schedule_timezone=LOCAL_TIME_ZONE.name,
-        ),
-        **endpoint,
+        code_location=CODE_LOCATION, partitions_def=multi_partitions_def, **endpoint
     )
     for endpoint in config_from_files(
         [
