@@ -184,9 +184,9 @@ def build_dynamic_partition_sensor(
         # get unique window starts
         window_starts = list(set([rr["window_start"] for rr in run_request_data]))
 
-        partitions_def.add_partitions(
+        context.instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def.name,
             partition_keys=[ws.to_iso8601_string() for ws in window_starts],
-            instance=context.instance,
         )
 
         # group run requests by window start
