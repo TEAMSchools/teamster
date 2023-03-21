@@ -11,6 +11,7 @@ sudo apt-get -qq -y update --no-install-recommends &&
 python -m pip install --no-cache-dir --upgrade pip
 
 # install Trunk
+# trunk-ignore(shellcheck/SC2312)
 curl https://get.trunk.io -fsSL | bash -s -- -y
 trunk install --ci
 
@@ -24,15 +25,33 @@ git add .
 git commit -m "Initial PDM commit"
 git push
 
-# export GCP service account key to file
+# create env folder
 mkdir -p ./env
-echo "${GCP_SERVICE_ACCOUNT_KEY}" >env/service-account.json
+
+# export GCP service account key to file
+echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud-service-account.json
+
+# export env vars
+# do not write .pyc files on the import of source modules
+export PYTHONDONTWRITEBYTECODE=1
+
+GCP_PROJECT_ID="$(jq -r .project_id env/gcloud-service-account.json)"
+export GCP_PROJECT_ID
+
+# trunk-ignore-begin(shellcheck/SC2312)
+GCP_PROJECT_NUMER=$(
+  gcloud projects list \
+    --filter="$(gcloud config get-value project)" \
+    --format="value(PROJECT_NUMBER)"
+)
+# trunk-ignore-end(shellcheck/SC2312)
+export GCP_PROJECT_NUMER
 
 # authenticate gcloud
-gcloud auth activate-service-account --key-file=env/service-account.json
+gcloud auth activate-service-account --key-file=env/gcloud-service-account.json
 
 # set gcloud project & region
-gcloud config set project "$(jq -r .project_id env/service-account.json)"
+gcloud config set project "${GCP_PROJECT_ID}"
 gcloud config set compute/region "${GCP_REGION}"
 
 # install kubectl authentication plugin
@@ -42,24 +61,6 @@ sudo apt-get -qq -y install --no-install-recommends google-cloud-sdk-gke-gcloud-
 
 # update the kubectl configuration to use the plugin
 gcloud container clusters get-credentials dagster-cloud
-
-echo "
-
-# postCreate.sh
-GCP_PROJECT_ID=\"$(jq -r .project_id env/service-account.json)\"
-export GCP_PROJECT_ID
-
-GCP_PROJECT_NUMER=$(
-  gcloud projects list \
-    --filter="$(gcloud config get-value project)" \
-    --format="value(PROJECT_NUMBER)"
-)
-export GCP_PROJECT_NUMER
-
-# do not write .pyc files on the import of source modules
-export PYTHONDONTWRITEBYTECODE=1
-" >>"${HOME}/.bashrc
-"
 
 # initialize dbt submodule
 git submodule init
