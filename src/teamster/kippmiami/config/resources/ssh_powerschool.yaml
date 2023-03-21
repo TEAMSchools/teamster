@@ -1,0 +1,8 @@
+remote_host:
+  env: KIPPMIAMI_PS_SSH_HOST
+remote_port:
+  env: KIPPMIAMI_PS_SSH_PORT
+username:
+  env: KIPPMIAMI_PS_SSH_USERNAME
+password:
+  env: KIPPMIAMI_PS_SSH_PASSWORD

@@ -7,11 +7,16 @@ file_envvars=(
   "DBT_USER_CREDS"
 )
 
+touch env/.env
+
 while read -ra array; do
   envvar="${array[0]}"
   envvar_lower="${envvar,,}"
   secret_name="${envvar_lower//_/-}"
+
   if [[ ! ${file_envvars[*]} =~ ${envvar} ]]; then
+    echo "${envvar}"="${!envvar}" >>env/.env
+
     kubectl create secret generic "${secret_name}" \
       --save-config \
       --dry-run=client \
@@ -21,6 +26,7 @@ while read -ra array; do
       kubectl apply -f - ||
       true
   fi
+
 done < <(gh secret list --app codespaces || true)
 
 kubectl create secret generic "secret-files" \

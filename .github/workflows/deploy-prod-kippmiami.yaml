@@ -1,4 +1,4 @@
-name: kipptaf - Hybrid Prod Deployment
+name: kippmiami - Hybrid Prod Deployment
 
 on:
   workflow_dispatch: null
@@ -8,10 +8,10 @@ on:
     paths:
       - Dockerfile
       - requirements.txt
-      - .github/workflows/prod-deploy-kipptaf.yaml
-      - .dagster/dagster-cloud-kipptaf.yaml
+      - .github/workflows/deploy-prod-kippmiami.yaml
+      - .dagster/dagster-cloud-kippmiami.yaml
       - src/teamster/core/**
-      - src/teamster/kipptaf/**
+      - src/teamster/kippmiami/**
       - teamster-dbt
 
 concurrency:
@@ -36,7 +36,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-kipptaf.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-kippmiami.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy

@@ -1,0 +1,4 @@
+password:
+  env: KIPPMIAMI_PS_DB_PASSWORD
+version:
+  env: KIPPMIAMI_PS_DB_VERSION
