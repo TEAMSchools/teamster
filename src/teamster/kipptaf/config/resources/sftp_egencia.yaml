@@ -2,4 +2,4 @@ remote_host:
   env: EGENCIA_SFTP_HOST
 username:
   env: EGENCIA_SFTP_USERNAME
-key_file: /etc/secret-volume/egencia-privatekey
+key_file: /etc/secret-volume/id_rsa_egencia
