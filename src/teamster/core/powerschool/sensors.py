@@ -114,15 +114,23 @@ def build_dynamic_partition_sensor(
         # check if asset has any modified records from past X hours
         run_request_data = []
 
-        config_dir = f"src/teamster/{code_location}/config/resources"
+        core_config_dir = "src/teamster/core/config/resources"
+        local_config_dir = f"src/teamster/{code_location}/config/resources"
         with build_resources(
             resources={"ssh": ssh_resource, "db": oracle},
             resource_config={
                 "ssh": {
-                    "config": config_from_files([f"{config_dir}/ssh_powerschool.yaml"])
+                    "config": config_from_files(
+                        [f"{local_config_dir}/ssh_powerschool.yaml"]
+                    )
                 },
                 "db": {
-                    "config": config_from_files([f"{config_dir}/db_powerschool.yaml"])
+                    "config": config_from_files(
+                        [
+                            f"{core_config_dir}/db_powerschool.yaml",
+                            f"{local_config_dir}/db_powerschool.yaml",
+                        ]
+                    )
                 },
             },
         ) as resources:
