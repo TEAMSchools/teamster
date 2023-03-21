@@ -7,4 +7,4 @@ kippnewark:
       project: teamster-332318
       schema: kippnewark
       threads: 1
-      keyfile: /etc/secret-volume/dbt-user-creds
+      keyfile: /etc/secret-volume/dbt_user_creds_json

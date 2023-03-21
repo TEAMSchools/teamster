@@ -17,4 +17,4 @@ trunk upgrade -y --no-progress
 
 # set up dbt env
 mkdir -p ~/.dbt
-echo "${DBT_USER_CREDS}" >~/.dbt/dbt-user-creds
+echo "${DBT_USER_CREDS}" >~/.dbt/dbt_user_creds_json
