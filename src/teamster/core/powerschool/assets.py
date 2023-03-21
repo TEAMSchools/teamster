@@ -83,7 +83,7 @@ def build_powerschool_table_asset(
 
         ssh_tunnel = context.resources.ps_ssh.get_tunnel(
             remote_port=1521,
-            remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST"),
+            remote_host=os.getenv(f"{code_location}_PS_SSH_REMOTE_BIND_HOST"),
             local_port=1521,
         )
 
