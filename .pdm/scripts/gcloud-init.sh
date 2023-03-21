@@ -46,9 +46,6 @@ gcloud iam workload-identity-pools providers create-oidc "github-provider" \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository"
 
-echo "GH_WORKLOAD_IDENTITY_POOL_ID=github-pool" >>env/core.env
-echo "GH_WORKLOAD_IDENTITY_PROVIDER_ID=github-provider" >>env/core.env
-
 # bind service account to WI pool
 GH_ORG_NAME=$(gh repo view --json owner --jq '.owner.login')
 gcloud iam service-accounts \

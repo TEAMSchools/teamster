@@ -1,10 +1,10 @@
 locations:
-  - location_name: kipptaf
+  - location_name: staging
     code_source:
-      module_name: teamster.kipptaf.definitions
+      module_name: teamster.staging.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-staging/teamster-staging
     working_directory: /root/app
     container_context:
       k8s:
@@ -18,6 +18,9 @@ locations:
           - coupa-sftp-host
           - coupa-sftp-password
           - coupa-sftp-username
+          - cpn-sftp-host
+          - cpn-sftp-password
+          - cpn-sftp-username
           - deanslist-sftp-host
           - deanslist-sftp-password
           - deanslist-sftp-username
@@ -26,6 +29,13 @@ locations:
           - illuminate-sftp-host
           - illuminate-sftp-password
           - illuminate-sftp-username
+          - kipptest-ps-db-password
+          - kipptest-ps-db-version
+          - kipptest-ps-ssh-host
+          - kipptest-ps-ssh-password
+          - kipptest-ps-ssh-port
+          - kipptest-ps-ssh-remote-bind-host
+          - kipptest-ps-ssh-username
           - ktaf-sftp-host
           - ktaf-sftp-password
           - ktaf-sftp-username
@@ -37,6 +47,9 @@ locations:
           - mssql-password
           - mssql-port
           - mssql-username
+          - nps-sftp-host
+          - nps-sftp-password
+          - nps-sftp-username
           - pythonanywhere-sftp-host
           - pythonanywhere-sftp-password
           - pythonanywhere-sftp-username

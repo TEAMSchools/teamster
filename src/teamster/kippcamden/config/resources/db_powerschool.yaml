@@ -1,0 +1,4 @@
+password:
+  env: KIPPCAMDEN_PS_DB_PASSWORD
+version:
+  env: KIPPCAMDEN_PS_DB_VERSION

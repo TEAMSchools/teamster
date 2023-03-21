@@ -1,0 +1,4 @@
+password:
+  env: KIPPNEWARK_PS_DB_PASSWORD
+version:
+  env: KIPPNEWARK_PS_DB_VERSION

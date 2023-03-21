@@ -9,7 +9,21 @@ locations:
     container_context:
       k8s:
         env_secrets:
-          - kippmiami
+          - kippmiami-ps-db-password
+          - kippmiami-ps-db-version
+          - kippmiami-ps-ssh-host
+          - kippmiami-ps-ssh-password
+          - kippmiami-ps-ssh-port
+          - kippmiami-ps-ssh-remote-bind-host
+          - kippmiami-ps-ssh-username
+          - mssql-database
+          - mssql-host
+          - mssql-password
+          - mssql-port
+          - mssql-username
+          - pythonanywhere-sftp-host
+          - pythonanywhere-sftp-password
+          - pythonanywhere-sftp-username
         volumes:
           - name: secret-volume
             secret:

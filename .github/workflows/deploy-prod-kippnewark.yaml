@@ -1,4 +1,4 @@
-name: kippcamden - Hybrid Prod Deployment
+name: kippnewark - Hybrid Prod Deployment
 
 on:
   workflow_dispatch: null
@@ -8,10 +8,10 @@ on:
     paths:
       - Dockerfile
       - requirements.txt
-      - .github/workflows/prod-deploy-kippcamden.yaml
-      - .dagster/dagster-cloud-kippcamden.yaml
+      - .github/workflows/deploy-prod-kippnewark.yaml
+      - .dagster/dagster-cloud-kippnewark.yaml
       - src/teamster/core/**
-      - src/teamster/kippcamden/**
+      - src/teamster/kippnewark/**
       - teamster-dbt
 
 concurrency:
@@ -36,7 +36,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-kippcamden.yaml
+          dagster_cloud_file: .dagster/dagster-cloud-kippnewark.yaml
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
