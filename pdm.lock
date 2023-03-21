@@ -370,7 +370,7 @@ dependencies = [
 
 [[package]]
 name = "google-api-python-client"
-version = "2.81.0"
+version = "2.82.0"
 requires_python = ">=3.7"
 summary = "Google API Client Library for Python"
 dependencies = [
@@ -482,7 +482,7 @@ dependencies = [
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.58.0"
+version = "1.59.0"
 requires_python = ">=3.7"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
@@ -491,12 +491,12 @@ dependencies = [
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.58.0"
+version = "1.59.0"
 extras = ["grpc"]
 requires_python = ">=3.7"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
-    "googleapis-common-protos==1.58.0",
+    "googleapis-common-protos==1.59.0",
     "grpcio<2.0.0dev,>=1.44.0",
 ]
 
@@ -1601,9 +1601,9 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/2b/15/7bafa5379a228ed72baf769eea5e6019a944469fe637ea0742c0351109bf/google-api-core-2.11.0.tar.gz", hash = "sha256:4b9bb5d5a380a0befa0573b302651b8a9a89262c1730e37bf423cec511804c22"},
     {url = "https://files.pythonhosted.org/packages/f7/24/a17e75c733609dce285a2dae6f56837d69a9566963c9d1cab96d788546c8/google_api_core-2.11.0-py3-none-any.whl", hash = "sha256:ce222e27b0de0d7bc63eb043b956996d6dccab14cc3b690aaea91c9cc99dc16e"},
 ]
-"google-api-python-client 2.81.0" = [
-    {url = "https://files.pythonhosted.org/packages/ca/8e/3c507a09ca912df23035e6d4d255bc9f11ed8fcbff004cdfad306b63fab5/google_api_python_client-2.81.0-py2.py3-none-any.whl", hash = "sha256:ad6700ae3a76ead8956d7f30935978cea308530e342ad8c1e26a4e40fc05c054"},
-    {url = "https://files.pythonhosted.org/packages/d0/e8/9a71d196a6ab2619d6af19003bb7d27f5d6fcab3233c65019a11d04f8cf7/google-api-python-client-2.81.0.tar.gz", hash = "sha256:8faab0b9b19d3797b455d33320c643253b6761fd0d3f3adb54792ab155d0795a"},
+"google-api-python-client 2.82.0" = [
+    {url = "https://files.pythonhosted.org/packages/48/8b/4a1902d7522127b95e8afdf4270f5b22609d5c3644bc776661d6f0cec2e7/google-api-python-client-2.82.0.tar.gz", hash = "sha256:22933a821bd46055b29fdf82aab96b13a9e33ff082dec2fc51cfc2efad9b0eea"},
+    {url = "https://files.pythonhosted.org/packages/90/e8/f8f1072dee14d69143c68a4be564e818e6d7b7fb2bb5a7f49102efeded43/google_api_python_client-2.82.0-py2.py3-none-any.whl", hash = "sha256:80a97d900f10dc709b9ba8fe5e72073d69f2a2b7f6b87d02cf69015790bc0b56"},
 ]
 "google-auth 2.16.2" = [
     {url = "https://files.pythonhosted.org/packages/09/be/56d3c1db93d85e53ffa4eb26a2f41b0df9ba00317ee1f253121c63489d03/google-auth-2.16.2.tar.gz", hash = "sha256:07e14f34ec288e3f33e00e2e3cc40c8942aa5d4ceac06256a28cd8e786591420"},
@@ -1707,9 +1707,9 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/0b/d8/9a46125189d955ff50228351848019aef51775787db59373fefb20b09b3b/google_resumable_media-2.4.1-py2.py3-none-any.whl", hash = "sha256:831e86fd78d302c1a034730a0c6e5369dd11d37bad73fa69ca8998460d5bae8d"},
     {url = "https://files.pythonhosted.org/packages/88/11/ea0db6fe28017487dd1e2c6bc3623ea2dc4655947d6f571c6207b6d9693c/google-resumable-media-2.4.1.tar.gz", hash = "sha256:15b8a2e75df42dc6502d1306db0bce2647ba6013f9cd03b6e17368c0886ee90a"},
 ]
-"googleapis-common-protos 1.58.0" = [
-    {url = "https://files.pythonhosted.org/packages/32/4e/ed585842aaa704d87495a0e99317aaa44c5007a597c05b995fa8cfc4dfbe/googleapis_common_protos-1.58.0-py2.py3-none-any.whl", hash = "sha256:ca3befcd4580dab6ad49356b46bf165bb68ff4b32389f028f1abd7c10ab9519a"},
-    {url = "https://files.pythonhosted.org/packages/41/43/613cbd071413f6b2a3427f905bc8a8f0f3da202a6e715d78aa22b1f35271/googleapis-common-protos-1.58.0.tar.gz", hash = "sha256:c727251ec025947d545184ba17e3578840fc3a24a0516a020479edab660457df"},
+"googleapis-common-protos 1.59.0" = [
+    {url = "https://files.pythonhosted.org/packages/9a/19/02a6256e00653b0fec9f356678df0ed996cb9d89aeb472c8c4df9490cac0/googleapis-common-protos-1.59.0.tar.gz", hash = "sha256:4168fcb568a826a52f23510412da405abd93f4d23ba544bb68d943b14ba3cb44"},
+    {url = "https://files.pythonhosted.org/packages/a7/8d/7ccf8f63ab0a768e13720262374c0d6a1489f7f23f1b89a16c92af452f09/googleapis_common_protos-1.59.0-py2.py3-none-any.whl", hash = "sha256:b287dc48449d1d41af0c69f4ea26242b5ae4c3d7249a38b0984c86a4caffff1f"},
 ]
 "greenlet 2.0.2" = [
     {url = "https://files.pythonhosted.org/packages/07/ef/6bfa2ea34f76dea02833d66d28ae7cf4729ddab74ee93ee069c7f1d47c4f/greenlet-2.0.2-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:d5508f0b173e6aa47273bdc0a0b5ba055b59662ba7c7ee5119528f466585526b"},
