@@ -3,6 +3,7 @@ import os
 
 import pendulum
 from dagster import (
+    DynamicPartitionsDefinition,
     SensorEvaluationContext,
     build_resources,
     config_from_files,
@@ -39,7 +40,7 @@ def get_asset_count(asset, db, window_start):
 def build_dynamic_partition_sensor(
     name,
     asset_selection,
-    partitions_def,
+    partitions_def: DynamicPartitionsDefinition,
     minimum_interval_seconds=None,
 ):
     asset_job = define_asset_job(
@@ -87,9 +88,9 @@ def build_dynamic_partition_sensor(
 
             window_start = pendulum.from_timestamp(0)
 
-            partitions_def.add_partitions(
+            context.instance.add_dynamic_partitions(
+                partitions_def_name=partitions_def.name,
                 partition_keys=[window_start.to_iso8601_string()],
-                instance=context.instance,
             )
 
             yield asset_job.run_request_for_partition(
