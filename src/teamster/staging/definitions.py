@@ -15,15 +15,13 @@ from teamster.core.resources.sqlalchemy import mssql, oracle
 
 from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
 
-core_config_path = "src/teamster/core/config"
-local_config_path = f"src/teamster/{CODE_LOCATION}/config"
+core_resource_config_dir = "src/teamster/core/config/resources"
+local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
 defs = Definitions(
     executor=k8s_job_executor,
     assets=(
-        load_assets_from_modules(
-            modules=[powerschool.db.assets], group_name="powerschool"
-        )
+        load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
         + load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist")
         + load_assets_from_modules(modules=[dbt.assets])
@@ -37,49 +35,47 @@ defs = Definitions(
             }
         ),
         "bq": bigquery_resource.configured(
-            config_from_files([f"{core_config_path}/resources/gcs.yaml"])
+            config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
         ),
         "sftp_staging": ssh_resource.configured(
-            config_from_files(
-                [f"{core_config_path}/resources/sftp_pythonanywhere.yaml"]
-            )
+            config_from_files([f"{core_resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
         "gcs": gcs_resource.configured(
-            config_from_files([f"{core_config_path}/resources/gcs.yaml"])
+            config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
         ),
         "warehouse": mssql.configured(
-            config_from_files([f"{core_config_path}/resources/warehouse.yaml"])
+            config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
         ),
         "ps_db": oracle.configured(
             config_from_files(
                 [
-                    f"{core_config_path}/resources/db_powerschool.yaml",
-                    f"{local_config_path}/resources/db_powerschool.yaml",
+                    f"{core_resource_config_dir}/db_powerschool.yaml",
+                    f"{local_resource_config_dir}/db_powerschool.yaml",
                 ]
             )
         ),
         "ps_ssh": ssh_resource.configured(
-            config_from_files([f"{local_config_path}/resources/ssh_powerschool.yaml"])
+            config_from_files([f"{local_resource_config_dir}/ssh_powerschool.yaml"])
         ),
         "gcs_fp_io": gcs_filepath_io_manager.configured(
-            config_from_files([f"{local_config_path}/resources/io.yaml"])
+            config_from_files([f"{local_resource_config_dir}/io.yaml"])
         ),
         "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files([f"{local_config_path}/resources/io.yaml"])
+            config_from_files([f"{local_resource_config_dir}/io.yaml"])
         ),
         "gsheets": google_sheets.configured(
-            config_from_files([f"{local_config_path}/resources/gsheets.yaml"])
+            config_from_files([f"{local_resource_config_dir}/gsheets.yaml"])
         ),
         "deanslist": deanslist_resource.configured(
             config_from_files(
                 [
-                    f"{core_config_path}/resources/deanslist.yaml",
-                    f"{local_config_path}/resources/deanslist.yaml",
+                    f"{core_resource_config_dir}/deanslist.yaml",
+                    f"{local_resource_config_dir}/deanslist.yaml",
                 ]
             )
         ),
         "gcs_avro_io": gcs_avro_io_manager.configured(
-            config_from_files([f"{local_config_path}/resources/io.yaml"])
+            config_from_files([f"{local_resource_config_dir}/io.yaml"])
         ),
     },
 )

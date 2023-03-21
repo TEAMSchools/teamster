@@ -38,6 +38,7 @@ def get_asset_count(asset, db, window_start):
 
 
 def build_dynamic_partition_sensor(
+    code_location,
     name,
     asset_selection,
     partitions_def: DynamicPartitionsDefinition,
@@ -113,18 +114,15 @@ def build_dynamic_partition_sensor(
         # check if asset has any modified records from past X hours
         run_request_data = []
 
+        config_dir = f"src/teamster/{code_location}/config/resources"
         with build_resources(
             resources={"ssh": ssh_resource, "db": oracle},
             resource_config={
                 "ssh": {
-                    "config": config_from_files(
-                        ["src/teamster/core/config/resources/ssh_powerschool.yaml"]
-                    )
+                    "config": config_from_files([f"{config_dir}/ssh_powerschool.yaml"])
                 },
                 "db": {
-                    "config": config_from_files(
-                        ["src/teamster/core/config/resources/db_powerschool.yaml"]
-                    )
+                    "config": config_from_files([f"{config_dir}/db_powerschool.yaml"])
                 },
             },
         ) as resources:

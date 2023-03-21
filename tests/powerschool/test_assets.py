@@ -2,7 +2,7 @@ from dagster import build_op_context, config_from_files, with_resources
 from dagster_gcp.gcs import gcs_resource
 from dagster_ssh import ssh_resource
 
-from teamster.core.powerschool.db.assets import build_powerschool_table_asset
+from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.resources.google import gcs_filepath_io_manager
 from teamster.core.resources.sqlalchemy import oracle
 
