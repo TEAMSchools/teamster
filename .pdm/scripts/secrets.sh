@@ -1,28 +1,26 @@
 #!/bin/bash
 
-while read -ra array; do
-  var="${array[0]}"
-  kubectl create secret generic "${var}" \
-    --save-config \
-    --dry-run=client \
-    --namespace=dagster-cloud \
-    --from-literal="${var}"="${var}" \
-    --output=yaml |
-    kubectl apply -f -
-done < <(gh secret list --app codespaces || true)
+file_envvars=(
+  "DEANSLIST_API_KEY_MAP"
+  "EGENCIA_RSA_PRIVATE_KEY"
+  "GCLOUD_SERVICE_ACCOUNT_KEY"
+)
 
-# if [[ -z ${1} ]]; then
-#   echo "Code Location is required"
-#   exit 1
-# else
-#   kubectl create secret generic "${1}" \
-#     --save-config \
-#     --dry-run=client \
-#     --namespace=dagster-cloud \
-#     --from-env-file="env/${1}/.env" \
-#     --output=yaml |
-#     kubectl apply -f -
-# fi
+while read -ra array; do
+  envvar="${array[0]}"
+  envvar_lower="${envvar,,}"
+  secret_name="${envvar_lower//_/-}"
+  if [[ ! ${file_envvars[*]} =~ ${envvar} ]]; then
+    kubectl create secret generic "${secret_name}" \
+      --save-config \
+      --dry-run=client \
+      --namespace=dagster-cloud \
+      --from-literal="${envvar}"="${!envvar}" \
+      --output=yaml |
+      kubectl apply -f - ||
+      true
+  fi
+done < <(gh secret list --app codespaces || true)
 
 # kubectl create secret generic "credential-files" \
 #   --save-config \
