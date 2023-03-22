@@ -29,13 +29,6 @@ locations:
           - illuminate-sftp-host
           - illuminate-sftp-password
           - illuminate-sftp-username
-          - kipptest-ps-db-password
-          - kipptest-ps-db-version
-          - kipptest-ps-ssh-host
-          - kipptest-ps-ssh-password
-          - kipptest-ps-ssh-port
-          - kipptest-ps-ssh-remote-bind-host
-          - kipptest-ps-ssh-username
           - ktaf-sftp-host
           - ktaf-sftp-password
           - ktaf-sftp-username
@@ -59,6 +52,13 @@ locations:
           - read180-sftp-host
           - read180-sftp-password
           - read180-sftp-username
+          - staging-ps-db-password
+          - staging-ps-db-version
+          - staging-ps-ssh-host
+          - staging-ps-ssh-password
+          - staging-ps-ssh-port
+          - staging-ps-ssh-remote-bind-host
+          - staging-ps-ssh-username
         volumes:
           - name: secret-volume
             secret:

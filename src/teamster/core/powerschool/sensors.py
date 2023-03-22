@@ -3,7 +3,7 @@ import os
 
 import pendulum
 from dagster import (
-    DynamicPartitionsDefinition,
+    AssetsDefinition,
     SensorEvaluationContext,
     build_resources,
     config_from_files,
@@ -38,22 +38,19 @@ def get_asset_count(asset, db, window_start):
 
 
 def build_dynamic_partition_sensor(
-    code_location,
-    name,
-    asset_selection,
-    partitions_def: DynamicPartitionsDefinition,
-    minimum_interval_seconds=None,
+    code_location, name, assets: list[AssetsDefinition], minimum_interval_seconds=None
 ):
-    asset_job = define_asset_job(
-        name="powerschool_asset_dynamic_partition_job",
-        selection=asset_selection,
-        partitions_def=partitions_def,
-    )
+    asset_jobs = [
+        define_asset_job(
+            name=f"{asset.key.to_python_identifier()}_dynamic_partition_job",
+            selection=[asset],
+            partitions_def=asset.partitions_def,
+        )
+        for asset in assets
+    ]
 
     @sensor(
-        name=name,
-        job=asset_job,
-        minimum_interval_seconds=minimum_interval_seconds,
+        name=name, jobs=asset_jobs, minimum_interval_seconds=minimum_interval_seconds
     )
     def _sensor(context: SensorEvaluationContext):
         window_end: pendulum.DateTime = (
@@ -64,9 +61,7 @@ def build_dynamic_partition_sensor(
 
         cursor = json.loads(context.cursor or "{}")
         asset_defs = [
-            a
-            for a in context.repository_def.asset_graph.assets
-            if a.key in asset_selection._keys
+            a for a in context.repository_def.asset_graph.assets if a.key in assets
         ]
 
         # check if asset has ever been materialized
@@ -89,13 +84,15 @@ def build_dynamic_partition_sensor(
 
             window_start = pendulum.from_timestamp(0)
 
-            context.instance.add_dynamic_partitions(
-                partitions_def_name=partitions_def.name,
-                partition_keys=[window_start.to_iso8601_string()],
-            )
+            for asset in never_materialized:
+                context.instance.add_dynamic_partitions(
+                    partitions_def_name=asset.partitions_def.name,
+                    partition_keys=[window_start.to_iso8601_string()],
+                )
 
+            asset_job = []
             yield asset_job.run_request_for_partition(
-                run_key=f"powerschool_resync_{window_start.int_timestamp}",
+                run_key="powerschool_resync",
                 partition_key=window_start.to_iso8601_string(),
                 run_config={
                     "execution": {
@@ -164,7 +161,7 @@ def build_dynamic_partition_sensor(
                         )
                     else:
                         window_start: pendulum.DateTime = window_end.subtract(
-                            weeks=1  # rewind 1 week in case of manual cursor reset
+                            weeks=2  # rewind 2 weeks in case of manual cursor reset
                         ).start_of("day")
                         cursor[asset_key_string] = window_start.timestamp()
 
@@ -192,16 +189,17 @@ def build_dynamic_partition_sensor(
         # get unique window starts
         window_starts = list(set([rr["window_start"] for rr in run_request_data]))
 
-        context.instance.add_dynamic_partitions(
-            partitions_def_name=partitions_def.name,
-            partition_keys=[ws.to_iso8601_string() for ws in window_starts],
-        )
-
         # group run requests by window start
         for window_start in window_starts:
             run_request_data_filtered = [
                 rr for rr in run_request_data if rr["window_start"] == window_start
             ]
+
+            for rr in run_request_data_filtered:
+                context.instance.add_dynamic_partitions(
+                    partitions_def_name=rr["asset"].partitions_def.name,
+                    partition_keys=[window_start.to_iso8601_string()],
+                )
 
             yield asset_job.run_request_for_partition(
                 run_key=f"powerschool_dynamic_partition_{window_start.int_timestamp}",
