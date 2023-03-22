@@ -14,6 +14,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         name=f"src_{package_name}__{asset_name}",
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
+        partitions_def=asset_definition.partitions_def,
         required_resource_keys={"bq", "dbt"},
         compute_kind="dbt",
         group_name="staging",
