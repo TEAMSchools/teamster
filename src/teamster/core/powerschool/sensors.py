@@ -90,22 +90,29 @@ def build_dynamic_partition_sensor(
                     partition_keys=[window_start.to_iso8601_string()],
                 )
 
-            asset_job = []
-            yield asset_job.run_request_for_partition(
-                run_key="powerschool_resync",
-                partition_key=window_start.to_iso8601_string(),
-                run_config={
-                    "execution": {
-                        "config": {
-                            "resources": {"limits": {"cpu": "750m", "memory": "1.0Gi"}}
-                        }
-                    }
-                },
-                instance=context.instance,
-                asset_selection=[asset.key for asset in never_materialized],
-            )
+                asset_job = [
+                    job
+                    for job in asset_jobs
+                    if job.name
+                    == f"{asset.key.to_python_identifier()}_dynamic_partition_job"
+                ][0]
 
-            for asset in never_materialized:
+                yield asset_job.run_request_for_partition(
+                    run_key=f"{asset_job.name}_resync",
+                    partition_key=window_start.to_iso8601_string(),
+                    run_config={
+                        "execution": {
+                            "config": {
+                                "resources": {
+                                    "limits": {"cpu": "750m", "memory": "1.0Gi"}
+                                }
+                            }
+                        }
+                    },
+                    instance=context.instance,
+                    asset_selection=[asset.key for asset in never_materialized],
+                )
+
                 cursor[asset.key.to_python_identifier()] = window_end.timestamp()
 
         # check if asset has any modified records from past X hours
@@ -196,17 +203,26 @@ def build_dynamic_partition_sensor(
             ]
 
             for rr in run_request_data_filtered:
+                asset = rr["asset"]
+
                 context.instance.add_dynamic_partitions(
-                    partitions_def_name=rr["asset"].partitions_def.name,
+                    partitions_def_name=asset.partitions_def.name,
                     partition_keys=[window_start.to_iso8601_string()],
                 )
 
-            yield asset_job.run_request_for_partition(
-                run_key=f"powerschool_dynamic_partition_{window_start.int_timestamp}",
-                partition_key=window_start.to_iso8601_string(),
-                instance=context.instance,
-                asset_selection=[rr["asset"].key for rr in run_request_data_filtered],
-            )
+                asset_job = [
+                    job
+                    for job in asset_jobs
+                    if job.name
+                    == f"{asset.key.to_python_identifier()}_dynamic_partition_job"
+                ][0]
+
+                yield asset_job.run_request_for_partition(
+                    run_key=f"{asset_job.name}_{window_start.int_timestamp}",
+                    partition_key=window_start.to_iso8601_string(),
+                    instance=context.instance,
+                    asset_selection=[asset.key],
+                )
 
         context.update_cursor(json.dumps(cursor))
 
