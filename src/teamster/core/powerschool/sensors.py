@@ -116,9 +116,6 @@ def build_dynamic_partition_sensor(
                 cursor[asset.key.to_python_identifier()] = window_end.timestamp()
 
         # check if asset has any modified records from past X hours
-        run_request_data = []
-
-        core_config_dir = "src/teamster/core/config/resources"
         local_config_dir = f"src/teamster/{code_location}/config/resources"
         with build_resources(
             resources={"ssh": ssh_resource, "db": oracle},
@@ -131,7 +128,7 @@ def build_dynamic_partition_sensor(
                 "db": {
                     "config": config_from_files(
                         [
-                            f"{core_config_dir}/db_powerschool.yaml",
+                            "src/teamster/core/config/resources/db_powerschool.yaml",
                             f"{local_config_dir}/db_powerschool.yaml",
                         ]
                     )
@@ -184,45 +181,30 @@ def build_dynamic_partition_sensor(
 
                     context.log.debug(f"count: {count}")
                     if count > 0:
-                        run_request_data.append(
-                            {"asset": asset, "window_start": window_start}
+                        context.instance.add_dynamic_partitions(
+                            partitions_def_name=asset.partitions_def.name,
+                            partition_keys=[window_start.to_iso8601_string()],
+                        )
+
+                        asset_job_name = (
+                            f"{asset.key.to_python_identifier()}_dynamic_partition_job"
+                        )
+
+                        asset_job = [
+                            job for job in asset_jobs if job.name == asset_job_name
+                        ][0]
+
+                        yield asset_job.run_request_for_partition(
+                            run_key=f"{asset_job.name}_{window_start.int_timestamp}",
+                            partition_key=window_start.to_iso8601_string(),
+                            instance=context.instance,
+                            asset_selection=[asset.key],
                         )
 
                         cursor[asset_key_string] = window_end.timestamp()
             finally:
                 context.log.debug("Stopping SSH tunnel")
                 ssh_tunnel.stop()
-
-        # get unique window starts
-        window_starts = list(set([rr["window_start"] for rr in run_request_data]))
-
-        # group run requests by window start
-        for window_start in window_starts:
-            run_request_data_filtered = [
-                rr for rr in run_request_data if rr["window_start"] == window_start
-            ]
-
-            for rr in run_request_data_filtered:
-                asset = rr["asset"]
-
-                context.instance.add_dynamic_partitions(
-                    partitions_def_name=asset.partitions_def.name,
-                    partition_keys=[window_start.to_iso8601_string()],
-                )
-
-                asset_job = [
-                    job
-                    for job in asset_jobs
-                    if job.name
-                    == f"{asset.key.to_python_identifier()}_dynamic_partition_job"
-                ][0]
-
-                yield asset_job.run_request_for_partition(
-                    run_key=f"{asset_job.name}_{window_start.int_timestamp}",
-                    partition_key=window_start.to_iso8601_string(),
-                    instance=context.instance,
-                    asset_selection=[asset.key],
-                )
 
         context.update_cursor(json.dumps(cursor))
 
