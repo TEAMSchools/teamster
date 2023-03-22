@@ -1,8 +1,8 @@
 remote_host:
-  env: KIPPTEST_PS_SSH_HOST
+  env: STAGING_PS_SSH_HOST
 remote_port:
-  env: KIPPTEST_PS_SSH_PORT
+  env: STAGING_PS_SSH_PORT
 username:
-  env: KIPPTEST_PS_SSH_USERNAME
+  env: STAGING_PS_SSH_USERNAME
 password:
-  env: KIPPTEST_PS_SSH_PASSWORD
+  env: STAGING_PS_SSH_PASSWORD

@@ -1,4 +1,4 @@
 password:
-  env: KIPPTEST_PS_DB_PASSWORD
+  env: STAGING_PS_DB_PASSWORD
 version:
-  env: KIPPTEST_PS_DB_VERSION
+  env: STAGING_PS_DB_VERSION
