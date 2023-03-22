@@ -38,7 +38,10 @@ def get_asset_count(asset, db, window_start):
 
 
 def build_dynamic_partition_sensor(
-    code_location, name, assets: list[AssetsDefinition], minimum_interval_seconds=None
+    code_location,
+    name,
+    asset_defs: list[AssetsDefinition],
+    minimum_interval_seconds=None,
 ):
     asset_jobs = [
         define_asset_job(
@@ -46,7 +49,7 @@ def build_dynamic_partition_sensor(
             selection=[asset],
             partitions_def=asset.partitions_def,
         )
-        for asset in assets
+        for asset in asset_defs
     ]
 
     @sensor(
@@ -60,9 +63,6 @@ def build_dynamic_partition_sensor(
         )
 
         cursor = json.loads(context.cursor or "{}")
-        asset_defs = [
-            a for a in context.repository_def.asset_graph.assets if a.key in assets
-        ]
 
         # check if asset has ever been materialized
         never_materialized = set(
