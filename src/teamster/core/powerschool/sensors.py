@@ -45,7 +45,7 @@ def build_dynamic_partition_sensor(
 ):
     asset_jobs = [
         define_asset_job(
-            name=asset.key.to_python_identifier(),
+            name=f"{asset.key.to_python_identifier()}_job",
             selection=[asset],
             partitions_def=asset.partitions_def,
         )
@@ -93,7 +93,7 @@ def build_dynamic_partition_sensor(
                 asset_job = [
                     job
                     for job in asset_jobs
-                    if job.name == asset.key.to_python_identifier()
+                    if job.name == f"{asset.key.to_python_identifier()}_job"
                 ][0]
 
                 yield asset_job.run_request_for_partition(
@@ -185,10 +185,10 @@ def build_dynamic_partition_sensor(
                             partition_keys=[window_start.to_iso8601_string()],
                         )
 
+                        asset_job_name = f"{asset.key.to_python_identifier()}_job"
+
                         asset_job = [
-                            job
-                            for job in asset_jobs
-                            if job.name == asset.key.to_python_identifier()
+                            job for job in asset_jobs if job.name == asset_job_name
                         ][0]
 
                         yield asset_job.run_request_for_partition(
