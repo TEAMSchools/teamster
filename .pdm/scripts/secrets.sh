@@ -35,7 +35,7 @@ kubectl create secret generic "secret-files" \
   --namespace=dagster-cloud \
   --from-literal="id_rsa_egencia"="${EGENCIA_RSA_PRIVATE_KEY}" \
   --from-literal="dbt_user_creds_json"="${DBT_USER_CREDS}" \
-  --from-literal="deanslist_api_key_map_json"="${DEANSLIST_API_KEY_MAP}" \
+  --from-literal="deanslist_api_key_map_yaml"="${DEANSLIST_API_KEY_MAP}" \
   --output=yaml |
   kubectl apply -f - ||
   true

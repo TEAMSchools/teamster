@@ -66,12 +66,7 @@ defs = Definitions(
             config_from_files([f"{local_resource_config_dir}/io.yaml"])
         ),
         "deanslist": deanslist_resource.configured(
-            config_from_files(
-                [
-                    f"{core_resource_config_dir}/deanslist.yaml",
-                    f"{local_resource_config_dir}/deanslist.yaml",
-                ]
-            )
+            config_from_files([f"{core_resource_config_dir}/deanslist.yaml"])
         ),
         "gcs_avro_io": gcs_avro_io_manager.configured(
             config_from_files([f"{local_resource_config_dir}/io.yaml"])

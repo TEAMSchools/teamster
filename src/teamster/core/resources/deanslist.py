@@ -1,4 +1,5 @@
-from dagster import Field, InitResourceContext, Int, Map, StringSource, resource
+import yaml
+from dagster import Field, InitResourceContext, String, StringSource, resource
 from requests import Session
 
 
@@ -12,8 +13,10 @@ class DeansList(Session):
 
         self.log = logger
         self.subdomain = resource_config["subdomain"]
-        self.api_key_map = resource_config["api_key_map"]
         self.base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
+
+        with open(resource_config["api_key_map"]) as f:
+            self.api_key_map = yaml.safe_load(f)["api_key_map"]
 
     def _get_url(self, api_version, endpoint, *args):
         if api_version == "beta":
@@ -65,7 +68,7 @@ class DeansList(Session):
 @resource(
     config_schema={
         "subdomain": StringSource,
-        "api_key_map": Map(key_type=Int, inner_type=StringSource),
+        "api_key_map": String,
         "api_version": Field(
             config=StringSource, default_value="v1", is_required=False
         ),

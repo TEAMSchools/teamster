@@ -1,1 +1,2 @@
 subdomain: kippnj
+api_key_map: /etc/secret-volume/deanslist_api_key_map_yaml

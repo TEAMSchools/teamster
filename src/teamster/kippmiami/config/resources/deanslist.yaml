@@ -1,9 +1,0 @@
-api_key_map:
-  280:
-    env: DL_APIKEY_280
-  381:
-    env: DL_APIKEY_381
-  472:
-    env: DL_APIKEY_472
-  525:
-    env: DL_APIKEY_525
