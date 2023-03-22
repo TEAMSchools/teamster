@@ -1,13 +1,15 @@
 #!/bin/bash
 
+# set gh secrets from .env file & clear file
+gh secret set --app codespaces --env-file env/.env &&
+  : >env/.env
+
 file_envvars=(
   "DEANSLIST_API_KEY_MAP"
   "EGENCIA_RSA_PRIVATE_KEY"
   "GCLOUD_SERVICE_ACCOUNT_KEY"
   "DBT_USER_CREDS"
 )
-
-touch env/.env
 
 while read -ra array; do
   envvar="${array[0]}"
