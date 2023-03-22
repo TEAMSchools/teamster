@@ -6,10 +6,6 @@ from .. import CODE_LOCATION
 
 config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/powerschool"
 
-dynamic_partitions_def = DynamicPartitionsDefinition(
-    name=f"{CODE_LOCATION}_powerschool_dynamic_partitions"
-)
-
 nonpartition_assets = [
     build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
     for cfg in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
@@ -25,7 +21,14 @@ for suffix in ["transactiondate", "whenmodified"]:
             build_powerschool_table_asset(
                 **asset,
                 code_location=CODE_LOCATION,
-                partitions_def=dynamic_partitions_def,
+                partitions_def=DynamicPartitionsDefinition(
+                    name=(
+                        CODE_LOCATION
+                        + "_powerschool_"
+                        + asset["asset_name"]
+                        + "_dynamic_partition"
+                    )
+                ),
                 metadata={"partition_column": partition_column},
             )
         )
