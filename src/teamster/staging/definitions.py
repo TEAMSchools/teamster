@@ -27,6 +27,7 @@ defs = Definitions(
         + load_assets_from_modules(modules=[dbt.assets])
     ),
     jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
+    sensors=powerschool.sensors.__all__ + dbt.sensors.__all__,
     resources={
         "dbt": dbt_cli_resource.configured(
             {
