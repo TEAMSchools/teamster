@@ -94,22 +94,31 @@ def build_deanslist_multi_partition_asset(
             if school_partition == partition_key.split("|")[-1]:
                 school_materialization_count += count
 
-        partition_fiscal_year = FiscalYear(datetime=date_partition, start_month=7)
+        # set fiscal year start and end
         if (
             school_materialization_count == 0
             or school_materialization_count == context.retry_number
         ):
             start_fy = FiscalYear(datetime=inception_date, start_month=7)
+
+            if set(["StartDate", "EndDate"]).issubset(params.keys()):
+                stop_fy = FiscalYear(datetime=date_partition, start_month=7)
+            elif set(["sdt", "edt"]).issubset(params.keys()):
+                stop_fy = FiscalYear(datetime=date_partition, start_month=7)
+            else:
+                stop_fy = FiscalYear(datetime=inception_date, start_month=7)
+
             modified_date = start_fy.start
         else:
-            start_fy = partition_fiscal_year
+            start_fy = FiscalYear(datetime=date_partition, start_month=7)
+            stop_fy = FiscalYear(datetime=date_partition, start_month=7)
             modified_date = date_partition
 
         dl: DeansList = context.resources.deanslist
 
         total_row_count = 0
         all_data = []
-        for fy in range(start_fy.fiscal_year, (partition_fiscal_year.fiscal_year + 1)):
+        for fy in range(start_fy.fiscal_year, (stop_fy.fiscal_year + 1)):
             fiscal_year = FiscalYear(
                 datetime=pendulum.datetime(year=fy, month=6, day=30), start_month=7
             )
