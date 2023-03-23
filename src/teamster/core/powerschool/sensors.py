@@ -36,7 +36,9 @@ def build_dynamic_partition_sensor(
 ):
     asset_jobs = [
         define_asset_job(
-            name=f"{asset.key.to_python_identifier()}_job", selection=[asset]
+            name=f"{asset.key.to_python_identifier()}_job",
+            selection=[asset],
+            partitions_def=asset.partitions_def,
         )
         for asset in asset_defs
     ]
