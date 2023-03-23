@@ -27,9 +27,12 @@ git push
 
 # create env folder
 mkdir -p ./env
+sudo mkdir -p /etc/secret-volume
 
 # export GCP service account key to file
 echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud-service-account.json
+echo "${DEANSLIST_API_KEY_MAP}" |
+  sudo tee /etc/secret-volume/deanslist_api_key_map_yaml >/dev/null
 
 # export env vars
 # do not write .pyc files on the import of source modules
