@@ -29,4 +29,4 @@ models:
 
 vars:
   powerschool_schema: kippcamden_powerschool
-  deanslist_schema: kippnewark_deanslist
+  deanslist_schema: kippcamden_deanslist
