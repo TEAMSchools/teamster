@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 import fastavro
 import google.auth
 import gspread
-import pendulum
 from dagster import (
     Field,
     InputContext,
@@ -19,8 +18,7 @@ from dagster._utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 
-from teamster.core.utils.functions import parse_partition_key
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
+from teamster.core.utils.functions import get_partition_key_path
 
 
 class FilepathGCSIOManager(PickledObjectGCSIOManager):
@@ -28,19 +26,12 @@ class FilepathGCSIOManager(PickledObjectGCSIOManager):
         if context.has_asset_key:
             if context.has_asset_partitions:
                 paths = []
-
                 for key in context.asset_partition_keys:
-                    # save resync file with current timestamp
-                    if key == pendulum.from_timestamp(0).to_iso8601_string():
-                        key = pendulum.now(tz=LOCAL_TIME_ZONE).to_iso8601_string()
-
-                    path = copy.deepcopy(context.asset_key.path)
-
-                    path.extend(parse_partition_key(partition_key=key))
-                    path.append("data")
+                    path = get_partition_key_path(
+                        partition_key=key, path=copy.deepcopy(context.asset_key.path)
+                    )
 
                     paths.append("/".join([self.prefix, *path]))
-
                 return paths
             else:
                 path = copy.deepcopy(context.asset_key.path)
@@ -88,19 +79,12 @@ class AvroGCSIOManager(PickledObjectGCSIOManager):
         if context.has_asset_key:
             if context.has_asset_partitions:
                 paths = []
-
                 for key in context.asset_partition_keys:
-                    # save resync file with current timestamp
-                    if key == pendulum.from_timestamp(0).to_iso8601_string():
-                        key = pendulum.now(tz=LOCAL_TIME_ZONE).to_iso8601_string()
-
-                    path = copy.deepcopy(context.asset_key.path)
-
-                    path.extend(parse_partition_key(partition_key=key))
-                    path.append("data")
+                    path = get_partition_key_path(
+                        partition_key=key, path=copy.deepcopy(context.asset_key.path)
+                    )
 
                     paths.append("/".join([self.prefix, *path]))
-
                 return paths
             else:
                 path = copy.deepcopy(context.asset_key.path)

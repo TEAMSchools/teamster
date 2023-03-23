@@ -3,6 +3,8 @@ from dagster import MultiPartitionKey
 
 from teamster.core.utils.classes import FiscalYear
 
+from .variables import LOCAL_TIME_ZONE
+
 
 def parse_partition_key(partition_key, dimension=None):
     try:
@@ -22,16 +24,18 @@ def parse_partition_key(partition_key, dimension=None):
                     string=partition_key, fmt=next(date_formats)
                 )
 
+                # save resync file with current timestamp
+                if partition_key_parsed == pendulum.from_timestamp(0):
+                    partition_key_parsed = pendulum.now(tz=LOCAL_TIME_ZONE)
+
                 break
             except ValueError:
                 partition_key_parsed = None
 
-        fiscal_year = FiscalYear(
-            datetime=partition_key_parsed, start_month=7
-        ).fiscal_year
+        pk_fiscal_year = FiscalYear(datetime=partition_key_parsed, start_month=7)
 
         return [
-            f"_dagster_partition_fiscal_year={fiscal_year}",
+            f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
             f"_dagster_partition_date={partition_key_parsed.to_date_string()}",
             f"_dagster_partition_hour={partition_key_parsed.format('HH')}",
             f"_dagster_partition_minute={partition_key_parsed.format('mm')}",
@@ -43,20 +47,20 @@ def parse_partition_key(partition_key, dimension=None):
             return [f"_dagster_partition_key={partition_key}"]
 
 
-def partition_key_to_vars(partition_key):
-    path = []
-
+def get_partition_key_path(partition_key, path):
     if isinstance(partition_key, MultiPartitionKey):
-        for (
-            dimension,
-            key,
-        ) in partition_key.keys_by_dimension.items():
+        for dimension, key in partition_key.keys_by_dimension.items():
             path.extend(parse_partition_key(partition_key=key, dimension=dimension))
     else:
         path.extend(parse_partition_key(partition_key=partition_key))
 
     path.append("data")
 
+    return path
+
+
+def partition_key_to_vars(partition_key):
+    path = get_partition_key_path(partition_key=partition_key, path=[])
     return {"partition_path": "/".join(path)}
 
 
