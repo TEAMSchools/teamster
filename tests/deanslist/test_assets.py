@@ -9,12 +9,7 @@ deanslist_endpoint_asset = with_resources(
     definitions=[*assets.__all__],
     resource_defs={
         "deanslist": deanslist_resource.configured(
-            config_from_files(
-                [
-                    "src/teamster/core/config/resources/deanslist.yaml",
-                    "tests/config/resources/deanslist.yaml",
-                ]
-            )
+            config_from_files(["src/teamster/core/config/resources/deanslist.yaml"])
         ),
         "gcs": gcs_resource.configured(
             config_from_files(["tests/config/resources/gcs.yaml"])
