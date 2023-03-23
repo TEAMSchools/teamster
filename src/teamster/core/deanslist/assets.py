@@ -102,7 +102,7 @@ def build_deanslist_multi_partition_asset(
             start_fy = FiscalYear(datetime=inception_date, start_month=7)
             modified_date = start_fy.start
         else:
-            start_fy = partition_fiscal_year.fiscal_year
+            start_fy = partition_fiscal_year
             modified_date = date_partition
 
         dl: DeansList = context.resources.deanslist
