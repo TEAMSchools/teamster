@@ -1,24 +1,26 @@
 version: 0.1
 cli:
-  version: 1.5.1
+  version: 1.6.1
 plugins:
   sources:
     - id: trunk
-      ref: v0.0.12
+      ref: v0.0.13
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
+    - flake8
     - sqlfluff
   enabled:
-    - flake8@6.0.0
+    - ruff@0.0.257
+    - yamllint@1.29.0
     - isort@5.12.0
     - black@23.1.0
     - taplo@0.7.0
     - sqlfmt@0.17.0
     - markdownlint@0.33.0
-    - prettier@2.8.4
+    - prettier@2.8.6
     - shellcheck@0.9.0
-    - gitleaks@8.16.0
+    - gitleaks@8.16.1
     - git-diff-check
     - shfmt@3.5.0
   definitions:
@@ -36,7 +38,7 @@ lint:
 runtimes:
   enabled:
     - python@3.10.8
-    - go@1.18.3
+    - go@1.19.5
     - node@18.12.1
 actions:
   enabled:
