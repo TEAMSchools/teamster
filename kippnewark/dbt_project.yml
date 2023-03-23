@@ -29,3 +29,4 @@ models:
 
 vars:
   powerschool_schema: kippnewark_powerschool
+  deanslist_schema: kippnewark_deanslist
