@@ -1,4 +1,5 @@
 import copy
+import gc
 
 import pendulum
 from dagster import (
@@ -142,6 +143,9 @@ def build_deanslist_multi_partition_asset(
             if row_count > 0:
                 total_row_count += row_count
                 all_data.extend(data)
+
+                del data
+                gc.collect()
 
         yield Output(
             value=(
