@@ -23,7 +23,7 @@ static_partitions_def = StaticPartitionsDefinition(school_ids)
 multi_partitions_def = MultiPartitionsDefinition(
     partitions_defs={
         "date": DailyPartitionsDefinition(
-            start_date="2023-03-22", timezone=LOCAL_TIME_ZONE.name, end_offset=1
+            start_date="2023-03-23", timezone=LOCAL_TIME_ZONE.name, end_offset=1
         ),
         "school": static_partitions_def,
     }
