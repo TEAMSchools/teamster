@@ -42,4 +42,4 @@ models:
 
 vars:
   powerschool_schema: kippmiami_powerschool
-  deanslist_schema: kippnewark_deanslist
+  deanslist_schema: kippmiami_deanslist
