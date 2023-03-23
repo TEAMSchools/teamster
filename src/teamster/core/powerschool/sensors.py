@@ -77,6 +77,7 @@ def build_dynamic_partition_sensor(
                 context.log.debug(asset_key_string)
 
                 run_request = False
+                run_config = None
 
                 if not context.instance.get_latest_materialization_event(asset.key):
                     window_start = pendulum.from_timestamp(0)
