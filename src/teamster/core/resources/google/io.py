@@ -140,13 +140,13 @@ class PickledObjectGCSIOManager(GCSIOManager):
         if context.dagster_type.typing_type == type(None):
             return None
 
-        key = self._get_path(context)
-        context.log.debug(f"Loading GCS object from: {self._uri_for_key(key)}")
+        for path in self._get_paths(context):
+            context.log.debug(f"Loading GCS object from: {self._uri_for_key(path)}")
 
-        bytes_obj = self.bucket_obj.blob(key).download_as_bytes()
-        obj = pickle.loads(bytes_obj)
+            bytes_obj = self.bucket_obj.blob(path).download_as_bytes()
+            obj = pickle.loads(bytes_obj)
 
-        return obj
+            yield obj
 
     def handle_output(self, context, obj):
         if context.dagster_type.typing_type == type(None):
@@ -159,20 +159,20 @@ class PickledObjectGCSIOManager(GCSIOManager):
             )
             return None
 
-        key = self._get_path(context)
-        context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
+        for path in self._get_paths(context):
+            context.log.debug(f"Writing GCS object at: {self._uri_for_key(path)}")
 
-        if self._has_object(key):
-            context.log.warning(f"Removing existing GCS key: {key}")
-            self._rm_object(key)
+            if self._has_object(path):
+                context.log.warning(f"Removing existing GCS key: {path}")
+                self._rm_object(path)
 
-        pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
+            pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
 
-        backoff(
-            self.bucket_obj.blob(key).upload_from_string,
-            args=[pickled_obj],
-            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-        )
+            backoff(
+                self.bucket_obj.blob(path).upload_from_string,
+                args=[pickled_obj],
+                retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+            )
 
 
 @io_manager(
