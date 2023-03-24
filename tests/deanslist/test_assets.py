@@ -2,7 +2,7 @@ from dagster import build_op_context, config_from_files, with_resources
 from dagster_gcp.gcs import gcs_resource
 
 from teamster.core.resources.deanslist import deanslist_resource
-from teamster.core.resources.google import gcs_avro_io_manager
+from teamster.core.resources.google.io import gcs_avro_io_manager
 from teamster.staging.deanslist import assets
 
 deanslist_endpoint_asset = with_resources(

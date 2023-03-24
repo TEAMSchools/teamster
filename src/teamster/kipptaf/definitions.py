@@ -1,9 +1,10 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
-from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_gcp.gcs import gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
-from teamster.core.resources.google import google_sheets
+from teamster.core.resources.google.io import gcs_io_manager
+from teamster.core.resources.google.sheets import google_sheets
 from teamster.core.resources.sqlalchemy import mssql
 
 from . import CODE_LOCATION, datagun
@@ -26,8 +27,8 @@ defs = Definitions(
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files([f"{core_resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
-        "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io.yaml"])
+        "io_manager": gcs_io_manager.configured(
+            config_from_files([f"{local_resource_config_dir}/io_pickle.yaml"])
         ),
         "gsheets": google_sheets.configured(
             config_from_files([f"{core_resource_config_dir}/gsheets.yaml"])
