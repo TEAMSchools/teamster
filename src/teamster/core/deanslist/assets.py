@@ -116,6 +116,8 @@ def build_deanslist_multi_partition_asset(
                 end_date = partition_fy.end
             else:
                 end_date = inception_fy.end
+
+            partition_modified_date = None
         else:
             start_date = partition_fy.start
             end_date = partition_fy.end
