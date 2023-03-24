@@ -1,4 +1,6 @@
 {
+  "editor.defaultFormatter": "trunk.io",
+  "editor.formatOnSave": true,
   "editor.renderWhitespace": "all",
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
@@ -14,16 +16,6 @@
   "files.watcherExclude": {
     "**/.trunk/*out": true
   },
-  "[json]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
-  "[python]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "trunk.io"
-  },
   "python.analysis.autoImportCompletions": false,
   "python.defaultInterpreterPath": ".venv/bin/python",
   "python.linting.ignorePatterns": [
@@ -33,9 +25,6 @@
   ],
   "python.linting.pylintEnabled": false,
   "python.terminal.activateEnvironment": false,
-  "[yaml]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
   "python.analysis.typeCheckingMode": "off",
   "python.testing.pytestArgs": ["tests"],
   "python.testing.unittestEnabled": false,

@@ -95,57 +95,66 @@ def build_deanslist_multi_partition_asset(
             if school_partition == partition_key.split("|")[-1]:
                 school_materialization_count += count
 
-        # set fiscal year start and end
+        # determine start and end dates
+        partition_fy = FiscalYear(datetime=date_partition, start_month=7)
+        inception_fy = FiscalYear(datetime=inception_date, start_month=7)
+
         if (
             school_materialization_count == 0
             or school_materialization_count == context.retry_number
         ):
-            start_fy = FiscalYear(datetime=inception_date, start_month=7)
-
+            start_date = inception_fy.start
             if set(["StartDate", "EndDate"]).issubset(params.keys()):
-                stop_fy = FiscalYear(datetime=date_partition, start_month=7)
+                end_date = partition_fy.end
             elif set(["sdt", "edt"]).issubset(params.keys()):
-                stop_fy = FiscalYear(datetime=date_partition, start_month=7)
+                end_date = partition_fy.end
             else:
-                stop_fy = FiscalYear(datetime=inception_date, start_month=7)
+                end_date = inception_fy.end
 
-            modified_date = start_fy.start
+            partition_modified_date = None
         else:
-            start_fy = FiscalYear(datetime=date_partition, start_month=7)
-            stop_fy = FiscalYear(datetime=date_partition, start_month=7)
-            modified_date = date_partition
+            start_date = partition_fy.start
+            end_date = partition_fy.end
+            partition_modified_date = date_partition
 
         dl: DeansList = context.resources.deanslist
 
+        multiyear_period = end_date - start_date
         total_row_count = 0
         all_data = []
-        for fy in range(start_fy.fiscal_year, (stop_fy.fiscal_year + 1)):
+
+        for year in multiyear_period.range("years"):
             fiscal_year = FiscalYear(
-                datetime=pendulum.datetime(year=fy, month=6, day=30), start_month=7
+                datetime=pendulum.datetime(year=year, month=6, day=30), start_month=7
             )
 
-            composed_params = copy.deepcopy(params)
-            for k, v in composed_params.items():
-                if isinstance(v, str):
-                    composed_params[k] = v.format(
-                        start_date=fiscal_year.start.to_date_string(),
-                        end_date=fiscal_year.end.to_date_string(),
-                        modified_date=modified_date.to_date_string(),
-                    )
+            fy_period = fiscal_year.end - fiscal_year.start
 
-            row_count, data = dl.get_endpoint(
-                api_version=api_version,
-                endpoint=asset_name,
-                school_id=int(school_partition),
-                **composed_params,
-            )
+            for month in fy_period.range("months"):
+                modified_date = partition_modified_date or fiscal_year.start
+                composed_params = copy.deepcopy(params)
 
-            if row_count > 0:
-                total_row_count += row_count
-                all_data.extend(data)
+                for k, v in composed_params.items():
+                    if isinstance(v, str):
+                        composed_params[k] = v.format(
+                            start_date=month.start_of("month").to_date_string(),
+                            end_date=month.end_of("month").to_date_string(),
+                            modified_date=modified_date.to_date_string(),
+                        )
 
-                del data
-                gc.collect()
+                row_count, data = dl.get_endpoint(
+                    api_version=api_version,
+                    endpoint=asset_name,
+                    school_id=int(school_partition),
+                    **composed_params,
+                )
+
+                if row_count > 0:
+                    total_row_count += row_count
+                    all_data.extend(data)
+
+                    del data
+                    gc.collect()
 
         yield Output(
             value=(

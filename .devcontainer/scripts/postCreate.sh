@@ -67,4 +67,4 @@ gcloud container clusters get-credentials dagster-cloud
 
 # initialize dbt submodule
 git submodule init
-git submodule update
+git submodule update --remote
