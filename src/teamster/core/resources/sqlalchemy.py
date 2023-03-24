@@ -1,3 +1,4 @@
+import copy
 import gc
 import json
 import pathlib
@@ -105,7 +106,9 @@ class SqlAlchemyEngine(object):
                 avro_schema_fields = []
                 for col in result_cursor_descr:
                     # TODO: refactor based on db type
-                    col_type = ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, [])
+                    col_type = copy.deepcopy(
+                        ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, [])
+                    )
                     col_type.insert(0, "null")
 
                     avro_schema_fields.append(
