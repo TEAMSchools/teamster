@@ -1,0 +1,2 @@
+gcs_bucket: teamster-staging
+io_format: avro

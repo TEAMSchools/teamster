@@ -1,12 +1,11 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
 from dagster_dbt import dbt_cli_resource
 from dagster_gcp import bigquery_resource, gcs_resource
-from dagster_gcp.gcs import gcs_pickle_io_manager
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.resources.deanslist import deanslist_resource
-from teamster.core.resources.google import gcs_avro_io_manager, gcs_filepath_io_manager
+from teamster.core.resources.google.io import gcs_io_manager
 from teamster.core.resources.sqlalchemy import mssql, oracle
 
 from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
@@ -53,8 +52,8 @@ defs = Definitions(
         "ps_ssh": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/ssh_powerschool.yaml"])
         ),
-        "io_manager": gcs_pickle_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io.yaml"])
+        "io_manager": gcs_io_manager.configured(
+            config_from_files([f"{local_resource_config_dir}/io_pickle.yaml"])
         ),
         "dbt": dbt_cli_resource.configured(
             {
@@ -62,17 +61,17 @@ defs = Definitions(
                 "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
             }
         ),
-        "gcs_fp_io": gcs_filepath_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io.yaml"])
-        ),
         "sftp_cpn": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_cpn.yaml"])
         ),
         "deanslist": deanslist_resource.configured(
             config_from_files([f"{core_resource_config_dir}/deanslist.yaml"])
         ),
-        "gcs_avro_io": gcs_avro_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io.yaml"])
+        "gcs_fp_io": gcs_io_manager.configured(
+            config_from_files([f"{local_resource_config_dir}/io_filepath.yaml"])
+        ),
+        "gcs_avro_io": gcs_io_manager.configured(
+            config_from_files([f"{local_resource_config_dir}/io_avro.yaml"])
         ),
     },
 )
