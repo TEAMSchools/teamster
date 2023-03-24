@@ -95,6 +95,14 @@ def build_deanslist_multi_partition_asset(
             if school_partition == partition_key.split("|")[-1]:
                 school_materialization_count += count
 
+        # determine if endpoint is within time-window
+        if set(["StartDate", "EndDate"]).issubset(params.keys()) or set(
+            ["sdt", "edt"]
+        ).issubset(params.keys()):
+            is_time_bound = True
+        else:
+            is_time_bound = False
+
         # determine start and end dates
         partition_fy = FiscalYear(datetime=date_partition, start_month=7)
         inception_fy = FiscalYear(datetime=inception_date, start_month=7)
@@ -104,14 +112,10 @@ def build_deanslist_multi_partition_asset(
             or school_materialization_count == context.retry_number
         ):
             start_date = inception_fy.start
-            if set(["StartDate", "EndDate"]).issubset(params.keys()) or set(
-                ["sdt", "edt"]
-            ).issubset(params.keys()):
+            if is_time_bound:
                 end_date = partition_fy.end
-                partition_modified_date = None
             else:
                 end_date = inception_fy.end
-                partition_modified_date = start_date
         else:
             start_date = partition_fy.start
             end_date = partition_fy.end
@@ -155,7 +159,7 @@ def build_deanslist_multi_partition_asset(
                     gc.collect()
 
                 # break loop for endpoints w/o start/end dates
-                if partition_modified_date == start_date:
+                if not is_time_bound:
                     break
 
         yield Output(
