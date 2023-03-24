@@ -106,7 +106,7 @@ class SqlAlchemyEngine(object):
                 for col in result_cursor_descr:
                     # TODO: refactor based on db type
                     col_type = ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, [])
-                    col_type.append("null")
+                    col_type.insert(0, "null")
 
                     avro_schema_fields.append(
                         {"name": col[0].lower(), "type": col_type, "default": None}
