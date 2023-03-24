@@ -129,12 +129,12 @@ def build_deanslist_multi_partition_asset(
         total_row_count = 0
         all_data = []
 
-        for year_start in multiyear_period.range("years"):
+        for year_start in multiyear_period.range(unit="years"):
             fiscal_year = FiscalYear(datetime=year_start, start_month=7)
 
             fy_period = fiscal_year.end - fiscal_year.start
 
-            for month in fy_period.range("months"):
+            for month in fy_period.range(unit="months"):
                 modified_date = partition_modified_date or fiscal_year.start
                 composed_params = copy.deepcopy(params)
 
