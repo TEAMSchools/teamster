@@ -123,10 +123,8 @@ def build_deanslist_multi_partition_asset(
         total_row_count = 0
         all_data = []
 
-        for year in multiyear_period.range("years"):
-            fiscal_year = FiscalYear(
-                datetime=pendulum.datetime(year=year, month=6, day=30), start_month=7
-            )
+        for year_start in multiyear_period.range("years"):
+            fiscal_year = FiscalYear(datetime=year_start, start_month=7)
 
             fy_period = fiscal_year.end - fiscal_year.start
 
