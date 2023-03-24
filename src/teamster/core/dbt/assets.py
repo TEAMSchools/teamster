@@ -33,7 +33,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         dbt_output = dbt.run_operation(
             macro="stage_external_sources",
             args={"select": f"{package_name}.src_{package_name}__{asset_name}"},
-            vars="'ext_full_refresh: true'",
+            vars="ext_full_refresh: true",
         )
 
         return Output(upstream, metadata=dbt_output.result)
