@@ -40,91 +40,80 @@ class Grow(Session):
             client_secret=client_secret,
         )
 
-    def _request(self, method, path, params={}, body=None):
+    def _get_url(self, endpoint, *args):
+        return (
+            f"{self.base_url}/external/{endpoint}" + ("/" + "/".join(args))
+            if args
+            else ""
+        )
+
+    def _request(self, method, url, params={}, body=None):
         try:
-            response = self.request(
-                method=method,
-                url=f"{self.base_url}/external/{path}",
-                params=params,
-                json=body,
-            )
+            response = self.request(method=method, url=url, params=params, json=body)
 
             response.raise_for_status()
             return response
-        except HTTPError as xc:
+        except HTTPError as e:
             if response.status_code >= 500:
-                raise xc
+                raise HTTPError from e
             else:
-                return response
+                raise HTTPError(response.json()) from e
 
-    def get(self, schema, record_id=None, params={}):
-        default_params = {"limit": self.api_response_limit, "skip": 0}
-        default_params.update(params)
+    def get(self, endpoint, *args, **kwargs):
+        url = self._get_url(endpoint=endpoint, *args)
 
-        if record_id:
-            response = self._request(
-                method="GET", path=f"{schema}/{record_id}", params=params
-            )
+        params = {"limit": self.api_response_limit, "skip": 0}
+        params.update(kwargs)
 
-            if response.ok:
-                # mock standardized response format
-                return {
-                    "count": 1,
-                    "limit": self.api_response_limit,
-                    "skip": 0,
-                    "data": [response.json()],
-                }
-            else:
-                raise HTTPError(response.json())
+        if args:
+            response = self._request(method="GET", url=url, params=kwargs)
+
+            # mock standardized response format
+            return {
+                "count": 1,
+                "limit": self.api_response_limit,
+                "skip": 0,
+                "data": [response.json()],
+            }
         else:
             all_data = []
 
             while True:
-                response = self._request(
-                    method="GET", path=schema, params=default_params
-                )
+                response = self._request(method="GET", url=url, params=params)
 
-                if response.ok:
-                    response_json = response.json()
+                response_json = response.json()
 
-                    data = response_json.get("data")
+                data = response_json.get("data")
+                all_data.extend(data)
 
-                    all_data.extend(data)
-                    if len(all_data) >= response_json.get("count"):
-                        break
-                    else:
-                        default_params["skip"] += default_params["limit"]
+                if len(all_data) >= response_json.get("count"):
+                    break
                 else:
-                    raise HTTPError(response.json())
+                    params["skip"] += params["limit"]
 
             response_json.update({"data": all_data})
             return response_json
 
-    def post(self, schema, params={}, body=None):
-        response = self._request(method="POST", path=schema, params=params, body=body)
+    def post(self, endpoint, body=None, **kwargs):
+        return self._request(
+            method="POST",
+            url=self._get_url(endpoint=endpoint),
+            params=kwargs,
+            body=body,
+        ).json()
 
-        if response.ok:
-            return response.json()
-        else:
-            raise HTTPError(response.json())
+    def put(self, endpoint, body=None, *args, **kwargs):
+        return self._request(
+            method="PUT",
+            url=self._get_url(endpoint=endpoint, *args),
+            params=kwargs,
+            body=body,
+        ).json()
 
-    def put(self, schema, record_id, params={}, body=None):
-        response = self._request(
-            method="PUT", path=f"{schema}/{record_id}", params=params, body=body
-        )
-
-        if response.ok:
-            return response.json()
-        else:
-            raise HTTPError(response.json())
-
-    def delete(self, schema, record_id):
-        response = self._request(method="DELETE", path=f"{schema}/{record_id}")
-
-        if response.ok:
-            return response.json()
-        else:
-            raise HTTPError(response.json())
+    def delete(self, endpoint, *args):
+        return self._request(
+            method="DELETE", url=self._get_url(endpoint=endpoint, *args)
+        ).json()
 
 
 @resource(
