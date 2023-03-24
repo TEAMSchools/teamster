@@ -104,14 +104,14 @@ def build_deanslist_multi_partition_asset(
             or school_materialization_count == context.retry_number
         ):
             start_date = inception_fy.start
-            if set(["StartDate", "EndDate"]).issubset(params.keys()):
+            if set(["StartDate", "EndDate"]).issubset(params.keys()) or set(
+                ["sdt", "edt"]
+            ).issubset(params.keys()):
                 end_date = partition_fy.end
-            elif set(["sdt", "edt"]).issubset(params.keys()):
-                end_date = partition_fy.end
+                partition_modified_date = None
             else:
                 end_date = inception_fy.end
-
-            partition_modified_date = None
+                partition_modified_date = start_date
         else:
             start_date = partition_fy.start
             end_date = partition_fy.end
@@ -155,6 +155,10 @@ def build_deanslist_multi_partition_asset(
 
                     del data
                     gc.collect()
+
+                # break loop for endpoints w/o start/end dates
+                if partition_modified_date == start_date:
+                    break
 
         yield Output(
             value=(
