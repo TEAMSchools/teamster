@@ -15,48 +15,40 @@ sys.modules["cx_Oracle"] = oracledb
 
 # https://cx-oracle.readthedocs.io/en/latest/user_guide/sql_execution.html#defaultfetchtypes
 ORACLE_AVRO_SCHEMA_TYPES = {
-    "DB_TYPE_BFILE": ["null"],
-    "DB_TYPE_BINARY_DOUBLE": ["null", "double"],
-    "DB_TYPE_BINARY_FLOAT": ["null", "float"],
-    "DB_TYPE_BINARY_INTEGER": ["null", "int"],
-    "DB_TYPE_BLOB": ["null", "bytes"],
-    "DB_TYPE_BOOLEAN": ["null", "boolean"],
-    "DB_TYPE_CHAR": ["null", "string"],
-    "DB_TYPE_CLOB": ["null", "string"],
-    "DB_TYPE_CURSOR": ["null"],
-    "DB_TYPE_DATE": ["null", {"type": "int", "logicalType": "date"}],
+    "DB_TYPE_BINARY_DOUBLE": ["double"],
+    "DB_TYPE_BINARY_FLOAT": ["float"],
+    "DB_TYPE_BINARY_INTEGER": ["int"],
+    "DB_TYPE_BLOB": ["bytes"],
+    "DB_TYPE_BOOLEAN": ["boolean"],
+    "DB_TYPE_CHAR": ["string"],
+    "DB_TYPE_CLOB": ["string"],
+    "DB_TYPE_DATE": [{"type": "int", "logicalType": "date"}],
     "DB_TYPE_INTERVAL_DS": [
-        "null",
         {"type": "fixed", "name": "datetime.timedelta", "logicalType": "duration"},
     ],
-    "DB_TYPE_INTERVAL_YM": ["null"],
-    "DB_TYPE_JSON": ["null", {"type": "bytes", "logicalType": "json"}],
-    "DB_TYPE_LONG": ["null", "string"],
-    "DB_TYPE_LONG_RAW": ["null", "bytes"],
-    "DB_TYPE_LONG_NVARCHAR": ["null", "string"],
-    "DB_TYPE_NCHAR": ["null", "string"],
-    "DB_TYPE_NCLOB": ["null", "string"],
+    "DB_TYPE_JSON": [{"type": "bytes", "logicalType": "json"}],
+    "DB_TYPE_LONG": ["string"],
+    "DB_TYPE_LONG_RAW": ["bytes"],
+    "DB_TYPE_LONG_NVARCHAR": ["string"],
+    "DB_TYPE_NCHAR": ["string"],
+    "DB_TYPE_NCLOB": ["string"],
     "DB_TYPE_NUMBER": [
-        "null",
         "int",
         "double",
         {"type": "bytes", "logicalType": "decimal", "precision": 40, "scale": 40},
     ],
-    "DB_TYPE_NVARCHAR": ["null", "string"],
-    "DB_TYPE_OBJECT": ["null"],
-    "DB_TYPE_RAW": ["null", "bytes"],
-    "DB_TYPE_ROWID": ["null", "string"],
-    "DB_TYPE_TIMESTAMP": ["null", {"type": "long", "logicalType": "timestamp-micros"}],
-    "DB_TYPE_TIMESTAMP_LTZ": [
-        "null",
-        {"type": "long", "logicalType": "timestamp-micros"},
-    ],
-    "DB_TYPE_TIMESTAMP_TZ": [
-        "null",
-        {"type": "long", "logicalType": "timestamp-micros"},
-    ],
-    "DB_TYPE_UROWID": ["null", "string"],
-    "DB_TYPE_VARCHAR": ["null", "string"],
+    "DB_TYPE_NVARCHAR": ["string"],
+    "DB_TYPE_RAW": ["bytes"],
+    "DB_TYPE_ROWID": ["string"],
+    "DB_TYPE_TIMESTAMP": [{"type": "long", "logicalType": "timestamp-micros"}],
+    "DB_TYPE_TIMESTAMP_LTZ": [{"type": "long", "logicalType": "timestamp-micros"}],
+    "DB_TYPE_TIMESTAMP_TZ": [{"type": "long", "logicalType": "timestamp-micros"}],
+    "DB_TYPE_UROWID": ["string"],
+    "DB_TYPE_VARCHAR": ["string"],
+    # "DB_TYPE_BFILE": [],
+    # "DB_TYPE_CURSOR": [],
+    # "DB_TYPE_INTERVAL_YM": [],
+    # "DB_TYPE_OBJECT": [],
 }
 
 
@@ -112,13 +104,12 @@ class SqlAlchemyEngine(object):
 
                 avro_schema_fields = []
                 for col in result_cursor_descr:
-                    # self.log.debug(col)
+                    # TODO: refactor based on db type
+                    col_type = ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, [])
+                    col_type.append("null")
+
                     avro_schema_fields.append(
-                        {
-                            "name": col[0].lower(),
-                            # TODO: refactor based on db type
-                            "type": ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name),
-                        }
+                        {"name": col[0].lower(), "type": col_type, "default": None}
                     )
                 self.log.debug(avro_schema_fields)
 
