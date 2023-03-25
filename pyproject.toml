@@ -44,4 +44,3 @@ helm-install = { shell = "bash .pdm/scripts/helm-install.sh", help = "Update Dag
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
 dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
-_.env_file = "env/.env"

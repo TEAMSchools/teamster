@@ -1,0 +1,16 @@
+endpoints:
+  - asset_name: generic-tags/assignmentpresets
+  - asset_name: informals
+  - asset_name: measurements
+  - asset_name: meetings
+  - asset_name: roles
+  - asset_name: rubrics
+  - asset_name: schools
+  - asset_name: videos
+  - asset_name: users
+  - asset_name: assignments
+    params:
+      lastModified: 1672531200.0
+  - asset_name: observations
+    params:
+      lastModified: 1672531200.0

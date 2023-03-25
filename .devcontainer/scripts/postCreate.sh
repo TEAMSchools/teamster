@@ -29,26 +29,10 @@ git push
 mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
 
-# export GCP service account key to file
+# save secrets to file
 echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud-service-account.json
 echo "${DEANSLIST_API_KEY_MAP}" |
   sudo tee /etc/secret-volume/deanslist_api_key_map_yaml >/dev/null
-
-# export env vars
-# do not write .pyc files on the import of source modules
-export PYTHONDONTWRITEBYTECODE=1
-
-GCP_PROJECT_ID="$(jq -r .project_id env/gcloud-service-account.json)"
-export GCP_PROJECT_ID
-
-# trunk-ignore-begin(shellcheck/SC2312)
-GCP_PROJECT_NUMER=$(
-  gcloud projects list \
-    --filter="$(gcloud config get-value project)" \
-    --format="value(PROJECT_NUMBER)"
-)
-# trunk-ignore-end(shellcheck/SC2312)
-export GCP_PROJECT_NUMER
 
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=env/gcloud-service-account.json

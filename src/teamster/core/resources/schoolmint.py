@@ -1,3 +1,5 @@
+import copy
+
 from dagster import Field, InitResourceContext, IntSource, StringSource, resource
 from oauthlib.oauth2 import BackendApplicationClient
 from requests import Session
@@ -11,10 +13,16 @@ class Grow(Session):
         logger: InitResourceContext.log,
         resource_config: InitResourceContext.resource_config,
     ):
+        super().__init__()
+
         self.log = logger
 
         self.base_url = "https://api.whetstoneeducation.com"
-        self.api_response_limit = resource_config["api_response_limit"]
+        self.default_params = {
+            "limit": resource_config["api_response_limit"],
+            "district": resource_config["district_id"],
+            "skip": 0,
+        }
 
         self.access_token = self._get_access_token(
             client_id=resource_config["client_id"],
@@ -41,10 +49,8 @@ class Grow(Session):
         )
 
     def _get_url(self, endpoint, *args):
-        return (
-            f"{self.base_url}/external/{endpoint}" + ("/" + "/".join(args))
-            if args
-            else ""
+        return f"{self.base_url}/external/{endpoint}" + (
+            "/" + "/".join(args) if args else ""
         )
 
     def _request(self, method, url, params={}, body=None):
@@ -62,7 +68,7 @@ class Grow(Session):
     def get(self, endpoint, *args, **kwargs):
         url = self._get_url(endpoint=endpoint, *args)
 
-        params = {"limit": self.api_response_limit, "skip": 0}
+        params = copy.deepcopy(self.default_params)
         params.update(kwargs)
 
         if args:
@@ -120,6 +126,7 @@ class Grow(Session):
     config_schema={
         "client_id": StringSource,
         "client_secret": StringSource,
+        "district_id": StringSource,
         "api_response_limit": Field(
             config=IntSource, is_required=False, default_value=100
         ),
