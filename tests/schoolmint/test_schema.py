@@ -31,12 +31,12 @@ def test_schoolmint_grow_schema():
             print(f"COUNT: {record_count}")
             print(records[0])
 
-            # assert validation.validate_many(
-            #     records=records,
-            #     schema=parse_schema(
-            #         get_avro_record_schema(
-            #             name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
-            #         )
-            #     ),
-            #     strict=True,
-            # )
+            assert validation.validate_many(
+                records=records,
+                schema=parse_schema(
+                    get_avro_record_schema(
+                        name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
+                    )
+                ),
+                strict=True,
+            )
