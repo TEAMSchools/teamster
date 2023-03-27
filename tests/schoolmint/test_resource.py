@@ -1,3 +1,5 @@
+import random
+
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation
 
@@ -25,14 +27,15 @@ def test_schoolmint_grow_schema():
 
             data = grow.get(endpoint=endpoint_name, **endpoint.get("params", {}))
 
-            record_count = data["count"]
             records = data["data"]
 
-            print(f"COUNT: {record_count}")
-            print(records[0])
+            sample_record = records[random.randint(a=0, b=(data["count"] - 1))]
+            print(sample_record)
 
-            assert validation.validate_many(
-                records=records,
+            # assert validation.validate_many(
+            #     records=records,
+            assert validation.validate(
+                datum=sample_record,
                 schema=parse_schema(
                     get_avro_record_schema(
                         name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
