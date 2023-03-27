@@ -8,14 +8,10 @@ from requests_oauthlib import OAuth2Session
 
 
 class Grow(Session):
-    def __init__(
-        self,
-        logger: InitResourceContext.log,
-        resource_config: InitResourceContext.resource_config,
-    ):
+    def __init__(self, logger, resource_config: InitResourceContext.resource_config):
         super().__init__()
 
-        self.log = logger
+        self.log: InitResourceContext.log = logger
 
         self.base_url = "https://api.whetstoneeducation.com"
         self.default_params = {
@@ -54,6 +50,9 @@ class Grow(Session):
         )
 
     def _request(self, method, url, params={}, body=None):
+        self.log.debug(f"{method}: {url}")
+        self.log.debug(f"PARAMS: {params}")
+
         try:
             response = self.request(method=method, url=url, params=params, json=body)
 
@@ -83,19 +82,18 @@ class Grow(Session):
             }
         else:
             all_data = []
-
             while True:
                 response = self._request(method="GET", url=url, params=params)
 
                 response_json = response.json()
 
-                data = response_json.get("data")
-                all_data.extend(data)
-
-                if len(all_data) >= response_json.get("count"):
+                all_data.extend(response_json["data"])
+                if len(all_data) >= response_json["count"]:
                     break
                 else:
                     params["skip"] += params["limit"]
+
+            self.log.debug(f"COUNT: {response_json['count']}")
 
             response_json.update({"data": all_data})
             return response_json
