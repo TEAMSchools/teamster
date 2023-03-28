@@ -52,7 +52,7 @@ GENERIC_TAG_TYPE_FIELDS = [
     {"name": "abbreviation", "type": ["null", "string"], "default": None},
     {"name": "type", "type": ["null", "string"], "default": None},
     {"name": "order", "type": ["null", "int"], "default": None},
-    {"name": "parent", "type": "null", "default": None},
+    {"name": "parent", "type": ["null"], "default": None},
     {
         "name": "tags",
         "type": ["null", {"type": "array", "items": "string"}],
@@ -341,9 +341,9 @@ SETTING_FIELDS = [
     {"name": "customHtml", "type": ["null", "string"], "default": None},
     {"name": "customHtmlTitle", "type": ["null", "string"], "default": None},
     {"name": "dashHidden", "type": ["null", "boolean"], "default": None},
-    {"name": "defaultCourse", "type": "null", "default": None},
-    {"name": "defaultObsTag4", "type": "null", "default": None},
-    {"name": "defaultUsertype", "type": "null", "default": None},
+    {"name": "defaultCourse", "type": ["null"], "default": None},
+    {"name": "defaultObsTag4", "type": ["null"], "default": None},
+    {"name": "defaultUsertype", "type": ["null"], "default": None},
     {"name": "disableMeetingsTab", "type": ["null", "boolean"], "default": None},
     {
         "name": "dontRequireTextboxesOnLikertRows",
@@ -378,10 +378,10 @@ SETTING_FIELDS = [
     {"name": "isSiteVisit", "type": ["null", "boolean"], "default": None},
     {"name": "locked", "type": ["null", "boolean"], "default": None},
     {"name": "meetingQuickCreate", "type": ["null", "boolean"], "default": None},
-    {"name": "meetingTypesExcludedFromScheduling", "type": "null", "default": None},
     {"name": "nameAndSignatureDisplay", "type": ["null", "boolean"], "default": None},
     {"name": "observationTypesHidden", "type": ["null", "boolean"], "default": None},
     {"name": "obsShowEndDate", "type": ["null", "boolean"], "default": None},
+    {"name": "meetingTypesExcludedFromScheduling", "type": ["null"], "default": None},
     {
         "name": "privateRows",
         "type": ["null", {"type": "array", "items": "string"}],
@@ -998,6 +998,7 @@ ASSIGNMENT_FIELDS = [
                         {"type": "string", "logicalType": "timestamp-millis"},
                     ],
                 },
+                {"name": "_id", "type": ["null", "string"], "default": None},
             ],
         ),
     },
@@ -1013,6 +1014,13 @@ ASSIGNMENT_FIELDS = [
                 ],
             ),
         },
+    },
+    {"name": "parent", "type": ["null"], "default": None},
+    {"name": "goalType", "type": ["null"], "default": None},
+    {
+        "name": "observation",
+        "type": ["null", "string"],
+        "default": None,
     },
     {
         "name": "school",
@@ -1087,6 +1095,41 @@ TAG_NOTE_FIELDS = [
     },
 ]
 
+ATTACHMENT_FIELDS = [
+    {"name": "id", "type": "string"},
+    {"name": "file", "type": "string"},
+    {"name": "private", "type": "boolean"},
+    {"name": "creator", "type": "string"},
+    {"name": "created", "type": "string", "logicalType": "timestamp-millis"},
+    {"name": "_id", "type": ["null", "string"], "default": None},
+    {"name": "resource", "type": ["null", "string"], "default": None},
+]
+
+TEACHING_ASSIGNMENT_FIELDS = [
+    {"name": "_id", "type": ["null", "string"], "default": None},
+    {"name": "school", "type": ["null", "string"], "default": None},
+    {"name": "course", "type": ["null", "string"], "default": None},
+    {"name": "grade", "type": ["null", "string"], "default": None},
+    {"name": "gradeLevel", "type": ["null", "string"], "default": None},
+    {"name": "period", "type": ["null", "string"], "default": None},
+]
+
+MAGIC_NOTE_FIELDS = [
+    {"name": "_id", "type": "string"},
+    {"name": "text", "type": "string"},
+    {"name": "shared", "type": "boolean"},
+    {"name": "created", "type": {"type": "string", "logicalType": "timestamp-millis"}},
+    {"name": "column", "type": ["null"], "default": None},
+]
+
+VIDEO_NOTE_FIELDS = [
+    {"name": "_id", "type": "string"},
+    {"name": "text", "type": "string"},
+    {"name": "timestamp", "type": "string"},
+    {"name": "creator", "type": "string"},
+    {"name": "shared", "type": "boolean"},
+]
+
 OBSERVATION_FIELDS = [
     *CORE_FIELDS,
     {"name": "isPrivate", "type": ["null", "boolean"]},
@@ -1123,20 +1166,22 @@ OBSERVATION_FIELDS = [
             ),
         },
     },
-    {"name": "observationModule", "type": "null", "default": None},
-    {"name": "observationtag1", "type": "null", "default": None},
-    {"name": "observationtag2", "type": "null", "default": None},
-    {"name": "observationtag3", "type": "null", "default": None},
+    {"name": "observationModule", "type": ["null"], "default": None},
+    {"name": "observationtag1", "type": ["null"], "default": None},
+    {"name": "observationtag2", "type": ["null"], "default": None},
+    {"name": "observationtag3", "type": ["null"], "default": None},
     {"name": "observationType", "type": ["null", "string"], "default": None},
     {"name": "requireSignature", "type": ["null", "boolean"], "default": None},
     {"name": "privateNotes1", "type": ["null", "string"], "default": None},
     {"name": "privateNotes2", "type": ["null", "string"], "default": None},
     {"name": "privateNotes3", "type": ["null", "string"], "default": None},
+    {"name": "privateNotes4", "type": ["null", "string"], "default": None},
     {"name": "sharedNotes1", "type": ["null", "string"], "default": None},
     {"name": "sharedNotes2", "type": ["null", "string"], "default": None},
     {"name": "sharedNotes3", "type": ["null", "string"], "default": None},
-    {"name": "score", "type": ["null", "float"], "default": None},
     {"name": "quickHits", "type": ["null", "string"], "default": None},
+    {"name": "assignActionStepWidgetText", "type": ["null", "string"], "default": None},
+    {"name": "score", "type": ["null", "float"], "default": None},
     {"name": "scoreAveragedByStrand", "type": ["null", "float"], "default": None},
     {"name": "sendEmail", "type": ["null", "boolean"], "default": None},
     {"name": "signed", "type": ["null", "boolean"], "default": None},
@@ -1200,15 +1245,7 @@ OBSERVATION_FIELDS = [
         "type": [
             "null",
             get_avro_record_schema(
-                name="teaching_assignment",
-                fields=[
-                    {"name": "_id", "type": ["null", "string"], "default": None},
-                    {"name": "school", "type": ["null", "string"], "default": None},
-                    {"name": "course", "type": ["null", "string"], "default": None},
-                    {"name": "grade", "type": ["null", "string"], "default": None},
-                    {"name": "gradeLevel", "type": ["null", "string"], "default": None},
-                    {"name": "period", "type": ["null", "string"], "default": None},
-                ],
+                name="teaching_assignment", fields=TEACHING_ASSIGNMENT_FIELDS
             ),
         ],
         "default": None,
@@ -1220,20 +1257,7 @@ OBSERVATION_FIELDS = [
             {
                 "type": "array",
                 "items": get_avro_record_schema(
-                    name="magic_note",
-                    fields=[
-                        {"name": "_id", "type": "string"},
-                        {"name": "text", "type": "string"},
-                        {"name": "shared", "type": "boolean"},
-                        {
-                            "name": "created",
-                            "type": {
-                                "type": "string",
-                                "logicalType": "timestamp-millis",
-                            },
-                        },
-                        {"name": "column", "type": "null", "default": None},
-                    ],
+                    name="magic_note", fields=MAGIC_NOTE_FIELDS
                 ),
             },
         ],
@@ -1260,6 +1284,20 @@ OBSERVATION_FIELDS = [
         "default": None,
     },
     {
+        "name": "videoNotes",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": [
+                    "null",
+                    get_avro_record_schema(name="video_note", fields=VIDEO_NOTE_FIELDS),
+                ],
+            },
+        ],
+        "default": None,
+    },
+    {
         "name": "attachments",
         "type": [
             "null",
@@ -1267,20 +1305,7 @@ OBSERVATION_FIELDS = [
                 "type": "array",
                 "items": [
                     "null",
-                    get_avro_record_schema(
-                        name="attachment",
-                        fields=[
-                            {"name": "id", "type": "string"},
-                            {"name": "file", "type": "string"},
-                            {"name": "private", "type": "boolean"},
-                            {"name": "creator", "type": "string"},
-                            {
-                                "name": "created",
-                                "type": "string",
-                                "logicalType": "timestamp-millis",
-                            },
-                        ],
-                    ),
+                    get_avro_record_schema(name="attachment", fields=ATTACHMENT_FIELDS),
                 ],
             },
         ],
