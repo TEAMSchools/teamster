@@ -4,3 +4,4 @@ client_secret:
   env: SCHOOLMINT_GROW_CLIENT_SECRET
 district_id:
   env: SCHOOLMINT_GROW_DISTRICT_ID
+api_response_limit: 6400

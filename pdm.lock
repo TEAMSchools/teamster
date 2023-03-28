@@ -415,7 +415,7 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-bigquery"
-version = "3.7.0"
+version = "3.8.0"
 requires_python = ">=3.7"
 summary = "Google BigQuery API client library"
 dependencies = [
@@ -442,7 +442,7 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-dataproc"
-version = "5.4.0"
+version = "5.4.1"
 requires_python = ">=3.7"
 summary = "Google Cloud Dataproc API client library"
 dependencies = [
@@ -1613,17 +1613,17 @@ content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef4892
     {url = "https://files.pythonhosted.org/packages/4a/07/8d9a8186e6768b55dfffeb57c719bc03770cf8a970a074616ae6f9e26a57/google_auth_oauthlib-1.0.0-py2.py3-none-any.whl", hash = "sha256:95880ca704928c300f48194d1770cf5b1462835b6e49db61445a520f793fd5fb"},
     {url = "https://files.pythonhosted.org/packages/e3/b4/ef2170c5f6aa5bc2461bab959a84e56d2819ce26662b50038d2d0602223e/google-auth-oauthlib-1.0.0.tar.gz", hash = "sha256:e375064964820b47221a7e1b7ee1fd77051b6323c3f9e3e19785f78ab67ecfc5"},
 ]
-"google-cloud-bigquery 3.7.0" = [
-    {url = "https://files.pythonhosted.org/packages/1d/75/a901d6889a4b5c27185532d55baae6508740aef9d8f63e6453a0f2533cea/google-cloud-bigquery-3.7.0.tar.gz", hash = "sha256:cf9f543fad3aaf4871c53f56b718e1ef94a9a778b17f16890015f6fc25c328ec"},
-    {url = "https://files.pythonhosted.org/packages/3d/a3/f349fff8b03cb6e35568e34573ccfb49517a11174cd98c9c12312417c747/google_cloud_bigquery-3.7.0-py2.py3-none-any.whl", hash = "sha256:d273e6a4fddd24317055c4f7a727b78edb165e714e646d8276df0761fa7023d0"},
+"google-cloud-bigquery 3.8.0" = [
+    {url = "https://files.pythonhosted.org/packages/49/e3/ad5fed86bdec58c69070b2d7b65317ae67161ebb39bfae7e3453cd40e321/google-cloud-bigquery-3.8.0.tar.gz", hash = "sha256:354e84d7f4dafd8b880eb8b10ab088dff74bb1f4133b873cb42c5b4008ace317"},
+    {url = "https://files.pythonhosted.org/packages/95/ee/20a2681148c6d054ecec7a7c59f22e5ba082a71aa36704a6546ede170f8f/google_cloud_bigquery-3.8.0-py2.py3-none-any.whl", hash = "sha256:4445d90ef81ddac1da414565df0c886de4c9be267c11057486dae1a5a46ef7e6"},
 ]
 "google-cloud-core 2.3.2" = [
     {url = "https://files.pythonhosted.org/packages/40/4b/f4cebb92fe965f02f4a9c06f16355cf83a61a2d5db110df9af71191c830a/google-cloud-core-2.3.2.tar.gz", hash = "sha256:b9529ee7047fd8d4bf4a2182de619154240df17fbe60ead399078c1ae152af9a"},
     {url = "https://files.pythonhosted.org/packages/ac/4d/bae84e736080ed465a6b02e9f447c89c60c00fcdade2eb6911fecf3f46aa/google_cloud_core-2.3.2-py2.py3-none-any.whl", hash = "sha256:8417acf6466be2fa85123441696c4badda48db314c607cf1e5d543fa8bdc22fe"},
 ]
-"google-cloud-dataproc 5.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/a1/d7/f2ffcdfdaed8ce57087590cf366ea76c56f153f91d280b42ed876030c7f6/google_cloud_dataproc-5.4.0-py2.py3-none-any.whl", hash = "sha256:6c0e8e80189ab7cf1a792e82269efd63bb80fbeaa19276847f96f53df5a13ee8"},
-    {url = "https://files.pythonhosted.org/packages/ec/06/c6a0ea4026b529db72d005959c7bdf500f39ed8cdb9e3c042bc701113efe/google-cloud-dataproc-5.4.0.tar.gz", hash = "sha256:a0c5fe5cc8259a0bb6b1f4445714aafc4f5fa047f8f54cc7133914ba97856f5e"},
+"google-cloud-dataproc 5.4.1" = [
+    {url = "https://files.pythonhosted.org/packages/0c/34/ca7342c6745048e4e7176678fffea3cd5df4b4a21582ef48b6eee1ad65dd/google-cloud-dataproc-5.4.1.tar.gz", hash = "sha256:1896e14f63c121a3f1e2c221287cc7fd00650d2a73f8b38f82040ae6d5aab7bf"},
+    {url = "https://files.pythonhosted.org/packages/a5/58/a236f58159a5baaa593ad1d01db4c53308fdf5fe72fa70cdcb058a2e88d9/google_cloud_dataproc-5.4.1-py2.py3-none-any.whl", hash = "sha256:dfc6db122b38330779882652b10aa85ace45547433ca4af020c4c262660a4074"},
 ]
 "google-cloud-storage 2.7.0" = [
     {url = "https://files.pythonhosted.org/packages/6e/23/3add67cdd1f2116eb4425b0d4f3154117b8a79eaaf3022edc23a71d82cc2/google_cloud_storage-2.7.0-py2.py3-none-any.whl", hash = "sha256:f78a63525e72dd46406b255bbdf858a22c43d6bad8dc5bdeb7851a42967e95a1"},

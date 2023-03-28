@@ -9,8 +9,8 @@ endpoints:
   - asset_name: videos
   - asset_name: users
   - asset_name: assignments
-    params:
-      lastModified: 1672531200.0
+    # params:
+    #   lastModified: 1672531200.0
   - asset_name: observations
-    params:
-      lastModified: 1672531200.0
+    # params:
+    #   lastModified: 1672531200.0
