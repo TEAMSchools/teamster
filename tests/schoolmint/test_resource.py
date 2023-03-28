@@ -1,7 +1,8 @@
+import json
 import random
 
 from dagster import build_resources, config_from_files
-from fastavro import parse_schema, validation
+from fastavro import parse_schema, validation, writer
 
 from teamster.core.resources.schoolmint import Grow, schoolmint_grow_resource
 from teamster.core.schoolmint.schema import ENDPOINT_FIELDS, get_avro_record_schema
@@ -45,3 +46,15 @@ def test_schoolmint_grow_schema():
             assert validation.validate_many(
                 records=records, schema=parsed_schema, strict=True
             )
+
+            with open(file="env/schoolmint_grow_test.json", mode="w+") as f:
+                json.dump(obj=records, fp=f)
+
+            with open(file="/dev/null", mode="wb") as fo:
+                writer(
+                    fo=fo,
+                    schema=parsed_schema,
+                    records=records,
+                    codec="snappy",
+                    strict_allow_default=True,
+                )
