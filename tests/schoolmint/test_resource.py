@@ -25,6 +25,12 @@ def test_schoolmint_grow_schema():
         for endpoint in asset_config["endpoints"]:
             endpoint_name = endpoint["asset_name"]
 
+            parsed_schema = parse_schema(
+                get_avro_record_schema(
+                    name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
+                )
+            )
+
             data = grow.get(endpoint=endpoint_name, **endpoint.get("params", {}))
 
             records = data["data"]
@@ -32,14 +38,10 @@ def test_schoolmint_grow_schema():
             sample_record = records[random.randint(a=0, b=(data["count"] - 1))]
             print(sample_record)
 
-            # assert validation.validate_many(
-            #     records=records,
             assert validation.validate(
-                datum=sample_record,
-                schema=parse_schema(
-                    get_avro_record_schema(
-                        name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
-                    )
-                ),
-                strict=True,
+                datum=sample_record, schema=parsed_schema, strict=True
+            )
+
+            assert validation.validate_many(
+                records=records, schema=parsed_schema, strict=True
             )

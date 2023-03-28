@@ -11,11 +11,7 @@ GENERIC_REF_FIELDS = [
     {"name": "name", "type": "string"},
 ]
 
-USER_REF_FIELDS = [
-    {"name": "_id", "type": "string"},
-    {"name": "name", "type": "string"},
-    {"name": "email", "type": "string"},
-]
+USER_REF_FIELDS = [*GENERIC_REF_FIELDS, {"name": "email", "type": "string"}]
 
 GENERIC_TAG_TYPE_FIELDS = [
     {"name": "__v", "type": "int"},
@@ -34,9 +30,6 @@ GENERIC_TAG_TYPE_FIELDS = [
         "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
         "default": None,
     },
-    # {"name": "showOnDash", "type": "boolean"},
-    # {"name": "color", "type": "string"},
-    # {"name": "parent", "type": "null"},
 ]
 
 INFORMAL_FIELDS = [
@@ -66,18 +59,10 @@ INFORMAL_FIELDS = [
 MEASUREMENT_FIELDS = [
     {"name": "_id", "type": "string"},
     {"name": "name", "type": "string"},
-    {"name": "description", "type": "string"},
     {"name": "district", "type": "string"},
-    {"name": "scaleMin", "type": ["null", "int"], "default": None},
-    {"name": "scaleMax", "type": ["null", "int"], "default": None},
     {"name": "rowStyle", "type": "string"},
     {"name": "lastModified", "type": "string", "logicalType": "timestamp-millis"},
     {"name": "created", "type": "string", "logicalType": "timestamp-millis"},
-    {
-        "name": "archivedAt",
-        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
-        "default": None,
-    },
     {
         "name": "textBoxes",
         "type": {
@@ -114,10 +99,14 @@ MEASUREMENT_FIELDS = [
             "default": [],
         },
     },
-    # {"name": "sortId", "type": "string"},
-    # {"name": "isPercentage", "type": "boolean"},
-    # {"name": "measurementType", "type": "null"},
-    # {"name": "measurementGroups", "type": {"type": "array", "items": "null"}},
+    {"name": "description", "type": ["null", "string"], "default": None},
+    {"name": "scaleMin", "type": ["null", "int"], "default": None},
+    {"name": "scaleMax", "type": ["null", "int"], "default": None},
+    {
+        "name": "archivedAt",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+        "default": None,
+    },
 ]
 
 MEETING_FIELDS = [
@@ -186,7 +175,7 @@ MEETING_FIELDS = [
     },
     {
         "name": "actionSteps",
-        "type": ["null", {"type": "array", "items": "null", "default": []}],
+        "type": ["null", {"type": "array", "items": "string", "default": []}],
         "default": None,
     },
     {
@@ -220,7 +209,19 @@ MEETING_FIELDS = [
                         {"name": "isPrivate", "type": "boolean"},
                         {
                             "name": "content",
-                            "type": ["null", "string"],
+                            "type": [
+                                "null",
+                                "string",
+                                "int",
+                                "boolean",
+                                get_avro_record_schema(
+                                    name="content",
+                                    fields=[
+                                        {"name": "left", "type": "string"},
+                                        {"name": "right", "type": "string"},
+                                    ],
+                                ),
+                            ],
                             "default": None,
                         },
                     ],
@@ -276,10 +277,6 @@ RUBRIC_FIELDS = [
                 {"name": "enablePointClick", "type": "boolean"},
                 {"name": "hasCompletionMarks", "type": "boolean"},
                 {"name": "hasRowDescriptions", "type": "boolean"},
-                {
-                    "name": "hiddenFeatures",
-                    "type": ["null", {"type": "array", "items": "string"}],
-                },
                 {"name": "hideFromLists", "type": "boolean"},
                 {"name": "hideOverallScore", "type": "boolean"},
                 {"name": "isPrivate", "type": "boolean"},
@@ -287,7 +284,7 @@ RUBRIC_FIELDS = [
                 {"name": "lockScoreAfterDays", "type": ["int", "string"]},
                 {"name": "notification", "type": "boolean"},
                 {"name": "obsTypeFinalize", "type": "boolean"},
-                {"name": "prepopulateActionStep", "type": "null"},
+                {"name": "prepopulateActionStep", "type": ["string", "null"]},
                 {"name": "quickHits", "type": ["null", "string"]},
                 {"name": "requireActionStepBeforeFinalize", "type": "boolean"},
                 {"name": "requireAll", "type": "boolean"},
@@ -364,6 +361,11 @@ RUBRIC_FIELDS = [
                 {"name": "filters", "type": ["null", "boolean"], "default": None},
                 {"name": "goalCreate", "type": ["null", "boolean"], "default": None},
                 {"name": "goals", "type": ["null", "boolean"], "default": None},
+                {
+                    "name": "hiddenFeatures",
+                    "type": ["null", {"type": "array", "items": "string"}],
+                    "default": None,
+                },
                 {"name": "hideEmptyRows", "type": ["null", "boolean"], "default": None},
                 {
                     "name": "hideEmptyTextRows",
@@ -614,9 +616,15 @@ RUBRIC_FIELDS = [
             "items": get_avro_record_schema(
                 name="measurement_group",
                 fields=[
-                    {"name": "_id", "type": "string"},
                     {"name": "name", "type": "string"},
                     {"name": "key", "type": "string"},
+                    {"name": "weight", "type": ["null", "int"], "default": None},
+                    {"name": "_id", "type": ["null", "string"], "default": None},
+                    {
+                        "name": "description",
+                        "type": ["null", "string"],
+                        "default": None,
+                    },
                     {
                         "name": "measurements",
                         "type": {
@@ -624,11 +632,20 @@ RUBRIC_FIELDS = [
                             "items": get_avro_record_schema(
                                 name="measurement",
                                 fields=[
-                                    {"name": "_id", "type": "string"},
-                                    {"name": "isPrivate", "type": "boolean"},
                                     {"name": "measurement", "type": ["null", "string"]},
-                                    {"name": "require", "type": "boolean"},
                                     {"name": "weight", "type": "int"},
+                                    {"name": "require", "type": "boolean"},
+                                    {"name": "isPrivate", "type": "boolean"},
+                                    {
+                                        "name": "_id",
+                                        "type": ["null", "string"],
+                                        "default": None,
+                                    },
+                                    {
+                                        "name": "key",
+                                        "type": ["null", "string"],
+                                        "default": None,
+                                    },
                                     {
                                         "name": "exclude",
                                         "type": ["null", "boolean"],
@@ -639,11 +656,6 @@ RUBRIC_FIELDS = [
                                         "type": ["null", "boolean"],
                                         "default": None,
                                     },
-                                    {
-                                        "name": "key",
-                                        "type": ["null", "string"],
-                                        "default": None,
-                                    },
                                 ],
                             ),
                         },
@@ -652,128 +664,28 @@ RUBRIC_FIELDS = [
             ),
         },
     },
-    # {"name": "scoringMethod", "type": "string"},
-    # {"name": "lastModified", "type": "string", "logicalType": "timestamp-millis"},
-    # {"name": "_measurementGroups", "type": "null"},
-    # {"name": "measurements", "type": "array", "items": "string"},
 ]
-
-{
-    "actionStep": False,
-    "actionStepCreate": True,
-    "actionStepWorkflow": False,
-    "allowCoTeacher": False,
-    "allowTakeOverObservation": True,
-    "cloneable": False,
-    "coachActionStep": False,
-    "coachingEvalType": "coaching",
-    "dashHidden": False,
-    "debrief": False,
-    "defaultObsModule": None,
-    "defaultObsTag1": None,
-    "defaultObsTag2": None,
-    "defaultObsTag3": None,
-    "defaultObsTag4": None,
-    "defaultObsType": None,
-    "descriptionsInEditor": False,
-    "disableMeetingsTab": False,
-    "displayLabels": True,
-    "displayNumbers": True,
-    "dontRequireTextboxesOnLikertRows": False,
-    "enablePointClick": True,
-    "filters": False,
-    "goalCreate": False,
-    "goals": False,
-    "hasCompletionMarks": False,
-    "hasRowDescriptions": False,
-    "hiddenFeatures": None,
-    "hideEmptyRows": False,
-    "hideEmptyTextRows": False,
-    "hideFromLists": False,
-    "hideOverallScore": False,
-    "isHolisticDefault": False,
-    "isPeerRubric": False,
-    "isPrivate": False,
-    "isScorePrivate": False,
-    "locked": False,
-    "lockScoreAfterDays": "365",
-    "meetingTypesExcludedFromScheduling": None,
-    "notification": True,
-    "observationTypesHidden": None,
-    "obsShowEndDate": False,
-    "obsTypeFinalize": False,
-    "prepopulateActionStep": None,
-    "quickHits": None,
-    "requireActionStepBeforeFinalize": False,
-    "requireAll": False,
-    "requireGoal": False,
-    "requireOnlyScores": False,
-    "resources": None,
-    "rolesExcluded": ["5eed577a2bdac8bef766773b", "5eed577a2bdac8bef766791d"],
-    "rubrictag1": "5f2ab49d10be6f0011fd3037",
-    "schoolsExcluded": [],
-    "scoreOnForm": False,
-    "scoreOverride": False,
-    "scripting": False,
-    "sendEmailOnSignature": False,
-    "showAllTextOnOpts": False,
-    "showAvgByStrand": False,
-    "showObservationLabels": False,
-    "showObservationModule": False,
-    "showObservationTag1": False,
-    "showObservationTag2": False,
-    "showObservationTag3": False,
-    "showObservationTag4": False,
-    "showObservationType": True,
-    "showOnDataReports": True,
-    "showStrandScores": False,
-    "signature": False,
-    "signatureOnByDefault": False,
-    "transferDescriptionToTextbox": False,
-    "video": False,
-    "videoForm": True,
-    "enableClickToFill": True,
-    "isSiteVisit": False,
-    "isAlwaysFocus": False,
-    "hideFromTeachers": True,
-    "hideFromCoaches": True,
-    "hideFromRegionalCoaches": False,
-    "hideFromSchoolAdmins": True,
-    "hideFromSchoolAssistantAdmins": True,
-    "isCoachingStartForm": False,
-    "meetingQuickCreate": False,
-    "customHtmlTitle": "",
-    "customHtml": "",
-    "defaultUsertype": None,
-    "defaultCourse": None,
-    "useStrandWeights": False,
-    "isCompetencyRubric": False,
-    "useAdditiveScoring": False,
-    "nameAndSignatureDisplay": False,
-    "privateRows": ["5ebb10c1f721a6001c3bbe66"],
-    "featureInstructions": [
-        {
-            "hideOnDraft": True,
-            "hideOnFinalized": False,
-            "includeOnEmails": False,
-            "_id": "5ebb136a8699620016778d9f",
-            "section": "assign-action",
-            "text": "",
-            "titleOverride": "Notes and Next Steps (Shared)",
-        }
-    ],
-}
 
 SCHOOL_FIELDS = [
     {"name": "_id", "type": "string"},
-    {"name": "abbreviation", "type": "string"},
     {"name": "name", "type": "string"},
+    {"name": "district", "type": "string"},
+    {"name": "created", "type": "string", "logicalType": "timestamp-millis"},
+    {"name": "lastModified", "type": "string", "logicalType": "timestamp-millis"},
     {
         "name": "archivedAt",
         "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
     },
-    {"name": "lastModified", "type": "string", "logicalType": "timestamp-millis"},
-    {"name": "nonInstructionalAdmins", "type": {"type": "array", "items": "null"}},
+    {"name": "abbreviation", "type": ["null", "string"], "default": None},
+    {
+        "name": "nonInstructionalAdmins",
+        "type": {
+            "type": "array",
+            "items": get_avro_record_schema(
+                name="non_instructional_admin", fields=GENERIC_REF_FIELDS
+            ),
+        },
+    },
     {
         "name": "admins",
         "type": {
@@ -797,15 +709,8 @@ SCHOOL_FIELDS = [
             "items": get_avro_record_schema(
                 name="observation_group",
                 fields=[
-                    {"name": "_id", "type": ["string"]},
-                    {"name": "locked", "type": ["boolean"]},
-                    {"name": "name", "type": ["string"]},
-                    {
-                        "name": "lastModified",
-                        "type": "string",
-                        "logicalType": "timestamp-millis",
-                    },
-                    {"name": "admins", "type": {"type": "array", "items": "null"}},
+                    {"name": "_id", "type": "string"},
+                    {"name": "name", "type": "string"},
                     {
                         "name": "observers",
                         "type": {
@@ -828,20 +733,165 @@ SCHOOL_FIELDS = [
             ),
         },
     },
-    # {"name": "address", "type": "string"},
-    # {"name": "city", "type": "string"},
-    # {"name": "cluster", "type": "string"},
-    # {"name": "district", "type": "string"},
-    # {"name": "gradeSpan", "type": "string"},
-    # {"name": "highGrade", "type": "string"},
-    # {"name": "internalId", "type": "string"},
-    # {"name": "lowGrade", "type": "string"},
-    # {"name": "phone", "type": "string"},
-    # {"name": "principal", "type": "string"},
-    # {"name": "region", "type": "string"},
-    # {"name": "state", "type": "string"},
-    # {"name": "ward", "type": "string"},
-    # {"name": "zip", "type": "string"},
+]
+
+VIDEO_FIELDS = [
+    {"name": "_id", "type": "string"},
+    {"name": "district", "type": "string"},
+    {"name": "url", "type": ["null", "string"]},
+    {"name": "name", "type": "string"},
+    {"name": "style", "type": "string"},
+    {
+        "name": "created",
+        "type": {"type": "string", "logicalType": "timestamp-millis"},
+    },
+    {
+        "name": "lastModified",
+        "type": {"type": "string", "logicalType": "timestamp-millis"},
+    },
+    {"name": "observations", "type": {"type": "array", "items": "string"}},
+    {"name": "comments", "type": {"type": "array", "items": "null"}},
+    {
+        "name": "videoNotes",
+        "type": {
+            "type": "array",
+            "items": [
+                "null",
+                get_avro_record_schema(
+                    name="video_notes",
+                    fields=[
+                        {"name": "_id", "type": "string"},
+                        {"name": "text", "type": "string"},
+                        {"name": "createdOnMillisecond", "type": "int"},
+                        {"name": "creator", "type": "string"},
+                    ],
+                ),
+            ],
+        },
+    },
+    {
+        "name": "creator",
+        "type": get_avro_record_schema(name="creator", fields=GENERIC_REF_FIELDS),
+    },
+    {
+        "name": "users",
+        "type": {
+            "type": "array",
+            "items": get_avro_record_schema(
+                name="user",
+                fields=[
+                    {"name": "user", "type": "string"},
+                    {"name": "role", "type": "string"},
+                    {"name": "_id", "type": ["null", "string"], "default": None},
+                ],
+            ),
+        },
+    },
+    {"name": "status", "type": ["null", "string"], "default": None},
+    {"name": "thumbnail", "type": ["null", "string"], "default": None},
+    {"name": "fileName", "type": ["null", "string"], "default": None},
+    {"name": "zencoderJobId", "type": ["null", "string"], "default": None},
+    {
+        "name": "archivedAt",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+        "default": None,
+    },
+    {
+        "name": "tags",
+        "type": ["null", {"type": "array", "items": "string"}],
+        "default": None,
+    },
+]
+
+USER_FIELDS = [
+    {"name": "_id", "type": "string"},
+    {"name": "internalId", "type": ["null", "string"]},
+    {"name": "accountingId", "type": ["null", "string"]},
+    {"name": "powerSchoolId", "type": ["null", "string"]},
+    {"name": "canvasId", "type": ["null", "string"]},
+    {"name": "name", "type": "string"},
+    {"name": "first", "type": ["null", "string"]},
+    {"name": "last", "type": ["null", "string"]},
+    {"name": "email", "type": "string"},
+    {"name": "endOfYearVisible", "type": ["null", "boolean"]},
+    {"name": "inactive", "type": ["null", "boolean"]},
+    {"name": "showOnDashboards", "type": "boolean"},
+    {"name": "coach", "type": ["null", "string"]},
+    {
+        "name": "archivedAt",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+    },
+    {"name": "created", "type": {"type": "string", "logicalType": "timestamp-millis"}},
+    {
+        "name": "lastActivity",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+    },
+    {
+        "name": "lastModified",
+        "type": {"type": "string", "logicalType": "timestamp-millis"},
+    },
+    {"name": "districts", "type": {"type": "array", "items": "string"}},
+    {"name": "additionalEmails", "type": {"type": "array", "items": "string"}},
+    {"name": "endOfYearLog", "type": ["null", {"type": "array", "items": "null"}]},
+    {"name": "pastUserTypes", "type": ["null", {"type": "array", "items": "null"}]},
+    {
+        "name": "regionalAdminSchools",
+        "type": {
+            "type": "array",
+            "items": get_avro_record_schema(
+                name="regional_admin_school",
+                fields=[
+                    {"name": "_id", "type": "string"},
+                    {"name": "name", "type": "string"},
+                ],
+            ),
+        },
+    },
+    {
+        "name": "externalIntegrations",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="external_integration",
+                    fields=[
+                        {"name": "type", "type": "string"},
+                        {"name": "id", "type": "string"},
+                    ],
+                ),
+            },
+        ],
+    },
+    {
+        "name": "roles",
+        "type": {
+            "type": "array",
+            "items": get_avro_record_schema(
+                name="role",
+                fields=[
+                    {"name": "_id", "type": "string"},
+                    {"name": "name", "type": "string"},
+                ],
+            ),
+        },
+    },
+    {
+        "name": "defaultInformation",
+        "type": get_avro_record_schema(
+            name="default_information",
+            fields=[
+                {"name": "gradeLevel", "type": ["null", "string"], "default": None},
+                {"name": "school", "type": ["null", "string"], "default": None},
+                {"name": "course", "type": ["null", "string"], "default": None},
+                {"name": "period", "type": ["null", "string"], "default": None},
+            ],
+        ),
+    },
+    {
+        "name": "preferences",
+        "type": ["null", get_avro_record_schema(name="preference", fields=[])],
+    },
 ]
 
 ASSIGNMENT_FIELDS = [
@@ -850,30 +900,32 @@ ASSIGNMENT_FIELDS = [
     {"name": "locked", "type": "boolean"},
     {"name": "private", "type": "boolean"},
     {"name": "coachingActivity", "type": "boolean"},
-    {"name": "name", "type": "string"},
     {"name": "type", "type": "string"},
     {"name": "created", "type": "string", "logicalType": "timestamp-millis"},
     {"name": "lastModified", "type": "string", "logicalType": "timestamp-millis"},
-    {"name": "parent", "type": "null"},
-    {"name": "grade", "type": "null"},
-    {"name": "course", "type": "null"},
     {
         "name": "creator",
-        "type": get_avro_record_schema(name="creator", fields=GENERIC_REF_FIELDS),
+        "type": get_avro_record_schema(name="creator", fields=USER_REF_FIELDS),
     },
     {
         "name": "user",
-        "type": get_avro_record_schema(name="user", fields=GENERIC_REF_FIELDS),
+        "type": get_avro_record_schema(name="user", fields=USER_REF_FIELDS),
     },
     {
         "name": "progress",
         "type": get_avro_record_schema(
             name="progress",
             fields=[
-                {"name": "percent", "type": ["int"]},
-                {"name": "assigner", "type": ["null"]},
-                {"name": "justification", "type": ["null"]},
-                {"name": "date", "type": ["null"]},
+                {"name": "percent", "type": "int"},
+                {"name": "assigner", "type": ["null", "string"]},
+                {"name": "justification", "type": ["null", "string"]},
+                {
+                    "name": "date",
+                    "type": [
+                        "null",
+                        {"type": "string", "logicalType": "timestamp-millis"},
+                    ],
+                },
             ],
         ),
     },
@@ -884,258 +936,270 @@ ASSIGNMENT_FIELDS = [
             "items": get_avro_record_schema(
                 name="tag",
                 fields=[
-                    {"name": "_id", "type": ["string"]},
-                    {"name": "name", "type": ["string"]},
-                    {"name": "url", "type": ["string"]},
+                    {"name": "_id", "type": "string"},
+                    {"name": "name", "type": "string"},
+                    {"name": "url", "type": ["null", "string"], "default": None},
                 ],
             ),
         },
     },
+    {"name": "name", "type": ["null", "string"], "default": None},
+    {
+        "name": "archivedAt",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+        "default": None,
+    },
+    {
+        "name": "school",
+        "type": [
+            "null",
+            get_avro_record_schema(name="school", fields=GENERIC_REF_FIELDS),
+        ],
+        "default": None,
+    },
+    {
+        "name": "grade",
+        "type": [
+            "null",
+            get_avro_record_schema(name="grade", fields=GENERIC_REF_FIELDS),
+        ],
+        "default": None,
+    },
+    {
+        "name": "course",
+        "type": [
+            "null",
+            get_avro_record_schema(name="course", fields=GENERIC_REF_FIELDS),
+        ],
+        "default": None,
+    },
 ]
 
-
 OBSERVATION_FIELDS = [
-    {"name": "_id", "type": ["string"]},
-    {"name": "isPublished", "type": ["boolean"]},
-    {"name": "sendEmail", "type": ["boolean"]},
-    {"name": "requireSignature", "type": ["boolean"]},
-    {"name": "locked", "type": ["boolean"]},
-    {"name": "isPrivate", "type": ["boolean"]},
-    {"name": "signed", "type": ["boolean"]},
-    {"name": "observer", "type": ["string"]},
-    {"name": "rubric", "type": ["string"]},
-    {"name": "teacher", "type": ["string"]},
-    {"name": "district", "type": ["string"]},
-    {"name": "observationType", "type": ["string"]},
-    {"name": "quickHits", "type": ["string"]},
-    {"name": "score", "type": ["float"]},
-    {"name": "scoreAveragedByStrand", "type": ["float"]},
+    {"name": "_id", "type": "string"},
+    {"name": "district", "type": "string"},
+    {"name": "isPrivate", "type": ["null", "boolean"]},
+    {"name": "isPublished", "type": "boolean"},
+    {"name": "locked", "type": ["null", "boolean"]},
+    {"name": "observationModule", "type": "null"},
+    {"name": "observationtag1", "type": "null"},
+    {"name": "observationtag2", "type": "null"},
+    {"name": "observationtag3", "type": "null"},
+    {"name": "observationType", "type": ["null", "string"]},
+    {"name": "requireSignature", "type": ["null", "boolean"]},
+    {
+        "name": "viewedByTeacher",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+    },
+    {"name": "created", "type": {"type": "string", "logicalType": "timestamp-millis"}},
     {
         "name": "observedAt",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "type": {"type": "string", "logicalType": "timestamp-millis"},
     },
     {
         "name": "firstPublished",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
-    },
-    {
-        "name": "lastPublished",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
-    },
-    {
-        "name": "created",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
     },
     {
         "name": "lastModified",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "type": {"type": "string", "logicalType": "timestamp-millis"},
     },
-    {"name": "observedUntil", "type": ["null"]},
-    {"name": "viewedByTeacher", "type": ["null"]},
-    {"name": "archivedAt", "type": ["null"]},
-    {"name": "observationModule", "type": ["null"]},
-    {"name": "observationtag1", "type": ["null"]},
-    {"name": "observationtag2", "type": ["null"]},
-    {"name": "observationtag3", "type": ["null"]},
-    {"name": "files", "type": [{"type": "array", "items": "null"}]},
-    {"name": "meetings", "type": [{"type": "array", "items": "null"}]},
-    {"name": "tags", "type": [{"type": "array", "items": "null"}]},
+    {"name": "meetings", "type": {"type": "array", "items": ["null", "string"]}},
+    {"name": "tags", "type": {"type": "array", "items": "null"}},
     {
-        "name": "observationScores",
-        "type": [
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="observation_score",
+        "name": "videos",
+        "type": {
+            "type": "array",
+            "items": [
+                "null",
+                get_avro_record_schema(
+                    name="video",
                     fields=[
-                        {"name": "measurement", "type": ["string"]},
-                        {"name": "measurementGroup", "type": ["string"]},
-                        {"name": "valueScore", "type": ["int"]},
-                        {"name": "valueText", "type": ["null"]},
-                        {"name": "percentage", "type": ["null"]},
+                        {"name": "video", "type": "string"},
+                        {"name": "includeVideoTimestamps", "type": "boolean"},
+                    ],
+                ),
+            ],
+        },
+    },
+    {
+        "name": "rubric",
+        "type": get_avro_record_schema(name="rubric", fields=GENERIC_REF_FIELDS),
+    },
+    {
+        "name": "observer",
+        "type": get_avro_record_schema(name="observer", fields=USER_REF_FIELDS),
+    },
+    {
+        "name": "teacher",
+        "type": get_avro_record_schema(name="teacher", fields=USER_REF_FIELDS),
+    },
+    {
+        "name": "attachments",
+        "type": {
+            "type": "array",
+            "items": [
+                "null",
+                get_avro_record_schema(
+                    name="attachment",
+                    fields=[
+                        {"name": "file", "type": "string"},
+                        {"name": "resource", "type": ["null"]},
+                        {"name": "private", "type": "boolean"},
+                        {"name": "_id", "type": "string"},
+                        {"name": "id", "type": "string"},
+                        {"name": "creator", "type": "string"},
                         {
-                            "name": "lastModified",
-                            "type": [
-                                {"type": "string", "logicalType": "timestamp-millis"}
-                            ],
-                        },
-                        {
-                            "name": "checkboxes",
-                            "type": [
-                                {
-                                    "type": "array",
-                                    "items": {"label": "string", "value": "boolean"},
-                                }
-                            ],
-                        },
-                        {
-                            "name": "textBoxes",
-                            "type": [
-                                {
-                                    "type": "array",
-                                    "items": {"label": "string", "text": "string"},
-                                }
-                            ],
+                            "name": "created",
+                            "type": "string",
+                            "logicalType": "timestamp-millis",
                         },
                     ],
                 ),
-            }
-        ],
+            ],
+        },
+    },
+    {
+        "name": "teachingAssignment",
+        "type": get_avro_record_schema(
+            name="teaching_assignment",
+            fields=[
+                {"name": "_id", "type": "string"},
+                {"name": "school", "type": ["null", "string"], "default": None},
+                {"name": "course", "type": ["null", "string"], "default": None},
+                {"name": "grade", "type": ["null", "string"], "default": None},
+            ],
+        ),
     },
     {
         "name": "magicNotes",
-        "type": [
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="magic_note",
-                    fields=[
-                        {"name": "shared", "type": ["boolean"]},
-                        {"name": "text", "type": ["string"]},
-                        {
-                            "name": "created",
-                            "type": [
-                                {"type": "string", "logicalType": "timestamp-millis"}
-                            ],
-                        },
-                    ],
-                ),
-            }
-        ],
+        "type": {
+            "type": "array",
+            "items": get_avro_record_schema(
+                name="magic_note",
+                fields=[
+                    {"name": "_id", "type": "string"},
+                    {"name": "text", "type": "string"},
+                    {"name": "shared", "type": "boolean"},
+                    {
+                        "name": "created",
+                        "type": {"type": "string", "logicalType": "timestamp-millis"},
+                    },
+                    {"name": "column", "type": "null", "default": None},
+                ],
+            ),
+        },
     },
-]
-
-
-USER_FIELDS = [
-    {"name": "_id", "type": ["string"]},
-    {"name": "email", "type": ["string"]},
-    {"name": "endOfYearVisible", "type": ["boolean"]},
-    {"name": "first", "type": ["string"]},
-    {"name": "inactive", "type": ["boolean"]},
-    {"name": "internalId", "type": ["string"]},
-    {"name": "last", "type": ["string"]},
-    {"name": "name", "type": ["string"]},
-    {"name": "showOnDashboards", "type": ["boolean"]},
-    {"name": "accountingId", "type": ["string"]},
-    {"name": "powerSchoolId", "type": ["string"]},
+    {
+        "name": "observationScores",
+        "type": {
+            "type": "array",
+            "items": get_avro_record_schema(
+                name="observation_score",
+                fields=[
+                    {"name": "measurement", "type": "string"},
+                    {"name": "measurementGroup", "type": "string"},
+                    {"name": "valueScore", "type": ["null", "int"]},
+                    {"name": "valueText", "type": "null"},
+                    {"name": "percentage", "type": "null"},
+                    {
+                        "name": "lastModified",
+                        "type": {"type": "string", "logicalType": "timestamp-millis"},
+                    },
+                    {
+                        "name": "checkboxes",
+                        "type": {
+                            "type": "array",
+                            "items": get_avro_record_schema(
+                                name="checkbox",
+                                fields=[
+                                    {"name": "label", "type": "string"},
+                                    {
+                                        "name": "value",
+                                        "type": ["null", "boolean"],
+                                        "default": None,
+                                    },
+                                ],
+                            ),
+                        },
+                    },
+                    {
+                        "name": "textBoxes",
+                        "type": {
+                            "type": "array",
+                            "items": get_avro_record_schema(
+                                name="text_box",
+                                fields=[
+                                    {"name": "key", "type": "string"},
+                                    {"name": "value", "type": ["null", "string"]},
+                                ],
+                            ),
+                        },
+                    },
+                ],
+            ),
+        },
+    },
+    {"name": "score", "type": ["null", "float"], "default": None},
+    {"name": "quickHits", "type": ["null", "string"], "default": None},
+    {"name": "scoreAveragedByStrand", "type": ["null", "float"], "default": None},
+    {"name": "sendEmail", "type": ["null", "boolean"], "default": None},
+    {"name": "signed", "type": ["null", "boolean"], "default": None},
     {
         "name": "archivedAt",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+        "default": None,
     },
     {
-        "name": "created",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "name": "observedUntil",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+        "default": None,
     },
     {
-        "name": "lastActivity",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "name": "signedAt",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+        "default": None,
     },
     {
-        "name": "lastModified",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
-    },
-    {"name": "canvasId", "type": ["null"]},
-    {"name": "coach", "type": ["null"]},
-    {"name": "districts", "type": [{"type": "array", "items": "string"}]},
-    {"name": "additionalEmails", "type": [{"type": "array", "items": "null"}]},
-    {"name": "endOfYearLog", "type": [{"type": "array", "items": "null"}]},
-    {"name": "pastUserTypes", "type": [{"type": "array", "items": "null"}]},
-    {"name": "regionalAdminSchools", "type": [{"type": "array", "items": "null"}]},
-    {"name": "externalIntegrations", "type": [{"type": "array", "items": "null"}]},
-    {
-        "name": "roles",
-        "type": [
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="role",
-                    fields=[
-                        {"name": "role", "type": ["string"]},
-                        {
-                            "name": "districts",
-                            "type": [{"type": "array", "items": "string"}],
-                        },
-                    ],
-                ),
-            },
-        ],
+        "name": "lastPublished",
+        "type": ["null", {"type": "string", "logicalType": "timestamp-millis"}],
+        "default": None,
     },
     {
-        "name": "defaultInformation",
-        "type": [
-            get_avro_record_schema(
-                name="default_information",
-                fields=[
-                    {"name": "period", "type": ["null"]},
-                    {
-                        "name": "gradeLevel",
-                        "type": [
-                            get_avro_record_schema(
-                                name="grade_level", fields=GENERIC_REF_FIELDS
-                            )
-                        ],
-                    },
-                    {
-                        "name": "school",
-                        "type": [
-                            get_avro_record_schema(
-                                name="school", fields=GENERIC_REF_FIELDS
-                            )
-                        ],
-                    },
-                    {
-                        "name": "course",
-                        "type": [
-                            get_avro_record_schema(
-                                name="course", fields=GENERIC_REF_FIELDS
-                            )
-                        ],
-                    },
-                ],
-            ),
-        ],
+        "name": "comments",
+        "type": ["null", {"type": "array", "items": "null"}],
+        "default": None,
     },
     {
-        "name": "preferences",
-        "type": [
-            get_avro_record_schema(
-                name="preference",
-                fields=[
-                    {
-                        "name": "unsubscribedTo",
-                        "type": [{"type": "array", "items": "null"}],
-                    },
-                    {"name": "homepage", "type": ["string"]},
-                    {"name": "timezoneText", "type": ["string"]},
-                ],
-            ),
-        ],
-    },
-]
-
-VIDEO_FIELDS = [
-    {"name": "_id", "type": ["string"]},
-    {"name": "creator", "type": ["string"]},
-    {"name": "district", "type": ["string"]},
-    {"name": "url", "type": ["string"]},
-    {"name": "thumbnail", "type": ["string"]},
-    {"name": "name", "type": ["string"]},
-    {"name": "fileName", "type": ["string"]},
-    {"name": "zencoderJobId", "type": ["string"]},
-    {"name": "status", "type": ["string"]},
-    {"name": "style", "type": ["string"]},
-    {
-        "name": "created",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "name": "listTwoColumnA",
+        "type": ["null", {"type": "array", "items": "string"}],
+        "default": None,
     },
     {
-        "name": "lastModified",
-        "type": [{"type": "string", "logicalType": "timestamp-millis"}],
+        "name": "listTwoColumnB",
+        "type": ["null", {"type": "array", "items": "string"}],
+        "default": None,
     },
-    {"name": "users", "type": [{"type": "array", "items": "null"}]},
-    {"name": "observations", "type": [{"type": "array", "items": "null"}]},
-    {"name": "comments", "type": [{"type": "array", "items": "null"}]},
-    {"name": "videoNotes", "type": [{"type": "array", "items": "null"}]},
+    {
+        "name": "listTwoColumnAPaired",
+        "type": ["null", {"type": "array", "items": "null"}],
+        "default": None,
+    },
+    {
+        "name": "listTwoColumnBPaired",
+        "type": ["null", {"type": "array", "items": "null"}],
+        "default": None,
+    },
+    {
+        "name": "eventLog",
+        "type": ["null", {"type": "array", "items": "null"}],
+        "default": None,
+    },
+    {
+        "name": "files",
+        "type": ["null", {"type": "array", "items": "null"}],
+        "default": None,
+    },
 ]
 
 ENDPOINT_FIELDS = {
@@ -1146,6 +1210,10 @@ ENDPOINT_FIELDS = {
     "roles": ROLE_FIELDS,
     "rubrics": RUBRIC_FIELDS,
     "schools": SCHOOL_FIELDS,
+    "videos": VIDEO_FIELDS,
+    "users": USER_FIELDS,
+    "assignments": ASSIGNMENT_FIELDS,
+    "observations": OBSERVATION_FIELDS,
 }
 
 # LESSON_PLAN_FORM_FIELDS = [
