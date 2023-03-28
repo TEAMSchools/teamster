@@ -1,16 +1,52 @@
 endpoints:
+  - asset_name: users
+  - asset_name: videos
   - asset_name: generic-tags/assignmentpresets
+  - asset_name: generic-tags/courses
+  - asset_name: generic-tags/grades
+  - asset_name: generic-tags/measurementgroups
+  - asset_name: generic-tags/observationtypes
+  - asset_name: generic-tags/tags
+  - asset_name: generic-tags/meetingtypes
   - asset_name: informals
   - asset_name: measurements
   - asset_name: meetings
   - asset_name: roles
   - asset_name: rubrics
   - asset_name: schools
-  - asset_name: videos
-  - asset_name: users
   - asset_name: assignments
-    # params:
-    #   lastModified: 1672531200.0
+    params:
+      lastModified: 1498867200,1530403200
+  - asset_name: assignments
+    params:
+      lastModified: 1530403200,1561939200
+  - asset_name: assignments
+    params:
+      lastModified: 1561939200,1593561600
+  - asset_name: assignments
+    params:
+      lastModified: 1593561600,1625097600
+  - asset_name: assignments
+    params:
+      lastModified: 1625097600,1656633600
+  - asset_name: assignments
+    params:
+      lastModified: 1656633600,1688169600
   - asset_name: observations
-    # params:
-    #   lastModified: 1672531200.0
+    params:
+      lastModified: 1498867200,1530403200
+  - asset_name: observations
+    params:
+      lastModified: 1530403200,1561939200
+  - asset_name: observations
+    params:
+      lastModified: 1561939200,1593561600
+  - asset_name: observations
+    params:
+      lastModified: 1593561600,1625097600
+  - asset_name: observations
+    params:
+      lastModified: 1625097600,1656633600
+  - asset_name: observations
+    params:
+      lastModified: 1656633600,1688169600
