@@ -11,9 +11,10 @@ from dagster import (
     asset,
 )
 
-from teamster.core.deanslist.schema import ENDPOINT_FIELDS, get_avro_record_schema
+from teamster.core.deanslist.schema import ENDPOINT_FIELDS
 from teamster.core.resources.deanslist import DeansList
 from teamster.core.utils.classes import FiscalYear
+from teamster.core.utils.functions import get_avro_record_schema
 
 
 def build_deanslist_static_partition_asset(
@@ -48,9 +49,7 @@ def build_deanslist_static_partition_asset(
                 value=(
                     data,
                     get_avro_record_schema(
-                        name=asset_name,
-                        fields=ENDPOINT_FIELDS[asset_name],
-                        version=api_version,
+                        name=asset_name, fields=ENDPOINT_FIELDS[asset_name][api_version]
                     ),
                 ),
                 metadata={"records": row_count},
@@ -168,9 +167,7 @@ def build_deanslist_multi_partition_asset(
             value=(
                 all_data,
                 get_avro_record_schema(
-                    name=asset_name,
-                    fields=ENDPOINT_FIELDS[asset_name],
-                    version=api_version,
+                    name=asset_name, fields=ENDPOINT_FIELDS[asset_name][api_version]
                 ),
             ),
             metadata={"records": total_row_count},

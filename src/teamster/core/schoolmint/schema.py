@@ -1,11 +1,4 @@
-def get_avro_record_schema(name: str, fields: list, namespace: str = None):
-    return {
-        "type": "record",
-        "name": f"{name.replace('-', '_').replace('/', '_')}_record",
-        "namespace": namespace,
-        "fields": fields,
-    }
-
+from teamster.core.utils.functions import get_avro_record_schema
 
 REF_FIELDS = [
     {"name": "_id", "type": "string"},

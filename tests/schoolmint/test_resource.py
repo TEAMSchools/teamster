@@ -5,7 +5,8 @@ from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
 from teamster.core.resources.schoolmint import Grow, schoolmint_grow_resource
-from teamster.core.schoolmint.schema import ENDPOINT_FIELDS, get_avro_record_schema
+from teamster.core.schoolmint.schema import ENDPOINT_FIELDS
+from teamster.core.utils.functions import get_avro_record_schema
 
 asset_config = config_from_files(["tests/config/schoolmint.yaml"])
 

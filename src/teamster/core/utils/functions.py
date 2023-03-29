@@ -6,6 +6,15 @@ from teamster.core.utils.classes import FiscalYear
 from .variables import LOCAL_TIME_ZONE
 
 
+def get_avro_record_schema(name: str, fields: list, namespace: str = None):
+    return {
+        "type": "record",
+        "name": f"{name.replace('-', '_').replace('/', '_')}_record",
+        "namespace": namespace,
+        "fields": fields,
+    }
+
+
 def parse_partition_key(partition_key, dimension=None):
     try:
         date_formats = iter(
