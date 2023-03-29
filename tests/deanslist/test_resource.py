@@ -4,10 +4,11 @@ import random
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
-from teamster.core.deanslist.schema import ENDPOINT_FIELDS, get_avro_record_schema
+from teamster.core.deanslist.schema import ENDPOINT_FIELDS
 from teamster.core.resources.deanslist import DeansList, deanslist_resource
+from teamster.core.utils.functions import get_avro_record_schema
 
-TEST_SCHOOL_ID = 126
+TEST_SCHOOL_ID = 125
 
 asset_config = config_from_files(["tests/config/deanslist.yaml"])
 resource_config = config_from_files(
@@ -29,8 +30,7 @@ def test_deanslist_schema():
             parsed_schema = parse_schema(
                 get_avro_record_schema(
                     name=endpoint_name,
-                    fields=ENDPOINT_FIELDS[endpoint_name],
-                    version=endpoint_version,
+                    fields=ENDPOINT_FIELDS[endpoint_name][endpoint_version],
                 )
             )
 
@@ -42,10 +42,11 @@ def test_deanslist_schema():
             )
 
             sample_record = records[random.randint(a=0, b=(row_count - 1))]
-            # sample_record = [
-            #     r for r in records if "" in json.dumps(r)
-            # ]
+            # sample_record = [r for r in records if "PointValue" in json.dumps(r)]
             print(sample_record)
+
+            with open(file="env/deanslist_test.json", mode="w+") as f:
+                json.dump(obj=records, fp=f)
 
             assert validation.validate(
                 datum=sample_record, schema=parsed_schema, strict=True
@@ -54,9 +55,6 @@ def test_deanslist_schema():
             assert validation.validate_many(
                 records=records, schema=parsed_schema, strict=True
             )
-
-            with open(file="env/deanslist_test.json", mode="w+") as f:
-                json.dump(obj=records, fp=f)
 
             with open(file="/dev/null", mode="wb") as fo:
                 writer(

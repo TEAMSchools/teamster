@@ -1,4 +1,13 @@
 endpoints:
+  - asset_name: incidents
+    api_version: v1
+    params:
+      StartDate: "2016-07-01"
+      EndDate: "2023-06-30"
+      UpdatedSince: "2016-07-01"
+      IncludeDeleted: Y
+      cf: Y
+  # static
   - asset_name: lists
     api_version: v1
   - asset_name: terms
@@ -18,55 +27,47 @@ endpoints:
   - asset_name: roster-assignments
     api_version: beta
   # multi
-  - asset_name: behavior
-    api_version: beta
-    params:
-      sdt: "2022-07-01"
-      edt: "2023-06-30"
-      UpdatedSince: "2022-07-01"
-      IncludeDeleted: Y
-  - asset_name: behavior
+  - asset_name: followups
     api_version: v1
     params:
-      StartDate: "2022-07-01"
-      EndDate: "2023-06-30"
-      UpdatedSince: "2022-07-01"
-      IncludeDeleted: Y
-  - asset_name: homework
-    api_version: beta
-    params:
-      sdt: "2022-07-01"
-      edt: "2023-06-30"
-      UpdatedSince: "2022-07-01"
-      IncludeDeleted: Y
-  - asset_name: homework
-    api_version: v1
-    params:
-      StartDate: "2022-07-01"
-      EndDate: "2023-06-30"
-      UpdatedSince: "2022-07-01"
-      IncludeDeleted: Y
+      UpdatedSince: "2016-07-01"
   - asset_name: comm
     api_version: beta
     params:
-      UpdatedSince: "2022-07-01"
+      UpdatedSince: "2016-07-01"
       IncludeDeleted: Y
       IncludePrevEnrollments: Y
   - asset_name: comm-log
     api_version: v1
     params:
-      UpdatedSince: "2022-07-01"
+      UpdatedSince: "2016-07-01"
       IncludeDeleted: Y
       IncludePrevEnrollments: Y
-  - asset_name: incidents
+  - asset_name: homework
+    api_version: beta
+    params:
+      sdt: "2022-07-01"
+      edt: "2023-06-30"
+      UpdatedSince: "2022-07-01"
+      IncludeDeleted: Y
+  - asset_name: homework
     api_version: v1
     params:
       StartDate: "2022-07-01"
       EndDate: "2023-06-30"
       UpdatedSince: "2022-07-01"
       IncludeDeleted: Y
-      cf: Y
-  - asset_name: followups
+  - asset_name: behavior
+    api_version: beta
+    params:
+      sdt: "2022-07-01"
+      edt: "2023-06-30"
+      UpdatedSince: "2022-07-01"
+      IncludeDeleted: Y
+  - asset_name: behavior
     api_version: v1
     params:
+      StartDate: "2022-07-01"
+      EndDate: "2023-06-30"
       UpdatedSince: "2022-07-01"
+      IncludeDeleted: Y
