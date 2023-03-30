@@ -9,9 +9,6 @@ sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y autoremove &&
   sudo apt-get -y clean
 
-# git config
-git config pull.rebase false
-
 # create env folder
 mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
