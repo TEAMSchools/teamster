@@ -24,14 +24,6 @@ echo "${DEANSLIST_API_KEY_MAP}" |
 # update pip
 python -m pip install --no-cache-dir --upgrade pip
 
-# install pdm dependencies
-pdm install --no-self
-
-# commit new files
-git add .
-git commit -m "Initial PDM commit"
-git push
-
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=env/gcloud-service-account.json
 

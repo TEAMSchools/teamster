@@ -10,7 +10,10 @@ sudo apt-get -y --no-install-recommends update &&
 python -m pip install --no-cache-dir --upgrade pip
 
 # update pdm
-sudo pdm self update
+sudo /usr/local/py-utils/bin/pdm self update
+
+# install pdm dependencies
+pdm install --no-lock
 
 # update trunk
 trunk upgrade -y --no-progress
