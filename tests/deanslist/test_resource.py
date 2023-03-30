@@ -8,8 +8,6 @@ from teamster.core.deanslist.schema import ENDPOINT_FIELDS
 from teamster.core.resources.deanslist import DeansList, deanslist_resource
 from teamster.core.utils.functions import get_avro_record_schema
 
-TEST_SCHOOL_ID = 125
-
 asset_config = config_from_files(["tests/config/deanslist.yaml"])
 resource_config = config_from_files(
     ["src/teamster/core/config/resources/deanslist.yaml"]
@@ -37,7 +35,7 @@ def test_deanslist_schema():
             row_count, records = dl.get_endpoint(
                 endpoint=endpoint_name,
                 api_version=endpoint_version,
-                school_id=TEST_SCHOOL_ID,
+                school_id=asset_config["school_id"],
                 **endpoint.get("params", {}),
             )
 
