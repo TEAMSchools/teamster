@@ -17,8 +17,8 @@ lint:
         - .helm/values.yaml
   enabled:
     - isort@5.12.0
-    - ruff@0.0.260
-    - actionlint@1.6.23
+    - ruff@0.0.261
+    - actionlint@1.6.24
     - black@23.3.0
     - git-diff-check
     - gitleaks@8.16.2
