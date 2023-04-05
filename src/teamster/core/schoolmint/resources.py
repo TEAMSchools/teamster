@@ -1,4 +1,5 @@
 import copy
+import gc
 
 from dagster import Field, InitResourceContext, IntSource, StringSource, resource
 from oauthlib.oauth2 import BackendApplicationClient
@@ -76,27 +77,43 @@ class Grow(Session):
             # mock standardized response format
             return {
                 "count": 1,
-                "limit": self.api_response_limit,
-                "skip": 0,
+                "limit": self.default_params["limit"],
+                "skip": self.default_params["skip"],
                 "data": [response.json()],
             }
         else:
-            all_data = []
+            all_data = {
+                "count": 0,
+                "limit": self.default_params["limit"],
+                "skip": self.default_params["skip"],
+                "data": [],
+            }
+
             while True:
                 response = self._request(method="GET", url=url, params=params)
 
                 response_json = response.json()
+                del response
+                gc.collect()
 
-                all_data.extend(response_json["data"])
-                if len(all_data) >= response_json["count"]:
+                count = response_json["count"]
+                data = response_json["data"]
+                del response_json
+                gc.collect()
+
+                all_data["data"].extend(data)
+                del data
+                gc.collect()
+
+                if len(all_data["data"]) >= count:
                     break
                 else:
                     params["skip"] += params["limit"]
 
-            self.log.debug(f"COUNT: {response_json['count']}")
+            all_data["count"] = count
+            self.log.debug(f"COUNT: {count}")
 
-            response_json.update({"data": all_data})
-            return response_json
+            return all_data
 
     def post(self, endpoint, body=None, **kwargs):
         return self._request(

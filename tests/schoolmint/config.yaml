@@ -1,4 +1,6 @@
 endpoints:
+  - asset_name: rubrics
+  - asset_name: schools
   - asset_name: observations
     params:
       lastModified: 1656633600,1688169600
@@ -48,5 +50,3 @@ endpoints:
   - asset_name: measurements
   - asset_name: meetings
   - asset_name: roles
-  - asset_name: rubrics
-  - asset_name: schools

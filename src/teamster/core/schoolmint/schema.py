@@ -451,6 +451,7 @@ FORM_FIELDS = [
     {"name": "includeInEmail", "type": ["null", "boolean"], "default": None},
     {"name": "rubricMeasurement", "type": ["null", "string"], "default": None},
     {"name": "showOnFinalizedPopup", "type": ["null", "boolean"], "default": None},
+    {"name": "mustBeMainPanel", "type": ["null", "boolean"], "default": None},
 ]
 
 LAYOUT_FIELDS = [

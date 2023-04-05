@@ -8,7 +8,7 @@ from teamster.core.schoolmint.resources import Grow, schoolmint_grow_resource
 from teamster.core.schoolmint.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-asset_config = config_from_files(["tests/config/schoolmint.yaml"])
+ASSET_CONFIG = config_from_files(["tests/schoolmint/config.yaml"])
 
 
 def test_schoolmint_grow_schema():
@@ -24,7 +24,7 @@ def test_schoolmint_grow_schema():
     ) as resources:
         grow: Grow = resources.grow
 
-        for endpoint in asset_config["endpoints"]:
+        for endpoint in ASSET_CONFIG["endpoints"]:
             endpoint_name = endpoint["asset_name"]
 
             parsed_schema = parse_schema(
@@ -38,9 +38,7 @@ def test_schoolmint_grow_schema():
             records = data["data"]
 
             sample_record = records[random.randint(a=0, b=(data["count"] - 1))]
-            # sample_record = [
-            #     r for r in records if "" in json.dumps(r)
-            # ]
+            # sample_record = [r for r in records if "mustBeMainPanel" in json.dumps(r)]
             print(sample_record)
 
             assert validation.validate(
