@@ -88,7 +88,6 @@ HOMEWORK_FIELDS = {
         {"name": "DLSchoolID", "type": "string"},
         {"name": "DLStudentID", "type": "string"},
         {"name": "DLUserID", "type": "string"},
-        {"name": "Notes", "type": "string"},
         {"name": "PointValue", "type": "string"},
         {"name": "Roster", "type": "string"},
         {"name": "RosterID", "type": "string"},
@@ -106,6 +105,7 @@ HOMEWORK_FIELDS = {
         {"name": "Weight", "type": "string"},
         {"name": "DL_LASTUPDATE", "type": "string", "logicalType": "timestamp-micros"},
         {"name": "Assignment", "type": ["null", "string"]},
+        {"name": "Notes", "type": ["null", "string"]},
         {"name": "is_deleted", "type": ["null", "boolean"], "default": None},
     ],
     "v1": [
@@ -118,7 +118,6 @@ HOMEWORK_FIELDS = {
         {"name": "DLSchoolID", "type": "string"},
         {"name": "DLStudentID", "type": "string"},
         {"name": "DLUserID", "type": "string"},
-        {"name": "Notes", "type": "string"},
         {"name": "PointValue", "type": "string"},
         {"name": "Roster", "type": "string"},
         {"name": "RosterID", "type": "string"},
@@ -136,6 +135,7 @@ HOMEWORK_FIELDS = {
         {"name": "Weight", "type": "string"},
         {"name": "DL_LASTUPDATE", "type": "string", "logicalType": "timestamp-micros"},
         {"name": "Assignment", "type": ["null", "string"]},
+        {"name": "Notes", "type": ["null", "string"]},
         {"name": "is_deleted", "type": ["null", "boolean"], "default": None},
     ],
 }
