@@ -4,8 +4,8 @@ import random
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
+from teamster.core.deanslist.resources import DeansList, deanslist_resource
 from teamster.core.deanslist.schema import ENDPOINT_FIELDS
-from teamster.core.resources.deanslist import DeansList, deanslist_resource
 from teamster.core.utils.functions import get_avro_record_schema
 
 asset_config = config_from_files(["tests/config/deanslist.yaml"])

@@ -2,9 +2,9 @@ from dagster import build_op_context, config_from_files, with_resources
 from dagster_gcp.gcs import gcs_resource
 from dagster_ssh import ssh_resource
 
+from teamster.core.google.resources.io import gcs_filepath_io_manager
 from teamster.core.powerschool.assets import build_powerschool_table_asset
-from teamster.core.resources.google.io import gcs_filepath_io_manager
-from teamster.core.resources.sqlalchemy import oracle
+from teamster.core.sqlalchemy.resources import oracle
 
 CODE_LOCATION = "test"
 PARTITIONS_START_DATE = "2002-07-01T00:00:00.000000"

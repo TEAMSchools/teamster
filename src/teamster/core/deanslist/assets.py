@@ -11,8 +11,8 @@ from dagster import (
     asset,
 )
 
+from teamster.core.deanslist.resources import DeansList
 from teamster.core.deanslist.schema import ENDPOINT_FIELDS
-from teamster.core.resources.deanslist import DeansList
 from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema
 

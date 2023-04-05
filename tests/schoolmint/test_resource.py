@@ -4,7 +4,7 @@ import random
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
-from teamster.core.resources.schoolmint import Grow, schoolmint_grow_resource
+from teamster.core.schoolmint.resources import Grow, schoolmint_grow_resource
 from teamster.core.schoolmint.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 

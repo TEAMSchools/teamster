@@ -3,9 +3,9 @@ from dagster_gcp.gcs import gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
-from teamster.core.resources.google.io import gcs_io_manager
-from teamster.core.resources.google.sheets import google_sheets
-from teamster.core.resources.sqlalchemy import mssql
+from teamster.core.google.resources.io import gcs_io_manager
+from teamster.core.google.resources.sheets import google_sheets
+from teamster.core.sqlalchemy.resources import mssql
 
 from . import CODE_LOCATION, datagun
 
