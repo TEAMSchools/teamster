@@ -4,9 +4,9 @@ from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
-from teamster.core.resources.deanslist import deanslist_resource
-from teamster.core.resources.google.io import gcs_io_manager
-from teamster.core.resources.sqlalchemy import mssql, oracle
+from teamster.core.deanslist.resources import deanslist_resource
+from teamster.core.google.resources.io import gcs_io_manager
+from teamster.core.sqlalchemy.resources import mssql, oracle
 
 from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
 
