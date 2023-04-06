@@ -80,7 +80,7 @@ def build_multi_partition_asset(
             )
         )
         for partition_key, count in asset_materialization_counts.items():
-            if archived_partition == partition_key.split("|")[-1]:
+            if archived_partition == partition_key.split("|")[0]:
                 static_materialization_count += count
 
         if (
