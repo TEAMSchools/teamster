@@ -28,4 +28,3 @@ endpoints:
       cf: Y
   - asset_name: followups
     api_version: v1
-    params:
