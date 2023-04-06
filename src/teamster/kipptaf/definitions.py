@@ -1,5 +1,6 @@
 from dagster import Definitions, config_from_files, load_assets_from_modules
-from dagster_gcp.gcs import gcs_resource
+from dagster_dbt import dbt_cli_resource
+from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
@@ -8,7 +9,7 @@ from teamster.core.google.resources.sheets import google_sheets
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.sqlalchemy.resources import mssql
 
-from . import CODE_LOCATION, datagun, schoolmint
+from . import CODE_LOCATION, datagun, dbt, schoolmint
 
 core_resource_config_dir = "src/teamster/core/config/resources"
 local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -18,10 +19,21 @@ defs = Definitions(
     assets=[
         *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
         *load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint"),
+        *load_assets_from_modules(modules=[dbt.assets]),
     ],
     jobs=[*datagun.jobs.__all__, *schoolmint.jobs.__all__],
     schedules=[*datagun.schedules.__all__, *schoolmint.schedules.__all__],
+    sensors=[*dbt.sensors.__all__],
     resources={
+        "dbt": dbt_cli_resource.configured(
+            {
+                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
+            }
+        ),
+        "bq": bigquery_resource.configured(
+            config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
+        ),
         "gcs": gcs_resource.configured(
             config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
         ),
