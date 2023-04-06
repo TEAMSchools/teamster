@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# set gh secrets from .env file & clear file
-# gh secret set --app codespaces --env-file env/.env
-
-# ignore
+# ignore envs
 file_envvars=(
   "DEANSLIST_API_KEY_MAP"
   "EGENCIA_RSA_PRIVATE_KEY"

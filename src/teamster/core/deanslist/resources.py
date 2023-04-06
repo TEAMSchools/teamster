@@ -1,3 +1,5 @@
+import gc
+
 import yaml
 from dagster import Field, InitResourceContext, String, StringSource, resource
 from requests import Session
@@ -30,7 +32,11 @@ class DeansList(Session):
         else:
             return f"{self.base_url}/{api_version}/{endpoint}"
 
-    def _parse_response_json(self, response_json):
+    def _parse_response(self, response):
+        response_json = response.json()
+        del response
+        gc.collect()
+
         row_count = response_json.get("rowcount", 0)
         deleted_row_count = response_json.get("deleted_rowcount", 0)
 
@@ -41,17 +47,12 @@ class DeansList(Session):
         for d in deleted_data:
             d["is_deleted"] = True
 
+        del response_json
+        gc.collect()
+
         all_data = data + deleted_data
 
-        return total_row_count, all_data
-
-    def _get_url_json(self, url, params):
-        response = self.get(url=url, params=params)
-        response.raise_for_status()
-
-        total_row_count, all_data = self._parse_response_json(response.json())
-
-        return total_row_count, all_data
+        return {"row_count": total_row_count, "data": all_data}
 
     def get_endpoint(self, api_version, endpoint, school_id, *args, **kwargs):
         url = self._get_url(api_version=api_version, endpoint=endpoint, *args)
@@ -60,9 +61,10 @@ class DeansList(Session):
 
         kwargs["apikey"] = self.api_key_map[school_id]
 
-        total_row_count, all_data = self._get_url_json(url=url, params=kwargs)
+        response = self.get(url=url, params=kwargs)
+        response.raise_for_status()
 
-        return total_row_count, all_data
+        return self._parse_response(response)
 
 
 @resource(
