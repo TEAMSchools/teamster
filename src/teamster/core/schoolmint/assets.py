@@ -13,7 +13,7 @@ from teamster.core.schoolmint.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_schoolmint_grow_static_partition_asset(
+def build_static_partition_asset(
     asset_name, code_location, partitions_def: StaticPartitionsDefinition, op_tags={}
 ) -> AssetsDefinition:
     @asset(
@@ -48,7 +48,7 @@ def build_schoolmint_grow_static_partition_asset(
     return _asset
 
 
-def build_schoolmint_grow_multi_partition_asset(
+def build_multi_partition_asset(
     asset_name, code_location, partitions_def: MultiPartitionsDefinition, op_tags={}
 ) -> AssetsDefinition:
     @asset(

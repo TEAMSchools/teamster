@@ -6,8 +6,8 @@ from dagster import (
 )
 
 from teamster.core.schoolmint.assets import (
-    build_schoolmint_grow_multi_partition_asset,
-    build_schoolmint_grow_static_partition_asset,
+    build_multi_partition_asset,
+    build_static_partition_asset,
 )
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -27,7 +27,7 @@ multi_partitions_def = MultiPartitionsDefinition(
 )
 
 static_partition_assets = [
-    build_schoolmint_grow_static_partition_asset(
+    build_static_partition_asset(
         code_location=CODE_LOCATION, partitions_def=static_partitions_def, **endpoint
     )
     for endpoint in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
@@ -36,7 +36,7 @@ static_partition_assets = [
 ]
 
 multi_partition_assets = [
-    build_schoolmint_grow_multi_partition_asset(
+    build_multi_partition_asset(
         code_location=CODE_LOCATION, partitions_def=multi_partitions_def, **endpoint
     )
     for endpoint in config_from_files([f"{config_dir}/multi-partition-assets.yaml"])[

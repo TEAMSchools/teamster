@@ -1,7 +1,7 @@
-from . import assets
+from . import assets, jobs, schedules
 
 __all__ = [
     assets,
-    # jobs,
-    # schedules,
+    jobs,
+    schedules,
 ]
