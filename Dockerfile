@@ -58,6 +58,12 @@ RUN dbt clean --project-dir teamster-dbt/kippnewark \
         --project-dir teamster-dbt/kippnewark \
         --profiles-dir teamster-dbt/kippnewark
 
+RUN dbt clean --project-dir teamster-dbt/kipptaf \
+    && dbt deps --project-dir teamster-dbt/kipptaf \
+    && dbt list \
+        --project-dir teamster-dbt/kipptaf \
+        --profiles-dir teamster-dbt/kipptaf
+
 # install project
 COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
