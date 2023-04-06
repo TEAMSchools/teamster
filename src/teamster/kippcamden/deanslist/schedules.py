@@ -1,4 +1,4 @@
-from dagster import build_schedule_from_partitioned_job, schedule
+from dagster import RunRequest, build_schedule_from_partitioned_job, schedule
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -13,18 +13,12 @@ from . import assets, jobs
 )
 def deanslist_static_partition_assets_job_schedule():
     for school_id in assets.school_ids:
-        run_request = (
-            jobs.deanslist_static_partition_assets_job.run_request_for_partition(
-                partition_key=school_id,
-                run_key=(
-                    CODE_LOCATION
-                    + "_deanslist_static_partition_assets_job_"
-                    + school_id
-                ),
-            )
+        yield RunRequest(
+            run_key=(
+                CODE_LOCATION + "_deanslist_static_partition_assets_job_" + school_id
+            ),
+            partition_key=school_id,
         )
-
-        yield run_request
 
 
 deanslist_multi_partition_assets_job_schedule = build_schedule_from_partitioned_job(

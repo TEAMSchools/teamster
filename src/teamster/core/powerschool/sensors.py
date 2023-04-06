@@ -2,7 +2,13 @@ import json
 import os
 
 import pendulum
-from dagster import AssetsDefinition, SensorEvaluationContext, define_asset_job, sensor
+from dagster import (
+    AssetsDefinition,
+    RunRequest,
+    SensorEvaluationContext,
+    define_asset_job,
+    sensor,
+)
 from sqlalchemy import text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
@@ -127,12 +133,12 @@ def build_dynamic_partition_sensor(
                         j for j in asset_jobs if j.name == f"{asset_key_string}_job"
                     ][0]
 
-                    yield asset_job.run_request_for_partition(
+                    yield RunRequest(
                         run_key=f"{asset_job.name}_{window_start.int_timestamp}",
-                        partition_key=partition_key,
                         run_config=run_config,
-                        instance=context.instance,
+                        job_name=asset_job.name,
                         asset_selection=[asset.key],
+                        partition_key=partition_key,
                     )
 
                     cursor[asset_key_string] = window_end.timestamp()
