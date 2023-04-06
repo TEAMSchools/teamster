@@ -28,4 +28,4 @@ models:
       +schema: schoolmint
 
 vars:
-  schoolmint_schema: kipptaf_schoolmint
+  schoolmint_grow_schema: kipptaf_schoolmint_grow
