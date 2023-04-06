@@ -46,6 +46,9 @@ locations:
           - read180-sftp-host
           - read180-sftp-password
           - read180-sftp-username
+          - schoolmint-grow-client-id
+          - schoolmint-grow-client-secret
+          - schoolmint-grow-district-id
         volumes:
           - name: secret-volume
             secret:
