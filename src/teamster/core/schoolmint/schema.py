@@ -372,12 +372,16 @@ SETTING_FIELDS = [
     {"name": "locked", "type": ["null", "boolean"], "default": None},
     {"name": "meetingQuickCreate", "type": ["null", "boolean"], "default": None},
     {"name": "nameAndSignatureDisplay", "type": ["null", "boolean"], "default": None},
-    {"name": "observationTypesHidden", "type": ["null", "boolean"], "default": None},
     {"name": "obsShowEndDate", "type": ["null", "boolean"], "default": None},
     {"name": "meetingTypesExcludedFromScheduling", "type": ["null"], "default": None},
     {
         "name": "privateRows",
         "type": ["null", {"type": "array", "items": "string"}],
+        "default": None,
+    },
+    {
+        "name": "observationTypesHidden",
+        "type": ["null", {"type": "array", "items": "null"}],
         "default": None,
     },
     {"name": "requireObservationType", "type": ["null", "boolean"], "default": None},
