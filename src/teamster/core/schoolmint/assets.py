@@ -62,7 +62,7 @@ def build_multi_partition_asset(
     )
     def _asset(context: OpExecutionContext):
         asset_key = context.asset_key_for_output()
-        archived_partition = context.partition_key.keys_by_dimension["archived"] == "t"
+        archived_partition = context.partition_key.keys_by_dimension["archived"]
         last_modified_partition = (
             pendulum.from_format(
                 string=context.partition_key.keys_by_dimension["last_modified"],
@@ -79,6 +79,7 @@ def build_multi_partition_asset(
                 asset_key, {}
             )
         )
+
         for partition_key, count in asset_materialization_counts.items():
             if archived_partition == partition_key.split("|")[0]:
                 static_materialization_count += count
@@ -93,7 +94,7 @@ def build_multi_partition_asset(
 
         endpoint_content = grow.get(
             endpoint=asset_name,
-            archived=archived_partition,
+            archived=(archived_partition == "t"),
             lastModified=last_modified_partition,
         )
 
