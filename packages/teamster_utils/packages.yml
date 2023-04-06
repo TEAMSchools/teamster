@@ -1,5 +1,5 @@
 packages:
   - package: dbt-labs/dbt_external_tables
-    version: 0.8.2
+    version: 0.8.3
   - package: dbt-labs/dbt_utils
     version: 1.0.0
