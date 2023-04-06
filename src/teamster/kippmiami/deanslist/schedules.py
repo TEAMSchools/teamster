@@ -9,23 +9,23 @@ from . import assets, jobs
 @schedule(
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE.name,
-    job=jobs.deanslist_static_partition_assets_job,
+    job=jobs.static_partition_asset_job,
 )
-def deanslist_static_partition_assets_job_schedule():
+def static_partition_asset_job_schedule():
     for school_id in assets.school_ids:
         yield RunRequest(
             run_key=(
-                CODE_LOCATION + "_deanslist_static_partition_assets_job_" + school_id
+                CODE_LOCATION + "_deanslist_static_partition_asset_job_" + school_id
             ),
             partition_key=school_id,
         )
 
 
-deanslist_multi_partition_assets_job_schedule = build_schedule_from_partitioned_job(
-    job=jobs.deanslist_multi_partition_assets_job, hour_of_day=0, minute_of_hour=0
+multi_partition_asset_job_schedule = build_schedule_from_partitioned_job(
+    job=jobs.multi_partition_asset_job, hour_of_day=0, minute_of_hour=0
 )
 
 __all__ = [
-    deanslist_static_partition_assets_job_schedule,
-    deanslist_multi_partition_assets_job_schedule,
+    static_partition_asset_job_schedule,
+    multi_partition_asset_job_schedule,
 ]

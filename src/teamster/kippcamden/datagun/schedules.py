@@ -5,13 +5,13 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 from . import jobs
 
 powerschool_extract_assets_schedule = ScheduleDefinition(
-    job=jobs.powerschool_extract_assets_job,
+    job=jobs.powerschool_extract_asset_job,
     cron_schedule="15 2 * * *",
     execution_timezone=LOCAL_TIME_ZONE.name,
 )
 
 cpn_extract_assets_schedule = ScheduleDefinition(
-    job=jobs.cpn_extract_assets_job,
+    job=jobs.cpn_extract_asset_job,
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE.name,
 )
