@@ -1,0 +1,126 @@
+version: 2
+
+sources:
+  - name: schoolmint
+    schema: "{{ var('schoolmint_schema', 'schoolmint') }}"
+    database: "{% if target.type != 'spark' %}{{ var('schoolmint_database', target.database) }}{% endif %}"
+    tables:
+      - name: src_schoolmint__rubrics
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/rubrics/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/rubrics/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__schools
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/schools/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/schools/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__users
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/users/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/users/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__videos
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/videos/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/videos/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__generic_tags_assignmentpresets
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_assignmentpresets/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_assignmentpresets/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__generic_tags_courses
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_courses/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_courses/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__generic_tags_grades
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_grades/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_grades/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__generic_tags_measurementgroups
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_measurementgroups/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_measurementgroups/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__generic_tags_observationtypes
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_observationtypes/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_observationtypes/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__generic_tags_tags
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_tags/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_tags/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__generic_tags_meetingtypes
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_meetingtypes/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/generic_tags_meetingtypes/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__informals
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/informals/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/informals/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__measurements
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/measurements/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/measurements/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__meetings
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/meetings/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/meetings/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__roles
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/roles/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/roles/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__observations
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/observations/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/observations/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint__assignments
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/assignments/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/schoolmint/assignments/"
+            format: AVRO
+            enable_logical_types: true
