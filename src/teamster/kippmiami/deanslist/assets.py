@@ -7,8 +7,8 @@ from dagster import (
 )
 
 from teamster.core.deanslist.assets import (
-    build_deanslist_multi_partition_asset,
-    build_deanslist_static_partition_asset,
+    build_multi_partition_asset,
+    build_static_partition_asset,
 )
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -30,7 +30,7 @@ multi_partitions_def = MultiPartitionsDefinition(
 )
 
 static_partition_assets = [
-    build_deanslist_static_partition_asset(
+    build_static_partition_asset(
         code_location=CODE_LOCATION, partitions_def=static_partitions_def, **endpoint
     )
     for endpoint in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
@@ -39,7 +39,7 @@ static_partition_assets = [
 ]
 
 multi_partition_assets = [
-    build_deanslist_multi_partition_asset(
+    build_multi_partition_asset(
         code_location=CODE_LOCATION,
         partitions_def=multi_partitions_def,
         inception_date=pendulum.date(2018, 7, 1),

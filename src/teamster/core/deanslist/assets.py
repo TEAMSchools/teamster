@@ -17,7 +17,7 @@ from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_deanslist_static_partition_asset(
+def build_static_partition_asset(
     asset_name,
     code_location,
     api_version,
@@ -60,7 +60,7 @@ def build_deanslist_static_partition_asset(
     return _asset
 
 
-def build_deanslist_multi_partition_asset(
+def build_multi_partition_asset(
     asset_name,
     code_location,
     api_version,
