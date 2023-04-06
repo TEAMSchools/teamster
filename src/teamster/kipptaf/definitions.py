@@ -70,5 +70,8 @@ defs = Definitions(
         "sftp_read180": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_read180.yaml"])
         ),
+        "gcs_avro_io": gcs_io_manager.configured(
+            config_from_files([f"{local_resource_config_dir}/io_avro.yaml"])
+        ),
     },
 )
