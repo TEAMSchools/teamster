@@ -38,10 +38,7 @@ def test_schoolmint_grow_schema():
             records = data["data"]
 
             sample_record = records[random.randint(a=0, b=(data["count"] - 1))]
-            # sample_record = [
-            #     r for r in records if "observationTypesHidden" in json.dumps(r)
-            # ]
-            print(sample_record)
+            # sample_record = [r for r in records if "" in json.dumps(r)]
 
             assert validation.validate(
                 datum=sample_record, schema=parsed_schema, strict=True
