@@ -19,7 +19,7 @@ def build_static_partition_asset(
 ) -> AssetsDefinition:
     @asset(
         name=asset_name.replace("-", "_").replace("/", "_"),
-        key_prefix=[code_location, "schoolmint", "grow"],
+        key_prefix=[code_location, "schoolmint_grow"],
         partitions_def=partitions_def,
         op_tags=op_tags,
         required_resource_keys={"schoolmint_grow"},
@@ -54,7 +54,7 @@ def build_multi_partition_asset(
 ) -> AssetsDefinition:
     @asset(
         name=asset_name.replace("-", "_").replace("/", "_"),
-        key_prefix=[code_location, "schoolmint", "grow"],
+        key_prefix=[code_location, "schoolmint_grow"],
         partitions_def=partitions_def,
         op_tags=op_tags,
         required_resource_keys={"schoolmint_grow"},
