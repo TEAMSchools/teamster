@@ -11,6 +11,7 @@ from dagster import (
 from teamster.core.schoolmint.resources import Grow
 from teamster.core.schoolmint.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def build_static_partition_asset(
@@ -67,6 +68,7 @@ def build_multi_partition_asset(
             pendulum.from_format(
                 string=context.partition_key.keys_by_dimension["last_modified"],
                 fmt="YYYY-MM-DD",
+                tz=LOCAL_TIME_ZONE,
             )
             .subtract(days=1)
             .timestamp()
