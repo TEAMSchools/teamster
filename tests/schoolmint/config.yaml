@@ -1,5 +1,7 @@
 endpoints:
   - asset_name: rubrics
+    params:
+      archived: True
   # - asset_name: schools
   # - asset_name: observations
   #   params:
