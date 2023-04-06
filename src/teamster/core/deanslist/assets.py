@@ -37,17 +37,19 @@ def build_deanslist_static_partition_asset(
     def _asset(context: OpExecutionContext):
         dl: DeansList = context.resources.deanslist
 
-        row_count, data = dl.get_endpoint(
+        endpoint_content = dl.get_endpoint(
             api_version=api_version,
             endpoint=asset_name,
             school_id=int(context.partition_key),
             **params,
         )
 
+        row_count = endpoint_content["row_count"]
+
         if row_count > 0:
             yield Output(
                 value=(
-                    data,
+                    endpoint_content["data"],
                     get_avro_record_schema(
                         name=asset_name, fields=ENDPOINT_FIELDS[asset_name][api_version]
                     ),
@@ -142,19 +144,21 @@ def build_deanslist_multi_partition_asset(
                         composed_params[k] = v.format(
                             start_date=month.start_of("month").to_date_string(),
                             end_date=month.end_of("month").to_date_string(),
-                            modified_date=modified_date.to_date_string(),
                         )
 
-                row_count, data = dl.get_endpoint(
+                endpoint_content = dl.get_endpoint(
                     api_version=api_version,
                     endpoint=asset_name,
                     school_id=int(school_partition),
+                    UpdatedSince=modified_date.to_date_string(),
                     **composed_params,
                 )
 
+                row_count = endpoint_content["row_count"]
+
                 if row_count > 0:
                     total_row_count += row_count
-                    all_data.extend(data)
+                    all_data.extend(endpoint_content["data"])
 
                     del data
                     gc.collect()

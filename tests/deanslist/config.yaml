@@ -70,5 +70,4 @@ endpoints:
     params:
       StartDate: "2022-07-01"
       EndDate: "2023-06-30"
-      UpdatedSince: "2023-03-29"
       IncludeDeleted: Y

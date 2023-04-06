@@ -15,7 +15,7 @@ from .. import CODE_LOCATION
 
 config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/schoolmint"
 
-static_partitions_def = StaticPartitionsDefinition(["true", "false"])
+static_partitions_def = StaticPartitionsDefinition(["t", "f"])
 
 multi_partitions_def = MultiPartitionsDefinition(
     partitions_defs={

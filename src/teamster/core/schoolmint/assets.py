@@ -29,7 +29,7 @@ def build_schoolmint_grow_static_partition_asset(
         grow: Grow = context.resources.schoolmint_grow
 
         response = grow.get(
-            endpoint=asset_name, archived=(context.partition_key == "true")
+            endpoint=asset_name, archived=(context.partition_key == "t")
         )
 
         count = response["count"]
@@ -62,9 +62,7 @@ def build_schoolmint_grow_multi_partition_asset(
     )
     def _asset(context: OpExecutionContext):
         asset_key = context.asset_key_for_output()
-        archived_partition = (
-            context.partition_key.keys_by_dimension["archived"] == "true"
-        )
+        archived_partition = context.partition_key.keys_by_dimension["archived"] == "t"
         last_modified_partition = (
             pendulum.from_format(
                 string=context.partition_key.keys_by_dimension["last_modified"],
@@ -93,18 +91,18 @@ def build_schoolmint_grow_multi_partition_asset(
 
         grow: Grow = context.resources.schoolmint_grow
 
-        response = grow.get(
+        endpoint_content = grow.get(
             endpoint=asset_name,
             archived=archived_partition,
             lastModified=last_modified_partition,
         )
 
-        count = response["count"]
+        count = endpoint_content["count"]
 
         if count > 0:
             yield Output(
                 value=(
-                    response["data"],
+                    endpoint_content["data"],
                     get_avro_record_schema(
                         name=asset_name, fields=ENDPOINT_FIELDS[asset_name]
                     ),
