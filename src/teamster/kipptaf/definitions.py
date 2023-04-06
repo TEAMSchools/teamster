@@ -15,12 +15,12 @@ local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=(
-        load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
-        + load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint")
-    ),
-    jobs=datagun.jobs.__all__,
-    schedules=datagun.schedules.__all__,
+    assets=[
+        *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
+        *load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint"),
+    ],
+    jobs=[*datagun.jobs.__all__, *schoolmint.jobs.__all__],
+    schedules=[*datagun.schedules.__all__],
     resources={
         "gcs": gcs_resource.configured(
             config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
