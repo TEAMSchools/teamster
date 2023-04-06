@@ -11,7 +11,7 @@ from . import assets, jobs
     execution_timezone=LOCAL_TIME_ZONE.name,
     job=jobs.static_partition_asset_job,
 )
-def static_partition_asset_job_schedule():
+def deanslist_static_partition_asset_job_schedule():
     for school_id in assets.school_ids:
         yield RunRequest(
             run_key=(
@@ -26,6 +26,6 @@ multi_partition_asset_job_schedule = build_schedule_from_partitioned_job(
 )
 
 __all__ = [
-    static_partition_asset_job_schedule,
+    deanslist_static_partition_asset_job_schedule,
     multi_partition_asset_job_schedule,
 ]

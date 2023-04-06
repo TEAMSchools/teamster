@@ -11,7 +11,7 @@ from . import jobs
     execution_timezone=LOCAL_TIME_ZONE.name,
     job=jobs.static_partition_asset_job,
 )
-def static_partition_asset_job_schedule():
+def schoolmint_grow_static_partition_asset_job_schedule():
     for archived in ["t", "f"]:
         yield RunRequest(
             run_key=(
@@ -28,6 +28,6 @@ multi_partition_asset_job_schedule = build_schedule_from_partitioned_job(
 )
 
 __all__ = [
-    static_partition_asset_job_schedule,
+    schoolmint_grow_static_partition_asset_job_schedule,
     multi_partition_asset_job_schedule,
 ]
