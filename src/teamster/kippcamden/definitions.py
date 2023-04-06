@@ -9,7 +9,7 @@ from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.sqlalchemy.resources import mssql, oracle
 
-from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool, schoolmint
+from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
 
 core_resource_config_dir = "src/teamster/core/config/resources"
 local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -20,7 +20,6 @@ defs = Definitions(
         load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
         + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
         + load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist")
-        + load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint")
         + load_assets_from_modules(modules=[dbt.assets])
     ),
     jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,

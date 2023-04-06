@@ -5,16 +5,20 @@ from dagster_ssh import ssh_resource
 
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import google_sheets
+from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.sqlalchemy.resources import mssql
 
-from . import CODE_LOCATION, datagun
+from . import CODE_LOCATION, datagun, schoolmint
 
 core_resource_config_dir = "src/teamster/core/config/resources"
 local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
+    assets=(
+        load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
+        + load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint")
+    ),
     jobs=datagun.jobs.__all__,
     schedules=datagun.schedules.__all__,
     resources={
@@ -32,6 +36,9 @@ defs = Definitions(
         ),
         "gsheets": google_sheets.configured(
             config_from_files([f"{core_resource_config_dir}/gsheets.yaml"])
+        ),
+        "schoolmint_grow": schoolmint_grow_resource.configured(
+            config_from_files([f"{core_resource_config_dir}/schoolmint.yaml"])
         ),
         "sftp_blissbook": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_blissbook.yaml"])
