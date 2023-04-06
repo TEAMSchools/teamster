@@ -20,7 +20,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint"),
     ],
     jobs=[*datagun.jobs.__all__, *schoolmint.jobs.__all__],
-    schedules=[*datagun.schedules.__all__],
+    schedules=[*datagun.schedules.__all__, *schoolmint.schedules.__all__],
     resources={
         "gcs": gcs_resource.configured(
             config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
