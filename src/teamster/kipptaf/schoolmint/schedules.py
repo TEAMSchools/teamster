@@ -1,4 +1,4 @@
-from dagster import RunRequest, build_schedule_from_partitioned_job, schedule
+from dagster import build_schedule_from_partitioned_job, schedule
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -13,13 +13,13 @@ from . import jobs
 )
 def schoolmint_grow_static_partition_asset_job_schedule():
     for archived in ["t", "f"]:
-        yield RunRequest(
+        yield jobs.static_partition_asset_job.run_request_for_partition(
+            partition_key=archived,
             run_key=(
                 CODE_LOCATION
                 + "_schoolmint_grow_static_partition_asset_job_"
                 + archived
             ),
-            partition_key=archived,
         )
 
 
