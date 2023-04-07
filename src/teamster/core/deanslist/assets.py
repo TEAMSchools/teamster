@@ -155,11 +155,13 @@ def build_multi_partition_asset(
                 )
 
                 row_count = endpoint_content["row_count"]
+                data = endpoint_content["data"]
+                del endpoint_content
+                gc.collect()
 
                 if row_count > 0:
                     total_row_count += row_count
-                    all_data.extend(endpoint_content["data"])
-
+                    all_data.extend(data)
                     del data
                     gc.collect()
 
