@@ -10,26 +10,20 @@ CORE_FIELDS = [
     {"name": "district", "type": ["null", "string"], "default": None},
     {
         "name": "created",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
         "name": "lastModified",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
         "name": "archivedAt",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
 ]
@@ -278,10 +272,8 @@ MEETING_FIELDS = [
     {"name": "title", "type": ["null", "string"], "default": None},
     {
         "name": "date",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
@@ -728,13 +720,8 @@ VIDEO_FIELDS = [
                         {"name": "_id", "type": ["null", "string"], "default": None},
                         {
                             "name": "sharedAt",
-                            "type": [
-                                "null",
-                                {
-                                    "type": ["null", "string"],
-                                    "logicalType": "timestamp-millis",
-                                },
-                            ],
+                            "type": ["null", "string"],
+                            "logicalType": "timestamp-millis",
                             "default": None,
                         },
                     ],
@@ -770,18 +757,14 @@ PLU_CONFIG_FIELDS = [
     {"name": "required", "type": ["null", "int"], "default": None},
     {
         "name": "startDate",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
         "name": "endDate",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
 ]
@@ -819,10 +802,8 @@ DISTRICT_DATA_FIELDS = [
     {"name": "videoLicense", "type": ["null", "boolean"], "default": None},
     {
         "name": "archivedAt",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
@@ -956,10 +937,8 @@ USER_FIELDS = [
     {"name": "coach", "type": ["null", "string"]},
     {
         "name": "lastActivity",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
     },
     {
         "name": "additionalEmails",
@@ -1138,13 +1117,8 @@ ASSIGNMENT_FIELDS = [
                     {"name": "justification", "type": ["null", "string"]},
                     {
                         "name": "date",
-                        "type": [
-                            "null",
-                            {
-                                "type": ["null", "string"],
-                                "logicalType": "timestamp-millis",
-                            },
-                        ],
+                        "type": ["null", "string"],
+                        "logicalType": "timestamp-millis",
                     },
                     {"name": "_id", "type": ["null", "string"], "default": None},
                 ],
@@ -1206,7 +1180,8 @@ OBSERVATION_SCORE_FIELDS = [
     {"name": "valueText", "type": ["null", "string"]},
     {
         "name": "lastModified",
-        "type": {"type": ["null", "string"], "logicalType": "timestamp-millis"},
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
     },
     {
         "name": "checkboxes",
@@ -1276,10 +1251,7 @@ MAGIC_NOTE_FIELDS = [
     {"name": "_id", "type": ["null", "string"]},
     {"name": "text", "type": ["null", "string"]},
     {"name": "shared", "type": ["null", "boolean"]},
-    {
-        "name": "created",
-        "type": {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-    },
+    {"name": "created", "type": ["null", "string"], "logicalType": "timestamp-millis"},
     {"name": "column", "type": ["null"], "default": None},
 ]
 
@@ -1298,14 +1270,13 @@ OBSERVATION_FIELDS = [
     {"name": "locked", "type": ["null", "boolean"]},
     {
         "name": "observedAt",
-        "type": {"type": ["null", "string"], "logicalType": "timestamp-millis"},
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
     },
     {
         "name": "firstPublished",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
     },
     {
         "name": "meetings",
@@ -1363,34 +1334,26 @@ OBSERVATION_FIELDS = [
     {"name": "signed", "type": ["null", "boolean"], "default": None},
     {
         "name": "observedUntil",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
         "name": "viewedByTeacher",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
         "name": "signedAt",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
         "name": "lastPublished",
-        "type": [
-            "null",
-            {"type": ["null", "string"], "logicalType": "timestamp-millis"},
-        ],
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
         "default": None,
     },
     {
