@@ -196,17 +196,13 @@ FOLLOWUP_FIELDS = {
         },
         {
             "name": "CloseTS",
-            "type": [
-                "null",
-                {"type": ["null", "string"], "logicalType": "timestamp-micros"},
-            ],
+            "type": ["null", "string"],
+            "logicalType": "timestamp-micros",
         },
         {
             "name": "OpenTS",
-            "type": [
-                "null",
-                {"type": ["null", "string"], "logicalType": "timestamp-micros"},
-            ],
+            "type": ["null", "string"],
+            "logicalType": "timestamp-micros",
         },
     ]
 }
@@ -378,14 +374,8 @@ PENALTY_FIELDS = {
         {"name": "SchoolID", "type": ["null", "string"]},
         {"name": "StudentID", "type": ["null", "string"]},
         {"name": "NumDays", "type": ["null", "float"]},
-        {
-            "name": "EndDate",
-            "type": ["null", {"type": ["null", "string"], "logicalType": "date"}],
-        },
-        {
-            "name": "StartDate",
-            "type": ["null", {"type": ["null", "string"], "logicalType": "date"}],
-        },
+        {"name": "EndDate", "type": ["null", "string"], "logicalType": "date"},
+        {"name": "StartDate", "type": ["null", "string"], "logicalType": "date"},
     ]
 }
 
@@ -640,10 +630,8 @@ ROSTER_FIELDS = {
         {"name": "SubjectName", "type": ["null", "string"]},
         {
             "name": "LastSynced",
-            "type": [
-                "null",
-                {"type": ["null", "string"], "logicalType": "timestamp-micros"},
-            ],
+            "type": ["null", "string"],
+            "logicalType": "timestamp-micros",
         },
     ]
 }

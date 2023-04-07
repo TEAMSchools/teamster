@@ -27,35 +27,38 @@ def test_schoolmint_grow_schema():
         for endpoint in ASSET_CONFIG["endpoints"]:
             endpoint_name = endpoint["asset_name"]
 
-            parsed_schema = parse_schema(
-                get_avro_record_schema(
-                    name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
-                )
+            schema = get_avro_record_schema(
+                name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
             )
+            # print(schema)
+
+            parsed_schema = parse_schema(schema)
 
             data = grow.get(endpoint=endpoint_name, **endpoint.get("params", {}))
 
             records = data["data"]
+            count = data["count"]
 
-            sample_record = records[random.randint(a=0, b=(data["count"] - 1))]
-            # sample_record = [r for r in records if "" in json.dumps(r)]
+            if count > 0:
+                sample_record = records[random.randint(a=0, b=(count - 1))]
+                # sample_record = [r for r in records if "" in json.dumps(r)]
 
-            assert validation.validate(
-                datum=sample_record, schema=parsed_schema, strict=True
-            )
-
-            assert validation.validate_many(
-                records=records, schema=parsed_schema, strict=True
-            )
-
-            with open(file="env/schoolmint_grow_test.json", mode="w+") as f:
-                json.dump(obj=records, fp=f)
-
-            with open(file="/dev/null", mode="wb") as fo:
-                writer(
-                    fo=fo,
-                    schema=parsed_schema,
-                    records=records,
-                    codec="snappy",
-                    strict_allow_default=True,
+                assert validation.validate(
+                    datum=sample_record, schema=parsed_schema, strict=True
                 )
+
+                assert validation.validate_many(
+                    records=records, schema=parsed_schema, strict=True
+                )
+
+                with open(file="env/schoolmint_grow_test.json", mode="w+") as f:
+                    json.dump(obj=records, fp=f)
+
+                with open(file="/dev/null", mode="wb") as fo:
+                    writer(
+                        fo=fo,
+                        schema=parsed_schema,
+                        records=records,
+                        codec="snappy",
+                        strict_allow_default=True,
+                    )
