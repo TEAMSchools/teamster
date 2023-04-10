@@ -318,6 +318,7 @@ COMMUNICATION_FIELDS = {
                     "items": get_avro_record_schema(
                         name="followup", fields=FOLLOWUP_FIELDS["v1"]
                     ),
+                    "default": [],
                 },
             ],
             "default": None,
@@ -448,7 +449,7 @@ CUSTOM_FIELD_FIELDS = {
         {"name": "Value", "type": ["null", "string"], "default": None},
         {
             "name": "SelectedOptions",
-            "type": ["null", {"type": "array", "items": "string"}],
+            "type": ["null", {"type": "array", "items": "string", "default": []}],
             "default": None,
         },
     ]
@@ -571,6 +572,7 @@ INCIDENT_FIELDS = {
                     "items": get_avro_record_schema(
                         name="penalty", fields=PENALTY_FIELDS["v1"]
                     ),
+                    "default": [],
                 },
             ],
             "default": None,
@@ -584,6 +586,7 @@ INCIDENT_FIELDS = {
                     "items": get_avro_record_schema(
                         name="action", fields=ACTION_FIELDS["v1"]
                     ),
+                    "default": [],
                 },
             ],
             "default": None,
@@ -597,6 +600,7 @@ INCIDENT_FIELDS = {
                     "items": get_avro_record_schema(
                         name="custom_field", fields=CUSTOM_FIELD_FIELDS["v1"]
                     ),
+                    "default": [],
                 },
             ],
             "default": None,
