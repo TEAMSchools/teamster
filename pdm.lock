@@ -16,6 +16,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "alchemer"
+version = "0.6.1"
+requires_python = ">=3.9"
+summary = ""
+dependencies = [
+    "pendulum>=2.1.2",
+    "requests>=2.28.2",
+]
+
+[[package]]
 name = "alembic"
 version = "1.10.3"
 requires_python = ">=3.7"
@@ -1250,12 +1260,16 @@ dependencies = [
 [metadata]
 lock_version = "4.2"
 groups = ["default", "dev"]
-content_hash = "sha256:1861ad53e461c011587a72558348bf9f66f2fc29bcf6509f0ebef48923234b13"
+content_hash = "sha256:f30eaf89a4d09d5572f9f21ef17a554af7357d5f37cad63adc7b762dab9ea5a2"
 
 [metadata.files]
 "agate 1.6.3" = [
     {url = "https://files.pythonhosted.org/packages/90/95/6e3fe3ddcc64e5f7de7fd7cd14c26a588aeaa7aea2d58a3bb61a150cebd9/agate-1.6.3-py2.py3-none-any.whl", hash = "sha256:2d568fd68a8eb8b56c805a1299ba4bc30ca0434563be1bea309c9d1c1c8401f4"},
     {url = "https://files.pythonhosted.org/packages/ae/0e/34231b11f1b80463f64c5be7d7279de5a5609a47c59c0e34ba7016e4e333/agate-1.6.3.tar.gz", hash = "sha256:e0f2f813f7e12311a4cdccc97d6ba0a6781e9c1aa8eca0ab00d5931c0113a308"},
+]
+"alchemer 0.6.1" = [
+    {url = "https://files.pythonhosted.org/packages/54/d2/81f3572ca78217e1a4f684b2087f8b1ea4d2525bac3c382d87d3de3fd392/alchemer-0.6.1.tar.gz", hash = "sha256:0b1399828a229560d77e14d0957150ebf20d0af3c1fa1119b134912b920f94f7"},
+    {url = "https://files.pythonhosted.org/packages/bf/f3/2251e6aadecb734527c82e1119d6af100330e4ae90ac681643dce0f6f2cf/alchemer-0.6.1-py3-none-any.whl", hash = "sha256:f511ac490a2a9106c4bf35e4dfac4e57b0f379caa3564c2f834fd5dc791fa631"},
 ]
 "alembic 1.10.3" = [
     {url = "https://files.pythonhosted.org/packages/1d/f3/bf536ece9c30b82f1cd193f36dff69a718138c443a1f2d41d3430fa467fd/alembic-1.10.3-py3-none-any.whl", hash = "sha256:b2e0a6cfd3a8ce936a1168320bcbe94aefa3f4463cd773a968a55071beb3cd37"},

@@ -1,4 +1,4 @@
-import json
+# import json
 import random
 
 from dagster import build_resources, config_from_files
@@ -50,9 +50,6 @@ def test_schoolmint_grow_schema():
                 assert validation.validate_many(
                     records=records, schema=parsed_schema, strict=True
                 )
-
-                with open(file="env/schoolmint_grow_test.json", mode="w+") as f:
-                    json.dump(obj=records, fp=f)
 
                 with open(file="/dev/null", mode="wb") as fo:
                     writer(
