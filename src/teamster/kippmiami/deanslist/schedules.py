@@ -7,7 +7,7 @@ from . import assets, jobs
 
 
 @schedule(
-    cron_schedule="0 0 * * *",
+    cron_schedule="10 0 * * *",
     execution_timezone=LOCAL_TIME_ZONE.name,
     job=jobs.static_partition_asset_job,
 )
