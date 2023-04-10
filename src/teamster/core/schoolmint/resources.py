@@ -96,8 +96,8 @@ class Grow(Session):
                 del response
                 gc.collect()
 
-                count = response_json["count"]
-                data = response_json["data"]
+                count = response_json.get("count", 0)
+                data = response_json.get("data", [])
                 del response_json
                 gc.collect()
 
