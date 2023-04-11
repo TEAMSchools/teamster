@@ -342,6 +342,7 @@ MESSAGE_FIELDS = [
 SURVEY_QUESTION_PROPERTY_FIELDS = [
     {"name": "custom_css", "type": ["null", "string"], "default": None},
     {"name": "disabled", "type": ["null", "boolean"], "default": None},
+    {"name": "element_style", "type": ["null", "string"], "default": None},
     {"name": "exclude_number", "type": ["null", "string"], "default": None},
     {"name": "force_currency", "type": ["null", "boolean"], "default": None},
     {"name": "force_numeric", "type": ["null", "boolean"], "default": None},
@@ -585,7 +586,7 @@ SURVEY_FIELDS = [
     },
 ]
 
-ENDPOINT_FIELDS = {"survey": SURVEY_FIELDS}
+ENDPOINT_FIELDS = {"survey": SURVEY_FIELDS, "survey/question": SURVEY_QUESTION_FIELDS}
 
 # # Continuous Sum
 # max_total string

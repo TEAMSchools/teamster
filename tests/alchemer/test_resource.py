@@ -14,7 +14,9 @@ TEST_SURVEY_ID = 5300913
 
 
 def check_schema(records, endpoint_name, key=None):
-    with open(file=f"env/{endpoint_name}.json", mode="w") as fp:
+    print(endpoint_name)
+
+    with open(file=f"env/{endpoint_name.replace('/', '_')}.json", mode="w") as fp:
         json.dump(obj=records, fp=fp)
 
     schema = get_avro_record_schema(
@@ -59,3 +61,9 @@ def test_alchemer_schema():
 
         survey = alchemer.survey.get(TEST_SURVEY_ID)
         check_schema(records=[survey.data], endpoint_name="survey")
+
+        check_schema(records=survey.question.list(), endpoint_name="survey/question")
+
+        check_schema(records=survey.campaign.list(), endpoint_name="survey/campaign")
+
+        check_schema(records=survey.response.list(), endpoint_name="survey/response")
