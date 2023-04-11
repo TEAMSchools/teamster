@@ -13,12 +13,15 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 TEST_SURVEY_ID = 5300913
 
 
-def foo(records, endpoint_name, key=None):
-    parsed_schema = parse_schema(
-        schema=get_avro_record_schema(
-            name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
-        )
+def check_schema(records, endpoint_name, key=None):
+    with open(file=f"env/{endpoint_name}.json", mode="w") as fp:
+        json.dump(obj=records, fp=fp)
+
+    schema = get_avro_record_schema(
+        name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
     )
+
+    parsed_schema = parse_schema(schema=schema)
 
     if key is not None:
         sample_record = [r for r in records if "" in json.dumps(r)]
@@ -55,4 +58,4 @@ def test_alchemer_schema():
         alchemer: AlchemerSession = resources.alchemer
 
         survey = alchemer.survey.get(TEST_SURVEY_ID)
-        print(survey.data)
+        check_schema(records=[survey.data], endpoint_name="survey")
