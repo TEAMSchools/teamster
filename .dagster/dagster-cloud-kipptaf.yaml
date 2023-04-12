@@ -49,6 +49,8 @@ locations:
           - schoolmint-grow-client-id
           - schoolmint-grow-client-secret
           - schoolmint-grow-district-id
+          - alchemer-api-token
+          - alchemer-api-token-secret
         volumes:
           - name: secret-volume
             secret:
