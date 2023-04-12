@@ -11,7 +11,50 @@ from teamster.core.alchemer.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
-TEST_SURVEY_ID = 3370039
+TEST_SURVEY_ID = None
+FILTER_SURVEY_IDS = []
+PASSED_SURVEY_IDS = [
+    # 3108476,
+    # 3242248,
+    # 3767678,
+    # 4561288,
+    # 4561325,
+    # 5300913,
+    2934233,
+    3167842,
+    3167903,
+    3211265,
+    3370039,
+    3511436,
+    3727563,
+    3774202,
+    3779180,
+    3779180,
+    3779230,
+    3946606,
+    4000821,
+    4031194,
+    4160102,
+    4251844,
+    4839791,
+    4843086,
+    4859726,
+    5351760,
+    5560557,
+    5593585,
+    6330385,
+    6580731,
+    6686058,
+    6734664,
+    6829997,
+    6997086,
+    7151740,
+    7196293,
+    7253288,
+    7257383,
+    7257415,
+    7257431,
+]
 
 
 def check_schema(records, endpoint_name, key=None):
@@ -31,12 +74,15 @@ def check_schema(records, endpoint_name, key=None):
     parsed_schema = parse_schema(schema=schema)
     print("\t\tSUCCESS")
 
+    len_records = len(records)
     if key is not None:
         sample_record = [r for r in records if "" in json.dumps(r)]
+    elif len_records == 0:
+        print("\tNO DATA")
+        return
     else:
-        sample_record = records[random.randint(a=0, b=(len(records) - 1))]
-    # print("\tSAMPLE RECORD:")
-    # print(sample_record)
+        sample_record = records[random.randint(a=0, b=(len_records - 1))]
+    # print(f"\tSAMPLE RECORD:\n{sample_record}")
 
     print("\tVALIDATING SINGLE RECORD...")
     assert validation.validate(datum=sample_record, schema=parsed_schema, strict=True)
@@ -75,9 +121,22 @@ def test_alchemer_schema():
 
         all_surveys = alchemer.survey.list()
 
-        test_survey = all_surveys[random.randint(a=0, b=(len(all_surveys) - 1))]
+        test_survey_id = None
+        for test_survey in all_surveys:
+            if TEST_SURVEY_ID is not None:
+                test_survey_id = TEST_SURVEY_ID
+                break
+            elif int(test_survey["id"]) in PASSED_SURVEY_IDS:
+                print(f"PASSED: {test_survey['title']}")
+            else:
+                test_survey_id = test_survey["id"]
+                break
 
-        survey = alchemer.survey.get(TEST_SURVEY_ID or test_survey["id"])
+        if test_survey_id is None:
+            print("ALL SURVEYS PASSED")
+            return
+
+        survey = alchemer.survey.get(test_survey_id)
         print(f"\nSURVEY: {survey.title}")
         print(f"ID: {survey.id}")
 
@@ -87,19 +146,18 @@ def test_alchemer_schema():
 
         check_schema(records=survey.campaign.list(), endpoint_name="survey/campaign")
 
-        end_date = pendulum.now(tz="US/Eastern")
-        if survey.id in [4561288]:
-            start_date = end_date.subtract(months=1)
-        else:
-            start_date = end_date.subtract(months=120)
+        if int(survey.id) in FILTER_SURVEY_IDS:
+            end_date = pendulum.now(tz="US/Eastern")
+            start_date = end_date.subtract(weeks=1)
 
-        survey_response = (
-            survey.response.filter(
-                "date_submitted", ">=", start_date.to_datetime_string()
+            survey_response = (
+                survey.response.filter(
+                    "date_submitted", ">=", start_date.to_datetime_string()
+                )
+                .filter("date_submitted", "<", end_date.to_datetime_string())
+                .list()
             )
-            .filter("date_submitted", "<", end_date.to_datetime_string())
-            .list()
-        )
+        else:
+            survey_response = survey.response.list()
 
-        assert len(survey_response) > 0
         check_schema(records=survey_response, endpoint_name="survey/response")

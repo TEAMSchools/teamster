@@ -1,5 +1,17 @@
 from teamster.core.utils.functions import get_avro_record_schema
 
+
+def foo(namespace, field_name, field_type, depth=1):
+    if depth > 0:
+        return get_avro_record_schema(
+            name=field_name,
+            fields=[*foo(namespace=f"{namespace}.{field_name}", depth=(depth - 1))],
+            namespace=namespace,
+        )
+    else:
+        return {}
+
+
 ATOM_FIELDS = [
     {"name": "type", "type": ["null", "string"], "default": None},
     {
@@ -188,9 +200,72 @@ SURVEY_PAGE_PROPERTY_FIELDS = [
     {"name": "page-group", "type": ["null", "string"], "default": None},
 ]
 
-TEAM_FIELDS = [
+SURVEY_TEAM_FIELDS = [
     {"name": "id", "type": ["null", "string"], "default": None},
     {"name": "name", "type": ["null", "string"], "default": None},
+]
+
+ACTION_FIELDS = [
+    {"name": "jump", "type": ["null", "string"]},
+    {"name": "redirect", "type": ["null", "boolean"]},
+    {"name": "save_data", "type": ["null", "boolean"]},
+    {"name": "complete", "type": ["null", "boolean"]},
+    {"name": "disqualify", "type": ["null", "boolean"]},
+]
+
+SURVEY_CAMPAIGN_FIELDS = [
+    {"name": "close_message", "type": ["null", "string"], "default": None},
+    {"name": "id", "type": ["null", "string"], "default": None},
+    {"name": "invite_id", "type": ["null", "string"], "default": None},
+    {"name": "language", "type": ["null", "string"], "default": None},
+    {"name": "limit_responses", "type": ["null", "string"], "default": None},
+    {"name": "link_type", "type": ["null", "string"], "default": None},
+    {"name": "name", "type": ["null", "string"], "default": None},
+    {"name": "primary_theme_content", "type": ["null", "string"], "default": None},
+    {"name": "primary_theme_options", "type": ["null", "string"], "default": None},
+    {"name": "SSL", "type": ["null", "string"], "default": None},
+    {"name": "status", "type": ["null", "string"], "default": None},
+    {"name": "subtype", "type": ["null", "string"], "default": None},
+    {"name": "token_variables", "type": ["null", "string"], "default": None},
+    {"name": "type", "type": ["null", "string"], "default": None},
+    {"name": "uri", "type": ["null", "string"], "default": None},
+    {
+        "name": "date_created",
+        "type": ["null", "string"],
+        "default": None,
+        "logicalType": "timestamp-micros",
+    },
+    {
+        "name": "date_modified",
+        "type": ["null", "string"],
+        "default": None,
+        "logicalType": "timestamp-micros",
+    },
+    {
+        "name": "link_close_date",
+        "type": ["null", "string"],
+        "default": None,
+        "logicalType": "timestamp-micros",
+    },
+    {
+        "name": "link_open_date",
+        "type": ["null", "string"],
+        "default": None,
+        "logicalType": "timestamp-micros",
+    },
+]
+
+SURVEY_DATA_ANSWER_FIELDS = [
+    {"name": "id", "type": ["null", "int"], "default": None},
+    {"name": "option", "type": ["null", "string"], "default": None},
+    {"name": "rank", "type": ["null", "string"], "default": None},
+]
+
+SURVEY_DATA_OPTIONS_FIELDS = [
+    {"name": "id", "type": ["null", "int"], "default": None},
+    {"name": "option", "type": ["null", "string"], "default": None},
+    {"name": "answer", "type": ["null", "string"], "default": None},
+    {"name": "original_answer", "type": ["null", "string"], "default": None},
 ]
 
 
@@ -238,6 +313,38 @@ def get_atom_fields(namespace, depth=1):
         return []
 
 
+def get_rule_fields(namespace):
+    return [
+        {
+            "name": "logic",
+            "type": [
+                "null",
+                get_avro_record_schema(
+                    name="rule",
+                    fields=[
+                        *SHOW_RULE_FIELDS,
+                        *ATOM_FIELDS,
+                        *get_atom_fields(namespace=f"{namespace}.rule", depth=9),
+                    ],
+                    namespace=namespace,
+                ),
+            ],
+            "default": None,
+        },
+        {"name": "logic_map", "type": ["null", "string"], "default": None},
+        {
+            "name": "actions",
+            "type": [
+                "null",
+                get_avro_record_schema(
+                    name="action", fields=ACTION_FIELDS, namespace=namespace
+                ),
+            ],
+            "default": None,
+        },
+    ]
+
+
 def get_survey_question_property_fields(namespace):
     return [
         *SURVEY_QUESTION_PROPERTY_FIELDS,
@@ -250,9 +357,21 @@ def get_survey_question_property_fields(namespace):
                     fields=[
                         *SHOW_RULE_FIELDS,
                         *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=7),
+                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=9),
                     ],
-                    namespace=f"{namespace}.show_rule",
+                    namespace=namespace,
+                ),
+            ],
+            "default": None,
+        },
+        {
+            "name": "rules",
+            "type": [
+                "null",
+                get_avro_record_schema(
+                    name="rule",
+                    fields=get_rule_fields(namespace=f"{namespace}.rule"),
+                    namespace=namespace,
                 ),
             ],
             "default": None,
@@ -272,7 +391,7 @@ def get_survey_option_property_fields(namespace):
                     fields=[
                         *SHOW_RULE_FIELDS,
                         *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=7),
+                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=8),
                     ],
                     namespace=namespace,
                 ),
@@ -347,7 +466,7 @@ def get_survey_question_fields(namespace, depth=1):
                         "items": get_avro_record_schema(
                             name="question",
                             fields=get_survey_question_fields(
-                                namespace=f"{namespace}.sub_questions",
+                                namespace=f"{namespace}.sub_question",
                                 depth=(depth - 1),
                             ),
                             namespace=namespace,
@@ -426,8 +545,18 @@ SURVEY_FIELDS = [
     {"name": "theme", "type": ["null", "string"], "default": None},
     {"name": "title", "type": ["null", "string"], "default": None},
     {"name": "type", "type": ["null", "string"], "default": None},
-    {"name": "created_on", "type": ["null", "string"], "default": None},  # logicalType
-    {"name": "modified_on", "type": ["null", "string"], "default": None},  # logicalType
+    {
+        "name": "created_on",
+        "type": ["null", "string"],
+        "default": None,
+        "logicalType": "timestamp-micros",
+    },
+    {
+        "name": "modified_on",
+        "type": ["null", "string"],
+        "default": None,
+        "logicalType": "timestamp-micros",
+    },
     {
         "name": "languages",
         "type": ["null", {"type": "array", "items": "string", "default": []}],
@@ -454,7 +583,7 @@ SURVEY_FIELDS = [
             "null",
             {
                 "type": "array",
-                "items": get_avro_record_schema(name="team", fields=TEAM_FIELDS),
+                "items": get_avro_record_schema(name="team", fields=SURVEY_TEAM_FIELDS),
                 "default": [],
             },
         ],
@@ -476,148 +605,91 @@ SURVEY_FIELDS = [
     },
 ]
 
-SURVEY_CAMPAIGN_FIELDS = [
-    {"name": "close_message", "type": ["null", "string"], "default": None},
-    {"name": "id", "type": ["null", "string"], "default": None},
-    {"name": "invite_id", "type": ["null", "string"], "default": None},
-    {"name": "language", "type": ["null", "string"], "default": None},
-    {"name": "limit_responses", "type": ["null", "string"], "default": None},
-    {"name": "link_type", "type": ["null", "string"], "default": None},
-    {"name": "name", "type": ["null", "string"], "default": None},
-    {"name": "primary_theme_content", "type": ["null", "string"], "default": None},
-    {"name": "primary_theme_options", "type": ["null", "string"], "default": None},
-    {"name": "SSL", "type": ["null", "string"], "default": None},
-    {"name": "status", "type": ["null", "string"], "default": None},
-    {"name": "subtype", "type": ["null", "string"], "default": None},
-    {"name": "token_variables", "type": ["null", "string"], "default": None},
-    {"name": "type", "type": ["null", "string"], "default": None},
-    {"name": "uri", "type": ["null", "string"], "default": None},
-    {
-        "name": "date_created",
-        "type": ["null", "string"],
-        "default": None,
-    },  # logicalType
-    {
-        "name": "date_modified",
-        "type": ["null", "string"],
-        "default": None,
-    },  # logicalType
-    {
-        "name": "link_close_date",
-        "type": ["null", "string"],
-        "default": None,
-    },  # logicalType
-    {
-        "name": "link_open_date",
-        "type": ["null", "string"],
-        "default": None,
-    },  # logicalType
-]
 
-SURVEY_DATA_ANSWER_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {"name": "option", "type": ["null", "string"], "default": None},
-    {"name": "rank", "type": ["null", "string"], "default": None},
-]
-
-SURVEY_DATA_OPTIONS_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {"name": "option", "type": ["null", "string"], "default": None},
-    {"name": "answer", "type": ["null", "string"], "default": None},
-]
-
-SURVEY_DATA_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {"name": "type", "type": ["null", "string"], "default": None},
-    {"name": "parent", "type": ["null", "int"], "default": None},
-    {"name": "question", "type": ["null", "string"], "default": None},
-    {"name": "section_id", "type": ["null", "int"], "default": None},
-    {"name": "original_answer", "type": ["null", "string"], "default": None},
-    {"name": "answer_id", "type": ["null", "int", "string"], "default": None},
-    {"name": "shown", "type": ["null", "boolean"], "default": None},
-    {
-        "name": "answer",
-        "type": [
-            "null",
-            "string",
+def get_survey_data_fields(namespace, depth=1):
+    if depth > 0:
+        return [
+            {"name": "id", "type": ["null", "int"], "default": None},
+            {"name": "type", "type": ["null", "string"], "default": None},
+            {"name": "parent", "type": ["null", "int"], "default": None},
+            {"name": "question", "type": ["null", "string"], "default": None},
+            {"name": "section_id", "type": ["null", "int"], "default": None},
+            {"name": "original_answer", "type": ["null", "string"], "default": None},
+            {"name": "answer_id", "type": ["null", "int", "string"], "default": None},
+            {"name": "shown", "type": ["null", "boolean"], "default": None},
             {
-                "type": "map",
-                "values": get_avro_record_schema(
-                    name="answer", fields=SURVEY_DATA_ANSWER_FIELDS
-                ),
-                "default": {},
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "options",
-        "type": [
-            "null",
-            {
-                "type": "map",
-                "values": get_avro_record_schema(
-                    name="option", fields=SURVEY_DATA_OPTIONS_FIELDS
-                ),
-                "default": {},
-            },
-        ],
-        "default": None,
-    },
-]
-
-DATA_QUALITY_FIELDS = [
-    {
-        "name": "opentext",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {
-                "type": "map",
-                "values": [
-                    {"type": "array", "items": "string", "default": []},
+                "name": "answer",
+                "type": [
+                    "null",
+                    "string",
                     {
                         "type": "map",
                         "values": [
-                            "int",
-                            {"type": "array", "items": "string", "default": []},
+                            "string",
+                            get_avro_record_schema(
+                                name="answer",
+                                fields=SURVEY_DATA_ANSWER_FIELDS,
+                                namespace=namespace,
+                            ),
                         ],
                         "default": {},
                     },
                 ],
-                "default": {},
+                "default": None,
             },
-        ],
-        "default": None,
-    },
-    {
-        "name": "checkbox",
-        "type": [
-            "null",
             {
-                "type": "map",
-                "values": {
-                    "type": "map",
-                    "values": [
-                        "int",
-                        {"type": "array", "items": "string", "default": []},
-                    ],
-                    "default": {},
-                },
-                "default": {},
+                "name": "options",
+                "type": [
+                    "null",
+                    {
+                        "type": "map",
+                        "values": get_avro_record_schema(
+                            name="option",
+                            fields=SURVEY_DATA_OPTIONS_FIELDS,
+                            namespace=namespace,
+                        ),
+                        "default": {},
+                    },
+                ],
+                "default": None,
             },
-        ],
-        "default": None,
-    },
-    {
-        "name": "straightlining",
-        "type": [
-            "null",
-            {"type": "map", "values": "int", "default": {}},
-        ],
-        "default": None,
-    },
-]
+            {
+                "name": "subquestions",
+                "type": [
+                    "null",
+                    {
+                        "type": "map",
+                        "values": [
+                            get_avro_record_schema(
+                                name="subquestion",
+                                fields=get_survey_data_fields(
+                                    namespace=f"{namespace}.subquestion",
+                                    depth=(depth - 1),
+                                ),
+                                namespace=namespace,
+                            ),
+                            {
+                                "type": "map",
+                                "values": get_avro_record_schema(
+                                    name="subquestion_map",
+                                    fields=get_survey_data_fields(
+                                        namespace=f"{namespace}.subquestion_map",
+                                        depth=(depth - 1),
+                                    ),
+                                    namespace=namespace,
+                                ),
+                                "default": {},
+                            },
+                        ],
+                        "default": {},
+                    },
+                ],
+                "default": None,
+            },
+        ]
+    else:
+        return []
+
 
 SURVEY_RESPONSE_FIELDS = [
     {"name": "id", "type": ["null", "string"], "default": None},
@@ -643,12 +715,14 @@ SURVEY_RESPONSE_FIELDS = [
         "name": "date_submitted",
         "type": ["null", "string"],
         "default": None,
-    },  # logicalType
+        "logicalType": "timestamp-micros",
+    },
     {
         "name": "date_started",
         "type": ["null", "string"],
         "default": None,
-    },  # logicalType
+        "logicalType": "timestamp-micros",
+    },
     {
         "name": "url_variables",
         "type": [
@@ -656,7 +730,7 @@ SURVEY_RESPONSE_FIELDS = [
             {"type": "array", "items": "string", "default": []},
             {
                 "type": "map",
-                "values": {"type": "map", "values": "string"},
+                "values": ["string", {"type": "map", "values": "string"}],
                 "default": {},
             },
         ],
@@ -670,7 +744,8 @@ SURVEY_RESPONSE_FIELDS = [
             {
                 "type": "map",
                 "values": get_avro_record_schema(
-                    name="survey_data", fields=SURVEY_DATA_FIELDS
+                    name="survey_data",
+                    fields=get_survey_data_fields(namespace="surveyresponse", depth=2),
                 ),
                 "default": {},
             },
@@ -682,7 +757,31 @@ SURVEY_RESPONSE_FIELDS = [
         "type": [
             "null",
             {"type": "array", "items": "string", "default": []},
-            get_avro_record_schema(name="data_quality", fields=DATA_QUALITY_FIELDS),
+            {
+                "type": "map",
+                "values": [
+                    "null",
+                    {"type": "array", "items": "string", "default": []},
+                    {
+                        "type": "map",
+                        "values": [
+                            "int",
+                            {"type": "array", "items": "string", "default": []},
+                            {
+                                "type": "map",
+                                "values": [
+                                    "int",
+                                    {"type": "array", "items": "string", "default": []},
+                                ],
+                                "default": {},
+                            },
+                        ],
+                        "default": {},
+                    },
+                ],
+                "default": {},
+            }
+            # get_avro_record_schema(name="data_quality", fields=DATA_QUALITY_FIELDS),
         ],
         "default": None,
     },
