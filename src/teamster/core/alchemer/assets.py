@@ -38,7 +38,7 @@ def build_static_partition_assets(code_location, op_tags={}) -> AssetsDefinition
         yield Output(
             output_name="survey",
             value=(
-                survey.data,
+                [survey.data],
                 get_avro_record_schema(name="survey", fields=ENDPOINT_FIELDS["survey"]),
             ),
             metadata={"record_count": 1},
