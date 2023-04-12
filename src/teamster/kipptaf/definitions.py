@@ -1,15 +1,17 @@
-from dagster import Definitions, config_from_files, load_assets_from_modules
+from dagster import Definitions, EnvVar, config_from_files, load_assets_from_modules
 from dagster_dbt import dbt_cli_resource
 from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
+from teamster.core.alchemer.resources import alchemer_resource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import google_sheets
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.sqlalchemy.resources import mssql
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
-from . import CODE_LOCATION, datagun, dbt, schoolmint
+from . import CODE_LOCATION, alchemer, datagun, dbt, schoolmint
 
 core_resource_config_dir = "src/teamster/core/config/resources"
 local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -19,6 +21,7 @@ defs = Definitions(
     assets=[
         *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
         *load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint"),
+        *load_assets_from_modules(modules=[alchemer.assets], group_name="alchemer"),
         *load_assets_from_modules(modules=[dbt.assets]),
     ],
     jobs=[*datagun.jobs.__all__, *schoolmint.jobs.__all__],
@@ -51,6 +54,12 @@ defs = Definitions(
         ),
         "schoolmint_grow": schoolmint_grow_resource.configured(
             config_from_files([f"{core_resource_config_dir}/schoolmint.yaml"])
+        ),
+        "alchemer": alchemer_resource(
+            api_token=EnvVar("ALCHEMER_API_TOKEN"),
+            api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
+            time_zone=LOCAL_TIME_ZONE,
+            **config_from_files([f"{core_resource_config_dir}/alchemer.yaml"]),
         ),
         "sftp_blissbook": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_blissbook.yaml"])
