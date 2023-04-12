@@ -789,7 +789,7 @@ SURVEY_RESPONSE_FIELDS = [
 
 ENDPOINT_FIELDS = {
     "survey": SURVEY_FIELDS,
-    "survey/campaign": SURVEY_CAMPAIGN_FIELDS,
-    "survey/response": SURVEY_RESPONSE_FIELDS,
-    "survey/question": get_survey_question_fields(namespace="surveyquestion", depth=2),
+    "survey_campaign": SURVEY_CAMPAIGN_FIELDS,
+    "survey_response": SURVEY_RESPONSE_FIELDS,
+    "survey_question": get_survey_question_fields(namespace="surveyquestion", depth=2),
 }
