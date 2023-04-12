@@ -1,11 +1,15 @@
 from teamster.core.utils.functions import get_avro_record_schema
 
-ATOM_CORE_FIELDS = [
+ATOM_FIELDS = [
     {"name": "type", "type": ["null", "string"], "default": None},
-    {"name": "value", "type": ["null", "string"], "default": None},
+    {
+        "name": "value",
+        "type": ["null", "string", {"type": "array", "items": "string", "default": []}],
+        "default": None,
+    },
 ]
 
-SHOW_RULE_CORE_FIELDS = [
+SHOW_RULE_FIELDS = [
     {"name": "id", "type": ["null", "string"], "default": None},
     {"name": "operator", "type": ["null", "string"], "default": None},
     {
@@ -13,63 +17,6 @@ SHOW_RULE_CORE_FIELDS = [
         "type": ["null", {"type": "array", "items": "string", "default": []}],
         "default": None,
     },
-]
-
-
-def get_atom_fields(namespace, depth=1):
-    if depth > 0:
-        return [
-            *ATOM_CORE_FIELDS,
-            *SHOW_RULE_CORE_FIELDS,
-            {
-                "name": "atom",
-                "type": [
-                    "null",
-                    get_avro_record_schema(
-                        name="atom",
-                        fields=[
-                            *ATOM_CORE_FIELDS,
-                            *SHOW_RULE_CORE_FIELDS,
-                            *get_atom_fields(
-                                namespace=f"{namespace}.atom", depth=(depth - 1)
-                            ),
-                        ],
-                        namespace=namespace,
-                    ),
-                ],
-                "default": None,
-            },
-            {
-                "name": "atom2",
-                "type": [
-                    "null",
-                    get_avro_record_schema(
-                        name="atom2",
-                        fields=[
-                            *ATOM_CORE_FIELDS,
-                            *SHOW_RULE_CORE_FIELDS,
-                            *get_atom_fields(
-                                namespace=f"{namespace}.atom2", depth=(depth - 1)
-                            ),
-                        ],
-                        namespace=namespace,
-                    ),
-                ],
-                "default": None,
-            },
-        ]
-    else:
-        return []
-
-
-SURVEY_QUESTION_PROPERTY_SHOW_RULE_FIELDS = [
-    *SHOW_RULE_CORE_FIELDS,
-    *get_atom_fields(namespace="survey.page.question.property.show_rule", depth=7),
-]
-
-SURVEY_OPTION_PROPERTY_SHOW_RULE_FIELDS = [
-    *SHOW_RULE_CORE_FIELDS,
-    *get_atom_fields(namespace="survey.page.question.option.property.show_rule"),
 ]
 
 SURVEY_OPTION_PROPERTY_FIELDS = [
@@ -82,18 +29,17 @@ SURVEY_OPTION_PROPERTY_FIELDS = [
     {"name": "none", "type": ["null", "boolean"], "default": None},
     {"name": "other", "type": ["null", "boolean"], "default": None},
     {"name": "otherrequired", "type": ["null", "boolean"], "default": None},
+    {"name": "requireother", "type": ["null", "boolean"], "default": None},
     {"name": "piping_exclude", "type": ["null", "string"], "default": None},
     {"name": "show_rules_logic_map", "type": ["null", "string"], "default": None},
     {
-        "name": "show_rules",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="show_rule",
-                fields=SURVEY_OPTION_PROPERTY_SHOW_RULE_FIELDS,
-                namespace="survey.page.question.option.property",
-            ),
-        ],
+        "name": "left-label",
+        "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
+        "default": None,
+    },
+    {
+        "name": "right-label",
+        "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
         "default": None,
     },
 ]
@@ -106,251 +52,22 @@ SURVEY_OPTION_FIELDS = [
         "type": ["null", {"type": "map", "values": "string", "default": {}}],
         "default": None,
     },
-    {
-        "name": "properties",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="property",
-                fields=SURVEY_OPTION_PROPERTY_FIELDS,
-                namespace="survey.page.question.option",
-            ),
-        ],
-        "default": None,
-    },
-]
-
-MESSAGE_FIELDS = [
-    {
-        "name": "payment-description",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "payment_button_text",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "payment-summary",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "configurator_button_text",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "configurator_complete",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "configurator_error",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "inputmask",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "r_extreme_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "l_extreme_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "center_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "right_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "left_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "conjoint_best_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "conjoint_worst_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "conjoint_none_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "conjoint_card_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "conjoint_error_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "maxdiff_best_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "maxdiff_worst_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "maxdiff_attribute_label",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "maxdiff_sets_message",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "na_text",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "maxdiff_of",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "th_content",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
 ]
 
 SURVEY_QUESTION_PROPERTY_FIELDS = [
     {"name": "custom_css", "type": ["null", "string"], "default": None},
+    {"name": "data_type", "type": ["null", "string"], "default": None},
+    {"name": "data_json", "type": ["null", "boolean"], "default": None},
     {"name": "disabled", "type": ["null", "boolean"], "default": None},
     {"name": "element_style", "type": ["null", "string"], "default": None},
     {"name": "exclude_number", "type": ["null", "string"], "default": None},
     {"name": "force_currency", "type": ["null", "boolean"], "default": None},
+    {"name": "force_int", "type": ["null", "boolean"], "default": None},
     {"name": "force_numeric", "type": ["null", "boolean"], "default": None},
     {"name": "force_percent", "type": ["null", "boolean"], "default": None},
     {"name": "hidden", "type": ["null", "boolean"], "default": None},
     {"name": "hide_after_response", "type": ["null", "boolean"], "default": None},
     {"name": "labels_right", "type": ["null", "boolean"], "default": None},
-    {"name": "limits", "type": ["null", "int"], "default": None},
     {"name": "map_key", "type": ["null", "string"], "default": None},
     {"name": "max_number", "type": ["null", "string"], "default": None},
     {"name": "min_answers_per_row", "type": ["null", "string"], "default": None},
@@ -382,8 +99,17 @@ SURVEY_QUESTION_PROPERTY_FIELDS = [
         "default": None,
     },
     {
-        "name": "placeholder",
+        "name": "limits",
         "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "default": None,
+    },
+    {
+        "name": "placeholder",
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            {"type": "map", "values": "string", "default": {}},
+        ],
         "default": None,
     },
     {
@@ -392,26 +118,37 @@ SURVEY_QUESTION_PROPERTY_FIELDS = [
         "default": None,
     },
     {
-        "name": "messages",
+        "name": "outbound",
         "type": [
             "null",
-            get_avro_record_schema(
-                name="message",
-                fields=MESSAGE_FIELDS,
-                namespace="survey.page.question.property",
-            ),
+            {
+                "type": "array",
+                "items": {"type": "map", "values": "string", "default": {}},
+                "default": [],
+            },
         ],
         "default": None,
     },
     {
-        "name": "show_rules",
+        "name": "messages",
         "type": [
             "null",
-            get_avro_record_schema(
-                name="show_rule",
-                fields=SURVEY_QUESTION_PROPERTY_SHOW_RULE_FIELDS,
-                namespace="survey.page.question.property",
-            ),
+            {
+                "type": "map",
+                "values": [
+                    {"type": "array", "items": "string", "default": []},
+                    {"type": "map", "values": "string", "default": {}},
+                ],
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "message",
+        "type": [
+            "null",
+            {"type": "map", "values": "string", "default": {}},
         ],
         "default": None,
     },
@@ -431,40 +168,16 @@ SURVEY_QUESTION_FIELDS = [
     },
     {
         "name": "varname",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            {"type": "map", "values": "string", "default": {}},
+        ],
         "default": None,
     },
     {
         "name": "title",
         "type": ["null", {"type": "map", "values": "string", "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "properties",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="property",
-                fields=SURVEY_QUESTION_PROPERTY_FIELDS,
-                namespace="survey.page.question",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "options",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="option",
-                    fields=SURVEY_OPTION_FIELDS,
-                    namespace="survey.page.question",
-                ),
-                "default": [],
-            },
-        ],
         "default": None,
     },
 ]
@@ -472,33 +185,213 @@ SURVEY_QUESTION_FIELDS = [
 SURVEY_PAGE_PROPERTY_FIELDS = [
     {"name": "hidden", "type": ["null", "boolean"], "default": None},
     {"name": "piped_from", "type": ["null", "string"], "default": None},
+    {"name": "page-group", "type": ["null", "string"], "default": None},
 ]
+
+TEAM_FIELDS = [
+    {"name": "id", "type": ["null", "string"], "default": None},
+    {"name": "name", "type": ["null", "string"], "default": None},
+]
+
+
+def get_atom_fields(namespace, depth=1):
+    if depth > 0:
+        return [
+            {
+                "name": "atom",
+                "type": [
+                    "null",
+                    get_avro_record_schema(
+                        name="atom",
+                        fields=[
+                            *ATOM_FIELDS,
+                            *SHOW_RULE_FIELDS,
+                            *get_atom_fields(
+                                namespace=f"{namespace}.atom", depth=(depth - 1)
+                            ),
+                        ],
+                        namespace=namespace,
+                    ),
+                ],
+                "default": None,
+            },
+            {
+                "name": "atom2",
+                "type": [
+                    "null",
+                    get_avro_record_schema(
+                        name="atom2",
+                        fields=[
+                            *ATOM_FIELDS,
+                            *SHOW_RULE_FIELDS,
+                            *get_atom_fields(
+                                namespace=f"{namespace}.atom2", depth=(depth - 1)
+                            ),
+                        ],
+                        namespace=namespace,
+                    ),
+                ],
+                "default": None,
+            },
+        ]
+    else:
+        return []
+
+
+def get_survey_question_property_fields(namespace):
+    return [
+        *SURVEY_QUESTION_PROPERTY_FIELDS,
+        {
+            "name": "show_rules",
+            "type": [
+                "null",
+                get_avro_record_schema(
+                    name="show_rule",
+                    fields=[
+                        *SHOW_RULE_FIELDS,
+                        *ATOM_FIELDS,
+                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=7),
+                    ],
+                    namespace=f"{namespace}.show_rule",
+                ),
+            ],
+            "default": None,
+        },
+    ]
+
+
+def get_survey_option_property_fields(namespace):
+    return [
+        *SURVEY_OPTION_PROPERTY_FIELDS,
+        {
+            "name": "show_rules",
+            "type": [
+                "null",
+                get_avro_record_schema(
+                    name="show_rule",
+                    fields=[
+                        *SHOW_RULE_FIELDS,
+                        *ATOM_FIELDS,
+                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=7),
+                    ],
+                    namespace=namespace,
+                ),
+            ],
+            "default": None,
+        },
+    ]
+
+
+def get_survey_option_fields(namespace):
+    return [
+        *SURVEY_OPTION_FIELDS,
+        {
+            "name": "properties",
+            "type": [
+                "null",
+                get_avro_record_schema(
+                    name="property",
+                    fields=get_survey_option_property_fields(
+                        namespace=f"{namespace}.property"
+                    ),
+                    namespace=namespace,
+                ),
+            ],
+            "default": None,
+        },
+    ]
+
+
+def get_survey_question_fields(namespace, depth=1):
+    if depth > 0:
+        return [
+            *SURVEY_QUESTION_FIELDS,
+            {
+                "name": "properties",
+                "type": [
+                    "null",
+                    get_avro_record_schema(
+                        name="property",
+                        fields=get_survey_question_property_fields(
+                            namespace=f"{namespace}.property"
+                        ),
+                        namespace=namespace,
+                    ),
+                ],
+                "default": None,
+            },
+            {
+                "name": "options",
+                "type": [
+                    "null",
+                    {
+                        "type": "array",
+                        "items": get_avro_record_schema(
+                            name="option",
+                            fields=get_survey_option_fields(
+                                namespace=f"{namespace}.option"
+                            ),
+                            namespace=namespace,
+                        ),
+                        "default": [],
+                    },
+                ],
+                "default": None,
+            },
+            {
+                "name": "sub_questions",
+                "type": [
+                    "null",
+                    {
+                        "type": "array",
+                        "items": get_avro_record_schema(
+                            name="question",
+                            fields=get_survey_question_fields(
+                                namespace=f"{namespace}.sub_questions",
+                                depth=(depth - 1),
+                            ),
+                            namespace=namespace,
+                        ),
+                        "default": [],
+                    },
+                ],
+                "default": None,
+            },
+        ]
+    else:
+        return []
+
 
 SURVEY_PAGE_FIELDS = [
     {"name": "id", "type": ["null", "int"], "default": None},
     {
         "name": "title",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            {"type": "map", "values": "string", "default": {}},
+        ],
         "default": None,
     },
     {
         "name": "description",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            {"type": "map", "values": "string", "default": {}},
+        ],
         "default": None,
     },
     {
         "name": "properties",
         "type": [
             "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="property",
-                    fields=SURVEY_PAGE_PROPERTY_FIELDS,
-                    namespace="survey.page",
-                ),
-                "default": [],
-            },
+            {"type": "array", "items": "string", "default": []},
+            get_avro_record_schema(
+                name="property",
+                fields=SURVEY_PAGE_PROPERTY_FIELDS,
+                namespace="survey.page",
+            ),
         ],
         "default": None,
     },
@@ -510,7 +403,9 @@ SURVEY_PAGE_FIELDS = [
                 "type": "array",
                 "items": get_avro_record_schema(
                     name="question",
-                    fields=SURVEY_QUESTION_FIELDS,
+                    fields=get_survey_question_fields(
+                        namespace="survey.page.question", depth=2
+                    ),
                     namespace="survey.page",
                 ),
                 "default": [],
@@ -520,18 +415,13 @@ SURVEY_PAGE_FIELDS = [
     },
 ]
 
-TEAM_FIELDS = [
-    {"name": "id", "type": ["null", "string"], "default": None},
-    {"name": "name", "type": ["null", "string"], "default": None},
-]
-
 SURVEY_FIELDS = [
-    {"name": "auto_close", "type": ["null"], "default": None},
+    {"name": "auto_close", "type": ["null", "string"], "default": None},
     {"name": "blockby", "type": ["null", "string"], "default": None},
     {"name": "forward_only", "type": ["null", "boolean"], "default": None},
     {"name": "id", "type": ["null", "string"], "default": None},
     {"name": "internal_title", "type": ["null", "string"], "default": None},
-    {"name": "overall_quota", "type": ["null"], "default": None},
+    {"name": "overall_quota", "type": ["null", "string"], "default": None},
     {"name": "status", "type": ["null", "string"], "default": None},
     {"name": "theme", "type": ["null", "string"], "default": None},
     {"name": "title", "type": ["null", "string"], "default": None},
@@ -545,7 +435,7 @@ SURVEY_FIELDS = [
     },
     {
         "name": "statistics",
-        "type": ["null", {"type": "map", "values": "int", "default": {}}],
+        "type": ["null", {"type": "map", "values": ["string", "int"], "default": {}}],
         "default": None,
     },
     {
@@ -586,20 +476,221 @@ SURVEY_FIELDS = [
     },
 ]
 
-ENDPOINT_FIELDS = {"survey": SURVEY_FIELDS, "survey/question": SURVEY_QUESTION_FIELDS}
+SURVEY_CAMPAIGN_FIELDS = [
+    {"name": "close_message", "type": ["null", "string"], "default": None},
+    {"name": "id", "type": ["null", "string"], "default": None},
+    {"name": "invite_id", "type": ["null", "string"], "default": None},
+    {"name": "language", "type": ["null", "string"], "default": None},
+    {"name": "limit_responses", "type": ["null", "string"], "default": None},
+    {"name": "link_type", "type": ["null", "string"], "default": None},
+    {"name": "name", "type": ["null", "string"], "default": None},
+    {"name": "primary_theme_content", "type": ["null", "string"], "default": None},
+    {"name": "primary_theme_options", "type": ["null", "string"], "default": None},
+    {"name": "SSL", "type": ["null", "string"], "default": None},
+    {"name": "status", "type": ["null", "string"], "default": None},
+    {"name": "subtype", "type": ["null", "string"], "default": None},
+    {"name": "token_variables", "type": ["null", "string"], "default": None},
+    {"name": "type", "type": ["null", "string"], "default": None},
+    {"name": "uri", "type": ["null", "string"], "default": None},
+    {
+        "name": "date_created",
+        "type": ["null", "string"],
+        "default": None,
+    },  # logicalType
+    {
+        "name": "date_modified",
+        "type": ["null", "string"],
+        "default": None,
+    },  # logicalType
+    {
+        "name": "link_close_date",
+        "type": ["null", "string"],
+        "default": None,
+    },  # logicalType
+    {
+        "name": "link_open_date",
+        "type": ["null", "string"],
+        "default": None,
+    },  # logicalType
+]
 
-# # Continuous Sum
-# max_total string
-# must_be_max boolean
-# max_total_noshow boolean
+SURVEY_DATA_ANSWER_FIELDS = [
+    {"name": "id", "type": ["null", "int"], "default": None},
+    {"name": "option", "type": ["null", "string"], "default": None},
+    {"name": "rank", "type": ["null", "string"], "default": None},
+]
 
-# # File Upload
-# sizelimit int
-# extensions string
-# maxfiles string
+SURVEY_DATA_OPTIONS_FIELDS = [
+    {"name": "id", "type": ["null", "int"], "default": None},
+    {"name": "option", "type": ["null", "string"], "default": None},
+    {"name": "answer", "type": ["null", "string"], "default": None},
+]
 
-# # URL Redirect
-# url URL
-# fieldname string
-# mapping string
-# default string
+SURVEY_DATA_FIELDS = [
+    {"name": "id", "type": ["null", "int"], "default": None},
+    {"name": "type", "type": ["null", "string"], "default": None},
+    {"name": "parent", "type": ["null", "int"], "default": None},
+    {"name": "question", "type": ["null", "string"], "default": None},
+    {"name": "section_id", "type": ["null", "int"], "default": None},
+    {"name": "original_answer", "type": ["null", "string"], "default": None},
+    {"name": "answer_id", "type": ["null", "int", "string"], "default": None},
+    {"name": "shown", "type": ["null", "boolean"], "default": None},
+    {
+        "name": "answer",
+        "type": [
+            "null",
+            "string",
+            {
+                "type": "map",
+                "values": get_avro_record_schema(
+                    name="answer", fields=SURVEY_DATA_ANSWER_FIELDS
+                ),
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "options",
+        "type": [
+            "null",
+            {
+                "type": "map",
+                "values": get_avro_record_schema(
+                    name="option", fields=SURVEY_DATA_OPTIONS_FIELDS
+                ),
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+]
+
+DATA_QUALITY_FIELDS = [
+    {
+        "name": "opentext",
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            {
+                "type": "map",
+                "values": [
+                    {"type": "array", "items": "string", "default": []},
+                    {
+                        "type": "map",
+                        "values": [
+                            "int",
+                            {"type": "array", "items": "string", "default": []},
+                        ],
+                        "default": {},
+                    },
+                ],
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "checkbox",
+        "type": [
+            "null",
+            {
+                "type": "map",
+                "values": {
+                    "type": "map",
+                    "values": [
+                        "int",
+                        {"type": "array", "items": "string", "default": []},
+                    ],
+                    "default": {},
+                },
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "straightlining",
+        "type": [
+            "null",
+            {"type": "map", "values": "int", "default": {}},
+        ],
+        "default": None,
+    },
+]
+
+SURVEY_RESPONSE_FIELDS = [
+    {"name": "id", "type": ["null", "string"], "default": None},
+    {"name": "status", "type": ["null", "string"], "default": None},
+    {"name": "contact_id", "type": ["null", "string"], "default": None},
+    {"name": "is_test_data", "type": ["null", "string"], "default": None},
+    {"name": "session_id", "type": ["null", "string"], "default": None},
+    {"name": "language", "type": ["null", "string"], "default": None},
+    {"name": "link_id", "type": ["null", "string"], "default": None},
+    {"name": "ip_address", "type": ["null", "string"], "default": None},
+    {"name": "referer", "type": ["null", "string"], "default": None},
+    {"name": "user_agent", "type": ["null", "string"], "default": None},
+    {"name": "response_time", "type": ["null", "int"], "default": None},
+    {"name": "comments", "type": ["null", "string"], "default": None},
+    {"name": "longitude", "type": ["null", "string"], "default": None},
+    {"name": "latitude", "type": ["null", "string"], "default": None},
+    {"name": "country", "type": ["null", "string"], "default": None},
+    {"name": "city", "type": ["null", "string"], "default": None},
+    {"name": "region", "type": ["null", "string"], "default": None},
+    {"name": "postal", "type": ["null", "string"], "default": None},
+    {"name": "dma", "type": ["null", "string"], "default": None},
+    {
+        "name": "date_submitted",
+        "type": ["null", "string"],
+        "default": None,
+    },  # logicalType
+    {
+        "name": "date_started",
+        "type": ["null", "string"],
+        "default": None,
+    },  # logicalType
+    {
+        "name": "url_variables",
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            {
+                "type": "map",
+                "values": {"type": "map", "values": "string"},
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "survey_data",
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            {
+                "type": "map",
+                "values": get_avro_record_schema(
+                    name="survey_data", fields=SURVEY_DATA_FIELDS
+                ),
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "data_quality",
+        "type": [
+            "null",
+            {"type": "array", "items": "string", "default": []},
+            get_avro_record_schema(name="data_quality", fields=DATA_QUALITY_FIELDS),
+        ],
+        "default": None,
+    },
+]
+
+ENDPOINT_FIELDS = {
+    "survey": SURVEY_FIELDS,
+    "survey/campaign": SURVEY_CAMPAIGN_FIELDS,
+    "survey/response": SURVEY_RESPONSE_FIELDS,
+    "survey/question": get_survey_question_fields(namespace="surveyquestion", depth=2),
+}
