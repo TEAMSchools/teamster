@@ -1,3 +1,4 @@
+import pendulum
 from alchemer import AlchemerSession
 from dagster import (
     AssetOut,
@@ -94,9 +95,12 @@ def build_partition_assets(code_location, op_tags={}) -> list:
     def survey_response(
         context: OpExecutionContext, alchemer: Resource[AlchemerSession]
     ):
-        survey_id, date_submitted = context.partition_key.split("|")
+        partition_key_split = context.partition_key.split("_")
+        date_submitted = pendulum.from_timestamp(
+            int(partition_key_split[1])
+        ).to_datetime_string()
 
-        survey = alchemer.survey.get(id=survey_id)
+        survey = alchemer.survey.get(id=partition_key_split[0])
 
         data = survey.response.filter("date_submitted", ">=", date_submitted).list(
             resultsperpage=500
