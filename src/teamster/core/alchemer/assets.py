@@ -60,36 +60,6 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             )
 
     @asset(
-        name="survey_response",
-        key_prefix=[code_location, "alchemer"],
-        io_manager_key="gcs_avro_io",
-        partitions_def=DynamicPartitionsDefinition(
-            name=f"{code_location}_alchemer_survey_response"
-        ),
-        op_tags=op_tags,
-        output_required=False,
-    )
-    def survey_response(
-        context: OpExecutionContext, alchemer: Resource[AlchemerSession]
-    ):
-        survey_id, date_submitted = context.partition_key.split(".")
-
-        survey = alchemer.survey.get(id=survey_id)
-
-        data = survey.response.filter("date_submitted", ">=", date_submitted).list(
-            resultsperpage=500
-        )
-
-        schema = get_avro_record_schema(
-            name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
-        )
-
-        yield Output(
-            value=(data, schema),
-            metadata={"record_count": len(data)},
-        )
-
-    @asset(
         name="survey_response_disqualified",
         key_prefix=[code_location, "alchemer"],
         io_manager_key="gcs_avro_io",
@@ -111,4 +81,34 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
-    return survey_assets, survey_response, survey_response_disqualified
+    @asset(
+        name="survey_response",
+        key_prefix=[code_location, "alchemer"],
+        io_manager_key="gcs_avro_io",
+        partitions_def=DynamicPartitionsDefinition(
+            name=f"{code_location}_alchemer_survey_response"
+        ),
+        op_tags=op_tags,
+        output_required=False,
+    )
+    def survey_response(
+        context: OpExecutionContext, alchemer: Resource[AlchemerSession]
+    ):
+        survey_id, date_submitted = context.partition_key.split("|")
+
+        survey = alchemer.survey.get(id=survey_id)
+
+        data = survey.response.filter("date_submitted", ">=", date_submitted).list(
+            resultsperpage=500
+        )
+
+        schema = get_avro_record_schema(
+            name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
+        )
+
+        yield Output(
+            value=(data, schema),
+            metadata={"record_count": len(data)},
+        )
+
+    return survey_assets, survey_response_disqualified, survey_response
