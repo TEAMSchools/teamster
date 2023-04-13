@@ -30,7 +30,9 @@ def build_partition_assets(code_location, op_tags={}) -> list:
                 io_manager_key="gcs_avro_io",
             ),
         },
-        partitions_def=DynamicPartitionsDefinition(name="survey_id"),
+        partitions_def=DynamicPartitionsDefinition(
+            name=f"{code_location}_alchemer_survey_id"
+        ),
         op_tags=op_tags,
     )
     def survey_assets(context: OpExecutionContext, alchemer: Resource[AlchemerSession]):
@@ -64,7 +66,9 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         name="survey_response_disqualified",
         key_prefix=[code_location, "alchemer"],
         io_manager_key="gcs_avro_io",
-        partitions_def=DynamicPartitionsDefinition(name="survey_id"),
+        partitions_def=DynamicPartitionsDefinition(
+            name=f"{code_location}_alchemer_survey_id"
+        ),
         op_tags=op_tags,
     )
     def survey_response_disqualified(
