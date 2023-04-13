@@ -29,15 +29,11 @@ def build_partition_assets(code_location, op_tags={}) -> list:
                 key_prefix=[code_location, "alchemer"],
                 io_manager_key="gcs_avro_io",
             ),
-            "survey_response_disqualified": AssetOut(
-                key_prefix=[code_location, "alchemer"],
-                io_manager_key="gcs_avro_io",
-            ),
         },
         partitions_def=DynamicPartitionsDefinition(name="survey_id"),
         op_tags=op_tags,
     )
-    def _multi_asset(context: OpExecutionContext, alchemer: Resource[AlchemerSession]):
+    def survey_assets(context: OpExecutionContext, alchemer: Resource[AlchemerSession]):
         survey = alchemer.survey.get(id=context.partition_key)
 
         yield Output(
@@ -52,9 +48,6 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         subobjects = {
             "survey_question": survey.question,
             "survey_campaign": survey.campaign,
-            "survey_response_disqualified": survey.response.filter(
-                "status", "=", "Disqualified"
-            ),
         }
 
         for name, obj in subobjects.items():
@@ -82,17 +75,45 @@ def build_partition_assets(code_location, op_tags={}) -> list:
     def survey_response(
         context: OpExecutionContext, alchemer: Resource[AlchemerSession]
     ):
-        survey_id = context.partition_key.keys_by_dimension["survey_id"]
-        date_submitted = (context.partition_key.keys_by_dimension["date_submitted"],)
-
-        survey = alchemer.survey.get(id=survey_id)
-
-        survey_response = survey.response.filter(
-            "date_submitted", ">=", date_submitted
-        ).list(resultsperpage=500)
-
-        yield Output(
-            value=survey_response, metadata={"record_count": len(survey_response)}
+        survey = alchemer.survey.get(
+            id=context.partition_key.keys_by_dimension["survey_id"]
         )
 
-    return [_multi_asset, survey_response]
+        data = survey.response.filter(
+            "date_submitted",
+            ">=",
+            context.partition_key.keys_by_dimension["date_submitted"],
+        ).list(resultsperpage=500)
+
+        schema = get_avro_record_schema(
+            name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
+        )
+
+        yield Output(
+            value=(data, schema),
+            metadata={"record_count": len(data)},
+        )
+
+    @asset(
+        name="survey_response_disqualified",
+        key_prefix=[code_location, "alchemer"],
+        io_manager_key="gcs_avro_io",
+        partitions_def=DynamicPartitionsDefinition(name="survey_id"),
+        op_tags=op_tags,
+    )
+    def survey_response_disqualified(
+        context: OpExecutionContext, alchemer: Resource[AlchemerSession]
+    ):
+        survey = alchemer.survey.get(id=context.partition_key)
+
+        data = survey.response.filter("status", "=", "Disqualified").list(
+            resultsperpage=500
+        )
+
+        schema = get_avro_record_schema(
+            name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
+        )
+
+        yield Output(value=(data, schema), metadata={"record_count": len(data)})
+
+    return survey_assets, survey_response, survey_response_disqualified
