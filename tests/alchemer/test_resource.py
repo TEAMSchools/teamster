@@ -1,5 +1,4 @@
 import json
-import os
 import random
 
 import pendulum
@@ -7,9 +6,9 @@ from alchemer import AlchemerSession
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
+from teamster.core.alchemer.resources import alchemer_resource
 from teamster.core.alchemer.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 TEST_SURVEY_ID = None
 FILTER_SURVEY_IDS = []
@@ -19,7 +18,6 @@ PASSED_SURVEY_IDS = [
     # 3767678,
     # 4561288,
     # 4561325,
-    5300913,
     2934233,
     3167842,
     3167903,
@@ -39,6 +37,7 @@ PASSED_SURVEY_IDS = [
     4839791,
     4843086,
     4859726,
+    5300913,
     5351760,
     5560557,
     5593585,
@@ -106,15 +105,13 @@ def check_schema(records, endpoint_name, key=None):
 
 def test_alchemer_schema():
     with build_resources(
-        resources={
-            "alchemer": AlchemerSession(
-                api_token=os.getenv("ALCHEMER_API_TOKEN"),
-                api_token_secret=os.getenv("ALCHEMER_API_TOKEN_SECRET"),
-                time_zone=LOCAL_TIME_ZONE,
-                **config_from_files(
+        resources={"alchemer": alchemer_resource},
+        resource_config={
+            "alchemer": {
+                "config": config_from_files(
                     ["src/teamster/core/config/resources/alchemer.yaml"]
-                ),
-            )
+                )
+            }
         },
     ) as resources:
         alchemer: AlchemerSession = resources.alchemer
@@ -136,28 +133,23 @@ def test_alchemer_schema():
             print("ALL SURVEYS PASSED")
             return
 
-        survey = alchemer.survey.get(test_survey_id)
+        survey = alchemer.survey.get(id=test_survey_id)
         print(f"\nSURVEY: {survey.title}")
         print(f"ID: {survey.id}")
 
         check_schema(records=[survey.data], endpoint_name="survey")
 
-        check_schema(records=survey.question.list(), endpoint_name="survey/question")
+        check_schema(records=survey.question.list(), endpoint_name="survey_question")
 
-        check_schema(records=survey.campaign.list(), endpoint_name="survey/campaign")
+        check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
 
         if int(survey.id) in FILTER_SURVEY_IDS:
-            end_date = pendulum.now(tz="US/Eastern")
-            start_date = end_date.subtract(weeks=1)
+            start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
 
-            survey_response = (
-                survey.response.filter(
-                    "date_submitted", ">=", start_date.to_datetime_string()
-                )
-                .filter("date_submitted", "<", end_date.to_datetime_string())
-                .list()
-            )
+            survey_response = survey.response.filter(
+                "date_submitted", ">=", start_date.to_datetime_string()
+            ).list(resultsperpage=500)
         else:
-            survey_response = survey.response.list()
+            survey_response = survey.response.list(resultsperpage=500)
 
-        check_schema(records=survey_response, endpoint_name="survey/response")
+        check_schema(records=survey_response, endpoint_name="survey_response")

@@ -1,11 +1,12 @@
 from alchemer import AlchemerSession
 from dagster import (
     AssetOut,
-    AssetsDefinition,
     DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
     Resource,
+    asset,
     multi_asset,
 )
 
@@ -13,7 +14,7 @@ from teamster.core.alchemer.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_static_partition_assets(code_location, op_tags={}) -> AssetsDefinition:
+def build_partition_assets(code_location, op_tags={}) -> list:
     @multi_asset(
         outs={
             "survey": AssetOut(
@@ -28,12 +29,16 @@ def build_static_partition_assets(code_location, op_tags={}) -> AssetsDefinition
                 key_prefix=[code_location, "alchemer"],
                 io_manager_key="gcs_avro_io",
             ),
+            "survey_response_disqualified": AssetOut(
+                key_prefix=[code_location, "alchemer"],
+                io_manager_key="gcs_avro_io",
+            ),
         },
         partitions_def=DynamicPartitionsDefinition(name="survey_id"),
         op_tags=op_tags,
     )
     def _multi_asset(context: OpExecutionContext, alchemer: Resource[AlchemerSession]):
-        survey = alchemer.survey.get(context.partition_key)
+        survey = alchemer.survey.get(id=context.partition_key)
 
         yield Output(
             output_name="survey",
@@ -44,28 +49,50 @@ def build_static_partition_assets(code_location, op_tags={}) -> AssetsDefinition
             metadata={"record_count": 1},
         )
 
-        survey_question_data = survey.question.list()
-        yield Output(
-            output_name="survey_question",
-            value=(
-                survey_question_data,
-                get_avro_record_schema(
-                    name="survey_question", fields=ENDPOINT_FIELDS["survey_question"]
-                ),
+        subobjects = {
+            "survey_question": survey.question,
+            "survey_campaign": survey.campaign,
+            "survey_response_disqualified": survey.response.filter(
+                "status", "=", "Disqualified"
             ),
-            metadata={"record_count": len(survey_question_data)},
+        }
+
+        for name, obj in subobjects.items():
+            data = obj.list(resultsperpage=500)
+            schema = get_avro_record_schema(name=name, fields=ENDPOINT_FIELDS[name])
+
+            yield Output(
+                output_name=name,
+                value=(data, schema),
+                metadata={"record_count": len(data)},
+            )
+
+    @asset(
+        name="survey_response",
+        key_prefix=[code_location, "alchemer"],
+        io_manager_key="gcs_avro_io",
+        partitions_def=MultiPartitionsDefinition(
+            partitions_defs={
+                "survey_id": DynamicPartitionsDefinition(name="survey_id"),
+                "date_submitted": DynamicPartitionsDefinition(name="date_submitted"),
+            }
+        ),
+        op_tags=op_tags,
+    )
+    def survey_response(
+        context: OpExecutionContext, alchemer: Resource[AlchemerSession]
+    ):
+        survey_id = context.partition_key.keys_by_dimension["survey_id"]
+        date_submitted = (context.partition_key.keys_by_dimension["date_submitted"],)
+
+        survey = alchemer.survey.get(id=survey_id)
+
+        survey_response = survey.response.filter(
+            "date_submitted", ">=", date_submitted
+        ).list(resultsperpage=500)
+
+        yield Output(
+            value=survey_response, metadata={"record_count": len(survey_response)}
         )
 
-        survey_campaign_data = survey.campaign.list()
-        yield Output(
-            output_name="survey_campaign",
-            value=(
-                survey_campaign_data,
-                get_avro_record_schema(
-                    name="survey_campaign", fields=ENDPOINT_FIELDS["survey_campaign"]
-                ),
-            ),
-            metadata={"record_count": len(survey_campaign_data)},
-        )
-
-    return _multi_asset
+    return [_multi_asset, survey_response]
