@@ -2,7 +2,6 @@ from alchemer import AlchemerSession
 from dagster import (
     AssetOut,
     DynamicPartitionsDefinition,
-    MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
     Resource,
@@ -64,26 +63,22 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         name="survey_response",
         key_prefix=[code_location, "alchemer"],
         io_manager_key="gcs_avro_io",
-        partitions_def=MultiPartitionsDefinition(
-            partitions_defs={
-                "survey_id": DynamicPartitionsDefinition(name="survey_id"),
-                "date_submitted": DynamicPartitionsDefinition(name="date_submitted"),
-            }
+        partitions_def=DynamicPartitionsDefinition(
+            name=f"{code_location}_alchemer_survey_response"
         ),
         op_tags=op_tags,
+        output_required=False,
     )
     def survey_response(
         context: OpExecutionContext, alchemer: Resource[AlchemerSession]
     ):
-        survey = alchemer.survey.get(
-            id=context.partition_key.keys_by_dimension["survey_id"]
-        )
+        survey_id, date_submitted = context.partition_key.split(".")
 
-        data = survey.response.filter(
-            "date_submitted",
-            ">=",
-            context.partition_key.keys_by_dimension["date_submitted"],
-        ).list(resultsperpage=500)
+        survey = alchemer.survey.get(id=survey_id)
+
+        data = survey.response.filter("date_submitted", ">=", date_submitted).list(
+            resultsperpage=500
+        )
 
         schema = get_avro_record_schema(
             name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
