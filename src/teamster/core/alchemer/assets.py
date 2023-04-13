@@ -5,7 +5,7 @@ from dagster import (
     DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
-    Resource,
+    ResourceParam,
     asset,
     multi_asset,
 )
@@ -35,7 +35,9 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         ),
         op_tags=op_tags,
     )
-    def survey_assets(context: OpExecutionContext, alchemer: Resource[AlchemerSession]):
+    def survey_assets(
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
+    ):
         survey = alchemer.survey.get(id=context.partition_key)
 
         yield Output(
@@ -72,7 +74,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         op_tags=op_tags,
     )
     def survey_response_disqualified(
-        context: OpExecutionContext, alchemer: Resource[AlchemerSession]
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
     ):
         survey = alchemer.survey.get(id=context.partition_key)
 
@@ -97,7 +99,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         output_required=False,
     )
     def survey_response(
-        context: OpExecutionContext, alchemer: Resource[AlchemerSession]
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
     ):
         partition_key_split = context.partition_key.split("_")
         date_submitted = pendulum.from_timestamp(
