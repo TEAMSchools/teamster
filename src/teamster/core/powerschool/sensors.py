@@ -81,8 +81,9 @@ def build_dynamic_partition_sensor(
 
         try:
             for asset in asset_defs:
-                asset_key_string = asset.key.to_python_identifier()
+                run_request = False
 
+                asset_key_string = asset.key.to_python_identifier()
                 context.log.debug(asset_key_string)
 
                 cursor_window_start = cursor.get(asset_key_string)
