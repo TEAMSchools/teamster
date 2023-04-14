@@ -1,13 +1,11 @@
 import pendulum
 from alchemer import AlchemerSession
 from dagster import (
-    AssetOut,
     DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
     ResourceParam,
     asset,
-    multi_asset,
 )
 
 from teamster.core.alchemer.schema import ENDPOINT_FIELDS
@@ -15,29 +13,16 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 def build_partition_assets(code_location, op_tags={}) -> list:
-    @multi_asset(
-        outs={
-            "survey": AssetOut(
-                key_prefix=[code_location, "alchemer"],
-                io_manager_key="gcs_avro_io",
-            ),
-            "survey_question": AssetOut(
-                key_prefix=[code_location, "alchemer"],
-                io_manager_key="gcs_avro_io",
-            ),
-            "survey_campaign": AssetOut(
-                key_prefix=[code_location, "alchemer"],
-                io_manager_key="gcs_avro_io",
-            ),
-        },
+    @asset(
+        name="survey",
+        key_prefix=[code_location, "alchemer"],
+        io_manager_key="gcs_avro_io",
         partitions_def=DynamicPartitionsDefinition(
             name=f"{code_location}_alchemer_survey_id"
         ),
         op_tags=op_tags,
     )
-    def survey_assets(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
-    ):
+    def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]):
         survey = alchemer.survey.get(id=context.partition_key)
 
         yield Output(
@@ -49,20 +34,58 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             metadata={"record_count": 1},
         )
 
-        subobjects = {
-            "survey_question": survey.question,
-            "survey_campaign": survey.campaign,
-        }
+    @asset(
+        name="survey_question",
+        key_prefix=[code_location, "alchemer"],
+        io_manager_key="gcs_avro_io",
+        partitions_def=DynamicPartitionsDefinition(
+            name=f"{code_location}_alchemer_survey_id"
+        ),
+        op_tags=op_tags,
+    )
+    def survey_question(
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
+    ):
+        survey = alchemer.survey.get(id=context.partition_key)
 
-        for name, obj in subobjects.items():
-            data = obj.list(resultsperpage=500)
-            schema = get_avro_record_schema(name=name, fields=ENDPOINT_FIELDS[name])
+        data = survey.question.list(resultsperpage=500)
+        schema = get_avro_record_schema(
+            name="survey_question", fields=ENDPOINT_FIELDS["survey_question"]
+        )
 
-            yield Output(
-                output_name=name,
-                value=(data, schema),
-                metadata={"record_count": len(data)},
-            )
+        yield Output(
+            output_name="survey_question",
+            value=(data, schema),
+            metadata={"record_count": len(data)},
+        )
+
+    @asset(
+        name="survey_campaign",
+        key_prefix=[code_location, "alchemer"],
+        io_manager_key="gcs_avro_io",
+        partitions_def=DynamicPartitionsDefinition(
+            name=f"{code_location}_alchemer_survey_id"
+        ),
+        op_tags=op_tags,
+    )
+    def survey_campaign(
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
+    ):
+        asset_name = context.assets_def.key[-1]
+        context.log.debug(asset_name)
+
+        survey = alchemer.survey.get(id=context.partition_key)
+
+        data = survey.campaign.list(resultsperpage=500)
+        schema = get_avro_record_schema(
+            name="survey_campaign", fields=ENDPOINT_FIELDS["survey_campaign"]
+        )
+
+        yield Output(
+            output_name="survey_campaign",
+            value=(data, schema),
+            metadata={"record_count": len(data)},
+        )
 
     @asset(
         name="survey_response_disqualified",
@@ -121,4 +144,10 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             metadata={"record_count": len(data)},
         )
 
-    return survey_assets, survey_response_disqualified, survey_response
+    return (
+        survey,
+        survey_question,
+        survey_campaign,
+        survey_response_disqualified,
+        survey_response,
+    )

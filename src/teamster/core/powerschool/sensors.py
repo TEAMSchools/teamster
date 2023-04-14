@@ -82,12 +82,15 @@ def build_dynamic_partition_sensor(
         try:
             for asset in asset_defs:
                 asset_key_string = asset.key.to_python_identifier()
+
                 context.log.debug(asset_key_string)
 
-                run_request = False
-                run_config = None
+                cursor_window_start = cursor.get(asset_key_string)
 
-                if not context.instance.get_latest_materialization_event(asset.key):
+                if (
+                    not context.instance.get_latest_materialization_event(asset.key)
+                    or cursor_window_start is None
+                ):
                     window_start = pendulum.from_timestamp(0)
                     run_request = True
                     run_config = {
@@ -100,15 +103,9 @@ def build_dynamic_partition_sensor(
                         }
                     }
                 else:
-                    cursor_window_start = cursor.get(asset_key_string)
-
-                    if cursor_window_start is not None:
-                        window_start = pendulum.from_timestamp(
-                            cursor_window_start, tz=LOCAL_TIME_ZONE
-                        )
-                    else:
-                        # rewind 2 weeks in case of manual cursor reset
-                        window_start = window_end.subtract(weeks=2).start_of("day")
+                    window_start = pendulum.from_timestamp(
+                        cursor_window_start, tz=LOCAL_TIME_ZONE
+                    )
 
                     count = get_asset_count(
                         asset=asset,
@@ -120,6 +117,7 @@ def build_dynamic_partition_sensor(
 
                     if count > 0:
                         run_request = True
+                        run_config = None
 
                 if run_request:
                     partition_key = window_start.to_iso8601_string()
