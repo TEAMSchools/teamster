@@ -37,20 +37,3 @@ assets:
     destination_config:
       name: pythonanywhere
       path: sftp/powerschool/kippmiami
-  - asset_name: powerschool_autocomm_students_easyiep_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: powerschool_autocomm_students_easyiep
-          schema: extracts
-        where: db_name = 'kippmiami'
-    file_config:
-      stem: powerschool_autocomm_students_easyiep
-      suffix: txt
-      format:
-        header: False
-        sep: "\t"
-    destination_config:
-      name: pythonanywhere
-      path: sftp/powerschool/kippmiami
