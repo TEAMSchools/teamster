@@ -13,13 +13,15 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 def build_partition_assets(code_location, op_tags={}) -> list:
+    io_manager_key = "gcs_avro_io"
+    key_prefix = [code_location, "alchemer"]
+    partitions_def_name = f"{code_location}_alchemer_survey_id"
+
     @asset(
         name="survey",
-        key_prefix=[code_location, "alchemer"],
-        io_manager_key="gcs_avro_io",
-        partitions_def=DynamicPartitionsDefinition(
-            name=f"{code_location}_alchemer_survey_id"
-        ),
+        key_prefix=key_prefix,
+        io_manager_key=io_manager_key,
+        partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
     def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]):
@@ -36,11 +38,9 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
     @asset(
         name="survey_question",
-        key_prefix=[code_location, "alchemer"],
-        io_manager_key="gcs_avro_io",
-        partitions_def=DynamicPartitionsDefinition(
-            name=f"{code_location}_alchemer_survey_id"
-        ),
+        key_prefix=key_prefix,
+        io_manager_key=io_manager_key,
+        partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
     def survey_question(
@@ -61,11 +61,9 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
     @asset(
         name="survey_campaign",
-        key_prefix=[code_location, "alchemer"],
-        io_manager_key="gcs_avro_io",
-        partitions_def=DynamicPartitionsDefinition(
-            name=f"{code_location}_alchemer_survey_id"
-        ),
+        key_prefix=key_prefix,
+        io_manager_key=io_manager_key,
+        partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
     def survey_campaign(
@@ -89,11 +87,9 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
     @asset(
         name="survey_response_disqualified",
-        key_prefix=[code_location, "alchemer"],
-        io_manager_key="gcs_avro_io",
-        partitions_def=DynamicPartitionsDefinition(
-            name=f"{code_location}_alchemer_survey_id"
-        ),
+        key_prefix=key_prefix,
+        io_manager_key=io_manager_key,
+        partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
     def survey_response_disqualified(
@@ -113,8 +109,8 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
     @asset(
         name="survey_response",
-        key_prefix=[code_location, "alchemer"],
-        io_manager_key="gcs_avro_io",
+        key_prefix=key_prefix,
+        io_manager_key=io_manager_key,
         partitions_def=DynamicPartitionsDefinition(
             name=f"{code_location}_alchemer_survey_response"
         ),
