@@ -20,12 +20,12 @@ defs = Definitions(
     assets=[
         *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
         *load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint"),
-        *load_assets_from_modules(modules=[alchemer.assets], group_name="alchemer"),
+        *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
         *load_assets_from_modules(modules=[dbt.assets]),
     ],
     jobs=[*datagun.jobs.__all__, *schoolmint.jobs.__all__],
     schedules=[*datagun.schedules.__all__, *schoolmint.schedules.__all__],
-    sensors=[*dbt.sensors.__all__],
+    sensors=[*dbt.sensors.__all__, *alchemer.sensors],
     resources={
         "dbt": dbt_cli_resource.configured(
             {

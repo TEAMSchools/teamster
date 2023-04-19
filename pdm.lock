@@ -279,7 +279,7 @@ dependencies = [
 
 [[package]]
 name = "dbt-core"
-version = "1.4.5"
+version = "1.4.6"
 requires_python = ">=3.7.2"
 summary = "With dbt, data analysts and engineers can build analytics the way engineers build applications."
 dependencies = [
@@ -290,7 +290,7 @@ dependencies = [
     "click<9,>=7.0",
     "colorama<0.4.7,>=0.3.9",
     "dbt-extractor~=0.4.1",
-    "hologram<=0.0.15,>=0.0.14",
+    "hologram<=0.0.16,>=0.0.14",
     "idna<4,>=2.5",
     "isodate<0.7,>=0.6",
     "logbook<1.6,>=1.5",
@@ -302,7 +302,7 @@ dependencies = [
     "pytz>=2015.7",
     "pyyaml>=6.0",
     "requests<3.0.0",
-    "sqlparse<0.5,>=0.2.3",
+    "sqlparse<0.4.4,>=0.2.3",
     "typing-extensions>=3.7.4",
     "werkzeug<3,>=1",
 ]
@@ -590,10 +590,10 @@ dependencies = [
 
 [[package]]
 name = "hologram"
-version = "0.0.15"
+version = "0.0.16"
 summary = "JSON schema generation from dataclasses"
 dependencies = [
-    "jsonschema<4.0,>=3.0",
+    "jsonschema>=3.0",
     "python-dateutil<2.9,>=2.8",
 ]
 
@@ -658,13 +658,12 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "3.2.0"
+version = "4.17.3"
+requires_python = ">=3.7"
 summary = "An implementation of JSON Schema validation for Python"
 dependencies = [
     "attrs>=17.4.0",
-    "pyrsistent>=0.14.0",
-    "setuptools",
-    "six>=1.11.0",
+    "pyrsistent!=0.17.0,!=0.17.1,!=0.17.2,>=0.14.0",
 ]
 
 [[package]]
@@ -1128,7 +1127,7 @@ dependencies = [
 
 [[package]]
 name = "sqlparse"
-version = "0.4.4"
+version = "0.4.3"
 requires_python = ">=3.5"
 summary = "A non-validating SQL parser."
 
@@ -1541,9 +1540,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/96/57/0318403851f2f850503f7f11dbd956daa82ffc862a3ee7f4f6447592788c/dbt-bigquery-1.4.3.tar.gz", hash = "sha256:af85c41cdf7efd71eee9a460f5b51d8c59ca903efbd2c6974d1e159c3e871489"},
     {url = "https://files.pythonhosted.org/packages/e5/1d/e0e1c568b76af20e7109d3be3ed6c59f8472ec03ec5f80d7ebf8167509a4/dbt_bigquery-1.4.3-py3-none-any.whl", hash = "sha256:7f6a7bf40492e68c2782410cf8e118321c4f3844c577d2e7c3c0b79acb307add"},
 ]
-"dbt-core 1.4.5" = [
-    {url = "https://files.pythonhosted.org/packages/06/ac/fcf87c574bf75e8b91af4975cc2a04bbc0fc5fc8002e74abce08ebfd3796/dbt_core-1.4.5-py3-none-any.whl", hash = "sha256:361248e7a629d2746e18c31fa459afb607060fb8cb1e2a76706c36ce5ab9b534"},
-    {url = "https://files.pythonhosted.org/packages/e6/1a/c286b5e966843c10a7733149c59728c30f51c0f9378f1d3e2253c000488b/dbt-core-1.4.5.tar.gz", hash = "sha256:d32a322c192a84f41c27e8e94758c3062d2796a2e0ef32056ae5fc5d4d5c2298"},
+"dbt-core 1.4.6" = [
+    {url = "https://files.pythonhosted.org/packages/27/56/6922164d4e3bc326ba09537fb6e9d487cda46ecbfa0fd3d729121e5b0add/dbt_core-1.4.6-py3-none-any.whl", hash = "sha256:836a63ea5026fec207b4f083f851fc8b9bb79f6d7965ccb7dc5b022b68a96742"},
+    {url = "https://files.pythonhosted.org/packages/37/b5/7843cc80769d5db2a9405832b274969a19006e53c89304933c104a479a1e/dbt-core-1.4.6.tar.gz", hash = "sha256:2cf0388530d6fae724b64447c1e93682cb4fe4cd27d170472c983c19a3395cf9"},
 ]
 "dbt-extractor 0.4.1" = [
     {url = "https://files.pythonhosted.org/packages/1c/bd/d14a9011a2d023f00154af4c61819b1927a94b4bdadda3fd81e5a4c7436c/dbt_extractor-0.4.1-cp36-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:037907a7c7ae0391045d81338ca77ddaef899a91d80f09958f09fe374594e19b"},
@@ -1862,9 +1861,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/2a/32/fec683ddd10629ea4ea46d206752a95a2d8a48c22521edd70b142488efe1/h2-4.1.0.tar.gz", hash = "sha256:a83aca08fbe7aacb79fec788c9c0bac936343560ed9ec18b82a13a12c28d2abb"},
     {url = "https://files.pythonhosted.org/packages/2a/e5/db6d438da759efbb488c4f3fbdab7764492ff3c3f953132efa6b9f0e9e53/h2-4.1.0-py3-none-any.whl", hash = "sha256:03a46bcf682256c95b5fd9e9a99c1323584c3eec6440d379b9903d709476bc6d"},
 ]
-"hologram 0.0.15" = [
-    {url = "https://files.pythonhosted.org/packages/a3/2a/de1aa58bde7560d51d17bd75e4ee47bae3e81bac0b0edaf39a84347efdd1/hologram-0.0.15-py3-none-any.whl", hash = "sha256:48ca81ed47da1c604b2d3b951424b600eb8a5785b00513e3b8e3ae8101f90145"},
-    {url = "https://files.pythonhosted.org/packages/f7/c7/532cba3069f5b5495d1bb1a8c9021d02226cd6e69810911a2b559acdca94/hologram-0.0.15.tar.gz", hash = "sha256:79b3d04df84d5a9d09c2e669ec5bcc50b1713ec79f4683cfdea85583b41e46f0"},
+"hologram 0.0.16" = [
+    {url = "https://files.pythonhosted.org/packages/9f/0c/273e0dfadb033789faac3393cb52fb8dbf367b7f687443d0266f82923e60/hologram-0.0.16.tar.gz", hash = "sha256:1c2c921b4e575361623ea0e0d0aa5aee377b1a333cc6c6a879e213ed34583e55"},
+    {url = "https://files.pythonhosted.org/packages/fe/1a/10c3937e47cc3d86a4deec51770ef5c454b732893e58655056d755ef921d/hologram-0.0.16-py3-none-any.whl", hash = "sha256:4e56bd525336bb64a18916f871977a4125b64be8aaa750233583003333cda361"},
 ]
 "hpack 4.0.0" = [
     {url = "https://files.pythonhosted.org/packages/3e/9b/fda93fb4d957db19b0f6b370e79d586b3e8528b20252c729c476a2c02954/hpack-4.0.0.tar.gz", hash = "sha256:fc41de0c63e687ebffde81187a948221294896f6bdc0ae2312708df339430095"},
@@ -1898,9 +1897,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/7a/ff/75c28576a1d900e87eb6335b063fab47a8ef3c8b4d88524c4bf78f670cce/Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
     {url = "https://files.pythonhosted.org/packages/bc/c3/f068337a370801f372f2f8f6bad74a5c140f6fda3d9de154052708dd3c65/Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
 ]
-"jsonschema 3.2.0" = [
-    {url = "https://files.pythonhosted.org/packages/69/11/a69e2a3c01b324a77d3a7c0570faa372e8448b666300c4117a516f8b1212/jsonschema-3.2.0.tar.gz", hash = "sha256:c8a85b28d377cc7737e46e2d9f2b4f44ee3c0e1deac6bf46ddefc7187d30797a"},
-    {url = "https://files.pythonhosted.org/packages/c5/8f/51e89ce52a085483359217bc72cdbf6e75ee595d5b1d4b5ade40c7e018b8/jsonschema-3.2.0-py2.py3-none-any.whl", hash = "sha256:4e5b3cf8216f577bee9ce139cbe72eca3ea4f292ec60928ff24758ce626cd163"},
+"jsonschema 4.17.3" = [
+    {url = "https://files.pythonhosted.org/packages/36/3d/ca032d5ac064dff543aa13c984737795ac81abc9fb130cd2fcff17cfabc7/jsonschema-4.17.3.tar.gz", hash = "sha256:0f864437ab8b6076ba6707453ef8f98a6a0d512a80e93f8abdb676f737ecb60d"},
+    {url = "https://files.pythonhosted.org/packages/c1/97/c698bd9350f307daad79dd740806e1a59becd693bd11443a0f531e3229b3/jsonschema-4.17.3-py3-none-any.whl", hash = "sha256:a870ad254da1a8ca84b6a2905cac29d265f805acc57af304784962a2aa6508f6"},
 ]
 "kubernetes 26.1.0" = [
     {url = "https://files.pythonhosted.org/packages/34/19/2f351c0eaf05234dc33a6e0ffc7894e9dedab0ff341311c5b4ba44f2d8ac/kubernetes-26.1.0.tar.gz", hash = "sha256:5854b0c508e8d217ca205591384ab58389abdae608576f9c9afc35a3c76a366c"},
@@ -2681,9 +2680,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/fa/42/4d20bc839294f99285ad20a6a3d9a751a70b2829f537e9191d61f32b5993/SQLAlchemy-1.4.47-cp27-cp27m-win_amd64.whl", hash = "sha256:10edbb92a9ef611f01b086e271a9f6c1c3e5157c3b0c5ff62310fb2187acbd4a"},
     {url = "https://files.pythonhosted.org/packages/fb/1e/6fd721b58448a70d563c6adce617a6f26e538e3db7b568bb2c4e0aa3adfb/SQLAlchemy-1.4.47-cp310-cp310-win_amd64.whl", hash = "sha256:2bba39b12b879c7b35cde18b6e14119c5f1a16bd064a48dd2ac62d21366a5e17"},
 ]
-"sqlparse 0.4.4" = [
-    {url = "https://files.pythonhosted.org/packages/65/16/10f170ec641ed852611b6c9441b23d10b5702ab5288371feab3d36de2574/sqlparse-0.4.4.tar.gz", hash = "sha256:d446183e84b8349fa3061f0fe7f06ca94ba65b426946ffebe6e3e8295332420c"},
-    {url = "https://files.pythonhosted.org/packages/98/5a/66d7c9305baa9f11857f247d4ba761402cea75db6058ff850ed7128957b7/sqlparse-0.4.4-py3-none-any.whl", hash = "sha256:5430a4fe2ac7d0f93e66f1efc6e1338a41884b7ddf2a350cedd20ccc4d9d28f3"},
+"sqlparse 0.4.3" = [
+    {url = "https://files.pythonhosted.org/packages/97/d3/31dd2c3e48fc2060819f4acb0686248250a0f2326356306b38a42e059144/sqlparse-0.4.3-py3-none-any.whl", hash = "sha256:0323c0ec29cd52bceabc1b4d9d579e311f3e4961b98d174201d5622a23b85e34"},
+    {url = "https://files.pythonhosted.org/packages/ba/fa/5b7662b04b69f3a34b8867877e4dbf2a37b7f2a5c0bbb5a9eed64efd1ad1/sqlparse-0.4.3.tar.gz", hash = "sha256:69ca804846bb114d2ec380e4360a8a340db83f0ccf3afceeb1404df028f57268"},
 ]
 "sshtunnel 0.4.0" = [
     {url = "https://files.pythonhosted.org/packages/58/13/8476c4328dcadfe26f8bd7f3a1a03bf9ddb890a7e7b692f54a179bc525bf/sshtunnel-0.4.0-py2.py3-none-any.whl", hash = "sha256:98e54c26f726ab8bd42b47a3a21fca5c3e60f58956f0f70de2fb8ab0046d0606"},
