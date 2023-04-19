@@ -22,7 +22,7 @@ defs = Definitions(
         ),
         *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
         *load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist"),
-        *load_assets_from_modules(modules=[dbt.assets]),
+        *load_assets_from_modules(modules=[dbt]),
     ],
     jobs=[*datagun.jobs.__all__, *deanslist.jobs.__all__],
     schedules=[
@@ -30,7 +30,7 @@ defs = Definitions(
         *powerschool.schedules.__all__,
         *deanslist.schedules.__all__,
     ],
-    sensors=[*powerschool.sensors.__all__, *dbt.sensors.__all__],
+    sensors=[*powerschool.sensors.__all__, *dbt.sensors],
     resources={
         "warehouse": mssql.configured(
             config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
