@@ -40,9 +40,9 @@ def build_survey_metadata_asset_sensor(
     def _sensor(
         context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
     ):
-        now = pendulum.now(tz=LOCAL_TIME_ZONE).start_of("minute")
+        cursor: dict = json.loads(context.cursor or "{}")
 
-        cursor = json.loads(context.cursor or "{}")
+        now = pendulum.now(tz=LOCAL_TIME_ZONE).start_of("minute")
 
         surveys = alchemer.survey.list()
         for survey in surveys:
@@ -53,51 +53,35 @@ def build_survey_metadata_asset_sensor(
                 tz="US/Eastern",
             )
 
-            context.log.debug(survey["title"])
+            survey_cursor_timestamp = cursor.get(survey_id)
 
-            # check if survey id has ever been materialized
-            materialization_count_by_partition = (
-                context.instance.get_materialization_count_by_partition(
-                    [survey_asset.key]
-                ).get(survey_asset.key, {})
+            survey_cursor_datetime = pendulum.from_timestamp(
+                timestamp=survey_cursor_timestamp, tz=LOCAL_TIME_ZONE
             )
 
-            materialization_count = 0
-            for partition_key, count in materialization_count_by_partition.items():
-                if partition_key == survey_id:
-                    materialization_count += count
-
-            run_request = False
             if (
-                materialization_count == 0
-                or materialization_count == context.retry_number
+                not context.instance.get_latest_materialization_event(survey_asset.key)
+                or survey_cursor_timestamp is None
             ):
                 run_request = True
-                last_requested = pendulum.from_timestamp(0)
+            elif modified_on > survey_cursor_datetime:
+                run_request = True
             else:
-                # check modified_on for survey id
-                last_requested = pendulum.from_timestamp(
-                    timestamp=cursor.get(survey_id), tz=LOCAL_TIME_ZONE
+                run_request = False
+
+            if run_request:
+                context.instance.add_dynamic_partitions(
+                    partitions_def_name=survey_asset.partitions_def.name,
+                    partition_keys=[survey_id],
                 )
 
-                if modified_on > last_requested:
-                    run_request = True
+                yield RunRequest(
+                    run_key=f"{asset_job.name}_{survey_id}",
+                    asset_selection=asset_keys,
+                    partition_key=survey_id,
+                )
 
-        if run_request:
-            partition_key = survey_id
-
-            context.instance.add_dynamic_partitions(
-                partitions_def_name=survey_asset.partitions_def.name,
-                partition_keys=[partition_key],
-            )
-
-            yield RunRequest(
-                run_key=f"{asset_job.name}_{partition_key}",
-                asset_selection=asset_keys,
-                partition_key=partition_key,
-            )
-
-            cursor[survey_id] = now.timestamp()
+                cursor[survey_id] = now.timestamp()
 
         context.update_cursor(json.dumps(cursor))
 

@@ -51,7 +51,7 @@ def build_dynamic_partition_sensor(
 
     @sensor(
         name=name,
-        jobs=asset_jobs,
+        # jobs=asset_jobs,
         minimum_interval_seconds=minimum_interval_seconds,
         required_resource_keys={"ps_ssh", "ps_db"},
     )
