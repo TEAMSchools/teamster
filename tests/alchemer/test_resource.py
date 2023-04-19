@@ -10,7 +10,7 @@ from teamster.core.alchemer.resources import alchemer_resource
 from teamster.core.alchemer.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-TEST_SURVEY_ID = None
+TEST_SURVEY_ID = 6330385
 FILTER_SURVEY_IDS = []
 PASSED_SURVEY_IDS = [
     # 3108476,
