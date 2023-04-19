@@ -426,7 +426,7 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-bigquery"
-version = "3.9.0"
+version = "3.10.0"
 requires_python = ">=3.7"
 summary = "Google BigQuery API client library"
 dependencies = [
@@ -1635,9 +1635,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/4a/07/8d9a8186e6768b55dfffeb57c719bc03770cf8a970a074616ae6f9e26a57/google_auth_oauthlib-1.0.0-py2.py3-none-any.whl", hash = "sha256:95880ca704928c300f48194d1770cf5b1462835b6e49db61445a520f793fd5fb"},
     {url = "https://files.pythonhosted.org/packages/e3/b4/ef2170c5f6aa5bc2461bab959a84e56d2819ce26662b50038d2d0602223e/google-auth-oauthlib-1.0.0.tar.gz", hash = "sha256:e375064964820b47221a7e1b7ee1fd77051b6323c3f9e3e19785f78ab67ecfc5"},
 ]
-"google-cloud-bigquery 3.9.0" = [
-    {url = "https://files.pythonhosted.org/packages/24/82/3a019e8fccd24df8f31d729aca41ccb4a2a7ec87787aa2af99e889004015/google_cloud_bigquery-3.9.0-py2.py3-none-any.whl", hash = "sha256:c7b539c6a020cd662fef950b3367ab1c33a4ba07e008bccf2e9cb09a516d0de9"},
-    {url = "https://files.pythonhosted.org/packages/9f/41/77c0ec111fb6eb0c0d6728149f4dbbf85e3f56ff7a2c3051f2f6b2fa14b0/google-cloud-bigquery-3.9.0.tar.gz", hash = "sha256:39b055087a8471b0ebab7a4bf54decda845b6087b104ef0be078ced1e1dccb26"},
+"google-cloud-bigquery 3.10.0" = [
+    {url = "https://files.pythonhosted.org/packages/9a/77/def5ee8ccf1c2fc7d4a9f6ec8e7a6a6411891cf094ac75139623dab3c435/google-cloud-bigquery-3.10.0.tar.gz", hash = "sha256:4b02def076e2db8cec66f65fb627d13904a9fc3cf4fee315ede43dcb7038a8df"},
+    {url = "https://files.pythonhosted.org/packages/fc/7a/47e3f57cad098ba1bfe2548c492f898978a7cadc6e630d4d54fa6b062c53/google_cloud_bigquery-3.10.0-py2.py3-none-any.whl", hash = "sha256:848a3cbce0ba7d4f1e9551400a7c99aa0eab72290d5a1bbbe69f18a24a10bd3a"},
 ]
 "google-cloud-core 2.3.2" = [
     {url = "https://files.pythonhosted.org/packages/40/4b/f4cebb92fe965f02f4a9c06f16355cf83a61a2d5db110df9af71191c830a/google-cloud-core-2.3.2.tar.gz", hash = "sha256:b9529ee7047fd8d4bf4a2182de619154240df17fbe60ead399078c1ae152af9a"},
