@@ -55,16 +55,14 @@ def build_survey_metadata_asset_sensor(
 
             survey_cursor_timestamp = cursor.get(survey_id)
 
-            survey_cursor_datetime = pendulum.from_timestamp(
-                timestamp=survey_cursor_timestamp, tz=LOCAL_TIME_ZONE
-            )
-
             if (
                 not context.instance.get_latest_materialization_event(survey_asset.key)
                 or survey_cursor_timestamp is None
             ):
                 run_request = True
-            elif modified_on > survey_cursor_datetime:
+            elif modified_on > pendulum.from_timestamp(
+                timestamp=survey_cursor_timestamp, tz=LOCAL_TIME_ZONE
+            ):
                 run_request = True
             else:
                 run_request = False
