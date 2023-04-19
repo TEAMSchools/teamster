@@ -28,7 +28,6 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         survey = alchemer.survey.get(id=context.partition_key)
 
         yield Output(
-            output_name="survey",
             value=(
                 [survey.data],
                 get_avro_record_schema(name="survey", fields=ENDPOINT_FIELDS["survey"]),
@@ -53,11 +52,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             name="survey_question", fields=ENDPOINT_FIELDS["survey_question"]
         )
 
-        yield Output(
-            output_name="survey_question",
-            value=(data, schema),
-            metadata={"record_count": len(data)},
-        )
+        yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
     @asset(
         name="survey_campaign",
@@ -79,11 +74,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             name="survey_campaign", fields=ENDPOINT_FIELDS["survey_campaign"]
         )
 
-        yield Output(
-            output_name="survey_campaign",
-            value=(data, schema),
-            metadata={"record_count": len(data)},
-        )
+        yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
     @asset(
         name="survey_response_disqualified",
