@@ -1,17 +1,5 @@
 from teamster.core.utils.functions import get_avro_record_schema
 
-
-def foo(namespace, field_name, field_type, depth=1):
-    if depth > 0:
-        return get_avro_record_schema(
-            name=field_name,
-            fields=[*foo(namespace=f"{namespace}.{field_name}", depth=(depth - 1))],
-            namespace=namespace,
-        )
-    else:
-        return {}
-
-
 ATOM_FIELDS = [
     {"name": "type", "type": ["null", "string"], "default": None},
     {
@@ -61,18 +49,20 @@ SURVEY_OPTION_FIELDS = [
     {"name": "value", "type": ["null", "string"], "default": None},
     {
         "name": "title",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
+        "type": ["null", {"type": "map", "values": ["string", "int"], "default": {}}],
         "default": None,
     },
 ]
 
 SURVEY_QUESTION_PROPERTY_FIELDS = [
+    {"name": "break_after", "type": ["null", "boolean"], "default": None},
     {"name": "custom_css", "type": ["null", "string"], "default": None},
-    {"name": "data_type", "type": ["null", "string"], "default": None},
     {"name": "data_json", "type": ["null", "boolean"], "default": None},
+    {"name": "data_type", "type": ["null", "string"], "default": None},
     {"name": "disabled", "type": ["null", "boolean"], "default": None},
     {"name": "element_style", "type": ["null", "string"], "default": None},
     {"name": "exclude_number", "type": ["null", "string"], "default": None},
+    {"name": "extentions", "type": ["null", "string"], "default": None},
     {"name": "force_currency", "type": ["null", "boolean"], "default": None},
     {"name": "force_int", "type": ["null", "boolean"], "default": None},
     {"name": "force_numeric", "type": ["null", "boolean"], "default": None},
@@ -82,6 +72,7 @@ SURVEY_QUESTION_PROPERTY_FIELDS = [
     {"name": "labels_right", "type": ["null", "boolean"], "default": None},
     {"name": "map_key", "type": ["null", "string"], "default": None},
     {"name": "max_number", "type": ["null", "string"], "default": None},
+    {"name": "maxfiles", "type": ["null", "string"], "default": None},
     {"name": "min_answers_per_row", "type": ["null", "string"], "default": None},
     {"name": "min_number", "type": ["null", "string"], "default": None},
     {"name": "minimum_response", "type": ["null", "int"], "default": None},
@@ -90,11 +81,11 @@ SURVEY_QUESTION_PROPERTY_FIELDS = [
     {"name": "orientation", "type": ["null", "string"], "default": None},
     {"name": "required", "type": ["null", "boolean"], "default": None},
     {"name": "show_title", "type": ["null", "boolean"], "default": None},
+    {"name": "sizelimit", "type": ["null", "int"], "default": None},
     {"name": "soft-required", "type": ["null", "boolean"], "default": None},
     {"name": "sub_questions", "type": ["null", "int"], "default": None},
     {"name": "subtype", "type": ["null", "string"], "default": None},
     {"name": "url", "type": ["null", "string"], "default": None},
-    {"name": "break_after", "type": ["null", "boolean"], "default": None},
     {
         "name": "question_description_above",
         "type": ["null", "boolean"],
