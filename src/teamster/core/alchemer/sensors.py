@@ -114,17 +114,21 @@ def build_survey_response_asset_sensor(
 
             # check if survey id has ever been materialized
             survey_materialization_count = 0
-            materialization_count = (
+            materialization_count_by_partition = (
                 context.instance.get_materialization_count_by_partition(
-                    [asset_def.key]
-                ).get(asset_def.key, {})
+                    asset_keys=[asset_def.key]
+                )
             )
-            context.log.debug(materialization_count)
+            context.log.debug(materialization_count_by_partition)
 
-            for partition_key, count in materialization_count.items():
+            for partition_key, count in materialization_count_by_partition.get(
+                asset_def.key, {}
+            ).items():
                 if partition_key.split("_")[0] == survey_id:
                     survey_materialization_count += count
 
+            context.log.debug(survey_materialization_count)
+            context.log.debug(survey_cursor_timestamp)
             if survey_materialization_count == 0 or survey_cursor_timestamp == 0:
                 run_request = True
                 run_config = {
@@ -150,6 +154,7 @@ def build_survey_response_asset_sensor(
                 else:
                     run_request = False
 
+            context.log.debug(run_request)
             if run_request:
                 partition_key = f"{survey_id}_{survey_cursor_timestamp}"
 
@@ -159,7 +164,9 @@ def build_survey_response_asset_sensor(
                 )
 
                 yield RunRequest(
-                    run_key=f"{code_location}_alchemer_survey_response_job_{survey_id}",
+                    run_key=(
+                        f"{code_location}_alchemer_survey_response_job_{partition_key}"
+                    ),
                     run_config=run_config,
                     asset_selection=[asset_def.key],
                     partition_key=partition_key,
