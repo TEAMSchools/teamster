@@ -125,7 +125,7 @@ def build_survey_response_asset_sensor(
                 if partition_key.split("_")[0] == survey_id:
                     survey_materialization_count += count
 
-            if survey_materialization_count == 0:
+            if survey_materialization_count == 0 or survey_cursor_timestamp == 0:
                 run_request = True
                 run_config = {
                     "execution": {
