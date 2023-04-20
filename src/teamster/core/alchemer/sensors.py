@@ -5,14 +5,13 @@ from alchemer import AlchemerSession
 from dagster import (
     AssetKey,
     AssetsDefinition,
+    AssetSelection,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     define_asset_job,
     sensor,
 )
-
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def build_survey_metadata_asset_sensor(
@@ -27,13 +26,13 @@ def build_survey_metadata_asset_sensor(
     ][0]
 
     asset_job = define_asset_job(
-        name="survey_metadata_job",
+        name=f"{code_location}_alchemer_survey_metadata_job",
         selection=asset_keys,
         partitions_def=survey_asset.partitions_def,
     )
 
     @sensor(
-        name="alchemer_survey_metadata_asset_sensor",
+        name=f"{code_location}_alchemer_survey_metadata_asset_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         job=asset_job,
     )
@@ -42,7 +41,7 @@ def build_survey_metadata_asset_sensor(
     ):
         cursor: dict = json.loads(context.cursor or "{}")
 
-        now = pendulum.now(tz=LOCAL_TIME_ZONE).start_of("minute")
+        now = pendulum.now(tz="US/Eastern").start_of("minute")
 
         surveys = alchemer.survey.list()
         for survey in surveys:
@@ -61,7 +60,7 @@ def build_survey_metadata_asset_sensor(
             ):
                 run_request = True
             elif modified_on > pendulum.from_timestamp(
-                timestamp=survey_cursor_timestamp, tz=LOCAL_TIME_ZONE
+                timestamp=survey_cursor_timestamp, tz="US/Eastern"
             ):
                 run_request = True
             else:
@@ -74,9 +73,89 @@ def build_survey_metadata_asset_sensor(
                 )
 
                 yield RunRequest(
-                    run_key=f"{asset_job.name}_{survey_id}",
+                    run_key=f"{code_location}_{asset_job.name}_{survey_id}",
                     asset_selection=asset_keys,
                     partition_key=survey_id,
+                )
+
+                cursor[survey_id] = now.timestamp()
+
+        context.update_cursor(json.dumps(cursor))
+
+    return _sensor
+
+
+def build_survey_response_asset_sensor(
+    code_location, asset_def: AssetsDefinition, minimum_interval_seconds=None
+):
+    @sensor(
+        name=f"{code_location}_alchemer_survey_response_asset_sensor",
+        minimum_interval_seconds=minimum_interval_seconds,
+        asset_selection=AssetSelection.assets(asset_def),
+    )
+    def _sensor(
+        context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
+    ):
+        cursor: dict = json.loads(context.cursor or "{}")
+
+        """ https://apihelp.alchemer.com/help/api-response-time
+        Response data is subject to response processing, which can vary based on server
+        load. If you are looking to access response data, the time between when a
+        response is submitted (even those submitted via the API) and when the data is
+        available via the API can be upwards of 5 minutes.
+        """
+        now = pendulum.now(tz="US/Eastern").subtract(minutes=15).start_of("minute")
+
+        surveys = alchemer.survey.list()
+        for survey in surveys:
+            survey_id = survey["id"]
+
+            survey_cursor_timestamp = cursor.get(survey_id)
+
+            survey_response_data = survey.response.filter(
+                "date_submitted",
+                ">=",
+                pendulum.from_timestamp(
+                    timestamp=survey_cursor_timestamp, tz="US/Eastern"
+                ),
+            ).list(page=1, resultsperpage=1)
+
+            if (
+                not context.instance.get_latest_materialization_event(asset_def.key)
+                or survey_cursor_timestamp is None
+            ):
+                survey_response_any = survey.response.list(page=1, resultsperpage=1)
+                context.log.debug(survey_response_any)
+
+                if survey_response_any:
+                    run_request = True
+                    run_config = {
+                        "execution": {
+                            "config": {
+                                "resources": {
+                                    "limits": {"cpu": "1000m", "memory": "6.5Gi"}
+                                }
+                            }
+                        }
+                    }
+            elif survey_response_data:
+                context.log.debug(survey_response_data)
+                run_request = True
+            else:
+                run_request = False
+
+            if run_request:
+                partition_key = f"{survey_id}_{now.timestamp}"
+                context.instance.add_dynamic_partitions(
+                    partitions_def_name=asset_def.partitions_def.name,
+                    partition_keys=[partition_key],
+                )
+
+                yield RunRequest(
+                    run_key=f"{code_location}_alchemer_survey_response_job_{survey_id}",
+                    run_config=run_config,
+                    asset_selection=asset_def.key,
+                    partition_key=partition_key,
                 )
 
                 cursor[survey_id] = now.timestamp()

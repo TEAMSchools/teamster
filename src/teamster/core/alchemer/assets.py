@@ -77,28 +77,6 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
     @asset(
-        name="survey_response_disqualified",
-        key_prefix=key_prefix,
-        io_manager_key=io_manager_key,
-        partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
-        op_tags=op_tags,
-    )
-    def survey_response_disqualified(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
-    ):
-        survey = alchemer.survey.get(id=context.partition_key)
-
-        data = survey.response.filter("status", "=", "Disqualified").list(
-            resultsperpage=500
-        )
-
-        schema = get_avro_record_schema(
-            name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
-        )
-
-        yield Output(value=(data, schema), metadata={"record_count": len(data)})
-
-    @asset(
         name="survey_response",
         key_prefix=key_prefix,
         io_manager_key=io_manager_key,
@@ -112,11 +90,11 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
     ):
         partition_key_split = context.partition_key.split("_")
-        date_submitted = pendulum.from_timestamp(
-            int(partition_key_split[1])
-        ).to_datetime_string()
 
         survey = alchemer.survey.get(id=partition_key_split[0])
+        date_submitted = pendulum.from_timestamp(
+            int(partition_key_split[1]), tz="US/Eastern"
+        ).to_datetime_string()
 
         data = survey.response.filter("date_submitted", ">=", date_submitted).list(
             resultsperpage=500
@@ -131,10 +109,4 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             metadata={"record_count": len(data)},
         )
 
-    return (
-        survey,
-        survey_question,
-        survey_campaign,
-        survey_response_disqualified,
-        survey_response,
-    )
+    return survey, survey_question, survey_campaign, survey_response
