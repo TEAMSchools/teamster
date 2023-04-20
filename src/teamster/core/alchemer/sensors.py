@@ -114,32 +114,34 @@ def build_survey_response_asset_sensor(
 
             survey = alchemer.survey.get(id=survey_id)
 
-            survey_response_data = survey.response.filter(
-                "date_submitted",
-                ">=",
-                pendulum.from_timestamp(
-                    timestamp=survey_cursor_timestamp, tz="US/Eastern"
-                ),
-            ).list(page=1, resultsperpage=1)
-
             if (
                 not context.instance.get_latest_materialization_event(asset_def.key)
                 or survey_cursor_timestamp is None
             ):
-                survey_response_any = survey.response.list(page=1, resultsperpage=1)
-                context.log.debug(survey_response_any)
+                survey_response_data = survey.response.list(page=1, resultsperpage=1)
+            else:
+                survey_response_data = survey.response.filter(
+                    "date_submitted",
+                    ">=",
+                    pendulum.from_timestamp(
+                        timestamp=survey_cursor_timestamp, tz="US/Eastern"
+                    ),
+                ).list(page=1, resultsperpage=1)
 
-                if survey_response_any:
-                    run_request = True
-                    run_config = {
-                        "execution": {
-                            "config": {
-                                "resources": {
-                                    "limits": {"cpu": "1000m", "memory": "6.5Gi"}
-                                }
-                            }
+            context.log.debug(survey_response_data)
+
+            if (
+                not context.instance.get_latest_materialization_event(asset_def.key)
+                or survey_cursor_timestamp is None
+            ) and survey_response_data:
+                run_request = True
+                run_config = {
+                    "execution": {
+                        "config": {
+                            "resources": {"limits": {"cpu": "1000m", "memory": "6.5Gi"}}
                         }
                     }
+                }
             elif survey_response_data:
                 context.log.debug(survey_response_data)
                 run_request = True
