@@ -92,7 +92,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
         survey = alchemer.survey.get(id=partition_key_split[0])
         date_submitted = pendulum.from_timestamp(
-            int(partition_key_split[1]), tz="US/Eastern"
+            float(partition_key_split[1]), tz="US/Eastern"
         ).to_datetime_string()
 
         data = survey.response.filter("date_submitted", ">=", date_submitted).list(

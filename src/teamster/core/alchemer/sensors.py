@@ -111,14 +111,14 @@ def build_survey_response_asset_sensor(
             survey_id = survey_metadata["id"]
 
             survey = alchemer.survey.get(id=survey_id)
-            survey_cursor_timestamp = cursor.get(survey_id)
+            survey_cursor_timestamp = cursor.get(survey_id, 0)
+
+            date_submitted = pendulum.from_timestamp(
+                timestamp=survey_cursor_timestamp, tz="US/Eastern"
+            )
 
             survey_response_data = survey.response.filter(
-                "date_submitted",
-                ">=",
-                pendulum.from_timestamp(
-                    timestamp=survey_cursor_timestamp, tz="US/Eastern"
-                ),
+                "date_submitted", ">=", date_submitted.to_datetime_string()
             ).list(params={"resultsperpage": 1, "page": 1})
 
             if (
@@ -139,7 +139,8 @@ def build_survey_response_asset_sensor(
                 run_request = False
 
             if run_request:
-                partition_key = f"{survey_id}_{now.timestamp()}"
+                partition_key = f"{survey_id}_{date_submitted.timestamp()}"
+
                 context.instance.add_dynamic_partitions(
                     partitions_def_name=asset_def.partitions_def.name,
                     partition_keys=[partition_key],
