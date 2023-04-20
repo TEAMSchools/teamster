@@ -118,7 +118,9 @@ def build_survey_response_asset_sensor(
                 not context.instance.get_latest_materialization_event(asset_def.key)
                 or survey_cursor_timestamp is None
             ):
-                survey_response_data = survey.response.list(page=1, resultsperpage=1)
+                survey_response_data = survey.response.list(
+                    params={"resultsperpage": 1, "page": 1}
+                )
             else:
                 survey_response_data = survey.response.filter(
                     "date_submitted",
@@ -126,7 +128,7 @@ def build_survey_response_asset_sensor(
                     pendulum.from_timestamp(
                         timestamp=survey_cursor_timestamp, tz="US/Eastern"
                     ),
-                ).list(page=1, resultsperpage=1)
+                ).list(params={"resultsperpage": 1, "page": 1})
 
             context.log.debug(survey_response_data)
 

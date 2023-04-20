@@ -47,7 +47,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
     ):
         survey = alchemer.survey.get(id=context.partition_key)
 
-        data = survey.question.list(resultsperpage=500)
+        data = survey.question.list(params={"resultsperpage": 500})
         schema = get_avro_record_schema(
             name="survey_question", fields=ENDPOINT_FIELDS["survey_question"]
         )
@@ -69,7 +69,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
         survey = alchemer.survey.get(id=context.partition_key)
 
-        data = survey.campaign.list(resultsperpage=500)
+        data = survey.campaign.list(params={"resultsperpage": 500})
         schema = get_avro_record_schema(
             name="survey_campaign", fields=ENDPOINT_FIELDS["survey_campaign"]
         )
@@ -97,7 +97,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         ).to_datetime_string()
 
         data = survey.response.filter("date_submitted", ">=", date_submitted).list(
-            resultsperpage=500
+            params={"resultsperpage": 500}
         )
 
         schema = get_avro_record_schema(
