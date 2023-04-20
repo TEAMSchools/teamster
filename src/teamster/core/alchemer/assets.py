@@ -95,9 +95,12 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             float(partition_key_split[1]), tz="US/Eastern"
         ).to_datetime_string()
 
-        data = survey.response.filter("date_submitted", ">=", date_submitted).list(
-            params={"resultsperpage": 500}
-        )
+        if date_submitted == pendulum.from_timestamp(0, tz="US/Eastern"):
+            data = survey.response.list(params={"resultsperpage": 500})
+        else:
+            data = survey.response.filter("date_submitted", ">=", date_submitted).list(
+                params={"resultsperpage": 500}
+            )
 
         schema = get_avro_record_schema(
             name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
