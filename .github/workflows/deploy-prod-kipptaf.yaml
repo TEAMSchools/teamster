@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - Dockerfile
-      - requirements.txt
+      - pdm.lock
       - .github/workflows/deploy-prod-kipptaf.yaml
       - .dagster/dagster-cloud-kipptaf.yaml
       - src/teamster/core/**
