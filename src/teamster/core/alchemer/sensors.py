@@ -151,7 +151,7 @@ def build_survey_response_asset_sensor(
                 run_request = False
 
             if run_request:
-                partition_key = f"{survey_id}_{now.timestamp}"
+                partition_key = f"{survey_id}_{now.timestamp()}"
                 context.instance.add_dynamic_partitions(
                     partitions_def_name=asset_def.partitions_def.name,
                     partition_keys=[partition_key],
