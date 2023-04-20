@@ -158,7 +158,7 @@ def build_survey_response_asset_sensor(
                 yield RunRequest(
                     run_key=f"{code_location}_alchemer_survey_response_job_{survey_id}",
                     run_config=run_config,
-                    asset_selection=asset_def.key,
+                    asset_selection=[asset_def.key],
                     partition_key=partition_key,
                 )
 
