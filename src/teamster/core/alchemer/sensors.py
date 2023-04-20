@@ -112,24 +112,7 @@ def build_survey_response_asset_sensor(
 
             survey_cursor_timestamp = cursor.get(survey_id, 0)
 
-            # check if survey id has ever been materialized
-            survey_materialization_count = 0
-            materialization_count_by_partition = (
-                context.instance.get_materialization_count_by_partition(
-                    asset_keys=[asset_def.key]
-                )
-            )
-            context.log.debug(materialization_count_by_partition)
-
-            for partition_key, count in materialization_count_by_partition.get(
-                asset_def.key, {}
-            ).items():
-                if partition_key.split("_")[0] == survey_id:
-                    survey_materialization_count += count
-
-            context.log.debug(survey_materialization_count)
-            context.log.debug(survey_cursor_timestamp)
-            if survey_materialization_count == 0 or survey_cursor_timestamp == 0:
+            if survey_cursor_timestamp == 0:
                 run_request = True
                 run_config = {
                     "execution": {
