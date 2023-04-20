@@ -693,7 +693,7 @@ SURVEY_RESPONSE_FIELDS = [
     {"name": "ip_address", "type": ["null", "string"], "default": None},
     {"name": "referer", "type": ["null", "string"], "default": None},
     {"name": "user_agent", "type": ["null", "string"], "default": None},
-    {"name": "response_time", "type": ["null", "int"], "default": None},
+    {"name": "response_time", "type": ["null", "long"], "default": None},
     {"name": "comments", "type": ["null", "string"], "default": None},
     {"name": "longitude", "type": ["null", "string"], "default": None},
     {"name": "latitude", "type": ["null", "string"], "default": None},
