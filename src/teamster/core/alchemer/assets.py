@@ -91,11 +91,13 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         partition_key_split = context.partition_key.split("_")
 
         survey = alchemer.survey.get(id=partition_key_split[0])
+        cursor_timestamp = float(partition_key_split[1])
+
         date_submitted = pendulum.from_timestamp(
-            float(partition_key_split[1]), tz="US/Eastern"
+            cursor_timestamp, tz="US/Eastern"
         ).to_datetime_string()
 
-        if date_submitted == pendulum.from_timestamp(0, tz="US/Eastern"):
+        if cursor_timestamp == 0:
             data = survey.response.list(params={"resultsperpage": 500})
         else:
             data = survey.response.filter("date_submitted", ">=", date_submitted).list(
