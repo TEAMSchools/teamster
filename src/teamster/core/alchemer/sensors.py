@@ -110,16 +110,7 @@ def build_survey_response_asset_sensor(
         for survey_metadata in surveys:
             survey_id = survey_metadata["id"]
 
-            survey = alchemer.survey.get(id=survey_id)
             survey_cursor_timestamp = cursor.get(survey_id, 0)
-
-            date_submitted = pendulum.from_timestamp(
-                timestamp=survey_cursor_timestamp, tz="US/Eastern"
-            )
-
-            survey_response_data = survey.response.filter(
-                "date_submitted", ">=", date_submitted.to_datetime_string()
-            ).list(params={"resultsperpage": 1, "page": 1})
 
             # check if survey id has ever been materialized
             survey_materialization_count = 0
@@ -142,10 +133,21 @@ def build_survey_response_asset_sensor(
                         }
                     }
                 }
-            elif survey_response_data:
-                run_request = True
             else:
-                run_request = False
+                survey = alchemer.survey.get(id=survey_id)
+
+                date_submitted = pendulum.from_timestamp(
+                    timestamp=survey_cursor_timestamp, tz="US/Eastern"
+                )
+
+                survey_response_data = survey.response.filter(
+                    "date_submitted", ">=", date_submitted.to_datetime_string()
+                ).list(params={"resultsperpage": 1, "page": 1})
+
+                if survey_response_data:
+                    run_request = True
+                else:
+                    run_request = False
 
             if run_request:
                 partition_key = f"{survey_id}_{survey_cursor_timestamp}"
