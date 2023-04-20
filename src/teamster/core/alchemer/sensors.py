@@ -110,32 +110,21 @@ def build_survey_response_asset_sensor(
         for survey_metadata in surveys:
             survey_id = survey_metadata["id"]
 
+            survey = alchemer.survey.get(id=survey_id)
             survey_cursor_timestamp = cursor.get(survey_id)
 
-            survey = alchemer.survey.get(id=survey_id)
+            survey_response_data = survey.response.filter(
+                "date_submitted",
+                ">=",
+                pendulum.from_timestamp(
+                    timestamp=survey_cursor_timestamp, tz="US/Eastern"
+                ),
+            ).list(params={"resultsperpage": 1, "page": 1})
 
             if (
                 not context.instance.get_latest_materialization_event(asset_def.key)
                 or survey_cursor_timestamp is None
             ):
-                survey_response_data = survey.response.list(
-                    params={"resultsperpage": 1, "page": 1}
-                )
-            else:
-                survey_response_data = survey.response.filter(
-                    "date_submitted",
-                    ">=",
-                    pendulum.from_timestamp(
-                        timestamp=survey_cursor_timestamp, tz="US/Eastern"
-                    ),
-                ).list(params={"resultsperpage": 1, "page": 1})
-
-            context.log.debug(survey_response_data)
-
-            if (
-                not context.instance.get_latest_materialization_event(asset_def.key)
-                or survey_cursor_timestamp is None
-            ) and survey_response_data:
                 run_request = True
                 run_config = {
                     "execution": {
@@ -145,7 +134,6 @@ def build_survey_response_asset_sensor(
                     }
                 }
             elif survey_response_data:
-                context.log.debug(survey_response_data)
                 run_request = True
             else:
                 run_request = False

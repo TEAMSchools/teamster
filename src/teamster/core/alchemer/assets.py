@@ -84,7 +84,6 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             name=f"{code_location}_alchemer_survey_response"
         ),
         op_tags=op_tags,
-        output_required=False,
     )
     def survey_response(
         context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
