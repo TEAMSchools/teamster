@@ -119,6 +119,7 @@ def build_survey_response_asset_sensor(
                     [asset_def.key]
                 ).get(asset_def.key, {})
             )
+            context.log.debug(materialization_count)
 
             for partition_key, count in materialization_count.items():
                 if partition_key.split("_")[0] == survey_id:
