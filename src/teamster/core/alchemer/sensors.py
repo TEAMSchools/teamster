@@ -121,10 +121,19 @@ def build_survey_response_asset_sensor(
                 "date_submitted", ">=", date_submitted.to_datetime_string()
             ).list(params={"resultsperpage": 1, "page": 1})
 
-            if (
-                not context.instance.get_latest_materialization_event(asset_def.key)
-                or survey_cursor_timestamp is None
-            ):
+            # check if survey id has ever been materialized
+            survey_materialization_count = 0
+            materialization_count = (
+                context.instance.get_materialization_count_by_partition(
+                    [asset_def.key]
+                ).get(asset_def.key, {})
+            )
+
+            for partition_key, count in materialization_count.items():
+                if partition_key.split("_")[0] == survey_id:
+                    survey_materialization_count += count
+
+            if survey_materialization_count == 0:
                 run_request = True
                 run_config = {
                     "execution": {
