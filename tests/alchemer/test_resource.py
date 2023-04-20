@@ -1,7 +1,7 @@
 import json
 import random
 
-import pendulum
+# import pendulum
 from alchemer import AlchemerSession
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
@@ -81,7 +81,7 @@ def check_schema(records, endpoint_name, key=None):
         return
     else:
         sample_record = records[random.randint(a=0, b=(len_records - 1))]
-    # print(f"\tSAMPLE RECORD:\n{sample_record}")
+    print(f"\tSAMPLE RECORD:\n{sample_record}")
 
     print("\tVALIDATING SINGLE RECORD...")
     assert validation.validate(datum=sample_record, schema=parsed_schema, strict=True)
@@ -143,13 +143,14 @@ def test_alchemer_schema():
 
         check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
 
-        if int(survey.id) in FILTER_SURVEY_IDS:
-            start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
+        # if int(survey.id) in FILTER_SURVEY_IDS:
+        #     start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
 
-            survey_response = survey.response.filter(
-                "date_submitted", ">=", start_date.to_datetime_string()
-            ).list(resultsperpage=500)
-        else:
-            survey_response = survey.response.list(resultsperpage=500)
+        #     survey_response = survey.response.filter(
+        #         "date_submitted", ">=", start_date.to_datetime_string()
+        #     ).list(params={"resultsperpage": 500})
+        # else:
+        #     survey_response = survey.response.list(params={"resultsperpage": 500})
+        survey_response = survey.response.list(params={"resultsperpage": 1, "page": 1})
 
         check_schema(records=survey_response, endpoint_name="survey_response")
