@@ -107,10 +107,12 @@ def build_survey_response_asset_sensor(
         now = pendulum.now(tz="US/Eastern").subtract(minutes=15).start_of("minute")
 
         surveys = alchemer.survey.list()
-        for survey in surveys:
-            survey_id = survey["id"]
+        for survey_metadata in surveys:
+            survey_id = survey_metadata["id"]
 
             survey_cursor_timestamp = cursor.get(survey_id)
+
+            survey = alchemer.survey.get(id=survey_id)
 
             survey_response_data = survey.response.filter(
                 "date_submitted",
