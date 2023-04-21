@@ -33,12 +33,14 @@ SURVEY_OPTION_PROPERTY_FIELDS = [
     {"name": "piping_exclude", "type": ["null", "string"], "default": None},
     {"name": "show_rules_logic_map", "type": ["null", "string"], "default": None},
     {
-        "name": "left_label",
+        "name": "left-label",
+        "aliases": ["left_label"],
         "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
         "default": None,
     },
     {
-        "name": "right_label",
+        "name": "right-label",
+        "aliases": ["right_label"],
         "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
         "default": None,
     },
@@ -82,7 +84,12 @@ SURVEY_QUESTION_PROPERTY_FIELDS = [
     {"name": "required", "type": ["null", "boolean"], "default": None},
     {"name": "show_title", "type": ["null", "boolean"], "default": None},
     {"name": "sizelimit", "type": ["null", "int"], "default": None},
-    {"name": "soft_required", "type": ["null", "boolean"], "default": None},
+    {
+        "name": "soft-required",
+        "aliases": ["soft_required"],
+        "type": ["null", "boolean"],
+        "default": None,
+    },
     {"name": "sub_questions", "type": ["null", "int"], "default": None},
     {"name": "subtype", "type": ["null", "string"], "default": None},
     {"name": "url", "type": ["null", "string"], "default": None},
@@ -188,7 +195,12 @@ SURVEY_QUESTION_FIELDS = [
 SURVEY_PAGE_PROPERTY_FIELDS = [
     {"name": "hidden", "type": ["null", "boolean"], "default": None},
     {"name": "piped_from", "type": ["null", "string"], "default": None},
-    {"name": "page_group", "type": ["null", "string"], "default": None},
+    {
+        "name": "page-group",
+        "aliases": ["page_group"],
+        "type": ["null", "string"],
+        "default": None,
+    },
 ]
 
 SURVEY_TEAM_FIELDS = [
