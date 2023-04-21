@@ -7,7 +7,6 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
-    DeleteDynamicPartitionsRequest,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
