@@ -100,7 +100,7 @@ def build_survey_response_asset_sensor(
     ):
         context.log.debug(
             context.instance.get_materialization_count_by_partition(
-                asset_keys=asset_def.key
+                asset_keys=[asset_def.key]
             )
         )
 
