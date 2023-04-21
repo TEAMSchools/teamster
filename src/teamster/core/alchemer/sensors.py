@@ -3,6 +3,7 @@ import json
 import pendulum
 from alchemer import AlchemerSession
 from dagster import (
+    AddDynamicPartitionsRequest,
     AssetKey,
     AssetsDefinition,
     AssetSelection,
@@ -131,6 +132,7 @@ def build_survey_response_asset_sensor(
             return
 
         run_requests = []
+        add_partitions = []
         for survey_metadata in surveys:
             survey_id = survey_metadata["id"]
 
@@ -169,11 +171,12 @@ def build_survey_response_asset_sensor(
 
             if is_run_request:
                 partition_key = f"{survey_id}_{survey_cursor_timestamp}"
+                add_partitions.append(partition_key)
 
-                context.instance.add_dynamic_partitions(
-                    partitions_def_name=asset_def.partitions_def.name,
-                    partition_keys=[partition_key],
-                )
+                # context.instance.add_dynamic_partitions(
+                #     partitions_def_name=asset_def.partitions_def.name,
+                #     partition_keys=[partition_key],
+                # )
 
                 run_requests.append(
                     RunRequest(
@@ -192,10 +195,14 @@ def build_survey_response_asset_sensor(
         return SensorResult(
             run_requests=run_requests,
             dynamic_partitions_requests=[
+                AddDynamicPartitionsRequest(
+                    partitions_def_name=asset_def.partitions_def.name,
+                    partition_keys=add_partitions,
+                ),
                 DeleteDynamicPartitionsRequest(
                     partitions_def_name=asset_def.partitions_def.name,
                     partition_keys=delete_partitions,
-                )
+                ),
             ],
         )
 
