@@ -7,6 +7,7 @@ from dagster import (
     ResourceParam,
     asset,
 )
+from requests.exceptions import HTTPError
 
 from teamster.core.alchemer.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
@@ -98,7 +99,10 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         ).to_datetime_string()
 
         if cursor_timestamp == 0:
-            data = survey.response.list(params={"resultsperpage": 500})
+            try:
+                data = survey.response.list(params={"resultsperpage": 500})
+            except HTTPError:
+                data = survey.response.list()
         else:
             data = survey.response.filter("date_submitted", ">=", date_submitted).list(
                 params={"resultsperpage": 500}

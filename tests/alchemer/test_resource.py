@@ -1,7 +1,7 @@
 import json
 import random
 
-# import pendulum
+import pendulum
 from alchemer import AlchemerSession
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
@@ -62,7 +62,7 @@ def check_schema(records, endpoint_name, key=None):
     print("\tSAVING TO FILE...")
     with open(file=f"env/{endpoint_name.replace('/', '_')}.json", mode="w") as fp:
         json.dump(obj=records, fp=fp)
-    print("\t\tSUCCESS")
+    print("\t\tPASS")
 
     schema = get_avro_record_schema(
         name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
@@ -71,7 +71,7 @@ def check_schema(records, endpoint_name, key=None):
 
     print("\tPARSING SCHEMA...")
     parsed_schema = parse_schema(schema=schema)
-    print("\t\tSUCCESS")
+    print("\t\tPASS")
 
     len_records = len(records)
     if key is not None:
@@ -81,15 +81,15 @@ def check_schema(records, endpoint_name, key=None):
         return
     else:
         sample_record = records[random.randint(a=0, b=(len_records - 1))]
-    print(f"\tSAMPLE RECORD:\n{sample_record}")
+    # print(f"\tSAMPLE RECORD:\n{sample_record}")
 
     print("\tVALIDATING SINGLE RECORD...")
     assert validation.validate(datum=sample_record, schema=parsed_schema, strict=True)
-    print("\t\tSUCCESS")
+    print("\t\tPASS")
 
     print("\tVALIDATING ALL RECORDS...")
     assert validation.validate_many(records=records, schema=parsed_schema, strict=True)
-    print("\t\tSUCCESS")
+    print("\t\tPASS")
 
     print("\tWRITING ALL RECORDS...")
     with open(file="/dev/null", mode="wb") as fo:
@@ -100,7 +100,7 @@ def check_schema(records, endpoint_name, key=None):
             codec="snappy",
             strict_allow_default=True,
         )
-    print("\t\tSUCCESS")
+    print("\t\tPASS")
 
 
 def test_alchemer_schema():
@@ -143,14 +143,19 @@ def test_alchemer_schema():
 
         check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
 
-        # if int(survey.id) in FILTER_SURVEY_IDS:
-        #     start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
+        if int(survey.id) in FILTER_SURVEY_IDS:
+            start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
 
-        #     survey_response = survey.response.filter(
-        #         "date_submitted", ">=", start_date.to_datetime_string()
-        #     ).list(params={"resultsperpage": 500})
-        # else:
-        #     survey_response = survey.response.list(params={"resultsperpage": 500})
-        survey_response = survey.response.list(params={"resultsperpage": 1, "page": 1})
+            survey_response = survey.response.filter(
+                "date_submitted", ">=", start_date.to_datetime_string()
+            ).list(params={"resultsperpage": 500})
+        else:
+            survey_response = survey.response.list()
+        # survey_response = survey.response.list(
+        #     params={
+        #         "resultsperpage": 1,
+        #         "page": 1,
+        #     }
+        # )
 
         check_schema(records=survey_response, endpoint_name="survey_response")
