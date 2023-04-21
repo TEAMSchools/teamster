@@ -327,7 +327,7 @@ def get_rule_fields(namespace):
                     fields=[
                         *SHOW_RULE_FIELDS,
                         *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.rule", depth=9),
+                        *get_atom_fields(namespace=f"{namespace}.rule", depth=1),
                     ],
                     namespace=namespace,
                 ),
@@ -360,7 +360,7 @@ def get_survey_question_property_fields(namespace):
                     fields=[
                         *SHOW_RULE_FIELDS,
                         *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=9),
+                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=1),
                     ],
                     namespace=namespace,
                 ),
@@ -394,7 +394,7 @@ def get_survey_option_property_fields(namespace):
                     fields=[
                         *SHOW_RULE_FIELDS,
                         *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=8),
+                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=1),
                     ],
                     namespace=namespace,
                 ),
