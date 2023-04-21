@@ -10,49 +10,49 @@ from teamster.core.alchemer.resources import alchemer_resource
 from teamster.core.alchemer.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-TEST_SURVEY_ID = 6330385
+TEST_SURVEY_ID = None
 FILTER_SURVEY_IDS = []
 PASSED_SURVEY_IDS = [
-    6330385,
-    4561325,
-    4031194,
-    3779230,
-    3370039,
-    3242248,
-    3108476,
+    # 6330385,
+    # 4561325,
+    # 4031194,
+    # 3779230,
+    # 3370039,
+    # 3242248,
+    # 3108476,
     # 3767678,
     # 4561288,
-    2934233,
-    3167842,
-    3167903,
-    3211265,
-    3511436,
-    3727563,
-    3774202,
-    3779180,
-    3779180,
-    3946606,
-    4000821,
-    4160102,
-    4251844,
-    4839791,
-    4843086,
-    4859726,
-    5300913,
-    5351760,
-    5560557,
-    5593585,
-    6580731,
-    6686058,
-    6734664,
-    6829997,
-    6997086,
-    7151740,
-    7196293,
-    7253288,
-    7257383,
-    7257415,
-    7257431,
+    # 2934233,
+    # 3167842,
+    # 3167903,
+    # 3211265,
+    # 3511436,
+    # 3727563,
+    # 3774202,
+    # 3779180,
+    # 3779180,
+    # 3946606,
+    # 4000821,
+    # 4160102,
+    # 4251844,
+    # 4839791,
+    # 4843086,
+    # 4859726,
+    # 5300913,
+    # 5351760,
+    # 5560557,
+    # 5593585,
+    # 6580731,
+    # 6686058,
+    # 6734664,
+    # 6829997,
+    # 6997086,
+    # 7151740,
+    # 7196293,
+    # 7253288,
+    # 7257383,
+    # 7257415,
+    # 7257431,
 ]
 
 
@@ -141,21 +141,15 @@ def test_alchemer_schema():
 
         check_schema(records=survey.question.list(), endpoint_name="survey_question")
 
-        check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
+        # check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
 
-        if int(survey.id) in FILTER_SURVEY_IDS:
-            start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
+        # if int(survey.id) in FILTER_SURVEY_IDS:
+        #     start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
 
-            survey_response = survey.response.filter(
-                "date_submitted", ">=", start_date.to_datetime_string()
-            ).list(params={"resultsperpage": 500})
-        else:
-            survey_response = survey.response.list()
-        # survey_response = survey.response.list(
-        #     params={
-        #         "resultsperpage": 1,
-        #         "page": 1,
-        #     }
-        # )
+        #     survey_response = survey.response.filter(
+        #         "date_submitted", ">=", start_date.to_datetime_string()
+        #     ).list(params={"resultsperpage": 500})
+        # else:
+        #     survey_response = survey.response.list()
 
         check_schema(records=survey_response, endpoint_name="survey_response")

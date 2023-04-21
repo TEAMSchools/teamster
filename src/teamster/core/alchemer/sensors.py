@@ -61,15 +61,15 @@ def build_survey_metadata_asset_sensor(
                 not context.instance.get_latest_materialization_event(survey_asset.key)
                 or survey_cursor_timestamp is None
             ):
-                run_request = True
+                is_run_request = True
             elif modified_on > pendulum.from_timestamp(
                 timestamp=survey_cursor_timestamp, tz="US/Eastern"
             ):
-                run_request = True
+                is_run_request = True
             else:
-                run_request = False
+                is_run_request = False
 
-            if run_request:
+            if is_run_request:
                 context.instance.add_dynamic_partitions(
                     partitions_def_name=survey_asset.partitions_def.name,
                     partition_keys=[survey_id],
@@ -114,16 +114,6 @@ def build_survey_response_asset_sensor(
             if p not in get_materialization_count_by_partition.get(asset_def.key)
         ]
 
-        if delete_partitions:
-            return SensorResult(
-                dynamic_partitions_requests=[
-                    DeleteDynamicPartitionsRequest(
-                        partitions_def_name=asset_def.partitions_def.name,
-                        partition_keys=delete_partitions,
-                    )
-                ]
-            )
-
         cursor: dict = json.loads(context.cursor or "{}")
 
         """ https://apihelp.alchemer.com/help/api-response-time
@@ -140,13 +130,14 @@ def build_survey_response_asset_sensor(
             context.log.error(e)
             return
 
+        run_requests = []
         for survey_metadata in surveys:
             survey_id = survey_metadata["id"]
 
             survey_cursor_timestamp = cursor.get(survey_id, 0)
 
             if survey_cursor_timestamp == 0:
-                run_request = True
+                is_run_request = True
                 run_config = {
                     "execution": {
                         "config": {
@@ -167,16 +158,16 @@ def build_survey_response_asset_sensor(
                     ).list(params={"resultsperpage": 1, "page": 1})
 
                     if survey_response_data:
-                        run_request = True
+                        is_run_request = True
                     else:
-                        run_request = False
+                        is_run_request = False
                 except HTTPError as e:
                     context.log.error(e)
-                    run_request = False
+                    is_run_request = False
                 finally:
                     run_config = None
 
-            if run_request:
+            if is_run_request:
                 partition_key = f"{survey_id}_{survey_cursor_timestamp}"
 
                 context.instance.add_dynamic_partitions(
@@ -184,17 +175,28 @@ def build_survey_response_asset_sensor(
                     partition_keys=[partition_key],
                 )
 
-                yield RunRequest(
-                    run_key=(
-                        f"{code_location}_alchemer_survey_response_job_{partition_key}"
-                    ),
-                    run_config=run_config,
-                    asset_selection=[asset_def.key],
-                    partition_key=partition_key,
+                run_requests.append(
+                    RunRequest(
+                        run_key=(
+                            f"{code_location}_alchemer_survey_response_job_{partition_key}"
+                        ),
+                        run_config=run_config,
+                        asset_selection=[asset_def.key],
+                        partition_key=partition_key,
+                    )
                 )
 
                 cursor[survey_id] = now.timestamp()
 
-        context.update_cursor(json.dumps(cursor))
+        # context.update_cursor(json.dumps(cursor))
+        return SensorResult(
+            run_requests=run_requests,
+            dynamic_partitions_requests=[
+                DeleteDynamicPartitionsRequest(
+                    partitions_def_name=asset_def.partitions_def.name,
+                    partition_keys=delete_partitions,
+                )
+            ],
+        )
 
     return _sensor
