@@ -12,6 +12,7 @@ from dagster import (
     define_asset_job,
     sensor,
 )
+from requests.exceptions import HTTPError
 
 
 def build_survey_metadata_asset_sensor(
@@ -106,7 +107,12 @@ def build_survey_response_asset_sensor(
         """
         now = pendulum.now(tz="US/Eastern").subtract(minutes=15).start_of("minute")
 
-        surveys = alchemer.survey.list()
+        try:
+            surveys = alchemer.survey.list()
+        except HTTPError as e:
+            context.log.error(e)
+            return
+
         for survey_metadata in surveys:
             survey_id = survey_metadata["id"]
 
@@ -122,22 +128,26 @@ def build_survey_response_asset_sensor(
                     }
                 }
             else:
-                survey = alchemer.survey.get(id=survey_id)
+                try:
+                    survey = alchemer.survey.get(id=survey_id)
 
-                date_submitted = pendulum.from_timestamp(
-                    timestamp=survey_cursor_timestamp, tz="US/Eastern"
-                )
+                    date_submitted = pendulum.from_timestamp(
+                        timestamp=survey_cursor_timestamp, tz="US/Eastern"
+                    )
 
-                survey_response_data = survey.response.filter(
-                    "date_submitted", ">=", date_submitted.to_datetime_string()
-                ).list(params={"resultsperpage": 1, "page": 1})
+                    survey_response_data = survey.response.filter(
+                        "date_submitted", ">=", date_submitted.to_datetime_string()
+                    ).list(params={"resultsperpage": 1, "page": 1})
 
-                if survey_response_data:
-                    run_request = True
-                else:
+                    if survey_response_data:
+                        run_request = True
+                    else:
+                        run_request = False
+                except HTTPError as e:
+                    context.log.error(e)
                     run_request = False
-
-                run_config = None
+                finally:
+                    run_config = None
 
             if run_request:
                 partition_key = f"{survey_id}_{survey_cursor_timestamp}"
