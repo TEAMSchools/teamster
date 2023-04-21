@@ -114,14 +114,15 @@ def build_survey_response_asset_sensor(
             if p not in get_materialization_count_by_partition.get(asset_def.key)
         ]
 
-        yield SensorResult(
-            dynamic_partitions_requests=[
-                DeleteDynamicPartitionsRequest(
-                    partitions_def_name=asset_def.partitions_def.name,
-                    partition_keys=delete_partitions,
-                )
-            ]
-        )
+        if delete_partitions:
+            return SensorResult(
+                dynamic_partitions_requests=[
+                    DeleteDynamicPartitionsRequest(
+                        partitions_def_name=asset_def.partitions_def.name,
+                        partition_keys=delete_partitions,
+                    )
+                ]
+            )
 
         cursor: dict = json.loads(context.cursor or "{}")
 
