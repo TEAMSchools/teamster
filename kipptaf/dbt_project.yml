@@ -26,6 +26,10 @@ models:
   schoolmint:
     staging:
       +schema: schoolmint
+  alchemer:
+    staging:
+      +schema: alchemer
 
 vars:
   schoolmint_grow_schema: kipptaf_schoolmint_grow
+  alchemer_schema: kipptaf_alchemer
