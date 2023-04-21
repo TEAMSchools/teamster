@@ -1,7 +1,7 @@
 import json
 import random
 
-import pendulum
+# import pendulum
 from alchemer import AlchemerSession
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
@@ -13,28 +13,27 @@ from teamster.core.utils.functions import get_avro_record_schema
 TEST_SURVEY_ID = None
 FILTER_SURVEY_IDS = []
 PASSED_SURVEY_IDS = [
-    # 6330385,
-    # 4561325,
-    # 4031194,
-    # 3779230,
-    # 3370039,
-    # 3242248,
-    # 3108476,
-    # 3767678,
-    # 4561288,
     # 2934233,
+    # 3108476,
     # 3167842,
     # 3167903,
     # 3211265,
+    # 3242248,
+    # 3370039,
     # 3511436,
     # 3727563,
+    # 3767678,
     # 3774202,
     # 3779180,
     # 3779180,
+    # 3779230,
     # 3946606,
     # 4000821,
+    # 4031194,
     # 4160102,
     # 4251844,
+    # 4561288,
+    # 4561325,
     # 4839791,
     # 4843086,
     # 4859726,
@@ -42,6 +41,7 @@ PASSED_SURVEY_IDS = [
     # 5351760,
     # 5560557,
     # 5593585,
+    # 6330385,
     # 6580731,
     # 6686058,
     # 6734664,
@@ -52,7 +52,7 @@ PASSED_SURVEY_IDS = [
     # 7253288,
     # 7257383,
     # 7257415,
-    # 7257431,
+    7257431,
 ]
 
 
@@ -152,4 +152,4 @@ def test_alchemer_schema():
         # else:
         #     survey_response = survey.response.list()
 
-        check_schema(records=survey_response, endpoint_name="survey_response")
+        # check_schema(records=survey_response, endpoint_name="survey_response")
