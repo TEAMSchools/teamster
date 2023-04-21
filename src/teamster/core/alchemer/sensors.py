@@ -115,10 +115,12 @@ def build_survey_response_asset_sensor(
         ]
 
         yield SensorResult(
-            dynamic_partitions_requests=DeleteDynamicPartitionsRequest(
-                partitions_def_name=asset_def.partitions_def.name,
-                partition_keys=delete_partitions,
-            )
+            dynamic_partitions_requests=[
+                DeleteDynamicPartitionsRequest(
+                    partitions_def_name=asset_def.partitions_def.name,
+                    partition_keys=delete_partitions,
+                )
+            ]
         )
 
         cursor: dict = json.loads(context.cursor or "{}")
