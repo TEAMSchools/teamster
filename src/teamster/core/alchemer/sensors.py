@@ -170,10 +170,9 @@ def build_survey_response_asset_sensor(
 
                 cursor[survey_id] = now.timestamp()
 
-        # context.update_cursor(json.dumps(cursor))
         return SensorResult(
             run_requests=run_requests,
-            cursor=cursor,
+            cursor=json.dumps(cursor),
             dynamic_partitions_requests=[
                 AddDynamicPartitionsRequest(
                     partitions_def_name=asset_def.partitions_def.name,
