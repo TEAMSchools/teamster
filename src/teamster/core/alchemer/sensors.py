@@ -113,6 +113,12 @@ def build_survey_response_asset_sensor(
             p
             for p in dynamic_partitions
             if p not in get_materialization_count_by_partition.get(asset_def.key)
+            and p
+            not in [
+                "6580731_1682090760.0",
+                "4561325_1682094300.0",
+                "6829997_1682087700.0",
+            ]
         ]
 
         cursor: dict = json.loads(context.cursor or "{}")

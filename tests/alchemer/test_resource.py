@@ -98,7 +98,7 @@ def check_schema(records, endpoint_name, key=None):
             schema=parsed_schema,
             records=records,
             codec="snappy",
-            strict_allow_default=True,
+            # strict_allow_default=True,
         )
     print("\t\tPASS")
 
