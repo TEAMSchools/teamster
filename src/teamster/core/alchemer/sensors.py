@@ -10,6 +10,7 @@ from dagster import (
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
+    SensorResult,
     define_asset_job,
     sensor,
 )
@@ -113,9 +114,11 @@ def build_survey_response_asset_sensor(
             if p not in get_materialization_count_by_partition.get(asset_def.key)
         ]
 
-        yield DeleteDynamicPartitionsRequest(
-            partitions_def_name=asset_def.partitions_def.name,
-            partition_keys=delete_partitions,
+        yield SensorResult(
+            dynamic_partitions_requests=DeleteDynamicPartitionsRequest(
+                partitions_def_name=asset_def.partitions_def.name,
+                partition_keys=delete_partitions,
+            )
         )
 
         cursor: dict = json.loads(context.cursor or "{}")
