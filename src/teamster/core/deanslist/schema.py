@@ -472,7 +472,6 @@ INCIDENT_FIELDS = {
         {"name": "FollowupNotes", "type": ["null", "string"], "default": None},
         {"name": "Gender", "type": ["null", "string"], "default": None},
         {"name": "GradeLevelShort", "type": ["null", "string"], "default": None},
-        {"name": "HearingDate", "type": ["null", "string"], "default": None},
         {"name": "HearingFlag", "type": ["null", "boolean"], "default": None},
         {"name": "HearingLocation", "type": ["null", "string"], "default": None},
         {"name": "HearingNotes", "type": ["null", "string"], "default": None},
@@ -504,19 +503,21 @@ INCIDENT_FIELDS = {
         {"name": "UpdateStaffSchoolID", "type": ["null", "string"], "default": None},
         {"name": "UpdateTitle", "type": ["null", "string"], "default": None},
         {
-            "name": "IssueTS",
-            "type": [
-                "null",
-                get_avro_record_schema(name="IssueTS", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-        {
             "name": "ReturnDate",
             "type": [
                 "null",
                 get_avro_record_schema(
                     name="ReturnDate", fields=TIMESTAMP_FIELDS["v1"]
+                ),
+            ],
+            "default": None,
+        },
+        {
+            "name": "HearingDate",
+            "type": [
+                "null",
+                get_avro_record_schema(
+                    name="HearingDate", fields=TIMESTAMP_FIELDS["v1"]
                 ),
             ],
             "default": None,
@@ -530,6 +531,14 @@ INCIDENT_FIELDS = {
             "default": None,
         },
         {
+            "name": "UpdateTS",
+            "type": [
+                "null",
+                get_avro_record_schema(name="UpdateTS", fields=TIMESTAMP_FIELDS["v1"]),
+            ],
+            "default": None,
+        },
+        {
             "name": "ReviewTS",
             "type": [
                 "null",
@@ -538,12 +547,10 @@ INCIDENT_FIELDS = {
             "default": None,
         },
         {
-            "name": "DL_LASTUPDATE",
+            "name": "IssueTS",
             "type": [
                 "null",
-                get_avro_record_schema(
-                    name="DL_LASTUPDATE", fields=TIMESTAMP_FIELDS["v1"]
-                ),
+                get_avro_record_schema(name="IssueTS", fields=TIMESTAMP_FIELDS["v1"]),
             ],
             "default": None,
         },
@@ -556,10 +563,12 @@ INCIDENT_FIELDS = {
             "default": None,
         },
         {
-            "name": "UpdateTS",
+            "name": "DL_LASTUPDATE",
             "type": [
                 "null",
-                get_avro_record_schema(name="UpdateTS", fields=TIMESTAMP_FIELDS["v1"]),
+                get_avro_record_schema(
+                    name="DL_LASTUPDATE", fields=TIMESTAMP_FIELDS["v1"]
+                ),
             ],
             "default": None,
         },
