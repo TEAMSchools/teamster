@@ -18,14 +18,14 @@ local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
-        *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
-        *load_assets_from_modules(modules=[schoolmint.assets], group_name="schoolmint"),
+        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
+        *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
-        *load_assets_from_modules(modules=[dbt.assets]),
+        *load_assets_from_modules(modules=[dbt]),
     ],
-    jobs=[*datagun.jobs.__all__, *schoolmint.jobs.__all__],
-    schedules=[*datagun.schedules.__all__, *schoolmint.schedules.__all__],
-    sensors=[*dbt.sensors.__all__, *alchemer.sensors],
+    jobs=[*datagun.jobs, *schoolmint.jobs],
+    schedules=[*datagun.schedules, *schoolmint.schedules],
+    sensors=[*dbt.sensors, *alchemer.sensors],
     resources={
         "dbt": dbt_cli_resource.configured(
             {

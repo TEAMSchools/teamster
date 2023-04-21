@@ -69,3 +69,23 @@ whetstone_extract_assets = generate_extract_assets(
 gsheet_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION, name="gsheets", extract_type="gsheet"
 )
+
+__all__ = [
+    *adp_extract_assets,
+    *alchemer_extract_assets,
+    *blissbook_extract_assets,
+    *clever_extract_assets,
+    *coupa_extract_assets,
+    *deanslist_extract_assets,
+    *egencia_extract_assets,
+    *fpodms_extract_assets,
+    *gam_extract_assets,
+    *gsheet_extract_assets,
+    *idauto_extract_assets,
+    *illuminate_extract_assets,
+    *littlesis_extract_assets,
+    *njdoe_extract_assets,
+    *razkids_extract_assets,
+    *read180_extract_assets,
+    *whetstone_extract_assets,
+]

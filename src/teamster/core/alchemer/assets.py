@@ -97,6 +97,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             survey = alchemer.survey.get(id=partition_key_split[0])
         except HTTPError as e:
             context.log.error(e)
+            context.log.info("Retrying in 60 seconds")
             time.sleep(60)
 
             survey = alchemer.survey.get(id=partition_key_split[0])
@@ -118,6 +119,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             data = survey_response_obj.list(params={"resultsperpage": 500})
         except HTTPError as e:
             context.log.error(e)
+            context.log.info("Retrying in 60 seconds")
             time.sleep(60)
 
             # resultsperpage can produce a 500 error
