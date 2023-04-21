@@ -1,3 +1,5 @@
+import time
+
 import pendulum
 from alchemer import AlchemerSession
 from dagster import (
@@ -91,7 +93,14 @@ def build_partition_assets(code_location, op_tags={}) -> list:
     ):
         partition_key_split = context.partition_key.split("_")
 
-        survey = alchemer.survey.get(id=partition_key_split[0])
+        try:
+            survey = alchemer.survey.get(id=partition_key_split[0])
+        except HTTPError as e:
+            context.log.error(e)
+            time.sleep(60)
+
+            survey = alchemer.survey.get(id=partition_key_split[0])
+
         cursor_timestamp = float(partition_key_split[1])
 
         date_submitted = pendulum.from_timestamp(
@@ -99,14 +108,20 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         ).to_datetime_string()
 
         if cursor_timestamp == 0:
-            try:
-                data = survey.response.list(params={"resultsperpage": 500})
-            except HTTPError:
-                data = survey.response.list()
+            survey_response_obj = survey.response
         else:
-            data = survey.response.filter("date_submitted", ">=", date_submitted).list(
-                params={"resultsperpage": 500}
+            survey_response_obj = survey.response.filter(
+                "date_submitted", ">=", date_submitted
             )
+
+        try:
+            data = survey_response_obj.list(params={"resultsperpage": 500})
+        except HTTPError as e:
+            context.log.error(e)
+            time.sleep(60)
+
+            # resultsperpage can produce a 500 error
+            data = survey_response_obj.list()
 
         schema = get_avro_record_schema(
             name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
