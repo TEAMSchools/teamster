@@ -1102,7 +1102,7 @@ dependencies = [
 
 [[package]]
 name = "setuptools"
-version = "67.7.0"
+version = "67.7.1"
 requires_python = ">=3.7"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 
@@ -2627,9 +2627,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/49/97/fa78e3d2f65c02c8e1268b9aba606569fe97f6c8f7c2d74394553347c145/rsa-4.9-py3-none-any.whl", hash = "sha256:90260d9058e514786967344d0ef75fa8727eed8a7d2e43ce9f4bcf1b536174f7"},
     {url = "https://files.pythonhosted.org/packages/aa/65/7d973b89c4d2351d7fb232c2e452547ddfa243e93131e7cfa766da627b52/rsa-4.9.tar.gz", hash = "sha256:e38464a49c6c85d7f1351b0126661487a7e0a14a50f1675ec50eb34d4f20ef21"},
 ]
-"setuptools 67.7.0" = [
-    {url = "https://files.pythonhosted.org/packages/17/76/1c4a5644126f4fa9ebf27ae9c353d8068b08d20c171389995134467e2ca7/setuptools-67.7.0-py3-none-any.whl", hash = "sha256:888be97fde8cc3afd60f7784e678fa29ee13c4e5362daa7104a93bba33646c50"},
-    {url = "https://files.pythonhosted.org/packages/68/86/d82a2a8f3f63f0dad4cb287dbae0cac178efb6267b07e0aef8b072866032/setuptools-67.7.0.tar.gz", hash = "sha256:b7e53a01c6c654d26d2999ee033d8c6125e5fa55f03b7b193f937ae7ac999f22"},
+"setuptools 67.7.1" = [
+    {url = "https://files.pythonhosted.org/packages/01/18/73f7ca619f72b22300493451350214d3a035e7fa8f17ce31db2da24fe0c9/setuptools-67.7.1.tar.gz", hash = "sha256:bb16732e8eb928922eabaa022f881ae2b7cdcfaf9993ef1f5e841a96d32b8e0c"},
+    {url = "https://files.pythonhosted.org/packages/47/6a/dfaf9838b6dd1f04537c0a66cf880dd24acd829f8a39d468c11fc0b7d8c6/setuptools-67.7.1-py3-none-any.whl", hash = "sha256:6f0839fbdb7e3cfef1fc38d7954f5c1c26bf4eebb155a55c9bf8faf997b9fb67"},
 ]
 "shellingham 1.5.0.post1" = [
     {url = "https://files.pythonhosted.org/packages/1f/13/fab0a3f512478bc387b66c51557ee715ede8e9811c77ce952f9b9a4d8ac1/shellingham-1.5.0.post1.tar.gz", hash = "sha256:823bc5fb5c34d60f285b624e7264f4dda254bc803a3774a147bf99c0e3004a28"},
