@@ -137,6 +137,8 @@ def build_survey_response_asset_sensor(
                 else:
                     run_request = False
 
+                run_config = None
+
             if run_request:
                 partition_key = f"{survey_id}_{survey_cursor_timestamp}"
 
