@@ -98,16 +98,22 @@ def build_survey_response_asset_sensor(
     def _sensor(
         context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
     ):
-        context.log.debug(
+        dynamic_partitions = context.instance.get_dynamic_partitions(
+            asset_def.partitions_def.name
+        )
+        get_materialization_count_by_partition = (
             context.instance.get_materialization_count_by_partition(
                 asset_keys=[asset_def.key]
             )
         )
 
-        # dynamic_partitions = context.instance.get_dynamic_partitions(
-        #     asset_def.partitions_def.name
-        # )
-        # delete_partitions = [p for p in dynamic_partitions if "built-in" in p]
+        delete_partitions = [
+            p
+            for p in dynamic_partitions
+            if p not in get_materialization_count_by_partition.get(asset_def.key)
+        ]
+        context.log.debug(delete_partitions)
+
         # yield DeleteDynamicPartitionsRequest(
         #     partitions_def_name=asset_def.partitions_def.name,
         #     partition_keys=delete_partitions,
