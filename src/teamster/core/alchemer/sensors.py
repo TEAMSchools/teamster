@@ -11,6 +11,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
@@ -46,7 +47,11 @@ def build_survey_metadata_asset_sensor(
 
         now = pendulum.now(tz="US/Eastern").start_of("minute")
 
-        surveys = alchemer.survey.list()
+        try:
+            surveys = alchemer.survey.list()
+        except HTTPError as e:
+            return SensorResult(skip_reason=SkipReason(e.strerror))
+
         for survey in surveys:
             survey_id = survey["id"]
             modified_on = pendulum.from_format(
