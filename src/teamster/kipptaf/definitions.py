@@ -1,4 +1,9 @@
-from dagster import Definitions, config_from_files, load_assets_from_modules
+from dagster import (
+    AutoMaterializePolicy,
+    Definitions,
+    config_from_files,
+    load_assets_from_modules,
+)
 from dagster_dbt import dbt_cli_resource
 from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_k8s import k8s_job_executor
@@ -21,7 +26,9 @@ defs = Definitions(
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
-        *load_assets_from_modules(modules=[dbt]),
+        *load_assets_from_modules(
+            modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
+        ),
     ],
     jobs=[*datagun.jobs, *schoolmint.jobs],
     schedules=[*datagun.schedules, *schoolmint.schedules],
