@@ -30,7 +30,7 @@ defs = Definitions(
         *powerschool.schedules.__all__,
         *deanslist.schedules.__all__,
     ],
-    sensors=[*powerschool.sensors.__all__, *dbt.sensors],
+    sensors=[*powerschool.sensors.__all__],
     resources={
         "warehouse": mssql.configured(
             config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
