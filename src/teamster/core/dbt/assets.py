@@ -22,6 +22,9 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
     def _asset(context: OpExecutionContext, upstream):
         dataset_name = f"{code_location}_{package_name}"
 
+        partition_key_range = context.asset_partition_key_range_for_output()
+        context.log.debug(partition_key_range)
+
         # create BigQuery dataset, if not exists
         bq: bigquery.Client = context.resources.bq
         context.log.info(f"Creating dataset {dataset_name}")
