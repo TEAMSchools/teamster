@@ -25,7 +25,7 @@ defs = Definitions(
     ],
     jobs=[*datagun.jobs, *schoolmint.jobs],
     schedules=[*datagun.schedules, *schoolmint.schedules],
-    sensors=[*dbt.sensors, *alchemer.sensors],
+    sensors=[*alchemer.sensors],
     resources={
         "dbt": dbt_cli_resource.configured(
             {
