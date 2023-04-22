@@ -846,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "pex"
-version = "2.1.133"
+version = "2.1.134"
 requires_python = ">=2.7,<3.12,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 summary = "The PEX packaging toolchain."
 
@@ -2253,9 +2253,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/e3/30/e695237aa47fda242a1ca7b3bcb75ae0cd9588a2cf94737eb5b0dc4caa8f/pendulum-2.1.2-cp39-cp39-manylinux1_i686.whl", hash = "sha256:29c40a6f2942376185728c9a0347d7c0f07905638c83007e1d262781f1e6953a"},
     {url = "https://files.pythonhosted.org/packages/f6/fa/fcddef6138ced8b676e50f1f7d66ea9081b647810b86d52b29e1a653b9a1/pendulum-2.1.2-cp37-cp37m-win_amd64.whl", hash = "sha256:db0a40d8bcd27b4fb46676e8eb3c732c67a5a5e6bfab8927028224fbced0b40b"},
 ]
-"pex 2.1.133" = [
-    {url = "https://files.pythonhosted.org/packages/b6/82/a0b6d0a35b59d30504cfd7bc6eb38916932752e5aaef8ce5d328cb49acec/pex-2.1.133.tar.gz", hash = "sha256:a02fede76ded2ddde277294c9179f82f0cac2b44d208b04c5b687c405e83fafe"},
-    {url = "https://files.pythonhosted.org/packages/e2/98/fdd4032c9a9d9ba3db5bf837fdd2ead7bc629facad572c8edc926e8685be/pex-2.1.133-py2.py3-none-any.whl", hash = "sha256:f9eec0d04cb3b85ee0bc339c3d01ef442b633630cc1715d6a5b7121c5f56b602"},
+"pex 2.1.134" = [
+    {url = "https://files.pythonhosted.org/packages/2f/0f/9852900735ea85f793a47c35af4c28e24c2ae5b94dd5a3fdb34bc2f98b18/pex-2.1.134-py2.py3-none-any.whl", hash = "sha256:13700c2c5b792b9c14576a7235b1063e01cb1c537197d606cb98c9e2191e0650"},
+    {url = "https://files.pythonhosted.org/packages/37/b1/fd95e7c5bdf88cb92e25e5aa5e707feae2b94b72c5aace6e2037c8447bed/pex-2.1.134.tar.gz", hash = "sha256:85587c37f79324be47a7121490bb270fdf39ce6d691a70f960383027fdcde9d5"},
 ]
 "pluggy 1.0.0" = [
     {url = "https://files.pythonhosted.org/packages/9e/01/f38e2ff29715251cf25532b9082a1589ab7e4f571ced434f98d0139336dc/pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},

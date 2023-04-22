@@ -32,18 +32,18 @@ SURVEY_OPTION_PROPERTY_FIELDS = [
     {"name": "requireother", "type": ["null", "boolean"], "default": None},
     {"name": "piping_exclude", "type": ["null", "string"], "default": None},
     {"name": "show_rules_logic_map", "type": ["null", "string"], "default": None},
-    {
-        "name": "left_label",
-        "aliases": ["left-label"],
-        "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "right_label",
-        "aliases": ["right-label"],
-        "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
-        "default": None,
-    },
+    # {
+    #     "name": "left_label",
+    #     "aliases": ["left-label"],
+    #     "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
+    #     "default": None,
+    # },
+    # {
+    #     "name": "right_label",
+    #     "aliases": ["right-label"],
+    #     "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
+    #     "default": None,
+    # },
 ]
 
 SURVEY_OPTION_FIELDS = [
@@ -84,12 +84,12 @@ SURVEY_QUESTION_PROPERTY_FIELDS = [
     {"name": "required", "type": ["null", "boolean"], "default": None},
     {"name": "show_title", "type": ["null", "boolean"], "default": None},
     {"name": "sizelimit", "type": ["null", "int"], "default": None},
-    {
-        "name": "soft_required",
-        "aliases": ["soft-required"],
-        "type": ["null", "boolean"],
-        "default": None,
-    },
+    # {
+    #     "name": "soft_required",
+    #     "aliases": ["soft-required"],
+    #     "type": ["null", "boolean"],
+    #     "default": None,
+    # },
     {"name": "sub_questions", "type": ["null", "int"], "default": None},
     {"name": "subtype", "type": ["null", "string"], "default": None},
     {"name": "url", "type": ["null", "string"], "default": None},
@@ -195,12 +195,12 @@ SURVEY_QUESTION_FIELDS = [
 SURVEY_PAGE_PROPERTY_FIELDS = [
     {"name": "hidden", "type": ["null", "boolean"], "default": None},
     {"name": "piped_from", "type": ["null", "string"], "default": None},
-    {
-        "name": "page_group",
-        "aliases": ["page-group"],
-        "type": ["null", "string"],
-        "default": None,
-    },
+    # {
+    #     "name": "page_group",
+    #     "aliases": ["page-group"],
+    #     "type": ["null", "string"],
+    #     "default": None,
+    # },
 ]
 
 SURVEY_TEAM_FIELDS = [
