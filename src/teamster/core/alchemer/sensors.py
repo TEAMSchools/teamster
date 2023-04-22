@@ -127,7 +127,7 @@ def build_survey_response_asset_sensor(
                 run_config = {
                     "execution": {
                         "config": {
-                            "resources": {"limits": {"cpu": "1000m", "memory": "3.0Gi"}}
+                            "resources": {"limits": {"cpu": "500m", "memory": "4.0Gi"}}
                         }
                     }
                 }
