@@ -7,6 +7,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
+    DeleteDynamicPartitionsRequest,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
@@ -104,6 +105,27 @@ def build_survey_response_asset_sensor(
     def _sensor(
         context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
     ):
+        dynamic_partitions = context.instance.get_dynamic_partitions(
+            asset_def.partitions_def.name
+        )
+        get_materialization_count_by_partition = (
+            context.instance.get_materialization_count_by_partition(
+                asset_keys=[asset_def.key]
+            )
+        )
+
+        delete_partitions = [
+            p
+            for p in dynamic_partitions
+            if p not in get_materialization_count_by_partition.get(asset_def.key)
+            and p
+            not in [
+                "6580731_1682090760.0",
+                "4561325_1682094300.0",
+                "6829997_1682087700.0",
+            ]
+        ]
+
         cursor: dict = json.loads(context.cursor or "{}")
 
         """ https://apihelp.alchemer.com/help/api-response-time
@@ -182,7 +204,11 @@ def build_survey_response_asset_sensor(
                 AddDynamicPartitionsRequest(
                     partitions_def_name=asset_def.partitions_def.name,
                     partition_keys=add_partitions,
-                )
+                ),
+                DeleteDynamicPartitionsRequest(
+                    partitions_def_name=asset_def.partitions_def.name,
+                    partition_keys=delete_partitions,
+                ),
             ],
         )
 
