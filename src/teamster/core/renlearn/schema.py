@@ -84,6 +84,6 @@ GENERIC_AR_EXTRACT_FIELDS = [
     {"name": "LexileLevel", "type": ["null", "string"], "default": None},
 ]
 
-ENDPOINT_FIELDS = [
-    {"generic_ar_extract": GENERIC_AR_EXTRACT_FIELDS},
-]
+ENDPOINT_FIELDS = {
+    "generic_ar_extract": GENERIC_AR_EXTRACT_FIELDS,
+}
