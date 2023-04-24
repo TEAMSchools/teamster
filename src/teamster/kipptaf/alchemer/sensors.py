@@ -11,7 +11,7 @@ survey_metadata_asset_sensor = build_survey_metadata_asset_sensor(
 )
 
 survey_response_asset_sensor = build_survey_response_asset_sensor(
-    code_location=CODE_LOCATION, asset_def=survey_response
+    code_location=CODE_LOCATION, asset_def=survey_response, minimum_interval_seconds=600
 )
 
 __all__ = [
