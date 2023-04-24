@@ -4,3 +4,4 @@ username:
   env: KIPPNJ_RENLEARN_SFTP_USERNAME
 password:
   env: KIPPNJ_RENLEARN_SFTP_PASSWORD
+remote_port: 22
