@@ -23,7 +23,8 @@ def build_sftp_asset(asset_name, code_location, source_system, op_tags={}):
         remote_filepath = pathlib.Path(config.remote_filepath)
 
         local_filepath = sftp_renlearn.sftp_get(
-            remote_filepath=str(remote_filepath), local_filepath=remote_filepath.name
+            remote_filepath=str(remote_filepath),
+            local_filepath=f"./data/{remote_filepath.name}",
         )
 
         df = pandas.read_csv(filepath_or_buffer=local_filepath)
