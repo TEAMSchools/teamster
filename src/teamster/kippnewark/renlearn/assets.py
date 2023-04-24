@@ -9,7 +9,7 @@ config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/renlearn"
 
 sftp_assets = [
     build_sftp_asset(
-        ssh_renlearn=ResourceParam[SSHResource],
+        sftp_renlearn=ResourceParam[SSHResource],
         code_location=CODE_LOCATION,
         source_system="renlearn",
         **a,

@@ -22,11 +22,11 @@ def build_sftp_asset(asset_name, code_location, source_system, op_tags={}, **kwa
         io_manager_key="gcs_avro_io",
     )
     def _asset(config: SFTPAssetConfig, **kwargs):
-        ssh: SSHResource = kwargs[f"sftp_{source_system}"]
+        sftp: SSHResource = kwargs[f"sftp_{source_system}"]
 
         remote_filepath = pathlib.Path(config.remote_filepath)
 
-        local_filepath = ssh.sftp_get(
+        local_filepath = sftp.sftp_get(
             remote_filepath=str(remote_filepath), local_filepath=remote_filepath.name
         )
 
