@@ -1,7 +1,7 @@
 import pathlib
 
 import pandas
-from dagster import Config, Output, ResourceParam, asset
+from dagster import Config, OpExecutionContext, Output, ResourceParam, asset
 from dagster_ssh import SSHResource
 
 from teamster.core.renlearn.schema import ENDPOINT_FIELDS
@@ -19,7 +19,11 @@ def build_sftp_asset(asset_name, code_location, source_system, op_tags={}):
         op_tags=op_tags,
         io_manager_key="gcs_avro_io",
     )
-    def _asset(config: SFTPAssetConfig, sftp_renlearn: ResourceParam[SSHResource]):
+    def _asset(
+        context: OpExecutionContext,
+        config: SFTPAssetConfig,
+        sftp_renlearn: ResourceParam[SSHResource],
+    ):
         remote_filepath = pathlib.Path(config.remote_filepath)
 
         local_filepath = sftp_renlearn.sftp_get(
@@ -28,6 +32,7 @@ def build_sftp_asset(asset_name, code_location, source_system, op_tags={}):
         )
 
         df = pandas.read_csv(filepath_or_buffer=local_filepath)
+        context.log.debug(df.dtypes)
 
         yield Output(
             value=(
