@@ -1,14 +1,13 @@
 from dagster import (
     AutoMaterializePolicy,
     Definitions,
-    EnvVar,
     config_from_files,
     load_assets_from_modules,
 )
 from dagster_dbt import dbt_cli_resource
 from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_k8s import k8s_job_executor
-from dagster_ssh import SSHResource, ssh_resource
+from dagster_ssh import ssh_resource
 
 from teamster.core.deanslist.resources import deanslist_resource
 from teamster.core.google.resources.io import gcs_io_manager
@@ -75,11 +74,8 @@ defs = Definitions(
         "sftp_nps": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_nps.yaml"])
         ),
-        "sftp_renlearn": SSHResource(
-            remote_host=EnvVar("KIPPNJ_RENLEARN_SFTP_HOST"),
-            username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
-            password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
-            remote_port=22,
+        "sftp_renlearn": ssh_resource.configured(
+            config_from_files([f"{local_resource_config_dir}/sftp_renlearn.yaml"])
         ),
         "deanslist": deanslist_resource.configured(
             config_from_files([f"{core_resource_config_dir}/deanslist.yaml"])
