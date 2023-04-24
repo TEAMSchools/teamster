@@ -1,0 +1,6 @@
+remote_host:
+  env: KIPPNJ_RENLEARN_SFTP_HOST
+username:
+  env: KIPPNJ_RENLEARN_SFTP_USERNAME
+password:
+  env: KIPPNJ_RENLEARN_SFTP_PASSWORD
