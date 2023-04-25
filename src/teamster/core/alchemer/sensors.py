@@ -43,9 +43,8 @@ def build_survey_metadata_asset_sensor(
     def _sensor(
         context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
     ):
-        cursor: dict = json.loads(context.cursor or "{}")
-
         now = pendulum.now(tz="US/Eastern").start_of("minute")
+        cursor: dict = json.loads(context.cursor or "{}")
 
         try:
             surveys = alchemer.survey.list()
