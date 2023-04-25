@@ -11,4 +11,5 @@ def foo(context: SensorEvaluationContext, sftp_renlearn: ResourceParam[SSHResour
 
     conn.close()
 
-    context.log.info(ls)
+    for f in ls:
+        context.log.info(f.filename, f.st_mtime)
