@@ -22,8 +22,17 @@ def build_sftp_asset(
         key_prefix=[code_location, source_system],
         op_tags=op_tags,
         io_manager_key="gcs_avro_io",
+        metadata={
+            "remote_filepath": remote_filepath,
+            "archive_filepath": archive_filepath,
+        },
     )
     def _asset(context: OpExecutionContext, sftp_renlearn: ResourceParam[SSHResource]):
+        asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
+
+        remote_filepath = asset_metadata["remote_filepath"]
+        archive_filepath = asset_metadata["archive_filepath"]
+
         local_filepath = sftp_renlearn.sftp_get(
             remote_filepath=remote_filepath,
             local_filepath=f"./data/{pathlib.Path(remote_filepath).name}",
