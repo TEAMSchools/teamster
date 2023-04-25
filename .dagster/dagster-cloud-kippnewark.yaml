@@ -16,7 +16,7 @@ locations:
           - kippnewark-ps-ssh-port
           - kippnewark-ps-ssh-remote-bind-host
           - kippnewark-ps-ssh-username
-          - kippnj-renlearn-sftp-host
+          - renlearn-sftp-host
           - kippnj-renlearn-sftp-password
           - kippnj-renlearn-sftp-username
           - mssql-database
