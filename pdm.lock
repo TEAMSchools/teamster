@@ -27,7 +27,7 @@ dependencies = [
 
 [[package]]
 name = "alembic"
-version = "1.10.3"
+version = "1.10.4"
 requires_python = ">=3.7"
 summary = "A database migration tool for SQLAlchemy."
 dependencies = [
@@ -484,7 +484,7 @@ summary = "A python wrapper of the C library 'Google CRC32C'"
 
 [[package]]
 name = "google-resumable-media"
-version = "2.4.1"
+version = "2.5.0"
 requires_python = ">= 3.7"
 summary = "Utilities for Google Media Downloads and Resumable Uploads"
 dependencies = [
@@ -784,7 +784,7 @@ summary = "A generic, spec-compliant, thorough implementation of the OAuth reque
 
 [[package]]
 name = "oracledb"
-version = "1.3.0"
+version = "1.3.1"
 requires_python = ">=3.6"
 summary = "Python interface to Oracle Database"
 dependencies = [
@@ -1272,9 +1272,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/54/d2/81f3572ca78217e1a4f684b2087f8b1ea4d2525bac3c382d87d3de3fd392/alchemer-0.6.1.tar.gz", hash = "sha256:0b1399828a229560d77e14d0957150ebf20d0af3c1fa1119b134912b920f94f7"},
     {url = "https://files.pythonhosted.org/packages/bf/f3/2251e6aadecb734527c82e1119d6af100330e4ae90ac681643dce0f6f2cf/alchemer-0.6.1-py3-none-any.whl", hash = "sha256:f511ac490a2a9106c4bf35e4dfac4e57b0f379caa3564c2f834fd5dc791fa631"},
 ]
-"alembic 1.10.3" = [
-    {url = "https://files.pythonhosted.org/packages/1d/f3/bf536ece9c30b82f1cd193f36dff69a718138c443a1f2d41d3430fa467fd/alembic-1.10.3-py3-none-any.whl", hash = "sha256:b2e0a6cfd3a8ce936a1168320bcbe94aefa3f4463cd773a968a55071beb3cd37"},
-    {url = "https://files.pythonhosted.org/packages/1e/7e/025531ac551af143f84475b5d2c7b523539d6812ccf771a1bf69c19fc8b7/alembic-1.10.3.tar.gz", hash = "sha256:32a69b13a613aeb7e8093f242da60eff9daed13c0df02fff279c1b06c32965d2"},
+"alembic 1.10.4" = [
+    {url = "https://files.pythonhosted.org/packages/14/b3/e471678c278e5f9beb9cb9b6acc2cfbb5628545d9795a9e05627f87c7e7c/alembic-1.10.4.tar.gz", hash = "sha256:295b54bbb92c4008ab6a7dcd1e227e668416d6f84b98b3c4446a2bc6214a556b"},
+    {url = "https://files.pythonhosted.org/packages/83/64/3d091f50da38aca0774e30053db2bd3483ba6358674a60d82fd6dd6248b6/alembic-1.10.4-py3-none-any.whl", hash = "sha256:43942c3d4bf2620c466b91c0f4fca136fe51ae972394a0cc8b90810d664e4f5c"},
 ]
 "attrs 23.1.0" = [
     {url = "https://files.pythonhosted.org/packages/97/90/81f95d5f705be17872843536b1868f351805acf6971251ff07c1b8334dbb/attrs-23.1.0.tar.gz", hash = "sha256:6279836d581513a26f1bf235f9acd333bc9115683f14f7e8fae46c98fc50e015"},
@@ -1722,9 +1722,9 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/fc/7f/b8fc0644c6eea688532a58a0d872d28ea9ffc2fdf93956ce03aa07f19c6b/google_crc32c-1.5.0-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:1e986b206dae4476f41bcec1faa057851f3889503a70e1bdb2378d406223994a"},
     {url = "https://files.pythonhosted.org/packages/fd/71/299a368347aeab3c89896cdfb67703161becbf5afbc1748a1850094828dc/google_crc32c-1.5.0-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8485b340a6a9e76c62a7dce3c98e5f102c9219f4cfbf896a00cf48caf078d438"},
 ]
-"google-resumable-media 2.4.1" = [
-    {url = "https://files.pythonhosted.org/packages/0b/d8/9a46125189d955ff50228351848019aef51775787db59373fefb20b09b3b/google_resumable_media-2.4.1-py2.py3-none-any.whl", hash = "sha256:831e86fd78d302c1a034730a0c6e5369dd11d37bad73fa69ca8998460d5bae8d"},
-    {url = "https://files.pythonhosted.org/packages/88/11/ea0db6fe28017487dd1e2c6bc3623ea2dc4655947d6f571c6207b6d9693c/google-resumable-media-2.4.1.tar.gz", hash = "sha256:15b8a2e75df42dc6502d1306db0bce2647ba6013f9cd03b6e17368c0886ee90a"},
+"google-resumable-media 2.5.0" = [
+    {url = "https://files.pythonhosted.org/packages/a8/84/b8c526864e53ee265516453015f707432448546c525dcf2b89bfd6c67245/google_resumable_media-2.5.0-py2.py3-none-any.whl", hash = "sha256:da1bd943e2e114a56d85d6848497ebf9be6a14d3db23e9fc57581e7c3e8170ec"},
+    {url = "https://files.pythonhosted.org/packages/c0/1b/173eacfeb03e6d026c932cb810ace18987dc9ca219154c89d7746b348b9c/google-resumable-media-2.5.0.tar.gz", hash = "sha256:218931e8e2b2a73a58eb354a288e03a0fd5fb1c4583261ac6e4c078666468c93"},
 ]
 "googleapis-common-protos 1.59.0" = [
     {url = "https://files.pythonhosted.org/packages/9a/19/02a6256e00653b0fec9f356678df0ed996cb9d89aeb472c8c4df9490cac0/googleapis-common-protos-1.59.0.tar.gz", hash = "sha256:4168fcb568a826a52f23510412da405abd93f4d23ba544bb68d943b14ba3cb44"},
@@ -2157,35 +2157,35 @@ content_hash = "sha256:715a454c41ad0d4b34530b82614a20bc2664b2aefd167ccf9325bfde8
     {url = "https://files.pythonhosted.org/packages/6d/fa/fbf4001037904031639e6bfbfc02badfc7e12f137a8afa254df6c4c8a670/oauthlib-3.2.2.tar.gz", hash = "sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918"},
     {url = "https://files.pythonhosted.org/packages/7e/80/cab10959dc1faead58dc8384a781dfbf93cb4d33d50988f7a69f1b7c9bbe/oauthlib-3.2.2-py3-none-any.whl", hash = "sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca"},
 ]
-"oracledb 1.3.0" = [
-    {url = "https://files.pythonhosted.org/packages/08/1e/f770f6023d726540f124f0d0b842cbd6f8254627b1f8461ab44ad5312a1e/oracledb-1.3.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:dd58d90ca0bcbc656049fc5160215e301e0192e12d4cd771dddca2638767bf6b"},
-    {url = "https://files.pythonhosted.org/packages/0d/6b/61677818ef05d42cb239949b3ba39f1287d00f4a81f69713cd7f4fb03282/oracledb-1.3.0-cp311-cp311-win32.whl", hash = "sha256:904a88478b86def89b54980fe80fd88a69b7831fcfaccf98849ec81e88a7ab26"},
-    {url = "https://files.pythonhosted.org/packages/18/14/e4f6611fe957ba27ea822890b57f67b3ed0309ffbc42e71161e912b8aea4/oracledb-1.3.0-cp37-cp37m-win_amd64.whl", hash = "sha256:785c191c39ee765a910e0d256f72889f527a45aaf3577917c08f0602155e785b"},
-    {url = "https://files.pythonhosted.org/packages/22/b2/89d440b41a1b3d71e44ca91e00d9d5240fcd34012292f4f3f546842d9a1f/oracledb-1.3.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:34f0c9f4df230a16e6a79bae601bc21d8ef915a95ebbaacd07dc9e586a419ed0"},
-    {url = "https://files.pythonhosted.org/packages/33/e2/c23fbdcf261612224d6d61d15c0c8bb102cc10cc12105f7ad9b8f4775c28/oracledb-1.3.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2dfb44e2ca7d17b983a5a9cb43b4f2acc1bc03c9c2010a83e25777bf6b1a6a1c"},
-    {url = "https://files.pythonhosted.org/packages/3b/34/1f217f62a2576b5ded044e9614eef3c76eee1312e3a52b5a32e7db6d3237/oracledb-1.3.0-cp39-cp39-win32.whl", hash = "sha256:fa3dbf4b8ca9809c774ea6755b7e618617cb84320e88909ba8f2f503f81f217b"},
-    {url = "https://files.pythonhosted.org/packages/3b/fc/3a0928a70e8d49c09496ba2d64d5e609d8a55b6774745debb36e7c808a8c/oracledb-1.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:090909b6f96ba0d9705a65413b3139903271860abe2cb2d5e4120cb700d8946d"},
-    {url = "https://files.pythonhosted.org/packages/3d/72/10f712121253c7e52b04b26fe9a8f587d24260b7ae1eb5ed706ef59f12a9/oracledb-1.3.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e3f7f7620308dd1adc7eeaf83372492fb80fc39b7cab335ccd332135c10d63ac"},
-    {url = "https://files.pythonhosted.org/packages/4a/af/c7ed7e7edabd2f89bf37f6ab65a4ca41a713ccf09fae9a2b541d7a86d4eb/oracledb-1.3.0-cp38-cp38-win32.whl", hash = "sha256:b858670555031254be28e4c51382dc0bd22df6f0fa3e8b10c19b6e56f16de986"},
-    {url = "https://files.pythonhosted.org/packages/59/5a/cb6532f2fc00eb6c449db7cadd9437969d642badd336ec8368b31702c82c/oracledb-1.3.0-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:9b50bdd797a65877d6570c57558138f04b329465cef52798091241989216e8b0"},
-    {url = "https://files.pythonhosted.org/packages/5a/99/9a7f1b9b5d4092dbec9343089b99d2cdbaf3382c451b3e32b58e35ca5b65/oracledb-1.3.0-cp37-cp37m-win32.whl", hash = "sha256:a5fa8ce065a6cc0d5b2384d848e7c4bab9abd6fbbf5a734da4749cc050dcc19c"},
-    {url = "https://files.pythonhosted.org/packages/60/87/1e3f3bda149b421c67f0400c24dc0b00b26f433ebeb1709bbdfe56a9c338/oracledb-1.3.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:53e4e826ebaf3dff0294c23d58af91ca85b0d3de246c7b31e413b63a6ebb0a81"},
-    {url = "https://files.pythonhosted.org/packages/64/5e/8f710aad27a0d9981525bc97bc1d5f3868cd8633dd953aa8f895384e99e9/oracledb-1.3.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8a225ed644f04cbd4d4edefb717c282d4b70a06f60a6d98eb8d1e747cdce6c62"},
-    {url = "https://files.pythonhosted.org/packages/78/e4/ccf13c590277d1dff000c9e47e289eacd6ac214b1c5894bdceffc35192f0/oracledb-1.3.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e855536c60f46507872ab38dd661f62318149f8ad5477abddb9a54294bdf6604"},
-    {url = "https://files.pythonhosted.org/packages/7b/0c/0533ac6b9b53449d15d481d7f24eb3d1813580449cb07ebe7270718f4502/oracledb-1.3.0-cp39-cp39-win_amd64.whl", hash = "sha256:3d0645bc03c91c9074c0553dc21fb3966048e7a9967d4b0b53a2861fc4b9d31f"},
-    {url = "https://files.pythonhosted.org/packages/89/42/b2f0578537d2be303a0324a541c15b690e50028f84592bb870adb87ae507/oracledb-1.3.0-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f408b252087c50f2adf6296b42f60ede3a0b4f4ff29963cccc1a2e929e4f0b33"},
-    {url = "https://files.pythonhosted.org/packages/8e/27/40a8c6d477b52f3aad88e2d9c480a13a047c8a8dc9b0787d220d8197ab68/oracledb-1.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f5ca297268ebbfb4783f7c37d20329b3472cdcb6b03e18036eccf2cc6cf489b4"},
-    {url = "https://files.pythonhosted.org/packages/91/7d/9396ea4f04588ca5da44940109e9a78351e0db1dbad5cddc5cda2965b8db/oracledb-1.3.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:f0ce0cde66faaa9d9113aaa48a544cdae56e49a16f7492e49efefb4334103e8c"},
-    {url = "https://files.pythonhosted.org/packages/92/8b/1c5a7e445d07a0f04cba0f8519b9bcc8b0bbfc0621cdc1c770f1c3ab6608/oracledb-1.3.0-cp38-cp38-win_amd64.whl", hash = "sha256:09ad628a599612b621548ea034fcc9872766248f50380a1b1bb10509c0c140e9"},
-    {url = "https://files.pythonhosted.org/packages/a6/99/d97f61085d19f50f9f8e259444248453f5a810eecb10478e34f9585572fd/oracledb-1.3.0-cp311-cp311-win_amd64.whl", hash = "sha256:3b22c2d40778c798c84afbef8057ed352b90aeaff522ce675163d6943fa56790"},
-    {url = "https://files.pythonhosted.org/packages/ad/23/5b25f2f57562f0c1e77c426482b521e250b072a644adc60093c07b8b5512/oracledb-1.3.0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:32db286d9ef2aad276bea80c01734b637ce805f7fc53c2a3bace7322324e4e73"},
-    {url = "https://files.pythonhosted.org/packages/b2/1f/b1740203718d99035e30e49adc176b083a61dc7a9872aaeb4c9b5dcbb4b2/oracledb-1.3.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d13baf1e5cc8aa2a45fbd94de09e05228a2ca63a2c0704665cedaeea1be3bf60"},
-    {url = "https://files.pythonhosted.org/packages/e1/83/105fe15cedb132d8696fdf56535da1609cda6826c81d111f700afbf09380/oracledb-1.3.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:786264c0b62bef784cca22b313e875cd08423c5d042bb766092eed6d4355e77b"},
-    {url = "https://files.pythonhosted.org/packages/e8/86/a5ad57482c1fa537fa9bd47b5dcebd7656538d7a0a9934b9842201c6434b/oracledb-1.3.0-cp310-cp310-win32.whl", hash = "sha256:906355f22e9acc331a54ea54b50b524d14db0b8fe33891248a582b801c163998"},
-    {url = "https://files.pythonhosted.org/packages/f9/fb/cd143639867963515fefa116f9392d74df242a7979df8abaaa8ec3d08c27/oracledb-1.3.0.tar.gz", hash = "sha256:f105a4705916a28d33e2918fa3634097fe83552bf5ea81afc3a7a68528c9e2f3"},
-    {url = "https://files.pythonhosted.org/packages/fa/98/ad2a36809685bdbe67764597712120d07c646d1c1f5885e1be9e3a896622/oracledb-1.3.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fd24339fbdab303cbf7b13826686117e7c17a2778599b22b4b2db2d61c9dc8f0"},
-    {url = "https://files.pythonhosted.org/packages/fd/39/4463f334f0a3d747046c5759b0a5ef0207424b260fb0105bbdbb651306c1/oracledb-1.3.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1843dfe676fc8637aa9da59e2390730a3e6464f77b86f8b438463c094098b7d3"},
-    {url = "https://files.pythonhosted.org/packages/fd/9b/0c8538e721cafeae06b4d9618e920ef10976918e65a833930efd02e6bf18/oracledb-1.3.0-cp310-cp310-win_amd64.whl", hash = "sha256:8d0be62327337f78fd28d4767018cb568038540c12cfe8e135a7ed86732cf1bf"},
+"oracledb 1.3.1" = [
+    {url = "https://files.pythonhosted.org/packages/0e/dc/546371feda373d4260d68f5fdd031747be1f8db2029323b18ab446503516/oracledb-1.3.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c3cb7940030c86d158231cddfbb1bb7dc95f71c786d8fb1772b95b4141e6923c"},
+    {url = "https://files.pythonhosted.org/packages/1e/ed/aa4223d7bc879da9529302dd990f251e29c9572d839d517561c9a6debddf/oracledb-1.3.1-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:93d9321cbaee556809da35a8facd45eb846f31df70c267758305fa25a1e3ce33"},
+    {url = "https://files.pythonhosted.org/packages/23/f8/7a8cad34feaaca9f6cd9580051a49bb716061a6ea8a5f953ecdbc259be1c/oracledb-1.3.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:29b4fbc90c0dbcacdf3f83bc4a9f34defd04c56ffa732998ed78a36f5d7f4c8d"},
+    {url = "https://files.pythonhosted.org/packages/24/b1/c52dd6d92ae23f0f9577b43dead46d4242a84b29ed5851d42c2203e2665a/oracledb-1.3.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:48fabce88c674566e1c87e9f743cdae85bc178239ccdfedf6f4af21e9d6840bb"},
+    {url = "https://files.pythonhosted.org/packages/25/e8/2d9ecc2f4a5e2f0edf0f56f5757240670aff18e8d32abe3bf23cfe530875/oracledb-1.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:ae37b751ec1a1195e731d9f28eedb6abcf233b84436c0edda6e7163ad2a24ab0"},
+    {url = "https://files.pythonhosted.org/packages/32/c4/b6c8f0b640af81a8129f13863d89d537b9b3d298706187fb64cac7368bff/oracledb-1.3.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f2173ef1edce4a66009f9d1af33fe2fac9a70c0d03c833cf373d6b54402c07a8"},
+    {url = "https://files.pythonhosted.org/packages/54/04/858905cde826e2c3b31a9fd91b7851f0a8284615dbafeae243eb827f0d95/oracledb-1.3.1-cp37-cp37m-win_amd64.whl", hash = "sha256:edfb982e562d11fb14242c23c80d5a82fe0606ac4aeedcc987c85eeb3d2ff131"},
+    {url = "https://files.pythonhosted.org/packages/5e/f1/2856a8773983af7e8dc32266ec969d77c6d34a35cb292f390bf27f007ce2/oracledb-1.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:860e69c31a5f45bf83c6f76728cdefd6f6cd72931e8657594a3cf09d6b3c0a48"},
+    {url = "https://files.pythonhosted.org/packages/61/3d/b72da4db09900e2153a8ae33344280763ecdb9b96219c44100a46ccdaba3/oracledb-1.3.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:aa3a1d2222be20c8c778fb735d871123e2220d8c66d17d9cbcebd31a4d0b27fd"},
+    {url = "https://files.pythonhosted.org/packages/6f/6c/d76bd8869664d2fa93b1631841c9bf794acbe59334d01ce757cb91252b30/oracledb-1.3.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:69f6021a4aa3430e7afc59b8bfcbddacb223f5cb59bd35eba72bdba7e2949251"},
+    {url = "https://files.pythonhosted.org/packages/70/e9/4648f37b84e8f6179b64d370ded75cd9dd757e669af8b577a6aec4e64df7/oracledb-1.3.1-cp39-cp39-win32.whl", hash = "sha256:792a80d4f7579578ac5432e1408b13e45cf3d43c1ccda19e71d860dbd8cc98e5"},
+    {url = "https://files.pythonhosted.org/packages/7a/9f/92bfcf45de2b8f25367933651989a9392e720616c70f78198b20f4ebc7a2/oracledb-1.3.1-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9728424d64064e31c79137539f69f3bcf50fe861a8833d2dc04c2fe6fa6f9711"},
+    {url = "https://files.pythonhosted.org/packages/7b/5b/9224085662eedd522a4e4f5124e2067315fa3b95bdeb8e69bdd94883826d/oracledb-1.3.1-cp310-cp310-win32.whl", hash = "sha256:e811ed3579dcb4dbf768c5af591ad70474e6dcc49a27472d24851a91a71147fc"},
+    {url = "https://files.pythonhosted.org/packages/82/9c/7ab12b95914b80d363a9642e13791e1c7129661db8ebaf9bf275ae805ccf/oracledb-1.3.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:dab0b5c01346cdc237adbb33dcced0a1286e51506f697c654089630cec1ee8bd"},
+    {url = "https://files.pythonhosted.org/packages/8b/88/e625fd37fda0060d81b0e70b3c2988aee26ca0e7f30cf614fe341d87153a/oracledb-1.3.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e65c4598ef0390fa2e214ade63da19233553303812bdd9da84a764adf8e8962a"},
+    {url = "https://files.pythonhosted.org/packages/8f/a2/b59c1883d97ab2a81355d725f74f2c7f716ba6d7161e0e3a2deab39a8ccb/oracledb-1.3.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:54f3d01681a2208bcdf4a510277b216977c328d2d00478a943b4dbf777d751e6"},
+    {url = "https://files.pythonhosted.org/packages/91/f4/c54e22894609b3078e489a3841cba35a47f956ba828d2ab11ed427cf25a7/oracledb-1.3.1-cp311-cp311-win32.whl", hash = "sha256:84775f9441f0975a54407e642a923f7b13d06b993b8b656168892718599d3573"},
+    {url = "https://files.pythonhosted.org/packages/97/13/930d3ee90605eb60babdd4a68a17abd5cb940191cfadc30ec28bd73e6e86/oracledb-1.3.1-cp38-cp38-win32.whl", hash = "sha256:ec0857b5120ac07b8325c84e2ec86b3455a7cbc2fb59896857f6a3ff31a63a23"},
+    {url = "https://files.pythonhosted.org/packages/a4/95/825e7ef068590b95fdbac5a939874ea74058bbb0dbfada4945319fd7defe/oracledb-1.3.1-cp38-cp38-win_amd64.whl", hash = "sha256:c653b820602ff5cd11a40f0666af1e451e5c5324cf15acf37ad0088051c90490"},
+    {url = "https://files.pythonhosted.org/packages/b1/3d/fa7606c907ceb2d5632da786031d984fddc5f9d93bb89c51cd52899c74e6/oracledb-1.3.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:d264eac7cbbc6fdacd8eb91e812110ff8a63fde32306173dfb610064162ca609"},
+    {url = "https://files.pythonhosted.org/packages/bc/99/aafcd6054f97d0b7a78e0b22a7629c984a200c92b41ff6a7ea088efb5981/oracledb-1.3.1-cp39-cp39-win_amd64.whl", hash = "sha256:d8a2c1833294a53f4b0dd26c7b74fa553c5e959dbb4c57b647910096f43aa8e2"},
+    {url = "https://files.pythonhosted.org/packages/c3/e8/bc0ae136302fc80e1e22da4c8d507aa27f9e51e188d88cd45c15c95a02d9/oracledb-1.3.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:10a4ed0b046cc36421380b2e9e4b8052c25209fa199e58c244190571997583d4"},
+    {url = "https://files.pythonhosted.org/packages/d5/a5/bbc2c9803c89c07cd3eaab62f5f5b0687a393b364d0e6117b67120d470e5/oracledb-1.3.1-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:09fe99fe47054199942557dc822bc9ccd277b1e20b4caafc35dd16cca59edcca"},
+    {url = "https://files.pythonhosted.org/packages/d8/23/344e79c825ec370c930f8d153c1cbb2b2a982b43757964c6b095bfbd3a13/oracledb-1.3.1-cp37-cp37m-win32.whl", hash = "sha256:46e2b01b10fe547f6d1ccb4f57d8596bf982caf876cb1c7006892ddb7fd3896a"},
+    {url = "https://files.pythonhosted.org/packages/d8/37/283c8b4ecfb1bb634227a6b22225fe199aa4998e8f1b7e9f2c44a1384391/oracledb-1.3.1-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:babab331ae31fca8b7a7a3d5cdf0bb0cb70ec1893283d81acd1bc429b9796ba5"},
+    {url = "https://files.pythonhosted.org/packages/e5/14/c0d0a8011be30bf0719d39153f3ed8b2647f9aa498d77c18f93b992c9630/oracledb-1.3.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d3d074b76e2cf459554c25b38c13962003112ae3de939a6da0a6ab37711c5379"},
+    {url = "https://files.pythonhosted.org/packages/e9/3f/17de9cc200cc783a3efdcf9b8a540c2af89726b8064860f802b7b0bb8687/oracledb-1.3.1.tar.gz", hash = "sha256:fce1bebdb0d8b88f908e0e1d0d8e5c24ce44e1be041b36032c28c3ba88e21314"},
+    {url = "https://files.pythonhosted.org/packages/f8/a7/593fad9fa1f6561e83890e91327d6ed127a4e3d8d46ad23ad40345a2a506/oracledb-1.3.1-cp310-cp310-win_amd64.whl", hash = "sha256:3addbdf7c5d110b8d31e132f2e1263f151ade950288d9ceea9ae01acefe563d4"},
 ]
 "packaging 23.1" = [
     {url = "https://files.pythonhosted.org/packages/ab/c3/57f0601a2d4fe15de7a553c00adbc901425661bf048f2a22dfc500caf121/packaging-23.1-py3-none-any.whl", hash = "sha256:994793af429502c4ea2ebf6bf664629d07c1a9fe974af92966e4b8d2df7edc61"},

@@ -11,6 +11,7 @@ from dagster_ssh import ssh_resource
 
 from teamster.core.deanslist.resources import deanslist_resource
 from teamster.core.google.resources.io import gcs_io_manager
+from teamster.core.renlearn.sensors import foo
 from teamster.core.sqlalchemy.resources import mssql, oracle
 
 from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool, renlearn
@@ -37,7 +38,7 @@ defs = Definitions(
         *powerschool.schedules.__all__,
         *deanslist.schedules.__all__,
     ],
-    sensors=[*powerschool.sensors.__all__],
+    sensors=[*powerschool.sensors.__all__, foo],
     resources={
         "warehouse": mssql.configured(
             config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
