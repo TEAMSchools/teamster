@@ -55,6 +55,6 @@ def build_sftp_sensor(
                     )
                     cursor[f.filename] = now.timestamp()
 
-        return SensorResult(run_requests=run_requests, cursor=cursor)
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
     return _sensor
