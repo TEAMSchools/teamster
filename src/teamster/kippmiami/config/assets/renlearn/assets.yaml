@@ -1,0 +1,10 @@
+assets:
+  - asset_name: generic_ar_extract
+    remote_filepath: KIPP Miami.zip
+    archive_filepath: AR_v2.csv
+  - asset_name: star_reading
+    remote_filepath: KIPP Miami.zip
+    archive_filepath: SR_v2.csv
+  - asset_name: star_math
+    remote_filepath: KIPP Miami.zip
+    archive_filepath: SM_v2.csv
