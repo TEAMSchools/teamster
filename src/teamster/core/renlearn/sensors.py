@@ -35,7 +35,7 @@ def build_sftp_sensor(code_location, asset_selection, minimum_interval_seconds=N
 
         conn.close()
 
-        asset_selection = []
+        run_asset_selection = []
         for f in ls:
             last_run = cursor.get(f.filename, 0)
             asset_match = [
@@ -48,12 +48,12 @@ def build_sftp_sensor(code_location, asset_selection, minimum_interval_seconds=N
                 context.log.info(f"{f.filename}: {f.st_mtime}")
 
                 if f.st_mtime >= last_run:
-                    asset_selection.append(asset_match[0].key)
+                    run_asset_selection.append(asset_match[0].key)
                     cursor[f.filename] = now.timestamp()
 
         return SensorResult(
             run_requests=[
-                RunRequest(run_key=asset_job.name, asset_selection=asset_selection)
+                RunRequest(run_key=asset_job.name, asset_selection=run_asset_selection)
             ],
             cursor=json.dumps(obj=cursor),
         )
