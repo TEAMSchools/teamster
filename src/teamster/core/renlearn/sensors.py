@@ -13,10 +13,11 @@ from dagster_ssh import SSHResource
 
 
 def build_sftp_sensor(
-    code_location, asset_configs: list[dict], minimum_interval_seconds=None
+    code_location, asset_job, asset_configs: list[dict], minimum_interval_seconds=None
 ):
     @sensor(
         name=f"{code_location}_renlearn_sftp_sensor",
+        job=asset_job,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(
