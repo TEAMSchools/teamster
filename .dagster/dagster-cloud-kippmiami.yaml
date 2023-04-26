@@ -16,6 +16,9 @@ locations:
           - kippmiami-ps-ssh-port
           - kippmiami-ps-ssh-remote-bind-host
           - kippmiami-ps-ssh-username
+          - renlearn-sftp-host
+          - kippmiami-renlearn-sftp-password
+          - kippmiami-renlearn-sftp-username
           - mssql-database
           - mssql-host
           - mssql-password
