@@ -97,7 +97,7 @@ ACCELERATED_READER_FIELDS = [
     {"name": "QuizDeleted", "type": ["null", "long"], "default": None},
     {"name": "WordCount", "type": ["null", "double"], "default": None},
     {"name": "QuizType", "type": ["null", "string"], "default": None},
-    {"name": "LexileMeasure", "type": ["null", "string"], "default": None},
+    {"name": "LexileMeasure", "type": ["null", "string", "int"], "default": None},
     {"name": "LexileLevel", "type": ["null", "double"], "default": None},
     {
         "name": "DateQuizCompleted",
