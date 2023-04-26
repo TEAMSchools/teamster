@@ -3,6 +3,7 @@ import zipfile
 
 from dagster import OpExecutionContext, Output, ResourceParam, asset
 from dagster_ssh import SSHResource
+from numpy import nan
 from pandas import read_csv
 
 from teamster.core.renlearn.schema import ENDPOINT_FIELDS
@@ -45,6 +46,7 @@ def build_sftp_asset(
             local_filepath = f"./data/{archive_filepath}"
 
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+        df = df.replace({nan: None})
 
         yield Output(
             value=(
