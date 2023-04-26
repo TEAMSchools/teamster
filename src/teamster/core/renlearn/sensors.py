@@ -55,15 +55,24 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
                 if f.st_mtime >= last_run and f.st_size > 0:
                     asset = asset_match[0]
 
+                    run_key = f"{asset.key.to_python_identifier()}_job"
+                    archive_filepath = (
+                        asset.metadata_by_key[asset.key].get("archive_filepath")
+                        == f.filename
+                    )
+
+                    asset_job = [j for j in asset_jobs if j.name == run_key][0]
+
+                    if archive_filepath is not None:
+                        asset_selection = [a.key for a in asset_defs]
+                    else:
+                        asset_selection = [asset.key]
+
                     run_requests.append(
                         RunRequest(
-                            run_key=f"{asset.key.to_python_identifier()}_job",
-                            job_name=[
-                                j
-                                for j in asset_jobs
-                                if j.name == f"{asset.key.to_python_identifier()}_job"
-                            ][0].name,
-                            asset_selection=[asset.key],
+                            run_key=run_key,
+                            job_name=asset_job.name,
+                            asset_selection=asset_selection,
                         )
                     )
                     cursor[f.filename] = now.timestamp()
