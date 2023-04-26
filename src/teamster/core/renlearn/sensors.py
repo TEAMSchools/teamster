@@ -24,7 +24,7 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
 
     @sensor(
         name=f"{code_location}_renlearn_sftp_sensor",
-        job=asset_jobs,
+        jobs=asset_jobs,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(
