@@ -11,13 +11,16 @@ from pandas import read_csv
 from teamster.core.renlearn.schema import ENDPOINT_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-CODE_LOCATION = "kippmiami"
 SOURCE_SYSTEM = "renlearn"
-ENDPOINT_NAME = "star_reading"
+CODE_LOCATION = "kippmiami"
+# "kippnewark"
+ENDPOINT_NAME = "accelerated_reader"
 REMOTE_FILEPATH = "KIPP Miami.zip"
 # "KIPPNewJersey - Generic AR Extract v2.csv"
 # "KIPPNewJersey - Star Math v2 RGP.csv"
-ARCHIVE_FILE_PATH = "SR_v2.csv"
+ARCHIVE_FILE_PATH = "AR_v2.csv"
+# None
+# "SR_v2.csv"
 # "SM_v2.csv"
 
 CONFIG_PATH = f"src/teamster/{CODE_LOCATION}/config/resources"
