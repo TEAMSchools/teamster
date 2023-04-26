@@ -62,7 +62,7 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
                                 j
                                 for j in asset_jobs
                                 if j.name == f"{asset.key.to_python_identifier()}_job"
-                            ][0],
+                            ][0].name,
                             asset_selection=[asset.key],
                         )
                     )
