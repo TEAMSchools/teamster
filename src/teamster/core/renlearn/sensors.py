@@ -58,6 +58,11 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset.key.to_python_identifier()}_job",
+                            job_name=[
+                                j
+                                for j in asset_jobs
+                                if j.name == f"{asset.key.to_python_identifier()}_job"
+                            ][0],
                             asset_selection=[asset.key],
                         )
                     )
