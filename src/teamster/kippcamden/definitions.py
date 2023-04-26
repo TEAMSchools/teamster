@@ -14,7 +14,7 @@ from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.sqlalchemy.resources import mssql, oracle
 
-from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
+from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool, renlearn
 
 core_resource_config_dir = "src/teamster/core/config/resources"
 local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -27,6 +27,7 @@ defs = Definitions(
         ),
         *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
         *load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist"),
+        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
@@ -37,7 +38,7 @@ defs = Definitions(
         *powerschool.schedules.__all__,
         *deanslist.schedules.__all__,
     ],
-    sensors=[*powerschool.sensors.__all__],
+    sensors=[*powerschool.sensors.__all__, *renlearn.sensors],
     resources={
         "warehouse": mssql.configured(
             config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
@@ -73,6 +74,9 @@ defs = Definitions(
         ),
         "sftp_cpn": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_cpn.yaml"])
+        ),
+        "sftp_renlearn": ssh_resource.configured(
+            config_from_files([f"{local_resource_config_dir}/sftp_renlearn.yaml"])
         ),
         "deanslist": deanslist_resource.configured(
             config_from_files([f"{core_resource_config_dir}/deanslist.yaml"])
