@@ -12,14 +12,19 @@ from dagster import (
 from dagster_ssh import SSHResource
 
 
-def build_sftp_sensor(code_location, asset_selection, minimum_interval_seconds=None):
-    asset_job = define_asset_job(
-        name=f"{code_location}__renlearn__asset_job", selection=asset_selection
-    )
+def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
+    asset_jobs = [
+        define_asset_job(
+            name=f"{asset.key.to_python_identifier()}_job",
+            selection=[asset],
+            partitions_def=asset.partitions_def,
+        )
+        for asset in asset_defs
+    ]
 
     @sensor(
         name=f"{code_location}_renlearn_sftp_sensor",
-        job=asset_job,
+        job=asset_jobs,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(
@@ -35,12 +40,12 @@ def build_sftp_sensor(code_location, asset_selection, minimum_interval_seconds=N
 
         conn.close()
 
-        run_asset_selection = []
+        run_requests = []
         for f in ls:
             last_run = cursor.get(f.filename, 0)
             asset_match = [
                 a
-                for a in asset_selection
+                for a in asset_defs
                 if a.metadata_by_key[a.key]["remote_filepath"] == f.filename
             ]
 
@@ -48,14 +53,16 @@ def build_sftp_sensor(code_location, asset_selection, minimum_interval_seconds=N
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
                 if f.st_mtime >= last_run and f.st_size > 0:
-                    run_asset_selection.append(asset_match[0].key)
+                    asset = asset_match[0]
+
+                    run_requests.append(
+                        RunRequest(
+                            run_key=f"{asset.key.to_python_identifier()}_job",
+                            asset_selection=[asset.key],
+                        )
+                    )
                     cursor[f.filename] = now.timestamp()
 
-        return SensorResult(
-            run_requests=[
-                RunRequest(run_key=asset_job.name, asset_selection=run_asset_selection)
-            ],
-            cursor=json.dumps(obj=cursor),
-        )
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
     return _sensor
