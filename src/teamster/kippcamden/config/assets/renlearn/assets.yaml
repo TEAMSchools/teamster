@@ -1,5 +1,5 @@
 assets:
-  - asset_name: generic_ar_extract
+  - asset_name: accelerated_reader
     remote_filepath: KIPPNewJersey - Generic AR Extract v2.csv
   - asset_name: star_reading
     remote_filepath: KIPPNewJersey - Star Reading v2 RGP.csv

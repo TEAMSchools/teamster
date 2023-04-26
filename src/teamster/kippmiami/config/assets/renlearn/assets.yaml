@@ -1,5 +1,5 @@
 assets:
-  - asset_name: generic_ar_extract
+  - asset_name: accelerated_reader
     remote_filepath: KIPP Miami.zip
     archive_filepath: AR_v2.csv
   - asset_name: star_reading

@@ -45,9 +45,9 @@ def build_sftp_sensor(code_location, asset_selection, minimum_interval_seconds=N
             ]
 
             if asset_match:
-                context.log.info(f"{f.filename}: {f.st_mtime}")
+                context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
-                if f.st_mtime >= last_run:
+                if f.st_mtime >= last_run and f.st_size > 0:
                     run_asset_selection.append(asset_match[0].key)
                     cursor[f.filename] = now.timestamp()
 

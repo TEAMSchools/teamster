@@ -76,7 +76,7 @@ CORE_FIELDS = [
     },
 ]
 
-GENERIC_AR_EXTRACT_FIELDS = [
+ACCELERATED_READER_FIELDS = [
     *CORE_FIELDS,
     {"name": "QuizNumber", "type": ["null", "double"], "default": None},
     {"name": "ContentLanguage", "type": ["null", "string"], "default": None},
@@ -90,7 +90,7 @@ GENERIC_AR_EXTRACT_FIELDS = [
     {"name": "PercentCorrect", "type": ["null", "double"], "default": None},
     {"name": "PointsPossible", "type": ["null", "double"], "default": None},
     {"name": "PointsEarned", "type": ["null", "double"], "default": None},
-    {"name": "Passed", "type": ["null", "string"], "default": None},
+    {"name": "Passed", "type": ["null", "boolean"], "default": None},
     {"name": "TWI", "type": ["null", "string"], "default": None},
     {"name": "BookRating", "type": ["null", "double"], "default": None},
     {"name": "AudioUsed", "type": ["null", "double"], "default": None},
@@ -237,7 +237,7 @@ STAR_FIELDS = [
     },
     {
         "name": "RenaissanceBenchmarkCategoryLevel",
-        "type": ["null", "long"],
+        "type": ["null", "double"],
         "default": None,
     },
     {
@@ -247,12 +247,12 @@ STAR_FIELDS = [
     },
     {
         "name": "RenaissanceBenchmarkCategoryMinPercentileRank",
-        "type": ["null", "long"],
+        "type": ["null", "double"],
         "default": None,
     },
     {
         "name": "RenaissanceBenchmarkCategoryMaxPercentileRank",
-        "type": ["null", "long"],
+        "type": ["null", "double"],
         "default": None,
     },
     {
@@ -262,7 +262,7 @@ STAR_FIELDS = [
     },
     {
         "name": "StateBenchmarkNumberOfCategoryLevels",
-        "type": ["null", "long"],
+        "type": ["null", "double"],
         "default": None,
     },
     {
@@ -360,7 +360,7 @@ STAR_READING_FIELDS = [
 ]
 
 ENDPOINT_FIELDS = {
-    "generic_ar_extract": GENERIC_AR_EXTRACT_FIELDS,
+    "accelerated_reader": ACCELERATED_READER_FIELDS,
     "star_math": STAR_MATH_FIELDS,
     "star_reading": STAR_READING_FIELDS,
 }
