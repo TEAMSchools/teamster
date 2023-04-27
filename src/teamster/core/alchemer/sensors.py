@@ -78,7 +78,7 @@ def build_survey_metadata_asset_sensor(
             if is_run_request:
                 dynamic_partitions_requests.append(
                     AddDynamicPartitionsRequest(
-                        partitions_def_nåame=survey_asset.partitions_def.name,
+                        partitions_def_name=survey_asset.partitions_def.name,
                         partition_keys=[survey_id],
                     )
                 )
