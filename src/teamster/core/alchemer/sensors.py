@@ -80,7 +80,14 @@ def build_survey_metadata_asset_sensor(
                 )
 
                 yield RunRequest(
-                    run_key=f"{code_location}_{asset_job.name}_{survey_id}",
+                    run_key="_".join(
+                        [
+                            code_location,
+                            asset_job.name,
+                            survey_id,
+                            modified_on.timestamp(),
+                        ]
+                    ),
                     asset_selection=asset_keys,
                     partition_key=survey_id,
                 )
