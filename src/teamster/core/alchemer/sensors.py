@@ -51,6 +51,8 @@ def build_survey_metadata_asset_sensor(
         except HTTPError as e:
             return SensorResult(skip_reason=SkipReason(e.strerror))
 
+        run_requests = []
+        dynamic_partitions_requests = []
         for survey in surveys:
             survey_id = survey["id"]
             modified_on = pendulum.from_format(
@@ -74,27 +76,35 @@ def build_survey_metadata_asset_sensor(
                 is_run_request = False
 
             if is_run_request:
-                context.instance.add_dynamic_partitions(
-                    partitions_def_name=survey_asset.partitions_def.name,
-                    partition_keys=[survey_id],
+                dynamic_partitions_requests.append(
+                    AddDynamicPartitionsRequest(
+                        partitions_def_nåame=survey_asset.partitions_def.name,
+                        partition_keys=[survey_id],
+                    )
                 )
 
-                yield RunRequest(
-                    run_key="_".join(
-                        [
-                            code_location,
-                            asset_job.name,
-                            survey_id,
-                            modified_on.timestamp(),
-                        ]
-                    ),
-                    asset_selection=asset_keys,
-                    partition_key=survey_id,
+                run_requests.append(
+                    RunRequest(
+                        run_key="_".join(
+                            [
+                                code_location,
+                                asset_job.name,
+                                survey_id,
+                                str(modified_on.timestamp()),
+                            ]
+                        ),
+                        asset_selection=asset_keys,
+                        partition_key=survey_id,
+                    )
                 )
 
                 cursor[survey_id] = now.timestamp()
 
-        context.update_cursor(json.dumps(cursor))
+        return SensorResult(
+            run_requests=run_requests,
+            cursor=json.dumps(cursor),
+            dynamic_partitions_requests=dynamic_partitions_requests,
+        )
 
     return _sensor
 
