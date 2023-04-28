@@ -1,39 +1,33 @@
 import json
+import re
 
 import pendulum
 from dagster import (
+    AssetSelection,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    define_asset_job,
     sensor,
 )
 from dagster_ssh import SSHResource
 
 
 def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
-    asset_jobs = [
-        define_asset_job(
-            name=f"{asset.key.to_python_identifier()}_job",
-            selection=[asset],
-            partitions_def=asset.partitions_def,
-        )
-        for asset in asset_defs
-    ]
-
     @sensor(
         name=f"{code_location}_clever_sftp_sensor",
-        jobs=asset_jobs,
         minimum_interval_seconds=minimum_interval_seconds,
+        asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(
-        context: SensorEvaluationContext, sftp_clever: ResourceParam[SSHResource]
+        context: SensorEvaluationContext,
+        sftp_clever_reports: ResourceParam[SSHResource],
     ):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
+        context.instance.get_asset_keys
 
-        conn = sftp_clever.get_connection()
+        conn = sftp_clever_reports.get_connection()
 
         with conn.open_sftp() as sftp_client:
             ls = {}
@@ -46,25 +40,25 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
 
         run_requests = []
         for remote_filepath, files in ls.items():
-            asset = [a for a in asset_defs if a.name == remote_filepath][0]
             last_run = cursor.get(remote_filepath, 0)
-
-            asset_job_name = f"{asset.key.to_python_identifier()}_job"
+            asset = [a for a in asset_defs if a.name == remote_filepath][0]
 
             partition_keys = set()
             for f in files:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 if f.st_mtime >= last_run and f.st_size > 0:
-                    partition_keys.add(f.filename)
+                    match = re.match(
+                        pattern=r"(\d{4}-\d{2}-\d{2})[-\w+]+-(\w+).csv",
+                        string=f.filename,
+                    )
+
+                    partition_keys.add("|".join(match.groups()))
 
             if partition_keys:
-                for pk in partition_keys:
+                for pk in list(partition_keys):
                     run_requests.append(
                         RunRequest(
-                            run_key=asset_job_name,
-                            job_name=[
-                                j for j in asset_jobs if j.name == asset_job_name
-                            ][0].name,
+                            run_key=f"{asset.key.to_python_identifier()}_{pk}",
                             asset_selection=[asset.key],
                             partition_key=pk,
                         )

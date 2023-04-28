@@ -12,7 +12,6 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    define_asset_job,
     sensor,
 )
 from requests.exceptions import HTTPError
@@ -21,24 +20,16 @@ from requests.exceptions import HTTPError
 def build_survey_metadata_asset_sensor(
     code_location, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
 ):
-    asset_keys = [a.key for a in asset_defs]
-
     survey_asset = [
         asset
         for asset in asset_defs
         if asset.key == AssetKey([code_location, "alchemer", "survey"])
     ][0]
 
-    asset_job = define_asset_job(
-        name=f"{code_location}_alchemer_survey_metadata_job",
-        selection=asset_keys,
-        partitions_def=survey_asset.partitions_def,
-    )
-
     @sensor(
         name=f"{code_location}_alchemer_survey_metadata_asset_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        job=asset_job,
+        asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(
         context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
@@ -88,12 +79,12 @@ def build_survey_metadata_asset_sensor(
                         run_key="_".join(
                             [
                                 code_location,
-                                asset_job.name,
+                                "survey_metadata",
                                 survey_id,
                                 str(modified_on.timestamp()),
                             ]
                         ),
-                        asset_selection=asset_keys,
+                        asset_selection=[a.key for a in asset_defs],
                         partition_key=survey_id,
                     )
                 )
