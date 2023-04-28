@@ -50,10 +50,12 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
                     cursor[f.filename] = now.timestamp()
 
         return SensorResult(
-            run_requests=RunRequest(
-                run_key=f"{code_location}_renlearn_sftp_{f.st_mtime}",
-                asset_selection=asset_selection,
-            ),
+            run_requests=[
+                RunRequest(
+                    run_key=f"{code_location}_renlearn_sftp_{f.st_mtime}",
+                    asset_selection=asset_selection,
+                )
+            ],
             cursor=json.dumps(obj=cursor),
         )
 
