@@ -45,6 +45,8 @@ def build_survey_metadata_asset_sensor(
         run_requests = []
         dynamic_partitions_requests = []
         for survey in surveys:
+            context.log.info(msg=survey["title"])
+
             survey_id = survey["id"]
             modified_on = pendulum.from_format(
                 string=survey["modified_on"],
@@ -59,10 +61,12 @@ def build_survey_metadata_asset_sensor(
                 or survey_cursor_timestamp is None
             ):
                 is_run_request = True
+                context.log.info("INITIAL RUN")
             elif modified_on > pendulum.from_timestamp(
                 timestamp=survey_cursor_timestamp, tz="US/Eastern"
             ):
                 is_run_request = True
+                context.log.info(f"MODIFIED: {modified_on}")
             else:
                 is_run_request = False
 
