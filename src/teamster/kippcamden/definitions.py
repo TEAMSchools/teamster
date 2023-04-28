@@ -22,23 +22,17 @@ local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
-        *load_assets_from_modules(
-            modules=[powerschool.assets], group_name="powerschool"
-        ),
-        *load_assets_from_modules(modules=[datagun.assets], group_name="datagun"),
-        *load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist"),
+        *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
+        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
+        *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
         *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
-    jobs=[*datagun.jobs.__all__, *deanslist.jobs.__all__],
-    schedules=[
-        *datagun.schedules.__all__,
-        *powerschool.schedules.__all__,
-        *deanslist.schedules.__all__,
-    ],
-    sensors=[*powerschool.sensors.__all__, *renlearn.sensors],
+    jobs=[*datagun.jobs, *deanslist.jobs],
+    schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
+    sensors=[*powerschool.sensors, *renlearn.sensors],
     resources={
         "warehouse": mssql.configured(
             config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
