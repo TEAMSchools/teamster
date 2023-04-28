@@ -2,30 +2,21 @@ import json
 
 import pendulum
 from dagster import (
+    AssetSelection,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    define_asset_job,
     sensor,
 )
 from dagster_ssh import SSHResource
 
 
 def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
-    asset_jobs = [
-        define_asset_job(
-            name=f"{asset.key.to_python_identifier()}_job",
-            selection=[asset],
-            partitions_def=asset.partitions_def,
-        )
-        for asset in asset_defs
-    ]
-
     @sensor(
         name=f"{code_location}_renlearn_sftp_sensor",
-        jobs=asset_jobs,
         minimum_interval_seconds=minimum_interval_seconds,
+        asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(
         context: SensorEvaluationContext, sftp_renlearn: ResourceParam[SSHResource]
@@ -40,7 +31,7 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
 
         conn.close()
 
-        run_requests = []
+        asset_selection = []
         for f in ls:
             last_run = cursor.get(f.filename, 0)
             asset_match = [
@@ -54,23 +45,16 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
 
                 if f.st_mtime >= last_run and f.st_size > 0:
                     for asset in asset_match:
-                        asset_selection = [asset.key]
-                        asset_job = [
-                            j
-                            for j in asset_jobs
-                            if j.name == f"{asset.key.to_python_identifier()}_job"
-                        ][0]
-
-                        run_requests.append(
-                            RunRequest(
-                                run_key=f"{asset_job.name}_{f.st_mtime}",
-                                job_name=asset_job.name,
-                                asset_selection=asset_selection,
-                            )
-                        )
+                        asset_selection.append(asset.key)
 
                     cursor[f.filename] = now.timestamp()
 
-        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+        return SensorResult(
+            run_requests=RunRequest(
+                run_key=f"{code_location}_renlearn_sftp_{f.st_mtime}",
+                asset_selection=asset_selection,
+            ),
+            cursor=json.dumps(obj=cursor),
+        )
 
     return _sensor

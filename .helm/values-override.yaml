@@ -34,3 +34,7 @@ workspace:
     requests:
       cpu: 250m
       memory: 0.5Gi
+  runK8sConfig:
+    podSpecConfig:
+      nodeSelector:
+        cloud.google.com/compute-class: Balanced

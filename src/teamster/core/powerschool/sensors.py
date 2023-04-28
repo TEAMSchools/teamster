@@ -3,10 +3,12 @@ import os
 
 import pendulum
 from dagster import (
+    AddDynamicPartitionsRequest,
     AssetsDefinition,
+    AssetSelection,
     RunRequest,
     SensorEvaluationContext,
-    define_asset_job,
+    SensorResult,
     sensor,
 )
 from sqlalchemy import text
@@ -40,19 +42,10 @@ def build_dynamic_partition_sensor(
     asset_defs: list[AssetsDefinition],
     minimum_interval_seconds=None,
 ):
-    asset_jobs = [
-        define_asset_job(
-            name=f"{asset.key.to_python_identifier()}_job",
-            selection=[asset],
-            partitions_def=asset.partitions_def,
-        )
-        for asset in asset_defs
-    ]
-
     @sensor(
         name=name,
-        jobs=asset_jobs,
         minimum_interval_seconds=minimum_interval_seconds,
+        asset_selection=AssetSelection.assets(*asset_defs),
         required_resource_keys={"ps_ssh", "ps_db"},
     )
     def _sensor(context: SensorEvaluationContext):
@@ -80,6 +73,9 @@ def build_dynamic_partition_sensor(
             ssh_tunnel.start()
 
         try:
+            run_requests = []
+            dynamic_partitions_requests = []
+
             for asset in asset_defs:
                 run_request = False
 
@@ -123,21 +119,25 @@ def build_dynamic_partition_sensor(
                 if run_request:
                     partition_key = window_start.to_iso8601_string()
 
-                    context.instance.add_dynamic_partitions(
-                        partitions_def_name=asset.partitions_def.name,
+                    dynamic_partitions_requests.append(
+                        AddDynamicPartitionsRequest(
+                            partitions_def_name=asset.partitions_def.name
+                        ),
                         partition_keys=[partition_key],
                     )
 
-                    asset_job = [
-                        j for j in asset_jobs if j.name == f"{asset_key_string}_job"
-                    ][0]
-
-                    yield RunRequest(
-                        run_key=f"{asset_job.name}_{window_start.int_timestamp}",
-                        run_config=run_config,
-                        job_name=asset_job.name,
-                        asset_selection=[asset.key],
-                        partition_key=partition_key,
+                    run_requests.append(
+                        RunRequest(
+                            run_key="_".join(
+                                [
+                                    asset.key.to_python_identifier(),
+                                    str(window_start.timestamp()),
+                                ]
+                            ),
+                            run_config=run_config,
+                            asset_selection=[asset.key],
+                            partition_key=partition_key,
+                        )
                     )
 
                     cursor[asset_key_string] = window_end.timestamp()
@@ -145,6 +145,10 @@ def build_dynamic_partition_sensor(
             context.log.debug("Stopping SSH tunnel")
             ssh_tunnel.stop()
 
-        context.update_cursor(json.dumps(cursor))
+        return SensorResult(
+            run_requests=run_requests,
+            cursor=json.dumps(cursor),
+            dynamic_partitions_requests=dynamic_partitions_requests,
+        )
 
     return _sensor
