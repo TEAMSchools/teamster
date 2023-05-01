@@ -39,11 +39,11 @@ RUN pip install --no-cache-dir .
 
 # install dbt
 COPY teamster-dbt ./teamster-dbt
-RUN dbt clean --project-dir "teamster-dbt/${CODE_LOCATION}" \
-    && dbt deps --project-dir "teamster-dbt/${CODE_LOCATION}" \
+RUN dbt clean --project-dir "teamster-dbt/$CODE_LOCATION" \
+    && dbt deps --project-dir "teamster-dbt/$CODE_LOCATION" \
     && dbt list \
-        --project-dir "teamster-dbt/${CODE_LOCATION}" \
-        --profiles-dir "teamster-dbt/${CODE_LOCATION}"
+        --project-dir "teamster-dbt/$CODE_LOCATION" \
+        --profiles-dir "teamster-dbt/$CODE_LOCATION"
 
 # install project
 COPY src/teamster ./src/teamster
