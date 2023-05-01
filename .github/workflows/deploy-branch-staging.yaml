@@ -10,6 +10,9 @@ on:
       - synchronize
       - reopened
 
+env:
+  CODE_LOCATION: staging
+
 concurrency:
   # Cancel in-progress runs on same branch
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -32,7 +35,7 @@ jobs:
         id: parse-workspace
         uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
         with:
-          dagster_cloud_file: .dagster/dagster-cloud-staging.yaml
+          dagster_cloud_file: ".dagster/dagster-cloud-${CODE_LOCATION}.yaml"
 
   dagster_cloud_build_push:
     name: Dagster Hybrid Deploy
@@ -56,6 +59,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           submodules: true
+
+      - name: Copy Dockerfile to root dir
+        run: cp "./src/teamster/${CODE_LOCATION}/Dockerfile" ./Dockerfile
 
       # https://github.com/google-github-actions/auth
       - id: auth
@@ -85,5 +91,6 @@ jobs:
           organization_id: ${{ secrets.DAGSTER_ORGANIZATION_ID }}
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
           location: ${{ toJson(matrix.location) }}
+          checkout_repo: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

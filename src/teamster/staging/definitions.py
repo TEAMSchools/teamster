@@ -16,19 +16,19 @@ local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=(
-        load_assets_from_modules(modules=[powerschool.assets], group_name="powerschool")
-        + load_assets_from_modules(modules=[datagun.assets], group_name="datagun")
-        + load_assets_from_modules(modules=[deanslist.assets], group_name="deanslist")
-        + load_assets_from_modules(modules=[dbt.assets])
-    ),
-    jobs=datagun.jobs.__all__ + deanslist.jobs.__all__,
-    sensors=powerschool.sensors.__all__ + dbt.sensors.__all__,
+    assets=[
+        *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
+        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
+        *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
+        *load_assets_from_modules(modules=[dbt]),
+    ],
+    jobs=[*datagun.jobs, *deanslist.jobs],
+    sensors=[*powerschool.sensors],
     resources={
         "dbt": dbt_cli_resource.configured(
             {
-                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
             }
         ),
         "bq": bigquery_resource.configured(
