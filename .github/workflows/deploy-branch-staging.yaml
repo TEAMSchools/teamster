@@ -99,5 +99,5 @@ jobs:
       - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
         with:
           args: >-
-            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf -keep=1
+            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster-staging -keep=1
             -tag-filter-any=.+
