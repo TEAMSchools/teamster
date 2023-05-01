@@ -27,8 +27,8 @@ defs = Definitions(
     resources={
         "dbt": dbt_cli_resource.configured(
             {
-                "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
+                "project-dir": f"./teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"./teamster-dbt/{CODE_LOCATION}",
             }
         ),
         "bq": bigquery_resource.configured(
