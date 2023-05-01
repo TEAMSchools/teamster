@@ -25,7 +25,12 @@ defs = Definitions(
     jobs=[*datagun.jobs, *deanslist.jobs],
     sensors=[*powerschool.sensors],
     resources={
-        "dbt": dbt_cli_resource,
+        "dbt": dbt_cli_resource.configured(
+            {
+                # "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
+            }
+        ),
         "bq": bigquery_resource.configured(
             config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
         ),
