@@ -61,8 +61,8 @@ defs = Definitions(
         ),
         "dbt": dbt_cli_resource.configured(
             {
-                "project-dir": f"teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": f"teamster-dbt/{CODE_LOCATION}",
+                "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
+                "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
             }
         ),
         "sftp_nps": ssh_resource.configured(
