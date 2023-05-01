@@ -1,8 +1,6 @@
 # Debian
 FROM python:3.10-slim
 
-ARG CODE_LOCATION=staging
-
 # update system pip
 # trunk-ignore(hadolint/DL3013)
 RUN python -m pip install --no-cache-dir --upgrade pip
@@ -39,11 +37,11 @@ RUN pip install --no-cache-dir .
 
 # install dbt
 COPY teamster-dbt ./teamster-dbt
-RUN dbt clean --project-dir "teamster-dbt/$CODE_LOCATION" \
-    && dbt deps --project-dir "teamster-dbt/$CODE_LOCATION" \
+RUN dbt clean --project-dir teamster-dbt/staging \
+    && dbt deps --project-dir teamster-dbt/staging \
     && dbt list \
-        --project-dir "teamster-dbt/$CODE_LOCATION" \
-        --profiles-dir "teamster-dbt/$CODE_LOCATION"
+        --project-dir teamster-dbt/staging \
+        --profiles-dir teamster-dbt/staging
 
 # install project
 COPY src/teamster ./src/teamster
