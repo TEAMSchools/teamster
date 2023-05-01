@@ -102,4 +102,5 @@ jobs:
       - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
         with:
           args: >-
-            -repo=us-central1-docker.pkg.dev/teamster-332318 -recursive -keep=1 -tag-filter-any=.+
+            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf -recursive -keep=1
+            -tag-filter-any=.+
