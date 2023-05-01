@@ -91,5 +91,6 @@ jobs:
           organization_id: ${{ secrets.DAGSTER_ORGANIZATION_ID }}
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
           location: ${{ toJson(matrix.location) }}
+          checkout_repo: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
