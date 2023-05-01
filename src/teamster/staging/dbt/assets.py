@@ -7,7 +7,7 @@ powerschool_dbt_src_assets = [
 ]
 
 powerschool_dbt_stg_assets = build_staging_assets(
-    manifest_json_path="target/manifest.json",
+    manifest_json_path="./target/manifest.json",
     key_prefix=[CODE_LOCATION, "dbt"],
     assets=powerschool.assets,
 )
