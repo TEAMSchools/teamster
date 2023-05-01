@@ -37,9 +37,10 @@ RUN pip install --no-cache-dir .
 
 # install dbt
 COPY teamster-dbt ./teamster-dbt
-RUN dbt clean --project-dir teamster-dbt/staging --profiles-dir teamster-dbt/staging \
-    && dbt deps --profiles-dir teamster-dbt/staging \
-    && dbt list --project-dir teamster-dbt/staging --profiles-dir teamster-dbt/staging
+ENV DBT_PROFILES_DIR=/root/app/teamster-dbt/staging
+RUN dbt clean --project-dir teamster-dbt/staging \
+    && dbt deps \
+    && dbt list --project-dir teamster-dbt/staging
 
 # install project
 COPY src/teamster ./src/teamster
