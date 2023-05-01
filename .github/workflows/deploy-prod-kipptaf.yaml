@@ -103,4 +103,3 @@ jobs:
         with:
           args: >-
             -repo=us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf -keep=1
-            -tag-filter-any=.+
