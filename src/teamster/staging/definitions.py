@@ -27,7 +27,7 @@ defs = Definitions(
     resources={
         "dbt": dbt_cli_resource.configured(
             {
-                # "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
+                "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
                 "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
             }
         ),
