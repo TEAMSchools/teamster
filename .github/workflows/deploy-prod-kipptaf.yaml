@@ -15,7 +15,7 @@ on:
       - teamster-dbt
 
 env:
-  CODE_LOCATION: kippnewark
+  CODE_LOCATION: kipptaf
 
 concurrency:
   # Cancel in-progress runs on same branch
