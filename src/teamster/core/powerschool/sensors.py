@@ -121,9 +121,9 @@ def build_dynamic_partition_sensor(
 
                     dynamic_partitions_requests.append(
                         AddDynamicPartitionsRequest(
-                            partitions_def_name=asset.partitions_def.name
+                            partitions_def_name=asset.partitions_def.name,
+                            partition_keys=[partition_key],
                         ),
-                        partition_keys=[partition_key],
                     )
 
                     run_requests.append(
