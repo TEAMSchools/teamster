@@ -1,7 +1,7 @@
-ARG CODE_LOCATION=staging
-
 # Debian
 FROM python:3.10-slim
+
+ARG CODE_LOCATION=staging
 
 # update system pip
 # trunk-ignore(hadolint/DL3013)
