@@ -3,6 +3,7 @@ import re
 
 import pendulum
 from dagster import (
+    AddDynamicPartitionsRequest,
     AssetSelection,
     ResourceParam,
     RunRequest,
@@ -39,6 +40,7 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
         conn.close()
 
         run_requests = []
+        dynamic_partitions_requests = []
         for remote_filepath, files in ls.items():
             last_run = cursor.get(remote_filepath, 0)
             asset = [a for a in asset_defs if a.name == remote_filepath][0]
@@ -48,7 +50,7 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 if f.st_mtime >= last_run and f.st_size > 0:
                     match = re.match(
-                        pattern=r"(\d{4}-\d{2}-\d{2})[-\w+]+-(\w+).csv",
+                        pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
                         string=f.filename,
                     )
 
@@ -63,8 +65,22 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
                             partition_key=pk,
                         )
                     )
+
+                dynamic_partitions_requests.append(
+                    AddDynamicPartitionsRequest(
+                        partitions_def_name=(
+                            f"{code_location}_clever_{asset.key[-1]}_date"
+                        ),
+                        partition_keys=partition_keys,
+                    )
+                )
+
                 cursor[remote_filepath] = now.timestamp()
 
-        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+        return SensorResult(
+            run_requests=run_requests,
+            cursor=json.dumps(obj=cursor),
+            dynamic_partitions_requests=dynamic_partitions_requests,
+        )
 
     return _sensor
