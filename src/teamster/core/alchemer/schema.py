@@ -792,7 +792,7 @@ SURVEY_RESPONSE_FIELDS = [
     },
 ]
 
-ENDPOINT_FIELDS = {
+ASSET_FIELDS = {
     "survey": SURVEY_FIELDS,
     "survey_campaign": SURVEY_CAMPAIGN_FIELDS,
     "survey_response": SURVEY_RESPONSE_FIELDS,

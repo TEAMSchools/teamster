@@ -700,7 +700,7 @@ ROSTER_FIELDS = {
     ]
 }
 
-ENDPOINT_FIELDS = {
+ASSET_FIELDS = {
     "lists": LIST_FIELDS,
     "terms": TERM_FIELDS,
     "rosters": ROSTER_FIELDS,

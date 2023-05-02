@@ -13,7 +13,7 @@ from dagster_ssh import SSHResource
 from numpy import nan
 from pandas import read_csv
 
-from teamster.core.clever.schema import ENDPOINT_FIELDS
+from teamster.core.clever.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
@@ -41,7 +41,6 @@ def build_sftp_asset(
     def _asset(
         context: OpExecutionContext, sftp_clever_reports: ResourceParam[SSHResource]
     ):
-        file_name = context.assets_def.key[-1].replace("_", "-")
         date_partition_key = context.partition_key.keys_by_dimension["date"]
         type_partition_key = context.partition_key.keys_by_dimension["type"]
 
@@ -52,7 +51,7 @@ def build_sftp_asset(
         local_filepath = sftp_clever_reports.sftp_get(
             remote_filepath=(
                 f"{remote_filepath}/"
-                f"{date_partition_key}-{file_name}-{type_partition_key}.csv"
+                f"{date_partition_key}-{remote_filepath}-{type_partition_key}.csv"
             ),
             local_filepath=f"./data/{pathlib.Path(remote_filepath).name}",
         )
@@ -64,7 +63,7 @@ def build_sftp_asset(
             value=(
                 df.to_dict(orient="records"),
                 get_avro_record_schema(
-                    name=asset_name, fields=ENDPOINT_FIELDS[asset_name]
+                    name=asset_name, fields=ASSET_FIELDS[asset_name]
                 ),
             ),
             metadata={"records": df.shape[0]},

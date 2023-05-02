@@ -11,7 +11,7 @@ from dagster import (
 )
 from requests.exceptions import HTTPError
 
-from teamster.core.alchemer.schema import ENDPOINT_FIELDS
+from teamster.core.alchemer.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
@@ -33,7 +33,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         yield Output(
             value=(
                 [survey.data],
-                get_avro_record_schema(name="survey", fields=ENDPOINT_FIELDS["survey"]),
+                get_avro_record_schema(name="survey", fields=ASSET_FIELDS["survey"]),
             ),
             metadata={"record_count": 1},
         )
@@ -52,7 +52,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
         data = survey.question.list(params={"resultsperpage": 500})
         schema = get_avro_record_schema(
-            name="survey_question", fields=ENDPOINT_FIELDS["survey_question"]
+            name="survey_question", fields=ASSET_FIELDS["survey_question"]
         )
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
@@ -74,7 +74,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
 
         data = survey.campaign.list(params={"resultsperpage": 500})
         schema = get_avro_record_schema(
-            name="survey_campaign", fields=ENDPOINT_FIELDS["survey_campaign"]
+            name="survey_campaign", fields=ASSET_FIELDS["survey_campaign"]
         )
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
@@ -126,7 +126,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             data = survey_response_obj.list()
 
         schema = get_avro_record_schema(
-            name="survey_response", fields=ENDPOINT_FIELDS["survey_response"]
+            name="survey_response", fields=ASSET_FIELDS["survey_response"]
         )
 
         yield Output(

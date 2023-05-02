@@ -9,7 +9,7 @@ from dagster import (
 )
 
 from teamster.core.schoolmint.resources import Grow
-from teamster.core.schoolmint.schema import ENDPOINT_FIELDS
+from teamster.core.schoolmint.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -40,7 +40,7 @@ def build_static_partition_asset(
                 value=(
                     response["data"],
                     get_avro_record_schema(
-                        name=asset_name, fields=ENDPOINT_FIELDS[asset_name]
+                        name=asset_name, fields=ASSET_FIELDS[asset_name]
                     ),
                 ),
                 metadata={"records": count},
@@ -107,7 +107,7 @@ def build_multi_partition_asset(
                 value=(
                     endpoint_content["data"],
                     get_avro_record_schema(
-                        name=asset_name, fields=ENDPOINT_FIELDS[asset_name]
+                        name=asset_name, fields=ASSET_FIELDS[asset_name]
                     ),
                 ),
                 metadata={"records": count},

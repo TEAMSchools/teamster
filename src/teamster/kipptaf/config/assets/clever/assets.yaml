@@ -1,0 +1,5 @@
+assets:
+  - asset_name: daily_participation
+    remote_filepath: daily-participation
+  - asset_name: resource_usage
+    remote_filepath: resource-usage

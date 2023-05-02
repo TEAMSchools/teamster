@@ -1665,7 +1665,7 @@ OBSERVATION_FIELDS = [
     },
 ]
 
-ENDPOINT_FIELDS = {
+ASSET_FIELDS = {
     "generic-tags/assignmentpresets": GENERIC_TAG_TYPE_FIELDS,
     "generic-tags/courses": GENERIC_TAG_TYPE_FIELDS,
     "generic-tags/grades": GENERIC_TAG_TYPE_FIELDS,

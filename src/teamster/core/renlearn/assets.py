@@ -6,7 +6,7 @@ from dagster_ssh import SSHResource
 from numpy import nan
 from pandas import read_csv
 
-from teamster.core.renlearn.schema import ENDPOINT_FIELDS
+from teamster.core.renlearn.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
@@ -52,7 +52,7 @@ def build_sftp_asset(
             value=(
                 df.to_dict(orient="records"),
                 get_avro_record_schema(
-                    name=asset_name, fields=ENDPOINT_FIELDS[asset_name]
+                    name=asset_name, fields=ASSET_FIELDS[asset_name]
                 ),
             ),
             metadata={"records": df.shape[0]},

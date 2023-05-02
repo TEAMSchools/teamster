@@ -359,7 +359,7 @@ STAR_READING_FIELDS = [
     },
 ]
 
-ENDPOINT_FIELDS = {
+ASSET_FIELDS = {
     "accelerated_reader": ACCELERATED_READER_FIELDS,
     "star_math": STAR_MATH_FIELDS,
     "star_reading": STAR_READING_FIELDS,
