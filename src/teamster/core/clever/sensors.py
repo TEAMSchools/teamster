@@ -42,47 +42,55 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
         run_requests = []
         dynamic_partitions_requests = []
         for remote_filepath, files in ls.items():
+            context.log.debug(remote_filepath)
+            context.log.debug(files)
             last_run = cursor.get(remote_filepath, 0)
-            asset = [
-                a for a in asset_defs if a.key[-1] == remote_filepath.replace("-", "_")
-            ][0]
 
-            partition_keys = set()
-            for f in files:
-                context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                if f.st_mtime >= last_run and f.st_size > 0:
-                    match = re.match(
-                        pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                        string=f.filename,
-                    )
+            for a in asset_defs:
+                context.log.debug(a.key)
+                if a.key[-1] == remote_filepath.replace("-", "_"):
+                    context.log.debug(True)
 
-                    partition_keys.add("|".join(match.groups()))
+            # asset = [
+            #     a for a in asset_defs if a.key[-1] == remote_filepath.replace("-", "_")
+            # ][0]
 
-            if partition_keys:
-                for pk in list(partition_keys):
-                    run_requests.append(
-                        RunRequest(
-                            run_key=f"{asset.key.to_python_identifier()}_{pk}",
-                            asset_selection=[asset.key],
-                            partition_key=pk,
-                        )
-                    )
+        #     partition_keys = set()
+        #     for f in files:
+        #         context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
+        #         if f.st_mtime >= last_run and f.st_size > 0:
+        #             match = re.match(
+        #                 pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
+        #                 string=f.filename,
+        #             )
 
-                dynamic_partitions_requests.append(
-                    AddDynamicPartitionsRequest(
-                        partitions_def_name=(
-                            f"{code_location}_clever_{asset.key[-1]}_date"
-                        ),
-                        partition_keys=partition_keys,
-                    )
-                )
+        #             partition_keys.add("|".join(match.groups()))
 
-                cursor[remote_filepath] = now.timestamp()
+        #     if partition_keys:
+        #         for pk in list(partition_keys):
+        #             run_requests.append(
+        #                 RunRequest(
+        #                     run_key=f"{asset.key.to_python_identifier()}_{pk}",
+        #                     asset_selection=[asset.key],
+        #                     partition_key=pk,
+        #                 )
+        #             )
 
-        return SensorResult(
-            run_requests=run_requests,
-            cursor=json.dumps(obj=cursor),
-            dynamic_partitions_requests=dynamic_partitions_requests,
-        )
+        #         dynamic_partitions_requests.append(
+        #             AddDynamicPartitionsRequest(
+        #                 partitions_def_name=(
+        #                     f"{code_location}_clever_{asset.key[-1]}_date"
+        #                 ),
+        #                 partition_keys=partition_keys,
+        #             )
+        #         )
+
+        #         cursor[remote_filepath] = now.timestamp()
+
+        # return SensorResult(
+        #     run_requests=run_requests,
+        #     cursor=json.dumps(obj=cursor),
+        #     dynamic_partitions_requests=dynamic_partitions_requests,
+        # )
 
     return _sensor
