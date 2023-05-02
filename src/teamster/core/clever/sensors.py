@@ -62,7 +62,7 @@ def build_sftp_sensor(
                         string=f.filename,
                     )
 
-                    partition_keys.add(match.group(1))
+                    partition_keys.add("|".join(match.groups()))
 
             if partition_keys:
                 pk_list = list(partition_keys)
@@ -81,16 +81,16 @@ def build_sftp_sensor(
                         partitions_def_name=(
                             f"{code_location}_clever_{asset.key.path[-1]}_date"
                         ),
-                        partition_keys=pk_list,
+                        partition_keys=[pk.split("|")[0] for pk in pk_list],
                     )
                 )
 
                 cursor[remote_filepath] = now.timestamp()
 
         return SensorResult(
-            run_requests=run_requests,
+            # run_requests=run_requests,
             cursor=json.dumps(obj=cursor),
-            dynamic_partitions_requests=dynamic_partitions_requests,
+            # dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
     return _sensor
