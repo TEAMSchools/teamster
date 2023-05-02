@@ -15,6 +15,9 @@ locations:
           - clever-sftp-host
           - clever-sftp-password
           - clever-sftp-username
+          - clever-reports-sftp-host
+          - clever-reports-sftp-password
+          - clever-reports-sftp-username
           - coupa-sftp-host
           - coupa-sftp-password
           - coupa-sftp-username
