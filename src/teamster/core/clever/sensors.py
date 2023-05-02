@@ -50,7 +50,7 @@ def build_sftp_sensor(
             asset = [
                 a
                 for a in asset_defs
-                if a.key.path[-1].replace("-", "_") == remote_filepath
+                if a.key.path[-1].replace("_", "-") == remote_filepath
             ][0]
 
             partition_keys = set()
