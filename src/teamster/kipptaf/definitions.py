@@ -15,7 +15,7 @@ from teamster.core.google.resources.sheets import google_sheets
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.sqlalchemy.resources import mssql
 
-from . import CODE_LOCATION, alchemer, datagun, dbt, schoolmint
+from . import CODE_LOCATION, alchemer, clever, datagun, dbt, schoolmint
 
 core_resource_config_dir = "src/teamster/core/config/resources"
 local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -26,13 +26,14 @@ defs = Definitions(
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
+        *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
     jobs=[*datagun.jobs, *schoolmint.jobs],
     schedules=[*datagun.schedules, *schoolmint.schedules],
-    sensors=[*alchemer.sensors],
+    sensors=[*alchemer.sensors, *clever.sensors],
     resources={
         "dbt": dbt_cli_resource.configured(
             {
@@ -69,6 +70,9 @@ defs = Definitions(
         ),
         "sftp_clever": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_clever.yaml"])
+        ),
+        "sftp_clever_reports": ssh_resource.configured(
+            config_from_files([f"{local_resource_config_dir}/sftp_clever_reports.yaml"])
         ),
         "sftp_coupa": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_coupa.yaml"])

@@ -6,7 +6,7 @@ from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
 from teamster.core.deanslist.resources import DeansList, deanslist_resource
-from teamster.core.deanslist.schema import ENDPOINT_FIELDS
+from teamster.core.deanslist.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 asset_config = config_from_files(["tests/deanslist/config.yaml"])
@@ -29,7 +29,7 @@ def test_deanslist_schema():
             parsed_schema = parse_schema(
                 get_avro_record_schema(
                     name=endpoint_name,
-                    fields=ENDPOINT_FIELDS[endpoint_name][endpoint_version],
+                    fields=ASSET_FIELDS[endpoint_name][endpoint_version],
                 )
             )
 

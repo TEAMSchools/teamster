@@ -1,6 +1,5 @@
 import pathlib
 import random
-import zipfile
 
 from dagster import build_resources, config_from_files
 from dagster_ssh import ssh_resource
@@ -8,20 +7,15 @@ from fastavro import parse_schema, validation, writer
 from numpy import nan
 from pandas import read_csv
 
-from teamster.core.renlearn.schema import ASSET_FIELDS
+from teamster.core.clever.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-SOURCE_SYSTEM = "renlearn"
-CODE_LOCATION = "kippmiami"
-# "kippnewark"
-ENDPOINT_NAME = "accelerated_reader"
-REMOTE_FILEPATH = "KIPP Miami.zip"
-# "KIPPNewJersey - Generic AR Extract v2.csv"
-# "KIPPNewJersey - Star Math v2 RGP.csv"
-ARCHIVE_FILE_PATH = "AR_v2.csv"
-# None
-# "SR_v2.csv"
-# "SM_v2.csv"
+SOURCE_SYSTEM = "clever_reporting"
+CODE_LOCATION = "kipptaf"
+REMOTE_FILEPATH = "daily-participation"
+# "resource-usage"
+DATE_PARTITION_KEY = "2023-05-01"
+TYPE_PARTITION_KEY = "students"
 
 CONFIG_PATH = f"src/teamster/{CODE_LOCATION}/config/resources"
 
@@ -37,18 +31,13 @@ def test_schema():
             }
         },
     ) as resources:
-        remote_filepath = pathlib.Path(REMOTE_FILEPATH)
-
         local_filepath = resources.sftp.sftp_get(
-            remote_filepath=str(remote_filepath),
-            local_filepath=f"./env/{remote_filepath.name}",
+            remote_filepath=(
+                f"{REMOTE_FILEPATH}/"
+                f"{DATE_PARTITION_KEY}-{REMOTE_FILEPATH}-{TYPE_PARTITION_KEY}.csv"
+            ),
+            local_filepath=f"./env/{pathlib.Path(REMOTE_FILEPATH).name}",
         )
-
-        if ARCHIVE_FILE_PATH is not None:
-            with zipfile.ZipFile(file=local_filepath) as zf:
-                zf.extract(member=ARCHIVE_FILE_PATH, path="./env")
-
-            local_filepath = f"./env/{ARCHIVE_FILE_PATH}"
 
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
         df = df.replace({nan: None})
@@ -58,15 +47,16 @@ def test_schema():
         # dtypes_dict = df.dtypes.to_dict()
         # print(dtypes_dict)
 
+        sample_record = records[random.randint(a=0, b=(count - 1))]
+        # sample_record = [r for r in records if "" in json.dumps(r)]
+        # print(sample_record)
+
         schema = get_avro_record_schema(
-            name=ENDPOINT_NAME, fields=ASSET_FIELDS[ENDPOINT_NAME]
+            name=REMOTE_FILEPATH, fields=ASSET_FIELDS[REMOTE_FILEPATH]
         )
         # print(schema)
 
         parsed_schema = parse_schema(schema)
-
-        sample_record = records[random.randint(a=0, b=(count - 1))]
-        # sample_record = [r for r in records if "" in json.dumps(r)]
 
         assert validation.validate(
             datum=sample_record, schema=parsed_schema, strict=True

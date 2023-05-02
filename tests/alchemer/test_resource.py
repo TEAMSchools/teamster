@@ -7,7 +7,7 @@ from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
 from teamster.core.alchemer.resources import alchemer_resource
-from teamster.core.alchemer.schema import ENDPOINT_FIELDS
+from teamster.core.alchemer.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 TEST_SURVEY_ID = None
@@ -65,7 +65,7 @@ def check_schema(records, endpoint_name, key=None):
     print("\t\tPASS")
 
     schema = get_avro_record_schema(
-        name=endpoint_name, fields=ENDPOINT_FIELDS[endpoint_name]
+        name=endpoint_name, fields=ASSET_FIELDS[endpoint_name]
     )
     # print(schema)
 
