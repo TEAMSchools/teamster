@@ -62,7 +62,7 @@ def build_sftp_sensor(
                         string=f.filename,
                     )
 
-                    partition_keys.add("|".join(match.groups()))
+                    partition_keys.add(match.group(1))
 
             if partition_keys:
                 pk_list = list(partition_keys)

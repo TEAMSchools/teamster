@@ -25,7 +25,7 @@ def build_sftp_asset(
         key_prefix=[code_location, source_system],
         metadata={
             "remote_filepath": remote_filepath,
-            "remote_file_regex": r"(\d{4}-\d{2}-\d{2})[-\w+]+-(\w+).csv",
+            "remote_file_regex": r"(\d{4}-\d{2}-\d{2})[-\w]+.csv",
         },
         io_manager_key="gcs_avro_io",
         partitions_def=MultiPartitionsDefinition(
