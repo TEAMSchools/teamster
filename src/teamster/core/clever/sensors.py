@@ -43,7 +43,9 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
         dynamic_partitions_requests = []
         for remote_filepath, files in ls.items():
             last_run = cursor.get(remote_filepath, 0)
-            asset = [a for a in asset_defs if a.name == remote_filepath][0]
+            asset = [
+                a for a in asset_defs if a.key[-1] == remote_filepath.replace("-", "_")
+            ][0]
 
             partition_keys = set()
             for f in files:
