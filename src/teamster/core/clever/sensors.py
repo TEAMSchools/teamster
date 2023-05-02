@@ -65,7 +65,8 @@ def build_sftp_sensor(
                     partition_keys.add("|".join(match.groups()))
 
             if partition_keys:
-                for pk in list(partition_keys):
+                pk_list = list(partition_keys)
+                for pk in pk_list:
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset.key.to_python_identifier()}_{pk}",
@@ -79,7 +80,7 @@ def build_sftp_sensor(
                         partitions_def_name=(
                             f"{code_location}_clever_{asset.key.path[-1]}_date"
                         ),
-                        partition_keys=partition_keys,
+                        partition_keys=pk_list,
                     )
                 )
 
