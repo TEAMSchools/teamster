@@ -1,5 +1,3 @@
-import os
-
 import pendulum
 from dagster import (
     AssetsDefinition,
@@ -81,16 +79,6 @@ def build_powerschool_table_asset(
             window_start=context.partition_key if partition_column else None,
         )
 
-        # ssh_tunnel = context.resources.ps_ssh.get_tunnel(
-        #     remote_port=1521,
-        #     remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
-        #     local_port=1521,
-        # )
-
-        # try:
-        #     context.log.info("Starting SSH tunnel")
-        #     ssh_tunnel.start()
-
         file_path = context.resources.ps_db.execute_query(
             query=sql, partition_size=100000, output="avro"
         )
@@ -104,8 +92,5 @@ def build_powerschool_table_asset(
         context.log.info(f"Found {num_records} records")
         if num_records > 0:
             yield Output(value=file_path, metadata={"records": num_records})
-        # finally:
-        #     context.log.info("Stopping SSH tunnel")
-        #     ssh_tunnel.stop()
 
     return _asset
