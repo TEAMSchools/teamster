@@ -87,10 +87,12 @@ def build_sftp_sensor(
 
                 cursor[remote_filepath] = now.timestamp()
 
+        context.log.debug(run_requests)
+        context.log.debug(dynamic_partitions_requests)
         return SensorResult(
-            run_requests=run_requests,
+            # run_requests=run_requests,
             cursor=json.dumps(obj=cursor),
-            dynamic_partitions_requests=dynamic_partitions_requests,
+            # dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
     return _sensor
