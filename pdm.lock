@@ -1061,14 +1061,14 @@ dependencies = [
 
 [[package]]
 name = "requests"
-version = "2.29.0"
+version = "2.30.0"
 requires_python = ">=3.7"
 summary = "Python HTTP for Humans."
 dependencies = [
     "certifi>=2017.4.17",
     "charset-normalizer<4,>=2",
     "idna<4,>=2.5",
-    "urllib3<1.27,>=1.21.1",
+    "urllib3<3,>=1.21.1",
 ]
 
 [[package]]
@@ -1229,8 +1229,8 @@ summary = "Implementation of RFC 6570 URI Templates"
 
 [[package]]
 name = "urllib3"
-version = "1.26.15"
-requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+version = "2.0.1"
+requires_python = ">=3.7"
 summary = "HTTP library with thread-safe connection pooling, file post, and more."
 
 [[package]]
@@ -1262,7 +1262,7 @@ dependencies = [
 [metadata]
 lock_version = "4.2"
 groups = ["default", "dev"]
-content_hash = "sha256:6b8aa582dce315b6c1a0053ebab5cb33db8f6689b13bf6ca487ed3d3d7119e99"
+content_hash = "sha256:ac7591ebc79946dbd9efc792dec8606f9999b39287825e1b2e851a9d0b13ced0"
 
 [metadata.files]
 "agate 1.6.3" = [
@@ -2612,9 +2612,9 @@ content_hash = "sha256:6b8aa582dce315b6c1a0053ebab5cb33db8f6689b13bf6ca487ed3d3d
     {url = "https://files.pythonhosted.org/packages/04/c6/a8dbf1edcbc236d93348f6e7c437cf09c7356dd27119fcc3be9d70c93bb1/questionary-1.10.0.tar.gz", hash = "sha256:600d3aefecce26d48d97eee936fdb66e4bc27f934c3ab6dd1e292c4f43946d90"},
     {url = "https://files.pythonhosted.org/packages/49/00/151ff8314078efa3087c23b4b7c473f08f601dff7c62bfb894dd462e0fc9/questionary-1.10.0-py3-none-any.whl", hash = "sha256:fecfcc8cca110fda9d561cb83f1e97ecbb93c613ff857f655818839dac74ce90"},
 ]
-"requests 2.29.0" = [
-    {url = "https://files.pythonhosted.org/packages/4c/d2/70fc708727b62d55bc24e43cc85f073039023212d482553d853c44e57bdb/requests-2.29.0.tar.gz", hash = "sha256:f2e34a75f4749019bb0e3effb66683630e4ffeaf75819fb51bebef1bf5aef059"},
-    {url = "https://files.pythonhosted.org/packages/cf/e1/2aa539876d9ed0ddc95882451deb57cfd7aa8dbf0b8dbce68e045549ba56/requests-2.29.0-py3-none-any.whl", hash = "sha256:e8f3c9be120d3333921d213eef078af392fba3933ab7ed2d1cba3b56f2568c3b"},
+"requests 2.30.0" = [
+    {url = "https://files.pythonhosted.org/packages/96/80/034ffeca15c0f4e01b7b9c6ad0fb704b44e190cde4e757edbd60be404c41/requests-2.30.0-py3-none-any.whl", hash = "sha256:10e94cc4f3121ee6da529d358cdaeaff2f1c409cd377dbc72b825852f2f7e294"},
+    {url = "https://files.pythonhosted.org/packages/e0/69/122171604bcef06825fa1c05bd9e9b1d43bc9feb8c6c0717c42c92cc6f3c/requests-2.30.0.tar.gz", hash = "sha256:239d7d4458afcb28a692cdd298d87542235f4ca8d36d03a15bfc128a6559a2f4"},
 ]
 "requests-oauthlib 1.3.1" = [
     {url = "https://files.pythonhosted.org/packages/6f/bb/5deac77a9af870143c684ab46a7934038a53eb4aa975bc0687ed6ca2c610/requests_oauthlib-1.3.1-py2.py3-none-any.whl", hash = "sha256:2577c501a2fb8d05a304c09d090d6e47c306fef15809d102b327cf8364bddab5"},
@@ -2734,9 +2734,9 @@ content_hash = "sha256:6b8aa582dce315b6c1a0053ebab5cb33db8f6689b13bf6ca487ed3d3d
     {url = "https://files.pythonhosted.org/packages/81/c0/7461b49cd25aeece13766f02ee576d1db528f1c37ce69aee300e075b485b/uritemplate-4.1.1-py2.py3-none-any.whl", hash = "sha256:830c08b8d99bdd312ea4ead05994a38e8936266f84b9a7878232db50b044e02e"},
     {url = "https://files.pythonhosted.org/packages/d2/5a/4742fdba39cd02a56226815abfa72fe0aa81c33bed16ed045647d6000eba/uritemplate-4.1.1.tar.gz", hash = "sha256:4346edfc5c3b79f694bccd6d6099a322bbeb628dbf2cd86eea55a456ce5124f0"},
 ]
-"urllib3 1.26.15" = [
-    {url = "https://files.pythonhosted.org/packages/21/79/6372d8c0d0641b4072889f3ff84f279b738cd8595b64c8e0496d4e848122/urllib3-1.26.15.tar.gz", hash = "sha256:8a388717b9476f934a21484e8c8e61875ab60644d29b9b39e11e4b9dc1c6b305"},
-    {url = "https://files.pythonhosted.org/packages/7b/f5/890a0baca17a61c1f92f72b81d3c31523c99bec609e60c292ea55b387ae8/urllib3-1.26.15-py2.py3-none-any.whl", hash = "sha256:aa751d169e23c7479ce47a0cb0da579e3ede798f994f5816a74e4f4500dcea42"},
+"urllib3 2.0.1" = [
+    {url = "https://files.pythonhosted.org/packages/7e/19/2a88626e71557cd989afee0985df3808a546d54d00b0b5853f3b6c334dbd/urllib3-2.0.1.tar.gz", hash = "sha256:2ce66a68134be469f5df5d46d724237489b3cd85b2bba2223dbbee1746548826"},
+    {url = "https://files.pythonhosted.org/packages/fc/cf/2bbbd8fc9b92b6f5b9eaff7ed0ddde10ecccfaf345f06e55cca99ed77121/urllib3-2.0.1-py3-none-any.whl", hash = "sha256:d75e5ece05ff170e323303fd924edf29e705f5ae057c489f453a686b639bb68a"},
 ]
 "watchdog 3.0.0" = [
     {url = "https://files.pythonhosted.org/packages/00/9e/a9711f35f1ad6571e92dc2e955e7de9dfac21a1b33e9cd212f066a60a387/watchdog-3.0.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:2b57a1e730af3156d13b7fdddfc23dea6487fceca29fc75c5a868beed29177ae"},
