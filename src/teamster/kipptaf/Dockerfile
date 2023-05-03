@@ -41,3 +41,5 @@ COPY teamster-dbt ./teamster-dbt
 ENV DBT_PROFILES_DIR=/root/app/teamster-dbt/kipptaf
 WORKDIR /root/app/teamster-dbt/kipptaf
 RUN dbt clean && dbt deps && dbt list
+
+WORKDIR /root/app
