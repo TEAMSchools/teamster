@@ -54,7 +54,7 @@ def build_sftp_sensor(
                 if a.key.path[-1].replace("_", "-") == remote_filepath
             ][0]
 
-            partition_keys = set()
+            partition_keys = []
             for f in files:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 if f.st_mtime >= last_run and f.st_size > 0:
@@ -63,12 +63,10 @@ def build_sftp_sensor(
                         string=f.filename,
                     )
 
-                    partition_keys.add(match.groupdict())
+                    partition_keys.append(match.groupdict())
 
             if partition_keys:
-                pk_list = list(partition_keys)
-
-                for pk in pk_list:
+                for pk in partition_keys:
                     context.log.debug(pk)
 
                     run_requests.append(
@@ -84,7 +82,7 @@ def build_sftp_sensor(
                         partitions_def_name=(
                             f"{code_location}_clever_{asset.key.path[-1]}_date"
                         ),
-                        partition_keys=[pk["date"] for pk in pk_list],
+                        partition_keys=[pk["date"] for pk in partition_keys],
                     )
                 )
 
