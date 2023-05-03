@@ -1,8 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
-# sshpass -p "${KIPPMIAMI_PS_SSH_PASSWORD}" \
-#   ssh "${KIPPMIAMI_PS_SSH_USERNAME}"@"${KIPPMIAMI_PS_SSH_HOST}" \
-#   -p "${KIPPMIAMI_PS_SSH_PORT}" \
-#   -L 1521:"${KIPPMIAMI_PS_SSH_REMOTE_BIND_HOST}":1521 \
-#   -fN
-echo "HELLO FROM THE ENTRYPOINT SCRIPT!"
+# Add any additional commands here
+sshpass -p "${KIPPMIAMI_PS_SSH_PASSWORD}" \
+  ssh "${KIPPMIAMI_PS_SSH_USERNAME}"@"${KIPPMIAMI_PS_SSH_HOST}" \
+  -p "${KIPPMIAMI_PS_SSH_PORT}" \
+  -L 1521:"${KIPPMIAMI_PS_SSH_REMOTE_BIND_HOST}":1521 \
+  -fN
+
+# Run the passed-in Dagster CMD
+exec "$@"
