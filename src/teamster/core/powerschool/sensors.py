@@ -14,8 +14,6 @@ from sqlalchemy import text
 
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
-# import os
-
 
 def get_asset_count(asset, db, window_start):
     partition_column = asset.metadata_by_key[asset.key]["partition_column"]
@@ -58,22 +56,6 @@ def build_dynamic_partition_sensor(
             .start_of("minute")
         )
 
-        # ssh_port = 1521
-        # ssh_tunnel = context.resources.ps_ssh.get_tunnel(
-        #     remote_port=ssh_port,
-        #     remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
-        #     local_port=ssh_port,
-        # )
-
-        # ssh_tunnel.check_tunnels()
-        # if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", ssh_port)):
-        #     context.log.debug("Restarting SSH tunnel")
-        #     ssh_tunnel.restart()
-        # else:
-        #     context.log.debug("Starting SSH tunnel")
-        #     ssh_tunnel.start()
-
-        # try:
         run_requests = []
         dynamic_partitions_requests = []
 
@@ -140,9 +122,6 @@ def build_dynamic_partition_sensor(
                 )
 
                 cursor[asset_key_string] = window_end.timestamp()
-        # finally:
-        #     context.log.debug("Stopping SSH tunnel")
-        #     ssh_tunnel.stop()
 
         return SensorResult(
             run_requests=run_requests,

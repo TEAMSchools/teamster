@@ -31,11 +31,8 @@ RUN apt-get update \
 
 WORKDIR /root/app
 
-# install dependencies
+# install dependencies & project
 COPY pyproject.toml ./pyproject.toml
-RUN pip install --no-cache-dir .
-
-# install project
 COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
 
