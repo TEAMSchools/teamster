@@ -46,4 +46,4 @@ RUN dbt clean --project-dir /root/app/teamster-dbt/kippmiami \
 COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
 
-ENTRYPOINT ["./src/teamster/kippmiami/docker-entrypoint.sh"]
+ENTRYPOINT ["bash", "src/teamster/kippmiami/docker-entrypoint.sh"]
