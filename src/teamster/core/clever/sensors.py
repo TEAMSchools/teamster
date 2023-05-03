@@ -67,8 +67,6 @@ def build_sftp_sensor(
 
             if partition_keys:
                 for pk in partition_keys:
-                    context.log.debug(pk)
-
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset.key.to_python_identifier()}_{pk}",
@@ -89,9 +87,9 @@ def build_sftp_sensor(
                 cursor[remote_filepath] = now.timestamp()
 
         return SensorResult(
-            # run_requests=run_requests,
+            run_requests=run_requests,
             cursor=json.dumps(obj=cursor),
-            # dynamic_partitions_requests=dynamic_partitions_requests,
+            dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
     return _sensor
