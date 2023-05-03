@@ -6,6 +6,7 @@ from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
+    MultiPartitionKey,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
@@ -62,17 +63,19 @@ def build_sftp_sensor(
                         string=f.filename,
                     )
 
-                    partition_keys.add("|".join(match.groups()))
+                    partition_keys.add(match.groupdict())
 
             if partition_keys:
                 pk_list = list(partition_keys)
 
                 for pk in pk_list:
+                    context.log.debug(pk)
+
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset.key.to_python_identifier()}_{pk}",
                             asset_selection=[asset.key],
-                            partition_key=pk,
+                            partition_key=MultiPartitionKey(pk),
                         )
                     )
 
@@ -81,14 +84,12 @@ def build_sftp_sensor(
                         partitions_def_name=(
                             f"{code_location}_clever_{asset.key.path[-1]}_date"
                         ),
-                        partition_keys=[pk.split("|")[0] for pk in pk_list],
+                        partition_keys=[pk["date"] for pk in pk_list],
                     )
                 )
 
                 cursor[remote_filepath] = now.timestamp()
 
-        context.log.debug(run_requests)
-        context.log.debug(dynamic_partitions_requests)
         return SensorResult(
             # run_requests=run_requests,
             cursor=json.dumps(obj=cursor),
