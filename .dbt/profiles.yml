@@ -1,0 +1,43 @@
+kippcamden:
+  target: kippcamden
+  outputs:
+    kippcamden:
+      type: bigquery
+      method: service-account
+      project: teamster-332318
+      schema: kippcamden
+      threads: 1
+      keyfile: /etc/secret-volume/dbt_user_creds_json
+
+kippmiami:
+  target: kippmiami
+  outputs:
+    kippmiami:
+      type: bigquery
+      method: service-account
+      project: teamster-332318
+      schema: kippmiami
+      threads: 1
+      keyfile: /etc/secret-volume/dbt_user_creds_json
+
+kippnewark:
+  target: kippnewark
+  outputs:
+    kippnewark:
+      type: bigquery
+      method: service-account
+      project: teamster-332318
+      schema: kippnewark
+      threads: 1
+      keyfile: /etc/secret-volume/dbt_user_creds_json
+
+kipptaf:
+  target: kipptaf
+  outputs:
+    kipptaf:
+      type: bigquery
+      method: service-account
+      project: teamster-332318
+      schema: kipptaf
+      threads: 1
+      keyfile: /etc/secret-volume/dbt_user_creds_json

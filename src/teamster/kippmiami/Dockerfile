@@ -35,15 +35,15 @@ WORKDIR /root/app
 COPY pyproject.toml ./pyproject.toml
 RUN pip install --no-cache-dir .
 
-# install dbt
-COPY teamster-dbt ./teamster-dbt
-ENV DBT_PROFILES_DIR=/root/app/teamster-dbt/kippmiami
-RUN dbt clean --project-dir /root/app/teamster-dbt/kippmiami \
-    && dbt deps --project-dir /root/app/teamster-dbt/kippmiami \
-    && dbt list --project-dir /root/app/teamster-dbt/kippmiami
-
 # install project
 COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
 
+# install dbt
+COPY teamster-dbt ./teamster-dbt
+ENV DBT_PROFILES_DIR=/root/app/teamster-dbt/kippmiami
+WORKDIR /root/app/teamster-dbt/kippmiami
+RUN dbt clean && dbt deps && dbt list
+
+WORKDIR /root/app
 ENTRYPOINT ["bash", "src/teamster/kippmiami/docker-entrypoint.sh"]
