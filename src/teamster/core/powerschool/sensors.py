@@ -116,6 +116,7 @@ def build_dynamic_partition_sensor(
                             ]
                         ),
                         run_config=run_config,
+                        tags={"powerschool_ssh": code_location},
                         asset_selection=[asset.key],
                         partition_key=partition_key,
                     )
