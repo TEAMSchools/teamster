@@ -75,19 +75,21 @@ def build_sftp_sensor(
                         )
                     )
 
+                date_pks = set([pk["date"] for pk in partition_keys])
+
                 dynamic_partitions_requests.append(
                     AddDynamicPartitionsRequest(
                         partitions_def_name=(
                             f"{code_location}_clever_{asset.key.path[-1]}_date"
                         ),
-                        partition_keys=[pk["date"] for pk in partition_keys],
+                        partition_keys=list(date_pks),
                     )
                 )
 
                 cursor[remote_filepath] = now.timestamp()
 
         return SensorResult(
-            # run_requests=run_requests,
+            run_requests=run_requests,
             cursor=json.dumps(obj=cursor),
             dynamic_partitions_requests=dynamic_partitions_requests,
         )
