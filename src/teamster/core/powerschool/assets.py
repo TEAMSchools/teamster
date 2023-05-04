@@ -4,9 +4,11 @@ from dagster import (
     DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
+    RetryRequested,
     asset,
 )
 from fastavro import block_reader
+from oracledb import exceptions
 from sqlalchemy import literal_column, select, table, text
 
 
@@ -79,9 +81,12 @@ def build_powerschool_table_asset(
             window_start=context.partition_key if partition_column else None,
         )
 
-        file_path = context.resources.ps_db.execute_query(
-            query=sql, partition_size=100000, output="avro"
-        )
+        try:
+            file_path = context.resources.ps_db.execute_query(
+                query=sql, partition_size=100000, output="avro"
+            )
+        except exceptions.OperationalError as e:
+            raise RetryRequested(max_retries=10) from e
 
         try:
             with open(file=file_path, mode="rb") as fo:
