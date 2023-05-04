@@ -45,7 +45,7 @@ def build_dynamic_partition_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        required_resource_keys={"ps_ssh", "ps_db"},
+        required_resource_keys={"ps_db"},
     )
     def _sensor(context: SensorEvaluationContext):
         cursor = json.loads(context.cursor or "{}")
