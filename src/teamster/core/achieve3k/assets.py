@@ -3,11 +3,9 @@ import re
 from dagster import (
     AutoMaterializePolicy,
     DynamicPartitionsDefinition,
-    MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
     ResourceParam,
-    StaticPartitionsDefinition,
     asset,
 )
 from dagster_ssh import SSHResource
@@ -32,13 +30,8 @@ def build_sftp_asset(
             ),
         },
         io_manager_key="gcs_avro_io",
-        partitions_def=MultiPartitionsDefinition(
-            {
-                "date": DynamicPartitionsDefinition(
-                    name=f"{code_location}_{source_system}_{asset_name}_date"
-                ),
-                "type": StaticPartitionsDefinition(["staff", "students", "teachers"]),
-            }
+        partitions_def=DynamicPartitionsDefinition(
+            name=f"{code_location}_{source_system}_{asset_name}"
         ),
         op_tags=op_tags,
         auto_materialize_policy=AutoMaterializePolicy.eager(),
