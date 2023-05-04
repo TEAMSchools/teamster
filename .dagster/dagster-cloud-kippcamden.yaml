@@ -19,9 +19,6 @@ locations:
           - kippcamden-ps-ssh-port
           - kippcamden-ps-ssh-remote-bind-host
           - kippcamden-ps-ssh-username
-          - renlearn-sftp-host
-          - kippnj-renlearn-sftp-password
-          - kippnj-renlearn-sftp-username
           - mssql-database
           - mssql-host
           - mssql-password

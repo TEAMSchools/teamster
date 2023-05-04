@@ -9,6 +9,9 @@ locations:
     container_context:
       k8s:
         env_secrets:
+          - achieve3k-sftp-host
+          - achieve3k-sftp-password
+          - achieve3k-sftp-username
           - blissbook-sftp-host
           - blissbook-sftp-password
           - blissbook-sftp-username
@@ -43,6 +46,9 @@ locations:
           - pythonanywhere-sftp-host
           - pythonanywhere-sftp-password
           - pythonanywhere-sftp-username
+          - renlearn-sftp-host
+          - kippnj-renlearn-sftp-password
+          - kippnj-renlearn-sftp-username
           - razkids-sftp-host
           - razkids-sftp-password
           - razkids-sftp-username
