@@ -14,7 +14,7 @@ from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.sqlalchemy.resources import mssql, oracle
 
-from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool, renlearn
+from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
 
 core_resource_config_dir = "src/teamster/core/config/resources"
 local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -25,14 +25,13 @@ defs = Definitions(
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
-        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
-    sensors=[*powerschool.sensors, *renlearn.sensors],
+    sensors=[*powerschool.sensors],
     resources={
         "warehouse": mssql.configured(
             config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
@@ -54,9 +53,6 @@ defs = Definitions(
                 ]
             )
         ),
-        "ps_ssh": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/ssh_powerschool.yaml"])
-        ),
         "io_manager": gcs_io_manager.configured(
             config_from_files([f"{local_resource_config_dir}/io_pickle.yaml"])
         ),
@@ -68,9 +64,6 @@ defs = Definitions(
         ),
         "sftp_cpn": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_cpn.yaml"])
-        ),
-        "sftp_renlearn": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_renlearn.yaml"])
         ),
         "deanslist": deanslist_resource.configured(
             config_from_files([f"{core_resource_config_dir}/deanslist.yaml"])
