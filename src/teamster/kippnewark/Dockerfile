@@ -9,7 +9,7 @@ RUN python -m pip install --no-cache-dir --upgrade pip
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        curl gnupg \
+        curl gnupg openssh-server sshpass \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
