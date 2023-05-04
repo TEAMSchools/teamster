@@ -2,13 +2,11 @@ import json
 import re
 
 import pendulum
-from dagster import (
+from dagster import (  # MultiPartitionKey,; RunRequest,
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
-    MultiPartitionKey,
     ResourceParam,
-    RunRequest,
     SensorEvaluationContext,
     SensorResult,
     sensor,
@@ -43,7 +41,7 @@ def build_sftp_sensor(
 
         conn.close()
 
-        run_requests = []
+        # run_requests = []
         dynamic_partitions_requests = []
         for remote_filepath, files in ls.items():
             last_run = cursor.get(remote_filepath, 0)
@@ -66,14 +64,14 @@ def build_sftp_sensor(
                     partition_keys.append(match.groupdict())
 
             if partition_keys:
-                for pk in partition_keys:
-                    run_requests.append(
-                        RunRequest(
-                            run_key=f"{asset.key.to_python_identifier()}_{pk}",
-                            asset_selection=[asset.key],
-                            partition_key=MultiPartitionKey(pk),
-                        )
-                    )
+                # for pk in partition_keys:
+                #     run_requests.append(
+                #         RunRequest(
+                #             run_key=f"{asset.key.to_python_identifier()}_{pk}",
+                #             asset_selection=[asset.key],
+                #             partition_key=MultiPartitionKey(pk),
+                #         )
+                #     )
 
                 date_pks = set([pk["date"] for pk in partition_keys])
 

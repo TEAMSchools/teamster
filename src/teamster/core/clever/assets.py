@@ -1,6 +1,7 @@
 import pathlib
 
 from dagster import (
+    AutoMaterializePolicy,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     OpExecutionContext,
@@ -39,6 +40,7 @@ def build_sftp_asset(
             }
         ),
         op_tags=op_tags,
+        auto_materialize_policy=AutoMaterializePolicy.eager(),
     )
     def _asset(
         context: OpExecutionContext, sftp_clever_reports: ResourceParam[SSHResource]
