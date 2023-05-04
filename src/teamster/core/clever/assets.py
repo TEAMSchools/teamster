@@ -43,17 +43,17 @@ def build_sftp_asset(
     def _asset(
         context: OpExecutionContext, sftp_clever_reports: ResourceParam[SSHResource]
     ):
-        date_partition_key = context.partition_key.keys_by_dimension["date"]
-        type_partition_key = context.partition_key.keys_by_dimension["type"]
-
-        asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
-
-        remote_filepath = asset_metadata["remote_filepath"]
+        remote_filepath = context.assets_def.metadata_by_key[context.assets_def.key][
+            "remote_filepath"
+        ]
 
         local_filepath = sftp_clever_reports.sftp_get(
             remote_filepath=(
                 f"{remote_filepath}/"
-                f"{date_partition_key}-{remote_filepath}-{type_partition_key}.csv"
+                + context.partition_key.keys_by_dimension["date"]
+                + f"-{remote_filepath}-"
+                + context.partition_key.keys_by_dimension["type"]
+                + ".csv"
             ),
             local_filepath=f"./data/{pathlib.Path(remote_filepath).name}",
         )
