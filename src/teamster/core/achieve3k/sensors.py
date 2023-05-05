@@ -34,6 +34,8 @@ def build_sftp_sensor(
         conn = sftp_clever_reports.get_connection()
 
         with conn.open_sftp() as sftp_client:
+            sftp_client.chdir(".")
+
             ls = {}
             for asset in asset_defs:
                 ls[asset.key.path[-1]] = sftp_client.listdir_attr(

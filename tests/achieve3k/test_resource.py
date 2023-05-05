@@ -14,7 +14,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 SOURCE_SYSTEM = "achieve3k"
 CODE_LOCATION = "kipptaf"
 ASSET_NAME = "students"
-REMOTE_FILEPATH = "/outgoing"
+REMOTE_FILEPATH = "outgoing"
 REMOTE_FILE_REGEX = r"(\d{4}[-\d{2}]+)-\d+_D[\d+_]+(\w\d{4}[-\d{2}]+_){2}student\.\w+"
 PARTITION_KEY = "2023-04-30"
 
@@ -35,6 +35,7 @@ def test_schema():
         conn = resources.sftp.get_connection()
 
         with conn.open_sftp() as sftp_client:
+            sftp_client.chdir(".")
             ls = sftp_client.listdir_attr(path=REMOTE_FILEPATH)
 
         conn.close()
