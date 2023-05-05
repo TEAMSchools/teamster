@@ -36,7 +36,7 @@ def build_sftp_sensor(
         with conn.open_sftp() as sftp_client:
             ls = {}
             for asset in asset_defs:
-                sftp_client.chdir(asset.metadata_by_key[asset.key]["remote_filepath"])
+                # sftp_client.chdir(asset.metadata_by_key[asset.key]["remote_filepath"])
                 ls[asset.key.path[-1]] = sftp_client.listdir_attr(
                     # path=asset.metadata_by_key[asset.key]["remote_filepath"]
                 )
