@@ -41,5 +41,5 @@ workspace:
         requests:
           cpu: 250m
           memory: 0.5Gi
-      command:
-        - ./src/teamster/core/docker-entrypoint.sh
+      # command:
+      #   - ./src/teamster/core/docker-entrypoint.sh

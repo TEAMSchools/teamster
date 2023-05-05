@@ -1,4 +1,5 @@
 import json
+import os
 
 import pendulum
 from dagster import (
@@ -45,7 +46,7 @@ def build_dynamic_partition_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        required_resource_keys={"ps_db"},
+        required_resource_keys={"ps_ssh", "ps_db"},
     )
     def _sensor(context: SensorEvaluationContext):
         cursor = json.loads(context.cursor or "{}")
@@ -56,73 +57,93 @@ def build_dynamic_partition_sensor(
             .start_of("minute")
         )
 
-        run_requests = []
-        dynamic_partitions_requests = []
+        ssh_port = 1521
+        ssh_tunnel = context.resources.ps_ssh.get_tunnel(
+            remote_port=ssh_port,
+            remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
+            local_port=ssh_port,
+        )
 
-        for asset in asset_defs:
-            run_request = False
+        ssh_tunnel.check_tunnels()
+        if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", ssh_port)):
+            context.log.debug("Restarting SSH tunnel")
+            ssh_tunnel.restart()
+        else:
+            context.log.debug("Starting SSH tunnel")
+            ssh_tunnel.start()
 
-            asset_key_string = asset.key.to_python_identifier()
-            context.log.debug(asset_key_string)
+        try:
+            run_requests = []
+            dynamic_partitions_requests = []
 
-            cursor_window_start = cursor.get(asset_key_string)
+            for asset in asset_defs:
+                run_request = False
 
-            if (
-                not context.instance.get_latest_materialization_event(asset.key)
-                or cursor_window_start is None
-            ):
-                window_start = pendulum.from_timestamp(0)
-                run_request = True
-                run_config = {
-                    "execution": {
-                        "config": {
-                            "resources": {"limits": {"cpu": "750m", "memory": "1.0Gi"}}
+                asset_key_string = asset.key.to_python_identifier()
+                context.log.debug(asset_key_string)
+
+                cursor_window_start = cursor.get(asset_key_string)
+
+                if (
+                    not context.instance.get_latest_materialization_event(asset.key)
+                    or cursor_window_start is None
+                ):
+                    window_start = pendulum.from_timestamp(0)
+                    run_request = True
+                    run_config = {
+                        "execution": {
+                            "config": {
+                                "resources": {
+                                    "limits": {"cpu": "750m", "memory": "1.0Gi"}
+                                }
+                            }
                         }
                     }
-                }
-            else:
-                window_start = pendulum.from_timestamp(
-                    cursor_window_start, tz=LOCAL_TIME_ZONE
-                )
-
-                count = get_asset_count(
-                    asset=asset,
-                    db=context.resources.ps_db,
-                    window_start=window_start,
-                )
-
-                context.log.debug(f"count: {count}")
-
-                if count > 0:
-                    run_request = True
-                    run_config = None
-
-            if run_request:
-                partition_key = window_start.to_iso8601_string()
-
-                dynamic_partitions_requests.append(
-                    AddDynamicPartitionsRequest(
-                        partitions_def_name=asset.partitions_def.name,
-                        partition_keys=[partition_key],
-                    ),
-                )
-
-                run_requests.append(
-                    RunRequest(
-                        run_key="_".join(
-                            [
-                                asset.key.to_python_identifier(),
-                                str(window_start.timestamp()),
-                            ]
-                        ),
-                        run_config=run_config,
-                        tags={"powerschool_ssh": code_location},
-                        asset_selection=[asset.key],
-                        partition_key=partition_key,
+                else:
+                    window_start = pendulum.from_timestamp(
+                        cursor_window_start, tz=LOCAL_TIME_ZONE
                     )
-                )
 
-                cursor[asset_key_string] = window_end.timestamp()
+                    count = get_asset_count(
+                        asset=asset,
+                        db=context.resources.ps_db,
+                        window_start=window_start,
+                    )
+
+                    context.log.debug(f"count: {count}")
+
+                    if count > 0:
+                        run_request = True
+                        run_config = None
+
+                if run_request:
+                    partition_key = window_start.to_iso8601_string()
+
+                    dynamic_partitions_requests.append(
+                        AddDynamicPartitionsRequest(
+                            partitions_def_name=asset.partitions_def.name,
+                            partition_keys=[partition_key],
+                        ),
+                    )
+
+                    run_requests.append(
+                        RunRequest(
+                            run_key="_".join(
+                                [
+                                    asset.key.to_python_identifier(),
+                                    str(window_start.timestamp()),
+                                ]
+                            ),
+                            run_config=run_config,
+                            asset_selection=[asset.key],
+                            partition_key=partition_key,
+                        )
+                    )
+
+                    cursor[asset_key_string] = window_end.timestamp()
+        finally:
+            context.log.debug("Stopping SSH tunnel")
+            ssh_tunnel.stop()
 
         return SensorResult(
             run_requests=run_requests,
