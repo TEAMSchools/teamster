@@ -44,6 +44,7 @@ def build_sftp_asset(
         conn = sftp_achieve3k.get_connection()
 
         with conn.open_sftp() as sftp_client:
+            sftp_client.chdir(".")
             ls = sftp_client.listdir_attr(path=remote_filepath)
 
         conn.close()
