@@ -1,7 +1,6 @@
 import re
 
 from dagster import (
-    AutoMaterializePolicy,
     DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
@@ -34,35 +33,31 @@ def build_sftp_asset(
             name=f"{code_location}_{source_system}_{asset_name}"
         ),
         op_tags=op_tags,
-        auto_materialize_policy=AutoMaterializePolicy.eager(),
     )
     def _asset(context: OpExecutionContext, sftp_achieve3k: ResourceParam[SSHResource]):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         remote_filepath = asset_metadata["remote_filepath"]
+        remote_file_regex = (
+            context.partition_key + asset_metadata["remote_file_regex"][:16]
+        )
 
         conn = sftp_achieve3k.get_connection()
 
         with conn.open_sftp() as sftp_client:
-            sftp_client.chdir(".")
             ls = sftp_client.listdir_attr(path=remote_filepath)
 
         conn.close()
 
-        for f in ls:
-            match = re.match(
-                pattern=(
-                    context.partition_key + asset_metadata["remote_file_regex"][:16]
-                ),
-                string=f.filename,
-            )
-
-            if match:
-                break
+        remote_filename = [
+            f.filename
+            for f in ls
+            if re.match(pattern=remote_file_regex, string=f.filename)
+        ][0]
 
         local_filepath = sftp_achieve3k.sftp_get(
-            remote_filepath=f"{remote_filepath}/{f.filename}",
-            local_filepath=f"./data/{f}",
+            remote_filepath=f"{remote_filepath}/{remote_filename}",
+            local_filepath=f"./data/{remote_filename}",
         )
 
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)

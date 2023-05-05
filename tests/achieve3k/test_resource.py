@@ -35,24 +35,19 @@ def test_schema():
         conn = resources.sftp.get_connection()
 
         with conn.open_sftp() as sftp_client:
-            sftp_client.chdir(REMOTE_FILEPATH)
-            ls = sftp_client.listdir_attr(
-                # path=REMOTE_FILEPATH
-            )
+            ls = sftp_client.listdir_attr(path=REMOTE_FILEPATH)
 
         conn.close()
-        for f in ls:
-            match = re.match(
-                pattern=(PARTITION_KEY + REMOTE_FILE_REGEX[:16]),
-                string=f.filename,
-            )
 
-            if match:
-                break
+        remote_filename = [
+            f.filename
+            for f in ls
+            if re.match(pattern=REMOTE_FILE_REGEX, string=f.filename)
+        ][0]
 
         local_filepath = resources.sftp.sftp_get(
-            remote_filepath=f"{REMOTE_FILEPATH}/{f.filename}",
-            local_filepath=f"./env/{f}",
+            remote_filepath=f"{REMOTE_FILEPATH}/{remote_filename}",
+            local_filepath=f"./env/{remote_filename}",
         )
 
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
