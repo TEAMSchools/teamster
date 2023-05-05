@@ -2,7 +2,7 @@ STUDENT_FIELDS = [
     {"name": "activities", "type": ["null", "double"], "default": None},
     {"name": "after_school_logins", "type": ["null", "double"], "default": None},
     {"name": "average_first_try_score", "type": ["null", "double"], "default": None},
-    {"name": "average_weekly_activities", "type": ["null", "string"], "default": None},
+    {"name": "average_weekly_activities", "type": ["null", "double"], "default": None},
     {"name": "current_lexile_level", "type": ["null", "double"], "default": None},
     {"name": "current_reading_level", "type": ["null", "double"], "default": None},
     {"name": "district_id", "type": ["null", "long"], "default": None},
