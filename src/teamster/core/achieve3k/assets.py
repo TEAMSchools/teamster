@@ -39,7 +39,7 @@ def build_sftp_asset(
 
         remote_filepath = asset_metadata["remote_filepath"]
         remote_file_regex = (
-            context.partition_key + asset_metadata["remote_file_regex"][:16]
+            context.partition_key + asset_metadata["remote_file_regex"][16:]
         )
         context.log.debug(remote_file_regex)
 
