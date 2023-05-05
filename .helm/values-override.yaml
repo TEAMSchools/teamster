@@ -36,7 +36,7 @@ workspace:
     containerConfig: # raw config for the pod's main container
       resources:
         limits:
-          cpu: 250m
+          cpu: 500m
           memory: 0.5Gi
         requests:
           cpu: 250m
