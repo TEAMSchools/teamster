@@ -35,11 +35,12 @@ def test_schema():
         conn = resources.sftp.get_connection()
 
         with conn.open_sftp() as sftp_client:
-            sftp_client.chdir(".")
-            ls = sftp_client.listdir_attr(path=REMOTE_FILEPATH)
+            sftp_client.chdir(REMOTE_FILEPATH)
+            ls = sftp_client.listdir_attr(
+                # path=REMOTE_FILEPATH
+            )
 
         conn.close()
-
         for f in ls:
             match = re.match(
                 pattern=(PARTITION_KEY + REMOTE_FILE_REGEX[:16]),
