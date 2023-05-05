@@ -28,39 +28,37 @@ def build_sftp_sensor(
     ):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
-        context.instance.get_asset_keys
 
+        ls = {}
         conn = sftp_clever_reports.get_connection()
-
         with conn.open_sftp() as sftp_client:
-            ls = {}
             for asset in asset_defs:
-                remote_filepath = asset.metadata_by_key[asset.key]["remote_filepath"]
-
-                ls[remote_filepath] = sftp_client.listdir_attr(path=remote_filepath)
-
+                ls[asset.key.to_python_identifier()] = sftp_client.listdir_attr(
+                    path=asset.metadata_by_key[asset.key]["remote_filepath"]
+                )
         conn.close()
 
         # run_requests = []
         dynamic_partitions_requests = []
-        for remote_filepath, files in ls.items():
-            last_run = cursor.get(remote_filepath, 0)
+        for asset_identifier, files in ls.items():
+            last_run = cursor.get(asset_identifier, 0)
 
             asset = [
                 a
                 for a in asset_defs
-                if a.key.path[-1].replace("_", "-") == remote_filepath
+                if a.key.to_python_identifier() == asset_identifier
             ][0]
 
             partition_keys = []
             for f in files:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                if f.st_mtime >= last_run and f.st_size > 0:
-                    match = re.match(
-                        pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                        string=f.filename,
-                    )
 
+                match = re.match(
+                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
+                    string=f.filename,
+                )
+
+                if match is not None and f.st_mtime >= last_run and f.st_size > 0:
                     partition_keys.append(match.groupdict())
 
             if partition_keys:
@@ -73,18 +71,14 @@ def build_sftp_sensor(
                 #         )
                 #     )
 
-                date_pks = set([pk["date"] for pk in partition_keys])
-
                 dynamic_partitions_requests.append(
                     AddDynamicPartitionsRequest(
-                        partitions_def_name=(
-                            f"{code_location}_clever_{asset.key.path[-1]}_date"
-                        ),
-                        partition_keys=list(date_pks),
+                        partitions_def_name=f"{asset_identifier}_date",
+                        partition_keys=list(set([pk["date"] for pk in partition_keys])),
                     )
                 )
 
-                cursor[remote_filepath] = now.timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(
             # run_requests=run_requests,

@@ -1,11 +1,12 @@
 import json
+import pathlib
 import re
 
 import pendulum
 from dagster import (
-    AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
+    MultiPartitionKey,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
@@ -14,24 +15,28 @@ from dagster import (
 )
 from dagster_ssh import SSHResource
 
+from teamster.core.utils.classes import FiscalYear
+
 
 def build_sftp_sensor(
-    code_location, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
+    code_location,
+    source_system,
+    asset_defs: list[AssetsDefinition],
+    minimum_interval_seconds=None,
 ):
     @sensor(
-        name=f"{code_location}_achieve3k_sftp_sensor",
+        name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(
-        context: SensorEvaluationContext,
-        sftp_achieve3k: ResourceParam[SSHResource],
+        context: SensorEvaluationContext, sftp_iready: ResourceParam[SSHResource]
     ):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
         ls = {}
-        conn = sftp_achieve3k.get_connection()
+        conn = sftp_iready.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = sftp_client.listdir_attr(
@@ -40,8 +45,6 @@ def build_sftp_sensor(
         conn.close()
 
         run_requests = []
-        dynamic_partitions_requests = []
-
         for asset_identifier, files in ls.items():
             last_run = cursor.get(asset_identifier, 0)
 
@@ -51,17 +54,29 @@ def build_sftp_sensor(
                 if a.key.to_python_identifier() == asset_identifier
             ][0]
 
+            asset_metadata = asset.metadata_by_key[asset.key]
+            remote_filepath = pathlib.Path(asset_metadata["remote_filepath"])
+
             partition_keys = []
             for f in files:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
                 match = re.match(
-                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                    string=f.filename,
+                    pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
-                if match and f.st_mtime >= last_run and f.st_size > 0:
-                    partition_keys.append(match.group(1))
+                if match is not None and f.st_mtime >= last_run and f.st_size > 0:
+                    if remote_filepath.name == "Current_Year":
+                        date_partition = FiscalYear(
+                            datetime=pendulum.from_timestamp(timestamp=f.st_mtime),
+                            start_month=7,
+                        ).start.to_date_string()
+                    else:
+                        date_partition = f"{remote_filepath[-4:]}-07-01"
+
+                    partition_keys.append(
+                        MultiPartitionKey({**match.groupdict(), "date": date_partition})
+                    )
 
             if partition_keys:
                 for pk in partition_keys:
@@ -73,19 +88,8 @@ def build_sftp_sensor(
                         )
                     )
 
-                dynamic_partitions_requests.append(
-                    AddDynamicPartitionsRequest(
-                        partitions_def_name=asset_identifier,
-                        partition_keys=partition_keys,
-                    )
-                )
-
                 cursor[asset_identifier] = now.timestamp()
 
-        return SensorResult(
-            run_requests=run_requests,
-            cursor=json.dumps(obj=cursor),
-            dynamic_partitions_requests=dynamic_partitions_requests,
-        )
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
     return _sensor
