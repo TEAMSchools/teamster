@@ -44,4 +44,4 @@ RUN dbt clean && dbt deps && dbt list
 
 WORKDIR /root/app
 RUN chmod +x ./src/teamster/kippmiami/docker-entrypoint.sh
-ENTRYPOINT ["./src/teamster/kippmiami/docker-entrypoint.sh"]
+# ENTRYPOINT ["./src/teamster/kippmiami/docker-entrypoint.sh"]

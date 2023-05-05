@@ -102,6 +102,13 @@ dagsterCloudAgent:
   # (https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig)
   loggingConfig: {}
 
+  # Number of replicas of the agent service to keep up at a given time.
+  replicas: 1
+
+  # Additional volumes for the agent pod and volumeMounts for the container.
+  # volumes:
+  # volumeMounts:
+
 ####################################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ####################################################################################################
