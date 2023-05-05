@@ -16,7 +16,6 @@ CODE_LOCATION = "kipptaf"
 ASSET_NAME = "students"
 REMOTE_FILEPATH = "outgoing"
 REMOTE_FILE_REGEX = r"(\d{4}[-\d{2}]+)-\d+_D[\d+_]+(\w\d{4}[-\d{2}]+_){2}student\.\w+"
-PARTITION_KEY = "2023-04-30"
 
 CONFIG_PATH = f"src/teamster/{CODE_LOCATION}/config/resources"
 
@@ -39,48 +38,49 @@ def test_schema():
 
         conn.close()
 
-        remote_filename = [
-            f.filename
+        file_matches = [
+            f
             for f in ls
-            if re.match(pattern=REMOTE_FILE_REGEX, string=f.filename)
-        ][0]
+            if re.match(pattern=REMOTE_FILE_REGEX, string=f.filename) is not None
+        ]
 
-        local_filepath = resources.sftp.sftp_get(
-            remote_filepath=f"{REMOTE_FILEPATH}/{remote_filename}",
-            local_filepath=f"./env/{remote_filename}",
-        )
-
-        df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
-        df = df.replace({nan: None})
-        df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
-
-        count = df.shape[0]
-        records = df.to_dict(orient="records")
-        # print(df.dtypes.to_dict())
-
-        sample_record = records[random.randint(a=0, b=(count - 1))]
-        # print(sample_record)
-
-        schema = get_avro_record_schema(
-            name=ASSET_NAME, fields=ASSET_FIELDS[ASSET_NAME]
-        )
-        # print(schema)
-
-        parsed_schema = parse_schema(schema)
-
-        assert validation.validate(
-            datum=sample_record, schema=parsed_schema, strict=True
-        )
-
-        assert validation.validate_many(
-            records=records, schema=parsed_schema, strict=True
-        )
-
-        with open(file="/dev/null", mode="wb") as fo:
-            writer(
-                fo=fo,
-                schema=parsed_schema,
-                records=records,
-                codec="snappy",
-                strict_allow_default=True,
+        for f in file_matches:
+            local_filepath = resources.sftp.sftp_get(
+                remote_filepath=f"{REMOTE_FILEPATH}/{f.filename}",
+                local_filepath=f"./env/{f.filename}",
             )
+
+            df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+            df = df.replace({nan: None})
+            df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
+
+            count = df.shape[0]
+            records = df.to_dict(orient="records")
+            # print(df.dtypes.to_dict())
+
+            sample_record = records[random.randint(a=0, b=(count - 1))]
+            # print(sample_record)
+
+            schema = get_avro_record_schema(
+                name=ASSET_NAME, fields=ASSET_FIELDS[ASSET_NAME]
+            )
+            # print(schema)
+
+            parsed_schema = parse_schema(schema)
+
+            assert validation.validate(
+                datum=sample_record, schema=parsed_schema, strict=True
+            )
+
+            assert validation.validate_many(
+                records=records, schema=parsed_schema, strict=True
+            )
+
+            with open(file="/dev/null", mode="wb") as fo:
+                writer(
+                    fo=fo,
+                    schema=parsed_schema,
+                    records=records,
+                    codec="snappy",
+                    strict_allow_default=True,
+                )
