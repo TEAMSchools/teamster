@@ -52,6 +52,9 @@ defs = Definitions(
                 ]
             )
         ),
+        "ps_ssh": ssh_resource.configured(
+            config_from_files([f"{local_resource_config_dir}/ssh_powerschool.yaml"])
+        ),
         "io_manager": gcs_io_manager.configured(
             config_from_files([f"{local_resource_config_dir}/io_pickle.yaml"])
         ),
