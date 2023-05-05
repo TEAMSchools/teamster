@@ -25,20 +25,19 @@ def build_sftp_sensor(
     )
     def _sensor(
         context: SensorEvaluationContext,
-        sftp_clever_reports: ResourceParam[SSHResource],
+        sftp_achieve3k: ResourceParam[SSHResource],
     ):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
         context.instance.get_asset_keys
 
-        conn = sftp_clever_reports.get_connection()
+        conn = sftp_achieve3k.get_connection()
 
         with conn.open_sftp() as sftp_client:
             ls = {}
             for asset in asset_defs:
-                # sftp_client.chdir(asset.metadata_by_key[asset.key]["remote_filepath"])
                 ls[asset.key.path[-1]] = sftp_client.listdir_attr(
-                    # path=asset.metadata_by_key[asset.key]["remote_filepath"]
+                    path=asset.metadata_by_key[asset.key]["remote_filepath"]
                 )
 
         conn.close()
