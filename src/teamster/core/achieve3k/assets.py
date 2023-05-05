@@ -41,7 +41,6 @@ def build_sftp_asset(
         remote_file_regex = (
             context.partition_key + asset_metadata["remote_file_regex"][16:]
         )
-        context.log.debug(remote_file_regex)
 
         conn = sftp_achieve3k.get_connection()
 
@@ -52,10 +51,8 @@ def build_sftp_asset(
 
         remote_filename = None
         for f in ls:
-            context.log.debug(f.filename)
             match = re.match(pattern=remote_file_regex, string=f.filename)
             if match is not None:
-                context.log.debug(match)
                 remote_filename = f.filename
 
         local_filepath = sftp_achieve3k.sftp_get(
