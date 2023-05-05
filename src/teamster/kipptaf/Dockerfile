@@ -43,3 +43,4 @@ WORKDIR /root/app/teamster-dbt/kipptaf
 RUN dbt clean && dbt deps && dbt list
 
 WORKDIR /root/app
+RUN chmod +x ./src/teamster/core/docker-entrypoint.sh

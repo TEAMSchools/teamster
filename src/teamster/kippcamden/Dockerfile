@@ -43,5 +43,4 @@ WORKDIR /root/app/teamster-dbt/kippcamden
 RUN dbt clean && dbt deps && dbt list
 
 WORKDIR /root/app
-RUN chmod +x ./src/teamster/kippcamden/docker-entrypoint.sh
-# ENTRYPOINT ["./src/teamster/kippcamden/docker-entrypoint.sh"]
+RUN chmod +x ./src/teamster/core/docker-entrypoint.sh
