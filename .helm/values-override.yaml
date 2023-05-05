@@ -8,25 +8,11 @@ dagsterCloudAgent:
       cpu: 250m
       memory: 0.5Gi
     requests:
-      cpu: 500m
+      cpu: 250m
       memory: 0.5Gi
 
 workspace:
-  serverTTL:
-    fullDeployments:
-      enabled: true
-      ttlSeconds: 300 # 5 min
-    branchDeployments:
-      ttlSeconds: 300 # 5 min
-  serverK8sConfig:
-    containerConfig: # raw config for the pod's main container
-      resources:
-        limits:
-          cpu: 500m
-          memory: 0.5Gi
-        requests:
-          cpu: 500m
-          memory: 0.5Gi
+  # Default compute resource requirements for the pods created by the agent.
   resources:
     limits:
       cpu: 250m
@@ -34,7 +20,26 @@ workspace:
     requests:
       cpu: 250m
       memory: 0.5Gi
+  serverTTL:
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 300 # 5 min
+    branchDeployments:
+      ttlSeconds: 300 # 5 min
+  # Raw k8s configuration for the Kubernetes Job and Pod created for each run.
   runK8sConfig:
     podSpecConfig:
       nodeSelector:
         cloud.google.com/compute-class: Balanced
+  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  serverK8sConfig:
+    containerConfig: # raw config for the pod's main container
+      resources:
+        limits:
+          cpu: 250m
+          memory: 0.5Gi
+        requests:
+          cpu: 250m
+          memory: 0.5Gi
+      command:
+        - ./src/teamster/kippmiami/docker-entrypoint.sh
