@@ -1,19 +1,19 @@
 from dagster import (
-    AutoMaterializePolicy,
-    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
     ResourceParam,
     StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
     asset,
 )
 from dagster_ssh import SSHResource
 from numpy import nan
 from pandas import read_csv
 
-from teamster.core.clever.schema import ASSET_FIELDS
+from teamster.core.iready.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def build_sftp_asset(
@@ -22,6 +22,7 @@ def build_sftp_asset(
     source_system,
     remote_filepath,
     remote_file_regex,
+    partition_start_date,
     op_tags={},
 ):
     @asset(
@@ -34,29 +35,29 @@ def build_sftp_asset(
         io_manager_key="gcs_avro_io",
         partitions_def=MultiPartitionsDefinition(
             {
-                "date": DynamicPartitionsDefinition(
-                    name=f"{code_location}_{source_system}_{asset_name}_date"
+                "subject": StaticPartitionsDefinition(["ela", "math"]),
+                "date": TimeWindowPartitionsDefinition(
+                    cron_schedule="0 0 1 7 *",
+                    timezone=LOCAL_TIME_ZONE.name,
+                    fmt="%Y-%m-%d",
+                    start=partition_start_date,
                 ),
-                "type": StaticPartitionsDefinition(["staff", "students", "teachers"]),
             }
         ),
         op_tags=op_tags,
-        auto_materialize_policy=AutoMaterializePolicy.eager(),
     )
-    def _asset(
-        context: OpExecutionContext, sftp_clever_reports: ResourceParam[SSHResource]
-    ):
+    def _asset(context: OpExecutionContext, sftp_iready: ResourceParam[SSHResource]):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
-        date_partition = context.partition_key.keys_by_dimension["date"]
-        type_partition = context.partition_key.keys_by_dimension["type"]
 
         remote_filepath = asset_metadata["remote_filepath"]
         remote_filename = regex_pattern_replace(
             pattern=asset_metadata["remote_file_regex"],
-            replacements={"date": date_partition, "type": type_partition},
+            replacements={
+                "subject": context.partition_key.keys_by_dimension["subject"]
+            },
         )
 
-        local_filepath = sftp_clever_reports.sftp_get(
+        local_filepath = sftp_iready.sftp_get(
             remote_filepath=f"{remote_filepath}/{remote_filename}",
             local_filepath=f"./data/{remote_filename}",
         )

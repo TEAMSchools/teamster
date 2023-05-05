@@ -4,4 +4,3 @@ username:
   env: ACHIEVE3K_SFTP_USERNAME
 password:
   env: ACHIEVE3K_SFTP_PASSWORD
-remote_port: 22

@@ -1,3 +1,4 @@
 assets:
   - asset_name: students
     remote_filepath: outgoing
+    remote_file_regex: (?P<date>\d{4}[-\d{2}]+)-\d+_D[\d+_]+(\w\d{4}[-\d{2}]+_){2}student\.\w+
