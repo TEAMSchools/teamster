@@ -6,7 +6,6 @@ from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
-    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -16,22 +15,25 @@ from dagster_ssh import SSHResource
 
 
 def build_sftp_sensor(
-    code_location, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
+    code_location,
+    source_system,
+    asset_defs: list[AssetsDefinition],
+    minimum_interval_seconds=None,
 ):
     @sensor(
-        name=f"{code_location}_achieve3k_sftp_sensor",
+        name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
+        required_resource_keys={f"sftp_{source_system}"},
     )
-    def _sensor(
-        context: SensorEvaluationContext,
-        sftp_achieve3k: ResourceParam[SSHResource],
-    ):
+    def _sensor(context: SensorEvaluationContext):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
+        sftp: SSHResource = context.resources[f"sftp_{source_system}"]
+
         ls = {}
-        conn = sftp_achieve3k.get_connection()
+        conn = sftp.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = {

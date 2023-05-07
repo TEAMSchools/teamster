@@ -4,7 +4,6 @@ import re
 import pendulum
 from dagster import (
     AssetSelection,
-    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -13,20 +12,23 @@ from dagster import (
 from dagster_ssh import SSHResource
 
 
-def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
+def build_sftp_sensor(
+    code_location, source_system, asset_defs, minimum_interval_seconds=None
+):
     @sensor(
-        name=f"{code_location}_renlearn_sftp_sensor",
+        name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
+        required_resource_keys={f"sftp_{source_system}"},
     )
-    def _sensor(
-        context: SensorEvaluationContext, sftp_renlearn: ResourceParam[SSHResource]
-    ):
+    def _sensor(context: SensorEvaluationContext):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
+        sftp: SSHResource = context.resources[f"sftp_{source_system}"]
+
         ls = {}
-        conn = sftp_renlearn.get_connection()
+        conn = sftp.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = {
@@ -48,7 +50,8 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
                 match = re.match(
-                    pattern=asset.metadata_by_key[asset.key], string=f.filename
+                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
+                    string=f.filename,
                 )
 
                 if match is not None and f.st_mtime >= last_run and f.st_size > 0:
