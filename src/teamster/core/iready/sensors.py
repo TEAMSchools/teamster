@@ -7,7 +7,6 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     MultiPartitionKey,
-    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -28,15 +27,16 @@ def build_sftp_sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
+        required_resource_keys={f"sftp_{source_system}"},
     )
-    def _sensor(
-        context: SensorEvaluationContext, sftp_iready: ResourceParam[SSHResource]
-    ):
+    def _sensor(context: SensorEvaluationContext):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
+        sftp: SSHResource = context.resources[f"sftp_{source_system}"]
+
         ls = {}
-        conn = sftp_iready.get_connection()
+        conn = sftp.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = {

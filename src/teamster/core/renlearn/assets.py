@@ -7,7 +7,7 @@ from numpy import nan
 from pandas import read_csv
 
 from teamster.core.renlearn.schema import ASSET_FIELDS
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
 
 
 def build_sftp_asset(
@@ -15,6 +15,7 @@ def build_sftp_asset(
     code_location,
     source_system,
     remote_filepath,
+    remote_file_regex,
     archive_filepath=None,
     op_tags={},
 ):
@@ -25,6 +26,7 @@ def build_sftp_asset(
         io_manager_key="gcs_avro_io",
         metadata={
             "remote_filepath": remote_filepath,
+            "remote_file_regex": remote_file_regex,
             "archive_filepath": archive_filepath,
         },
     )
@@ -32,10 +34,16 @@ def build_sftp_asset(
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         remote_filepath = asset_metadata["remote_filepath"]
+        remote_filename = regex_pattern_replace(
+            pattern=asset_metadata["remote_file_regex"],
+            replacements={
+                "subject": context.partition_key.keys_by_dimension["subject"]
+            },
+        )
         archive_filepath = asset_metadata["archive_filepath"]
 
         local_filepath = sftp_renlearn.sftp_get(
-            remote_filepath=remote_filepath,
+            remote_filepath=f"{remote_filepath}/{remote_filename}",
             local_filepath=f"./data/{pathlib.Path(remote_filepath).name}",
         )
 
