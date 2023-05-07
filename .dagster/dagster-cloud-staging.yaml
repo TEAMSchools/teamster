@@ -37,6 +37,9 @@ locations:
           - illuminate-sftp-host
           - illuminate-sftp-password
           - illuminate-sftp-username
+          - iready-sftp-host
+          - iready-sftp-password
+          - iready-sftp-username
           - kippnj-renlearn-sftp-password
           - kippnj-renlearn-sftp-username
           - ktaf-sftp-host
