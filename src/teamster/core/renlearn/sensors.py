@@ -1,4 +1,5 @@
 import json
+import re
 
 import pendulum
 from dagster import (
@@ -24,39 +25,42 @@ def build_sftp_sensor(code_location, asset_defs, minimum_interval_seconds=None):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
+        ls = {}
         conn = sftp_renlearn.get_connection()
-
         with conn.open_sftp() as sftp_client:
-            ls = sftp_client.listdir_attr()
-
+            for asset in asset_defs:
+                ls[asset.key.to_python_identifier()] = {
+                    "files": sftp_client.listdir_attr(
+                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
+                    ),
+                    "asset": asset,
+                }
         conn.close()
 
-        asset_selection = []
-        for f in ls:
-            last_run = cursor.get(f.filename, 0)
-            asset_match = [
-                a
-                for a in asset_defs
-                if a.metadata_by_key[a.key]["remote_filepath"] == f.filename
-            ]
+        run_requests = []
+        for asset_identifier, asset_dict in ls.items():
+            asset = asset_dict["asset"]
+            files = asset_dict["files"]
 
-            if asset_match:
+            last_run = cursor.get(asset_identifier, 0)
+
+            for f in files:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
-                if f.st_mtime >= last_run and f.st_size > 0:
-                    for asset in asset_match:
-                        asset_selection.append(asset.key)
-
-                    cursor[f.filename] = now.timestamp()
-
-        return SensorResult(
-            run_requests=[
-                RunRequest(
-                    run_key=f"{code_location}_renlearn_sftp_{f.st_mtime}",
-                    asset_selection=asset_selection,
+                match = re.match(
+                    pattern=asset.metadata_by_key[asset.key], string=f.filename
                 )
-            ],
-            cursor=json.dumps(obj=cursor),
-        )
+
+                if match is not None and f.st_mtime >= last_run and f.st_size > 0:
+                    run_requests.append(
+                        RunRequest(
+                            run_key=f"{asset_identifier}_{now.timestamp()}",
+                            asset_selection=[asset.key],
+                        )
+                    )
+
+                cursor[asset_identifier] = now.timestamp()
+
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
     return _sensor
