@@ -4,7 +4,7 @@ from .. import CODE_LOCATION
 from . import assets
 
 sftp_sensor = build_sftp_sensor(
-    code_location=CODE_LOCATION, source_system="clever_reporting", asset_defs=assets
+    code_location=CODE_LOCATION, source_system="clever_reports", asset_defs=assets
 )
 
 __all__ = [
