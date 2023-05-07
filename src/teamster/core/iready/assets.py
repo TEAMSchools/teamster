@@ -41,6 +41,7 @@ def build_sftp_asset(
                     timezone=LOCAL_TIME_ZONE.name,
                     fmt="%Y-%m-%d",
                     start=partition_start_date,
+                    end_offset=1,
                 ),
             }
         ),
