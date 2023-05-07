@@ -1,0 +1,6 @@
+remote_host:
+  env: LITTLESIS_SFTP_HOST
+username:
+  env: LITTLESIS_SFTP_USERNAME
+password:
+  env: LITTLESIS_SFTP_PASSWORD
