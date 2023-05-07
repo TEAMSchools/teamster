@@ -34,22 +34,21 @@ def build_sftp_sensor(
         conn = sftp_achieve3k.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
-                ls[asset.key.to_python_identifier()] = sftp_client.listdir_attr(
-                    path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                )
+                ls[asset.key.to_python_identifier()] = {
+                    "files": sftp_client.listdir_attr(
+                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
+                    ),
+                    "asset": asset,
+                }
         conn.close()
 
         run_requests = []
         dynamic_partitions_requests = []
+        for asset_identifier, asset_dict in ls.items():
+            asset = asset_dict["asset"]
+            files = asset_dict["files"]
 
-        for asset_identifier, files in ls.items():
             last_run = cursor.get(asset_identifier, 0)
-
-            asset = [
-                a
-                for a in asset_defs
-                if a.key.to_python_identifier() == asset_identifier
-            ][0]
 
             partition_keys = []
             for f in files:
@@ -67,7 +66,7 @@ def build_sftp_sensor(
                 for pk in partition_keys:
                     run_requests.append(
                         RunRequest(
-                            run_key=f"{asset.key.to_python_identifier()}_{pk}",
+                            run_key=f"{asset_identifier}_{pk}",
                             asset_selection=[asset.key],
                             partition_key=pk,
                         )
