@@ -31,17 +31,15 @@ RUN apt-get update \
 
 WORKDIR /root/app
 
-# install dependencies
+# install dependencies & project
 COPY pyproject.toml ./pyproject.toml
+COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
 
 # install dbt
 COPY teamster-dbt ./teamster-dbt
 ENV DBT_PROFILES_DIR=/root/app/teamster-dbt/staging
-RUN dbt clean --project-dir /root/app/teamster-dbt/staging \
-    && dbt deps --project-dir /root/app/teamster-dbt/staging \
-    && dbt list --project-dir /root/app/teamster-dbt/staging
+WORKDIR /root/app/teamster-dbt/staging
+RUN dbt clean && dbt deps && dbt list
 
-# install project
-COPY src/teamster ./src/teamster
-RUN pip install --no-cache-dir .
+WORKDIR /root/app

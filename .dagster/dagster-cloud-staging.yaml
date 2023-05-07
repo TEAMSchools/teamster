@@ -9,9 +9,17 @@ locations:
     container_context:
       k8s:
         env_secrets:
+          - achieve3k-sftp-host
+          - achieve3k-sftp-password
+          - achieve3k-sftp-username
+          - alchemer-api-token
+          - alchemer-api-token-secret
           - blissbook-sftp-host
           - blissbook-sftp-password
           - blissbook-sftp-username
+          - clever-reports-sftp-host
+          - clever-reports-sftp-password
+          - clever-reports-sftp-username
           - clever-sftp-host
           - clever-sftp-password
           - clever-sftp-username
@@ -29,6 +37,8 @@ locations:
           - illuminate-sftp-host
           - illuminate-sftp-password
           - illuminate-sftp-username
+          - kippnj-renlearn-sftp-password
+          - kippnj-renlearn-sftp-username
           - ktaf-sftp-host
           - ktaf-sftp-password
           - ktaf-sftp-username
@@ -52,6 +62,10 @@ locations:
           - read180-sftp-host
           - read180-sftp-password
           - read180-sftp-username
+          - renlearn-sftp-host
+          - schoolmint-grow-client-id
+          - schoolmint-grow-client-secret
+          - schoolmint-grow-district-id
           - staging-ps-db-password
           - staging-ps-db-version
           - staging-ps-ssh-host

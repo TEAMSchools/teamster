@@ -1,0 +1,7 @@
+remote_host:
+  env: RAZKIDS_SFTP_HOST
+username:
+  env: RAZKIDS_SFTP_USERNAME
+password:
+  env: RAZKIDS_SFTP_PASSWORD
+remote_port: 22224

@@ -1,0 +1,3 @@
+endpoints:
+  - asset_name: observations
+  - asset_name: assignments
