@@ -33,7 +33,7 @@ def build_sftp_sensor(
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
-        sftp: SSHResource = context.resources[f"sftp_{source_system}"]
+        sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
         ls = {}
         conn = sftp.get_connection()
