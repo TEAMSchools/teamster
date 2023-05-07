@@ -31,7 +31,7 @@ def build_sftp_asset(
         },
         io_manager_key="gcs_avro_io",
         partitions_def=DynamicPartitionsDefinition(
-            name=f"{code_location}_{source_system}_{asset_name}"
+            name=f"{code_location}__{source_system}__{asset_name}"
         ),
         op_tags=op_tags,
     )
