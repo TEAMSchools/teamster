@@ -5,7 +5,7 @@ assets:
     partition_start_date: 2019-07-01
   - asset_name: instructional_usage_data
     remote_filepath: /exports/nj-kipp_nj/Current_Year
-    remote_file_regex: instructional_usage_data_(?<subject>\w+).csv
+    remote_file_regex: instructional_usage_data_(?P<subject>\w+).csv
     partition_start_date: 2019-07-01
   - asset_name: diagnostic_results
     remote_filepath: /exports/nj-kipp_nj/Current_Year
