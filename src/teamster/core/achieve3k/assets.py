@@ -13,24 +13,27 @@ from pandas import read_csv
 from slugify import slugify
 
 from teamster.core.achieve3k.schema import ASSET_FIELDS
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
 
 
 def build_sftp_asset(
-    asset_name, code_location, source_system, remote_filepath, op_tags={}
+    asset_name,
+    code_location,
+    source_system,
+    remote_filepath,
+    remote_file_regex,
+    op_tags={},
 ):
     @asset(
         name=asset_name,
         key_prefix=[code_location, source_system],
         metadata={
             "remote_filepath": remote_filepath,
-            "remote_file_regex": (
-                r"(\d{4}[-\d{2}]+)-\d+_D[\d+_]+(\w\d{4}[-\d{2}]+_){2}student\.\w+"
-            ),
+            "remote_file_regex": remote_file_regex,
         },
         io_manager_key="gcs_avro_io",
         partitions_def=DynamicPartitionsDefinition(
-            name=f"{code_location}_{source_system}_{asset_name}"
+            name=f"{code_location}__{source_system}__{asset_name}"
         ),
         op_tags=op_tags,
     )
@@ -38,15 +41,14 @@ def build_sftp_asset(
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         remote_filepath = asset_metadata["remote_filepath"]
-        remote_file_regex = (
-            context.partition_key + asset_metadata["remote_file_regex"][16:]
+        remote_file_regex = regex_pattern_replace(
+            pattern=asset_metadata["remote_file_regex"],
+            replacements={"date": context.partition_key},
         )
 
         conn = sftp_achieve3k.get_connection()
-
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
-
         conn.close()
 
         remote_filename = None
@@ -54,6 +56,7 @@ def build_sftp_asset(
             match = re.match(pattern=remote_file_regex, string=f.filename)
             if match is not None:
                 remote_filename = f.filename
+                break
 
         local_filepath = sftp_achieve3k.sftp_get(
             remote_filepath=f"{remote_filepath}/{remote_filename}",

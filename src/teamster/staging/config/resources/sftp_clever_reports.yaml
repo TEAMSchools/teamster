@@ -1,0 +1,6 @@
+remote_host:
+  env: CLEVER_REPORTS_SFTP_HOST
+username:
+  env: CLEVER_REPORTS_SFTP_USERNAME
+password:
+  env: CLEVER_REPORTS_SFTP_PASSWORD

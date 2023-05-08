@@ -27,10 +27,10 @@ workspace:
     branchDeployments:
       ttlSeconds: 300 # 5 min
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run.
-  runK8sConfig:
-    podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: Balanced
+  # runK8sConfig:
+  #   podSpecConfig:
+  #     nodeSelector:
+  #       cloud.google.com/compute-class: Balanced
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig: # raw config for the pod's main container
@@ -39,7 +39,7 @@ workspace:
           cpu: 500m
           memory: 0.5Gi
         requests:
-          cpu: 250m
+          cpu: 500m
           memory: 0.5Gi
       # command:
       #   - ./src/teamster/core/docker-entrypoint.sh

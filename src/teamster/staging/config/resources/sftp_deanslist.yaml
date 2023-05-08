@@ -1,0 +1,6 @@
+remote_host:
+  env: DEANSLIST_SFTP_HOST
+username:
+  env: DEANSLIST_SFTP_USERNAME
+password:
+  env: DEANSLIST_SFTP_PASSWORD

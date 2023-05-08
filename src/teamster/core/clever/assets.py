@@ -1,5 +1,3 @@
-import pathlib
-
 from dagster import (
     AutoMaterializePolicy,
     DynamicPartitionsDefinition,
@@ -15,20 +13,23 @@ from numpy import nan
 from pandas import read_csv
 
 from teamster.core.clever.schema import ASSET_FIELDS
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
 
 
 def build_sftp_asset(
-    asset_name, code_location, source_system, remote_filepath, op_tags={}
+    asset_name,
+    code_location,
+    source_system,
+    remote_filepath,
+    remote_file_regex,
+    op_tags={},
 ):
     @asset(
         name=asset_name,
         key_prefix=[code_location, source_system],
         metadata={
             "remote_filepath": remote_filepath,
-            "remote_file_regex": (
-                r"(?P<date>\d{4}-\d{2}-\d{2})[-\w+]+-(?P<type>\w+).csv"
-            ),
+            "remote_file_regex": remote_file_regex,
         },
         io_manager_key="gcs_avro_io",
         partitions_def=MultiPartitionsDefinition(
@@ -45,19 +46,19 @@ def build_sftp_asset(
     def _asset(
         context: OpExecutionContext, sftp_clever_reports: ResourceParam[SSHResource]
     ):
-        remote_filepath = context.assets_def.metadata_by_key[context.assets_def.key][
-            "remote_filepath"
-        ]
+        asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
+        date_partition = context.partition_key.keys_by_dimension["date"]
+        type_partition = context.partition_key.keys_by_dimension["type"]
+
+        remote_filepath = asset_metadata["remote_filepath"]
+        remote_filename = regex_pattern_replace(
+            pattern=asset_metadata["remote_file_regex"],
+            replacements={"date": date_partition, "type": type_partition},
+        )
 
         local_filepath = sftp_clever_reports.sftp_get(
-            remote_filepath=(
-                f"{remote_filepath}/"
-                + context.partition_key.keys_by_dimension["date"]
-                + f"-{remote_filepath}-"
-                + context.partition_key.keys_by_dimension["type"]
-                + ".csv"
-            ),
-            local_filepath=f"./data/{pathlib.Path(remote_filepath).name}",
+            remote_filepath=f"{remote_filepath}/{remote_filename}",
+            local_filepath=f"./data/{remote_filename}",
         )
 
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)

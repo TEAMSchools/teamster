@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v0.0.16
+      ref: v0.0.17
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
@@ -17,7 +17,7 @@ lint:
         - .helm/values.yaml
   enabled:
     - isort@5.12.0
-    - ruff@0.0.264
+    - ruff@0.0.265
     - actionlint@1.6.24
     - black@23.3.0
     - git-diff-check

@@ -6,6 +6,17 @@ from teamster.core.utils.classes import FiscalYear
 from .variables import LOCAL_TIME_ZONE
 
 
+def regex_pattern_replace(pattern: str, replacements: dict):
+    for group_name, replacement in replacements.items():
+        start_index = pattern.index(f"(?P<{group_name}>")
+
+        end_index = pattern.index(")", start_index)
+
+        pattern = pattern[:start_index] + replacement + pattern[end_index + 1 :]
+
+    return pattern
+
+
 def get_avro_record_schema(name: str, fields: list, namespace: str = None):
     return {
         "type": "record",

@@ -6,7 +6,6 @@ from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
-    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -16,38 +15,42 @@ from dagster_ssh import SSHResource
 
 
 def build_sftp_sensor(
-    code_location, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
+    code_location,
+    source_system,
+    asset_defs: list[AssetsDefinition],
+    minimum_interval_seconds=None,
 ):
     @sensor(
-        name=f"{code_location}_achieve3k_sftp_sensor",
+        name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
+        required_resource_keys={f"sftp_{source_system}"},
     )
-    def _sensor(
-        context: SensorEvaluationContext,
-        sftp_achieve3k: ResourceParam[SSHResource],
-    ):
+    def _sensor(context: SensorEvaluationContext):
         now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
-        context.instance.get_asset_keys
 
-        conn = sftp_achieve3k.get_connection()
+        sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
+        ls = {}
+        conn = sftp.get_connection()
         with conn.open_sftp() as sftp_client:
-            ls = {}
             for asset in asset_defs:
-                ls[asset.key.path[-1]] = sftp_client.listdir_attr(
-                    path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                )
-
+                ls[asset.key.to_python_identifier()] = {
+                    "files": sftp_client.listdir_attr(
+                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
+                    ),
+                    "asset": asset,
+                }
         conn.close()
 
         run_requests = []
         dynamic_partitions_requests = []
+        for asset_identifier, asset_dict in ls.items():
+            asset = asset_dict["asset"]
+            files = asset_dict["files"]
 
-        for asset_name, files in ls.items():
-            last_run = cursor.get(asset_name, 0)
-            asset = [a for a in asset_defs if a.key.path[-1] == asset_name][0]
+            last_run = cursor.get(asset_identifier, 0)
 
             partition_keys = []
             for f in files:
@@ -65,7 +68,7 @@ def build_sftp_sensor(
                 for pk in partition_keys:
                     run_requests.append(
                         RunRequest(
-                            run_key=f"{asset.key.to_python_identifier()}_{pk}",
+                            run_key=f"{asset_identifier}_{pk}",
                             asset_selection=[asset.key],
                             partition_key=pk,
                         )
@@ -73,12 +76,12 @@ def build_sftp_sensor(
 
                 dynamic_partitions_requests.append(
                     AddDynamicPartitionsRequest(
-                        partitions_def_name=(f"{code_location}_achieve3k_{asset_name}"),
+                        partitions_def_name=asset_identifier,
                         partition_keys=partition_keys,
                     )
                 )
 
-                cursor[asset_name] = now.timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(
             run_requests=run_requests,

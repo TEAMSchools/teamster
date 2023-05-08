@@ -9,6 +9,9 @@ locations:
     container_context:
       k8s:
         env_secrets:
+          - iready-sftp-host
+          - iready-sftp-password
+          - iready-sftp-username
           - kippmiami-ps-db-password
           - kippmiami-ps-db-version
           - kippmiami-ps-ssh-host
@@ -16,7 +19,6 @@ locations:
           - kippmiami-ps-ssh-port
           - kippmiami-ps-ssh-remote-bind-host
           - kippmiami-ps-ssh-username
-          - renlearn-sftp-host
           - kippmiami-renlearn-sftp-password
           - kippmiami-renlearn-sftp-username
           - mssql-database
@@ -27,6 +29,7 @@ locations:
           - pythonanywhere-sftp-host
           - pythonanywhere-sftp-password
           - pythonanywhere-sftp-username
+          - renlearn-sftp-host
         volumes:
           - name: secret-volume
             secret:
