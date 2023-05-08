@@ -55,7 +55,7 @@ def build_sftp_sensor(
             files = filepath["files"]
             remote_filepath = pathlib.Path(filepath["remote_filepath"])
 
-            asset_identifier = asset.key.path.to_python_identifier()
+            asset_identifier = asset.key.to_python_identifier()
 
             last_run = cursor.get(asset_identifier, 0)
 
