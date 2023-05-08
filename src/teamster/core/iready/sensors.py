@@ -35,29 +35,31 @@ def build_sftp_sensor(
 
         sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
-        ls = {}
+        ls = []
         conn = sftp.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
-                ls[asset.key.to_python_identifier()] = {
-                    "files": [
-                        files
-                        for path in asset.metadata_by_key[asset.key]["remote_filepath"]
-                        for files in sftp_client.listdir_attr(path=path)
-                    ],
-                    "asset": asset,
-                }
+                for path in asset.metadata_by_key[asset.key]["remote_filepath"]:
+                    ls.append(
+                        {
+                            "asset": asset,
+                            "remote_filepath": path,
+                            "files": sftp_client.listdir_attr(path=path),
+                        }
+                    )
         conn.close()
 
         run_requests = []
-        for asset_identifier, asset_dict in ls.items():
-            asset = asset_dict["asset"]
-            files = asset_dict["files"]
+        for filepath in ls:
+            asset = filepath["asset"]
+            files = filepath["files"]
+            remote_filepath = pathlib.Path(filepath["remote_filepath"])
+
+            asset_identifier = asset.path.to_python_identifier()
 
             last_run = cursor.get(asset_identifier, 0)
 
             asset_metadata = asset.metadata_by_key[asset.key]
-            remote_filepath = pathlib.Path(asset_metadata["remote_filepath"])
 
             partition_keys = []
             for f in files:
@@ -74,7 +76,7 @@ def build_sftp_sensor(
                             start_month=7,
                         ).start.to_date_string()
                     else:
-                        date_partition = f"{remote_filepath[-4:]}-07-01"
+                        date_partition = f"{remote_filepath.name[-4:]}-07-01"
 
                     partition_keys.append(
                         MultiPartitionKey({**match.groupdict(), "date": date_partition})
