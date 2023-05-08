@@ -3,6 +3,12 @@ assets:
     remote_filepath: /exports/nj-kipp_nj/Current_Year
     remote_file_regex: personalized_instruction_by_lesson_(?P<subject>\w+).csv
     partition_start_date: 2019-07-01
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
   - asset_name: instructional_usage_data
     remote_filepath: /exports/nj-kipp_nj/Current_Year
     remote_file_regex: instructional_usage_data_(?P<subject>\w+).csv
