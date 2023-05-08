@@ -1,3 +1,4 @@
+import pendulum
 from dagster import (
     AutoMaterializePolicy,
     MultiPartitionsDefinition,
@@ -13,6 +14,7 @@ from numpy import nan
 from pandas import read_csv
 
 from teamster.core.iready.schema import ASSET_FIELDS
+from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
 from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
@@ -51,8 +53,24 @@ def build_sftp_asset(
     )
     def _asset(context: OpExecutionContext, sftp_iready: ResourceParam[SSHResource]):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
+        date_partition = context.partition_key.keys_by_dimension["date"]
 
-        remote_filepath = asset_metadata["remote_filepath"]
+        date_partition_fy = FiscalYear(
+            datetime=pendulum.from_format(string=date_partition, fmt="YYYY-MM-DD"),
+            start_month=7,
+        )
+
+        remote_filepath = [
+            fp
+            for fp in asset_metadata["remote_filepath"]
+            if (date_partition_fy.fiscal_year - 1) in fp
+        ]
+        remote_filepath = (
+            remote_filepath[0]
+            if remote_filepath
+            else "/exports/nj-kipp_nj/Current_Year"
+        )
+
         remote_filename = regex_pattern_replace(
             pattern=asset_metadata["remote_file_regex"],
             replacements={
@@ -61,7 +79,7 @@ def build_sftp_asset(
         )
 
         local_filepath = sftp_iready.sftp_get(
-            remote_filepath=f"{remote_filepath}/{remote_filename}",
+            remote_filepath=(f"{remote_filepath}/{remote_filename}"),
             local_filepath=f"./data/{remote_filename}",
         )
 
