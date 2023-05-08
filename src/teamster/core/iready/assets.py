@@ -1,4 +1,5 @@
 from dagster import (
+    AutoMaterializePolicy,
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
@@ -46,6 +47,7 @@ def build_sftp_asset(
             }
         ),
         op_tags=op_tags,
+        auto_materialize_policy=AutoMaterializePolicy.eager(),
     )
     def _asset(context: OpExecutionContext, sftp_iready: ResourceParam[SSHResource]):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]

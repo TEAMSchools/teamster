@@ -31,5 +31,6 @@
   "python.testing.pytestEnabled": true,
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  },
+  "githubPullRequests.ignoredPullRequestBranches": ["main"]
 }
