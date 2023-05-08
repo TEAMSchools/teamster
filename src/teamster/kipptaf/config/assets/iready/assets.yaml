@@ -1,9 +1,6 @@
 assets:
   - asset_name: personalized_instruction_by_lesson
-    remote_filepath:
-      - /exports/nj-kipp_nj/Current_Year
-      - /exports/nj-kipp_nj/academic_year_2021
-      - /exports/nj-kipp_nj/academic_year_2020
+    remote_filepath: /exports/nj-kipp_nj
     remote_file_regex: personalized_instruction_by_lesson_(?P<subject>\w+).csv
     partition_start_date: 2019-07-01
     op_tags:
@@ -13,23 +10,14 @@ assets:
             limits:
               memory: 1.0Gi
   - asset_name: instructional_usage_data
-    remote_filepath:
-      - /exports/nj-kipp_nj/Current_Year
-      - /exports/nj-kipp_nj/academic_year_2021
-      - /exports/nj-kipp_nj/academic_year_2020
+    remote_filepath: /exports/nj-kipp_nj
     remote_file_regex: instructional_usage_data_(?P<subject>\w+).csv
     partition_start_date: 2019-07-01
   - asset_name: diagnostic_results
-    remote_filepath:
-      - /exports/nj-kipp_nj/Current_Year
-      - /exports/nj-kipp_nj/academic_year_2021
-      - /exports/nj-kipp_nj/academic_year_2020
+    remote_filepath: /exports/nj-kipp_nj
     remote_file_regex: diagnostic_results_(?P<subject>\w+).csv
     partition_start_date: 2019-07-01
   - asset_name: diagnostic_and_instruction
-    remote_filepath:
-      - /exports/nj-kipp_nj/Current_Year
-      - /exports/nj-kipp_nj/academic_year_2021
-      - /exports/nj-kipp_nj/academic_year_2020
+    remote_filepath: /exports/nj-kipp_nj
     remote_file_regex: diagnostic_and_instruction_(?P<subject>\w+)_ytd_window.csv
     partition_start_date: 2019-07-01
