@@ -63,7 +63,9 @@ def build_sftp_sensor(
 
             partition_keys = []
             for f in files:
-                context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
+                context.log.info(
+                    f"{remote_filepath.name}/{f.filename}: {f.st_mtime} - {f.st_size}"
+                )
 
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
