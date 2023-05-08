@@ -70,6 +70,7 @@ def build_sftp_sensor(
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
+                context.log.debug(match.groupdict())
 
                 if match is not None and f.st_mtime >= last_run and f.st_size > 0:
                     if remote_filepath.name == "Current_Year":
@@ -86,7 +87,6 @@ def build_sftp_sensor(
 
             if partition_keys:
                 for pk in partition_keys:
-                    context.log.debug(pk)
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset_identifier}_{pk}",
