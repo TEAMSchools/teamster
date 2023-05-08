@@ -100,4 +100,4 @@ jobs:
         with:
           args: >-
             -repo=us-central1-docker.pkg.dev/teamster-332318/teamster-staging -recursive -keep=1
-            -tag-filter-any=.*
+            -tag-filter-any=.* -grace=48h
