@@ -40,9 +40,11 @@ def build_sftp_sensor(
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = {
-                    "files": sftp_client.listdir_attr(
-                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                    ),
+                    "files": [
+                        files
+                        for path in asset.metadata_by_key[asset.key]["remote_filepath"]
+                        for files in sftp_client.listdir_attr(path=path)
+                    ],
                     "asset": asset,
                 }
         conn.close()
