@@ -55,21 +55,17 @@ def build_sftp_asset(
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
         date_partition = context.partition_key.keys_by_dimension["date"]
 
+        current_fy = FiscalYear(datetime=pendulum.today(), start_month=7)
         date_partition_fy = FiscalYear(
             datetime=pendulum.from_format(string=date_partition, fmt="YYYY-MM-DD"),
             start_month=7,
         )
 
-        remote_filepath = [
-            fp
-            for fp in asset_metadata["remote_filepath"]
-            if (date_partition_fy.fiscal_year - 1) in fp
-        ]
-        remote_filepath = (
-            remote_filepath[0]
-            if remote_filepath
-            else "/exports/nj-kipp_nj/Current_Year"
-        )
+        remote_filepath = asset_metadata["remote_filepath"]
+        if date_partition_fy.fiscal_year == current_fy.fiscal_year:
+            remote_filepath += "/Current_Year"
+        else:
+            remote_filepath += f"/academic_year_{date_partition_fy.fiscal_year - 1}"
 
         remote_filename = regex_pattern_replace(
             pattern=asset_metadata["remote_file_regex"],

@@ -1,5 +1,4 @@
 import json
-import pathlib
 import re
 
 import pendulum
@@ -35,28 +34,23 @@ def build_sftp_sensor(
 
         sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
-        ls = []
+        ls = {}
         conn = sftp.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
-                for path in asset.metadata_by_key[asset.key]["remote_filepath"]:
-                    ls.append(
-                        {
-                            "asset": asset,
-                            "remote_filepath": path,
-                            "files": sftp_client.listdir_attr(path=path),
-                        }
-                    )
+                ls[asset.key.to_python_identifier()] = {
+                    "files": sftp_client.listdir_attr(
+                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
+                        + "/Current_Year"
+                    ),
+                    "asset": asset,
+                }
         conn.close()
 
         run_requests = []
-        for filepath in ls:
-            asset = filepath["asset"]
-            files = filepath["files"]
-            remote_filepath = pathlib.Path(filepath["remote_filepath"])
-
-            asset_identifier = asset.key.to_python_identifier()
-            context.log.debug(asset_identifier)
+        for asset_identifier, asset_dict in ls.items():
+            asset = asset_dict["asset"]
+            files = asset_dict["files"]
 
             last_run = cursor.get(asset_identifier, 0)
 
@@ -64,28 +58,25 @@ def build_sftp_sensor(
 
             partition_keys = []
             for f in files:
-                context.log.info(
-                    f"{remote_filepath.name}/{f.filename}: {f.st_mtime} - {f.st_size}"
-                )
+                context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
                 if match is not None and f.st_mtime >= last_run and f.st_size > 0:
-                    if remote_filepath.name == "Current_Year":
-                        date_partition = FiscalYear(
-                            datetime=pendulum.from_timestamp(timestamp=f.st_mtime),
-                            start_month=7,
-                        ).start.to_date_string()
-                    else:
-                        date_partition = f"{remote_filepath.name[-4:]}-07-01"
-
-                    context.log.debug(
-                        MultiPartitionKey({**match.groupdict(), "date": date_partition})
-                    )
                     partition_keys.append(
-                        MultiPartitionKey({**match.groupdict(), "date": date_partition})
+                        MultiPartitionKey(
+                            {
+                                **match.groupdict(),
+                                "date": FiscalYear(
+                                    datetime=pendulum.from_timestamp(
+                                        timestamp=f.st_mtime
+                                    ),
+                                    start_month=7,
+                                ).start.to_date_string(),
+                            }
+                        )
                     )
 
             if partition_keys:
