@@ -1,0 +1,7 @@
+remote_host:
+  env: BLISSBOOK_SFTP_HOST
+username:
+  env: BLISSBOOK_SFTP_USERNAME
+password:
+  env: BLISSBOOK_SFTP_PASSWORD
+remote_port: 3022

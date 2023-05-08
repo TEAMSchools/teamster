@@ -22,6 +22,7 @@ from . import (
     clever,
     datagun,
     dbt,
+    iready,
     renlearn,
     schoolmint,
 )
@@ -38,13 +39,20 @@ defs = Definitions(
         *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
+        *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
     jobs=[*datagun.jobs, *schoolmint.jobs],
     schedules=[*datagun.schedules, *schoolmint.schedules],
-    sensors=[*alchemer.sensors, *clever.sensors, *renlearn.sensors, *achieve3k.sensors],
+    sensors=[
+        *alchemer.sensors,
+        *clever.sensors,
+        *renlearn.sensors,
+        *achieve3k.sensors,
+        *iready.sensors,
+    ],
     resources={
         "dbt": dbt_cli_resource.configured(
             {
@@ -99,6 +107,9 @@ defs = Definitions(
         ),
         "sftp_illuminate": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_illuminate.yaml"])
+        ),
+        "sftp_iready": ssh_resource.configured(
+            config_from_files([f"{local_resource_config_dir}/sftp_iready.yaml"])
         ),
         "sftp_kipptaf": ssh_resource.configured(
             config_from_files([f"{local_resource_config_dir}/sftp_kipptaf.yaml"])

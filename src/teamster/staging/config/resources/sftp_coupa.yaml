@@ -1,0 +1,6 @@
+remote_host:
+  env: COUPA_SFTP_HOST
+username:
+  env: COUPA_SFTP_USERNAME
+password:
+  env: COUPA_SFTP_PASSWORD
