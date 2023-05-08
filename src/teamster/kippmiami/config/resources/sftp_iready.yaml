@@ -1,0 +1,6 @@
+remote_host:
+  env: IREADY_SFTP_HOST
+username:
+  env: IREADY_SFTP_USERNAME
+password:
+  env: IREADY_SFTP_PASSWORD
