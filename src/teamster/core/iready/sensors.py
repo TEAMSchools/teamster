@@ -40,6 +40,7 @@ def build_sftp_sensor(
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 for path in asset.metadata_by_key[asset.key]["remote_filepath"]:
+                    context.log.debug(path)
                     ls.append(
                         {
                             "asset": asset,
@@ -86,6 +87,7 @@ def build_sftp_sensor(
 
             if partition_keys:
                 for pk in partition_keys:
+                    context.log.debug(pk)
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset_identifier}_{pk}",
