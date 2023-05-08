@@ -40,7 +40,6 @@ def build_sftp_sensor(
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 for path in asset.metadata_by_key[asset.key]["remote_filepath"]:
-                    context.log.debug(path)
                     ls.append(
                         {
                             "asset": asset,
