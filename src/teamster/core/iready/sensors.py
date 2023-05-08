@@ -56,6 +56,7 @@ def build_sftp_sensor(
             remote_filepath = pathlib.Path(filepath["remote_filepath"])
 
             asset_identifier = asset.key.to_python_identifier()
+            context.log.debug(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
 
@@ -70,7 +71,7 @@ def build_sftp_sensor(
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
-                context.log.debug(match.groupdict())
+                context.log.debug(match)
 
                 if match is not None and f.st_mtime >= last_run and f.st_size > 0:
                     if remote_filepath.name == "Current_Year":
