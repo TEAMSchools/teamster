@@ -7,8 +7,6 @@ import pendulum
 from dagster import TimeWindowPartitionsDefinition
 from dagster._core.definitions.partition import DEFAULT_DATE_FORMAT
 
-from .variables import LOCAL_TIME_ZONE
-
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -39,9 +37,9 @@ class FiscalYearPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
         start_date: Union[pendulum.DateTime, str],
+        timezone: Optional[str],
         start_month: int,
         start_day: int = 1,
-        timezone: Optional[str] = LOCAL_TIME_ZONE.name,
         fmt: Optional[str] = None,
         end_offset: int = 1,
     ):
