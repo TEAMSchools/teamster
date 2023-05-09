@@ -1,12 +1,6 @@
 import re
 
-from dagster import (
-    DynamicPartitionsDefinition,
-    OpExecutionContext,
-    Output,
-    ResourceParam,
-    asset,
-)
+from dagster import DynamicPartitionsDefinition, OpExecutionContext, Output, asset
 from dagster_ssh import SSHResource
 from numpy import nan
 from pandas import read_csv
@@ -31,13 +25,14 @@ def build_sftp_asset(
             "remote_filepath": remote_filepath,
             "remote_file_regex": remote_file_regex,
         },
+        required_resource_keys={f"sftp_{source_system}"},
         io_manager_key="gcs_avro_io",
         partitions_def=DynamicPartitionsDefinition(
             name=f"{code_location}__{source_system}__{asset_name}"
         ),
         op_tags=op_tags,
     )
-    def _asset(context: OpExecutionContext, sftp_achieve3k: ResourceParam[SSHResource]):
+    def _asset(context: OpExecutionContext):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         remote_filepath = asset_metadata["remote_filepath"]
@@ -46,7 +41,9 @@ def build_sftp_asset(
             replacements={"date": context.partition_key},
         )
 
-        conn = sftp_achieve3k.get_connection()
+        ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+
+        conn = ssh.get_connection()
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
         conn.close()
@@ -58,7 +55,7 @@ def build_sftp_asset(
                 remote_filename = f.filename
                 break
 
-        local_filepath = sftp_achieve3k.sftp_get(
+        local_filepath = ssh.sftp_get(
             remote_filepath=f"{remote_filepath}/{remote_filename}",
             local_filepath=f"./data/{remote_filename}",
         )

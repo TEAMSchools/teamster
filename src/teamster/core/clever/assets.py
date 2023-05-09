@@ -4,7 +4,6 @@ from dagster import (
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
-    ResourceParam,
     StaticPartitionsDefinition,
     asset,
 )
@@ -31,6 +30,7 @@ def build_sftp_asset(
             "remote_filepath": remote_filepath,
             "remote_file_regex": remote_file_regex,
         },
+        required_resource_keys={f"sftp_{source_system}"},
         io_manager_key="gcs_avro_io",
         partitions_def=MultiPartitionsDefinition(
             {
@@ -43,9 +43,7 @@ def build_sftp_asset(
         op_tags=op_tags,
         auto_materialize_policy=AutoMaterializePolicy.eager(),
     )
-    def _asset(
-        context: OpExecutionContext, sftp_clever_reports: ResourceParam[SSHResource]
-    ):
+    def _asset(context: OpExecutionContext):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
         date_partition = context.partition_key.keys_by_dimension["date"]
         type_partition = context.partition_key.keys_by_dimension["type"]
@@ -56,7 +54,9 @@ def build_sftp_asset(
             replacements={"date": date_partition, "type": type_partition},
         )
 
-        local_filepath = sftp_clever_reports.sftp_get(
+        ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+
+        local_filepath = ssh.sftp_get(
             remote_filepath=f"{remote_filepath}/{remote_filename}",
             local_filepath=f"./data/{remote_filename}",
         )

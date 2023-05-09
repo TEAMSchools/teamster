@@ -25,10 +25,10 @@ def build_sftp_sensor(
     def _sensor(context: SensorEvaluationContext):
         cursor: dict = json.loads(context.cursor or "{}")
 
-        sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+        ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
         ls = {}
-        conn = sftp.get_connection()
+        conn = ssh.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = {

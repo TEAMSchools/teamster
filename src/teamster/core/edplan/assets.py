@@ -42,9 +42,9 @@ def build_sftp_asset(
         remote_filepath = asset_metadata["remote_filepath"]
         remote_file_regex = asset_metadata["remote_file_regex"]
 
-        sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+        ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
-        conn = sftp.get_connection()
+        conn = ssh.get_connection()
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
         conn.close()
@@ -56,7 +56,7 @@ def build_sftp_asset(
                 remote_filename = f.filename
                 break
 
-        local_filepath = sftp.sftp_get(
+        local_filepath = ssh.sftp_get(
             remote_filepath=(f"{remote_filepath}/{remote_filename}"),
             local_filepath=f"./data/{remote_filename}",
         )
