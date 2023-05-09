@@ -57,7 +57,9 @@ def build_sftp_sensor(
                         RunRequest(
                             run_key=f"{asset_identifier}_{f.st_mtime}",
                             asset_selection=[asset.key],
-                            partition_key=pendulum.from_timestamp(timestamp=f.st_mtime),
+                            partition_key=pendulum.from_timestamp(
+                                timestamp=f.st_mtime
+                            ).to_date_string(),
                         )
                     )
 
