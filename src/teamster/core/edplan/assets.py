@@ -1,3 +1,5 @@
+import re
+
 from dagster import DailyPartitionsDefinition, OpExecutionContext, Output, asset
 from dagster_ssh import SSHResource
 from numpy import nan
@@ -38,9 +40,21 @@ def build_sftp_asset(
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         remote_filepath = asset_metadata["remote_filepath"]
-        remote_filename = asset_metadata["remote_file_regex"]
+        remote_file_regex = asset_metadata["remote_file_regex"]
 
         sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+
+        conn = sftp.get_connection()
+        with conn.open_sftp() as sftp_client:
+            ls = sftp_client.listdir_attr(path=remote_filepath)
+        conn.close()
+
+        remote_filename = None
+        for f in ls:
+            match = re.match(pattern=remote_file_regex, string=f.filename)
+            if match is not None:
+                remote_filename = f.filename
+                break
 
         local_filepath = sftp.sftp_get(
             remote_filepath=(f"{remote_filepath}/{remote_filename}"),
