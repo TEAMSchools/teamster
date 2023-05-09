@@ -4,7 +4,7 @@ from teamster.core.renlearn.assets import build_sftp_asset
 
 from .. import CODE_LOCATION
 
-config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/renlearn"
+config_dir = f"src/teamster/{CODE_LOCATION}/renlearn/config"
 
 sftp_assets = [
     build_sftp_asset(code_location=CODE_LOCATION, source_system="renlearn", **a)

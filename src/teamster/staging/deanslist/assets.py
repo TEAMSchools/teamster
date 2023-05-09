@@ -14,7 +14,7 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 from .. import CODE_LOCATION
 
-config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/deanslist"
+config_dir = f"src/teamster/{CODE_LOCATION}/deanslist/config"
 
 school_ids = config_from_files([f"{config_dir}/school_ids.yaml"])["school_ids"]
 

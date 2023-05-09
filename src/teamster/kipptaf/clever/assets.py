@@ -4,7 +4,7 @@ from teamster.core.clever.assets import build_sftp_asset
 
 from .. import CODE_LOCATION
 
-config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/clever"
+config_dir = f"src/teamster/{CODE_LOCATION}/clever/config"
 
 sftp_assets = [
     build_sftp_asset(code_location=CODE_LOCATION, source_system="clever", **a)

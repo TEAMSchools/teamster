@@ -13,7 +13,7 @@ from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 from .. import CODE_LOCATION
 
-config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/schoolmint"
+config_dir = f"src/teamster/{CODE_LOCATION}/schoolmint/config"
 
 static_partitions_def = StaticPartitionsDefinition(["t", "f"])
 
