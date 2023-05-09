@@ -62,7 +62,6 @@ def build_sftp_sensor(
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     if f.st_mtime > last_run and f.st_size > 0:
-                        context.log.debug(match.groupdict())
                         partition_keys.append(match.groupdict())
 
             if partition_keys:
@@ -74,10 +73,6 @@ def build_sftp_sensor(
                 #             partition_key=MultiPartitionKey(pk),
                 #         )
                 #     )
-                context.log.debug(partition_keys)
-                context.log.debug([pk["date"] for pk in partition_keys])
-                context.log.debug(set([pk["date"] for pk in partition_keys]))
-                context.log.debug(list(set([pk["date"] for pk in partition_keys])))
 
                 dynamic_partitions_requests.append(
                     AddDynamicPartitionsRequest(
