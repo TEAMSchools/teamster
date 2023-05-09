@@ -13,7 +13,7 @@ from teamster.core.deanslist.resources import deanslist_resource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.sqlalchemy.resources import mssql, oracle
 
-from . import CODE_LOCATION, datagun, dbt, deanslist, powerschool
+from . import CODE_LOCATION, datagun, dbt, deanslist, edplan, powerschool
 
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
@@ -23,25 +23,32 @@ defs = Definitions(
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
+        *load_assets_from_modules(modules=[edplan], group_name="edplan"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
-    sensors=[*powerschool.sensors],
+    sensors=[*powerschool.sensors, *edplan.sensors],
     resources={
+        "io_manager": gcs_io_manager.configured(
+            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
+        ),
+        "gcs_fp_io": gcs_io_manager.configured(
+            config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
+        ),
+        "gcs_avro_io": gcs_io_manager.configured(
+            config_from_files([f"{resource_config_dir}/io_avro.yaml"])
+        ),
+        "gcs": gcs_resource.configured(
+            config_from_files([f"{resource_config_dir}/gcs.yaml"])
+        ),
         "warehouse": mssql.configured(
             config_from_files([f"{resource_config_dir}/warehouse.yaml"])
         ),
         "bq": bigquery_resource.configured(
             config_from_files([f"{resource_config_dir}/gcs.yaml"])
-        ),
-        "gcs": gcs_resource.configured(
-            config_from_files([f"{resource_config_dir}/gcs.yaml"])
-        ),
-        "sftp_pythonanywhere": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
         "ps_db": oracle.configured(
             config_from_files([f"{resource_config_dir}/db_powerschool.yaml"])
@@ -49,8 +56,8 @@ defs = Definitions(
         "ps_ssh": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/ssh_powerschool.yaml"])
         ),
-        "io_manager": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
+        "deanslist": deanslist_resource.configured(
+            config_from_files([f"{resource_config_dir}/deanslist.yaml"])
         ),
         "dbt": dbt_cli_resource.configured(
             {
@@ -58,17 +65,14 @@ defs = Definitions(
                 "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
             }
         ),
+        "sftp_pythonanywhere": ssh_resource.configured(
+            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
+        ),
         "sftp_cpn": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_cpn.yaml"])
         ),
-        "deanslist": deanslist_resource.configured(
-            config_from_files([f"{resource_config_dir}/deanslist.yaml"])
-        ),
-        "gcs_fp_io": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
-        ),
-        "gcs_avro_io": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_avro.yaml"])
+        "sftp_edplan": ssh_resource.configured(
+            config_from_files([f"{resource_config_dir}/sftp_edplan.yaml"])
         ),
     },
 )
