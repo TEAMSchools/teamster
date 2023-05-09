@@ -48,29 +48,33 @@ def build_sftp_asset(
         remote_file_regex = asset_metadata["remote_file_regex"]
         archive_filepath = asset_metadata["archive_filepath"]
 
+        # list files remote filepath
         conn = ssh.get_connection()
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
         conn.close()
 
-        remote_filename = None
-        for f in ls:
-            match = re.match(pattern=remote_file_regex, string=f.filename)
-            if match is not None:
-                remote_filename = f.filename
-                break
+        # find matching file for partition
+        remote_filename = [
+            f.filename
+            for f in ls
+            if re.match(pattern=remote_file_regex, string=f.filename) is not None
+        ][0]
 
+        # download file from sftp
         local_filepath = ssh.sftp_get(
             remote_filepath=f"{remote_filepath}/{remote_filename}",
             local_filepath=f"./data/{remote_filename}",
         )
 
+        # unzip file, if necessary
         if archive_filepath is not None:
             with zipfile.ZipFile(file=local_filepath) as zf:
                 zf.extract(member=archive_filepath, path="./data")
 
             local_filepath = f"./data/{archive_filepath}"
 
+        # load file into pandas and prep for output
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
         df = df.replace({nan: None})
         if slugify_cols:
@@ -89,45 +93,27 @@ def build_sftp_asset(
     return _asset
 
 
-def build_sftp_asset_1():
-    @asset()
-    def _asset(context: OpExecutionContext):
-        remote_file_regex = regex_pattern_replace(
-            pattern=asset_metadata["remote_file_regex"],
-            replacements={"date": context.partition_key},
-        )
+# # simple partition key
+# remote_file_regex = regex_pattern_replace(
+#     pattern=asset_metadata["remote_file_regex"],
+#     replacements={"date": context.partition_key},
+# )
 
+# # multi-partition key
+# date_partition = context.partition_key.keys_by_dimension["date"]
+# type_partition = context.partition_key.keys_by_dimension["type"]
+# remote_file_regex = regex_pattern_replace(
+#     pattern=asset_metadata["remote_file_regex"],
+#     replacements={"date": date_partition, "type": type_partition},
+# )
 
-def build_sftp_asset_2():
-    @asset()
-    def _asset(context: OpExecutionContext):
-        date_partition = context.partition_key.keys_by_dimension["date"]
-        type_partition = context.partition_key.keys_by_dimension["type"]
-
-        remote_file_regex = regex_pattern_replace(
-            pattern=asset_metadata["remote_file_regex"],
-            replacements={"date": date_partition, "type": type_partition},
-        )
-
-
-def build_sftp_asset_3():
-    @asset()
-    def _asset(context: OpExecutionContext):
-        date_partition = context.partition_key.keys_by_dimension["date"]
-
-        date_partition_fy = FiscalYear(
-            datetime=pendulum.from_format(string=date_partition, fmt="YYYY-MM-DD"),
-            start_month=7,
-        )
-
-        if date_partition_fy.fiscal_year == CURRENT_FISCAL_YEAR.fiscal_year:
-            remote_filepath += "/Current_Year"
-        else:
-            remote_filepath += f"/academic_year_{date_partition_fy.fiscal_year - 1}"
-
-        remote_filename = regex_pattern_replace(
-            pattern=asset_metadata["remote_file_regex"],
-            replacements={
-                "subject": context.partition_key.keys_by_dimension["subject"]
-            },
-        )
+# TODO: remove from iready
+# # alter remote filepath
+# date_partition_fy = FiscalYear(
+#     datetime=pendulum.from_format(string=date_partition, fmt="YYYY-MM-DD"),
+#     start_month=7,
+# )
+# if date_partition_fy.fiscal_year == CURRENT_FISCAL_YEAR.fiscal_year:
+#     remote_filepath += "/Current_Year"
+# else:
+#     remote_filepath += f"/academic_year_{date_partition_fy.fiscal_year - 1}"
