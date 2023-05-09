@@ -55,7 +55,6 @@ def build_sftp_asset(
             pattern=asset_metadata["remote_file_regex"],
             replacements={"date": date_partition, "type": type_partition},
         )
-        context.log.debug(remote_file_regex)
 
         ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
@@ -63,11 +62,9 @@ def build_sftp_asset(
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
         conn.close()
-        context.log.debug(ls)
 
         remote_filename = None
         for f in ls:
-            context.log.debug(f)
             match = re.match(pattern=remote_file_regex, string=f.filename)
             if match is not None:
                 remote_filename = f.filename
