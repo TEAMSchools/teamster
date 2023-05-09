@@ -1,3 +1,5 @@
+import re
+
 from dagster import (
     AutoMaterializePolicy,
     DynamicPartitionsDefinition,
@@ -49,12 +51,24 @@ def build_sftp_asset(
         type_partition = context.partition_key.keys_by_dimension["type"]
 
         remote_filepath = asset_metadata["remote_filepath"]
-        remote_filename = regex_pattern_replace(
+        remote_file_regex = regex_pattern_replace(
             pattern=asset_metadata["remote_file_regex"],
             replacements={"date": date_partition, "type": type_partition},
         )
 
         ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+
+        conn = ssh.get_connection()
+        with conn.open_sftp() as sftp_client:
+            ls = sftp_client.listdir_attr(path=remote_filepath)
+        conn.close()
+
+        remote_filename = None
+        for f in ls:
+            match = re.match(pattern=remote_file_regex, string=f.filename)
+            if match is not None:
+                remote_filename = f.filename
+                break
 
         local_filepath = ssh.sftp_get(
             remote_filepath=f"{remote_filepath}/{remote_filename}",
