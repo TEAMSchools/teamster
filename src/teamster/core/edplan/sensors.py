@@ -1,4 +1,5 @@
 import json
+import re
 
 import pendulum
 from dagster import (
@@ -49,10 +50,16 @@ def build_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
+            asset_metadata = asset.metadata_by_key[asset.key]
+
             for f in files:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
-                if f.st_mtime >= last_run and f.st_size > 0:
+                match = re.match(
+                    pattern=asset_metadata["remote_file_regex"], string=f.filename
+                )
+
+                if match is not None and f.st_mtime >= last_run and f.st_size > 0:
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset_identifier}_{f.st_mtime}",
