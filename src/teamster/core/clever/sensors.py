@@ -61,6 +61,7 @@ def build_sftp_sensor(
                 )
 
                 if match is not None and f.st_mtime > last_run and f.st_size > 0:
+                    context.log.debug(match.groupdict())
                     partition_keys.append(match.groupdict())
 
             if partition_keys:
