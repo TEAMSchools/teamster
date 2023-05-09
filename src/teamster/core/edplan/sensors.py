@@ -12,6 +12,8 @@ from dagster import (
 )
 from dagster_ssh import SSHResource
 
+from teamster.core.utils.variables import NOW
+
 
 def build_sftp_sensor(
     code_location,
@@ -26,7 +28,6 @@ def build_sftp_sensor(
         required_resource_keys={f"sftp_{source_system}"},
     )
     def _sensor(context: SensorEvaluationContext):
-        now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
         sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
@@ -59,7 +60,7 @@ def build_sftp_sensor(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
-                if match is not None and f.st_mtime >= last_run and f.st_size > 0:
+                if match is not None and f.st_mtime > last_run and f.st_size > 0:
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset_identifier}_{f.st_mtime}",
@@ -70,7 +71,7 @@ def build_sftp_sensor(
                         )
                     )
 
-                cursor[asset_identifier] = now.timestamp()
+                cursor[asset_identifier] = NOW.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

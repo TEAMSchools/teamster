@@ -1,7 +1,6 @@
 import json
 import re
 
-import pendulum
 from dagster import (  # MultiPartitionKey,; RunRequest,
     AddDynamicPartitionsRequest,
     AssetsDefinition,
@@ -11,6 +10,8 @@ from dagster import (  # MultiPartitionKey,; RunRequest,
     sensor,
 )
 from dagster_ssh import SSHResource
+
+from teamster.core.utils.variables import NOW
 
 
 def build_sftp_sensor(
@@ -26,7 +27,6 @@ def build_sftp_sensor(
         required_resource_keys={f"sftp_{source_system}"},
     )
     def _sensor(context: SensorEvaluationContext):
-        now = pendulum.now()
         cursor: dict = json.loads(context.cursor or "{}")
 
         sftp: SSHResource = getattr(context.resources, f"sftp_{source_system}")
@@ -60,7 +60,7 @@ def build_sftp_sensor(
                     string=f.filename,
                 )
 
-                if match is not None and f.st_mtime >= last_run and f.st_size > 0:
+                if match is not None and f.st_mtime > last_run and f.st_size > 0:
                     partition_keys.append(match.groupdict())
 
             if partition_keys:
@@ -80,7 +80,7 @@ def build_sftp_sensor(
                     )
                 )
 
-                cursor[asset_identifier] = now.timestamp()
+                cursor[asset_identifier] = NOW.timestamp()
 
         return SensorResult(
             # run_requests=run_requests,
