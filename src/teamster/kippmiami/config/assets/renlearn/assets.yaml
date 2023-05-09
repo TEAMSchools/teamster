@@ -1,13 +1,13 @@
 assets:
   - asset_name: accelerated_reader
     remote_filepath: .
-    remote_file_regex: KIPP Miami\.zip
+    remote_file_regex: 'KIPP Miami\.zip'
     archive_filepath: AR_v2.csv
   - asset_name: star_reading
     remote_filepath: .
-    remote_file_regex: KIPP Miami\.zip
+    remote_file_regex: 'KIPP Miami\.zip'
     archive_filepath: SR_v2.csv
   - asset_name: star_math
     remote_filepath: .
-    remote_file_regex: KIPP Miami\.zip
+    remote_file_regex: 'KIPP Miami\.zip'
     archive_filepath: SM_v2.csv

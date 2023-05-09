@@ -1,5 +1,5 @@
 assets:
   - asset_name: njsmart_powerschool
     remote_filepath: Reports
-    remote_file_regex: NJSMART-Power[Ss]chool\.txt
+    remote_file_regex: 'NJSMART-Power[Ss]chool\.txt'
     partition_start_date: 2023-05-08
