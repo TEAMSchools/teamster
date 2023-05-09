@@ -4,7 +4,7 @@ from teamster.core.powerschool.assets import build_powerschool_table_asset
 
 from .. import CODE_LOCATION
 
-config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/powerschool"
+config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
 
 nonpartition_assets = [
     build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)

@@ -4,7 +4,7 @@ from teamster.core.iready.assets import build_sftp_asset
 
 from .. import CODE_LOCATION
 
-config_dir = f"src/teamster/{CODE_LOCATION}/config/assets/iready"
+config_dir = f"src/teamster/{CODE_LOCATION}/iready/config"
 
 sftp_assets = [
     build_sftp_asset(code_location=CODE_LOCATION, source_system="iready", **a)
