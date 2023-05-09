@@ -14,7 +14,7 @@ from pandas import read_csv
 from teamster.core.iready.schema import ASSET_FIELDS
 from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
-from teamster.core.utils.variables import CURRENT_FISCAL_YEAR
+from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, LOCAL_TIME_ZONE
 
 
 def build_sftp_asset(
@@ -39,7 +39,10 @@ def build_sftp_asset(
             {
                 "subject": StaticPartitionsDefinition(["ela", "math"]),
                 "date": FiscalYearPartitionsDefinition(
-                    start_date=partition_start_date, start_month=7, fmt="%Y-%m-%d"
+                    start_date=partition_start_date,
+                    timezone=LOCAL_TIME_ZONE.name,
+                    start_month=7,
+                    fmt="%Y-%m-%d",
                 ),
             }
         ),

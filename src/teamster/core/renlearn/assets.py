@@ -9,6 +9,7 @@ from pandas import read_csv
 from teamster.core.renlearn.schema import ASSET_FIELDS
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def build_sftp_asset(
@@ -32,7 +33,10 @@ def build_sftp_asset(
         required_resource_keys={f"sftp_{source_system}"},
         io_manager_key="gcs_avro_io",
         partitions_def=FiscalYearPartitionsDefinition(
-            start_date=partition_start_date, start_month=7, fmt="%Y-%m-%d"
+            start_date=partition_start_date,
+            timezone=LOCAL_TIME_ZONE.name,
+            start_month=7,
+            fmt="%Y-%m-%d",
         ),
         op_tags=op_tags,
     )
