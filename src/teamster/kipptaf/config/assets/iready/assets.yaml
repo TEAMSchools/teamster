@@ -1,7 +1,7 @@
 assets:
   - asset_name: personalized_instruction_by_lesson
     remote_filepath: /exports/nj-kipp_nj
-    remote_file_regex: personalized_instruction_by_lesson_(?P<subject>\w+).csv
+    remote_file_regex: personalized_instruction_by_lesson_(?P<subject>\w+)\.csv
     partition_start_date: 2022-07-01
     op_tags:
       dagster-k8s/config:
@@ -11,13 +11,13 @@ assets:
               memory: 1.0Gi
   - asset_name: instructional_usage_data
     remote_filepath: /exports/nj-kipp_nj
-    remote_file_regex: instructional_usage_data_(?P<subject>\w+).csv
+    remote_file_regex: instructional_usage_data_(?P<subject>\w+)\.csv
     partition_start_date: 2022-07-01
   - asset_name: diagnostic_results
     remote_filepath: /exports/nj-kipp_nj
-    remote_file_regex: diagnostic_results_(?P<subject>\w+).csv
+    remote_file_regex: diagnostic_results_(?P<subject>\w+)\.csv
     partition_start_date: 2020-07-01
   - asset_name: diagnostic_and_instruction
     remote_filepath: /exports/nj-kipp_nj
-    remote_file_regex: diagnostic_and_instruction_(?P<subject>\w+)_ytd_window.csv
+    remote_file_regex: diagnostic_and_instruction_(?P<subject>\w+)_ytd_window\.csv
     partition_start_date: 2021-07-01
