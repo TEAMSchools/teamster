@@ -6,7 +6,6 @@ from dagster import (
     Output,
     ResourceParam,
     StaticPartitionsDefinition,
-    TimeWindowPartitionsDefinition,
     asset,
 )
 from dagster_ssh import SSHResource
@@ -14,9 +13,8 @@ from numpy import nan
 from pandas import read_csv
 
 from teamster.core.iready.schema import ASSET_FIELDS
-from teamster.core.utils.classes import FiscalYear
+from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def build_sftp_asset(
@@ -39,12 +37,8 @@ def build_sftp_asset(
         partitions_def=MultiPartitionsDefinition(
             {
                 "subject": StaticPartitionsDefinition(["ela", "math"]),
-                "date": TimeWindowPartitionsDefinition(
-                    cron_schedule="0 0 1 7 *",
-                    timezone=LOCAL_TIME_ZONE.name,
-                    fmt="%Y-%m-%d",
-                    start=partition_start_date,
-                    end_offset=1,
+                "date": FiscalYearPartitionsDefinition(
+                    start_date=partition_start_date, start_month=7, fmt="%Y-%m-%d"
                 ),
             }
         ),

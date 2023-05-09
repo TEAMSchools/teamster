@@ -1,13 +1,13 @@
 import json
 import random
 
-import pendulum
 from dagster import build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
 from teamster.core.deanslist.resources import DeansList, deanslist_resource
 from teamster.core.deanslist.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.variables import NOW
 
 asset_config = config_from_files(["tests/deanslist/config.yaml"])
 resource_config = config_from_files(
@@ -37,7 +37,7 @@ def test_deanslist_schema():
                 endpoint=endpoint_name,
                 api_version=endpoint_version,
                 school_id=asset_config["school_id"],
-                UpdatedSince=pendulum.now().to_date_string(),
+                UpdatedSince=NOW.to_date_string(),
                 **endpoint.get("params", {}),
             )
 

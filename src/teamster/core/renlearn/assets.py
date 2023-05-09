@@ -6,6 +6,7 @@ from numpy import nan
 from pandas import read_csv
 
 from teamster.core.renlearn.schema import ASSET_FIELDS
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import get_avro_record_schema
 
 
@@ -15,19 +16,23 @@ def build_sftp_asset(
     source_system,
     remote_filepath,
     remote_file_regex,
+    partition_start_date,
     archive_filepath=None,
     op_tags={},
 ):
     @asset(
         name=asset_name,
         key_prefix=[code_location, source_system],
-        op_tags=op_tags,
-        io_manager_key="gcs_avro_io",
         metadata={
             "remote_filepath": remote_filepath,
             "remote_file_regex": remote_file_regex,
             "archive_filepath": archive_filepath,
         },
+        io_manager_key="gcs_avro_io",
+        partitions_def=FiscalYearPartitionsDefinition(
+            start_date=partition_start_date, start_month=7, fmt="%Y-%m-%d"
+        ),
+        op_tags=op_tags,
     )
     def _asset(context: OpExecutionContext, sftp_renlearn: ResourceParam[SSHResource]):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
