@@ -10,7 +10,7 @@ from dagster import (
 )
 from dagster_ssh import SSHResource
 
-from teamster.core.utils.variables import NOW
+from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, NOW
 
 
 def build_sftp_sensor(
@@ -59,6 +59,7 @@ def build_sftp_sensor(
                         RunRequest(
                             run_key=f"{asset_identifier}_{f.st_mtime}",
                             asset_selection=[asset.key],
+                            partition_key=CURRENT_FISCAL_YEAR.start.to_date_string(),
                         )
                     )
 
