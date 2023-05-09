@@ -54,15 +54,15 @@ def build_sftp_sensor(
 
             partition_keys = []
             for f in files:
-                context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-
                 match = re.match(
                     pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
                     string=f.filename,
                 )
 
-                if match and f.st_mtime > last_run and f.st_size > 0:
-                    partition_keys.append(match.group(1))
+                if match is not None:
+                    context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
+                    if f.st_mtime > last_run and f.st_size > 0:
+                        partition_keys.append(match.group(1))
 
             if partition_keys:
                 for pk in partition_keys:

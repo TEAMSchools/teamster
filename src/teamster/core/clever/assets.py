@@ -35,7 +35,7 @@ def build_sftp_asset(
         partitions_def=MultiPartitionsDefinition(
             {
                 "date": DynamicPartitionsDefinition(
-                    name=f"{code_location}_{source_system}_{asset_name}_date"
+                    name=f"{code_location}__{source_system}__{asset_name}_date"
                 ),
                 "type": StaticPartitionsDefinition(["staff", "students", "teachers"]),
             }
