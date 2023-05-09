@@ -1,8 +1,8 @@
 import json
-import re
 
 import pendulum
 from dagster import (
+    AssetsDefinition,
     AssetSelection,
     RunRequest,
     SensorEvaluationContext,
@@ -13,7 +13,10 @@ from dagster_ssh import SSHResource
 
 
 def build_sftp_sensor(
-    code_location, source_system, asset_defs, minimum_interval_seconds=None
+    code_location,
+    source_system,
+    asset_defs: list[AssetsDefinition],
+    minimum_interval_seconds=None,
 ):
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
@@ -49,16 +52,12 @@ def build_sftp_sensor(
             for f in files:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
 
-                match = re.match(
-                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                    string=f.filename,
-                )
-
-                if match is not None and f.st_mtime >= last_run and f.st_size > 0:
+                if f.st_mtime >= last_run and f.st_size > 0:
                     run_requests.append(
                         RunRequest(
                             run_key=f"{asset_identifier}_{f.st_mtime}",
                             asset_selection=[asset.key],
+                            partition_key=pendulum.from_timestamp(timestamp=f.st_mtime),
                         )
                     )
 

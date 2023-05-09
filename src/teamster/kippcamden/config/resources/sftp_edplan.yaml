@@ -1,0 +1,5 @@
+remote_host: secureftp.easyiep.com
+username:
+  env: KIPPCAMDEN_EDPLAN_SFTP_USERNAME
+password:
+  env: KIPPCAMDEN_EDPLAN_SFTP_PASSWORD
