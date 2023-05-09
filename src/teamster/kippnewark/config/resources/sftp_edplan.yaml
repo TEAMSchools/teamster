@@ -1,0 +1,5 @@
+remote_host: secureftp.easyiep.com
+username:
+  env: KIPPNEWARK_EDPLAN_SFTP_USERNAME
+password:
+  env: KIPPNEWARK_EDPLAN_SFTP_PASSWORD
