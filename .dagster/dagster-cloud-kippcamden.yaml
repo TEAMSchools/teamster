@@ -12,6 +12,8 @@ locations:
           - cpn-sftp-host
           - cpn-sftp-password
           - cpn-sftp-username
+          - kippcamden-edplan-sftp-password
+          - kippcamden-edplan-sftp-username
           - kippcamden-ps-db-password
           - kippcamden-ps-db-version
           - kippcamden-ps-ssh-host

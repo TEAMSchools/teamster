@@ -9,6 +9,8 @@ locations:
     container_context:
       k8s:
         env_secrets:
+          - kippnewark-edplan-sftp-password
+          - kippnewark-edplan-sftp-username
           - kippnewark-ps-db-password
           - kippnewark-ps-db-version
           - kippnewark-ps-ssh-host
