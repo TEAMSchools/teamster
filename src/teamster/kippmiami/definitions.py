@@ -15,8 +15,7 @@ from teamster.core.sqlalchemy.resources import mssql, oracle
 
 from . import CODE_LOCATION, datagun, dbt, deanslist, iready, powerschool, renlearn
 
-core_resource_config_dir = "src/teamster/core/config/resources"
-local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
+resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -35,33 +34,28 @@ defs = Definitions(
     sensors=[*powerschool.sensors, *renlearn.sensors, *iready.sensors],
     resources={
         "warehouse": mssql.configured(
-            config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
+            config_from_files([f"{resource_config_dir}/warehouse.yaml"])
         ),
         "bq": bigquery_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
+            config_from_files([f"{resource_config_dir}/gcs.yaml"])
         ),
         "gcs": gcs_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
+            config_from_files([f"{resource_config_dir}/gcs.yaml"])
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/sftp_pythonanywhere.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
         "sftp_renlearn": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_renlearn.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_renlearn.yaml"])
         ),
         "ps_ssh": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/ssh_powerschool.yaml"])
+            config_from_files([f"{resource_config_dir}/ssh_powerschool.yaml"])
         ),
         "ps_db": oracle.configured(
-            config_from_files(
-                [
-                    f"{core_resource_config_dir}/db_powerschool.yaml",
-                    f"{local_resource_config_dir}/db_powerschool.yaml",
-                ]
-            )
+            config_from_files([f"{resource_config_dir}/db_powerschool.yaml"])
         ),
         "io_manager": gcs_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io_pickle.yaml"])
+            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
         ),
         "dbt": dbt_cli_resource.configured(
             {
@@ -70,16 +64,16 @@ defs = Definitions(
             }
         ),
         "deanslist": deanslist_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/deanslist.yaml"])
+            config_from_files([f"{resource_config_dir}/deanslist.yaml"])
         ),
         "gcs_fp_io": gcs_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io_filepath.yaml"])
+            config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
         ),
         "gcs_avro_io": gcs_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io_avro.yaml"])
+            config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
         "sftp_iready": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_iready.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_iready.yaml"])
         ),
     },
 )
