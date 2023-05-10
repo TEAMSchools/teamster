@@ -19,7 +19,9 @@ from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_
 def compose_remote_file_regex(remote_file_regex, context: OpExecutionContext):
     try:
         partitions_def = context.asset_partitions_def_for_output()
-    except DagsterInvariantViolationError:
+        context.log.debug(partitions_def)
+    except DagsterInvariantViolationError as e:
+        context.log.error(e)
         return remote_file_regex
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
@@ -29,7 +31,9 @@ def compose_remote_file_regex(remote_file_regex, context: OpExecutionContext):
         )
     else:
         compiled_regex = re.compile(pattern=remote_file_regex)
+        context.log.debug(compiled_regex)
         pattern_key = list(compiled_regex.groupindex.keys())[0]
+        context.log.debug(pattern_key)
         return regex_pattern_replace(
             pattern=remote_file_regex, replacements={pattern_key: context.partition_key}
         )
@@ -72,12 +76,14 @@ def build_sftp_asset(
         remote_file_regex = compose_remote_file_regex(
             remote_file_regex=asset_metadata["remote_file_regex"], context=context
         )
+        context.log.debug(remote_file_regex)
 
         # list files remote filepath
         conn = ssh.get_connection()
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
         conn.close()
+        context.log.debug(ls)
 
         # find matching file for partition
         remote_filename = [
