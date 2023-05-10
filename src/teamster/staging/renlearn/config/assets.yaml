@@ -1,10 +1,16 @@
 assets:
   - asset_name: accelerated_reader
     remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
     remote_file_regex: 'KIPPNewJersey - Generic AR Extract v2\.csv'
+    partition_start_date: 2022-07-01
   - asset_name: star_reading
     remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
     remote_file_regex: 'KIPPNewJersey - Star Reading v2 RGP\.csv'
+    partition_start_date: 2022-07-01
   - asset_name: star_math
     remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
     remote_file_regex: 'KIPPNewJersey - Star Math v2 RGP\.csv'
+    partition_start_date: 2022-07-01
