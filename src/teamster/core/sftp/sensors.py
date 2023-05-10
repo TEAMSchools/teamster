@@ -6,7 +6,9 @@ from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
+    DynamicPartitionsDefinition,
     MultiPartitionKey,
+    MultiPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -18,11 +20,29 @@ from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, NOW
 
 
+def foo(partitions_def):
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        return MultiPartitionKey()
+        # MultiPartitionKey(
+        #     {
+        #         **match.groupdict(),
+        #         "date": FiscalYear(
+        #             datetime=pendulum.from_timestamp(timestamp=f.st_mtime), start_month=7
+        #         ).start.to_date_string(),
+        #     }
+        # ),
+    else:
+        pass
+        # partition_key=CURRENT_FISCAL_YEAR.start.to_date_string(),
+        # partition_key=pendulum.from_timestamp(timestamp=f.st_mtime).to_date_string(),
+
+
 def build_sftp_sensor(
     code_location,
     source_system,
     asset_defs: list[AssetsDefinition],
     minimum_interval_seconds=None,
+    partitions_def=DynamicPartitionsDefinition | MultiPartitionsDefinition,
 ):
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
@@ -64,14 +84,36 @@ def build_sftp_sensor(
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     if f.st_mtime > last_run and f.st_size > 0:
-                        pass
+                        partition_key = foo()
+                        updates.append(
+                            {"mtime": f.st_mtime, "partition_key": partition_key}
+                        )
 
+            partition_keys = set()
             if updates:
-                for run in updates:
-                    # run requests
-                    pass
+                for u in updates:
+                    partition_key = u["partition_key"]
 
-            # dynamic partitions
+                    run_requests.append(
+                        RunRequest(
+                            run_key=f"{asset_identifier}_{partition_key}_{u['mtime']}",
+                            asset_selection=[asset.key],
+                            partition_key=partition_key,
+                        )
+                    )
+
+                    partition_keys.add(partition_key)
+
+            if isinstance(partitions_def, DynamicPartitionsDefinition) or (
+                DynamicPartitionsDefinition
+                in partitions_def._get_primary_and_secondary_dimension()
+            ):
+                dynamic_partitions_requests.append(
+                    AddDynamicPartitionsRequest(
+                        partitions_def_name=f"{asset_identifier}_{partitions_def.name}",
+                        partition_keys=list(partition_key),
+                    )
+                )
 
             cursor[asset_identifier] = NOW.timestamp()
 
@@ -82,60 +124,3 @@ def build_sftp_sensor(
         )
 
     return _sensor
-
-
-# dynamic_partitions_requests.append(
-#     AddDynamicPartitionsRequest(
-#         partitions_def_name=f"{asset_identifier}_date",
-#         partition_keys=list(set([pk["date"] for pk in partition_keys])),
-#     )
-# )
-
-# run_requests.append(
-#     RunRequest(
-#         run_key=f"{asset_identifier}_{f.st_mtime}",
-#         asset_selection=[asset.key],
-#         partition_key=CURRENT_FISCAL_YEAR.start.to_date_string(),
-#     )
-# )
-
-# run_requests.append(
-#     RunRequest(
-#         run_key=f"{asset_identifier}_{f.st_mtime}",
-#         asset_selection=[asset.key],
-#         partition_key=pendulum.from_timestamp(
-#             timestamp=f.st_mtime
-#         ).to_date_string(),
-#     )
-# )
-
-# run_requests.append(
-#     RunRequest(
-#         run_key=f"{asset_identifier}_{pk}",
-#         asset_selection=[asset.key],
-#         partition_key=MultiPartitionKey(pk),
-#     )
-# )
-
-# run_requests.append(
-#     RunRequest(
-#         run_key=f"{asset_identifier}_{run['mtime']}",
-#         asset_selection=[asset.key],
-#         partition_key=run["partition_key"],
-#     )
-# )
-
-# updates.append(
-#     {
-#         "mtime": f.st_mtime,
-#         "partition_key": MultiPartitionKey(
-#             {
-#                 **match.groupdict(),
-#                 "date": FiscalYear(
-#                     datetime=pendulum.from_timestamp(timestamp=f.st_mtime),
-#                     start_month=7,
-#                 ).start.to_date_string(),
-#             }
-#         ),
-#     }
-# )
