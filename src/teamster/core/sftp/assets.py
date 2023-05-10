@@ -47,6 +47,7 @@ def build_sftp_asset(
     auto_materialize_policy=None,
     slugify_cols=False,
     op_tags={},
+    **kwargs,
 ):
     @asset(
         name=asset_name,
