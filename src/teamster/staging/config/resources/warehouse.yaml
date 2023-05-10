@@ -1,0 +1,13 @@
+dialect: mssql
+driver: pyodbc
+mssql_driver: ODBC Driver 18 for SQL Server
+username:
+  env: MSSQL_USERNAME
+password:
+  env: MSSQL_PASSWORD
+host:
+  env: MSSQL_HOST
+port:
+  env: MSSQL_PORT
+database:
+  env: MSSQL_DATABASE

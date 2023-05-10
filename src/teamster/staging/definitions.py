@@ -25,8 +25,7 @@ from . import (
     schoolmint,
 )
 
-core_resource_config_dir = "src/teamster/core/config/resources"
-local_resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
+resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -53,25 +52,25 @@ defs = Definitions(
     ],
     resources={
         "gcs": gcs_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
+            config_from_files([f"{resource_config_dir}/gcs.yaml"])
         ),
         "io_manager": gcs_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io_pickle.yaml"])
+            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
         ),
         "gcs_fp_io": gcs_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io_filepath.yaml"])
+            config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
         ),
         "gcs_avro_io": gcs_io_manager.configured(
-            config_from_files([f"{local_resource_config_dir}/io_avro.yaml"])
+            config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
         "gsheets": google_sheets.configured(
-            config_from_files([f"{local_resource_config_dir}/gsheets.yaml"])
+            config_from_files([f"{resource_config_dir}/gsheets.yaml"])
         ),
         "bq": bigquery_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/gcs.yaml"])
+            config_from_files([f"{resource_config_dir}/gcs.yaml"])
         ),
         "warehouse": mssql.configured(
-            config_from_files([f"{core_resource_config_dir}/warehouse.yaml"])
+            config_from_files([f"{resource_config_dir}/warehouse.yaml"])
         ),
         "dbt": dbt_cli_resource.configured(
             {
@@ -80,45 +79,40 @@ defs = Definitions(
             }
         ),
         "ps_db": oracle.configured(
-            config_from_files(
-                [
-                    f"{core_resource_config_dir}/db_powerschool.yaml",
-                    f"{local_resource_config_dir}/db_powerschool.yaml",
-                ]
-            )
+            config_from_files([f"{resource_config_dir}/db_powerschool.yaml"])
         ),
         "ps_ssh": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/ssh_powerschool.yaml"])
+            config_from_files([f"{resource_config_dir}/ssh_powerschool.yaml"])
         ),
         "deanslist": deanslist_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/deanslist.yaml"])
+            config_from_files([f"{resource_config_dir}/deanslist.yaml"])
         ),
         "schoolmint_grow": schoolmint_grow_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/schoolmint.yaml"])
+            config_from_files([f"{resource_config_dir}/schoolmint.yaml"])
         ),
         "alchemer": alchemer_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/alchemer.yaml"])
+            config_from_files([f"{resource_config_dir}/alchemer.yaml"])
         ),
         "sftp_achieve3k": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_achieve3k.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_achieve3k.yaml"])
         ),
         "sftp_clever": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_clever.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_clever.yaml"])
         ),
         "sftp_clever_reports": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_clever_reports.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_clever_reports.yaml"])
         ),
         "sftp_iready": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_iready.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_iready.yaml"])
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/sftp_pythonanywhere.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
         "sftp_renlearn": ssh_resource.configured(
-            config_from_files([f"{local_resource_config_dir}/sftp_renlearn.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_renlearn.yaml"])
         ),
         "sftp_staging": ssh_resource.configured(
-            config_from_files([f"{core_resource_config_dir}/sftp_pythonanywhere.yaml"])
+            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
     },
 )
