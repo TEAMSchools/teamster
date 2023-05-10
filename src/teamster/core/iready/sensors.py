@@ -55,7 +55,7 @@ def build_sftp_sensor(
 
             asset_metadata = asset.metadata_by_key[asset.key]
 
-            partition_keys = []
+            updates = []
             for f in files:
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
@@ -64,27 +64,30 @@ def build_sftp_sensor(
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     if f.st_mtime > last_run and f.st_size > 0:
-                        partition_keys.append(
-                            MultiPartitionKey(
-                                {
-                                    **match.groupdict(),
-                                    "date": FiscalYear(
-                                        datetime=pendulum.from_timestamp(
-                                            timestamp=f.st_mtime
-                                        ),
-                                        start_month=7,
-                                    ).start.to_date_string(),
-                                }
-                            )
+                        updates.append(
+                            {
+                                "mtime": f.st_mtime,
+                                "partition_key": MultiPartitionKey(
+                                    {
+                                        **match.groupdict(),
+                                        "date": FiscalYear(
+                                            datetime=pendulum.from_timestamp(
+                                                timestamp=f.st_mtime
+                                            ),
+                                            start_month=7,
+                                        ).start.to_date_string(),
+                                    }
+                                ),
+                            }
                         )
 
-            if partition_keys:
-                for pk in partition_keys:
+            if updates:
+                for run in updates:
                     run_requests.append(
                         RunRequest(
-                            run_key=f"{asset_identifier}_{pk}",
+                            run_key=f"{asset_identifier}_{run['mtime']}",
                             asset_selection=[asset.key],
-                            partition_key=pk,
+                            partition_key=run["partition_key"],
                         )
                     )
 
