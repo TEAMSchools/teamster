@@ -6,7 +6,7 @@ assets:
   - asset_name: users_csv
     query_config:
       type: file
-      value: src/teamster/kipptaf/config/assets/datagun/sql/egencia_users.sql
+      value: src/teamster/kipptaf/datagun/config/sql/egencia_users.sql
     file_config:
       stem: users_{today}
       suffix: csv
