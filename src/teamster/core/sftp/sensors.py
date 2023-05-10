@@ -39,6 +39,8 @@ def build_sftp_sensor(
     asset_defs: list[AssetsDefinition],
     minimum_interval_seconds=None,
     partitions_def=None,
+    partition_key_fn=None,
+    dynamic_partition_fn=None,
 ):
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
@@ -67,7 +69,7 @@ def build_sftp_sensor(
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     if f.st_mtime > last_run and f.st_size > 0:
-                        partition_key = foo()
+                        partition_key = partition_key_fn()
                         updates.append(
                             {"mtime": f.st_mtime, "partition_key": partition_key}
                         )
@@ -87,7 +89,7 @@ def build_sftp_sensor(
 
                     partition_keys.add(partition_key)
 
-            dynamic_partitions_requests = bar()
+            dynamic_partitions_requests = dynamic_partition_fn()
 
             cursor[asset_identifier] = NOW.timestamp()
 
