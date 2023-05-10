@@ -27,10 +27,19 @@ workspace:
     branchDeployments:
       ttlSeconds: 300 # 5 min
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run.
-  runK8sConfig:
-    podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: General-purpose
+  # runK8sConfig:
+  #   podSpecConfig:
+  #     nodeSelector:
+  #       cloud.google.com/compute-class: null
+  #     affinity:
+  #       nodeAffinity:
+  #         requiredDuringSchedulingIgnoredDuringExecution:
+  #           nodeSelectorTerms:
+  #             - matchExpressions:
+  #                 - key: cloud.google.com/compute-class
+  #                   operator: In
+  #                   values:
+  #                     - null
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig: # raw config for the pod's main container
