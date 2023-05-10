@@ -26,6 +26,8 @@ for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]:
         **a,
     )
 
+    sftp_assets.append(asset)
+
 __all__ = [
     *sftp_assets,
 ]
