@@ -41,7 +41,6 @@ def build_sftp_sensor(
                 ls[asset.key.to_python_identifier()] = {
                     "files": sftp_client.listdir_attr(
                         path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                        + "/Current_Year"
                     ),
                     "asset": asset,
                 }
