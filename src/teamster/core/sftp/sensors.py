@@ -1,14 +1,9 @@
 import json
 import re
 
-import pendulum
 from dagster import (
-    AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
-    DynamicPartitionsDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -16,25 +11,26 @@ from dagster import (
 )
 from dagster_ssh import SSHResource
 
-from teamster.core.utils.classes import FiscalYear
-from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, NOW
+from teamster.core.utils.variables import NOW
 
 
-def foo(partitions_def):
-    if isinstance(partitions_def, MultiPartitionsDefinition):
-        return MultiPartitionKey()
-        # MultiPartitionKey(
-        #     {
-        #         **match.groupdict(),
-        #         "date": FiscalYear(
-        #             datetime=pendulum.from_timestamp(timestamp=f.st_mtime), start_month=7
-        #         ).start.to_date_string(),
-        #     }
-        # ),
-    else:
-        pass
-        # partition_key=CURRENT_FISCAL_YEAR.start.to_date_string(),
-        # partition_key=pendulum.from_timestamp(timestamp=f.st_mtime).to_date_string(),
+def get_ls(context, source_system, asset_defs):
+    cursor: dict = json.loads(context.cursor or "{}")
+    ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+
+    ls = {}
+    conn = ssh.get_connection()
+    with conn.open_sftp() as sftp_client:
+        for asset in asset_defs:
+            ls[asset.key.to_python_identifier()] = {
+                "files": sftp_client.listdir_attr(
+                    path=asset.metadata_by_key[asset.key]["remote_filepath"]
+                ),
+                "asset": asset,
+            }
+    conn.close()
+
+    return cursor, ls
 
 
 def build_sftp_sensor(
@@ -42,7 +38,7 @@ def build_sftp_sensor(
     source_system,
     asset_defs: list[AssetsDefinition],
     minimum_interval_seconds=None,
-    partitions_def=DynamicPartitionsDefinition | MultiPartitionsDefinition,
+    partitions_def=None,
 ):
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
@@ -51,20 +47,7 @@ def build_sftp_sensor(
         required_resource_keys={f"sftp_{source_system}"},
     )
     def _sensor(context: SensorEvaluationContext):
-        cursor: dict = json.loads(context.cursor or "{}")
-        ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
-
-        ls = {}
-        conn = ssh.get_connection()
-        with conn.open_sftp() as sftp_client:
-            for asset in asset_defs:
-                ls[asset.key.to_python_identifier()] = {
-                    "files": sftp_client.listdir_attr(
-                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                    ),
-                    "asset": asset,
-                }
-        conn.close()
+        cursor, ls = get_ls(context=context)
 
         run_requests = []
         dynamic_partitions_requests = []
@@ -104,16 +87,7 @@ def build_sftp_sensor(
 
                     partition_keys.add(partition_key)
 
-            if isinstance(partitions_def, DynamicPartitionsDefinition) or (
-                DynamicPartitionsDefinition
-                in partitions_def._get_primary_and_secondary_dimension()
-            ):
-                dynamic_partitions_requests.append(
-                    AddDynamicPartitionsRequest(
-                        partitions_def_name=f"{asset_identifier}_{partitions_def.name}",
-                        partition_keys=list(partition_key),
-                    )
-                )
+            dynamic_partitions_requests = bar()
 
             cursor[asset_identifier] = NOW.timestamp()
 
