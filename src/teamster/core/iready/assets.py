@@ -1,4 +1,3 @@
-import pendulum
 from dagster import (
     AutoMaterializePolicy,
     MultiPartitionsDefinition,
@@ -12,9 +11,9 @@ from numpy import nan
 from pandas import read_csv
 
 from teamster.core.iready.schema import ASSET_FIELDS
-from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
-from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, LOCAL_TIME_ZONE
+from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
 def build_sftp_asset(
@@ -51,19 +50,8 @@ def build_sftp_asset(
     )
     def _asset(context: OpExecutionContext):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
-        date_partition = context.partition_key.keys_by_dimension["date"]
-
-        date_partition_fy = FiscalYear(
-            datetime=pendulum.from_format(string=date_partition, fmt="YYYY-MM-DD"),
-            start_month=7,
-        )
 
         remote_filepath = asset_metadata["remote_filepath"]
-        if date_partition_fy.fiscal_year == CURRENT_FISCAL_YEAR.fiscal_year:
-            remote_filepath += "/Current_Year"
-        else:
-            remote_filepath += f"/academic_year_{date_partition_fy.fiscal_year - 1}"
-
         remote_filename = regex_pattern_replace(
             pattern=asset_metadata["remote_file_regex"],
             replacements={

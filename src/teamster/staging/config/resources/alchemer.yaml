@@ -1,0 +1,5 @@
+api_version: v5
+api_token:
+  env: ALCHEMER_API_TOKEN
+api_token_secret:
+  env: ALCHEMER_API_TOKEN_SECRET
