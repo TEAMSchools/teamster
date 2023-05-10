@@ -10,6 +10,7 @@ from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.alchemer.resources import alchemer_resource
+from teamster.core.dagster.sensors import run_execution_interrupted_sensor
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import google_sheets
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
@@ -51,6 +52,7 @@ defs = Definitions(
         *renlearn.sensors,
         *achieve3k.sensors,
         *iready.sensors,
+        run_execution_interrupted_sensor,
     ],
     resources={
         "dbt": dbt_cli_resource.configured(
