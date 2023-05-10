@@ -18,6 +18,8 @@ locations:
           - kippnewark-ps-ssh-port
           - kippnewark-ps-ssh-remote-bind-host
           - kippnewark-ps-ssh-username
+          - kippnewark-titan-sftp-password
+          - kippnewark-titan-sftp-username
           - mssql-database
           - mssql-host
           - mssql-password
