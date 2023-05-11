@@ -1,21 +1,15 @@
-from dagster import (
-    RunFailureSensorContext,
-    RunRequest,
-    SensorResult,
-    run_failure_sensor,
-)
+from dagster import RunFailureSensorContext, run_failure_sensor
 from dagster._core.execution.plan.objects import ErrorSource
+from dagster_graphql import DagsterGraphQLClient
 
 
 @run_failure_sensor
 def run_execution_interrupted_sensor(context: RunFailureSensorContext):
-    run_requests = []
+    client = DagsterGraphQLClient(hostname="localhost", port_number=3000)
+
     for event in context.get_step_failure_events():
         if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
-            ...
-            run_requests.append(RunRequest(...))
-
-    return SensorResult(run_requests=run_requests)
+            client._execute(query="", variables={})
 
 
 # DagsterEvent(

@@ -8,7 +8,10 @@ from .variables import LOCAL_TIME_ZONE
 
 def regex_pattern_replace(pattern: str, replacements: dict):
     for group_name, replacement in replacements.items():
-        start_index = pattern.index(f"(?P<{group_name}>")
+        try:
+            start_index = pattern.index(f"(?P<{group_name}>")
+        except ValueError:
+            continue
 
         end_index = pattern.index(")", start_index)
 
