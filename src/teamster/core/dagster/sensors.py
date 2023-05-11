@@ -1,6 +1,39 @@
+import os
+
 from dagster import RunFailureSensorContext, run_failure_sensor
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster_graphql import DagsterGraphQLClient
+
+LAUNCH_RUN_REEXECUTION_QUERY = """
+mutation(
+  $repositoryLocationName: String!
+  $parentRunId: String!
+  $rootRunId: String!
+) {
+  launchRunReexecution(
+    executionParams: {
+      selector: {
+        repositoryName: "__repository__"
+        repositoryLocationName: $repositoryLocationName
+      }
+      # stepKeys: []
+      executionMetadata: {
+        rootRunId: $rootRunId
+        parentRunId: $parentRunId
+        tags: [{ key: "dagster/is_resume_retry", value: "true" }]
+      }
+    }
+    reexecutionParams: { parentRunId: $parentRunId, strategy: FROM_FAILURE }
+  ) {
+    __typename
+    ... on PythonError {
+      message
+      className
+      stack
+    }
+  }
+}
+"""
 
 
 @run_failure_sensor
@@ -9,7 +42,15 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
 
     for event in context.get_step_failure_events():
         if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
-            client._execute(query="", variables={})
+            result = client._execute(
+                query=LAUNCH_RUN_REEXECUTION_QUERY,
+                variables={
+                    "repositoryLocationName": os.getenv("DAGSTER_LOCATION_NAME"),
+                    "parentRunId": event.logging_tags["run_id"],
+                    "rootRunId": context.dagster_run.get_root_run_id(),
+                },
+            )
+            context.log.info(result)
 
 
 # DagsterEvent(
