@@ -37,10 +37,11 @@ def compose_remote_file_regex(remote_file_regex, context: OpExecutionContext):
     else:
         compiled_regex = re.compile(pattern=remote_file_regex)
         context.log.debug(compiled_regex)
-        pattern_key = list(compiled_regex.groupindex.keys())[0]
-        context.log.debug(pattern_key)
+        pattern_keys = compiled_regex.groupindex.keys()
+        context.log.debug(pattern_keys)
         return regex_pattern_replace(
-            pattern=remote_file_regex, replacements={pattern_key: context.partition_key}
+            pattern=remote_file_regex,
+            replacements={key: context.partition_key for key in pattern_keys},
         )
 
 
