@@ -1,7 +1,8 @@
-import os
+# import os
 
 from dagster import RunFailureSensorContext, run_failure_sensor
-from dagster._core.execution.plan.objects import ErrorSource
+
+# from dagster._core.execution.plan.objects import ErrorSource
 from dagster_graphql import DagsterGraphQLClient
 
 LAUNCH_RUN_REEXECUTION_QUERY = """
@@ -16,7 +17,6 @@ mutation(
         repositoryName: "__repository__"
         repositoryLocationName: $repositoryLocationName
       }
-      # stepKeys: []
       executionMetadata: {
         rootRunId: $rootRunId
         parentRunId: $parentRunId
@@ -38,19 +38,21 @@ mutation(
 
 @run_failure_sensor
 def run_execution_interrupted_sensor(context: RunFailureSensorContext):
-    client = DagsterGraphQLClient(hostname="kipptaf.dagster.cloud", port_number=3000)
+    client = DagsterGraphQLClient(hostname="kipptaf.dagster.cloud")
 
     for event in context.get_step_failure_events():
-        if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
-            result = client._execute(
-                query=LAUNCH_RUN_REEXECUTION_QUERY,
-                variables={
-                    "repositoryLocationName": os.getenv("DAGSTER_LOCATION_NAME"),
-                    "parentRunId": event.logging_tags["run_id"],
-                    "rootRunId": context.dagster_run.get_root_run_id(),
-                },
-            )
-            context.log.info(result)
+        run_status = client.get_run_status(event.logging_tags["run_id"])
+
+        context.log.info(run_status)
+    #     if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
+    #         result = client._execute(
+    #             query=LAUNCH_RUN_REEXECUTION_QUERY,
+    #             variables={
+    #                 "repositoryLocationName": os.getenv("DAGSTER_LOCATION_NAME"),
+    #                 "parentRunId": event.logging_tags["run_id"],
+    #                 "rootRunId": context.dagster_run.get_root_run_id(),
+    #             },
+    #         )
 
 
 # DagsterEvent(
