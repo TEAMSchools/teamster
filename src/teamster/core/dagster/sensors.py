@@ -38,7 +38,7 @@ mutation(
 
 @run_failure_sensor
 def run_execution_interrupted_sensor(context: RunFailureSensorContext):
-    client = DagsterGraphQLClient(hostname="kipptaf.dagster.cloud")
+    client = DagsterGraphQLClient(hostname="kipptaf.dagster.cloud", port_number=3000)
 
     for event in context.get_step_failure_events():
         run_status = client.get_run_status(event.logging_tags["run_id"])
