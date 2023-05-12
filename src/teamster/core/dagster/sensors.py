@@ -1,5 +1,7 @@
+import json
 import os
 
+import pendulum
 from dagster import RunFailureSensorContext, run_failure_sensor
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster_graphql import DagsterGraphQLClient
@@ -23,6 +25,13 @@ mutation($parentRunId: String!) {
 
 @run_failure_sensor
 def run_execution_interrupted_sensor(context: RunFailureSensorContext):
+    cursor: dict = json.loads(context.cursor or "{}")
+
+    update_timestamp = pendulum.from_format(
+        string=(cursor.get("update_timestamp") or "1970-01-01T00:00:00.000000+00:000"),
+        fmt="YYYY-MM-DD[T]HH:mm:ss.SSSSSSZ",
+    )
+
     dagster_cloud_org_name = os.getenv("DAGSTER_CLOUD_AGENT_TOKEN").split(":")[1]
     dagster_cloud_hostname = f"https://{dagster_cloud_org_name}.dagster.cloud/prod"
 
@@ -36,14 +45,18 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
 
     for event in context.get_step_failure_events():
         if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
-            context.log.info(event.step_key)
+            context.log.info(event)
 
-            result = client._execute(
-                query=LAUNCH_RUN_REEXECUTION_QUERY,
-                variables={"parentRunId": event.logging_tags["run_id"]},
-            )
+            run_id = event.logging_tags["run_id"]
 
-            context.log.info(result)
+            run_record = context.instance.get_run_record_by_id(run_id)
+            context.log.debug(run_record)
+
+            # result = client._execute(
+            #     query=LAUNCH_RUN_REEXECUTION_QUERY, variables={"parentRunId": run_id}
+            # )
+
+            # context.log.info(result)
 
 
 # DagsterEvent(
