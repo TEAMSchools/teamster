@@ -42,10 +42,12 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         ),
     )
 
-    context.log.debug(context.get_step_failure_events())
-    context.log.debug(context.failure_event)
+    step_failure_events = context.get_step_failure_events()
 
-    for event in context.get_step_failure_events():
+    context.log.debug(context.dagster_event)
+    context.log.debug(context.dagster_run)
+
+    for event in step_failure_events:
         run_id = event.logging_tags["run_id"]
 
         run_record = context.instance.get_run_record_by_id(run_id)
@@ -73,54 +75,30 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
 
 
 # DagsterEvent(
-#     event_type_value='STEP_FAILURE',
-#     job_name='__ASSET_JOB_2',
-#     step_handle=StepHandle(
-#         node_handle=NodeHandle(
-#             name='kipptaf__dbt__alchemer__src_alchemer__survey_response',
-#             parent=None
-#         ),
-#         key='kipptaf__dbt__alchemer__src_alchemer__survey_response'
-#     ),
-#     node_handle=NodeHandle(
-#         name='kipptaf__dbt__alchemer__src_alchemer__survey_response',
-#         parent=None
-#     ),
-#     step_kind_value='COMPUTE',
-#     logging_tags={
-#         'job_name': '__ASSET_JOB_2',
-#         'op_name': 'kipptaf__dbt__alchemer__src_alchemer__survey_response',
-#         'resource_fn_name': 'None',
-#         'resource_name': 'None',
-#         'run_id': '35b4f2b7-77fe-4a26-9087-9818f2f237a1',
-#         'step_key': 'kipptaf__dbt__alchemer__src_alchemer__survey_response'
-#     },
-#     event_specific_data=StepFailureData(
+#     event_type_value="PIPELINE_FAILURE",
+#     job_name="__ASSET_JOB_31",
+#     step_handle=None,
+#     node_handle=None,
+#     step_kind_value=None,
+#     logging_tags={},
+#     event_specific_data=JobFailureData(
 #         error=SerializableErrorInfo(
-#             message='dagster._core.errors.DagsterExecutionInterruptedError\n',
+#             message="dagster._core.errors.DagsterExecutionInterruptedError: Execut...,
 #             stack=[
 #                 '  File "/usr/local/lib/python3.10/site-packages/dagster/_core/...',
 #                 '  File "/usr/local/lib/python3.10/site-packages/dagster/_core/...',
 #                 '  File "/usr/local/lib/python3.10/site-packages/dagster/_core/...',
-#                 '  File "/usr/local/lib/python3.10/site-packages/dagster/_core/...',
-#                 '  File "/usr/local/lib/python3.10/contextlib.py", line 135, in ...',
-#                 '  File "/usr/local/lib/python3.10/site-packages/dagster/_core/...',
-#                 '  File "/usr/local/lib/python3.10/contextlib.py", line 135, in ...',
-#                 '  File "/usr/local/lib/python3.10/site-packages/dagster/_core/er...',
-#                 '  File "/usr/local/lib/python3.10/contextlib.py", line 135, in ...',
-#                 '  File "/usr/local/lib/python3.10/site-packages/dagster/_utils/...'
 #             ],
-#             cls_name='DagsterExecutionInterruptedError',
+#             cls_name="DagsterExecutionInterruptedError",
 #             cause=None,
-#             context=None
-#         ),
-#         user_failure_data=None,
-#         error_source=<ErrorSource.INTERRUPT: 'INTERRUPT'>
+#             context=None,
+#         )
 #     ),
-#     message='Execution of step "kipptaf__dbt__alchemer__src_alchemer__survey_resp...',
+#     message='Execution of run for "__ASSET_JOB_31" failed. Execution was interrup...',
 #     pid=1,
-#     step_key='kipptaf__dbt__alchemer__src_alchemer__survey_response'
+#     step_key=None,
 # )
+
 
 # RunRecord(
 #     storage_id=15819666,
