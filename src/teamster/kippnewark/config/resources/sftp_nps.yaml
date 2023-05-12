@@ -1,6 +1,0 @@
-remote_host:
-  env: NPS_SFTP_HOST
-username:
-  env: NPS_SFTP_USERNAME
-password:
-  env: NPS_SFTP_PASSWORD
