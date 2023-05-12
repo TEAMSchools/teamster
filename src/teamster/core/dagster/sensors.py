@@ -43,7 +43,11 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
     )
 
     for event in context.get_step_failure_events():
-        if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
+        if event.event_specific_data.error_source in [
+            ErrorSource.FRAMEWORK_ERROR,
+            ErrorSource.INTERRUPT,
+            ErrorSource.UNEXPECTED_ERROR,
+        ]:
             run_id = event.logging_tags["run_id"]
 
             run_record = context.instance.get_run_record_by_id(run_id)
