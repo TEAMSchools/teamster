@@ -44,8 +44,24 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
 
     step_failure_events = context.get_step_failure_events()
 
-    context.log.debug(context.dagster_event)
-    context.log.debug(context.dagster_run)
+    if not step_failure_events:
+        run_id = context.dagster_run.run_id
+
+        run_record = context.instance.get_run_record_by_id(run_id)
+        context.log.info(
+            (
+                f"{run_id} {context.failure_event.event_type_value}\n"
+                f"{context.dagster_run.asset_key.to_user_string()}: "
+                f"{context.dagster_run.job_name}\n{run_record.end_time}"
+            )
+        )
+
+        if context.failure_event.event_type_value == "PIPELINE_FAILURE":
+            result = client._execute(
+                query=LAUNCH_RUN_REEXECUTION_QUERY, variables={"parentRunId": run_id}
+            )
+
+            context.log.info(result)
 
     for event in step_failure_events:
         run_id = event.logging_tags["run_id"]
@@ -53,10 +69,9 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         run_record = context.instance.get_run_record_by_id(run_id)
         context.log.info(
             (
-                f"{event.event_specific_data.error_source} "
+                f"{event.event_specific_data.error_source}\n"
                 f"[{run_id}] {event.asset_key.to_user_string()}: "
-                f"{event.job_name}/{event.step_key} "
-                f"{run_record.end_time}"
+                f"{event.job_name}/{event.step_key}\n{run_record.end_time}"
             )
         )
 
@@ -65,14 +80,101 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
             ErrorSource.INTERRUPT,
             ErrorSource.UNEXPECTED_ERROR,
         ]:
-            if run_record.end_time > last_tick.timestamp():
-                result = client._execute(
-                    query=LAUNCH_RUN_REEXECUTION_QUERY,
-                    variables={"parentRunId": run_id},
-                )
+            result = client._execute(
+                query=LAUNCH_RUN_REEXECUTION_QUERY, variables={"parentRunId": run_id}
+            )
 
-                context.log.info(result)
+            context.log.info(result)
 
+
+# DagsterRun(
+#     job_name="__ASSET_JOB_31",
+#     run_id="ca92a124-27d1-4371-96ad-35430d5689be",
+#     run_config={},
+#     asset_selection=frozenset({AssetKey(["kippnewark", "powerschool", "schools"])}),
+#     solid_selection=None,
+#     solids_to_execute=None,
+#     step_keys_to_execute=None,
+#     status="<DagsterRunStatus.FAILURE: 'FAILURE'>",
+#     tags={
+#         ".dagster/agent_type": "HYBRID",
+#         "dagster/agent_id": "949fbff1-dbf6-458a-936c-d7425e450d6a",
+#         "dagster/git_commit_hash": "3a75a3a904b343326ab408c99f3a5031317a3a46",
+#         "dagster/git_project_url": "https://github.com/TEAMSchools/teamster/tree/...",
+#         "dagster/image": "us-central1-docker.pkg.dev/teamster-332318/...",
+#         "dagster/parent_run_id": "bb931e87-58cb-4f98-8f1d-3c60f3e25286",
+#         "dagster/partition": "2023-05-11T21:30:00-04:00",
+#         "dagster/partition_set": "__ASSET_JOB_31_partition_set",
+#         "dagster/root_run_id": "f303dc7f-ed37-4cef-ad57-a4a8ffde297c",
+#         "user": "cbini@apps.teamschools.org",
+#     },
+#     root_run_id="f303dc7f-ed37-4cef-ad57-a4a8ffde297c",
+#     parent_run_id="bb931e87-58cb-4f98-8f1d-3c60f3e25286",
+#     job_snapshot_id="b72fae584948b5c1a668ecc77e8b58d181903869",
+#     execution_plan_snapshot_id="28e02e4630d1a788169a8fb32fcc26bb50343fc6",
+#     external_job_origin=ExternalJobOrigin(
+#         external_repository_origin=ExternalRepositoryOrigin(
+#             code_location_origin=RegisteredCodeLocationOrigin(
+#                 location_name="kippnewark"
+#             ),
+#             repository_name="__repository__",
+#         ),
+#         job_name="__ASSET_JOB_31",
+#     ),
+#     job_code_origin=JobPythonOrigin(
+#         job_name="__ASSET_JOB_31",
+#         repository_origin=RepositoryPythonOrigin(
+#             executable_path="/usr/local/bin/python",
+#             code_pointer=ModuleCodePointer(
+#                 module="teamster.kippnewark.definitions",
+#                 fn_name="defs",
+#                 working_directory="/root/app",
+#             ),
+#             container_image="us-central1-docker.pkg.dev/teamster-332318/...",
+#             entry_point=["dagster"],
+#             container_context={
+#                 "env_vars": [
+#                     "DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=0",
+#                     "DAGSTER_CLOUD_DEPLOYMENT_NAME=prod",
+#                     "DAGSTER_CLOUD_LOCATION_NAME=kippnewark",
+#                 ],
+#                 "k8s": {
+#                     "env_secrets": [
+#                         "dagster-cloud-agent-token",
+#                         "dagster-cloud-user-token",
+#                         "kippnewark-edplan-sftp-password",
+#                         "kippnewark-edplan-sftp-username",
+#                         "kippnewark-ps-db-password",
+#                         "kippnewark-ps-ssh-password",
+#                         "kippnewark-ps-ssh-port",
+#                         "kippnewark-ps-ssh-remote-bind-host",
+#                         "kippnewark-ps-ssh-username",
+#                         "kippnewark-titan-sftp-password",
+#                         "kippnewark-titan-sftp-username",
+#                         "mssql-password",
+#                         "mssql-username",
+#                         "pythonanywhere-sftp-password",
+#                         "pythonanywhere-sftp-username",
+#                     ],
+#                     "volume_mounts": [
+#                         {
+#                             "mountPath": "/etc/secret-volume",
+#                             "name": "secret-volume",
+#                             "readOnly": True,
+#                         }
+#                     ],
+#                     "volumes": [
+#                         {
+#                             "name": "secret-volume",
+#                             "secret": {"secretName": "secret-files"},
+#                         }
+#                     ],
+#                 },
+#             },
+#         ),
+#     ),
+#     has_repository_load_data=False,
+# )
 
 # DagsterEvent(
 #     event_type_value="PIPELINE_FAILURE",
