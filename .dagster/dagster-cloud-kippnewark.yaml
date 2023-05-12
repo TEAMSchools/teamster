@@ -22,8 +22,6 @@ locations:
           - kippnewark-titan-sftp-username
           - mssql-password
           - mssql-username
-          - nps-sftp-password
-          - nps-sftp-username
           - pythonanywhere-sftp-password
           - pythonanywhere-sftp-username
         volumes:
