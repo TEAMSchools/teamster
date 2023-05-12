@@ -637,7 +637,7 @@ dependencies = [
 
 [[package]]
 name = "grpclib"
-version = "0.4.3"
+version = "0.4.4"
 requires_python = ">=3.7"
 summary = "Pure-Python gRPC implementation for asyncio"
 dependencies = [
@@ -2008,8 +2008,8 @@ content_hash = "sha256:b13e0cd8069e028f7d74825c3e6a6e24874616b6aa92d8ca9be377399
     {url = "https://files.pythonhosted.org/packages/d4/5e/4611065fdb878d9d51f5d0a896c33b6ca5a30f098322be9e74505f46beb6/grpcio-status-1.47.5.tar.gz", hash = "sha256:671bb4c0819697a699c12a8785a78d6847eafb6a83b2437bbae13989b04e5c25"},
     {url = "https://files.pythonhosted.org/packages/f2/1f/31094ff48ae8bd0a1350860e4fcfa4587b2c6cf3258438b864dff79c2510/grpcio_status-1.47.5-py3-none-any.whl", hash = "sha256:24549a84fa37ca5de1e0f6be96b4c2c3623b1e2b7359aa16b3de5aa0563795f1"},
 ]
-"grpclib 0.4.3" = [
-    {url = "https://files.pythonhosted.org/packages/1b/50/c7191f1d21a0917eda0a9be82118d79492c379e34739becefbbb29f5bbee/grpclib-0.4.3.tar.gz", hash = "sha256:eadf2002fc5a25158b707c0338a6c0b96dd7fbdc6df66f7e515e7f041d56a940"},
+"grpclib 0.4.4" = [
+    {url = "https://files.pythonhosted.org/packages/b5/06/7f1334b0dc0000f00d5500ed3d0f745d75df2f13906bfdfbeee5381f70f4/grpclib-0.4.4.tar.gz", hash = "sha256:80c7f5179b8d05d1192a092db1b60b4934a0d52e9919358de75c912c269485e5"},
 ]
 "gspread 5.9.0" = [
     {url = "https://files.pythonhosted.org/packages/c4/ad/d76417ba329ab5b10ac26082ccb0e52a90bdef5135ab6d88c79ffa4e1644/gspread-5.9.0.tar.gz", hash = "sha256:34b97834bbefaccf72497702bae26d12f96d0685e49a418afe6a92a9bbcb9c9c"},

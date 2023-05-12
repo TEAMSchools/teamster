@@ -1,9 +1,9 @@
-# import os
+import os
 
 from dagster import RunFailureSensorContext, run_failure_sensor
-
-# from dagster._core.execution.plan.objects import ErrorSource
+from dagster._core.execution.plan.objects import ErrorSource
 from dagster_graphql import DagsterGraphQLClient
+from gql.transport.requests import RequestsHTTPTransport
 
 LAUNCH_RUN_REEXECUTION_QUERY = """
 mutation(
@@ -38,21 +38,29 @@ mutation(
 
 @run_failure_sensor
 def run_execution_interrupted_sensor(context: RunFailureSensorContext):
-    client = DagsterGraphQLClient(hostname="kipptaf.dagster.cloud", port_number=3000)
+    dagster_cloud_org_name = os.getenv("DAGSTER_CLOUD_AGENT_TOKEN").split(":")[1]
+    dagster_cloud_hostname = f"https://{dagster_cloud_org_name}.dagster.cloud/prod"
+
+    client = DagsterGraphQLClient(
+        hostname=dagster_cloud_hostname,
+        transport=RequestsHTTPTransport(
+            url=f"{dagster_cloud_hostname}/graphql",
+            headers={"Dagster-Cloud-Api-Token": os.getenv("DAGSTER_CLOUD_USER_TOKEN")},
+        ),
+    )
 
     for event in context.get_step_failure_events():
-        run_status = client.get_run_status(event.logging_tags["run_id"])
+        if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
+            result = client._execute(
+                query=LAUNCH_RUN_REEXECUTION_QUERY,
+                variables={
+                    "repositoryLocationName": os.getenv("DAGSTER_LOCATION_NAME"),
+                    "parentRunId": event.logging_tags["run_id"],
+                    "rootRunId": context.dagster_run.get_root_run_id(),
+                },
+            )
 
-        context.log.info(run_status)
-    #     if event.event_specific_data.error_source == ErrorSource.INTERRUPT:
-    #         result = client._execute(
-    #             query=LAUNCH_RUN_REEXECUTION_QUERY,
-    #             variables={
-    #                 "repositoryLocationName": os.getenv("DAGSTER_LOCATION_NAME"),
-    #                 "parentRunId": event.logging_tags["run_id"],
-    #                 "rootRunId": context.dagster_run.get_root_run_id(),
-    #             },
-    #         )
+            context.log.info(result)
 
 
 # DagsterEvent(
