@@ -25,15 +25,14 @@ mutation($parentRunId: String!) {
 
 @run_failure_sensor
 def run_execution_interrupted_sensor(context: RunFailureSensorContext):
-    cursor: dict = json.loads(context.cursor or "{}")
+    # sensor context doesn't have cursor: hardcode to sensor tick interval
+    now = pendulum.now().subtract(seconds=30)
 
-    update_timestamp = pendulum.from_format(
-        string=(cursor.get("update_timestamp") or "1970-01-01T00:00:00.000000+00:000"),
-        fmt="YYYY-MM-DD[T]HH:mm:ss.SSSSSSZ",
+    dagster_cloud_hostname = (
+        "https://"
+        + os.getenv("DAGSTER_CLOUD_AGENT_TOKEN").split(":")[1]
+        + ".dagster.cloud/prod"
     )
-
-    dagster_cloud_org_name = os.getenv("DAGSTER_CLOUD_AGENT_TOKEN").split(":")[1]
-    dagster_cloud_hostname = f"https://{dagster_cloud_org_name}.dagster.cloud/prod"
 
     client = DagsterGraphQLClient(
         hostname=dagster_cloud_hostname,
