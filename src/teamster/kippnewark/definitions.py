@@ -69,9 +69,6 @@ defs = Definitions(
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
-        "sftp_nps": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_nps.yaml"])
-        ),
         "sftp_edplan": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_edplan.yaml"])
         ),
