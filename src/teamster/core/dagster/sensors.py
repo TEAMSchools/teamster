@@ -56,7 +56,10 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
                 variables={
                     "repositoryLocationName": os.getenv("DAGSTER_LOCATION_NAME"),
                     "parentRunId": event.logging_tags["run_id"],
-                    "rootRunId": context.dagster_run.get_root_run_id(),
+                    "rootRunId": (
+                        context.dagster_run.get_root_run_id()
+                        or event.logging_tags["run_id"]
+                    ),
                 },
             )
 
