@@ -8,5 +8,4 @@ prefetchrows: 100000
 arraysize: 100000
 password:
   env: KIPPCAMDEN_PS_DB_PASSWORD
-version:
-  env: KIPPCAMDEN_PS_DB_VERSION
+version: 19.0.0.0.0

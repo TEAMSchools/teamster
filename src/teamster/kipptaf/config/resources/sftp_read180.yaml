@@ -1,5 +1,4 @@
-remote_host:
-  env: READ180_SFTP_HOST
+remote_host: imports.education.scholastic.com
 username:
   env: READ180_SFTP_USERNAME
 password:

@@ -1,5 +1,4 @@
-remote_host:
-  env: BLISSBOOK_SFTP_HOST
+remote_host: sftp.blissbook.com
 username:
   env: BLISSBOOK_SFTP_USERNAME
 password:

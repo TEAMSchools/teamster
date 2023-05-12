@@ -1,5 +1,4 @@
-remote_host:
-  env: CLEVER_REPORTS_SFTP_HOST
+remote_host: reports-sftp.clever.com
 username:
   env: CLEVER_REPORTS_SFTP_USERNAME
 password:

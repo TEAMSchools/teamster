@@ -1,5 +1,4 @@
-remote_host:
-  env: KIPPMIAMI_PS_SSH_HOST
+remote_host: ps.kippmiami.org
 remote_port:
   env: KIPPMIAMI_PS_SSH_PORT
 username:

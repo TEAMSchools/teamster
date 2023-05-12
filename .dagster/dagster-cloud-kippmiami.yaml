@@ -9,27 +9,21 @@ locations:
     container_context:
       k8s:
         env_secrets:
-          - iready-sftp-host
+          - dagster-cloud-agent-token
+          - dagster-cloud-user-token
           - iready-sftp-password
           - iready-sftp-username
           - kippmiami-ps-db-password
-          - kippmiami-ps-db-version
-          - kippmiami-ps-ssh-host
           - kippmiami-ps-ssh-password
           - kippmiami-ps-ssh-port
           - kippmiami-ps-ssh-remote-bind-host
           - kippmiami-ps-ssh-username
           - kippmiami-renlearn-sftp-password
           - kippmiami-renlearn-sftp-username
-          - mssql-database
-          - mssql-host
           - mssql-password
-          - mssql-port
           - mssql-username
-          - pythonanywhere-sftp-host
           - pythonanywhere-sftp-password
           - pythonanywhere-sftp-username
-          - renlearn-sftp-host
         volumes:
           - name: secret-volume
             secret:

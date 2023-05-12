@@ -9,26 +9,21 @@ locations:
     container_context:
       k8s:
         env_secrets:
+          - dagster-cloud-agent-token
+          - dagster-cloud-user-token
           - kippnewark-edplan-sftp-password
           - kippnewark-edplan-sftp-username
           - kippnewark-ps-db-password
-          - kippnewark-ps-db-version
-          - kippnewark-ps-ssh-host
           - kippnewark-ps-ssh-password
           - kippnewark-ps-ssh-port
           - kippnewark-ps-ssh-remote-bind-host
           - kippnewark-ps-ssh-username
           - kippnewark-titan-sftp-password
           - kippnewark-titan-sftp-username
-          - mssql-database
-          - mssql-host
           - mssql-password
-          - mssql-port
           - mssql-username
-          - nps-sftp-host
           - nps-sftp-password
           - nps-sftp-username
-          - pythonanywhere-sftp-host
           - pythonanywhere-sftp-password
           - pythonanywhere-sftp-username
         volumes:

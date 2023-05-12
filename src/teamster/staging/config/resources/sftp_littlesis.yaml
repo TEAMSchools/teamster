@@ -1,5 +1,4 @@
-remote_host:
-  env: LITTLESIS_SFTP_HOST
+remote_host: upload.littlesis.app
 username:
   env: LITTLESIS_SFTP_USERNAME
 password:

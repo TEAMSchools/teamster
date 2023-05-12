@@ -1,5 +1,4 @@
-remote_host:
-  env: RAZKIDS_SFTP_HOST
+remote_host: sftp.learninga-z.com
 username:
   env: RAZKIDS_SFTP_USERNAME
 password:

@@ -1,5 +1,4 @@
-remote_host:
-  env: KIPPCAMDEN_PS_SSH_HOST
+remote_host: pskcna.kippnj.org
 remote_port:
   env: KIPPCAMDEN_PS_SSH_PORT
 username:
