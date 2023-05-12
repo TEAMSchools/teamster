@@ -51,7 +51,7 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         context.log.info(
             (
                 f"{run_id} {context.failure_event.event_type_value}\n"
-                f"{context.dagster_run.asset_key.to_user_string()}: "
+                f"{context.dagster_run.asset_selection}\n"
                 f"{context.dagster_run.job_name}\n{run_record.end_time}"
             )
         )
