@@ -1,5 +1,4 @@
-remote_host:
-  env: COUPA_SFTP_HOST
+remote_host: fileshare.coupahost.com
 username:
   env: COUPA_SFTP_USERNAME
 password:

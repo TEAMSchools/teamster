@@ -8,5 +8,4 @@ prefetchrows: 100000
 arraysize: 100000
 password:
   env: STAGING_PS_DB_PASSWORD
-version:
-  env: STAGING_PS_DB_VERSION
+version: 19.0.0.0.0

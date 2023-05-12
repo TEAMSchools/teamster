@@ -9,53 +9,37 @@ locations:
     container_context:
       k8s:
         env_secrets:
-          - achieve3k-sftp-host
           - achieve3k-sftp-password
           - achieve3k-sftp-username
-          - blissbook-sftp-host
           - blissbook-sftp-password
           - blissbook-sftp-username
-          - clever-sftp-host
           - clever-sftp-password
           - clever-sftp-username
-          - clever-reports-sftp-host
           - clever-reports-sftp-password
           - clever-reports-sftp-username
-          - coupa-sftp-host
           - coupa-sftp-password
           - coupa-sftp-username
-          - deanslist-sftp-host
+          - dagster-cloud-agent-token
+          - dagster-cloud-user-token
           - deanslist-sftp-password
           - deanslist-sftp-username
-          - egencia-sftp-host
           - egencia-sftp-username
-          - illuminate-sftp-host
           - illuminate-sftp-password
           - illuminate-sftp-username
-          - iready-sftp-host
           - iready-sftp-password
           - iready-sftp-username
-          - ktaf-sftp-host
           - ktaf-sftp-password
           - ktaf-sftp-username
-          - littlesis-sftp-host
           - littlesis-sftp-password
           - littlesis-sftp-username
-          - mssql-database
-          - mssql-host
           - mssql-password
-          - mssql-port
           - mssql-username
-          - pythonanywhere-sftp-host
           - pythonanywhere-sftp-password
           - pythonanywhere-sftp-username
-          - renlearn-sftp-host
           - kippnj-renlearn-sftp-password
           - kippnj-renlearn-sftp-username
-          - razkids-sftp-host
           - razkids-sftp-password
           - razkids-sftp-username
-          - read180-sftp-host
           - read180-sftp-password
           - read180-sftp-username
           - schoolmint-grow-client-id

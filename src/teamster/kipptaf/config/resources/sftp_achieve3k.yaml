@@ -1,5 +1,4 @@
-remote_host:
-  env: ACHIEVE3K_SFTP_HOST
+remote_host: xfer.achieve3000.com
 username:
   env: ACHIEVE3K_SFTP_USERNAME
 password:

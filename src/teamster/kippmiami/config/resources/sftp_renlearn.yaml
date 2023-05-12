@@ -1,5 +1,4 @@
-remote_host:
-  env: RENLEARN_SFTP_HOST
+remote_host: sftp.renaissance.com
 username:
   env: KIPPMIAMI_RENLEARN_SFTP_USERNAME
 password:

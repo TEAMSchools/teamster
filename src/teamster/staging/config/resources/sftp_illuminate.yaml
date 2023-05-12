@@ -1,5 +1,4 @@
-remote_host:
-  env: ILLUMINATE_SFTP_HOST
+remote_host: sftp.illuminateed.com
 username:
   env: ILLUMINATE_SFTP_USERNAME
 password:

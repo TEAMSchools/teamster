@@ -5,9 +5,6 @@ username:
   env: MSSQL_USERNAME
 password:
   env: MSSQL_PASSWORD
-host:
-  env: MSSQL_HOST
-port:
-  env: MSSQL_PORT
-database:
-  env: MSSQL_DATABASE
+host: winsql05.kippnj.org
+port: 1433
+database: gabby
