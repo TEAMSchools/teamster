@@ -42,23 +42,27 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         ),
     )
 
+    context.log.debug(context.get_step_failure_events())
+    context.log.debug(context.failure_event)
+
     for event in context.get_step_failure_events():
+        run_id = event.logging_tags["run_id"]
+
+        run_record = context.instance.get_run_record_by_id(run_id)
+        context.log.info(
+            (
+                f"{event.event_specific_data.error_source} "
+                f"[{run_id}] {event.asset_key.to_user_string()}: "
+                f"{event.job_name}/{event.step_key} "
+                f"{run_record.end_time}"
+            )
+        )
+
         if event.event_specific_data.error_source in [
             ErrorSource.FRAMEWORK_ERROR,
             ErrorSource.INTERRUPT,
             ErrorSource.UNEXPECTED_ERROR,
         ]:
-            run_id = event.logging_tags["run_id"]
-
-            run_record = context.instance.get_run_record_by_id(run_id)
-            context.log.info(
-                (
-                    f"[{run_id}] {event.asset_key.to_user_string()}: "
-                    f"{event.job_name}/{event.step_key} "
-                    f"{run_record.end_time}"
-                )
-            )
-
             if run_record.end_time > last_tick.timestamp():
                 result = client._execute(
                     query=LAUNCH_RUN_REEXECUTION_QUERY,
