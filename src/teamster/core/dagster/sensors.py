@@ -48,6 +48,9 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         run_id = context.dagster_run.run_id
 
         run_record = context.instance.get_run_record_by_id(run_id)
+        context.log.debug(context.dagster_run)
+        context.log.debug(context.failure_event)
+        context.log.debug(run_record)
         context.log.info(
             "\n".join(
                 [
