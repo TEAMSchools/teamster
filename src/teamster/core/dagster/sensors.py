@@ -52,7 +52,7 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
             "\n".join(
                 [
                     run_id,
-                    run_record.end_time,
+                    str(run_record.end_time),
                     context.failure_event.event_type_value,
                     context.failure_event.message,
                     context.dagster_run.asset_selection,
@@ -76,7 +76,7 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
             "\n".join(
                 [
                     run_id,
-                    run_record.end_time,
+                    str(run_record.end_time),
                     event.event_specific_data.error_source,
                     event.message,
                     event.asset_key,
