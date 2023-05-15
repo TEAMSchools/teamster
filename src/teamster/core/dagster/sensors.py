@@ -49,10 +49,15 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
 
         run_record = context.instance.get_run_record_by_id(run_id)
         context.log.info(
-            (
-                f"{run_id} {context.failure_event.event_type_value}\n"
-                f"{context.dagster_run.asset_selection}\n"
-                f"{context.dagster_run.job_name}\n{run_record.end_time}"
+            "\n".join(
+                [
+                    run_id,
+                    run_record.end_time,
+                    context.failure_event.event_type_value,
+                    context.failure_event.message,
+                    context.dagster_run.asset_selection,
+                    context.dagster_run.job_name,
+                ]
             )
         )
 
@@ -68,10 +73,16 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
 
         run_record = context.instance.get_run_record_by_id(run_id)
         context.log.info(
-            (
-                f"[{run_id}] {event.event_specific_data.error_source}\n"
-                f"{event.asset_key}\n"
-                f"{event.job_name}/{event.step_key}\n{run_record.end_time}"
+            "\n".join(
+                [
+                    run_id,
+                    run_record.end_time,
+                    event.event_specific_data.error_source,
+                    event.message,
+                    event.asset_key,
+                    event.job_name,
+                    event.step_key,
+                ]
             )
         )
 
