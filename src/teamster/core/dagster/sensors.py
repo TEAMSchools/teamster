@@ -1,7 +1,12 @@
 import os
 
 import pendulum
-from dagster import RunFailureSensorContext, run_failure_sensor
+from dagster import (
+    DagsterEventType,
+    EventRecordsFilter,
+    RunFailureSensorContext,
+    run_failure_sensor,
+)
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster_graphql import DagsterGraphQLClient
 from gql.transport.requests import RequestsHTTPTransport
@@ -48,9 +53,18 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         run_id = context.dagster_run.run_id
 
         run_record = context.instance.get_run_record_by_id(run_id)
-        context.log.debug(context.dagster_run)
-        context.log.debug(context.failure_event)
-        context.log.debug(run_record)
+        event_records = [
+            context.instance.get_event_records(
+                event_records_filter=EventRecordsFilter(
+                    event_type=DagsterEventType.ENGINE_EVENT,
+                    asset_key=a.key,
+                    asset_partitions=[context.dagster_run.tags["dagster/partition"]],
+                )
+            )
+            for a in context.dagster_run.asset_selection
+        ]
+        context.log.debug(event_records)
+
         context.log.info(
             "\n".join(
                 [
@@ -75,6 +89,7 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         run_id = event.logging_tags["run_id"]
 
         run_record = context.instance.get_run_record_by_id(run_id)
+
         context.log.info(
             "\n".join(
                 [
@@ -99,3 +114,196 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
             )
 
             context.log.info(result)
+
+
+# DagsterRun(
+#     job_name="...",
+#     run_id="...",
+#     run_config={},
+#     asset_selection=frozenset(
+#         {
+#             AssetKey(
+#                 [
+#                     "...",
+#                 ]
+#             )
+#         }
+#     ),
+#     solid_selection=None,
+#     solids_to_execute=None,
+#     step_keys_to_execute=None,
+#     status="<DagsterRunStatus.FAILURE: 'FAILURE'>",
+#     tags={
+#         ".dagster/agent_type": "HYBRID",
+#         "dagster/agent_id": "...",
+#         "dagster/git_commit_hash": "...",
+#         "dagster/git_project_url": "...",
+#         "dagster/image": "...",
+#         "dagster/partition": "...",
+#         "dagster/partition_set": "...",
+#         "dagster/run_key": "...",
+#         "dagster/sensor_name": "...",
+#     },
+#     root_run_id=None,
+#     parent_run_id=None,
+#     job_snapshot_id="...",
+#     execution_plan_snapshot_id="...",
+#     external_job_origin=ExternalJobOrigin(
+#         external_repository_origin=ExternalRepositoryOrigin(
+#             code_location_origin=RegisteredCodeLocationOrigin(location_name="..."),
+#             repository_name="...",
+#         ),
+#         job_name="...",
+#     ),
+#     job_code_origin=JobPythonOrigin(
+#         job_name="...",
+#         repository_origin=RepositoryPythonOrigin(
+#             executable_path="...",
+#             code_pointer=ModuleCodePointer(
+#                 module="...",
+#                 fn_name="...",
+#                 working_directory="...",
+#             ),
+#             container_image="...",
+#             entry_point=["..."],
+#             container_context={
+#                 "env_vars": [
+#                     "...",
+#                 ],
+#                 "k8s": {
+#                     "env_secrets": [
+#                         "...",
+#                     ],
+#                     "volume_mounts": [
+#                         {
+#                             "mountPath": "...",
+#                             "name": "...",
+#                             "readOnly": True,
+#                         }
+#                     ],
+#                     "volumes": [
+#                         {
+#                             "name": "...",
+#                             "secret": {"secretName": "..."},
+#                         }
+#                     ],
+#                 },
+#             },
+#         ),
+#     ),
+#     has_repository_load_data=False,
+# )
+
+# DagsterEvent(
+#     event_type_value="PIPELINE_FAILURE",
+#     job_name="...",
+#     step_handle=None,
+#     node_handle=None,
+#     step_kind_value=None,
+#     logging_tags={},
+#     event_specific_data=JobFailureData(
+#         error=SerializableErrorInfo(
+#             message="...",
+#             stack=[
+#                 "...",
+#             ],
+#             cls_name="DagsterExecutionInterruptedError",
+#             cause=None,
+#             context=None,
+#         )
+#     ),
+#     message="...",
+#     pid=1,
+#     step_key=None,
+# )
+
+# RunRecord(
+#     storage_id=16205600,
+#     dagster_run=DagsterRun(
+#         job_name="...",
+#         run_id="...",
+#         run_config={},
+#         asset_selection=frozenset(
+#             {
+#                 AssetKey(
+#                     [
+#                         "...",
+#                     ]
+#                 )
+#             }
+#         ),
+#         solid_selection=None,
+#         solids_to_execute=None,
+#         step_keys_to_execute=None,
+#         status="<DagsterRunStatus.FAILURE: 'FAILURE'>",
+#         tags={
+#             ".dagster/agent_type": "HYBRID",
+#             "dagster/agent_id": "...",
+#             "dagster/git_commit_hash": "...",
+#             "dagster/git_project_url": "...",
+#             "dagster/image": "...",
+#             "dagster/partition": "...",
+#             "dagster/partition_set": "...",
+#             "dagster/run_key": "...",
+#             "dagster/sensor_name": "...",
+#         },
+#         root_run_id=None,
+#         parent_run_id=None,
+#         job_snapshot_id="...",
+#         execution_plan_snapshot_id="...",
+#         external_job_origin=ExternalJobOrigin(
+#             external_repository_origin=ExternalRepositoryOrigin(
+#                 code_location_origin=RegisteredCodeLocationOrigin(
+#                     location_name="..."
+#                 ),
+#                 repository_name="...",
+#             ),
+#             job_name="...",
+#         ),
+#         job_code_origin=JobPythonOrigin(
+#             job_name="...",
+#             repository_origin=RepositoryPythonOrigin(
+#                 executable_path="...",
+#                 code_pointer=ModuleCodePointer(
+#                     module="...",
+#                     fn_name="...",
+#                     working_directory="...",
+#                 ),
+#                 container_image="...",
+#                 entry_point=["..."],
+#                 container_context={
+#                     "env_vars": [
+#                         "...",
+#                     ],
+#                     "k8s": {
+#                         "env_secrets": [
+#                             "...",
+#                         ],
+#                         "volume_mounts": [
+#                             {
+#                                 "mountPath": "...",
+#                                 "name": "...",
+#                                 "readOnly": True,
+#                             }
+#                         ],
+#                         "volumes": [
+#                             {
+#                                 "name": "...",
+#                                 "secret": {"secretName": "..."},
+#                             }
+#                         ],
+#                     },
+#                 },
+#             ),
+#         ),
+#         has_repository_load_data=False,
+#     ),
+#     create_timestamp=datetime.datetime(
+#         2023, 5, 15, 14, 40, 32, 414947, tzinfo=datetime.timezone.utc
+#     ),
+#     update_timestamp=datetime.datetime(
+#         2023, 5, 15, 14, 45, 13, 248971, tzinfo=datetime.timezone.utc
+#     ),
+#     start_time=1684161882.688826,
+#     end_time=1684161913.250036,
+# )
