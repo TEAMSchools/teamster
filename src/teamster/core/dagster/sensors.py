@@ -58,7 +58,7 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
                 event_records_filter=EventRecordsFilter(
                     event_type=DagsterEventType.ENGINE_EVENT,
                     asset_key=asset_key,
-                    asset_partitions=[context.dagster_run.tags["dagster/partition"]],
+                    after_timestamp=run_record.start_time,
                 )
             )
             for asset_key in context.dagster_run.asset_selection
