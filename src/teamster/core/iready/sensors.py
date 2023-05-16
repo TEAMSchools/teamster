@@ -53,12 +53,11 @@ def build_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
-            asset_metadata = asset.metadata_by_key[asset.key]
-
             updates = []
             for f in files:
                 match = re.match(
-                    pattern=asset_metadata["remote_file_regex"], string=f.filename
+                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
+                    string=f.filename,
                 )
 
                 if match is not None:
