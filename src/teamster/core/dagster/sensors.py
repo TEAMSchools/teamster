@@ -53,16 +53,15 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
         run_id = context.dagster_run.run_id
 
         run_record = context.instance.get_run_record_by_id(run_id)
-        event_records = [
-            context.instance.get_event_records(
-                event_records_filter=EventRecordsFilter(
-                    event_type=DagsterEventType.ENGINE_EVENT,
-                    after_timestamp=run_record.start_time,
-                    before_timestamp=run_record.end_time,
-                )
+        event_records = context.instance.get_event_records(
+            event_records_filter=EventRecordsFilter(
+                event_type=DagsterEventType.ENGINE_EVENT,
+                after_cursor=run_record.storage_id - 1,
+                before_cursor=run_record.storage_id + 1,
+                after_timestamp=run_record.start_time,
+                before_timestamp=run_record.end_time,
             )
-            for asset_key in context.dagster_run.asset_selection
-        ]
+        )
         context.log.debug(event_records)
 
         context.log.info(
@@ -115,6 +114,46 @@ def run_execution_interrupted_sensor(context: RunFailureSensorContext):
 
             context.log.info(result)
 
+
+# EventLogRecord(
+#     storage_id=3871601612,
+#     event_log_entry=EventLogEntry(
+#         error_info=None,
+#         level=40,
+#         user_message="",
+#         run_id="...",
+#         timestamp=1684168349.0759048,
+#         step_key=None,
+#         job_name="__ASSET_JOB_2",
+#         dagster_event=DagsterEvent(
+#             event_type_value="ENGINE_EVENT",
+#             job_name="__ASSET_JOB_2",
+#             step_handle=None,
+#             node_handle=None,
+#             step_kind_value=None,
+#             logging_tags={},
+#             event_specific_data=EngineEventData(
+#                 metadata={},
+#                 error=SerializableErrorInfo(
+#                     message="dagster._core.errors.DagsterInvariantViolationError:
+#                       __ASSET_JOB_2 has no op named
+#                       kippnewark__powerschool__assignmentsection.\n",
+#                     stack=[
+#                         "...",
+#                     ],
+#                     cls_name="DagsterInvariantViolationError",
+#                     cause=None,
+#                     context=None,
+#                 ),
+#                 marker_start=None,
+#                 marker_end=None,
+#             ),
+#             message="...",
+#             pid=None,
+#             step_key=None,
+#         ),
+#     ),
+# )
 
 # DagsterRun(
 #     job_name="...",
