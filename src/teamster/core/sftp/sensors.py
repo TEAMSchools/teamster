@@ -38,7 +38,6 @@ def build_sftp_sensor(
     source_system,
     asset_defs: list[AssetsDefinition],
     minimum_interval_seconds=None,
-    partitions_def=None,
     partition_key_fn=None,
     dynamic_partition_fn=None,
 ):

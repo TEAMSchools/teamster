@@ -2,6 +2,7 @@ import json
 import re
 
 from dagster import (
+    AssetsDefinition,
     AssetSelection,
     RunRequest,
     SensorEvaluationContext,
@@ -14,7 +15,10 @@ from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, NOW
 
 
 def build_sftp_sensor(
-    code_location, source_system, asset_defs, minimum_interval_seconds=None
+    code_location,
+    source_system,
+    asset_defs: list[AssetsDefinition],
+    minimum_interval_seconds=None,
 ):
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
