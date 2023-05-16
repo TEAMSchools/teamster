@@ -20,8 +20,8 @@ locations:
           - kippcamden-ps-ssh-port
           - kippcamden-ps-ssh-remote-bind-host
           - kippcamden-ps-ssh-username
-          - kippnewark-titan-sftp-password
-          - kippnewark-titan-sftp-username
+          - kippcamden-titan-sftp-password
+          - kippcamden-titan-sftp-username
           - mssql-password
           - mssql-username
           - pythonanywhere-sftp-password
