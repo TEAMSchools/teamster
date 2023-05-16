@@ -6,10 +6,10 @@ dagsterCloudAgent:
   resources:
     limits:
       cpu: 250m
-      memory: 0.5Gi
+      memory: 1.0Gi
     requests:
       cpu: 250m
-      memory: 0.5Gi
+      memory: 1.0Gi
 
 workspace:
   # Default compute resource requirements for the pods created by the agent.
@@ -46,9 +46,9 @@ workspace:
       resources:
         limits:
           cpu: 500m
-          memory: 0.5Gi
+          memory: 1.0Gi
         requests:
           cpu: 500m
-          memory: 0.5Gi
+          memory: 1.0Gi
       # command:
       #   - ./src/teamster/core/docker-entrypoint.sh
