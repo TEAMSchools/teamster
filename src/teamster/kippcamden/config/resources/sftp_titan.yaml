@@ -1,0 +1,5 @@
+remote_host: sftp.titank12.com
+username:
+  env: KIPPCAMDEN_TITAN_SFTP_USERNAME
+password:
+  env: KIPPCAMDEN_TITAN_SFTP_PASSWORD
