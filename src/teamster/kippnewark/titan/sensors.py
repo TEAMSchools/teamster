@@ -1,4 +1,4 @@
-from teamster.core.sftp.sensors import build_sftp_sensor
+from teamster.core.titan.sensors import build_sftp_sensor
 
 from .. import CODE_LOCATION
 from . import assets

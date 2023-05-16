@@ -23,10 +23,10 @@ def get_ls(context, source_system, asset_defs):
     with conn.open_sftp() as sftp_client:
         for asset in asset_defs:
             ls[asset.key.to_python_identifier()] = {
+                "asset": asset,
                 "files": sftp_client.listdir_attr(
                     path=asset.metadata_by_key[asset.key]["remote_filepath"]
                 ),
-                "asset": asset,
             }
     conn.close()
 
@@ -48,11 +48,15 @@ def build_sftp_sensor(
         required_resource_keys={f"sftp_{source_system}"},
     )
     def _sensor(context: SensorEvaluationContext):
-        cursor, ls = get_ls(context=context)
+        cursor, ls = get_ls(
+            context=context, source_system=source_system, asset_defs=asset_defs
+        )
 
         run_requests = []
         dynamic_partitions_requests = []
         for asset_identifier, asset_dict in ls.items():
+            context.log.info(asset_identifier)
+
             last_run = cursor.get(asset_identifier, 0)
             asset = asset_dict["asset"]
             files = asset_dict["files"]
@@ -68,9 +72,8 @@ def build_sftp_sensor(
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     if f.st_mtime > last_run and f.st_size > 0:
-                        partition_key = partition_key_fn()
                         updates.append(
-                            {"mtime": f.st_mtime, "partition_key": partition_key}
+                            {"mtime": f.st_mtime, "partition_key": partition_key_fn()}
                         )
 
             partition_keys = set()
@@ -88,7 +91,7 @@ def build_sftp_sensor(
 
                     partition_keys.add(partition_key)
 
-            dynamic_partitions_requests = dynamic_partition_fn()
+            dynamic_partitions_requests.append(dynamic_partition_fn())
 
             cursor[asset_identifier] = NOW.timestamp()
 
