@@ -13,7 +13,7 @@ from teamster.core.deanslist.resources import deanslist_resource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.sqlalchemy.resources import mssql, oracle
 
-from . import CODE_LOCATION, datagun, dbt, deanslist, edplan, powerschool
+from . import CODE_LOCATION, datagun, dbt, deanslist, edplan, powerschool, titan
 
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
@@ -24,13 +24,14 @@ defs = Definitions(
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
         *load_assets_from_modules(modules=[edplan], group_name="edplan"),
+        *load_assets_from_modules(modules=[titan], group_name="titan"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
-    sensors=[*powerschool.sensors, *edplan.sensors],
+    sensors=[*powerschool.sensors, *edplan.sensors, *titan.sensors],
     resources={
         "io_manager": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
@@ -73,6 +74,9 @@ defs = Definitions(
         ),
         "sftp_edplan": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_edplan.yaml"])
+        ),
+        "sftp_titan": ssh_resource.configured(
+            config_from_files([f"{resource_config_dir}/sftp_titan.yaml"])
         ),
     },
 )

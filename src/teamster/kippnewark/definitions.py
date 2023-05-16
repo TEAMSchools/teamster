@@ -31,7 +31,7 @@ defs = Definitions(
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
-    sensors=[*powerschool.sensors, *edplan.sensors],
+    sensors=[*powerschool.sensors, *edplan.sensors, *titan.sensors],
     resources={
         "io_manager": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
