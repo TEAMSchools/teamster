@@ -7,6 +7,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     sensor,
 )
 from dagster_ssh import SSHResource
@@ -31,8 +32,13 @@ def build_sftp_sensor(
 
         ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
+        try:
+            conn = ssh.get_connection()
+        except ConnectionResetError as e:
+            context.log.error(e)
+            return SensorResult(skip_reason=SkipReason(str(e)))
+
         ls = {}
-        conn = ssh.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = {
