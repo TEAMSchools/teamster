@@ -13,6 +13,12 @@ locations:
           - achieve3k-sftp-username
           - adp-sftp-password
           - adp-sftp-username
+          - adp-wfm-app-key
+          - adp-wfm-client-id
+          - adp-wfm-client-secret
+          - adp-wfm-password
+          - adp-wfm-subdomain
+          - adp-wfm-username
           - blissbook-sftp-password
           - blissbook-sftp-username
           - clever-sftp-password
