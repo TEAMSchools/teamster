@@ -7,9 +7,11 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     sensor,
 )
 from dagster_ssh import SSHResource
+from paramiko.ssh_exception import SSHException
 
 from teamster.core.utils.variables import NOW
 
@@ -18,8 +20,16 @@ def get_ls(context, source_system, asset_defs):
     cursor: dict = json.loads(context.cursor or "{}")
     ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
 
+    try:
+        conn = ssh.get_connection()
+    except SSHException as e:
+        context.log.error(e)
+        return SensorResult(skip_reason=SkipReason(str(e)))
+    except ConnectionResetError as e:
+        context.log.error(e)
+        return SensorResult(skip_reason=SkipReason(str(e)))
+
     ls = {}
-    conn = ssh.get_connection()
     with conn.open_sftp() as sftp_client:
         for asset in asset_defs:
             ls[asset.key.to_python_identifier()] = {
