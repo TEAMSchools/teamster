@@ -17,28 +17,21 @@ from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_
 
 
 def compose_remote_file_regex(remote_file_regex, context: OpExecutionContext):
-    context.log.debug(remote_file_regex)
     try:
         partitions_def = context.asset_partitions_def_for_output()
-        context.log.debug(partitions_def)
-    except DagsterInvariantViolationError as e:
-        context.log.error(e)
+    except DagsterInvariantViolationError:
         return remote_file_regex
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
-        context.log.debug(context.partition_key.keys_by_dimension)
-        for group_name, replacement in context.partition_key.keys_by_dimension.items():
-            context.log.debug(group_name)
-            context.log.debug(replacement)
         return regex_pattern_replace(
             pattern=remote_file_regex,
             replacements=context.partition_key.keys_by_dimension,
         )
     else:
         compiled_regex = re.compile(pattern=remote_file_regex)
-        context.log.debug(compiled_regex)
+
         pattern_keys = compiled_regex.groupindex.keys()
-        context.log.debug(pattern_keys)
+
         return regex_pattern_replace(
             pattern=remote_file_regex,
             replacements={key: context.partition_key for key in pattern_keys},
@@ -82,14 +75,12 @@ def build_sftp_asset(
         remote_file_regex = compose_remote_file_regex(
             remote_file_regex=asset_metadata["remote_file_regex"], context=context
         )
-        context.log.debug(remote_file_regex)
 
         # list files remote filepath
         conn = ssh.get_connection()
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
         conn.close()
-        context.log.debug(ls)
 
         # find matching file for partition
         remote_filename = [

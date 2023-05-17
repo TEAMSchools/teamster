@@ -53,6 +53,7 @@ defs = Definitions(
         *renlearn.sensors,
         *achieve3k.sensors,
         *iready.sensors,
+        *adp.sensors,
     ],
     resources={
         "io_manager": gcs_io_manager.configured(
