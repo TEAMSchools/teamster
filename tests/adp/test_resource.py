@@ -8,7 +8,9 @@ from slugify import slugify
 from teamster.core.adp.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-ASSET_NAME = "pension_and_benefits_enrollments"
+ASSET_NAME = "TimeDetails"
+# "AccrualReportingPeriodSummary"
+# "pension_and_benefits_enrollments"
 # "comprehensive_benefits_report"
 # "additional_earnings_report"
 
