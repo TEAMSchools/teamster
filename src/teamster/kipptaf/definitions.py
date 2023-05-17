@@ -1,6 +1,7 @@
 from dagster import (
     AutoMaterializePolicy,
     Definitions,
+    EnvVar,
     config_from_files,
     load_assets_from_modules,
 )
@@ -9,6 +10,7 @@ from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
+from teamster.core.adp.resources import WorkforceManagerResource
 from teamster.core.alchemer.resources import alchemer_resource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import google_sheets
@@ -85,6 +87,14 @@ defs = Definitions(
         ),
         "alchemer": alchemer_resource.configured(
             config_from_files([f"{resource_config_dir}/alchemer.yaml"])
+        ),
+        "adp_wfm": WorkforceManagerResource(
+            subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
+            app_key=EnvVar("ADP_WFM_APP_KEY"),
+            client_id=EnvVar("ADP_WFM_CLIENT_ID"),
+            client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
+            username=EnvVar("ADP_WFM_USERNAME"),
+            password=EnvVar("ADP_WFM_PASSWORD"),
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
