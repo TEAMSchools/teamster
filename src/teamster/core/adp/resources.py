@@ -1,4 +1,5 @@
 from dagster import ConfigurableResource
+from pydantic import PrivateAttr
 from requests import Session, exceptions
 
 
@@ -10,54 +11,61 @@ class WorkforceManagerResource(ConfigurableResource):
     username: str
     password: str
 
+    _client: Session = PrivateAttr()
+    _base_url: str = PrivateAttr()
+    _authentication_payload: dict = PrivateAttr()
+    _access_token: dict = PrivateAttr()
+
     def authenticate(self, refresh_token=None):
-        self.client.headers["Content-Type"] = "application/x-www-form-urlencoded"
-        self.client.headers.pop("Authorization", "")  # remove existing auth for refresh
+        self._client.headers["Content-Type"] = "application/x-www-form-urlencoded"
+        self._client.headers.pop(
+            "Authorization", ""
+        )  # remove existing auth for refresh
 
         if refresh_token is not None:
             payload = {
-                **self.authentication_payload,
+                **self._authentication_payload,
                 "grant_type": "refresh_token",
                 "refresh_token": refresh_token,
             }
         else:
             payload = {
-                **self.authentication_payload,
+                **self._authentication_payload,
                 "username": self.username,
                 "password": self.password,
                 "grant_type": "password",
             }
 
-        response = self.client.post(
-            f"{self.base_url}/authentication/access_token", data=payload
+        response = self._client.post(
+            f"{self._base_url}/authentication/access_token", data=payload
         )
 
         response.raise_for_status()
 
-        self.access_token = response.json()
+        self._access_token = response.json()
 
-        self.client.headers["Content-Type"] = "application/json"
-        self.client.headers["Authorization"] = (
-            "Bearer " + self.access_token["access_token"]
+        self._client.headers["Content-Type"] = "application/json"
+        self._client.headers["Authorization"] = (
+            "Bearer " + self._access_token["access_token"]
         )
 
     def setup_for_execution(self, context):
-        self.client = Session()
-        self.base_url = f"https://{self.subdomain}.mykronos.com/api"
-        self.authentication_payload = {
+        self._client = Session()
+        self._base_url = f"https://{self.subdomain}.mykronos.com/api"
+        self._authentication_payload = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "auth_chain": "OAuthLdapService",
         }
 
-        self.client.headers["appkey"] = self.app_key
+        self._client.headers["appkey"] = self.app_key
 
         self.authenticate()
 
     def request(self, method, endpoint, **kwargs):
         try:
-            response = self.client.request(
-                method=method, url=f"{self.base_url}/{endpoint}", **kwargs
+            response = self._client.request(
+                method=method, url=f"{self._base_url}/{endpoint}", **kwargs
             )
 
             response.raise_for_status()
@@ -68,7 +76,7 @@ class WorkforceManagerResource(ConfigurableResource):
             context.log.error(e)
 
             if response.status_code == 401:
-                self.authenticate(refresh_token=self.access_token["refresh_token"])
+                self.authenticate(refresh_token=self._access_token["refresh_token"])
                 self.request(method, endpoint, **kwargs)
             else:
                 raise exceptions.HTTPError(response.text) from e
