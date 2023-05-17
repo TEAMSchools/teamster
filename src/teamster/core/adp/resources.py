@@ -42,7 +42,6 @@ class WorkforceManagerResource(ConfigurableResource):
         )
 
     def setup_for_execution(self):
-        self.context = self.get_resource_context()
         self.client = Session()
         self.base_url = f"https://{self.subdomain}.mykronos.com/api"
         self.authentication_payload = {
@@ -65,7 +64,8 @@ class WorkforceManagerResource(ConfigurableResource):
 
             return response
         except exceptions.HTTPError as e:
-            self.context.log.error(e)
+            context = self.get_resource_context()
+            context.log.error(e)
 
             if response.status_code == 401:
                 self.authenticate(refresh_token=self.access_token["refresh_token"])
