@@ -36,11 +36,9 @@ def build_sftp_sensor(
         try:
             conn = ssh.get_connection()
         except SSHException as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
-        except ConnectionResetError as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            if "Connection reset by peer" in str(e):
+                context.log.error(e)
+                return SensorResult(skip_reason=SkipReason(str(e)))
 
         ls = {}
         with conn.open_sftp() as sftp_client:
