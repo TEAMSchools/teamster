@@ -41,8 +41,8 @@ class WorkforceManagerResource(ConfigurableResource):
             "Bearer " + self.access_token["access_token"]
         )
 
-    def setup_for_execution(self, context):
-        self.context = context
+    def setup_for_execution(self):
+        self.context = self.get_resource_context()
         self.client = Session()
         self.base_url = f"https://{self.subdomain}.mykronos.com/api"
         self.authentication_payload = {
