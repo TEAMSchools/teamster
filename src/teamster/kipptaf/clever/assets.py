@@ -1,5 +1,4 @@
 from dagster import (
-    AutoMaterializePolicy,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -26,7 +25,6 @@ sftp_assets = [
                 "type": StaticPartitionsDefinition(["staff", "students", "teachers"]),
             }
         ),
-        auto_materialize_policy=AutoMaterializePolicy.eager(),
         **a,
     )
     for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]

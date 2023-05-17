@@ -18,6 +18,7 @@ from teamster.core.sqlalchemy.resources import mssql
 from . import (
     CODE_LOCATION,
     achieve3k,
+    adp,
     alchemer,
     clever,
     datagun,
@@ -39,6 +40,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
         *load_assets_from_modules(modules=[iready], group_name="iready"),
+        *load_assets_from_modules(modules=[adp], group_name="adp"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
@@ -53,6 +55,15 @@ defs = Definitions(
         *iready.sensors,
     ],
     resources={
+        "io_manager": gcs_io_manager.configured(
+            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
+        ),
+        "gcs_avro_io": gcs_io_manager.configured(
+            config_from_files([f"{resource_config_dir}/io_avro.yaml"])
+        ),
+        "gcs": gcs_resource.configured(
+            config_from_files([f"{resource_config_dir}/gcs.yaml"])
+        ),
         "dbt": dbt_cli_resource.configured(
             {
                 "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
@@ -62,17 +73,8 @@ defs = Definitions(
         "bq": bigquery_resource.configured(
             config_from_files([f"{resource_config_dir}/gcs.yaml"])
         ),
-        "gcs": gcs_resource.configured(
-            config_from_files([f"{resource_config_dir}/gcs.yaml"])
-        ),
         "warehouse": mssql.configured(
             config_from_files([f"{resource_config_dir}/warehouse.yaml"])
-        ),
-        "sftp_pythonanywhere": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
-        ),
-        "io_manager": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
         ),
         "gsheets": google_sheets.configured(
             config_from_files([f"{resource_config_dir}/gsheets.yaml"])
@@ -82,6 +84,9 @@ defs = Definitions(
         ),
         "alchemer": alchemer_resource.configured(
             config_from_files([f"{resource_config_dir}/alchemer.yaml"])
+        ),
+        "sftp_pythonanywhere": ssh_resource.configured(
+            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
         ),
         "sftp_achieve3k": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_achieve3k.yaml"])
@@ -125,8 +130,8 @@ defs = Definitions(
         "sftp_renlearn": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_renlearn.yaml"])
         ),
-        "gcs_avro_io": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_avro.yaml"])
+        "sftp_adp": ssh_resource.configured(
+            config_from_files([f"{resource_config_dir}/sftp_adp.yaml"])
         ),
     },
 )
