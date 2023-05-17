@@ -11,6 +11,7 @@ from dagster import (
     sensor,
 )
 from dagster_ssh import SSHResource
+from paramiko.ssh_exception import SSHException
 
 from teamster.core.utils.variables import NOW
 
@@ -34,6 +35,9 @@ def build_sftp_sensor(
 
         try:
             conn = ssh.get_connection()
+        except SSHException as e:
+            context.log.error(e)
+            return SensorResult(skip_reason=SkipReason(str(e)))
         except ConnectionResetError as e:
             context.log.error(e)
             return SensorResult(skip_reason=SkipReason(str(e)))
