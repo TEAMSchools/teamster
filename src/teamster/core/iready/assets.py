@@ -1,5 +1,4 @@
 from dagster import (
-    AutoMaterializePolicy,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     config_from_files,
@@ -30,7 +29,6 @@ def build_iready_sftp_asset(config_dir, code_location):
                     ),
                 }
             ),
-            auto_materialize_policy=AutoMaterializePolicy.eager(),
             **a,
         )
 

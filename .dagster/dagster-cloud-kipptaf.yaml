@@ -11,6 +11,8 @@ locations:
         env_secrets:
           - achieve3k-sftp-password
           - achieve3k-sftp-username
+          - adp-sftp-password
+          - adp-sftp-username
           - blissbook-sftp-password
           - blissbook-sftp-username
           - clever-sftp-password
