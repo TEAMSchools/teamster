@@ -7,9 +7,8 @@ from dagster import (
 from teamster.core.adp.assets import build_wfm_asset
 from teamster.core.adp.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
-from .. import CODE_LOCATION
+from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 SOURCE_SYSTEM = "adp"
 
@@ -31,7 +30,7 @@ wfm_assets_daily = [
         source_system=SOURCE_SYSTEM,
         date_partitions_def=DailyPartitionsDefinition(
             start_date=a["partition_start_date"],
-            timezone=LOCAL_TIME_ZONE.name,
+            timezone=LOCAL_TIMEZONE.name,
             fmt="%Y-%m-%d",
             end_offset=1,
         ),

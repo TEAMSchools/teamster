@@ -1,6 +1,7 @@
 import json
 import re
 
+import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
@@ -12,13 +13,12 @@ from dagster import (
 )
 from dagster_ssh import SSHResource
 
-from teamster.core.utils.variables import NOW
-
 
 def build_sftp_sensor(
     code_location,
     source_system,
     asset_defs: list[AssetsDefinition],
+    timezone,
     minimum_interval_seconds=None,
 ):
     @sensor(
@@ -81,7 +81,7 @@ def build_sftp_sensor(
                     )
                 )
 
-                cursor[asset_identifier] = NOW.timestamp()
+                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
 
         return SensorResult(
             run_requests=run_requests,

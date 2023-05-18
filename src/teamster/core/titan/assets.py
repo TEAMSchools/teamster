@@ -4,16 +4,15 @@ from dagster import StaticPartitionsDefinition, config_from_files
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.titan.schema import ASSET_FIELDS
 from teamster.core.utils.classes import FiscalYear
-from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, LOCAL_TIME_ZONE
 
 
-def build_titan_sftp_assets(config_dir, code_location):
+def build_titan_sftp_assets(config_dir, code_location, fiscal_year, timezone):
     sftp_assets = []
 
     for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]:
         start_fy = FiscalYear(
             datetime=pendulum.from_format(
-                string=a["partition_start_date"], fmt="YYYY-MM-DD", tz=LOCAL_TIME_ZONE
+                string=a["partition_start_date"], fmt="YYYY-MM-DD", tz=timezone
             ),
             start_month=7,
         )
@@ -21,9 +20,7 @@ def build_titan_sftp_assets(config_dir, code_location):
         partitions_def = StaticPartitionsDefinition(
             [
                 str(fy - 1)
-                for fy in range(
-                    start_fy.fiscal_year, (CURRENT_FISCAL_YEAR.fiscal_year + 1)
-                )
+                for fy in range(start_fy.fiscal_year, (fiscal_year.fiscal_year + 1))
             ]
         )
 

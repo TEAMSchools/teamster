@@ -3,8 +3,6 @@ from dagster import MultiPartitionKey
 
 from teamster.core.utils.classes import FiscalYear
 
-from .variables import LOCAL_TIME_ZONE
-
 
 def regex_pattern_replace(pattern: str, replacements: dict):
     for group_name, replacement in replacements.items():
@@ -49,7 +47,7 @@ def parse_partition_key(partition_key, dimension=None):
 
                 # save resync file with current timestamp
                 if partition_key_parsed == pendulum.from_timestamp(0):
-                    partition_key_parsed = pendulum.now(tz=LOCAL_TIME_ZONE)
+                    partition_key_parsed = pendulum.now()
 
                 break
             except ValueError:

@@ -22,7 +22,7 @@ def build_adp_wfm_schedule(
     @schedule(
         cron_schedule=cron_schedule,
         name=f"{code_location}_{source_system}_wfm_dynamic_partition_schedule",
-        execution_timezone=execution_timezone,
+        execution_timezone=execution_timezone.name,
         job=job,
     )
     def _schedule(

@@ -13,8 +13,6 @@ from dagster import (
 )
 from sqlalchemy import text
 
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
-
 
 def get_asset_count(asset, db, window_start):
     partition_column = asset.metadata_by_key[asset.key]["partition_column"]
@@ -40,6 +38,7 @@ def build_dynamic_partition_sensor(
     code_location,
     name,
     asset_defs: list[AssetsDefinition],
+    timezone,
     minimum_interval_seconds=None,
 ):
     @sensor(
@@ -52,7 +51,7 @@ def build_dynamic_partition_sensor(
         cursor = json.loads(context.cursor or "{}")
 
         window_end = (
-            pendulum.now(tz=LOCAL_TIME_ZONE)
+            pendulum.now(tz=timezone)
             .subtract(minutes=1)  # 1 min grace period for PS lag
             .start_of("minute")
         )
@@ -101,7 +100,7 @@ def build_dynamic_partition_sensor(
                     }
                 else:
                     window_start = pendulum.from_timestamp(
-                        cursor_window_start, tz=LOCAL_TIME_ZONE
+                        cursor_window_start, tz=timezone
                     )
 
                     count = get_asset_count(
