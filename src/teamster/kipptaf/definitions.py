@@ -15,6 +15,7 @@ from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import google_sheets
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
+from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import mssql
 
 from . import (
@@ -28,6 +29,7 @@ from . import (
     iready,
     renlearn,
     schoolmint,
+    smartrecruiters,
 )
 
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -43,6 +45,9 @@ defs = Definitions(
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
         *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[adp], group_name="adp"),
+        *load_assets_from_modules(
+            modules=[smartrecruiters], group_name="smartrecruiters"
+        ),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
@@ -97,6 +102,9 @@ defs = Definitions(
             client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
             username=EnvVar("ADP_WFM_USERNAME"),
             password=EnvVar("ADP_WFM_PASSWORD"),
+        ),
+        "smartrecruiters": SmartRecruitersResource(
+            smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
         ),
         "sftp_pythonanywhere": ssh_resource.configured(
             config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])

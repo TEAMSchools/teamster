@@ -1,4 +1,4 @@
-from dagster import ConfigurableResource
+from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
 from requests import Session, exceptions
 
@@ -49,7 +49,7 @@ class WorkforceManagerResource(ConfigurableResource):
             "Bearer " + self._access_token["access_token"]
         )
 
-    def setup_for_execution(self, context):
+    def setup_for_execution(self, context: InitResourceContext) -> None:
         self._client = Session()
         self._base_url = f"https://{self.subdomain}.mykronos.com/api"
         self._authentication_payload = {
@@ -61,6 +61,8 @@ class WorkforceManagerResource(ConfigurableResource):
         self._client.headers["appkey"] = self.app_key
 
         self.authenticate()
+
+        return super().setup_for_execution(context)
 
     def request(self, method, endpoint, **kwargs):
         try:
