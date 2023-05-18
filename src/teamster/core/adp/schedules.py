@@ -1,7 +1,9 @@
 from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
+    MultiPartitionKey,
     ResourceParam,
+    RunRequest,
     ScheduleEvaluationContext,
     schedule,
 )
@@ -33,7 +35,6 @@ def build_adp_wfm_schedule(
                 asset.partitions_def.get_partitions_def_for_dimension("symbolic_id")
             )
 
-            dynamic_partition_keys = set()
             for symbolic_id in symbolic_id_partition.get_partition_keys():
                 symbolic_period_record = adp_wfm.request(
                     method="POST",
@@ -46,11 +47,22 @@ def build_adp_wfm_schedule(
                     },
                 ).json()
 
-                dynamic_partition_keys.add(symbolic_period_record["begin"])
+                partition_key = MultiPartitionKey(
+                    {
+                        "symbolic_id": symbolic_id,
+                        "date": symbolic_period_record["begin"],
+                    }
+                )
 
-            context.instance.add_dynamic_partitions(
-                partitions_def_name=date_partition.name,
-                partition_keys=list(dynamic_partition_keys),
-            )
+                context.instance.add_dynamic_partitions(
+                    partitions_def_name=date_partition.name,
+                    partition_keys=[partition_key],
+                )
+
+                yield RunRequest(
+                    run_key=asset.key.to_python_identifier(),
+                    asset_selection=[asset.key],
+                    partition_key=partition_key,
+                )
 
     return _schedule
