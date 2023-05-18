@@ -40,13 +40,13 @@ def build_smartrecruiters_report_asset(
         )
 
         context.log.info(f"Executing {report_name}")
-        report_execution_response = smartrecruiters.request(
+        report_execution_data = smartrecruiters.request(
             method="POST", endpoint=report_endpoint
         ).json()
 
-        context.log.info(report_execution_response)
-        report_file_id = report_execution_response.json()["reportFileId"]
-        report_file_status = report_execution_response.json()["reportFileStatus"]
+        context.log.info(report_execution_data)
+        report_file_id = report_execution_data["reportFileId"]
+        report_file_status = report_execution_data["reportFileStatus"]
 
         while report_file_status != "COMPLETED":
             report_files_data = smartrecruiters.request(
