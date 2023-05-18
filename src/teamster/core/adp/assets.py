@@ -3,7 +3,6 @@ from io import StringIO
 
 from dagster import (
     AssetsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
@@ -24,9 +23,11 @@ def build_wfm_asset(
     asset_name,
     code_location,
     source_system,
+    date_partitions_def,
     symbolic_ids,
     hyperfind,
     op_tags={},
+    **kwargs,
 ) -> AssetsDefinition:
     @asset(
         name=asset_name,
@@ -35,9 +36,7 @@ def build_wfm_asset(
         partitions_def=MultiPartitionsDefinition(
             {
                 "symbolic_id": StaticPartitionsDefinition(symbolic_ids),
-                "date": DynamicPartitionsDefinition(
-                    name=f"{code_location}__{source_system}__{asset_name}_date"
-                ),
+                "date": date_partitions_def,
             }
         ),
         io_manager_key="gcs_avro_io",

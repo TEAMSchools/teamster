@@ -4,7 +4,3 @@ assets:
       - Previous_SchedPeriod
       - Current_SchedPeriod
     hyperfind: All Home
-  - asset_name: AccrualReportingPeriodSummary
-    symbolic_ids:
-      - Today
-    hyperfind: All Home
