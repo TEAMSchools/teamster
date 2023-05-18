@@ -9,7 +9,7 @@ from dagster_gcp import bigquery_resource, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
-from teamster.core.deanslist.resources import deanslist_resource
+from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.sqlalchemy.resources import mssql, oracle
 
@@ -63,8 +63,9 @@ defs = Definitions(
                 "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
             }
         ),
-        "deanslist": deanslist_resource.configured(
-            config_from_files([f"{resource_config_dir}/deanslist.yaml"])
+        "deanslist": DeansListResource(
+            subdomain="kippnj",
+            api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
         ),
         "gcs_fp_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
