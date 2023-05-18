@@ -47,8 +47,8 @@ defs = Definitions(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
-    jobs=[*datagun.jobs, *schoolmint.jobs],
-    schedules=[*datagun.schedules, *schoolmint.schedules],
+    jobs=[*datagun.jobs, *schoolmint.jobs, *adp.jobs],
+    schedules=[*datagun.schedules, *schoolmint.schedules, *adp.schedules],
     sensors=[
         *alchemer.sensors,
         *clever.sensors,
