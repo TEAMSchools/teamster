@@ -7,11 +7,11 @@ from .assets import wfm_assets_dynamic
 from .jobs import daily_partition_asset_job, dynamic_partition_asset_job
 
 daily_partition_asset_job_schedule = build_schedule_from_partitioned_job(
-    job=daily_partition_asset_job, hour_of_day=0, minute_of_hour=0
+    job=daily_partition_asset_job, minute_of_hour=0
 )
 
 dynamic_partition_asset_job_schedule = build_adp_wfm_schedule(
-    cron_schedule="0 0 * * *",
+    cron_schedule="0 * * * *",
     code_location=CODE_LOCATION,
     source_system="adp",
     job=dynamic_partition_asset_job,
