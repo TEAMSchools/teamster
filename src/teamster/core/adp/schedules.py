@@ -1,5 +1,4 @@
 from dagster import (
-    AddDynamicPartitionsRequest,
     AssetsDefinition,
     DynamicPartitionsDefinition,
     ResourceParam,
@@ -49,7 +48,7 @@ def build_adp_wfm_schedule(
 
                 dynamic_partition_keys.add(symbolic_period_record["begin"])
 
-            yield AddDynamicPartitionsRequest(
+            context.instance.add_dynamic_partitions(
                 partitions_def_name=date_partition.name,
                 partition_keys=list(dynamic_partition_keys),
             )
