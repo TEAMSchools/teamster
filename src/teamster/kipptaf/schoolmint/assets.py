@@ -9,9 +9,8 @@ from teamster.core.schoolmint.assets import (
     build_multi_partition_asset,
     build_static_partition_asset,
 )
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
-from .. import CODE_LOCATION
+from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 config_dir = f"src/teamster/{CODE_LOCATION}/schoolmint/config"
 
@@ -21,7 +20,7 @@ multi_partitions_def = MultiPartitionsDefinition(
     partitions_defs={
         "archived": static_partitions_def,
         "last_modified": DailyPartitionsDefinition(
-            start_date="2023-04-05", timezone=LOCAL_TIME_ZONE.name, end_offset=1
+            start_date="2023-04-05", timezone=LOCAL_TIMEZONE.name, end_offset=1
         ),
     }
 )

@@ -3,14 +3,14 @@ import json
 import pathlib
 
 import pandas as pd
+import pendulum
 from dagster import OpExecutionContext, asset, config_from_files
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.classes import CustomJSONEncoder
-from teamster.core.utils.variables import NOW, TODAY
 
 
-def construct_sql(query_type, query_value):
+def construct_sql(query_type, query_value, now):
     if query_type == "text":
         return text(query_value)
     elif query_type == "file":
@@ -21,7 +21,9 @@ def construct_sql(query_type, query_value):
         return (
             select(*[literal_column(col) for col in query_value.get("select", ["*"])])
             .select_from(table(**query_value["table"]))
-            .where(text(query_value.get("where", "").format(today=TODAY.isoformat())))
+            .where(
+                text(query_value.get("where", "").format(today=now.to_date_string()))
+            )
         )
 
 
@@ -101,8 +103,16 @@ def load_gsheet(context, data, file_stem):
 
 
 def sftp_extract_asset_factory(
-    asset_name, key_prefix, query_config, file_config, destination_config, op_tags={}
+    asset_name,
+    key_prefix,
+    query_config,
+    file_config,
+    destination_config,
+    timezone,
+    op_tags={},
 ):
+    now = pendulum.now(tz=timezone)
+
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
@@ -112,11 +122,13 @@ def sftp_extract_asset_factory(
     def sftp_extract(context):
         file_suffix = file_config["suffix"]
         file_stem = file_config["stem"].format(
-            today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
+            today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
         )
 
         sql = construct_sql(
-            query_type=query_config["type"], query_value=query_config["value"]
+            query_type=query_config["type"],
+            query_value=query_config["value"],
+            now=now,
         )
 
         data = context.resources.warehouse.execute_query(
@@ -145,8 +157,10 @@ def sftp_extract_asset_factory(
 
 
 def gsheet_extract_asset_factory(
-    asset_name, key_prefix, query_config, file_config, op_tags={}
+    asset_name, key_prefix, query_config, file_config, timezone, op_tags={}
 ):
+    now = pendulum.now(tz=timezone)
+
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
@@ -155,7 +169,7 @@ def gsheet_extract_asset_factory(
     )
     def gsheet_extract(context: OpExecutionContext):
         file_stem = file_config["stem"].format(
-            today=TODAY.date().isoformat(), now=str(NOW.timestamp()).replace(".", "_")
+            today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
         )
 
         sql = construct_sql(
@@ -177,7 +191,7 @@ def gsheet_extract_asset_factory(
     return gsheet_extract
 
 
-def generate_extract_assets(code_location, name, extract_type):
+def generate_extract_assets(code_location, name, extract_type, timezone):
     cfg = config_from_files(
         [f"src/teamster/{code_location}/datagun/config/{name}.yaml"]
     )
@@ -186,11 +200,15 @@ def generate_extract_assets(code_location, name, extract_type):
     for ac in cfg["assets"]:
         if extract_type == "sftp":
             assets.append(
-                sftp_extract_asset_factory(key_prefix=cfg["key_prefix"], **ac)
+                sftp_extract_asset_factory(
+                    key_prefix=cfg["key_prefix"], timezone=timezone, **ac
+                )
             )
         elif extract_type == "gsheet":
             assets.append(
-                gsheet_extract_asset_factory(key_prefix=cfg["key_prefix"], **ac)
+                gsheet_extract_asset_factory(
+                    key_prefix=cfg["key_prefix"], timezone=timezone, **ac
+                )
             )
 
     return assets

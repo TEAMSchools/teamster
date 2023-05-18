@@ -1,6 +1,7 @@
 import json
 import re
 
+import pendulum
 from dagster import (
     AssetsDefinition,
     AssetSelection,
@@ -11,13 +12,13 @@ from dagster import (
 )
 from dagster_ssh import SSHResource
 
-from teamster.core.utils.variables import CURRENT_FISCAL_YEAR, NOW
-
 
 def build_sftp_sensor(
     code_location,
     source_system,
     asset_defs: list[AssetsDefinition],
+    fiscal_year,
+    timezone,
     minimum_interval_seconds=None,
 ):
     @sensor(
@@ -63,11 +64,11 @@ def build_sftp_sensor(
                             RunRequest(
                                 run_key=f"{asset_identifier}_{f.st_mtime}",
                                 asset_selection=[asset.key],
-                                partition_key=CURRENT_FISCAL_YEAR.start.to_date_string(),
+                                partition_key=fiscal_year.start.to_date_string(),
                             )
                         )
 
-                cursor[asset_identifier] = NOW.timestamp()
+                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

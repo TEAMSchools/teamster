@@ -3,10 +3,9 @@ from dagster import config_from_files
 from teamster.core.renlearn.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.core.utils.variables import LOCAL_TIME_ZONE
 
 
-def build_renlearn_sftp_asset(config_dir, code_location):
+def build_renlearn_sftp_asset(config_dir, code_location, timezone):
     sftp_assets = []
 
     for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]:
@@ -16,7 +15,7 @@ def build_renlearn_sftp_asset(config_dir, code_location):
             asset_fields=ASSET_FIELDS,
             partitions_def=FiscalYearPartitionsDefinition(
                 start_date=a["partition_start_date"],
-                timezone=LOCAL_TIME_ZONE.name,
+                timezone=timezone.name,
                 start_month=7,
                 fmt="%Y-%m-%d",
             ),
