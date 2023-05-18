@@ -7,11 +7,12 @@ from dagster import (
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
+    ResourceParam,
     StaticPartitionsDefinition,
     asset,
 )
 
-from teamster.core.deanslist.resources import DeansList
+from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.deanslist.schema import ASSET_FIELDS
 from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema
@@ -30,14 +31,13 @@ def build_static_partition_asset(
         key_prefix=[code_location, "deanslist"],
         partitions_def=partitions_def,
         op_tags=op_tags,
-        required_resource_keys={"deanslist"},
         io_manager_key="gcs_avro_io",
         output_required=False,
     )
-    def _asset(context: OpExecutionContext):
-        dl: DeansList = context.resources.deanslist
-
-        endpoint_content = dl.get_endpoint(
+    def _asset(
+        context: OpExecutionContext, deanslist: ResourceParam[DeansListResource]
+    ):
+        endpoint_content = deanslist.get_endpoint(
             api_version=api_version,
             endpoint=asset_name,
             school_id=int(context.partition_key),
@@ -74,11 +74,12 @@ def build_multi_partition_asset(
         key_prefix=[code_location, "deanslist"],
         partitions_def=partitions_def,
         op_tags=op_tags,
-        required_resource_keys={"deanslist"},
         io_manager_key="gcs_avro_io",
         output_required=False,
     )
-    def _asset(context: OpExecutionContext):
+    def _asset(
+        context: OpExecutionContext, deanslist: ResourceParam[DeansListResource]
+    ):
         asset_key = context.asset_key_for_output()
         school_partition = context.partition_key.keys_by_dimension["school"]
         date_partition = pendulum.from_format(
@@ -124,8 +125,6 @@ def build_multi_partition_asset(
             end_date = partition_fy.end
             partition_modified_date = date_partition
 
-        dl: DeansList = context.resources.deanslist
-
         multiyear_period = end_date - start_date
         total_row_count = 0
         all_data = []
@@ -146,7 +145,7 @@ def build_multi_partition_asset(
                             end_date=month.end_of("month").to_date_string(),
                         )
 
-                endpoint_content = dl.get_endpoint(
+                endpoint_content = deanslist.get_endpoint(
                     api_version=api_version,
                     endpoint=asset_name,
                     school_id=int(school_partition),

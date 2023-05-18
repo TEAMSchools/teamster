@@ -1,36 +1,39 @@
 import gc
 
 import yaml
-from dagster import Field, InitResourceContext, String, StringSource, resource
+from dagster import ConfigurableResource, InitResourceContext
+from pydantic import PrivateAttr
 from requests import Session
 
 
-class DeansList(Session):
-    def __init__(
-        self,
-        logger: InitResourceContext.log,
-        resource_config: InitResourceContext.resource_config,
-    ):
-        super().__init__()
+class DeansListResource(ConfigurableResource):
+    subdomain: str
+    api_key_map: str
 
-        self.log = logger
-        self.subdomain = resource_config["subdomain"]
-        self.base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
+    _client: Session = PrivateAttr()
+    _base_url: str = PrivateAttr()
+    _api_key_map: dict = PrivateAttr()
 
-        with open(resource_config["api_key_map"]) as f:
-            self.api_key_map = yaml.safe_load(f)["api_key_map"]
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._client = Session()
+        self._base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
+
+        with open(self.api_key_map) as f:
+            self._api_key_map = yaml.safe_load(f)["api_key_map"]
+
+        return super().setup_for_execution(context)
 
     def _get_url(self, api_version, endpoint, *args):
         if api_version == "beta":
             return (
-                f"{self.base_url}/{api_version}/export/get-{endpoint}"
+                f"{self._base_url}/{api_version}/export/get-{endpoint}"
                 f"{'-data' if endpoint in ['behavior', 'homework', 'comm'] else ''}"
                 ".php"
             )
         elif args:
-            return f"{self.base_url}/{api_version}/{endpoint}/{'/'.join(args)}"
+            return f"{self._base_url}/{api_version}/{endpoint}/{'/'.join(args)}"
         else:
-            return f"{self.base_url}/{api_version}/{endpoint}"
+            return f"{self._base_url}/{api_version}/{endpoint}"
 
     def _parse_response(self, response):
         response_json = response.json()
@@ -57,24 +60,12 @@ class DeansList(Session):
     def get_endpoint(self, api_version, endpoint, school_id, *args, **kwargs):
         url = self._get_url(api_version=api_version, endpoint=endpoint, *args)
 
-        self.log.info(f"GET: {url}\nSCHOOL_ID: {school_id}\nPARAMS: {kwargs}")
+        context = self.get_resource_context()
+        context.log.info(f"GET: {url}\nSCHOOL_ID: {school_id}\nPARAMS: {kwargs}")
 
-        kwargs["apikey"] = self.api_key_map[school_id]
+        kwargs["apikey"] = self._api_key_map[school_id]
 
-        response = self.get(url=url, params=kwargs)
+        response = self._client.get(url=url, params=kwargs)
         response.raise_for_status()
 
         return self._parse_response(response)
-
-
-@resource(
-    config_schema={
-        "subdomain": StringSource,
-        "api_key_map": String,
-        "api_version": Field(
-            config=StringSource, default_value="v1", is_required=False
-        ),
-    }
-)
-def deanslist_resource(context: InitResourceContext):
-    return DeansList(logger=context.log, resource_config=context.resource_config)
