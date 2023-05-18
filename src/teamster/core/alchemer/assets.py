@@ -1,7 +1,6 @@
 import time
 
 import pendulum
-from alchemer import AlchemerSession
 from dagster import (
     DynamicPartitionsDefinition,
     OpExecutionContext,
@@ -11,6 +10,7 @@ from dagster import (
 )
 from requests.exceptions import HTTPError
 
+from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.alchemer.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
@@ -27,8 +27,8 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
-    def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]):
-        survey = alchemer.survey.get(id=context.partition_key)
+    def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]):
+        survey = alchemer._client.survey.get(id=context.partition_key)
 
         yield Output(
             value=(
@@ -46,9 +46,9 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         op_tags=op_tags,
     )
     def survey_question(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]
     ):
-        survey = alchemer.survey.get(id=context.partition_key)
+        survey = alchemer._client.survey.get(id=context.partition_key)
 
         data = survey.question.list(params={"resultsperpage": 500})
         schema = get_avro_record_schema(
@@ -65,12 +65,12 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         op_tags=op_tags,
     )
     def survey_campaign(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]
     ):
         asset_name = context.assets_def.key[-1]
         context.log.debug(asset_name)
 
-        survey = alchemer.survey.get(id=context.partition_key)
+        survey = alchemer._client.survey.get(id=context.partition_key)
 
         data = survey.campaign.list(params={"resultsperpage": 500})
         schema = get_avro_record_schema(
@@ -89,18 +89,18 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         op_tags=op_tags,
     )
     def survey_response(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
+        context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]
     ):
         partition_key_split = context.partition_key.split("_")
 
         try:
-            survey = alchemer.survey.get(id=partition_key_split[0])
+            survey = alchemer._client.survey.get(id=partition_key_split[0])
         except HTTPError as e:
             context.log.error(e)
             context.log.info("Retrying in 60 seconds")
             time.sleep(60)
 
-            survey = alchemer.survey.get(id=partition_key_split[0])
+            survey = alchemer._client.survey.get(id=partition_key_split[0])
 
         cursor_timestamp = float(partition_key_split[1])
 

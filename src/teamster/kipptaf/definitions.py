@@ -11,7 +11,7 @@ from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
 from teamster.core.adp.resources import WorkforceManagerResource
-from teamster.core.alchemer.resources import alchemer_resource
+from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import google_sheets
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
@@ -85,8 +85,10 @@ defs = Definitions(
         "schoolmint_grow": schoolmint_grow_resource.configured(
             config_from_files([f"{resource_config_dir}/schoolmint.yaml"])
         ),
-        "alchemer": alchemer_resource.configured(
-            config_from_files([f"{resource_config_dir}/alchemer.yaml"])
+        "alchemer": AlchemerResource(
+            api_token=EnvVar("ALCHEMER_API_TOKEN"),
+            api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
+            api_version="v5",
         ),
         "adp_wfm": WorkforceManagerResource(
             subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),

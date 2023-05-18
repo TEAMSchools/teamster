@@ -1,7 +1,6 @@
 import json
 
 import pendulum
-from alchemer import AlchemerSession
 from dagster import (
     AddDynamicPartitionsRequest,
     AssetKey,
@@ -15,6 +14,8 @@ from dagster import (
     sensor,
 )
 from requests.exceptions import HTTPError
+
+from teamster.core.alchemer.resources import AlchemerResource
 
 
 def build_survey_metadata_asset_sensor(
@@ -32,13 +33,13 @@ def build_survey_metadata_asset_sensor(
         asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(
-        context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
+        context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerResource]
     ):
         now = pendulum.now(tz="US/Eastern").start_of("minute")
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
-            surveys = alchemer.survey.list()
+            surveys = alchemer._client.survey.list()
         except HTTPError as e:
             return SensorResult(skip_reason=SkipReason(e.strerror))
 
@@ -113,7 +114,7 @@ def build_survey_response_asset_sensor(
         asset_selection=AssetSelection.assets(asset_def),
     )
     def _sensor(
-        context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
+        context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerResource]
     ):
         cursor: dict = json.loads(context.cursor or "{}")
 
@@ -126,7 +127,7 @@ def build_survey_response_asset_sensor(
         now = pendulum.now(tz="US/Eastern").subtract(minutes=15).start_of("minute")
 
         try:
-            surveys = alchemer.survey.list()
+            surveys = alchemer._client.survey.list()
         except HTTPError as e:
             context.log.error(e)
             return
@@ -149,7 +150,7 @@ def build_survey_response_asset_sensor(
                 }
             else:
                 try:
-                    survey = alchemer.survey.get(id=survey_id)
+                    survey = alchemer._client.survey.get(id=survey_id)
 
                     date_submitted = pendulum.from_timestamp(
                         timestamp=survey_cursor_timestamp, tz="US/Eastern"
