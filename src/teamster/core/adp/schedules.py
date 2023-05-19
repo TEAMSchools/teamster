@@ -58,7 +58,7 @@ def build_dynamic_partition_schedule(
 
                 context.instance.add_dynamic_partitions(
                     partitions_def_name=date_partition.name,
-                    partition_keys=[partition_key],
+                    partition_keys=[symbolic_period_record["begin"]],
                 )
 
                 yield RunRequest(
