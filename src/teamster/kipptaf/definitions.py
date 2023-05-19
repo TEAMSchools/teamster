@@ -6,7 +6,7 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_dbt import dbt_cli_resource
-from dagster_gcp import bigquery_resource, gcs_resource
+from dagster_gcp import BigQueryResource, gcs_resource
 from dagster_k8s import k8s_job_executor
 from dagster_ssh import ssh_resource
 
@@ -83,9 +83,7 @@ defs = Definitions(
                 "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
             }
         ),
-        "bq": bigquery_resource.configured(
-            config_from_files([f"{resource_config_dir}/gcs.yaml"])
-        ),
+        "bq": BigQueryResource(project="teamster-332318"),
         "warehouse": MSSQLResource(
             engine=SqlAlchemyEngineResource(
                 dialect="mssql",
