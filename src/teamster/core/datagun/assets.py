@@ -126,9 +126,7 @@ def sftp_extract_asset_factory(
         )
 
         sql = construct_sql(
-            query_type=query_config["type"],
-            query_value=query_config["value"],
-            now=now,
+            query_type=query_config["type"], query_value=query_config["value"], now=now
         )
 
         data = context.resources.warehouse.execute_query(
@@ -173,7 +171,7 @@ def gsheet_extract_asset_factory(
         )
 
         sql = construct_sql(
-            query_type=query_config["type"], query_value=query_config["value"]
+            query_type=query_config["type"], query_value=query_config["value"], now=now
         )
 
         data = context.resources.warehouse.execute_query(
