@@ -13,10 +13,10 @@ from dagster_ssh import ssh_resource
 from teamster.core.adp.resources import WorkforceManagerResource
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.google.resources.io import gcs_io_manager
-from teamster.core.google.resources.sheets import google_sheets
+from teamster.core.google.resources.sheets import GoogleSheetsResource
 from teamster.core.schoolmint.resources import schoolmint_grow_resource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
-from teamster.core.sqlalchemy.resources import mssql
+from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineResource
 
 from . import (
     CODE_LOCATION,
@@ -86,12 +86,19 @@ defs = Definitions(
         "bq": bigquery_resource.configured(
             config_from_files([f"{resource_config_dir}/gcs.yaml"])
         ),
-        "warehouse": mssql.configured(
-            config_from_files([f"{resource_config_dir}/warehouse.yaml"])
+        "warehouse": MSSQLResource(
+            engine=SqlAlchemyEngineResource(
+                dialect="mssql",
+                driver="pyodbc",
+                host="winsql05.kippnj.org",
+                port=1433,
+                database="gabby",
+                username=EnvVar("MSSQL_USERNAME"),
+                password=EnvVar("MSSQL_PASSWORD"),
+            ),
+            driver="ODBC Driver 18 for SQL Server",
         ),
-        "gsheets": google_sheets.configured(
-            config_from_files([f"{resource_config_dir}/gsheets.yaml"])
-        ),
+        "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
         "schoolmint_grow": schoolmint_grow_resource.configured(
             config_from_files([f"{resource_config_dir}/schoolmint.yaml"])
         ),

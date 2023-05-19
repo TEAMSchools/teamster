@@ -7,7 +7,6 @@ from dagster import (
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
-    ResourceParam,
     StaticPartitionsDefinition,
     asset,
 )
@@ -34,9 +33,7 @@ def build_static_partition_asset(
         io_manager_key="gcs_avro_io",
         output_required=False,
     )
-    def _asset(
-        context: OpExecutionContext, deanslist: ResourceParam[DeansListResource]
-    ):
+    def _asset(context: OpExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get_endpoint(
             api_version=api_version,
             endpoint=asset_name,
@@ -77,9 +74,7 @@ def build_multi_partition_asset(
         io_manager_key="gcs_avro_io",
         output_required=False,
     )
-    def _asset(
-        context: OpExecutionContext, deanslist: ResourceParam[DeansListResource]
-    ):
+    def _asset(context: OpExecutionContext, deanslist: DeansListResource):
         asset_key = context.asset_key_for_output()
         school_partition = context.partition_key.keys_by_dimension["school"]
         date_partition = pendulum.from_format(

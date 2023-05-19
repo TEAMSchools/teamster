@@ -2,7 +2,6 @@ from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
-    ResourceParam,
     RunRequest,
     ScheduleEvaluationContext,
     schedule,
@@ -26,8 +25,7 @@ def build_dynamic_partition_schedule(
         job=job,
     )
     def _schedule(
-        context: ScheduleEvaluationContext,
-        adp_wfm: ResourceParam[WorkforceManagerResource],
+        context: ScheduleEvaluationContext, adp_wfm: WorkforceManagerResource
     ):
         for asset in asset_defs:
             date_partition: DynamicPartitionsDefinition = (

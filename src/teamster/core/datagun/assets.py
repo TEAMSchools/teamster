@@ -7,6 +7,8 @@ import pendulum
 from dagster import OpExecutionContext, asset, config_from_files
 from sqlalchemy import literal_column, select, table, text
 
+from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.sqlalchemy.resources import MSSQLResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
@@ -93,15 +95,6 @@ def load_sftp(context, data, file_name, destination_config):
             f.write(data)
 
 
-def load_gsheet(context, data, file_stem):
-    if file_stem[0].isnumeric():
-        file_stem = "GS" + file_stem
-
-    context.resources.gsheets.update_named_range(
-        data=data, spreadsheet_name=file_stem, range_name=file_stem
-    )
-
-
 def sftp_extract_asset_factory(
     asset_name,
     key_prefix,
@@ -162,29 +155,96 @@ def gsheet_extract_asset_factory(
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
-        required_resource_keys={"warehouse", "gsheets"},
         op_tags=op_tags,
     )
-    def gsheet_extract(context: OpExecutionContext):
-        file_stem = file_config["stem"].format(
+    def gsheet_extract(
+        context: OpExecutionContext,
+        warehouse: MSSQLResource,
+        gsheets: GoogleSheetsResource,
+    ):
+        file_stem: str = file_config["stem"].format(
             today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
         )
 
-        sql = construct_sql(
-            query_type=query_config["type"], query_value=query_config["value"], now=now
-        )
+        # gsheet title first character must be alpha
+        if file_stem[0].isnumeric():
+            file_stem = "GS" + file_stem
 
-        data = context.resources.warehouse.execute_query(
-            query=sql,
+        data = warehouse.execute_query(
+            query=construct_sql(
+                query_type=query_config["type"],
+                query_value=query_config["value"],
+                now=now,
+            ),
             partition_size=query_config.get("partition_size", 100000),
             output="dict",
         )
 
-        if data:
-            context.log.info("Transforming data to gsheet")
-            transformed_data = transform(data=data, file_suffix="gsheet")
+        if not data:
+            return None
 
-            load_gsheet(context=context, data=transformed_data, file_stem=file_stem)
+        context.log.info("Transforming data to gsheet")
+        transformed_data = transform(data=data, file_suffix="gsheet")
+
+        context.log.info(f"Opening: {file_stem}")
+        spreadsheet = gsheets.get_sheet(title=file_stem)
+
+        context.log.debug(spreadsheet.url)
+
+        named_range_match = [
+            nr for nr in spreadsheet.list_named_ranges() if nr["name"] == file_stem
+        ]
+
+        named_range = named_range_match[0] if named_range_match else None
+
+        if named_range is not None:
+            named_range_id = named_range.get("namedRangeId")
+            end_row_ix = named_range["range"].get("endRowIndex", 0)
+            end_col_ix = named_range["range"].get("endColumnIndex", 0)
+
+            range_area = (end_row_ix + 1) * (end_col_ix + 1)
+        else:
+            named_range_id = None
+            range_area = 0
+
+        worksheet = (
+            spreadsheet.get_worksheet_by_id(id=named_range["range"].get("sheetId", 0))
+            if named_range
+            else spreadsheet.sheet1
+        )
+
+        nrows, ncols = transformed_data["shape"]
+        nrows = nrows + 1  # header row
+        transformed_data_area = nrows * ncols
+
+        # resize worksheet
+        worksheet_area = worksheet.row_count * worksheet.col_count
+        if worksheet_area != transformed_data_area:
+            context.log.debug(f"Resizing worksheet area to {nrows}x{ncols}.")
+            worksheet.resize(rows=nrows, cols=ncols)
+
+        # resize named range
+        if range_area != transformed_data_area:
+            start_cell = gsheets.rowcol_to_a1(1, 1)
+            end_cell = gsheets.rowcol_to_a1(nrows, ncols)
+
+            context.log.debug(
+                f"Resizing named range '{file_stem}' to {start_cell}:{end_cell}."
+            )
+
+            worksheet.delete_named_range(named_range_id=named_range_id)
+            worksheet.define_named_range(
+                name=f"{start_cell}:{end_cell}", file_stem=file_stem
+            )
+
+        context.log.debug(f"Clearing '{file_stem}' values.")
+        worksheet.batch_clear([file_stem])
+
+        context.log.info(f"Updating '{file_stem}': {transformed_data_area} cells.")
+        worksheet.update(
+            file_stem,
+            [transformed_data["columns"]] + transformed_data["transformed_data"],
+        )
 
     return gsheet_extract
 
