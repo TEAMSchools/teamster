@@ -6,7 +6,6 @@ from dagster import (
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
-    ResourceParam,
     StaticPartitionsDefinition,
     asset,
 )
@@ -43,9 +42,7 @@ def build_wfm_asset(
         op_tags=op_tags,
         output_required=False,
     )
-    def _asset(
-        context: OpExecutionContext, adp_wfm: ResourceParam[WorkforceManagerResource]
-    ):
+    def _asset(context: OpExecutionContext, adp_wfm: WorkforceManagerResource):
         asset = context.assets_def
         symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]
 
