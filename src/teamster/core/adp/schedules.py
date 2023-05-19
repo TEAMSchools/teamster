@@ -11,7 +11,7 @@ from dagster import (
 from teamster.core.adp.resources import WorkforceManagerResource
 
 
-def build_adp_wfm_schedule(
+def build_dynamic_partition_schedule(
     cron_schedule,
     code_location,
     source_system,
@@ -62,7 +62,7 @@ def build_adp_wfm_schedule(
                 )
 
                 yield RunRequest(
-                    run_key=asset.key.to_python_identifier(),
+                    run_key=f"{asset.key.to_python_identifier()}_{partition_key}",
                     asset_selection=[asset.key],
                     partition_key=partition_key,
                 )

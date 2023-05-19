@@ -1,6 +1,6 @@
 from dagster import build_schedule_from_partitioned_job
 
-from teamster.core.adp.schedules import build_adp_wfm_schedule
+from teamster.core.adp.schedules import build_dynamic_partition_schedule
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import wfm_assets_dynamic
@@ -10,7 +10,7 @@ daily_partition_asset_job_schedule = build_schedule_from_partitioned_job(
     job=daily_partition_asset_job, hour_of_day=23, minute_of_hour=50
 )
 
-dynamic_partition_asset_job_schedule = build_adp_wfm_schedule(
+dynamic_partition_asset_job_schedule = build_dynamic_partition_schedule(
     cron_schedule="50 23 * * *",
     code_location=CODE_LOCATION,
     source_system="adp",
