@@ -54,18 +54,35 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                     partitions=cursor_result.partitions(size=partition_size)
                 )
 
+                if output_format == "json":
+                    output = json.dumps(obj=output, cls=CustomJSONEncoder)
+
                 context.log.info(f"Retrieved {len(output)} rows")
             elif output_format == "avro":
-                output = self.result_to_avro(
-                    partitions=cursor_result.partitions(size=partition_size),
-                    table_name=query.get_final_froms()[0].name,
-                    cursor_description=cursor_result.cursor.description,
+                avro_schema = parse_schema(
+                    {
+                        "type": "record",
+                        "name": query.get_final_froms()[0].name,
+                        "fields": [
+                            {
+                                "name": col[0].lower(),
+                                "type": [
+                                    "null",
+                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),
+                                ],
+                                "default": None,
+                            }
+                            for col in cursor_result.cursor.description
+                        ],
+                    }
                 )
 
-        if output_format == "json":
-            return json.dumps(obj=output, cls=CustomJSONEncoder)
-        else:
-            return output
+                output = self.result_to_avro(
+                    partitions=cursor_result.partitions(size=partition_size),
+                    schema=avro_schema,
+                )
+
+        return output
 
     def result_to_tuple_list(self, partitions):
         context = self.get_resource_context()
@@ -93,32 +110,13 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
         return output_data
 
-    def result_to_avro(self, partitions, table_name, cursor_description):
+    def result_to_avro(self, partitions, schema):
         context = self.get_resource_context()
 
-        data_dir = pathlib.Path("data").absolute()
-        data_dir.mkdir(parents=True, exist_ok=True)
-        data_filepath = data_dir / "data.avro"
+        data_file_path = pathlib.Path("data").absolute() / "data.avro"
 
-        context.log.info(f"Saving results to {data_filepath}")
-
-        avro_schema = parse_schema(
-            {
-                "type": "record",
-                "name": table_name,
-                "fields": [
-                    {
-                        "name": col[0].lower(),
-                        "type": [
-                            "null",
-                            *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),
-                        ],
-                        "default": None,
-                    }
-                    for col in cursor_description
-                ],
-            }
-        )
+        context.log.info(f"Saving results to {data_file_path}")
+        data_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         len_data = 0
         for i, pt in enumerate(partitions):
@@ -132,14 +130,16 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
             context.log.debug(f"Saving partition {i}")
             if i == 0:
-                with data_filepath.open("wb") as f:
-                    writer(fo=f, schema=avro_schema, records=data, codec="snappy")
+                with data_file_path.open("wb") as f:
+                    writer(fo=f, schema=schema, records=data, codec="snappy")
             else:
-                with data_filepath.open("a+b") as f:
-                    writer(fo=f, schema=avro_schema, records=data, codec="snappy")
+                with data_file_path.open("a+b") as f:
+                    writer(fo=f, schema=schema, records=data, codec="snappy")
 
             del data
             gc.collect()
+
+        return data_file_path
 
 
 class MSSQLResource(ConfigurableResource):
