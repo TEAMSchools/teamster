@@ -1,4 +1,3 @@
-import copy
 import gc
 import json
 import pathlib
@@ -33,90 +32,114 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     def execute_query(self, query, partition_size, output, connect_kwargs={}):
         context = self.get_resource_context()
 
-        context.log.debug("Opening connection to engine")
+        context.log.info("Opening connection to engine")
         with self._engine.connect(**connect_kwargs) as conn:
             context.log.info(f"Executing query:\n{query}")
-            result = conn.execute(statement=query)
+            cursor_result = conn.execute(statement=query)
 
-            if output in ["dict", "json", "avro"]:
-                context.log.debug("Staging result mappings")
-                result = result.mappings()
+            if output is None:
+                context.log.info("Retrieving rows from all partitions")
 
-            output_data = self.parse_result(
-                output_format=output,
-                partitions=result.partitions(size=partition_size),
-                table_name=query.get_final_froms()[0].name,
-                columns=result.cursor.description,
-            )
+                output_data = self.result_to_tuple_list(
+                    partitions=cursor_result.partitions(size=partition_size)
+                )
+
+                context.log.info(f"Retrieved {len(output_data)} rows")
+            elif output in ["dict", "json"]:
+                context.log.info("Retrieving rows from all partitions")
+
+                cursor_result = cursor_result.mappings()
+
+                output_data = self.result_to_dict_list(
+                    partitions=cursor_result.partitions(size=partition_size)
+                )
+
+                context.log.info(f"Retrieved {len(output_data)} rows")
+            elif output == "avro":
+                output_data = self.result_to_avro(
+                    partitions=cursor_result.partitions(size=partition_size),
+                    table_name=query.get_final_froms()[0].name,
+                    cursor_description=cursor_result.cursor.description,
+                )
 
         if output == "json":
             return json.dumps(obj=output_data, cls=CustomJSONEncoder)
         else:
             return output_data
 
-    def parse_result(self, output_format, partitions, table_name=None, columns=None):
+    def result_to_tuple_list(self, partitions):
         context = self.get_resource_context()
 
-        if output_format in ["dict", "json"] or output_format is None:
-            context.log.debug("Retrieving rows from all partitions")
-            pt_rows = [rows for pt in partitions for rows in pt]
+        pt_rows = [rows for pt in partitions for rows in pt]
 
-            context.log.debug("Unpacking partition rows")
-            output_data = [
-                dict(row) if output_format in ["dict", "json"] else row
-                for row in pt_rows
-            ]
+        context.log.debug("Unpacking partition rows")
+        output_data = [row for row in pt_rows]
 
-            del pt_rows
-            gc.collect()
-
-            context.log.debug(f"Retrieved {len(output_data)} rows")
-        elif output_format == "avro":
-            data_dir = pathlib.Path("data").absolute()
-
-            data_dir.mkdir(parents=True, exist_ok=True)
-            output_data = data_dir / f"{table_name}.{output_format}"
-            context.log.debug(f"Saving results to {output_data}")
-
-            avro_schema_fields = []
-            for col in columns:
-                # TODO: refactor based on db type
-                col_type = copy.deepcopy(ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []))
-                col_type.insert(0, "null")
-
-                avro_schema_fields.append(
-                    {"name": col[0].lower(), "type": col_type, "default": None}
-                )
-            context.log.debug(avro_schema_fields)
-
-            avro_schema = parse_schema(
-                {"type": "record", "name": table_name, "fields": avro_schema_fields}
-            )
-
-            len_data = 0
-            for i, pt in enumerate(partitions):
-                context.log.debug(f"Retrieving rows from partition {i}")
-                data = [dict(row) for row in pt]
-
-                del pt
-                gc.collect()
-
-                len_data += len(data)
-
-                context.log.debug(f"Saving partition {i}")
-                if i == 0:
-                    with output_data.open("wb") as f:
-                        writer(fo=f, schema=avro_schema, records=data, codec="snappy")
-                else:
-                    with output_data.open("a+b") as f:
-                        writer(fo=f, schema=avro_schema, records=data, codec="snappy")
-
-                del data
-                gc.collect()
-
-            context.log.debug(f"Retrieved {len_data} rows")
+        del pt_rows
+        gc.collect()
 
         return output_data
+
+    def result_to_dict_list(self, partitions):
+        context = self.get_resource_context()
+
+        pt_rows = [rows for pt in partitions for rows in pt]
+
+        context.log.debug("Unpacking partition rows")
+        output_data = [dict(row) for row in pt_rows]
+
+        del pt_rows
+        gc.collect()
+
+        return output_data
+
+    def result_to_avro(self, partitions, table_name, cursor_description):
+        context = self.get_resource_context()
+
+        data_dir = pathlib.Path("data").absolute()
+        data_dir.mkdir(parents=True, exist_ok=True)
+        data_filepath = data_dir / "data.avro"
+
+        context.log.info(f"Saving results to {data_filepath}")
+
+        avro_schema = parse_schema(
+            {
+                "type": "record",
+                "name": table_name,
+                "fields": [
+                    {
+                        "name": col[0].lower(),
+                        "type": [
+                            "null",
+                            *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),
+                        ],
+                        "default": None,
+                    }
+                    for col in cursor_description
+                ],
+            }
+        )
+
+        len_data = 0
+        for i, pt in enumerate(partitions):
+            context.log.debug(f"Retrieving rows from partition {i}")
+
+            data = [dict(row) for row in pt]
+            del pt
+            gc.collect()
+
+            len_data += len(data)
+
+            context.log.debug(f"Saving partition {i}")
+            if i == 0:
+                with data_filepath.open("wb") as f:
+                    writer(fo=f, schema=avro_schema, records=data, codec="snappy")
+            else:
+                with data_filepath.open("a+b") as f:
+                    writer(fo=f, schema=avro_schema, records=data, codec="snappy")
+
+            del data
+            gc.collect()
 
 
 class MSSQLResource(ConfigurableResource):
