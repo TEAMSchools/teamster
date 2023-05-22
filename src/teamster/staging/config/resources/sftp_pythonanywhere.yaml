@@ -1,5 +1,0 @@
-remote_host: ssh.pythonanywhere.com
-username:
-  env: PYTHONANYWHERE_SFTP_USERNAME
-password:
-  env: PYTHONANYWHERE_SFTP_PASSWORD
