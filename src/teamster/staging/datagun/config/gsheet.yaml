@@ -3,7 +3,7 @@ key_prefix:
   - datagun
   - gsheets
 assets:
-  - asset_name: test_datagun_gsheet
+  - asset_name: test
     query_config:
       type: text
       value:

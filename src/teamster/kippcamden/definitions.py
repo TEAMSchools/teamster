@@ -77,10 +77,10 @@ defs = Definitions(
             arraysize=100000,
         ),
         "ps_ssh": SSHResource(
-            remote_host="teamacademy.clgpstest.com",
-            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
-            username=EnvVar("STAGING_PS_SSH_USERNAME"),
-            password=EnvVar("STAGING_PS_SSH_PASSWORD"),
+            remote_host="pskcna.kippnj.org",
+            remote_port=EnvVar("KIPPCAMDEN_PS_SSH_PORT"),
+            username=EnvVar("KIPPCAMDEN_PS_SSH_USERNAME"),
+            password=EnvVar("KIPPCAMDEN_PS_SSH_PASSWORD"),
         ),
         "deanslist": DeansListResource(
             subdomain="kippnj",
