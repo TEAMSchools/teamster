@@ -9,7 +9,7 @@ from dagster import ConfigurableResource
 from dagster._core.execution.context.init import InitResourceContext
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
-from sqlalchemy.engine import URL, create_engine
+from sqlalchemy.engine import URL, Engine, create_engine
 
 from teamster.core.utils.classes import CustomJSONEncoder
 
@@ -27,6 +27,8 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     port: int = None
     database: str = None
     query: dict = None
+
+    _engine: Engine = PrivateAttr()
 
     def execute_query(self, query, partition_size, output, connect_kwargs={}):
         context = self.get_resource_context()
@@ -121,10 +123,8 @@ class MSSQLResource(ConfigurableResource):
     engine: SqlAlchemyEngineResource
     driver: str
 
-    _engine = PrivateAttr()
-
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._engine = create_engine(
+        self.engine._engine = create_engine(
             url=URL.create(
                 drivername=f"{self.engine.dialect}+{self.engine.driver}",
                 username=self.engine.username,
@@ -143,15 +143,13 @@ class OracleResource(ConfigurableResource):
     engine: SqlAlchemyEngineResource
     version: str
     prefetchrows: int = oracledb.defaults.prefetchrows
-    arraysize: int = None
-
-    _engine = PrivateAttr()
+    arraysize: int = oracledb.defaults.arraysize
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         oracledb.version = self.version
         oracledb.defaults.prefetchrows = self.prefetchrows
 
-        self._engine = create_engine(
+        self.engine._engine = create_engine(
             url=URL.create(
                 drivername=f"{self.engine.dialect}+{self.engine.driver}",
                 username=self.engine.username,
