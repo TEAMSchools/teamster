@@ -13,3 +13,9 @@ assets:
   - asset_name: calendar_day
   - asset_name: spenrollments
   - asset_name: log
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
