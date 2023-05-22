@@ -172,6 +172,7 @@ defs = Definitions(
             remote_port=EnvVar("STAGING_PS_SSH_PORT"),
             username=EnvVar("STAGING_PS_SSH_USERNAME"),
             password=EnvVar("STAGING_PS_SSH_PASSWORD"),
+            tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
         ),
         "ssh_pythonanywhere": SSHConfigurableResource(
             remote_host="ssh.pythonanywhere.com",
