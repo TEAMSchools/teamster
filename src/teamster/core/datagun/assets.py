@@ -2,10 +2,10 @@ import gzip
 import json
 import pathlib
 
-import pandas as pd
 import pendulum
 from dagster import OpExecutionContext, asset, config_from_files
 from dagster_ssh import SSHResource
+from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.google.resources.sheets import GoogleSheetsResource
@@ -37,16 +37,19 @@ def transform(data, file_suffix, file_encoding=None, file_format=None):
         return gzip.compress(
             json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
-
-    df = pd.DataFrame(data=data)
-    if file_suffix in ["csv", "txt", "tsv"]:
-        return df.to_csv(index=False, encoding=file_encoding, **file_format).encode(
-            file_encoding
+    elif file_suffix in ["csv", "txt", "tsv"]:
+        return (
+            DataFrame(data=data)
+            .to_csv(index=False, encoding=file_encoding, **file_format)
+            .encode(file_encoding)
         )
     elif file_suffix == "gsheet":
+        df = DataFrame(data=data)
+
         df_json = df.to_json(orient="split", date_format="iso", index=False)
 
         df_dict = json.loads(df_json)
+
         df_dict["shape"] = df.shape
 
         return df_dict
@@ -243,8 +246,8 @@ def gsheet_extract_asset_factory(
 
         context.log.info(f"Updating '{file_stem}': {transformed_data_area} cells.")
         worksheet.update(
-            file_stem,
-            [transformed_data["columns"]] + transformed_data["transformed_data"],
+            range_name=file_stem,
+            values=[transformed_data["columns"]] + transformed_data["data"],
         )
 
     return gsheet_extract
