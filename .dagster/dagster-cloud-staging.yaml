@@ -11,6 +11,14 @@ locations:
         env_secrets:
           - achieve3k-sftp-password
           - achieve3k-sftp-username
+          - adp-sftp-password
+          - adp-sftp-username
+          - adp-wfm-app-key
+          - adp-wfm-client-id
+          - adp-wfm-client-secret
+          - adp-wfm-password
+          - adp-wfm-subdomain
+          - adp-wfm-username
           - alchemer-api-token
           - alchemer-api-token-secret
           - blissbook-sftp-password
@@ -49,6 +57,7 @@ locations:
           - schoolmint-grow-client-id
           - schoolmint-grow-client-secret
           - schoolmint-grow-district-id
+          - smartrecruiters-smarttoken
           - staging-ps-db-password
           - staging-ps-ssh-password
           - staging-ps-ssh-port
