@@ -1,7 +1,7 @@
 from dagster import Definitions, EnvVar, config_from_files, load_assets_from_modules
 from dagster_dbt import DbtCliClientResource
 from dagster_gcp import BigQueryResource
-from dagster_gcp.gcs import GCSResource
+from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.adp.resources import WorkforceManagerResource
@@ -9,7 +9,7 @@ from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import GoogleSheetsResource
-from teamster.core.schoolmint.resources import schoolmint_grow_resource
+from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import (
     MSSQLResource,
@@ -20,6 +20,7 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 
 from . import (
     CODE_LOCATION,
+    GCS_PROJECT_NAME,
     achieve3k,
     adp,
     alchemer,
@@ -77,8 +78,8 @@ defs = Definitions(
         *renlearn.sensors,
     ],
     resources={
-        "io_manager": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
+        "io_manager": ConfigurablePickledObjectGCSIOManager(
+            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-staging"
         ),
         "gcs_avro_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
@@ -86,12 +87,12 @@ defs = Definitions(
         "gcs_fp_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
         ),
-        "gcs": GCSResource(project="teamster-332318"),
+        "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt": DbtCliClientResource(
             project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
             profiles_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
         ),
-        "bq": BigQueryResource(project="teamster-332318"),
+        "bq": BigQueryResource(project=GCS_PROJECT_NAME),
         "warehouse": MSSQLResource(
             engine=SqlAlchemyEngineResource(
                 dialect="mssql",
@@ -105,8 +106,11 @@ defs = Definitions(
             driver="ODBC Driver 18 for SQL Server",
         ),
         "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
-        "schoolmint_grow": schoolmint_grow_resource.configured(
-            config_from_files([f"{resource_config_dir}/schoolmint.yaml"])
+        "schoolmint_grow": SchoolMintGrowResource(
+            client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
+            client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
+            district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
+            api_response_limit=3200,
         ),
         "alchemer": AlchemerResource(
             api_token=EnvVar("ALCHEMER_API_TOKEN"),

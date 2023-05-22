@@ -3,6 +3,7 @@ import pendulum
 from teamster.core.utils.classes import FiscalYear
 
 CODE_LOCATION = "staging"
+GCS_PROJECT_NAME = "teamster-332318"
 
 LOCAL_TIMEZONE = pendulum.timezone(name="US/Eastern")
 NOW = pendulum.now(tz=LOCAL_TIMEZONE)

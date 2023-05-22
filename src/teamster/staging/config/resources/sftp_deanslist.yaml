@@ -1,5 +1,0 @@
-remote_host: sftp.deanslistsoftware.com
-username:
-  env: DEANSLIST_SFTP_USERNAME
-password:
-  env: DEANSLIST_SFTP_PASSWORD

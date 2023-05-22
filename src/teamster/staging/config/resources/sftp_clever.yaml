@@ -1,5 +1,0 @@
-remote_host: sftp.clever.com
-username:
-  env: CLEVER_SFTP_USERNAME
-password:
-  env: CLEVER_SFTP_PASSWORD

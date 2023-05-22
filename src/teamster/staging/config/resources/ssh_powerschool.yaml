@@ -1,7 +1,0 @@
-remote_host: teamacademy.clgpstest.com
-remote_port:
-  env: STAGING_PS_SSH_PORT
-username:
-  env: STAGING_PS_SSH_USERNAME
-password:
-  env: STAGING_PS_SSH_PASSWORD
