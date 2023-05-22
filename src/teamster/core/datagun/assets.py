@@ -95,7 +95,7 @@ def load_sftp(context: OpExecutionContext, data, file_name, destination_config):
             sftp.chdir(str(destination_dir))
 
         context.log.info(f"Saving file to {destination_filepath}")
-        with sftp.file(file_name=file_name, mode="w") as f:
+        with sftp.file(filename=file_name, mode="w") as f:
             f.write(data)
 
 
