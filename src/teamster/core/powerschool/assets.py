@@ -36,21 +36,21 @@ def construct_sql(table_name, columns, partition_column, window_start=None):
     )
 
 
-def count(context, sql) -> int:
-    query_text = f"SELECT COUNT(*) FROM {sql.get_final_froms()[0].name}"
+# def count(context, sql) -> int:
+#     query_text = f"SELECT COUNT(*) FROM {sql.get_final_froms()[0].name}"
 
-    if sql.whereclause.text == "":
-        query = text(query_text)
-    else:
-        query = text(f"{query_text} WHERE {sql.whereclause.text}")
+#     if sql.whereclause.text == "":
+#         query = text(query_text)
+#     else:
+#         query = text(f"{query_text} WHERE {sql.whereclause.text}")
 
-    [(count,)] = context.resources.ps_db.execute_query(
-        query=query,
-        partition_size=1,
-        output=None,
-    )
+#     [(count,)] = context.resources.ps_db.engine.execute_query(
+#         query=query,
+#         partition_size=1,
+#         output_format=None,
+#     )
 
-    return count
+#     return count
 
 
 def build_powerschool_table_asset(
@@ -91,8 +91,8 @@ def build_powerschool_table_asset(
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            file_path = context.resources.ps_db.execute_query(
-                query=sql, partition_size=100000, output="avro"
+            file_path = context.resources.ps_db.engine.execute_query(
+                query=sql, partition_size=100000, output_format="avro"
             )
 
             try:

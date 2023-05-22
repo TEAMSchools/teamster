@@ -29,7 +29,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
     _engine: Engine = PrivateAttr()
 
-    def execute_query(self, query, partition_size, output, connect_kwargs={}):
+    def execute_query(self, query, partition_size, output_format, connect_kwargs={}):
         context = self.get_resource_context()
 
         context.log.info("Opening connection to engine")
@@ -37,35 +37,35 @@ class SqlAlchemyEngineResource(ConfigurableResource):
             context.log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
 
-            if output is None:
+            if output_format is None:
                 context.log.info("Retrieving rows from all partitions")
 
-                output_data = self.result_to_tuple_list(
+                output = self.result_to_tuple_list(
                     partitions=cursor_result.partitions(size=partition_size)
                 )
 
-                context.log.info(f"Retrieved {len(output_data)} rows")
-            elif output in ["dict", "json"]:
+                context.log.info(f"Retrieved {len(output)} rows")
+            elif output_format in ["dict", "json"]:
                 context.log.info("Retrieving rows from all partitions")
 
                 cursor_result = cursor_result.mappings()
 
-                output_data = self.result_to_dict_list(
+                output = self.result_to_dict_list(
                     partitions=cursor_result.partitions(size=partition_size)
                 )
 
-                context.log.info(f"Retrieved {len(output_data)} rows")
-            elif output == "avro":
-                output_data = self.result_to_avro(
+                context.log.info(f"Retrieved {len(output)} rows")
+            elif output_format == "avro":
+                output = self.result_to_avro(
                     partitions=cursor_result.partitions(size=partition_size),
                     table_name=query.get_final_froms()[0].name,
                     cursor_description=cursor_result.cursor.description,
                 )
 
-        if output == "json":
-            return json.dumps(obj=output_data, cls=CustomJSONEncoder)
+        if output_format == "json":
+            return json.dumps(obj=output, cls=CustomJSONEncoder)
         else:
-            return output_data
+            return output
 
     def result_to_tuple_list(self, partitions):
         context = self.get_resource_context()
