@@ -125,7 +125,7 @@ def sftp_extract_asset_factory(
         data = context.resources.warehouse.engine.execute_query(
             query=sql,
             partition_size=query_config.get("partition_size", 100000),
-            output="dict",
+            output_format="dict",
         )
 
         if data:
@@ -177,7 +177,7 @@ def gsheet_extract_asset_factory(
                 now=now,
             ),
             partition_size=query_config.get("partition_size", 100000),
-            output="dict",
+            output_format="dict",
         )
 
         if not data:

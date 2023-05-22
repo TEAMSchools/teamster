@@ -29,7 +29,9 @@ def get_asset_count(asset, db, window_start):
         )
     )
 
-    [(count,)] = db.execute_query(query=query, partition_size=1, output=None)
+    [(count,)] = db.engine.execute_query(
+        query=query, partition_size=1, output_format=None
+    )
 
     return count
 
