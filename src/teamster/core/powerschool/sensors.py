@@ -50,12 +50,11 @@ def build_dynamic_partition_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        # required_resource_keys={"ssh_powerschool", "ps_db"},
     )
     def _sensor(
         context: SensorEvaluationContext,
         ssh_powerschool: ResourceParam[SSHConfigurableResource],
-        ps_db: ResourceParam[OracleResource],
+        db_powerschool: ResourceParam[OracleResource],
     ):
         cursor = json.loads(context.cursor or "{}")
 
@@ -111,7 +110,7 @@ def build_dynamic_partition_sensor(
                     )
 
                     count = get_asset_count(
-                        asset=asset, db=ps_db, window_start=window_start
+                        asset=asset, db=db_powerschool, window_start=window_start
                     )
 
                     context.log.debug(f"count: {count}")
