@@ -12,10 +12,10 @@ from dagster import (
     SensorResult,
     sensor,
 )
-from dagster_ssh import SSHResource
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def get_asset_count(asset, db, window_start):
@@ -55,7 +55,7 @@ def build_dynamic_partition_sensor(
     )
     def _sensor(
         context: SensorEvaluationContext,
-        ssh_powerschool: ResourceParam[SSHResource],
+        ssh_powerschool: ResourceParam[SSHConfigurableResource],
         ps_db: ResourceParam[OracleResource],
     ):
         cursor = json.loads(context.cursor or "{}")

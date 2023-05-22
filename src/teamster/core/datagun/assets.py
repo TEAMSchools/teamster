@@ -4,12 +4,12 @@ import pathlib
 
 import pendulum
 from dagster import OpExecutionContext, asset, config_from_files
-from dagster_ssh import SSHResource
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.google.resources.sheets import GoogleSheetsResource
 from teamster.core.sqlalchemy.resources import MSSQLResource
+from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
@@ -60,7 +60,7 @@ def load_sftp(context: OpExecutionContext, data, file_name, destination_config):
     destination_path = destination_config.get("path", "")
 
     # context.resources is a namedtuple
-    ssh: SSHResource = getattr(context.resources, f"ssh_{destination_name}")
+    ssh: SSHConfigurableResource = getattr(context.resources, f"ssh_{destination_name}")
 
     conn = ssh.get_connection()
     with conn.open_sftp() as sftp:
