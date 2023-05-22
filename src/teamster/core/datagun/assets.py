@@ -5,6 +5,7 @@ import pathlib
 import pandas as pd
 import pendulum
 from dagster import OpExecutionContext, asset, config_from_files
+from dagster_ssh import SSHResource
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.google.resources.sheets import GoogleSheetsResource
@@ -51,15 +52,15 @@ def transform(data, file_suffix, file_encoding=None, file_format=None):
         return df_dict
 
 
-def load_sftp(context, data, file_name, destination_config):
+def load_sftp(context: OpExecutionContext, data, file_name, destination_config):
     destination_name = destination_config.get("name")
     destination_path = destination_config.get("path", "")
 
     # context.resources is a namedtuple
-    sftp = getattr(context.resources, f"sftp_{destination_name}")
+    ssh: SSHResource = getattr(context.resources, f"sftp_{destination_name}")
 
-    sftp_conn = sftp.get_connection()
-    with sftp_conn.open_sftp() as sftp:
+    conn = ssh.get_connection()
+    with conn.open_sftp() as sftp:
         sftp.chdir(".")
 
         if destination_path != "":
@@ -84,14 +85,14 @@ def load_sftp(context, data, file_name, destination_config):
                         sftp.stat(str(path))
                     except IOError:
                         context.log.info(f"Creating directory: {path}")
-                        sftp.mkdir(str(path))
+                        sftp.mkdir(path=str(path))
 
         # if destination_path given, chdir after confirming
         if destination_path:
             sftp.chdir(str(destination_dir))
 
         context.log.info(f"Saving file to {destination_filepath}")
-        with sftp.file(file_name, "w") as f:
+        with sftp.file(file_name=file_name, mode="w") as f:
             f.write(data)
 
 
@@ -234,7 +235,7 @@ def gsheet_extract_asset_factory(
 
             worksheet.delete_named_range(named_range_id=named_range_id)
             worksheet.define_named_range(
-                name=f"{start_cell}:{end_cell}", file_stem=file_stem
+                name=f"{start_cell}:{end_cell}", range_name=file_stem
             )
 
         context.log.debug(f"Clearing '{file_stem}' values.")
