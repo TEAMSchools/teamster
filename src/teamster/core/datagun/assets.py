@@ -246,8 +246,7 @@ def gsheet_extract_asset_factory(
 
         context.log.info(f"Updating '{file_stem}': {transformed_data_area} cells.")
         worksheet.update(
-            range_name=file_stem,
-            values=[transformed_data["columns"]] + transformed_data["data"],
+            file_stem, [transformed_data["columns"]] + transformed_data["data"]
         )
 
     return gsheet_extract
