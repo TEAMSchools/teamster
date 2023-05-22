@@ -9,11 +9,11 @@ from dagster import (
     ResourceParam,
     asset,
 )
-from dagster_ssh import SSHResource
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def construct_sql(table_name, columns, partition_column, window_start=None):
@@ -62,7 +62,7 @@ def build_powerschool_table_asset(
     )
     def _asset(
         context: OpExecutionContext,
-        ssh_powerschool: ResourceParam[SSHResource],
+        ssh_powerschool: ResourceParam[SSHConfigurableResource],
         ps_db: ResourceParam[OracleResource],
     ):
         sql = construct_sql(

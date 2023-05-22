@@ -11,12 +11,13 @@ from dagster import (
     SkipReason,
     sensor,
 )
-from dagster_ssh import SSHResource
+
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def get_ls(context, source_system, asset_defs):
     cursor: dict = json.loads(context.cursor or "{}")
-    ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+    ssh: SSHConfigurableResource = getattr(context.resources, f"sftp_{source_system}")
 
     try:
         conn = ssh.get_connection()

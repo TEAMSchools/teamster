@@ -1,11 +1,8 @@
-import os
-
 from dagster import Definitions, EnvVar, config_from_files, load_assets_from_modules
 from dagster_dbt import DbtCliClientResource
 from dagster_gcp import BigQueryResource
 from dagster_gcp.gcs import GCSResource
 from dagster_k8s import k8s_job_executor
-from dagster_ssh import SSHResource
 
 from teamster.core.adp.resources import WorkforceManagerResource
 from teamster.core.alchemer.resources import AlchemerResource
@@ -19,6 +16,7 @@ from teamster.core.sqlalchemy.resources import (
     OracleResource,
     SqlAlchemyEngineResource,
 )
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 from . import (
     CODE_LOCATION,
@@ -144,57 +142,49 @@ defs = Definitions(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
         ),
-        "ssh_achieve3k": SSHResource(
+        "ssh_achieve3k": SSHConfigurableResource(
             remote_host="xfer.achieve3000.com",
-            remote_port=22,
             username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
-        "ssh_adp": SSHResource(
+        "ssh_adp": SSHConfigurableResource(
             remote_host="sftp.kippnj.org",
-            remote_port=22,
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
         ),
-        "ssh_clever": SSHResource(
+        "ssh_clever": SSHConfigurableResource(
             remote_host="sftp.clever.com",
-            remote_port=22,
             username=EnvVar("CLEVER_SFTP_USERNAME"),
             password=EnvVar("CLEVER_SFTP_PASSWORD"),
         ),
-        "ssh_clever_reports": SSHResource(
+        "ssh_clever_reports": SSHConfigurableResource(
             remote_host="reports-sftp.clever.com",
-            remote_port=22,
             username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
             password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
         ),
-        "ssh_iready": SSHResource(
+        "ssh_iready": SSHConfigurableResource(
             remote_host="prod-sftp-1.aws.cainc.com",
-            remote_port=22,
             username=EnvVar("IREADY_SFTP_USERNAME"),
             password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
-        "ssh_powerschool": SSHResource(
+        "ssh_powerschool": SSHConfigurableResource(
             remote_host="teamacademy.clgpstest.com",
-            remote_port=int(os.getenv("STAGING_PS_SSH_PORT")),
+            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
             username=EnvVar("STAGING_PS_SSH_USERNAME"),
             password=EnvVar("STAGING_PS_SSH_PASSWORD"),
         ),
-        "ssh_pythonanywhere": SSHResource(
+        "ssh_pythonanywhere": SSHConfigurableResource(
             remote_host="ssh.pythonanywhere.com",
-            remote_port=22,
             username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
             password=EnvVar("PYTHONANYWHERE_SFTP_PASSWORD"),
         ),
-        "ssh_renlearn": SSHResource(
+        "ssh_renlearn": SSHConfigurableResource(
             remote_host="sftp.renaissance.com",
-            remote_port=22,
             username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
             password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
         ),
-        "ssh_kipptaf": SSHResource(
+        "ssh_kipptaf": SSHConfigurableResource(
             remote_host="sftp.kippnj.org",
-            remote_port=22,
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
