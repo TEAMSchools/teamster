@@ -54,14 +54,13 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         metadata=metadata,
         op_tags=op_tags,
-        # required_resource_keys={"ps_db", "ssh_powerschool"},
         io_manager_key="gcs_fp_io",
         output_required=False,
     )
     def _asset(
         context: OpExecutionContext,
         ssh_powerschool: ResourceParam[SSHConfigurableResource],
-        ps_db: ResourceParam[OracleResource],
+        db_powerschool: ResourceParam[OracleResource],
     ):
         sql = construct_sql(
             table_name=asset_name,
@@ -76,7 +75,7 @@ def build_powerschool_table_asset(
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            file_path = ps_db.engine.execute_query(
+            file_path = db_powerschool.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
             )
 

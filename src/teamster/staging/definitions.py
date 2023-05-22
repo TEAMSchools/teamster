@@ -105,30 +105,7 @@ defs = Definitions(
             ),
             driver="ODBC Driver 18 for SQL Server",
         ),
-        "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
-        "schoolmint_grow": SchoolMintGrowResource(
-            client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
-            client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
-            district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
-            api_response_limit=3200,
-        ),
-        "alchemer": AlchemerResource(
-            api_token=EnvVar("ALCHEMER_API_TOKEN"),
-            api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
-            api_version="v5",
-        ),
-        "adp_wfm": WorkforceManagerResource(
-            subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
-            app_key=EnvVar("ADP_WFM_APP_KEY"),
-            client_id=EnvVar("ADP_WFM_CLIENT_ID"),
-            client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
-            username=EnvVar("ADP_WFM_USERNAME"),
-            password=EnvVar("ADP_WFM_PASSWORD"),
-        ),
-        "smartrecruiters": SmartRecruitersResource(
-            smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
-        ),
-        "ps_db": OracleResource(
+        "db_powerschool": OracleResource(
             engine=SqlAlchemyEngineResource(
                 dialect="oracle",
                 driver="cx_oracle",
@@ -142,9 +119,32 @@ defs = Definitions(
             prefetchrows=100000,
             arraysize=100000,
         ),
+        "adp_wfm": WorkforceManagerResource(
+            subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
+            app_key=EnvVar("ADP_WFM_APP_KEY"),
+            client_id=EnvVar("ADP_WFM_CLIENT_ID"),
+            client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
+            username=EnvVar("ADP_WFM_USERNAME"),
+            password=EnvVar("ADP_WFM_PASSWORD"),
+        ),
+        "alchemer": AlchemerResource(
+            api_token=EnvVar("ALCHEMER_API_TOKEN"),
+            api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
+            api_version="v5",
+        ),
         "deanslist": DeansListResource(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
+        ),
+        "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
+        "schoolmint_grow": SchoolMintGrowResource(
+            client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
+            client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
+            district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
+            api_response_limit=3200,
+        ),
+        "smartrecruiters": SmartRecruitersResource(
+            smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
         ),
         "ssh_achieve3k": SSHConfigurableResource(
             remote_host="xfer.achieve3000.com",
@@ -171,6 +171,11 @@ defs = Definitions(
             username=EnvVar("IREADY_SFTP_USERNAME"),
             password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
+        "ssh_kipptaf": SSHConfigurableResource(
+            remote_host="sftp.kippnj.org",
+            username=EnvVar("KTAF_SFTP_USERNAME"),
+            password=EnvVar("KTAF_SFTP_PASSWORD"),
+        ),
         "ssh_powerschool": SSHConfigurableResource(
             remote_host="teamacademy.clgpstest.com",
             remote_port=EnvVar("STAGING_PS_SSH_PORT"),
@@ -187,11 +192,6 @@ defs = Definitions(
             remote_host="sftp.renaissance.com",
             username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
             password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
-        ),
-        "ssh_kipptaf": SSHConfigurableResource(
-            remote_host="sftp.kippnj.org",
-            username=EnvVar("KTAF_SFTP_USERNAME"),
-            password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
     },
 )
