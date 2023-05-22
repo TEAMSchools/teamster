@@ -3,7 +3,7 @@ assets:
   - asset_name: test_datagun_sftp_textquery
     query_config:
       type: file
-      value: src/teamster/staging/datagun/config/sql/staging.sql
+      value: src/teamster/staging/datagun/config/sql/test.sql
     file_config:
       stem: json-staging-{now}
       suffix: json.gz

@@ -122,7 +122,7 @@ def sftp_extract_asset_factory(
             query_type=query_config["type"], query_value=query_config["value"], now=now
         )
 
-        data = context.resources.warehouse.execute_query(
+        data = context.resources.warehouse.engine.execute_query(
             query=sql,
             partition_size=query_config.get("partition_size", 100000),
             output="dict",
@@ -170,7 +170,7 @@ def gsheet_extract_asset_factory(
         if file_stem[0].isnumeric():
             file_stem = "GS" + file_stem
 
-        data = warehouse.execute_query(
+        data = warehouse.engine.execute_query(
             query=construct_sql(
                 query_type=query_config["type"],
                 query_value=query_config["value"],

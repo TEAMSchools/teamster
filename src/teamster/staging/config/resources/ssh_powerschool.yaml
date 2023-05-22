@@ -1,5 +1,4 @@
-remote_host:
-  env: STAGING_PS_SSH_HOST
+remote_host: teamacademy.clgpstest.com
 remote_port:
   env: STAGING_PS_SSH_PORT
 username:
