@@ -1,7 +1,6 @@
 from dagster import ScheduleDefinition
 
-from teamster.core.utils.variables import LOCAL_TIMEZONE
-
+from .. import LOCAL_TIMEZONE
 from .jobs import powerschool_nonpartition_asset_job
 
 powerschool_nonpartition_asset_job_schedule = ScheduleDefinition(

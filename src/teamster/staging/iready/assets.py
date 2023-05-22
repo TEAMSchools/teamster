@@ -1,15 +1,12 @@
-from dagster import config_from_files
+from teamster.core.iready.assets import build_iready_sftp_asset
 
-from teamster.core.iready.assets import build_sftp_asset
+from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
-from .. import CODE_LOCATION
-
-config_dir = f"src/teamster/{CODE_LOCATION}/iready/config"
-
-sftp_assets = [
-    build_sftp_asset(code_location=CODE_LOCATION, source_system="iready", **a)
-    for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
-]
+sftp_assets = build_iready_sftp_asset(
+    config_dir=f"src/teamster/{CODE_LOCATION}/iready/config",
+    code_location=CODE_LOCATION,
+    timezone=LOCAL_TIMEZONE,
+)
 
 __all__ = [
     *sftp_assets,

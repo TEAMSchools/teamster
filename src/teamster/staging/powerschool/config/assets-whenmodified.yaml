@@ -22,6 +22,16 @@ assets:
   - asset_name: personphonenumberassoc
   - asset_name: phonenumber
   - asset_name: roledef
+  - asset_name: s_nj_crs_x
+  - asset_name: s_nj_ren_x
+  - asset_name: s_nj_stu_x
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
+  - asset_name: s_nj_usr_x
   - asset_name: schoolstaff
   - asset_name: sectionteacher
   - asset_name: studentcontactassoc
@@ -31,4 +41,12 @@ assets:
   - asset_name: teachercategory
   - asset_name: u_clg_et_stu
   - asset_name: u_clg_et_stu_alt
+  - asset_name: u_def_ext_students
+  - asset_name: u_studentsuserfields
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
   - asset_name: users
