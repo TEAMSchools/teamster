@@ -56,13 +56,13 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         metadata=metadata,
         op_tags=op_tags,
-        # required_resource_keys={"ps_db", "ps_ssh"},
+        # required_resource_keys={"ps_db", "ssh_powerschool"},
         io_manager_key="gcs_fp_io",
         output_required=False,
     )
     def _asset(
         context: OpExecutionContext,
-        ps_ssh: ResourceParam[SSHResource],
+        ssh_powerschool: ResourceParam[SSHResource],
         ps_db: ResourceParam[OracleResource],
     ):
         sql = construct_sql(
@@ -72,7 +72,7 @@ def build_powerschool_table_asset(
             window_start=context.partition_key if partition_column else None,
         )
 
-        ssh_tunnel = ps_ssh.get_tunnel(
+        ssh_tunnel = ssh_powerschool.get_tunnel(
             remote_port=1521,
             remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
             local_port=1521,

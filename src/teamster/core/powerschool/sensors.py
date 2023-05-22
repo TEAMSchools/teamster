@@ -51,11 +51,11 @@ def build_dynamic_partition_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        # required_resource_keys={"ps_ssh", "ps_db"},
+        # required_resource_keys={"ssh_powerschool", "ps_db"},
     )
     def _sensor(
         context: SensorEvaluationContext,
-        ps_ssh: ResourceParam[SSHResource],
+        ssh_powerschool: ResourceParam[SSHResource],
         ps_db: ResourceParam[OracleResource],
     ):
         cursor = json.loads(context.cursor or "{}")
@@ -67,7 +67,7 @@ def build_dynamic_partition_sensor(
         )
 
         ssh_port = 1521
-        ssh_tunnel = ps_ssh.get_tunnel(
+        ssh_tunnel = ssh_powerschool.get_tunnel(
             remote_port=ssh_port,
             remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
             local_port=ssh_port,

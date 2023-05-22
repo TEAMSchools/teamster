@@ -60,7 +60,7 @@ def load_sftp(context: OpExecutionContext, data, file_name, destination_config):
     destination_path = destination_config.get("path", "")
 
     # context.resources is a namedtuple
-    ssh: SSHResource = getattr(context.resources, f"sftp_{destination_name}")
+    ssh: SSHResource = getattr(context.resources, f"ssh_{destination_name}")
 
     conn = ssh.get_connection()
     with conn.open_sftp() as sftp:
@@ -113,7 +113,7 @@ def sftp_extract_asset_factory(
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
-        required_resource_keys={"warehouse", f"sftp_{destination_config['name']}"},
+        required_resource_keys={"warehouse", f"ssh_{destination_config['name']}"},
         op_tags=op_tags,
     )
     def sftp_extract(context):
