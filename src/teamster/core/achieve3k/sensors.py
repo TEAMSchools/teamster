@@ -36,7 +36,7 @@ def build_sftp_sensor(
         )
 
         ls = {}
-        conn = ssh.get_connection()
+        conn = ssh._internal_resource.get_connection()
         with conn.open_sftp() as sftp_client:
             for asset in asset_defs:
                 ls[asset.key.to_python_identifier()] = {

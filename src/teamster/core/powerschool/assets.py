@@ -1,5 +1,3 @@
-import os
-
 import pendulum
 from dagster import (
     AssetsDefinition,
@@ -72,11 +70,7 @@ def build_powerschool_table_asset(
             window_start=context.partition_key if partition_column else None,
         )
 
-        ssh_tunnel = ssh_powerschool.get_tunnel(
-            remote_port=1521,
-            remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
-            local_port=1521,
-        )
+        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
         try:
             context.log.info("Starting SSH tunnel")

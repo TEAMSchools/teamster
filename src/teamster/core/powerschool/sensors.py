@@ -1,5 +1,4 @@
 import json
-import os
 
 import pendulum
 from dagster import (
@@ -68,9 +67,7 @@ def build_dynamic_partition_sensor(
 
         ssh_port = 1521
         ssh_tunnel = ssh_powerschool.get_tunnel(
-            remote_port=ssh_port,
-            remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
-            local_port=ssh_port,
+            remote_port=ssh_port, local_port=ssh_port
         )
 
         ssh_tunnel.check_tunnels()
