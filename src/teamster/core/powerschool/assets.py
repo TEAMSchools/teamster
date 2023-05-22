@@ -6,10 +6,14 @@ from dagster import (
     DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
+    ResourceParam,
     asset,
 )
+from dagster_ssh import SSHResource
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
+
+from teamster.core.sqlalchemy.resources import OracleResource
 
 
 def construct_sql(table_name, columns, partition_column, window_start=None):
@@ -52,11 +56,15 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         metadata=metadata,
         op_tags=op_tags,
-        required_resource_keys={"ps_db", "ps_ssh"},
+        # required_resource_keys={"ps_db", "ps_ssh"},
         io_manager_key="gcs_fp_io",
         output_required=False,
     )
-    def _asset(context: OpExecutionContext):
+    def _asset(
+        context: OpExecutionContext,
+        ps_ssh: ResourceParam[SSHResource],
+        ps_db: ResourceParam[OracleResource],
+    ):
         sql = construct_sql(
             table_name=asset_name,
             columns=columns,
@@ -64,7 +72,7 @@ def build_powerschool_table_asset(
             window_start=context.partition_key if partition_column else None,
         )
 
-        ssh_tunnel = context.resources.ps_ssh.get_tunnel(
+        ssh_tunnel = ps_ssh.get_tunnel(
             remote_port=1521,
             remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
             local_port=1521,
@@ -74,7 +82,7 @@ def build_powerschool_table_asset(
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            file_path = context.resources.ps_db.engine.execute_query(
+            file_path = ps_db.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
             )
 

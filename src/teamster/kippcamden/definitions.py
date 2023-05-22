@@ -6,9 +6,10 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_dbt import dbt_cli_resource
-from dagster_gcp import BigQueryResource, gcs_resource
+from dagster_gcp import BigQueryResource
+from dagster_gcp.gcs import GCSResource
 from dagster_k8s import k8s_job_executor
-from dagster_ssh import ssh_resource
+from dagster_ssh import SSHResource, ssh_resource
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.resources.io import gcs_io_manager
@@ -47,9 +48,7 @@ defs = Definitions(
         "gcs_avro_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
-        "gcs": gcs_resource.configured(
-            config_from_files([f"{resource_config_dir}/gcs.yaml"])
-        ),
+        "gcs": GCSResource(project="teamster-332318"),
         "warehouse": MSSQLResource(
             engine=SqlAlchemyEngineResource(
                 dialect="mssql",
@@ -77,8 +76,11 @@ defs = Definitions(
             prefetchrows=100000,
             arraysize=100000,
         ),
-        "ps_ssh": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/ssh_powerschool.yaml"])
+        "ps_ssh": SSHResource(
+            remote_host="teamacademy.clgpstest.com",
+            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
+            username=EnvVar("STAGING_PS_SSH_USERNAME"),
+            password=EnvVar("STAGING_PS_SSH_PASSWORD"),
         ),
         "deanslist": DeansListResource(
             subdomain="kippnj",

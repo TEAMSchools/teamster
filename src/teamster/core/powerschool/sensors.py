@@ -6,12 +6,16 @@ from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
+    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
     sensor,
 )
+from dagster_ssh import SSHResource
 from sqlalchemy import text
+
+from teamster.core.sqlalchemy.resources import OracleResource
 
 
 def get_asset_count(asset, db, window_start):
@@ -47,9 +51,13 @@ def build_dynamic_partition_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        required_resource_keys={"ps_ssh", "ps_db"},
+        # required_resource_keys={"ps_ssh", "ps_db"},
     )
-    def _sensor(context: SensorEvaluationContext):
+    def _sensor(
+        context: SensorEvaluationContext,
+        ps_ssh: ResourceParam[SSHResource],
+        ps_db: ResourceParam[OracleResource],
+    ):
         cursor = json.loads(context.cursor or "{}")
 
         window_end = (
@@ -59,7 +67,7 @@ def build_dynamic_partition_sensor(
         )
 
         ssh_port = 1521
-        ssh_tunnel = context.resources.ps_ssh.get_tunnel(
+        ssh_tunnel = ps_ssh.get_tunnel(
             remote_port=ssh_port,
             remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
             local_port=ssh_port,
@@ -106,9 +114,7 @@ def build_dynamic_partition_sensor(
                     )
 
                     count = get_asset_count(
-                        asset=asset,
-                        db=context.resources.ps_db,
-                        window_start=window_start,
+                        asset=asset, db=ps_db, window_start=window_start
                     )
 
                     context.log.debug(f"count: {count}")
