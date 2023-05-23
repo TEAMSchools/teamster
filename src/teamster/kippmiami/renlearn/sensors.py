@@ -9,6 +9,7 @@ sftp_sensor = build_sftp_sensor(
     asset_defs=assets,
     fiscal_year=CURRENT_FISCAL_YEAR,
     timezone=LOCAL_TIMEZONE,
+    minimum_interval_seconds=600,
 )
 
 __all__ = [
