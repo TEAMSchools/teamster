@@ -1,5 +1,0 @@
-remote_host: sftp.careevolution.com
-username:
-  env: CPN_SFTP_USERNAME
-password:
-  env: CPN_SFTP_PASSWORD

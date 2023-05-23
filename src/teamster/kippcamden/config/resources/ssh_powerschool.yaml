@@ -1,7 +1,0 @@
-remote_host: pskcna.kippnj.org
-remote_port:
-  env: KIPPCAMDEN_PS_SSH_PORT
-username:
-  env: KIPPCAMDEN_PS_SSH_USERNAME
-password:
-  env: KIPPCAMDEN_PS_SSH_PASSWORD

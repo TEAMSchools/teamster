@@ -5,10 +5,10 @@ from dagster import (
     config_from_files,
     load_assets_from_modules,
 )
-from dagster_dbt import dbt_cli_resource
-from dagster_gcp import BigQueryResource, gcs_resource
+from dagster_dbt import DbtCliClientResource
+from dagster_gcp import BigQueryResource
+from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
-from dagster_ssh import ssh_resource
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.resources.io import gcs_io_manager
@@ -17,8 +17,18 @@ from teamster.core.sqlalchemy.resources import (
     OracleResource,
     SqlAlchemyEngineResource,
 )
+from teamster.core.ssh.resources import SSHConfigurableResource
 
-from . import CODE_LOCATION, datagun, dbt, deanslist, edplan, powerschool, titan
+from . import (
+    CODE_LOCATION,
+    GCS_PROJECT_NAME,
+    datagun,
+    dbt,
+    deanslist,
+    edplan,
+    powerschool,
+    titan,
+)
 
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
@@ -38,19 +48,22 @@ defs = Definitions(
     schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
     sensors=[*powerschool.sensors, *edplan.sensors, *titan.sensors],
     resources={
-        "io_manager": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
-        ),
-        "gcs_fp_io": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
+        "io_manager": ConfigurablePickledObjectGCSIOManager(
+            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-staging"
         ),
         "gcs_avro_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
-        "gcs": gcs_resource.configured(
-            config_from_files([f"{resource_config_dir}/gcs.yaml"])
+        "gcs_fp_io": gcs_io_manager.configured(
+            config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
         ),
-        "warehouse": MSSQLResource(
+        "gcs": GCSResource(project="teamster-332318"),
+        "dbt": DbtCliClientResource(
+            project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
+            profiles_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
+        ),
+        "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
+        "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
                 dialect="mssql",
                 driver="pyodbc",
@@ -62,8 +75,7 @@ defs = Definitions(
             ),
             driver="ODBC Driver 18 for SQL Server",
         ),
-        "bq": BigQueryResource(project="teamster-332318"),
-        "ps_db": OracleResource(
+        "db_powerschool": OracleResource(
             engine=SqlAlchemyEngineResource(
                 dialect="oracle",
                 driver="cx_oracle",
@@ -77,27 +89,30 @@ defs = Definitions(
             prefetchrows=100000,
             arraysize=100000,
         ),
-        "ps_ssh": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/ssh_powerschool.yaml"])
-        ),
-        "dbt": dbt_cli_resource.configured(
-            {
-                "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
-            }
-        ),
         "deanslist": DeansListResource(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
         ),
-        "sftp_pythonanywhere": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
+        "ssh_edplan": SSHConfigurableResource(
+            remote_host="secureftp.easyiep.com",
+            username=EnvVar("KIPPNEWARK_EDPLAN_SFTP_USERNAME"),
+            password=EnvVar("KIPPNEWARK_EDPLAN_SFTP_PASSWORD"),
         ),
-        "sftp_edplan": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_edplan.yaml"])
+        "ssh_powerschool": SSHConfigurableResource(
+            remote_host="pskcna.kippnj.org",
+            remote_port=EnvVar("KIPPNEWARK_PS_SSH_PORT"),
+            username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
+            password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
         ),
-        "sftp_titan": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_titan.yaml"])
+        "ssh_pythonanywhere": SSHConfigurableResource(
+            remote_host="ssh.pythonanywhere.com",
+            username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
+            password=EnvVar("PYTHONANYWHERE_SFTP_PASSWORD"),
+        ),
+        "ssh_titan": SSHConfigurableResource(
+            remote_host="sftp.titank12.com",
+            username=EnvVar("KIPPNEWARK_TITAN_SFTP_USERNAME"),
+            password=EnvVar("KIPPNEWARK_TITAN_SFTP_PASSWORD"),
         ),
     },
 )
