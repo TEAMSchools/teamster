@@ -92,8 +92,8 @@ defs = Definitions(
             project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
             profiles_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
         ),
-        "bq": BigQueryResource(project=GCS_PROJECT_NAME),
-        "warehouse": MSSQLResource(
+        "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
+        "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
                 dialect="mssql",
                 driver="pyodbc",

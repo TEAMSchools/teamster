@@ -1,7 +1,0 @@
-remote_host: psteam.kippnj.org
-remote_port:
-  env: KIPPNEWARK_PS_SSH_PORT
-username:
-  env: KIPPNEWARK_PS_SSH_USERNAME
-password:
-  env: KIPPNEWARK_PS_SSH_PASSWORD

@@ -1,8 +1,8 @@
 import json
 
 from dagster import AssetIn, AssetsDefinition, OpExecutionContext, Output, asset
-from dagster_dbt import DbtCliResource, load_assets_from_dbt_manifest
-from google.cloud import bigquery
+from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_manifest
+from dagster_gcp import BigQueryResource
 
 from teamster.core.utils.functions import partition_key_to_vars
 
@@ -15,22 +15,22 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
         partitions_def=asset_definition.partitions_def,
-        required_resource_keys={"bq", "dbt"},
         compute_kind="dbt",
         group_name="staging",
     )
-    def _asset(context: OpExecutionContext, upstream):
+    def _asset(
+        context: OpExecutionContext,
+        db_bigquery: BigQueryResource,
+        dbt: DbtCliClientResource,
+        upstream,
+    ):
         dataset_name = f"{code_location}_{package_name}"
 
         # create BigQuery dataset, if not exists
-        bq: bigquery.Client = context.resources.bq
         context.log.info(f"Creating dataset {dataset_name}")
-        bq.create_dataset(dataset=dataset_name, exists_ok=True)
+        db_bigquery.create_dataset(dataset=dataset_name, exists_ok=True)
 
-        # dbt run-operation stage_external_sources
-        dbt: DbtCliResource = context.resources.dbt
-
-        dbt_output = dbt.run_operation(
+        dbt_output = dbt.get_dbt_client().run_operation(
             macro="stage_external_sources",
             args={"select": f"{package_name}.src_{package_name}__{asset_name}"},
             vars="ext_full_refresh: true",

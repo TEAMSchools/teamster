@@ -5,21 +5,23 @@ from dagster import (
     config_from_files,
     load_assets_from_modules,
 )
-from dagster_dbt import dbt_cli_resource
-from dagster_gcp import BigQueryResource, gcs_resource
+from dagster_dbt import DbtCliClientResource
+from dagster_gcp import BigQueryResource
+from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
-from dagster_ssh import ssh_resource
 
 from teamster.core.adp.resources import WorkforceManagerResource
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import GoogleSheetsResource
-from teamster.core.schoolmint.resources import schoolmint_grow_resource
+from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineResource
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 from . import (
     CODE_LOCATION,
+    GCS_PROJECT_NAME,
     achieve3k,
     adp,
     alchemer,
@@ -68,23 +70,19 @@ defs = Definitions(
         *adp.sensors,
     ],
     resources={
-        "io_manager": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_pickle.yaml"])
+        "io_manager": ConfigurablePickledObjectGCSIOManager(
+            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-staging"
         ),
         "gcs_avro_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
-        "gcs": gcs_resource.configured(
-            config_from_files([f"{resource_config_dir}/gcs.yaml"])
+        "gcs": GCSResource(project="teamster-332318"),
+        "dbt": DbtCliClientResource(
+            project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
+            profiles_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
         ),
-        "dbt": dbt_cli_resource.configured(
-            {
-                "project-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
-                "profiles-dir": f"/root/app/teamster-dbt/{CODE_LOCATION}",
-            }
-        ),
-        "bq": BigQueryResource(project="teamster-332318"),
-        "warehouse": MSSQLResource(
+        "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
+        "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
                 dialect="mssql",
                 driver="pyodbc",
@@ -96,15 +94,6 @@ defs = Definitions(
             ),
             driver="ODBC Driver 18 for SQL Server",
         ),
-        "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
-        "schoolmint_grow": schoolmint_grow_resource.configured(
-            config_from_files([f"{resource_config_dir}/schoolmint.yaml"])
-        ),
-        "alchemer": AlchemerResource(
-            api_token=EnvVar("ALCHEMER_API_TOKEN"),
-            api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
-            api_version="v5",
-        ),
         "adp_wfm": WorkforceManagerResource(
             subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
             app_key=EnvVar("ADP_WFM_APP_KEY"),
@@ -113,56 +102,109 @@ defs = Definitions(
             username=EnvVar("ADP_WFM_USERNAME"),
             password=EnvVar("ADP_WFM_PASSWORD"),
         ),
+        "alchemer": AlchemerResource(
+            api_token=EnvVar("ALCHEMER_API_TOKEN"),
+            api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
+            api_version="v5",
+        ),
+        "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
+        "schoolmint_grow": SchoolMintGrowResource(
+            client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
+            client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
+            district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
+            api_response_limit=3200,
+        ),
         "smartrecruiters": SmartRecruitersResource(
             smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
         ),
-        "sftp_pythonanywhere": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_pythonanywhere.yaml"])
+        "ssh_achieve3k": SSHConfigurableResource(
+            remote_host="xfer.achieve3000.com",
+            username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
+            password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
-        "sftp_achieve3k": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_achieve3k.yaml"])
+        "ssh_adp": SSHConfigurableResource(
+            remote_host="sftp.kippnj.org",
+            username=EnvVar("ADP_SFTP_USERNAME"),
+            password=EnvVar("ADP_SFTP_PASSWORD"),
         ),
-        "sftp_blissbook": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_blissbook.yaml"])
+        "ssh_blissbook": SSHConfigurableResource(
+            remote_host="sftp.blissbook.com",
+            remote_port="3022",
+            username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
+            password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
         ),
-        "sftp_clever": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_clever.yaml"])
+        "ssh_clever": SSHConfigurableResource(
+            remote_host="sftp.clever.com",
+            username=EnvVar("CLEVER_SFTP_USERNAME"),
+            password=EnvVar("CLEVER_SFTP_PASSWORD"),
         ),
-        "sftp_clever_reports": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_clever_reports.yaml"])
+        "ssh_clever_reports": SSHConfigurableResource(
+            remote_host="reports-sftp.clever.com",
+            username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
+            password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
         ),
-        "sftp_coupa": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_coupa.yaml"])
+        "ssh_coupa": SSHConfigurableResource(
+            remote_host="fileshare.coupahost.com",
+            username=EnvVar("COUPA_SFTP_USERNAME"),
+            password=EnvVar("COUPA_SFTP_PASSWORD"),
         ),
-        "sftp_deanslist": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_deanslist.yaml"])
+        "ssh_deanslist": SSHConfigurableResource(
+            remote_host="sftp.deanslistsoftware.com",
+            username=EnvVar("DEANSLIST_SFTP_USERNAME"),
+            password=EnvVar("DEANSLIST_SFTP_PASSWORD"),
         ),
-        "sftp_egencia": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_egencia.yaml"])
+        "ssh_egencia": SSHConfigurableResource(
+            remote_host="eusftp.egencia.com",
+            username=EnvVar("EGENCIA_SFTP_USERNAME"),
+            key_file="/etc/secret-volume/id_rsa_egencia",
         ),
-        "sftp_illuminate": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_illuminate.yaml"])
+        "ssh_illuminate": SSHConfigurableResource(
+            remote_host="sftp.illuminateed.com",
+            username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
+            password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
         ),
-        "sftp_iready": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_iready.yaml"])
+        "ssh_iready": SSHConfigurableResource(
+            remote_host="prod-sftp-1.aws.cainc.com",
+            username=EnvVar("IREADY_SFTP_USERNAME"),
+            password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
-        "sftp_kipptaf": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_kipptaf.yaml"])
+        "ssh_kipptaf": SSHConfigurableResource(
+            remote_host="sftp.kippnj.org",
+            username=EnvVar("KTAF_SFTP_USERNAME"),
+            password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
-        "sftp_littlesis": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_littlesis.yaml"])
+        "ssh_littlesis": SSHConfigurableResource(
+            remote_host="upload.littlesis.app",
+            username=EnvVar("LITTLESIS_SFTP_USERNAME"),
+            password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
         ),
-        "sftp_razkids": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_razkids.yaml"])
+        "ssh_powerschool": SSHConfigurableResource(
+            remote_host="teamacademy.clgpstest.com",
+            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
+            username=EnvVar("STAGING_PS_SSH_USERNAME"),
+            password=EnvVar("STAGING_PS_SSH_PASSWORD"),
+            tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
         ),
-        "sftp_read180": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_read180.yaml"])
+        "ssh_pythonanywhere": SSHConfigurableResource(
+            remote_host="ssh.pythonanywhere.com",
+            username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
+            password=EnvVar("PYTHONANYWHERE_SFTP_PASSWORD"),
         ),
-        "sftp_renlearn": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_renlearn.yaml"])
+        "ssh_razkids": SSHConfigurableResource(
+            remote_host="sftp.learninga-z.com",
+            remote_port="22224",
+            username=EnvVar("RAZKIDS_SFTP_USERNAME"),
+            password=EnvVar("RAZKIDS_SFTP_PASSWORD"),
         ),
-        "sftp_adp": ssh_resource.configured(
-            config_from_files([f"{resource_config_dir}/sftp_adp.yaml"])
+        "ssh_read180": SSHConfigurableResource(
+            remote_host="imports.education.scholastic.com",
+            username=EnvVar("READ180_SFTP_USERNAME"),
+            password=EnvVar("READ180_SFTP_PASSWORD"),
+        ),
+        "ssh_renlearn": SSHConfigurableResource(
+            remote_host="sftp.renaissance.com",
+            username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
+            password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
         ),
     },
 )

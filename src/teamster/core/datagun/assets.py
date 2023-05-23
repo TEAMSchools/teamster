@@ -113,7 +113,7 @@ def sftp_extract_asset_factory(
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
-        required_resource_keys={"warehouse", f"ssh_{destination_config['name']}"},
+        required_resource_keys={"db_mssql", f"ssh_{destination_config['name']}"},
         op_tags=op_tags,
     )
     def sftp_extract(context):
@@ -126,7 +126,7 @@ def sftp_extract_asset_factory(
             query_type=query_config["type"], query_value=query_config["value"], now=now
         )
 
-        data = context.resources.warehouse.engine.execute_query(
+        data = context.resources.db_mssql.engine.execute_query(
             query=sql,
             partition_size=query_config.get("partition_size", 100000),
             output_format="dict",
@@ -163,7 +163,7 @@ def gsheet_extract_asset_factory(
     )
     def gsheet_extract(
         context: OpExecutionContext,
-        warehouse: MSSQLResource,
+        db_mssql: MSSQLResource,
         gsheets: GoogleSheetsResource,
     ):
         file_stem: str = file_config["stem"].format(
@@ -174,7 +174,7 @@ def gsheet_extract_asset_factory(
         if file_stem[0].isnumeric():
             file_stem = "GS" + file_stem
 
-        data = warehouse.engine.execute_query(
+        data = db_mssql.engine.execute_query(
             query=construct_sql(
                 query_type=query_config["type"],
                 query_value=query_config["value"],
