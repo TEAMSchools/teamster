@@ -8,6 +8,7 @@ sftp_sensor = build_sftp_sensor(
     source_system="edplan",
     asset_defs=assets,
     timezone=LOCAL_TIMEZONE,
+    minimum_interval_seconds=600,
 )
 
 __all__ = [

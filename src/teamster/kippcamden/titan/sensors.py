@@ -8,7 +8,7 @@ sftp_sensor = build_sftp_sensor(
     source_system="titan",
     asset_defs=assets,
     timezone=LOCAL_TIMEZONE,
-    minimum_interval_seconds=900,
+    minimum_interval_seconds=600,
 )
 
 __all__ = [
