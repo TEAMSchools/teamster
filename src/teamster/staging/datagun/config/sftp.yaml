@@ -1,16 +1,16 @@
 key_prefix: staging
 assets:
-  - asset_name: test_datagun_sftp_textquery
+  - asset_name: test_text
     query_config:
       type: file
-      value: src/teamster/staging/datagun/config/sql/staging.sql
+      value: src/teamster/staging/datagun/config/sql/test.sql
     file_config:
       stem: json-staging-{now}
       suffix: json.gz
     destination_config:
-      name: staging
+      name: pythonanywhere
       path: sftp/staging-path
-  - asset_name: test_datagun_sftp_schemaquery
+  - asset_name: test_schema
     query_config:
       type: schema
       value:
@@ -32,5 +32,5 @@ assets:
         quoting: 1 # csv.QUOTE_ALL
         sep: "\t"
     destination_config:
-      name: staging
+      name: pythonanywhere
       path: sftp/staging-path

@@ -1,8 +1,0 @@
-remote_host:
-  env: STAGING_PS_SSH_HOST
-remote_port:
-  env: STAGING_PS_SSH_PORT
-username:
-  env: STAGING_PS_SSH_USERNAME
-password:
-  env: STAGING_PS_SSH_PASSWORD

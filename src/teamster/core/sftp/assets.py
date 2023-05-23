@@ -8,11 +8,11 @@ from dagster import (
     Output,
     asset,
 )
-from dagster_ssh import SSHResource
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
+from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
 
 
@@ -60,14 +60,16 @@ def build_sftp_asset(
             "remote_file_regex": remote_file_regex,
             "archive_filepath": archive_filepath,
         },
-        required_resource_keys={f"sftp_{source_system}"},
+        required_resource_keys={f"ssh_{source_system}"},
         io_manager_key="gcs_avro_io",
         partitions_def=partitions_def,
         op_tags=op_tags,
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: OpExecutionContext):
-        ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+        ssh: SSHConfigurableResource = getattr(
+            context.resources, f"ssh_{source_system}"
+        )
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         remote_filepath = asset_metadata["remote_filepath"]

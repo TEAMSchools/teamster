@@ -10,9 +10,8 @@ from teamster.core.deanslist.assets import (
     build_multi_partition_asset,
     build_static_partition_asset,
 )
-from teamster.core.utils.variables import LOCAL_TIMEZONE
 
-from .. import CODE_LOCATION
+from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 config_dir = f"src/teamster/{CODE_LOCATION}/deanslist/config"
 

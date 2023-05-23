@@ -1,17 +1,20 @@
 import json
-import os
 
 import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
+    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
     sensor,
 )
 from sqlalchemy import text
+
+from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def get_asset_count(asset, db, window_start):
@@ -29,7 +32,9 @@ def get_asset_count(asset, db, window_start):
         )
     )
 
-    [(count,)] = db.execute_query(query=query, partition_size=1, output=None)
+    [(count,)] = db.engine.execute_query(
+        query=query, partition_size=1, output_format=None
+    )
 
     return count
 
@@ -45,9 +50,12 @@ def build_dynamic_partition_sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        required_resource_keys={"ps_ssh", "ps_db"},
     )
-    def _sensor(context: SensorEvaluationContext):
+    def _sensor(
+        context: SensorEvaluationContext,
+        ssh_powerschool: ResourceParam[SSHConfigurableResource],
+        db_powerschool: ResourceParam[OracleResource],
+    ):
         cursor = json.loads(context.cursor or "{}")
 
         window_end = (
@@ -57,10 +65,8 @@ def build_dynamic_partition_sensor(
         )
 
         ssh_port = 1521
-        ssh_tunnel = context.resources.ps_ssh.get_tunnel(
-            remote_port=ssh_port,
-            remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
-            local_port=ssh_port,
+        ssh_tunnel = ssh_powerschool.get_tunnel(
+            remote_port=ssh_port, local_port=ssh_port
         )
 
         ssh_tunnel.check_tunnels()
@@ -104,9 +110,7 @@ def build_dynamic_partition_sensor(
                     )
 
                     count = get_asset_count(
-                        asset=asset,
-                        db=context.resources.ps_db,
-                        window_start=window_start,
+                        asset=asset, db=db_powerschool, window_start=window_start
                     )
 
                     context.log.debug(f"count: {count}")
