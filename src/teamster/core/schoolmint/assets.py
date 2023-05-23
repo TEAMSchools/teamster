@@ -8,7 +8,7 @@ from dagster import (
     asset,
 )
 
-from teamster.core.schoolmint.resources import Grow
+from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.schoolmint.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
@@ -21,14 +21,11 @@ def build_static_partition_asset(
         key_prefix=[code_location, "schoolmint_grow"],
         partitions_def=partitions_def,
         op_tags=op_tags,
-        required_resource_keys={"schoolmint_grow"},
         io_manager_key="gcs_avro_io",
         output_required=False,
     )
-    def _asset(context: OpExecutionContext):
-        grow: Grow = context.resources.schoolmint_grow
-
-        response = grow.get(
+    def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
+        response = schoolmint_grow.get(
             endpoint=asset_name, archived=(context.partition_key == "t")
         )
 
@@ -56,11 +53,10 @@ def build_multi_partition_asset(
         key_prefix=[code_location, "schoolmint_grow"],
         partitions_def=partitions_def,
         op_tags=op_tags,
-        required_resource_keys={"schoolmint_grow"},
         io_manager_key="gcs_avro_io",
         output_required=False,
     )
-    def _asset(context: OpExecutionContext):
+    def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         asset_key = context.asset_key_for_output()
         archived_partition = context.partition_key.keys_by_dimension["archived"]
         last_modified_partition = (
@@ -90,9 +86,7 @@ def build_multi_partition_asset(
         ):
             last_modified_partition = None
 
-        grow: Grow = context.resources.schoolmint_grow
-
-        endpoint_content = grow.get(
+        endpoint_content = schoolmint_grow.get(
             endpoint=asset_name,
             archived=(archived_partition == "t"),
             lastModified=last_modified_partition,

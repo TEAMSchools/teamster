@@ -1,61 +1,68 @@
 import copy
 import gc
 
-from dagster import Field, InitResourceContext, IntSource, StringSource, resource
+from dagster import ConfigurableResource, InitResourceContext
 from oauthlib.oauth2 import BackendApplicationClient
+from pydantic import PrivateAttr
 from requests import Session
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
 
 
-class Grow(Session):
-    def __init__(self, logger, resource_config: InitResourceContext.resource_config):
-        super().__init__()
+class SchoolMintGrowResource(ConfigurableResource):
+    client_id: str
+    client_secret: str
+    district_id: str
+    api_response_limit: int = 100
 
-        self.log: InitResourceContext.log = logger
+    _client: Session = PrivateAttr(default_factory=Session)
+    _base_url: str = PrivateAttr(default="https://api.whetstoneeducation.com")
+    _default_params: dict = PrivateAttr()
 
-        self.base_url = "https://api.whetstoneeducation.com"
-        self.default_params = {
-            "limit": resource_config["api_response_limit"],
-            "district": resource_config["district_id"],
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._default_params = {
+            "limit": self.api_response_limit,
+            "district": self.district_id,
             "skip": 0,
         }
 
-        self.access_token = self._get_access_token(
-            client_id=resource_config["client_id"],
-            client_secret=resource_config["client_secret"],
+        access_token = self._get_access_token(
+            client_id=self.client_id, client_secret=self.client_secret
         )
 
-        self.headers.update(
+        self._client.headers.update(
             {
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.access_token.get('access_token')}",
+                "Authorization": "Bearer " + access_token.get("access_token"),
             }
         )
 
-    def _get_access_token(self, client_id, client_secret):
-        client = BackendApplicationClient(client_id=client_id)
+        return super().setup_for_execution(context)
 
-        oauth = OAuth2Session(client=client)
+    def _get_access_token(self):
+        oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.client_id))
 
         return oauth.fetch_token(
-            token_url=f"{self.base_url}/auth/client/token",
-            client_id=client_id,
-            client_secret=client_secret,
+            token_url=f"{self._base_url}/auth/client/token",
+            client_id=self.client_id,
+            client_secret=self.client_secret,
         )
 
     def _get_url(self, endpoint, *args):
-        return f"{self.base_url}/external/{endpoint}" + (
+        return f"{self._base_url}/external/{endpoint}" + (
             "/" + "/".join(args) if args else ""
         )
 
     def _request(self, method, url, params={}, body=None):
-        self.log.debug(f"{method}: {url}")
-        self.log.debug(f"PARAMS: {params}")
+        context = self.get_resource_context()
+
+        context.log.debug(f"{method}: {url}\nPARAMS: {params}")
 
         try:
-            response = self.request(method=method, url=url, params=params, json=body)
+            response = self._client.request(
+                method=method, url=url, params=params, json=body
+            )
 
             response.raise_for_status()
             return response
@@ -66,26 +73,28 @@ class Grow(Session):
                 raise HTTPError(response.json()) from e
 
     def get(self, endpoint, *args, **kwargs):
+        context = self.get_resource_context()
+
         url = self._get_url(endpoint=endpoint, *args)
 
-        params = copy.deepcopy(self.default_params)
+        params = copy.deepcopy(self._default_params)
         params.update(kwargs)
 
         if args:
             response = self._request(method="GET", url=url, params=kwargs)
 
-            # mock standardized response format
+            # mock paginated response format
             return {
                 "count": 1,
-                "limit": self.default_params["limit"],
-                "skip": self.default_params["skip"],
+                "limit": self._default_params["limit"],
+                "skip": self._default_params["skip"],
                 "data": [response.json()],
             }
         else:
             all_data = {
                 "count": 0,
-                "limit": self.default_params["limit"],
-                "skip": self.default_params["skip"],
+                "limit": self._default_params["limit"],
+                "skip": self._default_params["skip"],
                 "data": [],
             }
 
@@ -111,8 +120,8 @@ class Grow(Session):
                     params["skip"] += params["limit"]
 
             all_data["count"] = count
-            self.log.debug(f"COUNT: {count}")
 
+            context.log.debug(f"COUNT: {count}")
             return all_data
 
     def post(self, endpoint, body=None, **kwargs):
@@ -135,17 +144,3 @@ class Grow(Session):
         return self._request(
             method="DELETE", url=self._get_url(endpoint=endpoint, *args)
         ).json()
-
-
-@resource(
-    config_schema={
-        "client_id": StringSource,
-        "client_secret": StringSource,
-        "district_id": StringSource,
-        "api_response_limit": Field(
-            config=IntSource, is_required=False, default_value=100
-        ),
-    }
-)
-def schoolmint_grow_resource(context: InitResourceContext):
-    return Grow(logger=context.log, resource_config=context.resource_config)

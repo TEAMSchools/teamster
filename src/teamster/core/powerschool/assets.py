@@ -1,15 +1,17 @@
-import os
-
 import pendulum
 from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
+    ResourceParam,
     asset,
 )
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
+
+from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def construct_sql(table_name, columns, partition_column, window_start=None):
@@ -36,23 +38,6 @@ def construct_sql(table_name, columns, partition_column, window_start=None):
     )
 
 
-def count(context, sql) -> int:
-    query_text = f"SELECT COUNT(*) FROM {sql.get_final_froms()[0].name}"
-
-    if sql.whereclause.text == "":
-        query = text(query_text)
-    else:
-        query = text(f"{query_text} WHERE {sql.whereclause.text}")
-
-    [(count,)] = context.resources.ps_db.execute_query(
-        query=query,
-        partition_size=1,
-        output=None,
-    )
-
-    return count
-
-
 def build_powerschool_table_asset(
     asset_name,
     code_location,
@@ -69,11 +54,14 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         metadata=metadata,
         op_tags=op_tags,
-        required_resource_keys={"ps_db", "ps_ssh"},
         io_manager_key="gcs_fp_io",
         output_required=False,
     )
-    def _asset(context: OpExecutionContext):
+    def _asset(
+        context: OpExecutionContext,
+        ssh_powerschool: ResourceParam[SSHConfigurableResource],
+        db_powerschool: ResourceParam[OracleResource],
+    ):
         sql = construct_sql(
             table_name=asset_name,
             columns=columns,
@@ -81,18 +69,14 @@ def build_powerschool_table_asset(
             window_start=context.partition_key if partition_column else None,
         )
 
-        ssh_tunnel = context.resources.ps_ssh.get_tunnel(
-            remote_port=1521,
-            remote_host=os.getenv(f"{code_location.upper()}_PS_SSH_REMOTE_BIND_HOST"),
-            local_port=1521,
-        )
+        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
         try:
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            file_path = context.resources.ps_db.execute_query(
-                query=sql, partition_size=100000, output="avro"
+            file_path = db_powerschool.engine.execute_query(
+                query=sql, partition_size=100000, output_format="avro"
             )
 
             try:

@@ -1,7 +1,7 @@
 import time
 from io import StringIO
 
-from dagster import AssetsDefinition, OpExecutionContext, Output, ResourceParam, asset
+from dagster import AssetsDefinition, OpExecutionContext, Output, asset
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -26,10 +26,7 @@ def build_smartrecruiters_report_asset(
         op_tags=op_tags,
         output_required=False,
     )
-    def _asset(
-        context: OpExecutionContext,
-        smartrecruiters: ResourceParam[SmartRecruitersResource],
-    ):
+    def _asset(context: OpExecutionContext, smartrecruiters: SmartRecruitersResource):
         asset = context.assets_def
 
         report_name = asset.key.path[-1]

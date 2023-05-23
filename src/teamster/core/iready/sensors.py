@@ -11,8 +11,8 @@ from dagster import (
     SensorResult,
     sensor,
 )
-from dagster_ssh import SSHResource
 
+from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.classes import FiscalYear
 
 
@@ -32,7 +32,9 @@ def build_sftp_sensor(
     def _sensor(context: SensorEvaluationContext):
         cursor: dict = json.loads(context.cursor or "{}")
 
-        ssh: SSHResource = getattr(context.resources, f"sftp_{source_system}")
+        ssh: SSHConfigurableResource = getattr(
+            context.resources, f"sftp_{source_system}"
+        )
 
         ls = {}
         conn = ssh.get_connection()

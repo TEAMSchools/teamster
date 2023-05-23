@@ -13,56 +13,49 @@ class WorkforceManagerResource(ConfigurableResource):
 
     _client: Session = PrivateAttr()
     _base_url: str = PrivateAttr()
-    _authentication_payload: dict = PrivateAttr()
-    _access_token: dict = PrivateAttr()
+    _refresh_token: str = PrivateAttr()
 
-    def authenticate(self, refresh_token=None):
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._client = Session()
+        self._base_url = f"https://{self.subdomain}.mykronos.com/api"
+
+        self._client.headers["appkey"] = self.app_key
+
+        self.authenticate(grant_type="password")
+
+        return super().setup_for_execution(context)
+
+    def authenticate(self, grant_type):
         self._client.headers["Content-Type"] = "application/x-www-form-urlencoded"
         self._client.headers.pop(
             "Authorization", ""
         )  # remove existing auth for refresh
 
-        if refresh_token is not None:
-            payload = {
-                **self._authentication_payload,
-                "grant_type": "refresh_token",
-                "refresh_token": refresh_token,
-            }
+        payload = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "grant_type": grant_type,
+            "auth_chain": "OAuthLdapService",
+        }
+
+        if grant_type == "refresh_token":
+            payload["refresh_token"] = self._refresh_token
         else:
-            payload = {
-                **self._authentication_payload,
-                "username": self.username,
-                "password": self.password,
-                "grant_type": "password",
-            }
+            payload["username"] = self.username
+            payload["password"] = self.password
 
         response = self._client.post(
             f"{self._base_url}/authentication/access_token", data=payload
         )
 
         response.raise_for_status()
+        response_data = response.json()
 
-        self._access_token = response.json()
-
+        self._refresh_token = response_data["refresh_token"]
         self._client.headers["Content-Type"] = "application/json"
         self._client.headers["Authorization"] = (
-            "Bearer " + self._access_token["access_token"]
+            "Bearer " + response_data["access_token"]
         )
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._client = Session()
-        self._base_url = f"https://{self.subdomain}.mykronos.com/api"
-        self._authentication_payload = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "auth_chain": "OAuthLdapService",
-        }
-
-        self._client.headers["appkey"] = self.app_key
-
-        self.authenticate()
-
-        return super().setup_for_execution(context)
 
     def request(self, method, endpoint, **kwargs):
         try:
@@ -78,7 +71,7 @@ class WorkforceManagerResource(ConfigurableResource):
             context.log.error(e)
 
             if response.status_code == 401:
-                self.authenticate(refresh_token=self._access_token["refresh_token"])
+                self.authenticate(grant_type="refresh_token")
                 self.request(method, endpoint, **kwargs)
             else:
                 raise exceptions.HTTPError(response.text) from e

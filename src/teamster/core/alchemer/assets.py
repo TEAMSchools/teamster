@@ -1,13 +1,7 @@
 import time
 
 import pendulum
-from dagster import (
-    DynamicPartitionsDefinition,
-    OpExecutionContext,
-    Output,
-    ResourceParam,
-    asset,
-)
+from dagster import DynamicPartitionsDefinition, OpExecutionContext, Output, asset
 from requests.exceptions import HTTPError
 
 from teamster.core.alchemer.resources import AlchemerResource
@@ -27,7 +21,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
-    def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]):
+    def survey(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
 
         yield Output(
@@ -45,9 +39,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
-    def survey_question(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]
-    ):
+    def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
 
         data = survey.question.list(params={"resultsperpage": 500})
@@ -64,9 +56,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
     )
-    def survey_campaign(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]
-    ):
+    def survey_campaign(context: OpExecutionContext, alchemer: AlchemerResource):
         asset_name = context.assets_def.key[-1]
         context.log.debug(asset_name)
 
@@ -88,9 +78,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         ),
         op_tags=op_tags,
     )
-    def survey_response(
-        context: OpExecutionContext, alchemer: ResourceParam[AlchemerResource]
-    ):
+    def survey_response(context: OpExecutionContext, alchemer: AlchemerResource):
         partition_key_split = context.partition_key.split("_")
 
         try:

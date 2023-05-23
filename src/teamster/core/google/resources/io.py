@@ -1,13 +1,11 @@
 import copy
 import pathlib
-import pickle
 from urllib.parse import urlparse
 
 import fastavro
 from dagster import Field, InputContext, IOManager, OutputContext, String, StringSource
 from dagster import _check as check
 from dagster import io_manager
-from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage
@@ -135,46 +133,6 @@ class AvroGCSIOManager(GCSIOManager):
         return [urlparse(self._uri_for_key(path)) for path in paths]
 
 
-class PickledObjectGCSIOManager(GCSIOManager):
-    def load_input(self, context):
-        if context.dagster_type.typing_type == type(None):
-            return None
-
-        for path in self._get_paths(context):
-            context.log.debug(f"Loading GCS object from: {self._uri_for_key(path)}")
-
-            bytes_obj = self.bucket_obj.blob(path).download_as_bytes()
-            obj = pickle.loads(bytes_obj)
-
-            yield obj
-
-    def handle_output(self, context, obj):
-        if context.dagster_type.typing_type == type(None):
-            check.invariant(
-                obj is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output "
-                    f"received value that was not None and was of type {type(obj)}."
-                ),
-            )
-            return None
-
-        for path in self._get_paths(context):
-            context.log.debug(f"Writing GCS object at: {self._uri_for_key(path)}")
-
-            if self._has_object(path):
-                context.log.warning(f"Removing existing GCS key: {path}")
-                self._rm_object(path)
-
-            pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
-
-            backoff(
-                self.bucket_obj.blob(path).upload_from_string,
-                args=[pickled_obj],
-                retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-            )
-
-
 @io_manager(
     config_schema={
         "io_format": Field(config=String),
@@ -195,5 +153,3 @@ def gcs_io_manager(init_context):
         return FilepathGCSIOManager(bucket=bucket, client=client, prefix=prefix)
     elif io_format == "avro":
         return AvroGCSIOManager(bucket=bucket, client=client, prefix=prefix)
-    elif io_format == "pickle":
-        return PickledObjectGCSIOManager(bucket=bucket, client=client, prefix=prefix)

@@ -6,7 +6,6 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
-    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -32,9 +31,7 @@ def build_survey_metadata_asset_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
-    def _sensor(
-        context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerResource]
-    ):
+    def _sensor(context: SensorEvaluationContext, alchemer: AlchemerResource):
         now = pendulum.now(tz="US/Eastern").start_of("minute")
         cursor: dict = json.loads(context.cursor or "{}")
 
@@ -113,9 +110,7 @@ def build_survey_response_asset_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(asset_def),
     )
-    def _sensor(
-        context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerResource]
-    ):
+    def _sensor(context: SensorEvaluationContext, alchemer: AlchemerResource):
         cursor: dict = json.loads(context.cursor or "{}")
 
         """ https://apihelp.alchemer.com/help/api-response-time
