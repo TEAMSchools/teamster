@@ -1,5 +1,0 @@
-remote_host: sftp.kippnj.org
-username:
-  env: ADP_SFTP_USERNAME
-password:
-  env: ADP_SFTP_PASSWORD

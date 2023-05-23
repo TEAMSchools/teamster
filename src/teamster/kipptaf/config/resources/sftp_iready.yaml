@@ -1,5 +1,0 @@
-remote_host: prod-sftp-1.aws.cainc.com
-username:
-  env: IREADY_SFTP_USERNAME
-password:
-  env: IREADY_SFTP_PASSWORD
