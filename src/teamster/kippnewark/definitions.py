@@ -103,6 +103,7 @@ defs = Definitions(
             remote_port=EnvVar("KIPPNEWARK_PS_SSH_PORT"),
             username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
             password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
+            tunnel_remote_host=EnvVar("KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST"),
         ),
         "ssh_pythonanywhere": SSHConfigurableResource(
             remote_host="ssh.pythonanywhere.com",

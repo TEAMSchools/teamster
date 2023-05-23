@@ -108,6 +108,7 @@ defs = Definitions(
             remote_port=EnvVar("KIPPCAMDEN_PS_SSH_PORT"),
             username=EnvVar("KIPPCAMDEN_PS_SSH_USERNAME"),
             password=EnvVar("KIPPCAMDEN_PS_SSH_PASSWORD"),
+            tunnel_remote_host=EnvVar("KIPPCAMDEN_PS_SSH_REMOTE_BIND_HOST"),
         ),
         "ssh_pythonanywhere": SSHConfigurableResource(
             remote_host="ssh.pythonanywhere.com",
