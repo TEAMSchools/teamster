@@ -17,7 +17,7 @@
     "**/.trunk/*out": true
   },
   "python.analysis.autoImportCompletions": false,
-  "python.defaultInterpreterPath": ".venv/bin/python",
+  "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
   "python.linting.ignorePatterns": [
     "**/site-packages/**/*.py",
     ".vscode/*.py",

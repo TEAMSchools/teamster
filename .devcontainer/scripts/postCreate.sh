@@ -32,8 +32,8 @@ python -m pip install --no-cache-dir --upgrade pip
 gcloud auth activate-service-account --key-file=env/gcloud-service-account.json
 
 # set gcloud project & region
-gcloud config set project "${GCP_PROJECT_ID}"
-gcloud config set compute/region "${GCP_REGION}"
+gcloud config set project teamster-332318
+gcloud config set compute/region us-central1
 
 # update the kubectl configuration to use the plugin
 gcloud container clusters get-credentials dagster-cloud

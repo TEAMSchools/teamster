@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# export dev envvars
+export PYTHONDONTWRITEBYTECODE=1
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+export DBT_PROFILES_DIR=/workspaces/teamster/.dbt
+
 # update apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&

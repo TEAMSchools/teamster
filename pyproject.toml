@@ -31,7 +31,7 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = ["pytest"]
+dev = ["pytest>=7.3.1"]
 
 [tool.pdm.scripts]
 clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
