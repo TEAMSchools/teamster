@@ -16,23 +16,9 @@ from paramiko.ssh_exception import SSHException
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
-def get_sftp_ls(
-    context: SensorEvaluationContext,
-    ssh: SSHConfigurableResource,
-    asset_defs: list[AssetsDefinition],
-):
-    cursor: dict = json.loads(context.cursor or "{}")
-
-    try:
-        conn = ssh.get_connection()
-    except SSHException as e:
-        context.log.error(e)
-        return SensorResult(skip_reason=SkipReason(str(e)))
-    except ConnectionResetError as e:
-        context.log.error(e)
-        return SensorResult(skip_reason=SkipReason(str(e)))
-
+def get_sftp_ls(ssh: SSHConfigurableResource, asset_defs: list[AssetsDefinition]):
     ls = {}
+    conn = ssh.get_connection()
     with conn.open_sftp() as sftp_client:
         for asset in asset_defs:
             ls[asset.key.to_python_identifier()] = {
@@ -43,7 +29,7 @@ def get_sftp_ls(
             }
     conn.close()
 
-    return cursor, ls
+    return ls
 
 
 def build_sftp_sensor(
@@ -60,10 +46,17 @@ def build_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
-    def _sensor(context: SensorEvaluationContext):
-        cursor, ls = get_sftp_ls(
-            context=context, source_system=source_system, asset_defs=asset_defs
-        )
+    def _sensor(context: SensorEvaluationContext, ssh: SSHConfigurableResource):
+        cursor: dict = json.loads(context.cursor or "{}")
+
+        try:
+            ls = get_sftp_ls(ssh=ssh, asset_defs=asset_defs)
+        except SSHException as e:
+            context.log.error(e)
+            return SensorResult(skip_reason=SkipReason(str(e)))
+        except ConnectionResetError as e:
+            context.log.error(e)
+            return SensorResult(skip_reason=SkipReason(str(e)))
 
         run_requests = []
         dynamic_partitions_requests = []
