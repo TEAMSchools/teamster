@@ -99,7 +99,7 @@ defs = Definitions(
             password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
         "ssh_powerschool": SSHConfigurableResource(
-            remote_host="pskcna.kippnj.org",
+            remote_host="ps.kippmiami.org",
             remote_port=EnvVar("KIPPMIAMI_PS_SSH_PORT"),
             username=EnvVar("KIPPMIAMI_PS_SSH_USERNAME"),
             password=EnvVar("KIPPMIAMI_PS_SSH_PASSWORD"),
