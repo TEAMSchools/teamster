@@ -16,9 +16,12 @@ from paramiko.ssh_exception import SSHException
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
-def get_ls(context, source_system, asset_defs):
+def get_sftp_ls(
+    context: SensorEvaluationContext,
+    ssh: SSHConfigurableResource,
+    asset_defs: list[AssetsDefinition],
+):
     cursor: dict = json.loads(context.cursor or "{}")
-    ssh: SSHConfigurableResource = getattr(context.resources, f"sftp_{source_system}")
 
     try:
         conn = ssh.get_connection()
@@ -56,10 +59,9 @@ def build_sftp_sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        required_resource_keys={f"sftp_{source_system}"},
     )
     def _sensor(context: SensorEvaluationContext):
-        cursor, ls = get_ls(
+        cursor, ls = get_sftp_ls(
             context=context, source_system=source_system, asset_defs=asset_defs
         )
 

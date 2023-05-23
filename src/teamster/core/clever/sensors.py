@@ -13,6 +13,7 @@ from dagster import (
     sensor,
 )
 
+from teamster.core.sftp.sensors import get_sftp_ls
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
@@ -27,26 +28,13 @@ def build_sftp_sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        required_resource_keys={f"sftp_{source_system}"},
     )
-    def _sensor(context: SensorEvaluationContext):
-        cursor: dict = json.loads(context.cursor or "{}")
-
-        ssh: SSHConfigurableResource = getattr(
-            context.resources, f"sftp_{source_system}"
+    def _sensor(
+        context: SensorEvaluationContext, ssh_clever_reports: SSHConfigurableResource
+    ):
+        cursor, ls = get_sftp_ls(
+            context=context, ssh=ssh_clever_reports, asset_defs=asset_defs
         )
-
-        ls = {}
-        conn = ssh.get_connection()
-        with conn.open_sftp() as sftp_client:
-            for asset in asset_defs:
-                ls[asset.key.to_python_identifier()] = {
-                    "files": sftp_client.listdir_attr(
-                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                    ),
-                    "asset": asset,
-                }
-        conn.close()
 
         run_requests = []
         dynamic_partitions_requests = []

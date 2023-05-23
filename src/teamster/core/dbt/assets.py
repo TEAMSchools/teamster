@@ -28,7 +28,8 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
 
         # create BigQuery dataset, if not exists
         context.log.info(f"Creating dataset {dataset_name}")
-        db_bigquery.create_dataset(dataset=dataset_name, exists_ok=True)
+        with db_bigquery.get_client() as bq:
+            bq.create_dataset(dataset=dataset_name, exists_ok=True)
 
         dbt_output = dbt.get_dbt_client().run_operation(
             macro="stage_external_sources",

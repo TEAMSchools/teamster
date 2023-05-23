@@ -8,11 +8,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
+from teamster.core.sftp.sensors import get_sftp_ls
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
@@ -27,32 +26,9 @@ def build_sftp_sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
-        required_resource_keys={f"sftp_{source_system}"},
     )
-    def _sensor(context: SensorEvaluationContext):
-        cursor: dict = json.loads(context.cursor or "{}")
-
-        ssh: SSHConfigurableResource = getattr(
-            context.resources, f"sftp_{source_system}"
-        )
-
-        try:
-            conn = ssh.get_connection()
-        except SSHException as e:
-            if "Connection reset by peer" in str(e):
-                context.log.error(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
-
-        ls = {}
-        with conn.open_sftp() as sftp_client:
-            for asset in asset_defs:
-                ls[asset.key.to_python_identifier()] = {
-                    "asset": asset,
-                    "files": sftp_client.listdir_attr(
-                        path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                    ),
-                }
-        conn.close()
+    def _sensor(context: SensorEvaluationContext, ssh_titan: SSHConfigurableResource):
+        cursor, ls = get_sftp_ls(context=context, ssh=ssh_titan, asset_defs=asset_defs)
 
         run_requests = []
         for asset_identifier, asset_dict in ls.items():
