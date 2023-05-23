@@ -10,8 +10,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     sensor,
 )
+from paramiko.ssh_exception import SSHException
 
 from teamster.core.sftp.sensors import get_sftp_ls
 from teamster.core.ssh.resources import SSHConfigurableResource
@@ -32,9 +34,18 @@ def build_sftp_sensor(
     def _sensor(
         context: SensorEvaluationContext, ssh_clever_reports: SSHConfigurableResource
     ):
-        cursor, ls = get_sftp_ls(
-            context=context, ssh=ssh_clever_reports, asset_defs=asset_defs
-        )
+        cursor: dict = json.loads(context.cursor or "{}")
+
+        try:
+            ls = get_sftp_ls(
+                context=context, ssh=ssh_clever_reports, asset_defs=asset_defs
+            )
+        except SSHException as e:
+            context.log.error(e)
+            return SensorResult(skip_reason=SkipReason(str(e)))
+        except ConnectionResetError as e:
+            context.log.error(e)
+            return SensorResult(skip_reason=SkipReason(str(e)))
 
         run_requests = []
         dynamic_partitions_requests = []
