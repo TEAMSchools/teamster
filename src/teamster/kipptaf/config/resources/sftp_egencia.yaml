@@ -1,4 +1,0 @@
-remote_host: eusftp.egencia.com
-username:
-  env: EGENCIA_SFTP_USERNAME
-key_file: /etc/secret-volume/id_rsa_egencia

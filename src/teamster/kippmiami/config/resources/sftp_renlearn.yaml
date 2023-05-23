@@ -1,6 +1,0 @@
-remote_host: sftp.renaissance.com
-username:
-  env: KIPPMIAMI_RENLEARN_SFTP_USERNAME
-password:
-  env: KIPPMIAMI_RENLEARN_SFTP_PASSWORD
-remote_port: 22
