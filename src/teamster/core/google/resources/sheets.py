@@ -6,31 +6,40 @@ from pydantic import PrivateAttr
 
 
 class GoogleSheetsResource(ConfigurableResource):
-    folder_id: str
-    scopes: list = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-
     _client: gspread.Client = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        credentials, project_id = google.auth.default(scopes=self.scopes)
+        credentials, project_id = google.auth.default(
+            scopes=[
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive",
+            ]
+        )
 
         self._client = gspread.authorize(credentials=credentials)
 
         return super().setup_for_execution(context)
 
-    def open_or_create_sheet(self, title):
+    def open(self, **kwargs):
+        kwargs_keys = kwargs.keys()
+
+        if "title" in kwargs_keys:
+            return self._client.open(**kwargs)
+        elif "sheet_id" in kwargs_keys:
+            return self._client.open_by_key(**kwargs)
+        elif "url" in kwargs_keys:
+            return self._client.open_by_url(**kwargs)
+
+    def open_or_create_sheet(self, title, folder_id):
         try:
-            spreadsheet = self._client.open(title=title, folder_id=self.folder_id)
+            spreadsheet = self._client.open(title=title, folder_id=folder_id)
         except gspread.exceptions.SpreadsheetNotFound as e:
             context = self.get_resource_context()
 
             context.log.warning(e)
             context.log.info("Creating new Sheet")
 
-            spreadsheet = self._client.create(title=title, folder_id=self.folder_id)
+            spreadsheet = self._client.create(title=title, folder_id=folder_id)
 
         return spreadsheet
 

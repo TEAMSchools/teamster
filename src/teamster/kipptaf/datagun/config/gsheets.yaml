@@ -2,6 +2,7 @@ key_prefix:
   - kipptaf
   - datagun
   - gsheets
+folder_id: 1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5
 assets:
   - asset_name: next_year_status
     query_config:

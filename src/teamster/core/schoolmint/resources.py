@@ -69,7 +69,8 @@ class SchoolMintGrowResource(ConfigurableResource):
 
         params.update(kwargs)
 
-        context.log.debug(f"POST: {url}")
+        context.log.debug(f"GET: {url}\nPARAMS: {params}")
+
         if args:
             response = self._request(method="GET", url=url, params=params)
 

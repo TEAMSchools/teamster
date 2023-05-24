@@ -28,6 +28,7 @@ from . import (
     clever,
     datagun,
     dbt,
+    google,
     iready,
     renlearn,
     schoolmint,
@@ -39,14 +40,15 @@ resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
-        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
-        *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
-        *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
-        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
-        *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
-        *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[adp], group_name="adp"),
+        *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
+        *load_assets_from_modules(modules=[clever], group_name="clever"),
+        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
+        *load_assets_from_modules(modules=[google], group_name="google"),
+        *load_assets_from_modules(modules=[iready], group_name="iready"),
+        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
+        *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
         *load_assets_from_modules(
             modules=[smartrecruiters], group_name="smartrecruiters"
         ),
@@ -107,7 +109,7 @@ defs = Definitions(
             api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
             api_version="v5",
         ),
-        "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
+        "gsheets": GoogleSheetsResource(),
         "schoolmint_grow": SchoolMintGrowResource(
             client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
             client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
