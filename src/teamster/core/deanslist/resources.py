@@ -75,9 +75,9 @@ class DeansListResource(ConfigurableResource):
 
         context.log.info(f"GET: {url}\nSCHOOL_ID: {school_id}\n{kwargs}")
 
-        kwargs["params"]["apikey"] = self._api_key_map[school_id]
-
-        response = self._request(method="GET", url=url, **kwargs)
+        response = self._request(
+            method="GET", url=url, apikey=self._api_key_map[school_id], **kwargs
+        )
 
         response.raise_for_status()
 

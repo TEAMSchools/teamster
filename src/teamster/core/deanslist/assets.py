@@ -38,7 +38,7 @@ def build_static_partition_asset(
             api_version=api_version,
             endpoint=asset_name,
             school_id=int(context.partition_key),
-            params=params,
+            **params,
         )
 
         row_count = endpoint_content["row_count"]
@@ -144,10 +144,8 @@ def build_multi_partition_asset(
                     api_version=api_version,
                     endpoint=asset_name,
                     school_id=int(school_partition),
-                    params={
-                        "UpdatedSince": modified_date.to_date_string(),
-                        **composed_params,
-                    },
+                    UpdatedSince=modified_date.to_date_string(),
+                    **composed_params,
                 )
 
                 row_count = endpoint_content["row_count"]
