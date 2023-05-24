@@ -71,7 +71,7 @@ class SchoolMintGrowResource(ConfigurableResource):
 
         context.log.debug(f"POST: {url}")
         if args:
-            response = self._request(method="GET", url=url, params=kwargs)
+            response = self._request(method="GET", url=url, params=params)
 
             # mock paginated response format
             return {
@@ -127,14 +127,11 @@ class SchoolMintGrowResource(ConfigurableResource):
 
         self.get_resource_context().log.debug(f"PUT: {url}")
 
-        return self._request(
-            method="PUT", url=self._get_url(endpoint=endpoint, *args), **kwargs
-        ).json()
+        return self._request(method="PUT", url=url, **kwargs).json()
 
     def delete(self, endpoint, *args):
         url = self._get_url(endpoint=endpoint)
 
         self.get_resource_context().log.debug(f"DELETE: {url}")
-        return self._request(
-            method="DELETE", url=self._get_url(endpoint=endpoint, *args)
-        ).json()
+
+        return self._request(method="DELETE", url=url).json()
