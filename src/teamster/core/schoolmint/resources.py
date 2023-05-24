@@ -81,6 +81,8 @@ class SchoolMintGrowResource(ConfigurableResource):
                 "data": [response.json()],
             }
         else:
+            context = self.get_resource_context()
+
             all_data = {
                 "count": 0,
                 "limit": self._default_params["limit"],
@@ -108,6 +110,8 @@ class SchoolMintGrowResource(ConfigurableResource):
                     break
                 else:
                     params["skip"] += params["limit"]
+
+                context.log.debug(params)
 
             all_data["count"] = count
 
