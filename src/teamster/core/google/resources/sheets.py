@@ -30,16 +30,16 @@ class GoogleSheetsResource(ConfigurableResource):
         elif "url" in kwargs_keys:
             return self._client.open_by_url(**kwargs)
 
-    def open_or_create_sheet(self, title, folder_id):
+    def open_or_create_sheet(self, **kwargs):
         try:
-            spreadsheet = self._client.open(title=title, folder_id=folder_id)
+            spreadsheet = self.open(**kwargs)
         except gspread.exceptions.SpreadsheetNotFound as e:
             context = self.get_resource_context()
 
             context.log.warning(e)
             context.log.info("Creating new Sheet")
 
-            spreadsheet = self._client.create(title=title, folder_id=folder_id)
+            spreadsheet = self._client.create(**kwargs)
 
         return spreadsheet
 
