@@ -191,7 +191,7 @@ def gsheet_extract_asset_factory(
         transformed_data = transform(data=data, file_suffix="gsheet")
 
         context.log.info(f"Opening: {file_stem}")
-        spreadsheet = gsheets.get_sheet(title=file_stem)
+        spreadsheet = gsheets.open_or_create_sheet(title=file_stem)
 
         context.log.debug(spreadsheet.url)
 
@@ -199,20 +199,21 @@ def gsheet_extract_asset_factory(
             nr for nr in spreadsheet.list_named_ranges() if nr["name"] == file_stem
         ]
 
-        named_range = named_range_match[0] if named_range_match else None
+        if named_range_match:
+            named_range = named_range_match[0]["range"]
 
-        if named_range is not None:
-            named_range_id = named_range.get("namedRangeId")
-            end_row_ix = named_range["range"].get("endRowIndex", 0)
-            end_col_ix = named_range["range"].get("endColumnIndex", 0)
+            sheet_id = named_range.get("sheetId", 0)
+            end_row_ix = named_range.get("endRowIndex", 0)
+            end_col_ix = named_range.get("endColumnIndex", 0)
 
+            named_range_id = named_range_match[0].get("namedRangeId")
             range_area = (end_row_ix + 1) * (end_col_ix + 1)
         else:
             named_range_id = None
             range_area = 0
 
         worksheet = (
-            spreadsheet.get_worksheet_by_id(id=named_range["range"].get("sheetId", 0))
+            spreadsheet.get_worksheet_by_id(id=sheet_id)
             if named_range
             else spreadsheet.sheet1
         )
