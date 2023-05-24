@@ -74,7 +74,7 @@ class SchoolMintGrowResource(ConfigurableResource):
             response = self._request(method="GET", url=url, params=kwargs)
 
             # mock paginated response format
-            all_data = {
+            return {
                 "count": 1,
                 "limit": self._default_params["limit"],
                 "skip": self._default_params["skip"],
@@ -111,11 +111,7 @@ class SchoolMintGrowResource(ConfigurableResource):
 
             all_data["count"] = count
 
-        context = self.get_resource_context()
-
-        context.log.debug("COUNT: " + all_data["count"])
-
-        return all_data
+            return all_data
 
     def post(self, endpoint, **kwargs):
         return self._request(
