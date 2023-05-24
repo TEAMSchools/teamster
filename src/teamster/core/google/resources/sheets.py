@@ -26,7 +26,7 @@ class GoogleSheetsResource(ConfigurableResource):
         if "title" in kwargs_keys:
             return self._client.open(**kwargs)
         elif "sheet_id" in kwargs_keys:
-            return self._client.open_by_key(**kwargs)
+            return self._client.open_by_key(key=kwargs["sheet_id"])
         elif "url" in kwargs_keys:
             return self._client.open_by_url(**kwargs)
 
