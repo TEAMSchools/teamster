@@ -21,20 +21,13 @@ class GoogleSheetsResource(ConfigurableResource):
 
         return super().setup_for_execution(context)
 
-    def get_named_range(self, spreadsheet: gspread.Spreadsheet, range_name):
-        named_ranges = spreadsheet.list_named_ranges()
-
-        named_range_match = [nr for nr in named_ranges if nr["name"] == range_name]
-
-        return named_range_match[0] if named_range_match else None
-
-    def get_sheet(self, title):
+    def open_or_create_sheet(self, title):
         try:
             spreadsheet = self._client.open(title=title, folder_id=self.folder_id)
         except gspread.exceptions.SpreadsheetNotFound as e:
             context = self.get_resource_context()
 
-            context.log.debug(e)
+            context.log.warning(e)
             context.log.info("Creating new Sheet")
 
             spreadsheet = self._client.create(title=title, folder_id=self.folder_id)
