@@ -38,7 +38,7 @@ clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, 
 docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
-test = { shell = "pdm run pytest -s", help = "Run tests with the default Python" }
+test = { shell = "pytest -s", help = "Run tests with the default Python" }
 secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret for branch" }
 helm-install = { shell = "bash .pdm/scripts/helm-install.sh", help = "Update Dagster Cloud Agent via Helm" }
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
