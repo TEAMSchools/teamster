@@ -51,25 +51,25 @@ class SchoolMintGrowResource(ConfigurableResource):
         )
 
     def _request(self, method, url, **kwargs):
-        context = self.get_resource_context()
-
         try:
-            context.log.debug(f"{method}: {url}")
-
             response = self._client.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
+
             return response
         except HTTPError as e:
-            context.log.error(e)
+            self.get_resource_context().log.error(e)
+
             raise HTTPError(response.text) from e
 
     def get(self, endpoint, *args, **kwargs):
+        context = self.get_resource_context()
         url = self._get_url(endpoint=endpoint, *args)
-
         params = copy.deepcopy(self._default_params)
+
         params.update(kwargs)
 
+        context.log.debug(f"POST: {url}")
         if args:
             response = self._request(method="GET", url=url, params=kwargs)
 
@@ -81,8 +81,6 @@ class SchoolMintGrowResource(ConfigurableResource):
                 "data": [response.json()],
             }
         else:
-            context = self.get_resource_context()
-
             all_data = {
                 "count": 0,
                 "limit": self._default_params["limit"],
@@ -118,16 +116,25 @@ class SchoolMintGrowResource(ConfigurableResource):
             return all_data
 
     def post(self, endpoint, **kwargs):
-        return self._request(
-            method="POST", url=self._get_url(endpoint=endpoint), **kwargs
-        ).json()
+        url = self._get_url(endpoint=endpoint)
 
-    def put(self, endpoint, body=None, *args, **kwargs):
+        self.get_resource_context().log.debug(f"POST: {url}")
+
+        return self._request(method="POST", url=url, **kwargs).json()
+
+    def put(self, endpoint, *args, **kwargs):
+        url = self._get_url(endpoint=endpoint)
+
+        self.get_resource_context().log.debug(f"PUT: {url}")
+
         return self._request(
             method="PUT", url=self._get_url(endpoint=endpoint, *args), **kwargs
         ).json()
 
     def delete(self, endpoint, *args):
+        url = self._get_url(endpoint=endpoint)
+
+        self.get_resource_context().log.debug(f"DELETE: {url}")
         return self._request(
             method="DELETE", url=self._get_url(endpoint=endpoint, *args)
         ).json()
