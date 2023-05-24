@@ -152,15 +152,11 @@ def sftp_extract_asset_factory(
 
 
 def gsheet_extract_asset_factory(
-    asset_name, key_prefix, query_config, file_config, timezone, op_tags={}
+    asset_name, key_prefix, query_config, file_config, timezone, folder_id, op_tags={}
 ):
     now = pendulum.now(tz=timezone)
 
-    @asset(
-        name=asset_name,
-        key_prefix=key_prefix,
-        op_tags=op_tags,
-    )
+    @asset(name=asset_name, key_prefix=key_prefix, op_tags=op_tags)
     def gsheet_extract(
         context: OpExecutionContext,
         db_mssql: MSSQLResource,
@@ -191,7 +187,7 @@ def gsheet_extract_asset_factory(
         transformed_data = transform(data=data, file_suffix="gsheet")
 
         context.log.info(f"Opening: {file_stem}")
-        spreadsheet = gsheets.open_or_create_sheet(title=file_stem)
+        spreadsheet = gsheets.open_or_create_sheet(title=file_stem, folder_id=folder_id)
 
         context.log.debug(spreadsheet.url)
 
@@ -269,7 +265,10 @@ def generate_extract_assets(code_location, name, extract_type, timezone):
         elif extract_type == "gsheet":
             assets.append(
                 gsheet_extract_asset_factory(
-                    key_prefix=cfg["key_prefix"], timezone=timezone, **ac
+                    key_prefix=cfg["key_prefix"],
+                    folder_id=cfg["folder_id"],
+                    timezone=timezone,
+                    **ac,
                 )
             )
 
