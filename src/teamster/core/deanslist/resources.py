@@ -3,19 +3,18 @@ import gc
 import yaml
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
-from requests import Session
+from requests import Session, exceptions
 
 
 class DeansListResource(ConfigurableResource):
     subdomain: str
     api_key_map: str
 
-    _client: Session = PrivateAttr()
+    _client: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()
     _api_key_map: dict = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._client = Session()
         self._base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
         with open(self.api_key_map) as f:
@@ -34,6 +33,18 @@ class DeansListResource(ConfigurableResource):
             return f"{self._base_url}/{api_version}/{endpoint}/{'/'.join(args)}"
         else:
             return f"{self._base_url}/{api_version}/{endpoint}"
+
+    def _request(self, method, url, **kwargs):
+        context = self.get_resource_context()
+
+        try:
+            response = self._client.request(method=method, url=url, **kwargs)
+
+            response.raise_for_status()
+            return response
+        except exceptions.HTTPError as e:
+            context.log.error(e)
+            raise exceptions.HTTPError(response.text) from e
 
     def _parse_response(self, response):
         response_json = response.json()
@@ -57,15 +68,17 @@ class DeansListResource(ConfigurableResource):
 
         return {"row_count": total_row_count, "data": all_data}
 
-    def get_endpoint(self, api_version, endpoint, school_id, *args, **kwargs):
+    def get(self, api_version, endpoint, school_id, *args, **kwargs):
+        context = self.get_resource_context()
+
         url = self._get_url(api_version=api_version, endpoint=endpoint, *args)
 
-        context = self.get_resource_context()
-        context.log.info(f"GET: {url}\nSCHOOL_ID: {school_id}\nPARAMS: {kwargs}")
+        context.log.info(f"GET: {url}\nSCHOOL_ID: {school_id}\n{kwargs}")
 
-        kwargs["apikey"] = self._api_key_map[school_id]
+        kwargs["params"]["apikey"] = self._api_key_map[school_id]
 
-        response = self._client.get(url=url, params=kwargs)
+        response = self._request(method="GET", url=url, **kwargs)
+
         response.raise_for_status()
 
         return self._parse_response(response)

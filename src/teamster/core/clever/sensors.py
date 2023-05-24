@@ -37,9 +37,7 @@ def build_sftp_sensor(
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
-            ls = get_sftp_ls(
-                context=context, ssh=ssh_clever_reports, asset_defs=asset_defs
-            )
+            ls = get_sftp_ls(ssh=ssh_clever_reports, asset_defs=asset_defs)
         except SSHException as e:
             context.log.error(e)
             return SensorResult(skip_reason=SkipReason(str(e)))

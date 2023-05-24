@@ -30,7 +30,7 @@ workspace:
   # runK8sConfig:
   #   podSpecConfig:
   #     nodeSelector:
-  #       cloud.google.com/compute-class: null
+  #       cloud.google.com/compute-class:
   #     affinity:
   #       nodeAffinity:
   #         requiredDuringSchedulingIgnoredDuringExecution:
@@ -39,7 +39,7 @@ workspace:
   #                 - key: cloud.google.com/compute-class
   #                   operator: In
   #                   values:
-  #                     - null
+  #                     -
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig: # raw config for the pod's main container

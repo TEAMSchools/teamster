@@ -26,7 +26,7 @@ def build_static_partition_asset(
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         response = schoolmint_grow.get(
-            endpoint=asset_name, archived=(context.partition_key == "t")
+            endpoint=asset_name, params={"archived": context.partition_key == "t"}
         )
 
         count = response["count"]
@@ -88,8 +88,10 @@ def build_multi_partition_asset(
 
         endpoint_content = schoolmint_grow.get(
             endpoint=asset_name,
-            archived=(archived_partition == "t"),
-            lastModified=last_modified_partition,
+            params={
+                "archived": (archived_partition == "t"),
+                "lastModified": last_modified_partition,
+            },
         )
 
         count = endpoint_content["count"]
