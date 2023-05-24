@@ -11,21 +11,20 @@ class WorkforceManagerResource(ConfigurableResource):
     username: str
     password: str
 
-    _client: Session = PrivateAttr()
+    _client: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()
     _refresh_token: str = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._client = Session()
         self._base_url = f"https://{self.subdomain}.mykronos.com/api"
 
         self._client.headers["appkey"] = self.app_key
 
-        self.authenticate(grant_type="password")
+        self._authenticate(grant_type="password")
 
         return super().setup_for_execution(context)
 
-    def authenticate(self, grant_type):
+    def _authenticate(self, grant_type):
         self._client.headers["Content-Type"] = "application/x-www-form-urlencoded"
         self._client.headers.pop(
             "Authorization", ""
@@ -57,21 +56,41 @@ class WorkforceManagerResource(ConfigurableResource):
             "Bearer " + response_data["access_token"]
         )
 
-    def request(self, method, endpoint, **kwargs):
+    def _request(self, method, url, **kwargs):
+        context = self.get_resource_context()
+
         try:
-            response = self._client.request(
-                method=method, url=f"{self._base_url}/{endpoint}", **kwargs
-            )
+            response = self._client.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
 
             return response
         except exceptions.HTTPError as e:
-            context = self.get_resource_context()
             context.log.error(e)
 
             if response.status_code == 401:
-                self.authenticate(grant_type="refresh_token")
-                self.request(method, endpoint, **kwargs)
+                self._authenticate(grant_type="refresh_token")
+                self._request(method=method, url=url, **kwargs)
             else:
                 raise exceptions.HTTPError(response.text) from e
+
+    def _get_url(self, endpoint, *args):
+        return f"{self._base_url}/{endpoint}" + ("/" + "/".join(args) if args else "")
+
+    def get(self, endpoint, *args, **kwargs):
+        context = self.get_resource_context()
+
+        url = self._get_url(endpoint=endpoint, *args)
+        context.log.debug(f"GET: {url}")
+
+        return self._request(method="GET", url=url, **kwargs)
+
+    def post(self, endpoint, *args, **kwargs):
+        context = self.get_resource_context()
+
+        url = self._get_url(endpoint=endpoint, *args)
+        context.log.debug(f"POST: {url}")
+
+        return self._request(
+            method="POST", url=self._get_url(endpoint=endpoint, *args), **kwargs
+        )

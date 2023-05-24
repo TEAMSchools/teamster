@@ -37,18 +37,14 @@ def build_smartrecruiters_report_asset(
         )
 
         context.log.info(f"Executing {report_name}")
-        report_execution_data = smartrecruiters.request(
-            method="POST", endpoint=report_endpoint
-        ).json()
+        report_execution_data = smartrecruiters.post(endpoint=report_endpoint).json()
 
         context.log.info(report_execution_data)
         report_file_id = report_execution_data["reportFileId"]
         report_file_status = report_execution_data["reportFileStatus"]
 
         while report_file_status != "COMPLETED":
-            report_files_data = smartrecruiters.request(
-                method="GET", endpoint=report_endpoint
-            ).json()
+            report_files_data = smartrecruiters.get(endpoint=report_endpoint).json()
 
             report_file_record = [
                 rf
@@ -66,8 +62,8 @@ def build_smartrecruiters_report_asset(
                 time.sleep(0.1)  # rate-limit 10 req/sec
 
         context.log.info(f"Downloading {report_name}")
-        report_file_text = smartrecruiters.request(
-            method="GET", endpoint=f"{report_endpoint}/recent/data"
+        report_file_text = smartrecruiters.get(
+            endpoint=f"{report_endpoint}/recent/data"
         ).text
 
         df = read_csv(filepath_or_buffer=StringIO(report_file_text), low_memory=False)

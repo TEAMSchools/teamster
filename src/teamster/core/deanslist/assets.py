@@ -34,11 +34,11 @@ def build_static_partition_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext, deanslist: DeansListResource):
-        endpoint_content = deanslist.get_endpoint(
+        endpoint_content = deanslist.get(
             api_version=api_version,
             endpoint=asset_name,
             school_id=int(context.partition_key),
-            **params,
+            params=params,
         )
 
         row_count = endpoint_content["row_count"]
@@ -140,12 +140,14 @@ def build_multi_partition_asset(
                             end_date=month.end_of("month").to_date_string(),
                         )
 
-                endpoint_content = deanslist.get_endpoint(
+                endpoint_content = deanslist.get(
                     api_version=api_version,
                     endpoint=asset_name,
                     school_id=int(school_partition),
-                    UpdatedSince=modified_date.to_date_string(),
-                    **composed_params,
+                    params={
+                        "UpdatedSince": modified_date.to_date_string(),
+                        **composed_params,
+                    },
                 )
 
                 row_count = endpoint_content["row_count"]

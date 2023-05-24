@@ -50,16 +50,14 @@ def build_wfm_asset(
 
         symbolic_period_record = [
             sp
-            for sp in adp_wfm.request(
-                method="GET", endpoint="v1/commons/symbolicperiod"
-            ).json()
+            for sp in adp_wfm.get(endpoint="v1/commons/symbolicperiod").json()
             if sp["symbolicId"] == symbolic_id
         ][0]
 
         hyperfind_record = [
             hq
             for hq in (
-                adp_wfm.request(method="GET", endpoint="v1/commons/hyperfind")
+                adp_wfm.get(endpoint="v1/commons/hyperfind")
                 .json()
                 .get("hyperfindQueries")
             )
@@ -70,8 +68,7 @@ def build_wfm_asset(
             f"Executing {report_name}:\n{symbolic_period_record}\n{hyperfind_record}"
         )
 
-        report_execution_response = adp_wfm.request(
-            method="POST",
+        report_execution_response = adp_wfm.post(
             endpoint=f"v1/platform/reports/{report_name}/execute",
             json={
                 "parameters": [
@@ -95,9 +92,7 @@ def build_wfm_asset(
         while True:
             report_execution_record = [
                 rex
-                for rex in adp_wfm.request(
-                    method="GET", endpoint="v1/platform/report_executions"
-                ).json()
+                for rex in adp_wfm.get(endpoint="v1/platform/report_executions").json()
                 if rex.get("id") == report_execution_id
             ][0]
 
@@ -106,11 +101,8 @@ def build_wfm_asset(
             if report_execution_record.get("status").get("qualifier") == "Completed":
                 context.log.info(f"Downloading {report_name}")
 
-                report_file_text = adp_wfm.request(
-                    method="GET",
-                    endpoint=(
-                        f"v1/platform/report_executions/{report_execution_id}/file"
-                    ),
+                report_file_text = adp_wfm.get(
+                    endpoint=f"v1/platform/report_executions/{report_execution_id}/file"
                 ).text
 
                 break

@@ -26,15 +26,11 @@ class SchoolMintGrowResource(ConfigurableResource):
             "skip": 0,
         }
 
-        access_token = self._get_access_token(
-            client_id=self.client_id, client_secret=self.client_secret
-        )
-
         self._client.headers.update(
             {
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-                "Authorization": "Bearer " + access_token.get("access_token"),
+                "Authorization": "Bearer " + self._get_access_token()["access_token"],
             }
         )
 
@@ -54,27 +50,21 @@ class SchoolMintGrowResource(ConfigurableResource):
             "/" + "/".join(args) if args else ""
         )
 
-    def _request(self, method, url, params={}, body=None):
+    def _request(self, method, url, **kwargs):
         context = self.get_resource_context()
 
-        context.log.debug(f"{method}: {url}\nPARAMS: {params}")
-
         try:
-            response = self._client.request(
-                method=method, url=url, params=params, json=body
-            )
+            context.log.debug(f"{method}: {url}")
+
+            response = self._client.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
             return response
         except HTTPError as e:
-            if response.status_code >= 500:
-                raise HTTPError from e
-            else:
-                raise HTTPError(response.json()) from e
+            context.log.error(e)
+            raise HTTPError(response.text) from e
 
     def get(self, endpoint, *args, **kwargs):
-        context = self.get_resource_context()
-
         url = self._get_url(endpoint=endpoint, *args)
 
         params = copy.deepcopy(self._default_params)
@@ -84,7 +74,7 @@ class SchoolMintGrowResource(ConfigurableResource):
             response = self._request(method="GET", url=url, params=kwargs)
 
             # mock paginated response format
-            return {
+            all_data = {
                 "count": 1,
                 "limit": self._default_params["limit"],
                 "skip": self._default_params["skip"],
@@ -121,23 +111,20 @@ class SchoolMintGrowResource(ConfigurableResource):
 
             all_data["count"] = count
 
-            context.log.debug(f"COUNT: {count}")
-            return all_data
+        context = self.get_resource_context()
 
-    def post(self, endpoint, body=None, **kwargs):
+        context.log.debug("COUNT: " + all_data["count"])
+
+        return all_data
+
+    def post(self, endpoint, **kwargs):
         return self._request(
-            method="POST",
-            url=self._get_url(endpoint=endpoint),
-            params=kwargs,
-            body=body,
+            method="POST", url=self._get_url(endpoint=endpoint), **kwargs
         ).json()
 
     def put(self, endpoint, body=None, *args, **kwargs):
         return self._request(
-            method="PUT",
-            url=self._get_url(endpoint=endpoint, *args),
-            params=kwargs,
-            body=body,
+            method="PUT", url=self._get_url(endpoint=endpoint, *args), **kwargs
         ).json()
 
     def delete(self, endpoint, *args):
