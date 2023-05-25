@@ -1,10 +1,11 @@
 from dagster import job
 
+from teamster.core.utils.ops import asset_observation_op
+
 from .. import CODE_LOCATION
-from .ops import asset_observation_op
 
 
-@job(name=f"{CODE_LOCATION}_gsheet_observation_job")
+@job(name=f"{CODE_LOCATION}_asset_observation_job")
 def asset_observation_job():
     asset_observation_op()
 
