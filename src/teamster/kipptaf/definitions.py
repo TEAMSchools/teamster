@@ -18,6 +18,7 @@ from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.utils.jobs import asset_observation_job
 
 from . import (
     CODE_LOCATION,
@@ -33,7 +34,6 @@ from . import (
     renlearn,
     schoolmint,
     smartrecruiters,
-    utils,
 )
 
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -60,9 +60,9 @@ defs = Definitions(
     jobs=[
         *adp.jobs,
         *datagun.jobs,
-        *utils.jobs,
         *schoolmint.jobs,
         *smartrecruiters.jobs,
+        asset_observation_job,
     ],
     schedules=[
         *adp.schedules,
@@ -75,7 +75,7 @@ defs = Definitions(
         *adp.sensors,
         *alchemer.sensors,
         *clever.sensors,
-        # *google.sensors,
+        *google.sensors,
         *iready.sensors,
         *renlearn.sensors,
     ],

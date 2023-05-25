@@ -1,15 +1,11 @@
 import json
 
 import pendulum
-from dagster import (
-    AssetSelection,
-    RunRequest,
-    SensorEvaluationContext,
-    SourceAsset,
-    sensor,
-)
+from dagster import RunRequest, SensorEvaluationContext, SourceAsset, sensor
 
 from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.utils.jobs import asset_observation_job
+from teamster.core.utils.ops import ObservationOpConfig
 
 
 def build_gsheet_sensor(
@@ -20,19 +16,18 @@ def build_gsheet_sensor(
     @sensor(
         name=f"{code_location}_gsheets_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        # asset_selection=AssetSelection.assets(*asset_defs),
+        job=asset_observation_job,
     )
     def _sensor(context: SensorEvaluationContext, gsheets: GoogleSheetsResource):
         cursor: dict = json.loads(context.cursor or "{}")
 
+        asset_keys = []
         for asset in asset_defs:
-            asset_key_str = asset.key.to_python_identifier()
+            asset_key_str = asset.key.to_user_string()
 
             context.log.info(asset_key_str)
 
-            spreadsheet = gsheets.open(
-                sheet_id=asset.metadata_by_key[asset.key]["sheet_id"]
-            )
+            spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"])
 
             last_update_timestamp = pendulum.parser.parse(
                 text=spreadsheet.lastUpdateTime
@@ -55,11 +50,13 @@ def build_gsheet_sensor(
             )
 
             if last_update_timestamp > latest_materialization_timestamp:
-                yield RunRequest(
-                    run_key=f"{asset_key_str}_{last_update_timestamp}",
-                    asset_selection=[asset.key],
-                )
+                asset_keys.append(asset_key_str)
 
                 cursor[asset_key_str] = last_update_timestamp
+
+        yield RunRequest(
+            run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
+            run_config=ObservationOpConfig(asset_keys),
+        )
 
     return _sensor
