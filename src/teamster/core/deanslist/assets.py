@@ -28,6 +28,7 @@ def build_static_partition_asset(
     @asset(
         name=asset_name.replace("-", "_"),
         key_prefix=[code_location, "deanslist"],
+        metadata=params,
         partitions_def=partitions_def,
         op_tags=op_tags,
         io_manager_key="gcs_avro_io",
@@ -38,7 +39,7 @@ def build_static_partition_asset(
             api_version=api_version,
             endpoint=asset_name,
             school_id=int(context.partition_key),
-            **params,
+            params=params,
         )
 
         row_count = endpoint_content["row_count"]
@@ -69,6 +70,7 @@ def build_multi_partition_asset(
     @asset(
         name=asset_name.replace("-", "_"),
         key_prefix=[code_location, "deanslist"],
+        metadata=params,
         partitions_def=partitions_def,
         op_tags=op_tags,
         io_manager_key="gcs_avro_io",
@@ -144,8 +146,10 @@ def build_multi_partition_asset(
                     api_version=api_version,
                     endpoint=asset_name,
                     school_id=int(school_partition),
-                    UpdatedSince=modified_date.to_date_string(),
-                    **composed_params,
+                    params={
+                        "UpdatedSince": modified_date.to_date_string(),
+                        **composed_params,
+                    },
                 )
 
                 row_count = endpoint_content["row_count"]
