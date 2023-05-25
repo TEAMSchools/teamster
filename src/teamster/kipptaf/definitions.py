@@ -56,20 +56,26 @@ defs = Definitions(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
-    jobs=[*datagun.jobs, *schoolmint.jobs, *adp.jobs, *smartrecruiters.jobs],
+    jobs=[
+        *adp.jobs,
+        *datagun.jobs,
+        *schoolmint.jobs,
+        *smartrecruiters.jobs,
+    ],
     schedules=[
+        *adp.schedules,
         *datagun.schedules,
         *schoolmint.schedules,
-        *adp.schedules,
         *smartrecruiters.schedules,
     ],
     sensors=[
+        *achieve3k.sensors,
+        *adp.sensors,
         *alchemer.sensors,
         *clever.sensors,
-        *renlearn.sensors,
-        *achieve3k.sensors,
+        # *google.sensors,
         *iready.sensors,
-        *adp.sensors,
+        *renlearn.sensors,
     ],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
