@@ -28,35 +28,37 @@ def build_gsheet_sensor(
             context.log.info(asset_key_str)
 
             spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"])
+            context.log.debug(spreadsheet.client.auth.service_account_email)
 
-            last_update_timestamp = pendulum.parser.parse(
-                text=spreadsheet.lastUpdateTime
-            ).timestamp()
-            context.log.debug(f"last_update_time:\t{last_update_timestamp}")
+            # last_update_timestamp = pendulum.parser.parse(
+            #     text=spreadsheet.lastUpdateTime
+            # ).timestamp()
+            # context.log.debug(f"last_update_time:\t{last_update_timestamp}")
 
-            latest_materialization_event = (
-                context.instance.get_latest_materialization_event(asset.key)
+            # latest_materialization_event = (
+            #     context.instance.get_latest_materialization_event(asset.key)
+            # )
+
+            # latest_materialization_timestamp = (
+            #     latest_materialization_event.timestamp
+            #     if latest_materialization_event
+            #     else 0
+            # )
+
+            # context.log.debug(
+            #     "latest_materialization_event:\t"
+            #     + str(latest_materialization_timestamp)
+            # )
+
+            # if last_update_timestamp > latest_materialization_timestamp:
+            #     asset_keys.append(asset_key_str)
+
+            #     cursor[asset_key_str] = last_update_timestamp
+
+        if asset_keys:
+            yield RunRequest(
+                run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
+                run_config=ObservationOpConfig(asset_keys),
             )
-
-            latest_materialization_timestamp = (
-                latest_materialization_event.timestamp
-                if latest_materialization_event
-                else 0
-            )
-
-            context.log.debug(
-                "latest_materialization_event:\t"
-                + str(latest_materialization_timestamp)
-            )
-
-            if last_update_timestamp > latest_materialization_timestamp:
-                asset_keys.append(asset_key_str)
-
-                cursor[asset_key_str] = last_update_timestamp
-
-        yield RunRequest(
-            run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
-            run_config=ObservationOpConfig(asset_keys),
-        )
 
     return _sensor
