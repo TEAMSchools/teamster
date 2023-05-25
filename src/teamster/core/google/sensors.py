@@ -21,14 +21,15 @@ def build_gsheet_sensor(
     def _sensor(context: SensorEvaluationContext, gsheets: GoogleSheetsResource):
         cursor: dict = json.loads(context.cursor or "{}")
 
+        context.log.debug(gsheets._client.auth.service_account_email)
+
         asset_keys = []
         for asset in asset_defs:
             asset_key_str = asset.key.to_user_string()
 
             context.log.info(asset_key_str)
 
-            spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"])
-            context.log.debug(spreadsheet.client.auth.service_account_email)
+            # spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"])
 
             # last_update_timestamp = pendulum.parser.parse(
             #     text=spreadsheet.lastUpdateTime
