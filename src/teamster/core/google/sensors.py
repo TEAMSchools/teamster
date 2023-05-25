@@ -1,7 +1,13 @@
 import json
 
 import pendulum
-from dagster import AssetSelection, SensorEvaluationContext, SourceAsset, sensor
+from dagster import (
+    AssetSelection,
+    RunRequest,
+    SensorEvaluationContext,
+    SourceAsset,
+    sensor,
+)
 
 from teamster.core.google.resources.sheets import GoogleSheetsResource
 
@@ -14,7 +20,7 @@ def build_gsheet_sensor(
     @sensor(
         name=f"{code_location}_gsheets_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        # asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(context: SensorEvaluationContext, gsheets: GoogleSheetsResource):
         cursor: dict = json.loads(context.cursor or "{}")
@@ -49,6 +55,11 @@ def build_gsheet_sensor(
             )
 
             if last_update_timestamp > latest_materialization_timestamp:
+                yield RunRequest(
+                    run_key=f"{asset_key_str}_{last_update_timestamp}",
+                    asset_selection=[asset.key],
+                )
+
                 cursor[asset_key_str] = last_update_timestamp
 
     return _sensor

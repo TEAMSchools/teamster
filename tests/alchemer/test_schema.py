@@ -1,16 +1,15 @@
 import json
 import random
 
-# import pendulum
-from alchemer import AlchemerSession
-from dagster import build_resources, config_from_files
+import pendulum
+from dagster import EnvVar, build_resources
 from fastavro import parse_schema, validation, writer
 
-from teamster.core.alchemer.resources import alchemer_resource
+from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.alchemer.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-TEST_SURVEY_ID = None
+TEST_SURVEY_ID = 6734664
 FILTER_SURVEY_IDS = []
 PASSED_SURVEY_IDS = [
     # 2934233,
@@ -98,25 +97,24 @@ def check_schema(records, endpoint_name, key=None):
             schema=parsed_schema,
             records=records,
             codec="snappy",
-            # strict_allow_default=True,
+            strict_allow_default=True,
         )
     print("\t\tPASS")
 
 
-def test_alchemer_schema():
+def test_schema():
     with build_resources(
-        resources={"alchemer": alchemer_resource},
-        resource_config={
-            "alchemer": {
-                "config": config_from_files(
-                    ["src/teamster/core/config/resources/alchemer.yaml"]
-                )
-            }
-        },
+        resources={
+            "alchemer": AlchemerResource(
+                api_token=EnvVar("ALCHEMER_API_TOKEN"),
+                api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
+                api_version="v5",
+            )
+        }
     ) as resources:
-        alchemer: AlchemerSession = resources.alchemer
+        alchemer: AlchemerResource = resources.alchemer
 
-        all_surveys = alchemer.survey.list()
+        all_surveys = alchemer._client.survey.list()
 
         test_survey_id = None
         for test_survey in all_surveys:
@@ -133,7 +131,7 @@ def test_alchemer_schema():
             print("ALL SURVEYS PASSED")
             return
 
-        survey = alchemer.survey.get(id=test_survey_id)
+        survey = alchemer._client.survey.get(id=test_survey_id)
         print(f"\nSURVEY: {survey.title}")
         print(f"ID: {survey.id}")
 
@@ -141,15 +139,15 @@ def test_alchemer_schema():
 
         check_schema(records=survey.question.list(), endpoint_name="survey_question")
 
-        # check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
+        check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
 
-        # if int(survey.id) in FILTER_SURVEY_IDS:
-        #     start_date = pendulum.now(tz="US/Eastern").subtract(weeks=1)
+        if int(survey.id) in FILTER_SURVEY_IDS:
+            start_date = pendulum.now(tz="US/Eastern").subtract(days=1)
 
-        #     survey_response = survey.response.filter(
-        #         "date_submitted", ">=", start_date.to_datetime_string()
-        #     ).list(params={"resultsperpage": 500})
-        # else:
-        #     survey_response = survey.response.list()
+            survey_response = survey.response.filter(
+                "date_submitted", ">=", start_date.to_datetime_string()
+            ).list(params={"resultsperpage": 500})
+        else:
+            survey_response = survey.response.list()
 
-        # check_schema(records=survey_response, endpoint_name="survey_response")
+        check_schema(records=survey_response, endpoint_name="survey_response")
