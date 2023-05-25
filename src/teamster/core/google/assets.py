@@ -1,22 +1,13 @@
-import pendulum
-from dagster import DataVersion, observable_source_asset
-
-from teamster.core.google.resources.sheets import GoogleSheetsResource
+from dagster import observable_source_asset
 
 
-def build_gsheet_asset(name, code_location, sheet_id):
+def build_gsheet_asset(name, code_location, sheet_id, range_name):
     @observable_source_asset(
         name=name,
         key_prefix=[code_location, "gsheets"],
-        metadata={"sheet_id": sheet_id},
+        metadata={"sheet_id": sheet_id, "range_name": range_name},
     )
-    def _asset(gsheets: GoogleSheetsResource):
-        spreadsheet = gsheets.open(sheet_id=sheet_id)
-
-        last_update_timestamp = pendulum.parser.parse(
-            text=spreadsheet.lastUpdateTime
-        ).timestamp()
-
-        return DataVersion(last_update_timestamp)
+    def _asset():
+        ...
 
     return _asset

@@ -59,6 +59,7 @@ defs = Definitions(
     jobs=[
         *adp.jobs,
         *datagun.jobs,
+        *google.jobs,
         *schoolmint.jobs,
         *smartrecruiters.jobs,
     ],
