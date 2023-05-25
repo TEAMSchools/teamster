@@ -33,6 +33,7 @@ from . import (
     renlearn,
     schoolmint,
     smartrecruiters,
+    utils,
 )
 
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
@@ -59,7 +60,7 @@ defs = Definitions(
     jobs=[
         *adp.jobs,
         *datagun.jobs,
-        *google.jobs,
+        *utils.jobs,
         *schoolmint.jobs,
         *smartrecruiters.jobs,
     ],
