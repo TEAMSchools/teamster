@@ -20,7 +20,7 @@ mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
 
 # save secrets to file
-echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud-service-account.json
+echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud_service_account_json
 echo "${DBT_USER_CREDS}" |
   sudo tee /etc/secret-volume/dbt_user_creds_json >/dev/null
 echo "${DEANSLIST_API_KEY_MAP}" |
