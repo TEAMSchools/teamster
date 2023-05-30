@@ -18,6 +18,7 @@ def test_gsheet_resource():
         spreadsheet = gsheets.open(
             sheet_id="1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik"
         )
+        print(spreadsheet.client._get_file_drive_metadata(spreadsheet.id))
         last_update_timestamp = pendulum.parser.parse(
             text=spreadsheet.lastUpdateTime
         ).timestamp()
