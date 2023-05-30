@@ -25,7 +25,7 @@ def build_gsheet_sensor(
         job=asset_observation_job,
     )
     def _sensor(context: SensorEvaluationContext, gsheets: GoogleSheetsResource):
-        print(gsheets._client.auth.service_account_email)
+        context.log.debug(gsheets._client.auth.service_account_email)
         # cursor: dict = json.loads(context.cursor or "{}")
 
         # asset_keys = []
