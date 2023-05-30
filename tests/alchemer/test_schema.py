@@ -74,7 +74,7 @@ def check_schema(records, endpoint_name, key=None):
 
     len_records = len(records)
     if key is not None:
-        sample_record = [r for r in records if "" in json.dumps(r)]
+        sample_record = [r for r in records if "" in json.dumps(obj=r)]
     elif len_records == 0:
         print("\tNO DATA")
         return

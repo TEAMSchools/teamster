@@ -150,7 +150,7 @@ def build_dynamic_partition_sensor(
 
         return SensorResult(
             run_requests=run_requests,
-            cursor=json.dumps(cursor),
+            cursor=json.dumps(obj=cursor),
             dynamic_partitions_requests=dynamic_partitions_requests,
         )
 

@@ -4,7 +4,13 @@ from teamster.core.google.resources.sheets import GoogleSheetsResource
 
 
 def test_gsheet_resource():
-    with build_resources(resources={"gsheets": GoogleSheetsResource()}) as resources:
+    with build_resources(
+        resources={
+            "gsheets": GoogleSheetsResource(
+                service_account_file_path="env/gcloud-service-account.json"
+            )
+        }
+    ) as resources:
         gsheets: GoogleSheetsResource = resources.gsheets
 
         print(gsheets._client.auth)
