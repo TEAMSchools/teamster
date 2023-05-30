@@ -11,7 +11,6 @@ from dagster import (
 
 from teamster.core.google.resources.sheets import GoogleSheetsResource
 from teamster.core.utils.jobs import asset_observation_job
-from teamster.core.utils.ops import ObservationOpConfig
 
 
 def build_gsheet_sensor(
