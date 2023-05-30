@@ -117,7 +117,9 @@ defs = Definitions(
             api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
             api_version="v5",
         ),
-        "gsheets": GoogleSheetsResource(),
+        "gsheets": GoogleSheetsResource(
+            service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+        ),
         "schoolmint_grow": SchoolMintGrowResource(
             client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
             client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),

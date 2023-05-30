@@ -48,7 +48,7 @@ def test_schema():
         # print(dtypes_dict)
 
         sample_record = records[random.randint(a=0, b=(count - 1))]
-        # sample_record = [r for r in records if "" in json.dumps(r)]
+        # sample_record = [r for r in records if "" in json.dumps(obj=r)]
         # print(sample_record)
 
         schema = get_avro_record_schema(

@@ -41,6 +41,7 @@ kubectl create secret generic "secret-files" \
   --from-literal="id_rsa_egencia"="${EGENCIA_RSA_PRIVATE_KEY}" \
   --from-literal="dbt_user_creds_json"="${DBT_USER_CREDS}" \
   --from-literal="deanslist_api_key_map_yaml"="${DEANSLIST_API_KEY_MAP}" \
+  --from-literal="gcloud_service_account_json"="${GCLOUD_SERVICE_ACCOUNT_KEY}" \
   --output=yaml |
   kubectl apply -f - ||
   true

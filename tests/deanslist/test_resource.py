@@ -45,7 +45,7 @@ def test_deanslist_schema():
             records = endpoint_content["data"]
 
             sample_record = records[random.randint(a=0, b=(row_count - 1))]
-            # sample_record = [r for r in records if "PointValue" in json.dumps(r)]
+            # sample_record = [r for r in records if "PointValue" in json.dumps(obj=r)]
             print(sample_record)
 
             with open(file="env/deanslist_test.json", mode="w+") as f:

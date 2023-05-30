@@ -66,7 +66,7 @@ def test_schema():
         parsed_schema = parse_schema(schema)
 
         sample_record = records[random.randint(a=0, b=(count - 1))]
-        # sample_record = [r for r in records if "" in json.dumps(r)]
+        # sample_record = [r for r in records if "" in json.dumps(obj=r)]
 
         assert validation.validate(
             datum=sample_record, schema=parsed_schema, strict=True

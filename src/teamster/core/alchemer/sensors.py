@@ -95,7 +95,7 @@ def build_survey_metadata_asset_sensor(
 
         return SensorResult(
             run_requests=run_requests,
-            cursor=json.dumps(cursor),
+            cursor=json.dumps(obj=cursor),
             dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
@@ -184,7 +184,7 @@ def build_survey_response_asset_sensor(
 
         return SensorResult(
             run_requests=run_requests,
-            cursor=json.dumps(cursor),
+            cursor=json.dumps(obj=cursor),
             dynamic_partitions_requests=[
                 AddDynamicPartitionsRequest(
                     partitions_def_name=asset_def.partitions_def.name,
