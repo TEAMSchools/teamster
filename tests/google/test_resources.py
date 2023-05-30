@@ -13,10 +13,10 @@ def test_gsheet_resource():
     ) as resources:
         gsheets: GoogleSheetsResource = resources.gsheets
 
-        print(gsheets._client.auth)
-        print(vars(gsheets._client.auth))
+        print(gsheets._client.auth.service_account_email)
 
         spreadsheet = gsheets.open(
             sheet_id="1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik"
         )
+
         print(spreadsheet.lastUpdateTime)
