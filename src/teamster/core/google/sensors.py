@@ -66,7 +66,13 @@ def build_gsheet_sensor(
                 run_requests=[
                     RunRequest(
                         run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
-                        run_config=ObservationOpConfig(asset_keys=asset_keys),
+                        run_config={
+                            "ops": {
+                                "asset_observation_op": {
+                                    "config": {"asset_keys": asset_keys}
+                                }
+                            }
+                        },
                     )
                 ],
                 cursor=json.dumps(obj=cursor),
