@@ -2,6 +2,7 @@ import json
 
 import pendulum
 from dagster import (
+    RunConfig,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -11,6 +12,7 @@ from dagster import (
 
 from teamster.core.google.resources.sheets import GoogleSheetsResource
 from teamster.core.utils.jobs import asset_observation_job
+from teamster.core.utils.ops import ObservationOpConfig
 
 
 def build_gsheet_sensor(
@@ -65,13 +67,13 @@ def build_gsheet_sensor(
                 run_requests=[
                     RunRequest(
                         run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
-                        run_config={
-                            "ops": {
-                                "asset_observation_op": {
-                                    "config": {"asset_keys": asset_keys}
-                                }
+                        run_config=RunConfig(
+                            ops={
+                                "asset_observation_op": ObservationOpConfig(
+                                    asset_keys=asset_keys
+                                )
                             }
-                        },
+                        ),
                     )
                 ],
                 cursor=json.dumps(obj=cursor),
