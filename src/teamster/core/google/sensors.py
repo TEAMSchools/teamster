@@ -33,8 +33,7 @@ def build_gsheet_sensor(
         for asset in asset_defs:
             asset_key_str = asset.key.to_user_string()
 
-            context.log.info(asset_key_str)
-            context.log.debug(asset.metadata["sheet_id"].value)
+            context.log.info(f"{asset_key_str}:\t" + asset.metadata["sheet_id"].value)
 
             try:
                 spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"].value)
