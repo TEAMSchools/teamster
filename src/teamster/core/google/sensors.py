@@ -33,8 +33,7 @@ def build_gsheet_sensor(
 
             context.log.info(asset_key_str)
 
-            spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"])
-            context.log.debug(spreadsheet)
+            spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"].value)
 
             last_update_timestamp = pendulum.parser.parse(
                 text=spreadsheet.lastUpdateTime
