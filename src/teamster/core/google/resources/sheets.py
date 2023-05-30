@@ -6,17 +6,24 @@ from pydantic import PrivateAttr
 
 
 class GoogleSheetsResource(ConfigurableResource):
+    service_account_file_path: str = None
+
     _client: gspread.Client = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        credentials, project_id = google.auth.default(
-            scopes=[
-                "https://www.googleapis.com/auth/spreadsheets",
-                "https://www.googleapis.com/auth/drive",
-            ]
-        )
+        if self.service_account_file_path is not None:
+            self._client = gspread.service_account(
+                filename=self.service_account_file_path
+            )
+        else:
+            credentials, project_id = google.auth.default(
+                scopes=[
+                    "https://www.googleapis.com/auth/spreadsheets",
+                    "https://www.googleapis.com/auth/drive",
+                ]
+            )
 
-        self._client = gspread.authorize(credentials=credentials)
+            self._client = gspread.authorize(credentials=credentials)
 
         return super().setup_for_execution(context)
 

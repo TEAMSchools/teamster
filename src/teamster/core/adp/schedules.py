@@ -36,14 +36,10 @@ def build_dynamic_partition_schedule(
             )
 
             for symbolic_id in symbolic_id_partition.get_partition_keys():
-                symbolic_period_record = adp_wfm.request(
-                    method="POST",
+                symbolic_period_record = adp_wfm.post(
                     endpoint="v1/commons/symbolicperiod/read",
                     json={
-                        "where": {
-                            "currentUser": True,
-                            "symbolicPeriodId": symbolic_id,
-                        }
+                        "where": {"currentUser": True, "symbolicPeriodId": symbolic_id}
                     },
                 ).json()
 
