@@ -1,10 +1,20 @@
 import pendulum
-from dagster import build_resources
+from dagster import build_resources, config_from_files
 
+from teamster.core.google.assets import build_gsheet_asset
 from teamster.core.google.resources.sheets import GoogleSheetsResource
+
+CODE_LOCATION = "kipptaf"
 
 
 def test_gsheet_resource():
+    config_dir = f"src/teamster/{CODE_LOCATION}/google/config"
+
+    asset_defs = [
+        build_gsheet_asset(code_location=CODE_LOCATION, **asset)
+        for asset in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
+    ]
+
     with build_resources(
         resources={
             "gsheets": GoogleSheetsResource(
@@ -14,16 +24,14 @@ def test_gsheet_resource():
     ) as resources:
         gsheets: GoogleSheetsResource = resources.gsheets
 
-        print(vars(gsheets._client.auth))
+        for asset in asset_defs:
+            sheet_id = asset.metadata["sheet_id"].value
 
-        spreadsheet = gsheets.open(
-            sheet_id="1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik"
-        )
+            print(sheet_id)
+            spreadsheet = gsheets.open(sheet_id=sheet_id)
 
-        print(vars(spreadsheet.client.auth))
+            last_update_timestamp = pendulum.parser.parse(
+                text=spreadsheet.lastUpdateTime
+            ).timestamp()
 
-        last_update_timestamp = pendulum.parser.parse(
-            text=spreadsheet.lastUpdateTime
-        ).timestamp()
-
-        print(last_update_timestamp)
+            print(f"\t{last_update_timestamp}")

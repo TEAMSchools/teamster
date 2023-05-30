@@ -45,22 +45,13 @@ def build_gsheet_sensor(
 
                 context.log.debug(f"last_update_time:\t{last_update_timestamp}")
 
-                latest_materialization_event = (
-                    context.instance.get_latest_materialization_event(asset.key)
-                )
-
-                latest_materialization_timestamp = (
-                    latest_materialization_event.timestamp
-                    if latest_materialization_event
-                    else 0
-                )
+                latest_observation_timestamp = cursor.get(asset_key_str, 0)
 
                 context.log.debug(
-                    "latest_materialization_event:\t"
-                    + str(latest_materialization_timestamp)
+                    f"last_observation_timestamp:\t{latest_observation_timestamp}"
                 )
 
-                if last_update_timestamp > latest_materialization_timestamp:
+                if last_update_timestamp > latest_observation_timestamp:
                     asset_keys.append(asset_key_str)
 
                     cursor[asset_key_str] = last_update_timestamp
