@@ -29,9 +29,6 @@ assets:
   - name: renaissance__ar_individualized_goals
     range_name: fivetran_ar_individualized_goals
     sheet_id: 1UXyQhjJbyge05ydZjWDY6KnbuqVOw-PZpnmbY_ic57Q
-  - name: pm__teacher_goals_exemption
-    range_name: fivetran_teacher_goals_exemptions
-    sheet_id: 1d84x7HHOMgnQM78dYLY9vHqf-jLfYmpH8YGHEDezGNs
   - name: act__scale_score_key
     range_name: fivetran_scale_score_key
     sheet_id: 1QeVG9COJCTlRSPwjM9OQH7ofsAJcs7RxHe3WIE7nhW4
@@ -62,9 +59,6 @@ assets:
   - name: people__staff_attendance
     range_name: fivetran_staff_attendance
     sheet_id: 16AB2wcagWOExCo_wjNfmxD2fcxoTwJHWVyrn77dX6VA
-  - name: people__student_password_override
-    range_name: fivetran_student_password_override
-    sheet_id: 1nHUip20GCnE9EFbbuUz-Ho8HvKvb126Qn4BHOc0eSCg
   - name: egencia__traveler_groups
     range_name: fivetran_egencia_traveller_groups
     sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
@@ -77,9 +71,6 @@ assets:
   - name: coupa__school_name_aliases
     range_name: fivetran_school_aliases
     sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
-  - name: surveys__so_assignments
-    range_name: fivetran_so_assignments
-    sheet_id: 15PIpnnKaU2NF42JzjUbnrocL_2F41JOVZP4dYDS7mME
   - name: coupa__address_name_crosswalk
     range_name: fivetran_address_name_crosswalk
     sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
@@ -98,9 +89,6 @@ assets:
   - name: pm__assignments
     range_name: fivetran_pm_appsheet_assignments
     sheet_id: 1LMuwh41lIwdbEa_lQ9p1kzJmGIOTBTFz12Scb6_TQMM
-  - name: people__staffing_model
-    range_name: fivetran_staffing_model
-    sheet_id: 1KzRMjL2kmC4xV3gllh70g8HReVhjvHrqNHEl0WCVM24
   - name: people__nj_cert_tracker
     range_name: nj_cert_export
     sheet_id: 1HNe3V4yABln436GMVJyiHnjluU-xCXS1Oq289gg7PnM
@@ -119,3 +107,15 @@ assets:
   - name: assessments__standards_translation
     range_name: standards_translation
     sheet_id: 1EwHv7MajgHTq-HphLpwrS0KG_2Y_FXlPuPvj98YuFS8
+  # - name: people__staffing_model
+  #   range_name: fivetran_staffing_model
+  #   sheet_id: 1KzRMjL2kmC4xV3gllh70g8HReVhjvHrqNHEl0WCVM24
+  # - name: people__student_password_override
+  #   range_name: fivetran_student_password_override
+  #   sheet_id: 1nHUip20GCnE9EFbbuUz-Ho8HvKvb126Qn4BHOc0eSCg
+  # - name: surveys__so_assignments
+  #   range_name: fivetran_so_assignments
+  #   sheet_id: 15PIpnnKaU2NF42JzjUbnrocL_2F41JOVZP4dYDS7mME
+  # - name: pm__teacher_goals_exemption
+  #   range_name: fivetran_teacher_goals_exemptions
+  #   sheet_id: 1d84x7HHOMgnQM78dYLY9vHqf-jLfYmpH8YGHEDezGNs
