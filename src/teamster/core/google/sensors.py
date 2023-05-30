@@ -42,15 +42,14 @@ def build_gsheet_sensor(
                     text=spreadsheet.lastUpdateTime
                 ).timestamp()
 
-                context.log.debug(f"last_update_time:\t{last_update_timestamp}")
-
                 latest_observation_timestamp = cursor.get(asset_key_str, 0)
 
-                context.log.debug(
-                    f"last_observation_timestamp:\t{latest_observation_timestamp}"
-                )
-
                 if last_update_timestamp > latest_observation_timestamp:
+                    context.log.debug(f"last_update_time:\t{last_update_timestamp}")
+                    context.log.debug(
+                        f"last_observation_timestamp:\t{latest_observation_timestamp}"
+                    )
+
                     asset_keys.append(asset_key_str)
 
                     cursor[asset_key_str] = last_update_timestamp
