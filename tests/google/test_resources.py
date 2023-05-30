@@ -7,6 +7,7 @@ def test_gsheet_resource():
     with build_resources(resources={"gsheets": GoogleSheetsResource()}) as resources:
         gsheets: GoogleSheetsResource = resources.gsheets
 
+        print(gsheets._client.auth)
         print(vars(gsheets._client.auth))
 
         spreadsheet = gsheets.open(

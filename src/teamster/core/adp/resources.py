@@ -57,8 +57,6 @@ class WorkforceManagerResource(ConfigurableResource):
         )
 
     def _request(self, method, url, **kwargs):
-        context = self.get_resource_context()
-
         try:
             response = self._client.request(method=method, url=url, **kwargs)
 
@@ -66,7 +64,7 @@ class WorkforceManagerResource(ConfigurableResource):
 
             return response
         except exceptions.HTTPError as e:
-            context.log.error(e)
+            self.get_resource_context().log.error(e)
 
             if response.status_code == 401:
                 self._authenticate(grant_type="refresh_token")
@@ -78,19 +76,13 @@ class WorkforceManagerResource(ConfigurableResource):
         return f"{self._base_url}/{endpoint}" + ("/" + "/".join(args) if args else "")
 
     def get(self, endpoint, *args, **kwargs):
-        context = self.get_resource_context()
-
         url = self._get_url(endpoint=endpoint, *args)
-        context.log.debug(f"GET: {url}")
+        self.get_resource_context().log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
     def post(self, endpoint, *args, **kwargs):
-        context = self.get_resource_context()
-
         url = self._get_url(endpoint=endpoint, *args)
-        context.log.debug(f"POST: {url}")
+        self.get_resource_context().log.debug(f"POST: {url}")
 
-        return self._request(
-            method="POST", url=self._get_url(endpoint=endpoint, *args), **kwargs
-        )
+        return self._request(method="POST", url=url, **kwargs)
