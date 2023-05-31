@@ -11,7 +11,7 @@ from .jobs import mclass_asset_job
     job=mclass_asset_job,
 )
 def mclass_asset_job_schedule():
-    partition_key = CURRENT_FISCAL_YEAR.start.to_date_string
+    partition_key = CURRENT_FISCAL_YEAR.start.to_date_string()
     yield mclass_asset_job.run_request_for_partition(
         partition_key=partition_key,
         run_key=f"{CODE_LOCATION}_{mclass_asset_job.name}_{partition_key}",
