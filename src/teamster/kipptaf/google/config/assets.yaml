@@ -11,9 +11,6 @@ assets:
   - name: reporting__reporting_term_map
     range_name: fivetran_reporting_term_map
     sheet_id: 1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
-  - name: reporting__report_card_comment_bank
-    range_name: fivetran_report_card_comment_bank
-    sheet_id: 1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
   - name: pm__teacher_goals
     range_name: fivetran_teacher_goals
     sheet_id: 1yepMCMDEQfYu-VwlzbtpSk5yCLfB76wtNFKiz_l180M
@@ -113,6 +110,9 @@ assets:
   # - name: pm__teacher_goals_exemption
   #   range_name: fivetran_teacher_goals_exemptions
   #   sheet_id: 1d84x7HHOMgnQM78dYLY9vHqf-jLfYmpH8YGHEDezGNs
+  # - name: reporting__report_card_comment_bank
+  #   range_name: fivetran_report_card_comment_bank
+  #   sheet_id: 1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
   # - name: surveys__exit_survey
   #   range_name: fivetran_exit_survey
   #   sheet_id: 1ONA_w4YYl7fSSPsUkx5H5mqtvyXqvBTGMrgnHIL73jA

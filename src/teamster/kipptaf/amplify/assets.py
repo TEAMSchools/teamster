@@ -1,4 +1,4 @@
-from dagster import config_from_files
+from dagster import FreshnessPolicy, config_from_files
 
 from teamster.core.amplify.assets import build_mclass_asset
 
@@ -11,6 +11,11 @@ mclass_assets = [
         code_location=CODE_LOCATION,
         source_system="amplify",
         timezone=LOCAL_TIMEZONE,
+        freshness_policy=FreshnessPolicy(
+            maximum_lag_minutes=0,
+            cron_schedule="0 0 * * *",
+            cron_schedule_timezone=LOCAL_TIMEZONE.name,
+        ),
         **a,
     )
     for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
