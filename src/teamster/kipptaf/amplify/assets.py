@@ -17,5 +17,5 @@ mclass_assets = [
 ]
 
 __all__ = [
-    mclass_assets,
+    *mclass_assets,
 ]
