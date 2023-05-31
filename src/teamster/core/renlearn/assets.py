@@ -17,7 +17,6 @@ def build_renlearn_sftp_asset(config_dir, code_location, timezone):
                 start_date=a["partition_start_date"],
                 timezone=timezone.name,
                 start_month=7,
-                fmt="%Y-%m-%d",
             ),
             **a,
         )

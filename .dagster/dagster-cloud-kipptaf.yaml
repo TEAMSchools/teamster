@@ -21,6 +21,8 @@ locations:
           - adp-wfm-username
           - alchemer-api-token
           - alchemer-api-token-secret
+          - amplify-password
+          - amplify-username
           - blissbook-sftp-password
           - blissbook-sftp-username
           - clever-reports-sftp-password

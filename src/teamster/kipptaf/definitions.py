@@ -12,6 +12,7 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.core.adp.resources import WorkforceManagerResource
 from teamster.core.alchemer.resources import AlchemerResource
+from teamster.core.amplify.resources import MClassResource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import GoogleSheetsResource
 from teamster.core.schoolmint.resources import SchoolMintGrowResource
@@ -26,6 +27,7 @@ from . import (
     achieve3k,
     adp,
     alchemer,
+    amplify,
     clever,
     datagun,
     dbt,
@@ -44,6 +46,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
         *load_assets_from_modules(modules=[adp], group_name="adp"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
+        *load_assets_from_modules(modules=[amplify], group_name="amplify"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[google], group_name="google"),
@@ -116,6 +119,9 @@ defs = Definitions(
             api_token=EnvVar("ALCHEMER_API_TOKEN"),
             api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
             api_version="v5",
+        ),
+        "mclass": MClassResource(
+            username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
         ),
         "gsheets": GoogleSheetsResource(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
