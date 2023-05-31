@@ -62,6 +62,7 @@ defs = Definitions(
     ],
     jobs=[
         *adp.jobs,
+        *amplify.jobs,
         *datagun.jobs,
         *schoolmint.jobs,
         *smartrecruiters.jobs,
@@ -69,6 +70,7 @@ defs = Definitions(
     ],
     schedules=[
         *adp.schedules,
+        *amplify.schedules,
         *datagun.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,

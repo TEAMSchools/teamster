@@ -1,6 +1,6 @@
 from io import StringIO
 
-from dagster import AutoMaterializePolicy, OpExecutionContext, Output, asset
+from dagster import OpExecutionContext, Output, asset
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -18,8 +18,8 @@ def build_mclass_asset(
     partition_start_date,
     timezone,
     dyd_payload,
-    freshness_policy,
-    auto_materialize_policy=AutoMaterializePolicy.eager(),
+    freshness_policy=None,
+    auto_materialize_policy=None,
     op_tags={},
 ):
     @asset(
