@@ -6,6 +6,7 @@ from .jobs import mclass_asset_job
 
 @schedule(
     cron_schedule="0 0 * * *",
+    name=f"{CODE_LOCATION}_{mclass_asset_job.name}",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=mclass_asset_job,
 )
