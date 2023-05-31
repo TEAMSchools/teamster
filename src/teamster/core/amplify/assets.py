@@ -32,7 +32,7 @@ def build_mclass_asset(
         output_required=False,
     )
     def _asset(context: OpExecutionContext, mclass: MClassResource):
-        asset_name = context.assets_def.key[-1]
+        asset_name = context.assets_def.key.path[-1]
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         response = mclass.post(
