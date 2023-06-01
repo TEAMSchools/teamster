@@ -64,13 +64,10 @@ def build_dynamic_partition_sensor(
             .start_of("minute")
         )
 
-        ssh_port = 1521
-        ssh_tunnel = ssh_powerschool.get_tunnel(
-            remote_port=ssh_port, local_port=ssh_port
-        )
+        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
         ssh_tunnel.check_tunnels()
-        if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", ssh_port)):
+        if ssh_tunnel.tunnel_is_up.get(("127.0.0.1", 1521)):
             context.log.debug("Restarting SSH tunnel")
             ssh_tunnel.restart()
         else:
@@ -82,19 +79,17 @@ def build_dynamic_partition_sensor(
             dynamic_partitions_requests = []
 
             for asset in asset_defs:
-                run_request = False
+                is_requested = False
+                run_config = None
 
                 asset_key_string = asset.key.to_python_identifier()
                 context.log.debug(asset_key_string)
 
                 cursor_window_start = cursor.get(asset_key_string)
 
-                if (
-                    not context.instance.get_latest_materialization_event(asset.key)
-                    or cursor_window_start is None
-                ):
+                if cursor_window_start is None:
                     window_start = pendulum.from_timestamp(0)
-                    run_request = True
+                    is_requested = True
                     run_config = {
                         "execution": {
                             "config": {
@@ -116,27 +111,21 @@ def build_dynamic_partition_sensor(
                     context.log.debug(f"count: {count}")
 
                     if count > 0:
-                        run_request = True
-                        run_config = None
+                        is_requested = True
 
-                if run_request:
+                if is_requested:
                     partition_key = window_start.to_iso8601_string()
 
                     dynamic_partitions_requests.append(
                         AddDynamicPartitionsRequest(
                             partitions_def_name=asset.partitions_def.name,
                             partition_keys=[partition_key],
-                        ),
+                        )
                     )
 
                     run_requests.append(
                         RunRequest(
-                            run_key="_".join(
-                                [
-                                    asset.key.to_python_identifier(),
-                                    str(window_start.timestamp()),
-                                ]
-                            ),
+                            run_key=f"{asset_key_string}_{partition_key}",
                             run_config=run_config,
                             asset_selection=[asset.key],
                             partition_key=partition_key,
