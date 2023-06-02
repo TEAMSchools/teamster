@@ -1,0 +1,78 @@
+########################################################################################
+# Dagster Cloud: Config for Dagster Cloud's hosted resources
+########################################################################################
+dagsterCloud:
+  # Specify the Dagster Cloud deployments (e.g. dev, staging, prod) that the agent should serve.
+  deployments:
+    - prod
+
+  # Specify whether the agent should also serve branch deployments for your organization.
+  branchDeployments: true
+
+########################################################################################
+# Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
+########################################################################################
+dagsterCloudAgent:
+  resources:
+    limits:
+      cpu: 250m
+      memory: 1.0Gi
+    requests:
+      cpu: 250m
+      memory: 1.0Gi
+
+########################################################################################
+# Workspace: Configuration for pods (launched by the agent) that run Dagster user code
+########################################################################################
+workspace:
+  # Default compute resource requirements for the pods created by the agent. See:
+  # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  resources:
+    limits:
+      cpu: 250m
+      memory: 0.5Gi
+    requests:
+      cpu: 250m
+      memory: 0.5Gi
+
+  # Specify TTL for user code servers.
+  # By default full deployment servers do not have a TTL.
+  # Branch deployments servers have a default TTL of 24 hours
+  # The max code servers defaults to 25, and only applies to servers with TTL.
+  serverTTL:
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 300 # 5 min
+    branchDeployments:
+      ttlSeconds: 300 # 5 min
+
+  # Raw k8s configuration for the Kubernetes Job and Pod created for each run.
+  # See: https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
+  # runK8sConfig:
+  #   podSpecConfig:
+  #     nodeSelector:
+  #       cloud.google.com/compute-class: Balanced
+
+  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  serverK8sConfig:
+    containerConfig: # raw config for the pod's main container
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1.0Gi
+        requests:
+          cpu: 500m
+          memory: 1.0Gi
+      # command:
+      #   - ./src/teamster/core/docker-entrypoint.sh
+########################################################################################
+# Extra Manifests: (Optional) Create additional k8s resources within this chart
+########################################################################################
+# extraManifests:
+#   # https://github.com/1Password/onepassword-operator#usage
+#   - apiVersion: onepassword.com/v1
+#     kind: OnePasswordItem
+#     metadata:
+#       name: test-onepassword-item
+#     spec:
+#       itemPath: vaults/Data Team/items/PowerSchool SSH (Newark)

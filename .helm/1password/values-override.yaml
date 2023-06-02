@@ -1,0 +1,13 @@
+# This section of values is for 1Password Operator Configuration
+operator:
+  # Denotes whether the 1Password Operator will be deployed
+  create: true
+
+  # The resources requests/limits for the 1Password Operator pod
+  resources:
+    limits:
+      cpu: 250m
+      memory: 0.5Gi
+    requests:
+      cpu: 250m
+      memory: 0.5Gi

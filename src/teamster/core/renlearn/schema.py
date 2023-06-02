@@ -35,7 +35,7 @@ CORE_FIELDS = [
     {"name": "StudentRenaissanceID", "type": ["null", "string"], "default": None},
     {"name": "StudentSourcedID", "type": ["null", "long"], "default": None},
     {"name": "StudentStateID", "type": ["null", "double", "string"], "default": None},
-    {"name": "StudentUserID", "type": ["null", "long"], "default": None},
+    {"name": "StudentUserID", "type": ["null", "long", "float"], "default": None},
     {"name": "TeacherEmail", "type": ["null", "string"], "default": None},
     {"name": "TeacherFirstName", "type": ["null", "string"], "default": None},
     {"name": "TeacherIdentifier", "type": ["null", "string"], "default": None},
@@ -242,7 +242,7 @@ STAR_FIELDS = [
     },
     {
         "name": "RenaissanceBenchmarkCategoryNumberOfLevels",
-        "type": ["null", "long"],
+        "type": ["null", "long", "float"],
         "default": None,
     },
     {
