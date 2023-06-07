@@ -33,5 +33,38 @@ def test_resource():
             )
         )
 
+        output_connectors: list[asset_defs.FivetranConnectionMetadata] = []
+
         groups = instance._fivetran_instance.make_request("GET", "groups")["items"]
-        print(groups)
+
+        for group in groups:
+            print(group)
+            group_id = group["id"]
+
+            connectors = instance._fivetran_instance.make_request(
+                "GET", f"groups/{group_id}/connectors"
+            )["items"]
+            for connector in connectors:
+                print(connector)
+                connector_id = connector["id"]
+
+                connector_name = connector["schema"]
+
+                setup_state = connector.get("status", {}).get("setup_state")
+                if setup_state and setup_state in ("incomplete", "broken"):
+                    continue
+
+                connector_url = asset_defs.get_fivetran_connector_url(connector)
+
+                schemas = instance._fivetran_instance.make_request(
+                    "GET", f"connectors/{connector_id}/schemas"
+                )
+
+                output_connectors.append(
+                    asset_defs.FivetranConnectionMetadata(
+                        name=connector_name,
+                        connector_id=connector_id,
+                        connector_url=connector_url,
+                        schemas=schemas,
+                    )
+                )
