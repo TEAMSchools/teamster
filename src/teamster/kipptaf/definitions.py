@@ -42,6 +42,10 @@ from . import (
 
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
+fivetran_instance = FivetranResource(
+    api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
+)
+
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
@@ -62,12 +66,10 @@ defs = Definitions(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
         load_assets_from_fivetran_instance(
-            fivetran=FivetranResource(
-                api_key=EnvVar("FIVETRAN_API_KEY"),
-                api_secret=EnvVar("FIVETRAN_API_SECRET"),
+            fivetran=fivetran_instance,
+            connector_filter=(
+                lambda meta: meta.connector_id in fivetran.FIVETRAN_CONNECTOR_IDS
             ),
-            connector_filter=lambda meta: meta.connector_id
-            in fivetran.FIVETRAN_CONNECTOR_IDS,
         ),
     ],
     jobs=[
