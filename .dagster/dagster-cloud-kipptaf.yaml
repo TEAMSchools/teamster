@@ -36,6 +36,8 @@ locations:
           - deanslist-sftp-password
           - deanslist-sftp-username
           - egencia-sftp-username
+          - fivetran-api-key
+          - fivetran-api-secret
           - illuminate-sftp-password
           - illuminate-sftp-username
           - iready-sftp-password
