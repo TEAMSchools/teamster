@@ -6,6 +6,7 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_dbt import DbtCliClientResource
+from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance
 from dagster_gcp import BigQueryResource
 from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
@@ -31,6 +32,7 @@ from . import (
     clever,
     datagun,
     dbt,
+    fivetran,
     google,
     iready,
     renlearn,
@@ -58,6 +60,14 @@ defs = Definitions(
         ),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
+        ),
+        load_assets_from_fivetran_instance(
+            fivetran=FivetranResource(
+                api_key=EnvVar("FIVETRAN_API_KEY"),
+                api_secret=EnvVar("FIVETRAN_API_SECRET"),
+            ),
+            connector_filter=lambda meta: meta.connector_id
+            in fivetran.FIVETRAN_CONNECTOR_IDS,
         ),
     ],
     jobs=[
