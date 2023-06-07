@@ -1,3 +1,5 @@
+import os
+
 from dagster import (
     AutoMaterializePolicy,
     Definitions,
@@ -43,7 +45,7 @@ from . import (
 resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 
 fivetran_instance = FivetranResource(
-    api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
+    api_key=os.getenv("FIVETRAN_API_KEY"), api_secret=os.getenv("FIVETRAN_API_SECRET")
 )
 
 defs = Definitions(
