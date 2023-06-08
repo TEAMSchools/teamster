@@ -197,20 +197,20 @@ def gsheet_extract_asset_factory(
 
         if named_range_match:
             named_range = named_range_match[0]["range"]
+            named_range_id = named_range_match["namedRangeId"]
 
-            sheet_id = named_range.get("sheetId", 0)
+            named_range_sheet_id = named_range.get("sheetId", 0)
             end_row_ix = named_range.get("endRowIndex", 0)
             end_col_ix = named_range.get("endColumnIndex", 0)
 
-            named_range_id = named_range_match[0].get("namedRangeId")
             range_area = (end_row_ix + 1) * (end_col_ix + 1)
         else:
             named_range_id = None
             range_area = 0
 
         worksheet = (
-            spreadsheet.get_worksheet_by_id(id=sheet_id)
-            if named_range
+            spreadsheet.get_worksheet_by_id(id=named_range_sheet_id)
+            if named_range_id
             else spreadsheet.sheet1
         )
 
