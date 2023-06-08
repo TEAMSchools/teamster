@@ -1,0 +1,429 @@
+{
+  "enable_new_by_default": true,
+  "schemas": {
+    "zendesk": {
+      "name_in_destination": "zendesk",
+      "enabled": true,
+      "tables": {
+        "address": {
+          "name_in_destination": "address",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "agent_attribute": {
+          "name_in_destination": "agent_attribute",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "agent_condition": {
+          "name_in_destination": "agent_condition",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "agent_condition_required_status": {
+          "name_in_destination": "agent_condition_required_status",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "alert_recipient": {
+          "name_in_destination": "alert_recipient",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "article": {
+          "name_in_destination": "article",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "audit_log": {
+          "name_in_destination": "audit_log",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "brand": {
+          "name_in_destination": "brand",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "call_leg": {
+          "name_in_destination": "call_leg",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "call_leg_quality_issue": {
+          "name_in_destination": "call_leg_quality_issue",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "call_metric": {
+          "name_in_destination": "call_metric",
+          "enabled": false,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "custom_role": {
+          "name_in_destination": "custom_role",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "daylight_time": {
+          "name_in_destination": "daylight_time",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "domain_name": {
+          "name_in_destination": "domain_name",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "end_user_condition": {
+          "name_in_destination": "end_user_condition",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "forum_topic": {
+          "name_in_destination": "forum_topic",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "greeting": {
+          "name_in_destination": "greeting",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "greeting_category": {
+          "name_in_destination": "greeting_category",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "greeting_ivr": {
+          "name_in_destination": "greeting_ivr",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "group": {
+          "name_in_destination": "group",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "group_member": {
+          "name_in_destination": "group_member",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ivr": {
+          "name_in_destination": "ivr",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ivr_menu": {
+          "name_in_destination": "ivr_menu",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ivr_menu_route": {
+          "name_in_destination": "ivr_menu_route",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ivr_menu_route_option": {
+          "name_in_destination": "ivr_menu_route_option",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "line": {
+          "name_in_destination": "line",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "line_categorised_greeting": {
+          "name_in_destination": "line_categorised_greeting",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "line_greeting": {
+          "name_in_destination": "line_greeting",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "line_group": {
+          "name_in_destination": "line_group",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "organization": {
+          "name_in_destination": "organization",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "organization_member": {
+          "name_in_destination": "organization_member",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "organization_tag": {
+          "name_in_destination": "organization_tag",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "post": {
+          "name_in_destination": "post",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "post_comment": {
+          "name_in_destination": "post_comment",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "satisfaction_rating": {
+          "name_in_destination": "satisfaction_rating",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "schedule": {
+          "name_in_destination": "schedule",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "schedule_holiday": {
+          "name_in_destination": "schedule_holiday",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "skip_ticket_history": {
+          "name_in_destination": "skip_ticket_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "sla_policy_history": {
+          "name_in_destination": "sla_policy_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "sla_policy_metric_history": {
+          "name_in_destination": "sla_policy_metric_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ticket": {
+          "name_in_destination": "ticket",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ticket_alert": {
+          "name_in_destination": "ticket_alert",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_attribute": {
+          "name_in_destination": "ticket_attribute",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_collaborator": {
+          "name_in_destination": "ticket_collaborator",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_comment": {
+          "name_in_destination": "ticket_comment",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_custom_field": {
+          "name_in_destination": "ticket_custom_field",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ticket_custom_status": {
+          "name_in_destination": "ticket_custom_status",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ticket_field_history": {
+          "name_in_destination": "ticket_field_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_field_option": {
+          "name_in_destination": "ticket_field_option",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ticket_follower": {
+          "name_in_destination": "ticket_follower",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_form_field": {
+          "name_in_destination": "ticket_form_field",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_form_history": {
+          "name_in_destination": "ticket_form_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ticket_form_restricted_brand": {
+          "name_in_destination": "ticket_form_restricted_brand",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_link": {
+          "name_in_destination": "ticket_link",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "OTHER",
+            "reason": "Access to Ticket Links Services API is forbidden. To sync this table, you need Administrator permissions and the Jira application must be installed in your account."
+          }
+        },
+        "ticket_macro_reference": {
+          "name_in_destination": "ticket_macro_reference",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_schedule": {
+          "name_in_destination": "ticket_schedule",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_sla_policy": {
+          "name_in_destination": "ticket_sla_policy",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "ticket_tag": {
+          "name_in_destination": "ticket_tag",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "ticket_tag_history": {
+          "name_in_destination": "ticket_tag_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "time_zone": {
+          "name_in_destination": "time_zone",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "tweet_recipient": {
+          "name_in_destination": "tweet_recipient",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "user": {
+          "name_in_destination": "user",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": false, "reason_code": "SYSTEM_TABLE" }
+        },
+        "user_tag": {
+          "name_in_destination": "user_tag",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "user_vote": {
+          "name_in_destination": "user_vote",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        }
+      }
+    }
+  },
+  "schema_change_handling": "ALLOW_ALL"
+}

@@ -1,0 +1,304 @@
+{
+  "enable_new_by_default": true,
+  "schemas": {
+    "adp_workforce_now": {
+      "name_in_destination": "adp_workforce_now",
+      "enabled": true,
+      "tables": {
+        "additional_remuneration_associated_rate_qualifier": {
+          "name_in_destination": "additional_remuneration_associated_rate_qualifier",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "assigned_work_communication": {
+          "name_in_destination": "assigned_work_communication",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "associated_rate_qualifier": {
+          "name_in_destination": "associated_rate_qualifier",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "base_remuneration_associated_rate_qualifier": {
+          "name_in_destination": "base_remuneration_associated_rate_qualifier",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "business_communication": {
+          "name_in_destination": "business_communication",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "classification": {
+          "name_in_destination": "classification",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "groups": {
+          "name_in_destination": "groups",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "location": {
+          "name_in_destination": "location",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "organizational_unit": {
+          "name_in_destination": "organizational_unit",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "other_personal_address": {
+          "name_in_destination": "other_personal_address",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person": {
+          "name_in_destination": "person",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_alternate_preferred_name": {
+          "name_in_destination": "person_alternate_preferred_name",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_citizenship": {
+          "name_in_destination": "person_citizenship",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_communication": {
+          "name_in_destination": "person_communication",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "person_disability": {
+          "name_in_destination": "person_disability",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_document": {
+          "name_in_destination": "person_document",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_former_name": {
+          "name_in_destination": "person_former_name",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_government_id": {
+          "name_in_destination": "person_government_id",
+          "enabled": false,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "person_history": {
+          "name_in_destination": "person_history",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_military_classification": {
+          "name_in_destination": "person_military_classification",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_preferred_salutation": {
+          "name_in_destination": "person_preferred_salutation",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_residency": {
+          "name_in_destination": "person_residency",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_social_insurance_program": {
+          "name_in_destination": "person_social_insurance_program",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_title_affix": {
+          "name_in_destination": "person_title_affix",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "person_title_prefix": {
+          "name_in_destination": "person_title_prefix",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "work_assignment": {
+          "name_in_destination": "work_assignment",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "work_assignment_history": {
+          "name_in_destination": "work_assignment_history",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker": {
+          "name_in_destination": "worker",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "worker_additional_remuneration": {
+          "name_in_destination": "worker_additional_remuneration",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_assigned_location": {
+          "name_in_destination": "worker_assigned_location",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_assigned_organizational_unit": {
+          "name_in_destination": "worker_assigned_organizational_unit",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_assignment_cost_center": {
+          "name_in_destination": "worker_assignment_cost_center",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_base_remuneration": {
+          "name_in_destination": "worker_base_remuneration",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_classification": {
+          "name_in_destination": "worker_classification",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_group": {
+          "name_in_destination": "worker_group",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_home_organizational_unit": {
+          "name_in_destination": "worker_home_organizational_unit",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_home_work_communication": {
+          "name_in_destination": "worker_home_work_communication",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        },
+        "worker_report_to": {
+          "name_in_destination": "worker_report_to",
+          "enabled": true,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "NOT_SELECTABLE_CHILD_TABLE"
+          }
+        }
+      }
+    }
+  },
+  "schema_change_handling": "ALLOW_ALL"
+}

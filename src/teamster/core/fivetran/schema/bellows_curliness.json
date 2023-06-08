@@ -1,0 +1,990 @@
+{
+  "enable_new_by_default": true,
+  "schemas": {
+    "coupa": {
+      "name_in_destination": "coupa",
+      "enabled": true,
+      "tables": {
+        "account": {
+          "name_in_destination": "account",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "account_group": {
+          "name_in_destination": "account_group",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "account_type": {
+          "name_in_destination": "account_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "account_validation_rule": {
+          "name_in_destination": "account_validation_rule",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "address": {
+          "name_in_destination": "address",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "address_business_group_relation": {
+          "name_in_destination": "address_business_group_relation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "address_tax_registration_relation": {
+          "name_in_destination": "address_tax_registration_relation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "approval": {
+          "name_in_destination": "approval",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "approval_limit": {
+          "name_in_destination": "approval_limit",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "asn_header": {
+          "name_in_destination": "asn_header",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "asn_line": {
+          "name_in_destination": "asn_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "asset_tag": {
+          "name_in_destination": "asset_tag",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "attachment": {
+          "name_in_destination": "attachment",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "budget_line": {
+          "name_in_destination": "budget_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "bulk_price": {
+          "name_in_destination": "bulk_price",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "business_group": {
+          "name_in_destination": "business_group",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "business_group_contract_mapping": {
+          "name_in_destination": "business_group_contract_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "charge": {
+          "name_in_destination": "charge",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "charge_allocation": {
+          "name_in_destination": "charge_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "comment": {
+          "name_in_destination": "comment",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "commodity": {
+          "name_in_destination": "commodity",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "commodity_translation": {
+          "name_in_destination": "commodity_translation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contact": {
+          "name_in_destination": "contact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contract": {
+          "name_in_destination": "contract",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contract_party": {
+          "name_in_destination": "contract_party",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contract_party_contract_mapping": {
+          "name_in_destination": "contract_party_contract_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contract_template": {
+          "name_in_destination": "contract_template",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "OTHER",
+            "reason": "Not able to access this table. Message : "
+          }
+        },
+        "contract_template_business_group_mapping": {
+          "name_in_destination": "contract_template_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contract_term": {
+          "name_in_destination": "contract_term",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contract_type": {
+          "name_in_destination": "contract_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "country": {
+          "name_in_destination": "country",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "currency": {
+          "name_in_destination": "currency",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "data_file_source": {
+          "name_in_destination": "data_file_source",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "department": {
+          "name_in_destination": "department",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "dispute_reason": {
+          "name_in_destination": "dispute_reason",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "easy_form_approval_mapping": {
+          "name_in_destination": "easy_form_approval_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "easy_form_data": {
+          "name_in_destination": "easy_form_data",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "easy_form_widget_data": {
+          "name_in_destination": "easy_form_widget_data",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "enterprise": {
+          "name_in_destination": "enterprise",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "exchange_rate": {
+          "name_in_destination": "exchange_rate",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_artifact": {
+          "name_in_destination": "expense_artifact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_attendee": {
+          "name_in_destination": "expense_attendee",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_attendee_type": {
+          "name_in_destination": "expense_attendee_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_category": {
+          "name_in_destination": "expense_category",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line": {
+          "name_in_destination": "expense_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_allocation": {
+          "name_in_destination": "expense_line_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_daily_per_diem": {
+          "name_in_destination": "expense_line_daily_per_diem",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_imported_data": {
+          "name_in_destination": "expense_line_imported_data",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_mileage": {
+          "name_in_destination": "expense_line_mileage",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_mileage_allocation": {
+          "name_in_destination": "expense_line_mileage_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_per_diem": {
+          "name_in_destination": "expense_line_per_diem",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_preapproval": {
+          "name_in_destination": "expense_line_preapproval",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_line_tax": {
+          "name_in_destination": "expense_line_tax",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_mileage_config": {
+          "name_in_destination": "expense_mileage_config",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_mileage_rate_type": {
+          "name_in_destination": "expense_mileage_rate_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_mileage_region": {
+          "name_in_destination": "expense_mileage_region",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_mileage_tier_rule": {
+          "name_in_destination": "expense_mileage_tier_rule",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_mileage_vehicle_type": {
+          "name_in_destination": "expense_mileage_vehicle_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_per_diem_config": {
+          "name_in_destination": "expense_per_diem_config",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_per_diem_deduction": {
+          "name_in_destination": "expense_per_diem_deduction",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_per_diem_rule": {
+          "name_in_destination": "expense_per_diem_rule",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_per_diem_rule_condition": {
+          "name_in_destination": "expense_per_diem_rule_condition",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_per_diem_time_range_condition": {
+          "name_in_destination": "expense_per_diem_time_range_condition",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_policy": {
+          "name_in_destination": "expense_policy",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_policy_violation": {
+          "name_in_destination": "expense_policy_violation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_report": {
+          "name_in_destination": "expense_report",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_report_approval_mapping": {
+          "name_in_destination": "expense_report_approval_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_report_comment_mapping": {
+          "name_in_destination": "expense_report_comment_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_report_event_history": {
+          "name_in_destination": "expense_report_event_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_report_preapproval": {
+          "name_in_destination": "expense_report_preapproval",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_trip": {
+          "name_in_destination": "expense_trip",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_trip_mileage": {
+          "name_in_destination": "expense_trip_mileage",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_trip_mileage_allocation": {
+          "name_in_destination": "expense_trip_mileage_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_trip_segment": {
+          "name_in_destination": "expense_trip_segment",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "expense_violation": {
+          "name_in_destination": "expense_violation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "form": {
+          "name_in_destination": "form",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inspection_code": {
+          "name_in_destination": "inspection_code",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "integration": {
+          "name_in_destination": "integration",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "integration_contacts": {
+          "name_in_destination": "integration_contacts",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "integration_error": {
+          "name_in_destination": "integration_error",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "integration_history_record": {
+          "name_in_destination": "integration_history_record",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "integration_record_response": {
+          "name_in_destination": "integration_record_response",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "integration_run": {
+          "name_in_destination": "integration_run",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inventory_organization": {
+          "name_in_destination": "inventory_organization",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inventory_organization_warehouse_mapping": {
+          "name_in_destination": "inventory_organization_warehouse_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inventory_transaction": {
+          "name_in_destination": "inventory_transaction",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inventory_transaction_asset_tag_mapping": {
+          "name_in_destination": "inventory_transaction_asset_tag_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inventory_transaction_attachment_mapping": {
+          "name_in_destination": "inventory_transaction_attachment_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inventory_transaction_valuation": {
+          "name_in_destination": "inventory_transaction_valuation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "inventory_txn_allocation": {
+          "name_in_destination": "inventory_txn_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_charge": {
+          "name_in_destination": "invoice_charge",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_charge_allocation": {
+          "name_in_destination": "invoice_charge_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_charge_tax_line_mapping": {
+          "name_in_destination": "invoice_charge_tax_line_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_email": {
+          "name_in_destination": "invoice_email",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_failed_tolerance": {
+          "name_in_destination": "invoice_failed_tolerance",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_header": {
+          "name_in_destination": "invoice_header",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_header_approval_mapping": {
+          "name_in_destination": "invoice_header_approval_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_header_attachment_mapping": {
+          "name_in_destination": "invoice_header_attachment_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_line": {
+          "name_in_destination": "invoice_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_line_allocation": {
+          "name_in_destination": "invoice_line_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_payment_receipt": {
+          "name_in_destination": "invoice_payment_receipt",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "invoice_reconciliation_line": {
+          "name_in_destination": "invoice_reconciliation_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "item": {
+          "name_in_destination": "item",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "legal_payment_receipt": {
+          "name_in_destination": "legal_payment_receipt",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "lookup": {
+          "name_in_destination": "lookup",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "lookup_business_group_mapping": {
+          "name_in_destination": "lookup_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "lookup_value": {
+          "name_in_destination": "lookup_value",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_header": {
+          "name_in_destination": "order_header",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_header_attachment_mapping": {
+          "name_in_destination": "order_header_attachment_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_header_change": {
+          "name_in_destination": "order_header_change",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_header_change_approval_mapping": {
+          "name_in_destination": "order_header_change_approval_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_header_change_order_line_change_mapping": {
+          "name_in_destination": "order_header_change_order_line_change_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_line": {
+          "name_in_destination": "order_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_line_allocation": {
+          "name_in_destination": "order_line_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_line_asset_tag_mapping": {
+          "name_in_destination": "order_line_asset_tag_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_line_attribute": {
+          "name_in_destination": "order_line_attribute",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_line_change": {
+          "name_in_destination": "order_line_change",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_line_change_allocation": {
+          "name_in_destination": "order_line_change_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_pad": {
+          "name_in_destination": "order_pad",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_pad_business_group_mapping": {
+          "name_in_destination": "order_pad_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_pad_line": {
+          "name_in_destination": "order_pad_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "order_pad_section": {
+          "name_in_destination": "order_pad_section",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "payment": {
+          "name_in_destination": "payment",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "payment_business_group_mapping": {
+          "name_in_destination": "payment_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "payment_term": {
+          "name_in_destination": "payment_term",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "pcard": {
+          "name_in_destination": "pcard",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "per_diem_deduction": {
+          "name_in_destination": "per_diem_deduction",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "period": {
+          "name_in_destination": "period",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "project": {
+          "name_in_destination": "project",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "project_business_group_mapping": {
+          "name_in_destination": "project_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "project_user_mapping": {
+          "name_in_destination": "project_user_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "punchout_site": {
+          "name_in_destination": "punchout_site",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "purpose": {
+          "name_in_destination": "purpose",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request": {
+          "name_in_destination": "quote_request",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request_attachment": {
+          "name_in_destination": "quote_request_attachment",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request_attachment_mapping": {
+          "name_in_destination": "quote_request_attachment_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request_business_group_mapping": {
+          "name_in_destination": "quote_request_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request_line": {
+          "name_in_destination": "quote_request_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request_line_attribute": {
+          "name_in_destination": "quote_request_line_attribute",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request_lot": {
+          "name_in_destination": "quote_request_lot",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_request_user": {
+          "name_in_destination": "quote_request_user",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "quote_supplier": {
+          "name_in_destination": "quote_supplier",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "reason_insight": {
+          "name_in_destination": "reason_insight",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "reason_insight_event": {
+          "name_in_destination": "reason_insight_event",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "receipt": {
+          "name_in_destination": "receipt",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "registered_company": {
+          "name_in_destination": "registered_company",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "remit_to_address": {
+          "name_in_destination": "remit_to_address",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "remit_to_address_tax_registration_mapping": {
+          "name_in_destination": "remit_to_address_tax_registration_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "req_line_allocation": {
+          "name_in_destination": "req_line_allocation",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "requisition_header": {
+          "name_in_destination": "requisition_header",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "requisition_header_approval_mapping": {
+          "name_in_destination": "requisition_header_approval_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "requisition_header_attachment_mapping": {
+          "name_in_destination": "requisition_header_attachment_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "requisition_line": {
+          "name_in_destination": "requisition_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "requisition_line_asset_tag_mapping": {
+          "name_in_destination": "requisition_line_asset_tag_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "role": {
+          "name_in_destination": "role",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "shipping_term": {
+          "name_in_destination": "shipping_term",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "shipping_term_business_group_mapping": {
+          "name_in_destination": "shipping_term_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "statement": {
+          "name_in_destination": "statement",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier": {
+          "name_in_destination": "supplier",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_address": {
+          "name_in_destination": "supplier_address",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_address_mapping": {
+          "name_in_destination": "supplier_address_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_business_group_mapping": {
+          "name_in_destination": "supplier_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_contact_mapping": {
+          "name_in_destination": "supplier_contact_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_item": {
+          "name_in_destination": "supplier_item",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_remit_to": {
+          "name_in_destination": "supplier_remit_to",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_remit_to_address_mapping": {
+          "name_in_destination": "supplier_remit_to_address_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_restricted_account_type_mapping": {
+          "name_in_destination": "supplier_restricted_account_type_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "supplier_risk_aware_feed": {
+          "name_in_destination": "supplier_risk_aware_feed",
+          "enabled": false,
+          "enabled_patch_settings": {
+            "allowed": false,
+            "reason_code": "OTHER",
+            "reason": "Not able to access this table. Message : {\"errors\":{\"request\":[\"Not supported\"]}}"
+          }
+        },
+        "tag": {
+          "name_in_destination": "tag",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "tagging": {
+          "name_in_destination": "tagging",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "tax_code": {
+          "name_in_destination": "tax_code",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "tax_line": {
+          "name_in_destination": "tax_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "tax_rate": {
+          "name_in_destination": "tax_rate",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "tax_rate_type": {
+          "name_in_destination": "tax_rate_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "tax_registration": {
+          "name_in_destination": "tax_registration",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "unit_of_measure": {
+          "name_in_destination": "unit_of_measure",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "upload_error": {
+          "name_in_destination": "upload_error",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user": {
+          "name_in_destination": "user",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_account_group_mapping": {
+          "name_in_destination": "user_account_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_approval_group_mapping": {
+          "name_in_destination": "user_approval_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_business_group_mapping": {
+          "name_in_destination": "user_business_group_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_can_expense_for_mapping": {
+          "name_in_destination": "user_can_expense_for_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_expenses_delegated_to_mapping": {
+          "name_in_destination": "user_expenses_delegated_to_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_group": {
+          "name_in_destination": "user_group",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_group_membership": {
+          "name_in_destination": "user_group_membership",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_role_mapping": {
+          "name_in_destination": "user_role_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "user_working_warehouse_mapping": {
+          "name_in_destination": "user_working_warehouse_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "virtual_card": {
+          "name_in_destination": "virtual_card",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "virtual_card_partner": {
+          "name_in_destination": "virtual_card_partner",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "virtual_card_partner_account_type_mapping": {
+          "name_in_destination": "virtual_card_partner_account_type_mapping",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "warehouse": {
+          "name_in_destination": "warehouse",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "warehouse_location": {
+          "name_in_destination": "warehouse_location",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "warehouse_type": {
+          "name_in_destination": "warehouse_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "withholding_tax_line": {
+          "name_in_destination": "withholding_tax_line",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        }
+      }
+    }
+  },
+  "schema_change_handling": "ALLOW_ALL"
+}
