@@ -29,7 +29,6 @@ for suffix in ["transactiondate", "whenmodified"]:
                         + "_dynamic_partition"
                     )
                 ),
-                metadata={"partition_column": partition_column},
             )
         )
 

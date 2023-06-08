@@ -2,6 +2,7 @@ key_prefix:
   - staging
   - datagun
   - gsheets
+folder_id: 1hUStYtmmsk7dzCNeuf8cS7mOLU4Vilbu
 assets:
   - asset_name: test
     query_config:
