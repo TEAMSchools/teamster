@@ -1,7 +1,6 @@
 import gc
 import json
 import pathlib
-import sys
 
 import oracledb
 from dagster import ConfigurableResource
@@ -14,7 +13,10 @@ from teamster.core.utils.classes import CustomJSONEncoder
 
 from .schema import ORACLE_AVRO_SCHEMA_TYPES
 
-sys.modules["cx_Oracle"] = oracledb
+# import sys
+
+
+# sys.modules["cx_Oracle"] = oracledb
 
 
 class SqlAlchemyEngineResource(ConfigurableResource):
