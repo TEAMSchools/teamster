@@ -1393,7 +1393,7 @@ summary = "WebSocket client for Python with low level API options"
 
 [[package]]
 name = "werkzeug"
-version = "2.3.5"
+version = "2.3.6"
 requires_python = ">=3.8"
 summary = "The comprehensive WSGI web application library."
 dependencies = [
@@ -1414,7 +1414,7 @@ dependencies = [
 lock_version = "4.2"
 cross_platform = true
 groups = ["default"]
-content_hash = "sha256:54c74c881a388db4d79a326fe9b75f56e5ccee211b72e7677dce8f5d055dc47e"
+content_hash = "sha256:6c426501e4b9afcc9ee6c73dc6ceacfcad94353345b1121b515a2fc8c31e9321"
 
 [metadata.files]
 "agate 1.6.3" = [
@@ -2998,9 +2998,9 @@ content_hash = "sha256:54c74c881a388db4d79a326fe9b75f56e5ccee211b72e7677dce8f5d0
     {url = "https://files.pythonhosted.org/packages/3f/f2/2624e12ef854ee667d92ac5dc7815932095e0852e5ff2b2bf57feda8a11b/websocket-client-1.5.2.tar.gz", hash = "sha256:c7d67c13b928645f259d9b847ab5b57fd2d127213ca41ebd880de1f553b7c23b"},
     {url = "https://files.pythonhosted.org/packages/86/5c/2ebfbb7d4dbb7f35a1f70c40d003f7844d78945ac7c69757067ebaea9c78/websocket_client-1.5.2-py3-none-any.whl", hash = "sha256:f8c64e28cd700e7ba1f04350d66422b6833b82a796b525a51e740b8cc8dab4b1"},
 ]
-"werkzeug 2.3.5" = [
-    {url = "https://files.pythonhosted.org/packages/42/bc/eab59b4c4ad1a3d70424fb8b3970be753577a3b5f8e3142d0c744885091d/Werkzeug-2.3.5.tar.gz", hash = "sha256:f6426f626540009131f06482c73f10c536efd47125afc63c850cc950db9ae585"},
-    {url = "https://files.pythonhosted.org/packages/46/f9/c25e781ee706fd9f487048b6b639836b0a3e22547c9591de1b77343e4031/Werkzeug-2.3.5-py3-none-any.whl", hash = "sha256:26c6a6a63a8a8d10a8d4e13e7f10821772ff5f138909262e89e946717c72b857"},
+"werkzeug 2.3.6" = [
+    {url = "https://files.pythonhosted.org/packages/ba/d6/8040faecaba2feb84e1647af174b3243c9b90c163c7ea407820839931efe/Werkzeug-2.3.6-py3-none-any.whl", hash = "sha256:935539fa1413afbb9195b24880778422ed620c0fc09670945185cce4d91a8890"},
+    {url = "https://files.pythonhosted.org/packages/d1/7e/c35cea5749237d40effc50ed1a1c7518d9f2e768fcf30b4e9ea119e74975/Werkzeug-2.3.6.tar.gz", hash = "sha256:98c774df2f91b05550078891dee5f0eb0cb797a522c757a2452b9cee5b202330"},
 ]
 "yarl 1.9.2" = [
     {url = "https://files.pythonhosted.org/packages/0e/b1/a65fcf0363ae8c08c0e586772a34cc15b4200bae163eed24258cc95cda90/yarl-1.9.2-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:566185e8ebc0898b11f8026447eacd02e46226716229cea8db37496c8cdd26e0"},
