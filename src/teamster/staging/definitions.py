@@ -133,7 +133,9 @@ defs = Definitions(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
         ),
-        "gsheets": GoogleSheetsResource(folder_id="1x3lycfK1nT4KaERu6hDmIxQbGdKaDzK5"),
+        "gsheets": GoogleSheetsResource(
+            service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+        ),
         "schoolmint_grow": SchoolMintGrowResource(
             client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
             client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
@@ -142,6 +144,13 @@ defs = Definitions(
         ),
         "smartrecruiters": SmartRecruitersResource(
             smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
+        ),
+        "ssh_powerschool": SSHConfigurableResource(
+            remote_host="teamacademy.clgpstest.com",
+            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
+            username=EnvVar("STAGING_PS_SSH_USERNAME"),
+            password=EnvVar("STAGING_PS_SSH_PASSWORD"),
+            tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
         ),
         "ssh_pythonanywhere": SSHConfigurableResource(
             remote_host="ssh.pythonanywhere.com",
@@ -177,13 +186,6 @@ defs = Definitions(
         #     remote_host="sftp.kippnj.org",
         #     username=EnvVar("KTAF_SFTP_USERNAME"),
         #     password=EnvVar("KTAF_SFTP_PASSWORD"),
-        # ),
-        # "ssh_powerschool": SSHConfigurableResource(
-        #     remote_host="teamacademy.clgpstest.com",
-        #     remote_port=EnvVar("STAGING_PS_SSH_PORT"),
-        #     username=EnvVar("STAGING_PS_SSH_USERNAME"),
-        #     password=EnvVar("STAGING_PS_SSH_PASSWORD"),
-        #     tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
         # ),
         # "ssh_renlearn": SSHConfigurableResource(
         #     remote_host="sftp.renaissance.com",
