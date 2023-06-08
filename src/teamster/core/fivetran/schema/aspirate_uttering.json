@@ -1,0 +1,427 @@
+{
+  "enable_new_by_default": false,
+  "schemas": {
+    "hubspot": {
+      "name_in_destination": "hubspot",
+      "enabled": true,
+      "tables": {
+        "association_type": {
+          "name_in_destination": "association_type",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "calendar_event": {
+          "name_in_destination": "calendar_event",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "calendar_topic": {
+          "name_in_destination": "calendar_topic",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "calendar_user": {
+          "name_in_destination": "calendar_user",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "company": {
+          "name_in_destination": "company",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "company_property_history": {
+          "name_in_destination": "company_property_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contact": {
+          "name_in_destination": "contact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contact_company": {
+          "name_in_destination": "contact_company",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contact_form_submission": {
+          "name_in_destination": "contact_form_submission",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contact_list": {
+          "name_in_destination": "contact_list",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contact_list_member": {
+          "name_in_destination": "contact_list_member",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "contact_property_history": {
+          "name_in_destination": "contact_property_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "deal": {
+          "name_in_destination": "deal",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "deal_company": {
+          "name_in_destination": "deal_company",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "deal_contact": {
+          "name_in_destination": "deal_contact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "deal_pipeline": {
+          "name_in_destination": "deal_pipeline",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "deal_pipeline_stage": {
+          "name_in_destination": "deal_pipeline_stage",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "deal_property_history": {
+          "name_in_destination": "deal_property_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "deal_stage": {
+          "name_in_destination": "deal_stage",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_campaign": {
+          "name_in_destination": "email_campaign",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event": {
+          "name_in_destination": "email_event",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_bounce": {
+          "name_in_destination": "email_event_bounce",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_click": {
+          "name_in_destination": "email_event_click",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_deferred": {
+          "name_in_destination": "email_event_deferred",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_delivered": {
+          "name_in_destination": "email_event_delivered",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_dropped": {
+          "name_in_destination": "email_event_dropped",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_forward": {
+          "name_in_destination": "email_event_forward",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_open": {
+          "name_in_destination": "email_event_open",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_print": {
+          "name_in_destination": "email_event_print",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_sent": {
+          "name_in_destination": "email_event_sent",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_spam_report": {
+          "name_in_destination": "email_event_spam_report",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_status_change": {
+          "name_in_destination": "email_event_status_change",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_event_suppressed": {
+          "name_in_destination": "email_event_suppressed",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_subscription": {
+          "name_in_destination": "email_subscription",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "email_subscription_change": {
+          "name_in_destination": "email_subscription_change",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement": {
+          "name_in_destination": "engagement",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_call": {
+          "name_in_destination": "engagement_call",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_communication": {
+          "name_in_destination": "engagement_communication",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_company": {
+          "name_in_destination": "engagement_company",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_contact": {
+          "name_in_destination": "engagement_contact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_deal": {
+          "name_in_destination": "engagement_deal",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_email": {
+          "name_in_destination": "engagement_email",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_meeting": {
+          "name_in_destination": "engagement_meeting",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_note": {
+          "name_in_destination": "engagement_note",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_postal_mail": {
+          "name_in_destination": "engagement_postal_mail",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_property_history": {
+          "name_in_destination": "engagement_property_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "engagement_task": {
+          "name_in_destination": "engagement_task",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "form": {
+          "name_in_destination": "form",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "line_item": {
+          "name_in_destination": "line_item",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "line_item_deal": {
+          "name_in_destination": "line_item_deal",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "line_item_property_history": {
+          "name_in_destination": "line_item_property_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "marketing_email": {
+          "name_in_destination": "marketing_email",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "marketing_email_campaign": {
+          "name_in_destination": "marketing_email_campaign",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "marketing_email_contact": {
+          "name_in_destination": "marketing_email_contact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "marketing_email_contact_list": {
+          "name_in_destination": "marketing_email_contact_list",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "merged_deal": {
+          "name_in_destination": "merged_deal",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "owner": {
+          "name_in_destination": "owner",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "owner_team": {
+          "name_in_destination": "owner_team",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "product": {
+          "name_in_destination": "product",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "product_property_history": {
+          "name_in_destination": "product_property_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "property": {
+          "name_in_destination": "property",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "property_option": {
+          "name_in_destination": "property_option",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "role": {
+          "name_in_destination": "role",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student": {
+          "name_in_destination": "student",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_company": {
+          "name_in_destination": "student_to_company",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_contact": {
+          "name_in_destination": "student_to_contact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_deal": {
+          "name_in_destination": "student_to_deal",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_email": {
+          "name_in_destination": "student_to_email",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_engagement": {
+          "name_in_destination": "student_to_engagement",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_line_item": {
+          "name_in_destination": "student_to_line_item",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_product": {
+          "name_in_destination": "student_to_product",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "student_to_ticket": {
+          "name_in_destination": "student_to_ticket",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "team": {
+          "name_in_destination": "team",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "team_user": {
+          "name_in_destination": "team_user",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket": {
+          "name_in_destination": "ticket",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_company": {
+          "name_in_destination": "ticket_company",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_contact": {
+          "name_in_destination": "ticket_contact",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_deal": {
+          "name_in_destination": "ticket_deal",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_engagement": {
+          "name_in_destination": "ticket_engagement",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_pipeline": {
+          "name_in_destination": "ticket_pipeline",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_pipeline_stage": {
+          "name_in_destination": "ticket_pipeline_stage",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "ticket_property_history": {
+          "name_in_destination": "ticket_property_history",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        },
+        "users": {
+          "name_in_destination": "users",
+          "enabled": true,
+          "enabled_patch_settings": { "allowed": true }
+        }
+      }
+    }
+  },
+  "schema_change_handling": "ALLOW_COLUMNS"
+}

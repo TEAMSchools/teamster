@@ -1,4 +1,4 @@
-# import os
+import os
 
 from dagster import (
     AutoMaterializePolicy,
@@ -8,8 +8,7 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_dbt import DbtCliClientResource
-
-# from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance
+from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
@@ -17,6 +16,7 @@ from dagster_k8s import k8s_job_executor
 from teamster.core.adp.resources import WorkforceManagerResource
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
+from teamster.core.fivetran.resources import load_assets_from_fivetran_instance
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import GoogleSheetsResource
 from teamster.core.schoolmint.resources import SchoolMintGrowResource
@@ -25,7 +25,7 @@ from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineRe
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.jobs import asset_observation_job
 
-from . import (  # fivetran,
+from . import (
     CODE_LOCATION,
     GCS_PROJECT_NAME,
     achieve3k,
@@ -35,6 +35,7 @@ from . import (  # fivetran,
     clever,
     datagun,
     dbt,
+    fivetran,
     google,
     iready,
     renlearn,
@@ -63,15 +64,19 @@ defs = Definitions(
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
-        # load_assets_from_fivetran_instance(
-        #     fivetran=FivetranResource(
-        #         api_key=os.getenv("FIVETRAN_API_KEY"),
-        #         api_secret=os.getenv("FIVETRAN_API_SECRET"),
-        #     ),
-        #     connector_filter=(
-        #         lambda meta: meta.connector_id in fivetran.FIVETRAN_CONNECTOR_IDS
-        #     ),
-        # ),
+        load_assets_from_fivetran_instance(
+            fivetran=FivetranResource(
+                api_key=os.getenv("FIVETRAN_API_KEY"),
+                api_secret=os.getenv("FIVETRAN_API_SECRET"),
+            ),
+            connector_filter=(
+                lambda meta: meta.connector_id in fivetran.FIVETRAN_CONNECTOR_IDS
+            ),
+            schema_files=[
+                "src/teamster/core/fivetran/schema/jinx_credulous.json",
+                "src/teamster/core/fivetran/schema/genuine_describing.json",
+            ],
+        ),
     ],
     jobs=[
         *adp.jobs,
