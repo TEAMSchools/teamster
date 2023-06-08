@@ -1,2 +1,3 @@
 # not partitionable
-assets: []
+assets:
+  - asset_name: gen
