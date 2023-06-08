@@ -1,21 +1,2 @@
 # not partitionable
-assets:
-  - asset_name: attendance_conversion_items
-  - asset_name: gen
-  - asset_name: test
-  - asset_name: testscore
-  - asset_name: attendance_code
-  - asset_name: bell_schedule
-  - asset_name: cycle_day
-  - asset_name: fte
-  - asset_name: period
-  - asset_name: reenrollments
-  - asset_name: calendar_day
-  - asset_name: spenrollments
-  - asset_name: log
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            limits:
-              memory: 1.0Gi
+assets: []

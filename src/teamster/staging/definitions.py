@@ -18,19 +18,16 @@ from teamster.core.sqlalchemy.resources import (
 )
 from teamster.core.ssh.resources import SSHConfigurableResource
 
-from . import (
+from . import (  # achieve3k,; iready,; renlearn,
     CODE_LOCATION,
     GCS_PROJECT_NAME,
-    achieve3k,
     adp,
     alchemer,
     clever,
     datagun,
     dbt,
     deanslist,
-    iready,
     powerschool,
-    renlearn,
     schoolmint,
     smartrecruiters,
 )
@@ -40,20 +37,20 @@ resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
-        *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
+        *load_assets_from_modules(modules=[adp], group_name="adp"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[dbt]),
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
-        *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
-        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
-        *load_assets_from_modules(modules=[adp], group_name="adp"),
         *load_assets_from_modules(
             modules=[smartrecruiters], group_name="smartrecruiters"
         ),
+        # *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
+        # *load_assets_from_modules(modules=[iready], group_name="iready"),
+        # *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
     ],
     jobs=[
         *datagun.jobs,
@@ -62,21 +59,21 @@ defs = Definitions(
         *adp.jobs,
         *smartrecruiters.jobs,
     ],
-    schedules=[
-        # *datagun.schedules,
-        *schoolmint.schedules,
-        *adp.schedules,
-        *smartrecruiters.schedules,
-    ],
-    sensors=[
-        *achieve3k.sensors,
-        *adp.sensors,
-        *alchemer.sensors,
-        *clever.sensors,
-        *iready.sensors,
-        *powerschool.sensors,
-        *renlearn.sensors,
-    ],
+    # schedules=[
+    #     *datagun.schedules,
+    #     *schoolmint.schedules,
+    #     *adp.schedules,
+    #     *smartrecruiters.schedules,
+    # ],
+    # sensors=[
+    #     *achieve3k.sensors,
+    #     *adp.sensors,
+    #     *alchemer.sensors,
+    #     *clever.sensors,
+    #     *iready.sensors,
+    #     *powerschool.sensors,
+    #     *renlearn.sensors,
+    # ],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
             gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-staging"
@@ -146,52 +143,52 @@ defs = Definitions(
         "smartrecruiters": SmartRecruitersResource(
             smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
         ),
-        "ssh_achieve3k": SSHConfigurableResource(
-            remote_host="xfer.achieve3000.com",
-            username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
-            password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
-        ),
-        "ssh_adp": SSHConfigurableResource(
-            remote_host="sftp.kippnj.org",
-            username=EnvVar("ADP_SFTP_USERNAME"),
-            password=EnvVar("ADP_SFTP_PASSWORD"),
-        ),
-        "ssh_clever": SSHConfigurableResource(
-            remote_host="sftp.clever.com",
-            username=EnvVar("CLEVER_SFTP_USERNAME"),
-            password=EnvVar("CLEVER_SFTP_PASSWORD"),
-        ),
-        "ssh_clever_reports": SSHConfigurableResource(
-            remote_host="reports-sftp.clever.com",
-            username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
-            password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
-        ),
-        "ssh_iready": SSHConfigurableResource(
-            remote_host="prod-sftp-1.aws.cainc.com",
-            username=EnvVar("IREADY_SFTP_USERNAME"),
-            password=EnvVar("IREADY_SFTP_PASSWORD"),
-        ),
-        "ssh_kipptaf": SSHConfigurableResource(
-            remote_host="sftp.kippnj.org",
-            username=EnvVar("KTAF_SFTP_USERNAME"),
-            password=EnvVar("KTAF_SFTP_PASSWORD"),
-        ),
-        "ssh_powerschool": SSHConfigurableResource(
-            remote_host="teamacademy.clgpstest.com",
-            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
-            username=EnvVar("STAGING_PS_SSH_USERNAME"),
-            password=EnvVar("STAGING_PS_SSH_PASSWORD"),
-            tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
-        ),
         "ssh_pythonanywhere": SSHConfigurableResource(
             remote_host="ssh.pythonanywhere.com",
             username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
             password=EnvVar("PYTHONANYWHERE_SFTP_PASSWORD"),
         ),
-        "ssh_renlearn": SSHConfigurableResource(
-            remote_host="sftp.renaissance.com",
-            username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
-            password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
-        ),
+        # "ssh_achieve3k": SSHConfigurableResource(
+        #     remote_host="xfer.achieve3000.com",
+        #     username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
+        #     password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
+        # ),
+        # "ssh_adp": SSHConfigurableResource(
+        #     remote_host="sftp.kippnj.org",
+        #     username=EnvVar("ADP_SFTP_USERNAME"),
+        #     password=EnvVar("ADP_SFTP_PASSWORD"),
+        # ),
+        # "ssh_clever": SSHConfigurableResource(
+        #     remote_host="sftp.clever.com",
+        #     username=EnvVar("CLEVER_SFTP_USERNAME"),
+        #     password=EnvVar("CLEVER_SFTP_PASSWORD"),
+        # ),
+        # "ssh_clever_reports": SSHConfigurableResource(
+        #     remote_host="reports-sftp.clever.com",
+        #     username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
+        #     password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
+        # ),
+        # "ssh_iready": SSHConfigurableResource(
+        #     remote_host="prod-sftp-1.aws.cainc.com",
+        #     username=EnvVar("IREADY_SFTP_USERNAME"),
+        #     password=EnvVar("IREADY_SFTP_PASSWORD"),
+        # ),
+        # "ssh_kipptaf": SSHConfigurableResource(
+        #     remote_host="sftp.kippnj.org",
+        #     username=EnvVar("KTAF_SFTP_USERNAME"),
+        #     password=EnvVar("KTAF_SFTP_PASSWORD"),
+        # ),
+        # "ssh_powerschool": SSHConfigurableResource(
+        #     remote_host="teamacademy.clgpstest.com",
+        #     remote_port=EnvVar("STAGING_PS_SSH_PORT"),
+        #     username=EnvVar("STAGING_PS_SSH_USERNAME"),
+        #     password=EnvVar("STAGING_PS_SSH_PASSWORD"),
+        #     tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
+        # ),
+        # "ssh_renlearn": SSHConfigurableResource(
+        #     remote_host="sftp.renaissance.com",
+        #     username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
+        #     password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
+        # ),
     },
 )
