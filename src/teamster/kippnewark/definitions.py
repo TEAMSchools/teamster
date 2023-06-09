@@ -78,7 +78,7 @@ defs = Definitions(
         "db_powerschool": OracleResource(
             engine=SqlAlchemyEngineResource(
                 dialect="oracle",
-                driver="cx_oracle",
+                driver="oracledb",
                 username="PSNAVIGATOR",
                 host="localhost",
                 database="PSPRODDB",
