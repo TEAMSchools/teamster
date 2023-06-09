@@ -17,4 +17,5 @@ trunk upgrade -y --no-progress
 
 # set up dbt env
 mkdir -p ~/.dbt
-echo "${DBT_USER_CREDS}" >~/.dbt/dbt_user_creds_json
+sudo mkdir -p /etc/secret-volume
+sudo echo "${DBT_USER_CREDS}" >/etc/secret-volume/dbt_user_creds_json
