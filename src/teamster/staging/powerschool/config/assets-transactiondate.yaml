@@ -1,19 +1,2 @@
-partition_column: transaction_date
 assets:
-  - asset_name: attendance
-  - asset_name: cc
-  - asset_name: courses
-  - asset_name: pgfinalgrades
-  - asset_name: prefs
   - asset_name: schools
-  - asset_name: sections
-  - asset_name: storedgrades
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            limits:
-              memory: 1.0Gi
-  - asset_name: students
-  - asset_name: termbins
-  - asset_name: terms

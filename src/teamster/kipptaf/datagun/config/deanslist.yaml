@@ -62,7 +62,7 @@ assets:
         container_config:
           resources:
             limits:
-              memory: 1.0Gi
+              memory: 1.5Gi
   - asset_name: deanslist_instructional_tech_json
     query_config:
       type: schema
@@ -100,7 +100,6 @@ assets:
     destination_config:
       name: deanslist
   - asset_name: deanslist_missing_assignments_json
-
     query_config:
       type: schema
       value:
@@ -112,6 +111,12 @@ assets:
       suffix: json
     destination_config:
       name: deanslist
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
   - asset_name: deanslist_mod_assessment_json
     query_config:
       type: schema

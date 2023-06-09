@@ -5,7 +5,6 @@ from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
-    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -53,8 +52,8 @@ def build_dynamic_partition_sensor(
     )
     def _sensor(
         context: SensorEvaluationContext,
-        ssh_powerschool: ResourceParam[SSHConfigurableResource],
-        db_powerschool: ResourceParam[OracleResource],
+        ssh_powerschool: SSHConfigurableResource,
+        db_powerschool: OracleResource,
     ):
         cursor = json.loads(context.cursor or "{}")
 

@@ -1,20 +1,18 @@
 import gc
 import json
 import pathlib
-import sys
+from typing import Iterator, Sequence
 
 import oracledb
 from dagster import ConfigurableResource
 from dagster._core.execution.context.init import InitResourceContext
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
-from sqlalchemy.engine import URL, Engine, create_engine
+from sqlalchemy.engine import URL, Engine, create_engine, result, row
 
 from teamster.core.utils.classes import CustomJSONEncoder
 
 from .schema import ORACLE_AVRO_SCHEMA_TYPES
-
-sys.modules["cx_Oracle"] = oracledb
 
 
 class SqlAlchemyEngineResource(ConfigurableResource):
@@ -110,7 +108,9 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
         return output_data
 
-    def result_to_avro(self, partitions, schema):
+    def result_to_avro(
+        self, partitions: Iterator[Sequence[row.Row[result._TP]]], schema
+    ):
         context = self.get_resource_context()
 
         data_file_path = pathlib.Path("data").absolute() / "data.avro"
@@ -122,7 +122,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         for i, pt in enumerate(partitions):
             context.log.debug(f"Retrieving rows from partition {i}")
 
-            data = [dict(row) for row in pt]
+            data = [row._mapping for row in pt]
             del pt
             gc.collect()
 
