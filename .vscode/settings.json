@@ -1,5 +1,6 @@
 {
   "dbt.queryLimit": 500,
+  "dbt.dbtPythonPathOverride": "/workspaces/teamster-dbt/.venv/bin/python",
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
