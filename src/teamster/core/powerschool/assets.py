@@ -4,7 +4,6 @@ from dagster import (
     DynamicPartitionsDefinition,
     OpExecutionContext,
     Output,
-    ResourceParam,
     asset,
 )
 from fastavro import block_reader
@@ -33,8 +32,8 @@ def build_powerschool_table_asset(
     )
     def _asset(
         context: OpExecutionContext,
-        ssh_powerschool: ResourceParam[SSHConfigurableResource],
-        db_powerschool: ResourceParam[OracleResource],
+        ssh_powerschool: SSHConfigurableResource,
+        db_powerschool: OracleResource,
     ):
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
