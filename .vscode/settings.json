@@ -1,8 +1,20 @@
 {
+  "dbt.queryLimit": 500,
+  "editor.defaultFormatter": "trunk.io",
+  "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
+  "editor.renderWhitespace": "all",
   "editor.wordWrap": "bounded",
   "editor.wordWrapColumn": 88,
+  "python.analysis.autoImportCompletions": false,
+  "python.analysis.typeCheckingMode": "off",
+  "python.defaultInterpreterPath": "/workspaces/teamster-dbt/.venv/bin/python",
+  "python.linting.pylintEnabled": false,
+  "python.terminal.activateEnvironment": false,
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
   "files.associations": {
     "*.toml": "toml",
     "*.env": "shellscript",
@@ -14,6 +26,11 @@
   "files.watcherExclude": {
     "**/.trunk/*out": true
   },
+  "python.linting.ignorePatterns": [
+    "**/site-packages/**/*.py",
+    ".vscode/*.py",
+    "**/__pypackages__/**/*.py"
+  ],
   "[json]": {
     "editor.defaultFormatter": "trunk.io"
   },
@@ -24,18 +41,7 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "trunk.io"
   },
-  "python.analysis.autoImportCompletions": false,
-  "python.defaultInterpreterPath": ".venv/bin/python",
-  "python.linting.ignorePatterns": [
-    "**/site-packages/**/*.py",
-    ".vscode/*.py",
-    "**/__pypackages__/**/*.py"
-  ],
-  "python.linting.pylintEnabled": false,
-  "python.terminal.activateEnvironment": false,
   "[yaml]": {
     "editor.defaultFormatter": "trunk.io"
-  },
-  "python.analysis.typeCheckingMode": "off",
-  "dbt.queryLimit": 500
+  }
 }
