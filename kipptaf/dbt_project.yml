@@ -23,12 +23,9 @@ clean-targets: # directories to be removed by `dbt clean`
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
-  schoolmint:
-    staging:
-      +schema: schoolmint
-  alchemer:
-    staging:
-      +schema: alchemer
+  kipptaf:
+    powerschool:
+      +schema: powerschool
 
 vars:
   schoolmint_grow_schema: kipptaf_schoolmint_grow
