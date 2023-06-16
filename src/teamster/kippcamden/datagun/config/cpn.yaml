@@ -17,6 +17,12 @@ assets:
     destination_config:
       name: cpn
       path: /Data
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            limits:
+              memory: 1.0Gi
   - asset_name: cpn_demographic_csv
     query_config:
       type: schema
