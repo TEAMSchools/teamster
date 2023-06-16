@@ -98,7 +98,7 @@ defs = Definitions(
         *adp.sensors,
         *alchemer.sensors,
         *clever.sensors,
-        # *google.sensors,
+        *google.sensors,
         *iready.sensors,
         *renlearn.sensors,
     ],
