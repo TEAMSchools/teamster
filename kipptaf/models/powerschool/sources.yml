@@ -2,8 +2,6 @@ version: 2
 
 sources:
   - name: kippnewark_powerschool
-    schema: kippnewark_powerschool
-    database: "{{ target.database }}"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
       - name: stg_powerschool__assignmentscore
@@ -69,8 +67,6 @@ sources:
       - name: stg_powerschool__users
 
   - name: kippcamden_powerschool
-    schema: kippcamden_powerschool
-    database: "{{ target.database }}"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
       - name: stg_powerschool__assignmentscore
@@ -136,8 +132,6 @@ sources:
       - name: stg_powerschool__users
 
   - name: kippmiami_powerschool
-    schema: kippmiami_powerschool
-    database: "{{ target.database }}"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
       - name: stg_powerschool__assignmentscore
