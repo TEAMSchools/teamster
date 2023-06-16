@@ -109,7 +109,7 @@ defs = Definitions(
         "gcs_avro_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
-        "gcs": GCSResource(project="teamster-332318"),
+        "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt": DbtCliClientResource(
             project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
             profiles_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
