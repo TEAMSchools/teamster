@@ -4,7 +4,7 @@ from dagster import AssetIn, AssetsDefinition, OpExecutionContext, Output, asset
 from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_manifest
 from dagster_gcp import BigQueryResource
 
-from teamster.core.utils.functions import partition_key_to_vars
+# from teamster.core.utils.functions import partition_key_to_vars
 
 
 def build_external_source_asset(asset_definition: AssetsDefinition):
@@ -14,7 +14,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         name=f"src_{package_name}__{asset_name}",
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
-        partitions_def=asset_definition.partitions_def,
+        # partitions_def=asset_definition.partitions_def,
         compute_kind="dbt",
         group_name="staging",
     )
@@ -54,10 +54,10 @@ def build_staging_assets(
             select=f"stg_{asset.key.path[-2]}__{asset.key.path[-1]}+",
             key_prefix=key_prefix,
             source_key_prefix=key_prefix,
-            partitions_def=asset.partitions_def,
-            partition_key_to_vars_fn=(
-                partition_key_to_vars if asset.partitions_def is not None else None
-            ),
+            # partitions_def=asset.partitions_def,
+            # partition_key_to_vars_fn=(
+            #     partition_key_to_vars if asset.partitions_def is not None else None
+            # ),
         )
         for asset in assets
     ]

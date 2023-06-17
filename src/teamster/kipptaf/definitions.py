@@ -69,6 +69,7 @@ defs = Definitions(
                 api_key=os.getenv("FIVETRAN_API_KEY"),
                 api_secret=os.getenv("FIVETRAN_API_SECRET"),
             ),
+            key_prefix=[CODE_LOCATION],
             connector_filter=(
                 lambda meta: meta.connector_id in fivetran.FIVETRAN_CONNECTOR_IDS
             ),
