@@ -19,15 +19,68 @@
 ) -%}
 
 select
-    {{ dbt_utils.star(from=src_work_assignment_history) }},
-    {{ dbt_utils.star(from=src_worker_report_to) }},
-    {{ dbt_utils.star(from=src_worker_group) }},
-    {{ dbt_utils.star(from=src_groups) }},
-    {{ dbt_utils.star(from=src_worker_base_remuneration) }},
-    {{ dbt_utils.star(from=src_worker_additional_remuneration) }},
-    {{ dbt_utils.star(from=src_worker_assigned_location) }},
-    {{ dbt_utils.star(from=src_location) }},
-    {{ dbt_utils.star(from=ref_worker_organizational_unit) }},
+    {{
+        dbt_utils.star(
+            from=src_work_assignment_history,
+            except=["_fivetran_synced"],
+            relation_alias="wah",
+            quote_identifiers=False,
+        )
+    }},
+    {{
+        dbt_utils.star(
+            from=src_worker_report_to,
+            except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
+            relation_alias="wrt",
+            prefix="report_to_",
+            quote_identifiers=False,
+        )
+    }},
+    {{
+        dbt_utils.star(
+            from=src_groups,
+            except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
+            relation_alias="grp",
+            prefix="group_",
+            quote_identifiers=False,
+        )
+    }},
+    {{
+        dbt_utils.star(
+            from=src_worker_base_remuneration,
+            except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
+            relation_alias="wbr",
+            prefix="base_remuneration_",
+            quote_identifiers=False,
+        )
+    }},
+    {{
+        dbt_utils.star(
+            from=src_worker_additional_remuneration,
+            except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
+            relation_alias="war",
+            prefix="additional_remuneration_",
+            quote_identifiers=False,
+        )
+    }},
+    {{
+        dbt_utils.star(
+            from=src_location,
+            except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
+            relation_alias="loc",
+            prefix="location_",
+            quote_identifiers=False,
+        )
+    }},
+    {{-
+        dbt_utils.star(
+            from=ref_worker_organizational_unit,
+            except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
+            relation_alias="wou",
+            prefix="organizational_unit_",
+            quote_identifiers=False,
+        )
+    }},
 from {{ src_work_assignment_history }} as wah
 left join {{ src_worker_report_to }} as wrt on wah.id = wrt.worker_assignment_id
 left join {{ src_worker_group }} as wg on wah.id = wg.worker_assignment_id
@@ -41,4 +94,5 @@ left join
     )
 left join {{ src_worker_assigned_location }} as wal on wah.id = wal.worker_assignment_id
 left join {{ src_location }} as loc on wal.id = loc.id
-left join {{ ref_worker_organizational_unit }} as ou on wah.id = ou.worker_assignment_id
+left join
+    {{ ref_worker_organizational_unit }} as wou on wah.id = wou.worker_assignment_id
