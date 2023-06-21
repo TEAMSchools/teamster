@@ -26,6 +26,8 @@ models:
   kipptaf:
     adp_workforce_now:
       +schema: adp_workforce_now
+    people:
+      +schema: people
     powerschool:
       +schema: powerschool
 

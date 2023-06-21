@@ -90,7 +90,7 @@ summary = "Cross-platform colored terminal text."
 
 [[package]]
 name = "dbt-bigquery"
-version = "1.5.1"
+version = "1.5.2"
 requires_python = ">=3.7"
 summary = "The Bigquery adapter plugin for dbt"
 dependencies = [
@@ -959,9 +959,9 @@ content_hash = "sha256:4bbac6a9ddd1528882f6ea72fd89a7947de7fdfec6902daaae3aed03b
     {url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-"dbt-bigquery 1.5.1" = [
-    {url = "https://files.pythonhosted.org/packages/89/96/c2e9481d42b743142d4524f23cc3a04fc84f27e550bb7c69995f05f8198c/dbt_bigquery-1.5.1-py3-none-any.whl", hash = "sha256:1e93a084fa8631966076381b7b8261c0d4fdae4619cd0452f87b09c9c2ba98f3"},
-    {url = "https://files.pythonhosted.org/packages/8a/18/53de52604efea789ff7d8b0ef82d3e08ced61aabf0d6a88e7aade614b24e/dbt-bigquery-1.5.1.tar.gz", hash = "sha256:93fe836a77d08738edf6d11c4446cc851767bfc3a2ecdf72cb31a600876d9150"},
+"dbt-bigquery 1.5.2" = [
+    {url = "https://files.pythonhosted.org/packages/32/10/e805fa6fa0dcf3c0a5920d9bdbff0ec8d1f975af60e4170953e13c7e2177/dbt-bigquery-1.5.2.tar.gz", hash = "sha256:93ccdd7a4da1f1d0ff60a13e7413cc698041e796285cd5d29f50b298154d1ba5"},
+    {url = "https://files.pythonhosted.org/packages/e0/9e/42d4d073d5d97a736a02ccf0026e0e010062b537a0d9c312bba271987129/dbt_bigquery-1.5.2-py3-none-any.whl", hash = "sha256:e1a468f608bfd35e9e4dd381297d2a3f8ce29a8f3d07f2970b8a2a073bf8e9d4"},
 ]
 "dbt-core 1.5.1" = [
     {url = "https://files.pythonhosted.org/packages/78/4c/4181aed8e7ebc2f871a376b0cc884e7c95fb48070f89151d17fab357d0b9/dbt-core-1.5.1.tar.gz", hash = "sha256:d645ebdc1098ad0fad19f0871022d16ce77bec6b00d2b6b078db792c8917b8be"},
