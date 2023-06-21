@@ -1,6 +1,7 @@
 {%- set src_work_assignment_history = source(
     "adp_workforce_now", "work_assignment_history"
 ) -%}
+{%- set src_worker = source("adp_workforce_now", "worker") -%}
 {%- set src_worker_report_to = source("adp_workforce_now", "worker_report_to") -%}
 {%- set src_worker_group = source("adp_workforce_now", "worker_group") -%}
 {%- set src_groups = source("adp_workforce_now", "groups") -%}
@@ -15,7 +16,7 @@
 ) -%}
 {%- set src_location = source("adp_workforce_now", "location") -%}
 {%- set ref_worker_organizational_unit = ref(
-    "base_adp_workforce_now__worker_organizational_unit_pivot"
+    "stg_adp_workforce_now__worker_organizational_unit_pivot"
 ) -%}
 
 select
@@ -24,7 +25,15 @@ select
             from=src_work_assignment_history,
             except=["_fivetran_synced"],
             relation_alias="wah",
-            quote_identifiers=False,
+            prefix="work_assignment_",
+        )
+    }},
+    {{
+        dbt_utils.star(
+            from=src_worker,
+            except=["_fivetran_synced", "worker_id"],
+            relation_alias="w",
+            prefix="worker_",
         )
     }},
     {{
@@ -33,7 +42,6 @@ select
             except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
             relation_alias="wrt",
             prefix="report_to_",
-            quote_identifiers=False,
         )
     }},
     {{
@@ -42,7 +50,6 @@ select
             except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
             relation_alias="grp",
             prefix="group_",
-            quote_identifiers=False,
         )
     }},
     {{
@@ -51,7 +58,6 @@ select
             except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
             relation_alias="wbr",
             prefix="base_remuneration_",
-            quote_identifiers=False,
         )
     }},
     {{
@@ -60,7 +66,6 @@ select
             except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
             relation_alias="war",
             prefix="additional_remuneration_",
-            quote_identifiers=False,
         )
     }},
     {{
@@ -69,7 +74,6 @@ select
             except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
             relation_alias="loc",
             prefix="location_",
-            quote_identifiers=False,
         )
     }},
     {{-
@@ -78,10 +82,10 @@ select
             except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
             relation_alias="wou",
             prefix="organizational_unit_",
-            quote_identifiers=False,
         )
     }},
 from {{ src_work_assignment_history }} as wah
+inner join {{ src_worker }} as w on wah.worker_id = w.id
 left join {{ src_worker_report_to }} as wrt on wah.id = wrt.worker_assignment_id
 left join {{ src_worker_group }} as wg on wah.id = wg.worker_assignment_id
 left join {{ src_groups }} as grp on wg.id = grp.id

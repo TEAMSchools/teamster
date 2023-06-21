@@ -1,5 +1,5 @@
 with
-    ou_union as (
+    union_relations as (
         {{
             dbt_utils.union_relations(
                 relations=[
@@ -14,7 +14,9 @@ with
     ),
     ou_coalesce as (
         select
-            id, type_short_name, coalesce(name_short_name, name_long_name, name) as name
+            id,
+            type_short_name,
+            coalesce(name_short_name, name_long_name, `name`) as `name`
         from {{ source("adp_workforce_now", "organizational_unit") }}
     ),
     ou_join as (
@@ -28,14 +30,14 @@ with
                     ouu._dbt_source_relation, r'worker_(\w+)_organizational_unit'
                 )
             ) as input_column,
-        from ou_union as ouu
+        from union_relations as ouu
         inner join ou_coalesce as ouc on ouu.id = ouc.id
     )
 
 select *
 from
     ou_join pivot (
-        max(name) for input_column in (
+        max(`name`) for input_column in (
             'business_unit_assigned',
             'business_unit_home',
             'cost_number_assigned',

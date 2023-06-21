@@ -1,4 +1,4 @@
-{% macro dedupe_source_model(model_ref) %}
+{%- macro dedupe_source_model(model_ref) -%}
     with
         using_clause as (
             select
@@ -20,4 +20,4 @@
                 )
             }}
         )
-{% endmacro %}
+{%- endmacro -%}
