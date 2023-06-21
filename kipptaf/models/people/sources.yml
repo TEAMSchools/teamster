@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: people
+    schema: kipptaf_people
+    tables:
+      - name: src_people__employee_numbers
