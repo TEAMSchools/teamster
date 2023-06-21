@@ -26,10 +26,16 @@ models:
   kipptaf:
     adp_workforce_now:
       +schema: adp_workforce_now
+      staging:
+        +materialized: table
+        base:
+          +materialized: view
     people:
       +schema: people
     powerschool:
       +schema: powerschool
+    surveys:
+      +schema: surveys
 
 vars:
   schoolmint_grow_schema: kipptaf_schoolmint_grow

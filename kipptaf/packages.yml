@@ -1,3 +1,3 @@
 packages:
-  - local: ../packages/schoolmint
-  - local: ../packages/alchemer
+  - local: ../schoolmint
+  - local: ../alchemer
