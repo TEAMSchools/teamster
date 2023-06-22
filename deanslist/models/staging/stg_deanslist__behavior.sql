@@ -1,23 +1,22 @@
 {{
-    teamster_utils.incremental_merge_source_file(
-        file_uri=teamster_utils.get_gcs_uri(partition_path=var("partition_path")),
+    teamster_utils.generate_staging_model(
         unique_key="dlsaid",
         transform_cols=[
-            {"name": "DLOrganizationID", "cast": "INT64"},
-            {"name": "DLSchoolID", "cast": "INT64"},
-            {"name": "DLStudentID", "cast": "INT64"},
-            {"name": "StudentSchoolID", "cast": "INT64"},
-            {"name": "SecondaryStudentID", "cast": "INT64", "nullif": "''"},
+            {"name": "DLOrganizationID", "cast": "int"},
+            {"name": "DLSchoolID", "cast": "int"},
+            {"name": "DLStudentID", "cast": "int"},
+            {"name": "StudentSchoolID", "cast": "int"},
+            {"name": "SecondaryStudentID", "cast": "int"},
             {"name": "StudentMiddleName", "nullif": "''"},
-            {"name": "DLSAID", "cast": "INT64"},
-            {"name": "BehaviorDate", "cast": "DATE"},
-            {"name": "PointValue", "cast": "INT64"},
-            {"name": "DLUserID", "cast": "INT64"},
+            {"name": "DLSAID", "cast": "int"},
+            {"name": "BehaviorDate", "cast": "date"},
+            {"name": "PointValue", "cast": "int"},
+            {"name": "DLUserID", "cast": "int"},
             {"name": "StaffTitle", "nullif": "''"},
             {"name": "StaffMiddleName", "nullif": "''"},
-            {"name": "RosterID", "cast": "INT64"},
+            {"name": "RosterID", "cast": "int"},
             {"name": "Notes", "nullif": "''"},
-            {"name": "DL_LASTUPDATE", "cast": "DATETIME"},
+            {"name": "DL_LASTUPDATE", "cast": "datetime"},
         ],
         except_cols=[
             "_dagster_partition_fiscal_year",
@@ -28,3 +27,6 @@
         ],
     )
 }}
+
+select *
+from staging

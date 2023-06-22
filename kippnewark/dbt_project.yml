@@ -24,8 +24,7 @@ clean-targets: # directories to be removed by `dbt clean`
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   powerschool:
-    staging:
-      +schema: powerschool
+    +schema: powerschool
 
 vars:
   powerschool_schema: kippnewark_powerschool

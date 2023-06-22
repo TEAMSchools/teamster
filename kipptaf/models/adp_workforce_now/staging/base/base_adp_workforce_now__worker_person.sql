@@ -3,6 +3,7 @@
 
 select
     {{ dbt_utils.star(from=ref_worker, relation_alias="w") }},
+
     {{
         dbt_utils.star(
             from=ref_person, relation_alias="p", except=["person_worker_id"]

@@ -6,9 +6,6 @@
     "stg_adp_workforce_now__person_communication_pivot"
 ) -%}
 {%- set src_person_disability = source("adp_workforce_now", "person_disability") -%}
-{# {%- set src_person_government_id = source(
-    "adp_workforce_now", "person_government_id"
-) -%} #}
 {%- set src_other_personal_address = source(
     "adp_workforce_now", "other_personal_address"
 ) -%}
@@ -54,20 +51,8 @@ select
             prefix="disability_",
         )
     }},
-{# {{
-        dbt_utils.star(
-            from=src_person_government_id,
-            except=["_fivetran_synced", "worker_id"],
-            relation_alias="pgi",
-            prefix="government_id_",
-        )
-    }}, #}
 from {{ ref_person_history }} as ph
 left join {{ ref_person_preferred_salutation }} pps on ph.worker_id = pps.worker_id
 left join {{ ref_person_communication }} pc on ph.worker_id = pc.worker_id
 left join {{ src_other_personal_address }} opa on ph.worker_id = opa.worker_id
-left join
-    {{ src_person_disability }} pd on ph.worker_id = pd.worker_id
-
-    {# left join {{ src_person_government_id }} pgi on ph.worker_id = pgi.worker_id #}
-    
+left join {{ src_person_disability }} pd on ph.worker_id = pd.worker_id

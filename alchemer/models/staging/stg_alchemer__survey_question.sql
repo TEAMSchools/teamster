@@ -10,11 +10,7 @@ select
     survey_id,
     {{
         dbt_utils.star(
-            from=source_model_ref,
-            except=[
-                "_dagster_partition_key",
-                "shortname",
-            ],
+            from=source_model_ref, except=["_dagster_partition_key", "shortname"]
         )
     }}
 from deduplicate

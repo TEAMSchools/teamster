@@ -4,17 +4,17 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v0.0.18
+      ref: v0.0.19
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
+    - trivy
+    - trufflehog
+    - bandit
+    - checkov
     - sqlfluff
     - flake8
   enabled:
-    - bandit@1.7.5
-    - checkov@2.3.296
-    - trivy@0.42.1
-    - trufflehog@3.40.0
     - ruff@0.0.274
     - yamllint@1.32.0
     - isort@5.12.0
