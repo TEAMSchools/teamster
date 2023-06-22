@@ -1,6 +1,5 @@
 {
-  "dbt.queryLimit": 500,
-  "dbt.dbtPythonPathOverride": "/workspaces/teamster-dbt/.venv/bin/python",
+  "dbt.dbtPythonPathOverride": "pdm run python",
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
@@ -44,5 +43,7 @@
   },
   "[yaml]": {
     "editor.defaultFormatter": "trunk.io"
-  }
+  },
+  "dbt.versionCheck": "status bar",
+  "dbt.queryLimit": 500
 }
