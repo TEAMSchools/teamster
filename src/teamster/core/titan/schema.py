@@ -2,7 +2,7 @@ PERSON_DATA_FIELDS = [
     {"name": "eligibility_benefit_type", "type": ["null", "string"], "default": None},
     {"name": "eligibility_end_date", "type": ["null", "string"], "default": None},
     {"name": "eligibility_start_date", "type": ["null", "string"], "default": None},
-    {"name": "eligibility", "type": ["null", "long"], "default": None},
+    {"name": "eligibility", "type": ["null", "long", "string"], "default": None},
     {"name": "is_directly_certified", "type": ["null", "boolean"], "default": None},
     {"name": "person_identifier", "type": ["null", "long"], "default": None},
     {"name": "total_balance", "type": ["null", "string"], "default": None},
