@@ -96,7 +96,7 @@ class AvroGCSIOManager(GCSIOManager):
     def handle_output(self, context: OutputContext, obj: tuple):
         records, schema = obj
 
-        context.log.debug(records[0])
+        # context.log.debug(records[0])
 
         for path in self._get_paths(context):
             if self._has_object(path):

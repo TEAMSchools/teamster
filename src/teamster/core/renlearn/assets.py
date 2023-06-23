@@ -18,6 +18,7 @@ def build_renlearn_sftp_asset(config_dir, code_location, timezone):
                 timezone=timezone.name,
                 start_month=7,
             ),
+            slugify_cols=False,
             **a,
         )
 

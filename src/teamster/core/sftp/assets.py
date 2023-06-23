@@ -48,7 +48,7 @@ def build_sftp_asset(
     archive_filepath=None,
     partitions_def=None,
     auto_materialize_policy=None,
-    slugify_cols=False,
+    slugify_cols=True,
     op_tags={},
     **kwargs,
 ):
