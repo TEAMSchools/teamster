@@ -12,7 +12,11 @@ NJSMART_POWERSCHOOL_FIELDS = [
     {"name": "nj_se_referraldate", "type": ["null", "string"], "default": None},
     {"name": "nj_timeinregularprogram", "type": ["null", "string"], "default": None},
     {"name": "special_education", "type": ["null", "double"], "default": None},
-    {"name": "state_studentnumber", "type": ["null", "long"], "default": None},
+    {
+        "name": "state_studentnumber",
+        "type": ["null", "long", "double"],
+        "default": None,
+    },
     {"name": "student_number", "type": ["null", "long"], "default": None},
     {"name": "ti_serv_counseling", "type": ["null", "string"], "default": None},
     {"name": "ti_serv_occup", "type": ["null", "string"], "default": None},
