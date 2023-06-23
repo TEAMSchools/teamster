@@ -40,7 +40,7 @@ select
             from=src_other_personal_address,
             except=["_fivetran_synced", "worker_id"],
             relation_alias="opa",
-            prefix="personal_address_",
+            prefix="other_personal_address_",
         )
     }},
     {{
