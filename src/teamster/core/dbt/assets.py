@@ -51,13 +51,9 @@ def build_staging_assets(
     asset_lists = [
         load_assets_from_dbt_manifest(
             manifest_json=manifest_json,
-            select=f"stg_{asset.key.path[-2]}__{asset.key.path[-1]}+",
+            select=f"stg_{asset.key.path[-2]}__{asset.key.path[-1]}",
             key_prefix=key_prefix,
             source_key_prefix=key_prefix,
-            # partitions_def=asset.partitions_def,
-            # partition_key_to_vars_fn=(
-            #     partition_key_to_vars if asset.partitions_def is not None else None
-            # ),
         )
         for asset in assets
     ]
