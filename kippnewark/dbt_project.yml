@@ -25,7 +25,10 @@ clean-targets: # directories to be removed by `dbt clean`
 models:
   powerschool:
     +schema: powerschool
+  edplan:
+    +schema: edplan
 
 vars:
   powerschool_schema: kippnewark_powerschool
   deanslist_schema: kippnewark_deanslist
+  edplan_schema: kippnewark_edplan

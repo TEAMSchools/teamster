@@ -30,7 +30,7 @@ with
             men.max_employee_number + row_number() over (order by ins.id)
         ) as employee_number,
         ins.id as adp_associate_id,
-        null as adp_associate_id_legacy,
+        cast(null as string) as adp_associate_id_legacy,
         true as is_active
     from inserts ins
     cross join
