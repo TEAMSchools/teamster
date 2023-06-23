@@ -8,6 +8,11 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
+    - bandit
+    - checkov
+    - terrascan
+    - trivy
+    - trufflehog
     - flake8
     - sql-formatter
     - sqlfluff
