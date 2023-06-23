@@ -111,7 +111,6 @@ def build_sftp_asset(
             df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 
         df_records = df.to_dict(orient="records")
-        context.log.debug(df_records[:10])
 
         yield Output(
             value=(
