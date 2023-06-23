@@ -110,9 +110,12 @@ def build_sftp_asset(
         if slugify_cols:
             df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 
+        df_records = df.to_dict(orient="records")
+        context.log.debug(df_records[:10])
+
         yield Output(
             value=(
-                df.to_dict(orient="records"),
+                df_records,
                 get_avro_record_schema(
                     name=asset_name, fields=asset_fields[asset_name]
                 ),
