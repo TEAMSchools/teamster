@@ -64,6 +64,7 @@ def build_sftp_asset(
         io_manager_key="gcs_avro_io",
         partitions_def=partitions_def,
         op_tags=op_tags,
+        output_required=False,
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: OpExecutionContext):
@@ -85,11 +86,16 @@ def build_sftp_asset(
         conn.close()
 
         # find matching file for partition
-        remote_filename = [
+        remote_file_regex_matches = [
             f.filename
             for f in ls
             if re.match(pattern=remote_file_regex, string=f.filename) is not None
-        ][0]
+        ]
+
+        if remote_file_regex_matches:
+            remote_filename = remote_file_regex_matches[0]
+        else:
+            return None
 
         # download file from sftp
         local_filepath = ssh.sftp_get(

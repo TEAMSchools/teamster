@@ -22,7 +22,7 @@ lint:
         - .helm/**/values.yaml
   enabled:
     - isort@5.12.0
-    - ruff@0.0.274
+    - ruff@0.0.275
     - actionlint@1.6.25
     - black@23.3.0
     - git-diff-check
