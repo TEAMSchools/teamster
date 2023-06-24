@@ -36,7 +36,5 @@ models:
       +schema: powerschool
     surveys:
       +schema: surveys
-
-vars:
-  schoolmint_grow_schema: kipptaf_schoolmint_grow
-  alchemer_schema: kipptaf_alchemer
+    alchemer:
+      +schema: kipptaf_alchemer

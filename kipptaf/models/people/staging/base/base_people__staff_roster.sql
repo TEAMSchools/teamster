@@ -3,7 +3,22 @@ select
     wp.work_assignment_actual_start_date,
     wp.work_assignment_hire_date,
     wp.work_assignment_termination_date,
-    wp.work_assignment_assignment_status_long_name as assignment_status_long_name,
+    if
+    (
+        work_assignment_assignment_status_effective_date
+        > current_date('America/New_York')
+        and work_assignment_assignment_status_long_name = 'Active'
+        and (
+            work_assignment_assignment_status_long_name_prev is null
+            or work_assignment_assignment_status_long_name_prev = 'Terminated'
+        ),
+        'Pre-Start',
+        work_assignment_assignment_status_long_name
+    ) as assignment_status,
+    coalesce(
+        wp.work_assignment_assignment_status_reason_long_name,
+        wp.work_assignment_assignment_status_reason_short_name
+    ) as assignment_status_reason,
     wp.work_assignment_assignment_status_effective_date
     as assignment_status_effective_date,
     wp.work_assignment_management_position_indicator as management_position_indicator,
@@ -32,10 +47,6 @@ select
     as standard_pay_period_hour_hours_quantity,
     wp.work_assignment_standard_hour_hours_quantity as standard_hour_hours_quantity,
     wp.work_assignment_standard_hour_unit_short_name as standard_hour_unit_short_name,
-    coalesce(
-        wp.work_assignment_assignment_status_reason_long_name,
-        wp.work_assignment_assignment_status_reason_short_name
-    ) as assignment_status_reason,
     wp.work_assignment_full_time_equivalence_ratio as full_time_equivalence_ratio,
     wp.work_assignment_custom_payroll_custom_area_1 as custom_payroll_custom_area_1,
     wp.work_assignment_custom_payroll_custom_area_2 as custom_payroll_custom_area_2,
@@ -75,7 +86,7 @@ select
     coalesce(
         wp.person_preferred_name_family_name_1, wp.person_legal_name_family_name_1
     ) as preferred_name_family_name,
-    wp.person_birth_name_family_name_1 as birth_name_family_name_1,
+    wp.person_birth_name_family_name_1 as birth_name_family_name,
     wp.person_legal_address_line_one as legal_address_line_one,
     wp.person_legal_address_line_two as legal_address_line_two,
     wp.person_legal_address_line_three as legal_address_line_three,
@@ -233,4 +244,4 @@ inner join
     {{ ref("stg_people__employee_numbers") }} as en
     on wp.work_assignment_worker_id = en.adp_associate_id
     and en.is_active
-where wp.work_assignment__fivetran_active
+where wp.work_assignment__fivetran_active and wp.work_assignment_primary_indicator

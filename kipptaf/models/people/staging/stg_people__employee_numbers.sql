@@ -7,6 +7,19 @@
     )
 -}}
 
+{%- if execute -%}
+    {%- if flags.FULL_REFRESH -%}
+        {{
+            exceptions.raise_compiler_error(
+                (
+                    "Full refresh is not allowed for this model. "
+                    "Exclude it from the run via the argument '--exclude model_name'."
+                )
+            )
+        }}
+    {%- endif -%}
+{%- endif -%}
+
 with
     using_clause as (select id from {{ source("adp_workforce_now", "worker") }}),
 
@@ -14,11 +27,7 @@ with
         select id
         from using_clause
         {% if is_incremental() -%}
-            where
-                id in (
-                    select coalesce(adp_associate_id, adp_associate_id_legacy)
-                    from {{ this }}
-                )
+            where id in (select adp_associate_id from {{ this }})
         {%- endif %}
     ),
 

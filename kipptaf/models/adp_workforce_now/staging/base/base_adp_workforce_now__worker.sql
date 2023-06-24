@@ -28,6 +28,10 @@ select
             prefix="work_assignment_",
         )
     }},
+    lag(wah.assignment_status_long_name) over (
+        partition by wah.worker_id order by wah.assignment_status_effective_date asc
+    ) as work_assignment_assignment_status_long_name_prev,
+
     {{
         dbt_utils.star(
             from=src_worker,
@@ -36,6 +40,7 @@ select
             prefix="worker_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=src_worker_report_to,
@@ -44,6 +49,7 @@ select
             prefix="report_to_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=src_groups,
@@ -52,6 +58,7 @@ select
             prefix="group_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=src_worker_base_remuneration,
@@ -60,6 +67,7 @@ select
             prefix="base_remuneration_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=src_worker_additional_remuneration,
@@ -68,6 +76,7 @@ select
             prefix="additional_remuneration_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=src_location,
@@ -76,6 +85,7 @@ select
             prefix="location_",
         )
     }},
+
     {{-
         dbt_utils.star(
             from=ref_worker_organizational_unit,

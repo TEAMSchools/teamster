@@ -1,5 +1,3 @@
-{{ config(schema="alchemer") }}
-
 select
     sr.survey_id,
     sr.id as survey_response_id,
