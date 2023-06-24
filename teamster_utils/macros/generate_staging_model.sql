@@ -1,4 +1,9 @@
-{%- macro generate_staging_model(unique_key, transform_cols=[], except_cols=[]) -%}
+{%- macro generate_staging_model(
+    unique_key,
+    order_by="_file_name desc",
+    transform_cols=[],
+    except_cols=[]
+) -%}
 
     {%- set source_model = source(
         model.package_name, model.name | replace("stg", "src")
@@ -17,7 +22,7 @@
                 dbt_utils.deduplicate(
                     relation=source_model,
                     partition_by=unique_key,
-                    order_by="_file_name desc",
+                    order_by=order_by,
                 )
             }}
         ),
@@ -27,6 +32,7 @@
                 /* column transformations */
                 {% for col in transform_cols %}
                     {%- set col_alias = col.alias or dbt_utils.slugify(col.name) -%}
+
                     {%- if col.cast -%}
                         safe_cast(
                     {%- endif -%}
