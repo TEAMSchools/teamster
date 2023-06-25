@@ -1,15 +1,44 @@
 import json
 
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     AssetsDefinition,
-    OpExecutionContext,
     Output,
     asset,
 )
 from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_manifest
+from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.cli import DbtCli, DbtManifest
 from dagster_gcp import BigQueryResource
+
+
+def build_dbt_assets(manifest: DbtManifest, select="fqn:*", exclude=""):
+    @dbt_assets(manifest=manifest, select=select, exclude=exclude)
+    def _asset(
+        context: AssetExecutionContext, dbt: DbtCli, db_bigquery: BigQueryResource
+    ):
+        dataset_name = f"{code_location}_{package_name}"
+
+        # create BigQuery dataset, if not exists
+        context.log.info(f"Creating dataset {dataset_name}")
+        with db_bigquery.get_client() as bq:
+            bq.create_dataset(dataset=dataset_name, exists_ok=True)
+
+        yield dbt.cli(
+            [
+                "stage_external_sources",
+                "--args"
+                f"{'select': '{package_name}.src_{package_name}__{asset_name}'}",
+                "--vars",
+                "'ext_full_refresh: true'",
+            ],
+            manifest=manifest,
+            context=context,
+        ).stream()
+
+    return _asset
 
 
 def build_external_source_asset(asset_definition: AssetsDefinition):
@@ -23,7 +52,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         group_name="staging",
     )
     def _asset(
-        context: OpExecutionContext,
+        context: AssetExecutionContext,
         db_bigquery: BigQueryResource,
         dbt: DbtCliClientResource,
         upstream,
@@ -53,11 +82,12 @@ def build_external_source_asset_from_key(asset_key: AssetKey):
         name=f"src_{package_name}__{asset_name}",
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
+        io_manager_key="io_manager",
         compute_kind="dbt",
         group_name=package_name,
     )
     def _asset(
-        context: OpExecutionContext,
+        context: AssetExecutionContext,
         db_bigquery: BigQueryResource,
         dbt: DbtCliClientResource,
         upstream,
@@ -99,7 +129,7 @@ def build_external_source_asset_from_params(
         group_name=group_name,
     )
     def _asset(
-        context: OpExecutionContext,
+        context: AssetExecutionContext,
         db_bigquery: BigQueryResource,
         dbt: DbtCliClientResource,
         upstream,
