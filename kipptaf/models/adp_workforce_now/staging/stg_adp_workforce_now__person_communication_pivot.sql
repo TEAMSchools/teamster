@@ -3,8 +3,14 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("adp_workforce_now", "person_communication"),
-                    source("adp_workforce_now", "business_communication"),
+                    source(
+                        "adp_workforce_now",
+                        "src_adp_workforce_now__person_communication",
+                    ),
+                    source(
+                        "adp_workforce_now",
+                        "src_adp_workforce_now__business_communication",
+                    ),
                 ],
                 include=[
                     "worker_id",

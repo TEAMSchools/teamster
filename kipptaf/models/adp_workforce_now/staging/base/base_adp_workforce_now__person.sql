@@ -5,9 +5,11 @@
 {%- set ref_person_communication = ref(
     "stg_adp_workforce_now__person_communication_pivot"
 ) -%}
-{%- set src_person_disability = source("adp_workforce_now", "person_disability") -%}
+{%- set src_person_disability = source(
+    "adp_workforce_now", "src_adp_workforce_now__person_disability"
+) -%}
 {%- set src_other_personal_address = source(
-    "adp_workforce_now", "other_personal_address"
+    "adp_workforce_now", "src_adp_workforce_now__other_personal_address"
 ) -%}
 
 select
