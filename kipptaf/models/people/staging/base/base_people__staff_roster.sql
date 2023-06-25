@@ -143,13 +143,15 @@ select
 
     wp.report_to_id as report_to_associate_oid,
     wp.report_to_position_id,
-    wp.report_to_report_to_worker_id,
+    wp.report_to_report_to_worker_id as report_to_worker_id,
 
     wp.communication_person_landline,
     wp.communication_business_mobile,
     wp.communication_business_landline,
 
-    en.employee_number
+    en.employee_number,
+
+    enm.employee_number as report_to_employee_number,
 
 {#- work_assignment_id,
     work_assignment__fivetran_active,
@@ -244,4 +246,8 @@ inner join
     {{ ref("stg_people__employee_numbers") }} as en
     on wp.work_assignment_worker_id = en.adp_associate_id
     and en.is_active
+left join
+    {{ ref("stg_people__employee_numbers") }} as enm
+    on wp.report_to_report_to_worker_id = enm.adp_associate_id
+    and enm.is_active
 where wp.work_assignment__fivetran_active and wp.work_assignment_primary_indicator
