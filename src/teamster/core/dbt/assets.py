@@ -46,7 +46,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
     return _asset
 
 
-def build_external_source_asset_from_key(asset_key: AssetKey):
+def build_external_source_asset_from_key(asset_key: AssetKey, group_name=None):
     code_location, package_name, asset_name = asset_key.path
 
     @asset(
@@ -54,7 +54,7 @@ def build_external_source_asset_from_key(asset_key: AssetKey):
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
         compute_kind="dbt",
-        group_name=package_name,
+        group_name=group_name or package_name,
     )
     def _asset(
         context: OpExecutionContext,
