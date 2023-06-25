@@ -49,7 +49,7 @@ defs = Definitions(
     sensors=[*powerschool.sensors, *edplan.sensors, *titan.sensors],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
-            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-staging"
+            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kippnewark"
         ),
         "gcs_avro_io": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
