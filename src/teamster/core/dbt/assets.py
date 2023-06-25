@@ -9,11 +9,12 @@ from dagster import (
     asset,
 )
 from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_manifest
-from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtCli, DbtManifest
+
+# from dagster_dbt.asset_decorator import dbt_assets
+# from dagster_dbt.cli import DbtCli, DbtManifest
 from dagster_gcp import BigQueryResource
 
-
+"""
 def build_dbt_assets(manifest: DbtManifest, select="fqn:*", exclude=""):
     @dbt_assets(manifest=manifest, select=select, exclude=exclude)
     def _asset(
@@ -39,6 +40,7 @@ def build_dbt_assets(manifest: DbtManifest, select="fqn:*", exclude=""):
         ).stream()
 
     return _asset
+"""
 
 
 def build_external_source_asset(asset_definition: AssetsDefinition):
