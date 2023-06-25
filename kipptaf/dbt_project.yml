@@ -30,11 +30,13 @@ models:
         +materialized: table
         base:
           +materialized: view
+    alchemer:
+      +schema: alchemer
+    extracts:
+      +schema: extracts
     people:
       +schema: people
     powerschool:
       +schema: powerschool
     surveys:
       +schema: surveys
-    alchemer:
-      +schema: kipptaf_alchemer

@@ -90,7 +90,7 @@ summary = "Cross-platform colored terminal text."
 
 [[package]]
 name = "dbt-bigquery"
-version = "1.5.2"
+version = "1.5.3"
 requires_python = ">=3.7"
 summary = "The Bigquery adapter plugin for dbt"
 dependencies = [
@@ -551,7 +551,7 @@ summary = "Persistent/Functional/Immutable data structures"
 
 [[package]]
 name = "pytest"
-version = "7.3.2"
+version = "7.4.0"
 requires_python = ">=3.7"
 summary = "pytest: simple powerful testing with Python"
 dependencies = [
@@ -959,9 +959,9 @@ content_hash = "sha256:4bbac6a9ddd1528882f6ea72fd89a7947de7fdfec6902daaae3aed03b
     {url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-"dbt-bigquery 1.5.2" = [
-    {url = "https://files.pythonhosted.org/packages/32/10/e805fa6fa0dcf3c0a5920d9bdbff0ec8d1f975af60e4170953e13c7e2177/dbt-bigquery-1.5.2.tar.gz", hash = "sha256:93ccdd7a4da1f1d0ff60a13e7413cc698041e796285cd5d29f50b298154d1ba5"},
-    {url = "https://files.pythonhosted.org/packages/e0/9e/42d4d073d5d97a736a02ccf0026e0e010062b537a0d9c312bba271987129/dbt_bigquery-1.5.2-py3-none-any.whl", hash = "sha256:e1a468f608bfd35e9e4dd381297d2a3f8ce29a8f3d07f2970b8a2a073bf8e9d4"},
+"dbt-bigquery 1.5.3" = [
+    {url = "https://files.pythonhosted.org/packages/1f/04/effbee5a495927b56e7f1f6387eb6b5f0d6a8a3e3a8e3c3034a2226cae8f/dbt_bigquery-1.5.3-py3-none-any.whl", hash = "sha256:cfa88c69469ae846d78ad8192f27b7554bd6c823e7aca4dd56da976a61555929"},
+    {url = "https://files.pythonhosted.org/packages/7c/ba/71517759c414f85e7273e073c13c8f7713bcc887976ee77a59dd5095706d/dbt-bigquery-1.5.3.tar.gz", hash = "sha256:75c6210b39697d7a52b0ebceded1a2b44b3a06dc34ff9089ae0da7b030d1cee8"},
 ]
 "dbt-core 1.5.1" = [
     {url = "https://files.pythonhosted.org/packages/78/4c/4181aed8e7ebc2f871a376b0cc884e7c95fb48070f89151d17fab357d0b9/dbt-core-1.5.1.tar.gz", hash = "sha256:d645ebdc1098ad0fad19f0871022d16ce77bec6b00d2b6b078db792c8917b8be"},
@@ -1575,9 +1575,9 @@ content_hash = "sha256:4bbac6a9ddd1528882f6ea72fd89a7947de7fdfec6902daaae3aed03b
     {url = "https://files.pythonhosted.org/packages/ed/7b/7d032130a6838b179b46dff1ee88909c11d518a10ec9bc70c4b72c7c2f80/pyrsistent-0.19.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:20460ac0ea439a3e79caa1dbd560344b64ed75e85d8703943e0b66c2a6150e4a"},
     {url = "https://files.pythonhosted.org/packages/f4/43/183384edb4d2788374aa7663b82ace4afe4a0c1fbfee064875eb40ada95b/pyrsistent-0.19.3-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3a8cb235fa6d3fd7aae6a4f1429bbb1fec1577d978098da1252f0489937786f3"},
 ]
-"pytest 7.3.2" = [
-    {url = "https://files.pythonhosted.org/packages/58/2a/07c65fdc40846ecb8a9dcda2c38fcb5a06a3e39d08d4a4960916431951cb/pytest-7.3.2.tar.gz", hash = "sha256:ee990a3cc55ba808b80795a79944756f315c67c12b56abd3ac993a7b8c17030b"},
-    {url = "https://files.pythonhosted.org/packages/7a/d0/de969198293cdea22b3a6fb99a99aeeddb7b3827f0823b33c5dc0734bbe5/pytest-7.3.2-py3-none-any.whl", hash = "sha256:cdcbd012c9312258922f8cd3f1b62a6580fdced17db6014896053d47cddf9295"},
+"pytest 7.4.0" = [
+    {url = "https://files.pythonhosted.org/packages/33/b2/741130cbcf2bbfa852ed95a60dc311c9e232c7ed25bac3d9b8880a8df4ae/pytest-7.4.0-py3-none-any.whl", hash = "sha256:78bf16451a2eb8c7a2ea98e32dc119fd2aa758f1d5d66dbf0a59d69a3969df32"},
+    {url = "https://files.pythonhosted.org/packages/a7/f3/dadfbdbf6b6c8b5bd02adb1e08bc9fbb45ba51c68b0893fa536378cdf485/pytest-7.4.0.tar.gz", hash = "sha256:b4bf8c45bd59934ed84001ad51e11b4ee40d40a1229d2c79f9c592b0a3f6bd8a"},
 ]
 "python-dateutil 2.8.2" = [
     {url = "https://files.pythonhosted.org/packages/36/7a/87837f39d0296e723bb9b62bbb257d0355c7f6128853c78955f57342a56d/python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
