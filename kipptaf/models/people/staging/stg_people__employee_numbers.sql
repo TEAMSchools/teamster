@@ -49,5 +49,5 @@ with
         (select max(employee_number) as max_employee_number from {{ this }}) as men
 {% else %}
     select employee_number, adp_associate_id, adp_associate_id_legacy, is_active
-    from {{ source("people", "src_people__employee_numbers") }}
+    from {{ source("people", "src_people__employee_numbers_archive") }}
 {% endif %}

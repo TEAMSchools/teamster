@@ -4,13 +4,13 @@ sources:
   - name: people
     schema: kipptaf_people
     tables:
-      - name: src_people__employee_numbers
+      - name: src_people__employee_numbers_archive
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-            sheet_range: src_people__employee_numbers
+            sheet_range: src_people__employee_numbers_archive
             skip_leading_rows: 1
       - name: src_people__location_crosswalk
         external:
