@@ -1,11 +1,18 @@
-from teamster.core.dbt.assets import build_external_source_asset
+import json
 
-from .. import alchemer, schoolmint
+from dagster_dbt import load_assets_from_dbt_manifest
 
-dbt_src_assets = [
-    build_external_source_asset(a) for a in [*schoolmint.assets, *alchemer.assets]
-]
+from .. import CODE_LOCATION
+
+with open(file=f"teamster-dbt/{CODE_LOCATION}/target/manifest.json") as f:
+    manifest_json = json.load(f)
+
+dbt_assets = load_assets_from_dbt_manifest(
+    manifest_json=manifest_json,
+    key_prefix=[CODE_LOCATION, "dbt"],
+    source_key_prefix=[CODE_LOCATION, "dbt"],
+)
 
 __all__ = [
-    *dbt_src_assets,
+    *dbt_assets,
 ]
