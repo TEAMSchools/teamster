@@ -46,25 +46,16 @@ workspace:
     branchDeployments:
       ttlSeconds: 300 # 5 min
 
-  # Raw k8s configuration for the Kubernetes Job and Pod created for each run.
-  # See: https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
-  # runK8sConfig:
-  #   podSpecConfig:
-  #     nodeSelector:
-  #       cloud.google.com/compute-class: Balanced
-
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig: # raw config for the pod's main container
       resources:
         limits:
-          cpu: 500m
-          memory: 1.0Gi
+          cpu: 1000m
+          memory: 1.5Gi
         requests:
-          cpu: 500m
-          memory: 1.0Gi
-      # command:
-      #   - ./src/teamster/core/docker-entrypoint.sh
+          cpu: 1000m
+          memory: 1.5Gi
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
