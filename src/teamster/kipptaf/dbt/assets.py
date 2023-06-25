@@ -2,7 +2,10 @@ import json
 
 from dagster_dbt import load_assets_from_dbt_manifest
 
-from teamster.core.dbt.assets import build_external_source_asset_from_key
+from teamster.core.dbt.assets import (
+    build_external_source_asset_from_key,
+    build_external_source_asset_from_params,
+)
 from teamster.kipptaf import CODE_LOCATION, fivetran, google
 
 with open(file=f"teamster-dbt/{CODE_LOCATION}/target/manifest.json") as f:
@@ -22,8 +25,12 @@ fivetran_source_assets = [
 ]
 
 gsheet_source_assets = [
-    build_external_source_asset_from_key(
-        asset_key=asset.key, group_name=asset.key.path[-1].split("__")[0]
+    build_external_source_asset_from_params(
+        code_location=asset.key.path[0],
+        table_name=asset.key.path[-1].split("__")[1],
+        dbt_package_name=asset.key.path[-1].split("__")[0],
+        upstream_package_name=asset.key.path[1],
+        group_name=asset.key.path[-1].split("__")[0],
     )
     for asset in google.assets
 ]
