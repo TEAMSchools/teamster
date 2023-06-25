@@ -3,27 +3,49 @@ version: 2
 sources:
   - name: adp_workforce_now
     tables:
-      - name: business_communication
-      - name: classification
-      - name: groups
-      - name: location
-      - name: organizational_unit
-      - name: other_personal_address
-      - name: person_communication
-      - name: person_disability
-      - name: person_government_id
-      - name: person_history
-      - name: person_military_classification
-      - name: person_preferred_salutation
-      - name: person_social_insurance_program
-      - name: work_assignment_history
-      - name: worker
+      - name: src_adp_workforce_now__business_communication
+        identifier: business_communication
+      - name: src_adp_workforce_now__classification
+        identifier: classification
+      - name: src_adp_workforce_now__groups
+        identifier: groups
+      - name: src_adp_workforce_now__location
+        identifier: location
+      - name: src_adp_workforce_now__organizational_unit
+        identifier: organizational_unit
+      - name: src_adp_workforce_now__other_personal_address
+        identifier: other_personal_address
+      - name: src_adp_workforce_now__person_communication
+        identifier: person_communication
+      - name: src_adp_workforce_now__person_disability
+        identifier: person_disability
+      - name: src_adp_workforce_now__person_government_id
+        identifier: person_government_id
+      - name: src_adp_workforce_now__person_history
+        identifier: person_history
+      - name: src_adp_workforce_now__person_military_classification
+        identifier: person_military_classification
+      - name: src_adp_workforce_now__person_preferred_salutation
+        identifier: person_preferred_salutation
+      - name: src_adp_workforce_now__person_social_insurance_program
+        identifier: person_social_insurance_program
+      - name: src_adp_workforce_now__work_assignment_history
+        identifier: work_assignment_history
+      - name: src_adp_workforce_now__worker
         identifier: worker
-      - name: worker_additional_remuneration
-      - name: worker_assigned_location
-      - name: worker_assigned_organizational_unit
-      - name: worker_base_remuneration
-      - name: worker_classification
-      - name: worker_group
-      - name: worker_home_organizational_unit
-      - name: worker_report_to
+      - name: src_adp_workforce_now__worker_additional_remuneration
+        identifier: worker_additional_remuneration
+      - name: src_adp_workforce_now__worker_assigned_location
+        identifier: worker_assigned_location
+      - name: src_adp_workforce_now__worker_assigned_organizational_unit
+        identifier: worker_assigned_organizational_unit
+      - name: src_adp_workforce_now__worker_base_remuneration
+        identifier: worker_base_remuneration
+      - name: src_adp_workforce_now__worker_classification
+        identifier: worker_classification
+      - name: src_adp_workforce_now__worker_group
+        identifier: worker_group
+      - name: src_adp_workforce_now__worker_home_organizational_unit
+        identifier: worker_home_organizational_unit
+      - name: src_adp_workforce_now__worker_report_to
+        identifier: worker_report_to
