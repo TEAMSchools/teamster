@@ -8,6 +8,6 @@ def build_gsheet_asset(name, code_location, sheet_id, range_name):
         metadata={"sheet_id": sheet_id, "range_name": range_name},
     )
     def _asset():
-        ...
+        return
 
     return _asset
