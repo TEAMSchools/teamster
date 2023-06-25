@@ -54,7 +54,7 @@ def build_external_source_asset_from_key(asset_key: AssetKey):
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
         compute_kind="dbt",
-        group_name="staging",
+        group_name=package_name,
     )
     def _asset(
         context: OpExecutionContext,
