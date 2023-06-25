@@ -4,9 +4,13 @@ with
             dbt_utils.union_relations(
                 relations=[
                     source(
-                        "adp_workforce_now", "worker_assigned_organizational_unit"
+                        "adp_workforce_now",
+                        "src_adp_workforce_now__worker_assigned_organizational_unit",
                     ),
-                    source("adp_workforce_now", "worker_home_organizational_unit"),
+                    source(
+                        "adp_workforce_now",
+                        "src_adp_workforce_now__worker_home_organizational_unit",
+                    ),
                 ],
                 exclude=["_fivetran_synced"],
             )
@@ -17,7 +21,12 @@ with
             id,
             type_short_name,
             coalesce(name_short_name, name_long_name, `name`) as `name`
-        from {{ source("adp_workforce_now", "organizational_unit") }}
+        from
+            {{
+                source(
+                    "adp_workforce_now", "src_adp_workforce_now__organizational_unit"
+                )
+            }}
     ),
     ou_join as (
         select
