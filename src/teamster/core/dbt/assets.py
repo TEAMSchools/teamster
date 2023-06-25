@@ -10,13 +10,26 @@ from dagster import (
 )
 from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_manifest
 
-# from dagster_dbt.asset_decorator import dbt_assets
 # from dagster_dbt.cli import DbtCli, DbtManifest
 from dagster_gcp import BigQueryResource
 
 """
 def build_staging_assets_from_source(manifest: DbtManifest, select="fqn:*", exclude=""):
-    @dbt_assets(manifest=manifest, select=select, exclude=exclude)
+    @asset(
+        name=f"src_{dbt_package_name}__{table_name}",
+        key_prefix=[code_location, "dbt", dbt_package_name],
+        ins={
+            "upstream": AssetIn(
+                key=[
+                    code_location,
+                    upstream_package_name,
+                    f"{dbt_package_name}__{table_name}",
+                ]
+            )
+        },
+        compute_kind="dbt",
+        group_name=group_name,
+    )
     def _asset(
         context: AssetExecutionContext, dbt: DbtCli, db_bigquery: BigQueryResource
     ):
@@ -52,7 +65,6 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         name=f"src_{package_name}__{asset_name}",
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
-        io_manager_key="io_manager",
         compute_kind="dbt",
         group_name="staging",
     )
@@ -87,7 +99,6 @@ def build_external_source_asset_from_key(asset_key: AssetKey):
         name=f"src_{package_name}__{asset_name}",
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
-        io_manager_key="io_manager",
         compute_kind="dbt",
         group_name=package_name,
     )
@@ -121,16 +132,15 @@ def build_external_source_asset_from_params(
     @asset(
         name=f"src_{dbt_package_name}__{table_name}",
         key_prefix=[code_location, "dbt", dbt_package_name],
-        ins={
-            "upstream": AssetIn(
-                key=[
+        non_argument_deps=[
+            AssetKey(
+                [
                     code_location,
                     upstream_package_name,
                     f"{dbt_package_name}__{table_name}",
                 ]
             )
-        },
-        io_manager_key="io_manager",
+        ],
         compute_kind="dbt",
         group_name=group_name,
     )
@@ -138,7 +148,6 @@ def build_external_source_asset_from_params(
         context: AssetExecutionContext,
         db_bigquery: BigQueryResource,
         dbt: DbtCliClientResource,
-        upstream,
     ):
         dataset_name = f"{code_location}_{dbt_package_name}"
 
@@ -147,13 +156,11 @@ def build_external_source_asset_from_params(
         with db_bigquery.get_client() as bq:
             bq.create_dataset(dataset=dataset_name, exists_ok=True)
 
-        dbt_output = dbt.get_dbt_client().run_operation(
+        dbt.get_dbt_client().run_operation(
             macro="stage_external_sources",
             args={"select": f"src_{dbt_package_name}__{table_name}"},
             vars="ext_full_refresh: true",
         )
-
-        return Output(value=upstream, metadata=dbt_output.result)
 
     return _asset
 
