@@ -1,4 +1,6 @@
-from dagster import observable_source_asset
+from datetime import datetime
+
+from dagster import DataVersion, observable_source_asset
 
 
 def build_gsheet_asset(name, code_location, sheet_id, range_name):
@@ -8,6 +10,6 @@ def build_gsheet_asset(name, code_location, sheet_id, range_name):
         metadata={"sheet_id": sheet_id, "range_name": range_name},
     )
     def _asset():
-        return
+        return DataVersion(str(datetime.now().timestamp()))
 
     return _asset
