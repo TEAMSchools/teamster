@@ -1,9 +1,18 @@
 assets:
+  - name: people__employee_numbers
+    range_name: src_people__employee_numbers
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+  - name: people__location_crosswalk
+    range_name: src_people__location_crosswalk
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+  - name: people__campus_crosswalk
+    range_name: src_people__campus_crosswalk
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+  - name: people__powerschool_crosswalk
+    range_name: src_people__powerschool_crosswalk
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
   - name: people__id_crosswalk_adp
     range_name: fivetran_id_crosswalk_adp
-    sheet_id: 1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik
-  - name: people__id_crosswalk_powerschool
-    range_name: fivetran_id_crosswalk_powerschool
     sheet_id: 1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik
   - name: reporting__reporting_terms
     range_name: fivetran_reporting_terms
@@ -32,12 +41,6 @@ assets:
   - name: lit__network_goals
     range_name: fivetran_lit_network_goals
     sheet_id: 1yiCP5pTnOplhRw4u4wZeg1hW7GAnI2Hci5yecO1qLow
-  - name: people__school_crosswalk
-    range_name: fivetran_school_crosswalk
-    sheet_id: 1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik
-  - name: people__campus_crosswalk
-    range_name: fivetran_campus_crosswalk
-    sheet_id: 1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik
   - name: assessments__normed_scopes
     range_name: fivetran_normed_scopes
     sheet_id: 1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
