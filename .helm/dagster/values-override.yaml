@@ -29,11 +29,11 @@ workspace:
   # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
   resources:
     limits:
-      cpu: 250m
-      memory: 0.5Gi
+      cpu: 500m
+      memory: 1.0Gi
     requests:
-      cpu: 250m
-      memory: 0.5Gi
+      cpu: 500m
+      memory: 1.0Gi
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
