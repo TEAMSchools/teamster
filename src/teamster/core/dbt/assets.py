@@ -15,7 +15,7 @@ from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_manifest
 from dagster_gcp import BigQueryResource
 
 """
-def build_dbt_assets(manifest: DbtManifest, select="fqn:*", exclude=""):
+def build_staging_assets_from_source(manifest: DbtManifest, select="fqn:*", exclude=""):
     @dbt_assets(manifest=manifest, select=select, exclude=exclude)
     def _asset(
         context: AssetExecutionContext, dbt: DbtCli, db_bigquery: BigQueryResource
@@ -28,7 +28,7 @@ def build_dbt_assets(manifest: DbtManifest, select="fqn:*", exclude=""):
             bq.create_dataset(dataset=dataset_name, exists_ok=True)
 
         yield dbt.cli(
-            [
+            args=[
                 "stage_external_sources",
                 "--args"
                 f"{'select': '{package_name}.src_{package_name}__{asset_name}'}",
@@ -38,6 +38,8 @@ def build_dbt_assets(manifest: DbtManifest, select="fqn:*", exclude=""):
             manifest=manifest,
             context=context,
         ).stream()
+
+        yield dbt.cli(args=["run"])
 
     return _asset
 """
@@ -50,6 +52,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         name=f"src_{package_name}__{asset_name}",
         key_prefix=[code_location, "dbt", package_name],
         ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
+        io_manager_key="io_manager",
         compute_kind="dbt",
         group_name="staging",
     )
@@ -127,6 +130,7 @@ def build_external_source_asset_from_params(
                 ]
             )
         },
+        io_manager_key="io_manager",
         compute_kind="dbt",
         group_name=group_name,
     )
