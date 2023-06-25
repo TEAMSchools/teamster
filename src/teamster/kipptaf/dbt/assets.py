@@ -2,7 +2,8 @@ import json
 
 from dagster_dbt import load_assets_from_dbt_manifest
 
-from .. import CODE_LOCATION
+from teamster.core.dbt.assets import build_external_source_asset_from_key
+from teamster.kipptaf import CODE_LOCATION, fivetran
 
 with open(file=f"teamster-dbt/{CODE_LOCATION}/target/manifest.json") as f:
     manifest_json = json.load(f)
@@ -13,6 +14,14 @@ dbt_assets = load_assets_from_dbt_manifest(
     source_key_prefix=[CODE_LOCATION, "dbt"],
 )
 
+fivetran_source_assets = [
+    build_external_source_asset_from_key(asset_key=asset_key)
+    for assets in fivetran.assets
+    for assets_def in assets.compute_cacheable_data()
+    for table_name, asset_key in assets_def.keys_by_output_name.items()
+]
+
 __all__ = [
     *dbt_assets,
+    *fivetran_source_assets,
 ]
