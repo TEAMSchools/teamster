@@ -1,6 +1,6 @@
 assets:
-  - name: people__employee_numbers
-    range_name: src_people__employee_numbers
+  - name: people__employee_numbers_archive
+    range_name: src_people__employee_numbers_archive
     sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
   - name: people__location_crosswalk
     range_name: src_people__location_crosswalk
