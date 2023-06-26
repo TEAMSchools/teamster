@@ -306,7 +306,7 @@ def build_bigquery_extract_asset(
 
     @asset(
         name=asset_name,
-        key_prefix=[code_location, "datagun", destination_name],
+        key_prefix=[code_location, "extracts", destination_name],
         non_argument_deps=[AssetKey([code_location, dataset_id, table_id])],
         op_tags=op_tags,
     )
