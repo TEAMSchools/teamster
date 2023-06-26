@@ -62,7 +62,8 @@ def build_staging_assets_from_source(
             args=[
                 "run_operation",
                 "stage_external_sources",
-                "--args" f"{'select': 'src_{dbt_package_name}__{table_name}'}",
+                "--args",
+                f"{'select': 'src_{dbt_package_name}__{table_name}'}",
                 "--vars",
                 "'ext_full_refresh: true'",
             ],
@@ -110,79 +111,6 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         )
 
         return Output(value=upstream, metadata=dbt_output.result)
-
-    return _asset
-
-
-def build_external_source_asset_from_key(asset_key: AssetKey):
-    code_location, package_name, asset_name = asset_key.path
-
-    @asset(
-        name=f"src_{package_name}__{asset_name}",
-        key_prefix=[code_location, "dbt", package_name],
-        ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
-        compute_kind="dbt",
-        group_name=package_name,
-    )
-    def _asset(
-        context: AssetExecutionContext,
-        db_bigquery: BigQueryResource,
-        dbt: DbtCliClientResource,
-        upstream,
-    ):
-        dataset_name = f"{code_location}_{package_name}"
-
-        # create BigQuery dataset, if not exists
-        context.log.info(f"Creating dataset {dataset_name}")
-        with db_bigquery.get_client() as bq:
-            bq.create_dataset(dataset=dataset_name, exists_ok=True)
-
-        dbt_output = dbt.get_dbt_client().run_operation(
-            macro="stage_external_sources",
-            args={"select": f"{package_name}.src_{package_name}__{asset_name}"},
-            vars="ext_full_refresh: true",
-        )
-
-        return Output(value=upstream, metadata=dbt_output.result)
-
-    return _asset
-
-
-def build_external_source_asset_from_params(
-    code_location, table_name, dbt_package_name, upstream_package_name, group_name
-):
-    @asset(
-        name=f"src_{dbt_package_name}__{table_name}",
-        key_prefix=[code_location, "dbt", dbt_package_name],
-        non_argument_deps=[
-            AssetKey(
-                [
-                    code_location,
-                    upstream_package_name,
-                    f"{dbt_package_name}__{table_name}",
-                ]
-            )
-        ],
-        compute_kind="dbt",
-        group_name=group_name,
-    )
-    def _asset(
-        context: AssetExecutionContext,
-        db_bigquery: BigQueryResource,
-        dbt: DbtCliClientResource,
-    ):
-        dataset_name = f"{code_location}_{dbt_package_name}"
-
-        # create BigQuery dataset, if not exists
-        context.log.info(f"Creating dataset {dataset_name}")
-        with db_bigquery.get_client() as bq:
-            bq.create_dataset(dataset=dataset_name, exists_ok=True)
-
-        dbt.get_dbt_client().run_operation(
-            macro="stage_external_sources",
-            args={"select": f"src_{dbt_package_name}__{table_name}"},
-            vars="ext_full_refresh: true",
-        )
 
     return _asset
 
