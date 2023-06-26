@@ -46,7 +46,6 @@ workspace:
     branchDeployments:
       ttlSeconds: 300 # 5 min
 
-
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   # serverK8sConfig:
   #   containerConfig: # raw config for the pod's main container
@@ -57,6 +56,13 @@ workspace:
   #       requests:
   #         cpu: 1000m
   #         memory: 1.5Gi
+
+  # Specifies the timeout in seconds the agent should use when waiting for a code
+  # server to be ready after the Kubernetes deployment is created. If not set, defaults
+  # to 180 seconds.
+  # This timeout should be increased if your code locations can take more than 3
+  # minutes to load your Dagster definitions.
+  serverProcessStartupTimeout: 360
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
