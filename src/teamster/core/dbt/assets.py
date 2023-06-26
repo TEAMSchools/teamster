@@ -1,6 +1,6 @@
 import json
 
-from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, Output, asset
+from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, asset
 from dagster_dbt import load_assets_from_dbt_manifest
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtCli, DbtCliClientResource
@@ -22,15 +22,13 @@ def build_external_source_asset_new(
     code_location,
     table_name,
     dbt_package_name,
-    upstream_package_name,
+    upstream_asset_key,
     group_name,
 ):
     @asset(
         name=f"src_{dbt_package_name}__{table_name}",
         key_prefix=[code_location, "dbt", dbt_package_name],
-        non_argument_deps=[
-            AssetKey([code_location, upstream_package_name, table_name])
-        ],
+        non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
     )
@@ -66,15 +64,13 @@ def build_staging_asset_from_source(
     code_location,
     table_name,
     dbt_package_name,
-    upstream_package_name,
+    upstream_asset_key,
     group_name,
 ):
     @asset(
-        name=f"stg_{dbt_package_name}__{table_name}",
+        name=f"stg_{table_name}",
         key_prefix=[code_location, "dbt", dbt_package_name],
-        non_argument_deps=[
-            AssetKey([code_location, upstream_package_name, table_name])
-        ],
+        non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
     )
@@ -126,7 +122,6 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         context: AssetExecutionContext,
         db_bigquery: BigQueryResource,
         dbt: DbtCliClientResource,
-        upstream,
     ):
         dataset_name = f"{code_location}_{package_name}"
 
@@ -135,13 +130,11 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         with db_bigquery.get_client() as bq:
             bq.create_dataset(dataset=dataset_name, exists_ok=True)
 
-        dbt_output = dbt.get_dbt_client().run_operation(
+        dbt.get_dbt_client().run_operation(
             macro="stage_external_sources",
             args={"select": f"{package_name}.src_{package_name}__{asset_name}"},
             vars="ext_full_refresh: true",
         )
-
-        return Output(value=upstream, metadata=dbt_output.result)
 
     return _asset
 

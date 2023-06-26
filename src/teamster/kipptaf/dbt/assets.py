@@ -50,7 +50,7 @@ fivetran_source_assets = [
         code_location=CODE_LOCATION,
         table_name=object_identifier.split(sep=".")[1],
         dbt_package_name=object_identifier.split(sep=".")[0],
-        upstream_package_name=asset_key.path[1],
+        upstream_asset_key=asset_key,
         group_name=asset_key.path[1],
     )
     for assets in fivetran.assets
@@ -62,13 +62,13 @@ gsheet_source_assets = [
     build_staging_asset_from_source(
         manifest=manifest,
         code_location=CODE_LOCATION,
-        table_name=asset.path[-1].split("__")[1],
-        dbt_package_name=asset.path[-1].split("__")[0],
-        upstream_package_name=asset.path[1],
-        group_name=asset.path[-1].split("__")[0],
+        table_name=asset_key.path[-1],
+        dbt_package_name=asset_key.path[-1].split("__")[0],
+        upstream_asset_key=asset_key,
+        group_name=asset_key.path[-1].split("__")[0],
     )
-    for asset in AssetSelection.keys(
-        ["kipptaf", "gsheets", "people__employee_numbers_archive"],
+    for asset_key in AssetSelection.keys(
+        [CODE_LOCATION, "gsheets", "people__employee_numbers_archive"]
     )._keys
 ]
 
