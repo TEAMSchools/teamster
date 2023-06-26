@@ -25,12 +25,12 @@ def build_dbt_assets(manifest):
 
 
 def build_external_source_asset_new(
-    manifest,
     code_location,
-    table_name,
     dbt_package_name,
+    table_name,
     upstream_asset_key,
     group_name,
+    manifest,
 ):
     @asset(
         name=f"src_{dbt_package_name}__{table_name}",
@@ -67,21 +67,20 @@ def build_external_source_asset_new(
 
 
 def build_staging_asset_from_source(
-    manifest,
     code_location,
-    table_name,
     dbt_package_name,
+    source_model_name,
+    staging_model_name,
     upstream_asset_key: AssetKey,
     group_name,
+    manifest,
 ):
+    key_prefix = [code_location, "dbt", dbt_package_name]
+
     @multi_asset(
         outs={
-            f"src_{table_name}": AssetOut(
-                key_prefix=[code_location, "dbt", dbt_package_name]
-            ),
-            f"stg_{table_name}": AssetOut(
-                key_prefix=[code_location, "dbt", dbt_package_name]
-            ),
+            source_model_name: AssetOut(key_prefix=key_prefix),
+            staging_model_name: AssetOut(key_prefix=key_prefix),
         },
         name=f"{upstream_asset_key.to_python_identifier()}__dbt",
         non_argument_deps=[upstream_asset_key],
@@ -104,7 +103,7 @@ def build_staging_asset_from_source(
                 "run_operation",
                 "stage_external_sources",
                 "--args",
-                f"{'select': 'src_{dbt_package_name}__{table_name}'}",
+                f"{'select': '{source_model_name}'}",
                 "--vars",
                 "'ext_full_refresh: true'",
             ],
@@ -112,9 +111,9 @@ def build_staging_asset_from_source(
             context=context,
         ).stream()
 
-        # run staging model
+        # build staging model
         yield from dbt_cli.cli(
-            args=["run", "--select", f"stg_{dbt_package_name}__{table_name}"],
+            args=["build", "--select", staging_model_name],
             manifest=manifest,
             context=context,
         ).stream()

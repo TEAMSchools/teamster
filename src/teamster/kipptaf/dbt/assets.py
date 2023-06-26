@@ -1,14 +1,10 @@
 import json
 
-from dagster import AssetKey, AssetSelection
+from dagster import AssetKey
 from dagster_dbt.cli import DbtManifest
 
-from teamster.core.dbt.assets import (
-    build_dbt_assets,
-    build_external_source_asset_new,
-    build_staging_asset_from_source,
-)
-from teamster.kipptaf import CODE_LOCATION, fivetran
+from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset_new
+from teamster.kipptaf import CODE_LOCATION, fivetran, google
 
 
 class CustomizedDbtManifest(DbtManifest):
@@ -46,12 +42,12 @@ dbt_assets = build_dbt_assets(manifest=manifest)
 
 fivetran_source_assets = [
     build_external_source_asset_new(
-        manifest=manifest,
         code_location=CODE_LOCATION,
-        table_name=object_identifier.split(sep=".")[1],
         dbt_package_name=object_identifier.split(sep=".")[0],
+        table_name=object_identifier.split(sep=".")[1],
         upstream_asset_key=asset_key,
         group_name=asset_key.path[1],
+        manifest=manifest,
     )
     for assets in fivetran.assets
     for assets_def in assets.compute_cacheable_data()
@@ -59,17 +55,15 @@ fivetran_source_assets = [
 ]
 
 gsheet_source_assets = [
-    build_staging_asset_from_source(
-        manifest=manifest,
+    build_external_source_asset_new(
         code_location=CODE_LOCATION,
-        table_name=asset_key.path[-1],
-        dbt_package_name=asset_key.path[-1].split("__")[0],
-        upstream_asset_key=asset_key,
-        group_name=asset_key.path[-1].split("__")[0],
+        dbt_package_name=asset.key.path[-1].split("__")[0],
+        table_name=f"src_{asset.key.path[-1]}",
+        upstream_asset_key=asset.key,
+        group_name=asset.key.path[-1].split("__")[0],
+        manifest=manifest,
     )
-    for asset_key in AssetSelection.keys(
-        [CODE_LOCATION, "gsheets", "people__employee_numbers_archive"]
-    )._keys
+    for asset in google.assets
 ]
 
 __all__ = [
