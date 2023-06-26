@@ -283,7 +283,7 @@ def build_bigquery_extract_asset(
     timezone,
     dataset_config,
     file_config,
-    # destination_config,
+    destination_config,
     extract_job_config={},
     op_tags={},
 ):
@@ -303,7 +303,7 @@ def build_bigquery_extract_asset(
 
     @asset(
         name=asset_name,
-        key_prefix=[code_location, dataset_id],
+        key_prefix=[code_location, "extracts", destination_config["name"]],
         op_tags=op_tags,
     )
     def _asset(context: AssetExecutionContext, db_bigquery: BigQueryResource):

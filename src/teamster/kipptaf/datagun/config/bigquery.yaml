@@ -3,8 +3,9 @@ assets:
       dataset_id: extracts
       table_id: rpt_idauto__staff_roster
     extract_job_config:
-      destinationFormat: CSV
+      destination_format: CSV
     file_config:
       stem: AD
       suffix: csv
-    # destination_config:
+    destination_config:
+      name: idauto
