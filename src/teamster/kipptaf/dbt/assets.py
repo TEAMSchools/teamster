@@ -17,7 +17,7 @@ class CustomizedDbtManifest(DbtManifest):
         if asset_key_config:
             return AssetKey(asset_key_config)
 
-        components = [CODE_LOCATION, "dbt"]
+        components = [CODE_LOCATION]
 
         if node_info["resource_type"] == "source":
             components.extend([node_info["source_name"], node_info["name"]])
