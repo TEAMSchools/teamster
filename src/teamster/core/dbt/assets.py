@@ -59,7 +59,7 @@ def build_external_source_asset_new(
                 "run-operation",
                 "stage_external_sources",
                 "--args",
-                f"'select': '{name}'",
+                f"'select: {dbt_package_name}.{name}'",
                 "--vars",
                 "'ext_full_refresh: true'",
             ],
