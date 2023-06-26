@@ -55,7 +55,7 @@ def build_external_source_asset_new(
                 "run_operation",
                 "stage_external_sources",
                 "--args",
-                f"{'select': '{name}'}",
+                f"{{'select': '{name}'}}",
                 "--vars",
                 "'ext_full_refresh: true'",
             ],
