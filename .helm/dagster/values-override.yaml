@@ -12,14 +12,14 @@ dagsterCloud:
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
-dagsterCloudAgent:
-  resources:
-    limits:
-      cpu: 250m
-      memory: 1.0Gi
-    requests:
-      cpu: 250m
-      memory: 1.0Gi
+# dagsterCloudAgent:
+#   resources:
+#     limits:
+#       cpu: 250m
+#       memory: 1.0Gi
+#     requests:
+#       cpu: 250m
+#       memory: 1.0Gi
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
@@ -27,13 +27,13 @@ dagsterCloudAgent:
 workspace:
   # Default compute resource requirements for the pods created by the agent. See:
   # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-  resources:
-    limits:
-      cpu: 500m
-      memory: 1.0Gi
-    requests:
-      cpu: 500m
-      memory: 1.0Gi
+  # resources:
+  #   limits:
+  #     cpu: 500m
+  #     memory: 1.0Gi
+  #   requests:
+  #     cpu: 500m
+  #     memory: 1.0Gi
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
@@ -46,16 +46,17 @@ workspace:
     branchDeployments:
       ttlSeconds: 300 # 5 min
 
+
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
-  serverK8sConfig:
-    containerConfig: # raw config for the pod's main container
-      resources:
-        limits:
-          cpu: 1000m
-          memory: 1.5Gi
-        requests:
-          cpu: 1000m
-          memory: 1.5Gi
+  # serverK8sConfig:
+  #   containerConfig: # raw config for the pod's main container
+  #     resources:
+  #       limits:
+  #         cpu: 1000m
+  #         memory: 1.5Gi
+  #       requests:
+  #         cpu: 1000m
+  #         memory: 1.5Gi
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################

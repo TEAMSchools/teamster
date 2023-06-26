@@ -21,7 +21,7 @@ def build_dbt_assets(manifest):
 
         yield from dbt_run.stream()
 
-        context.log.info(dbt_run.get_artifact("run_results.json"))
+        # context.log.info(dbt_run.get_artifact("run_results.json"))
 
         return
 
@@ -69,7 +69,7 @@ def build_external_source_asset_new(
 
         yield from dbt_run_operation.stream()
 
-        context.log.info(dbt_run_operation.get_artifact("run_results.json"))
+        # context.log.info(dbt_run_operation.get_artifact("run_results.json"))
 
         return
 
