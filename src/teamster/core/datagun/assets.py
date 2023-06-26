@@ -292,6 +292,8 @@ def build_bigquery_extract_asset(
     dataset_id = dataset_config["dataset_id"]
     table_id = dataset_config["table_id"]
 
+    destination_name = destination_config["name"]
+
     file_suffix = file_config["suffix"]
     file_stem = file_config["stem"].format(
         today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
@@ -304,8 +306,8 @@ def build_bigquery_extract_asset(
 
     @asset(
         name=asset_name,
-        key_prefix=[code_location, "extracts", destination_config["name"]],
-        non_argument_deps=[AssetKey([code_location, "extracts", table_id])],
+        key_prefix=[code_location, "datagun", destination_name],
+        non_argument_deps=[AssetKey([code_location, dataset_id, table_id])],
         op_tags=op_tags,
     )
     def _asset(context: AssetExecutionContext, db_bigquery: BigQueryResource):
@@ -314,12 +316,12 @@ def build_bigquery_extract_asset(
         )
 
         with db_bigquery.get_client() as bq_client:
-            extract_job = bq_client.extract_table(
+            extract_job = bq_client.extract_view(
                 source=dataset_ref.table(table_id=table_id),
                 destination_uris=[
                     (
                         f"gs://teamster-{code_location}/dagster/{code_location}/"
-                        f"extracts/{dataset_id}/{file_stem}.{file_suffix}"
+                        f"extracts/data/{destination_name}/{file_stem}.{file_suffix}"
                     )
                 ],
                 job_config=bigquery.ExtractJobConfig(**extract_job_config),
