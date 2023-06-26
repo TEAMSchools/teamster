@@ -41,7 +41,6 @@ def build_external_source_asset_new(
         non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
-        output_required=False,
     )
     def _asset(
         context: AssetExecutionContext, dbt_cli: DbtCli, db_bigquery: BigQueryResource
@@ -69,7 +68,7 @@ def build_external_source_asset_new(
 
         yield from dbt_run_operation.stream()
 
-        return Output(value=dbt_run_operation)
+        return Output(value=dbt_run_operation.get_artifact(artifact="run_results.json"))
 
     return _asset
 
