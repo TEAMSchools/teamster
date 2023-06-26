@@ -34,6 +34,7 @@ models:
       +schema: alchemer
     extracts:
       +schema: extracts
+      +materialized: table
     people:
       +schema: people
     powerschool:
