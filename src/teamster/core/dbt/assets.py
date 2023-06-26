@@ -41,6 +41,7 @@ def build_external_source_asset_new(
         non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
+        output_required=False,
     )
     def _asset(
         context: AssetExecutionContext, dbt_cli: DbtCli, db_bigquery: BigQueryResource
@@ -137,6 +138,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
         non_argument_deps=[AssetKey([code_location, package_name, asset_name])],
         compute_kind="dbt",
         group_name="staging",
+        output_required=False,
     )
     def _asset(
         context: AssetExecutionContext,
