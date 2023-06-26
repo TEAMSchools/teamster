@@ -1,9 +1,12 @@
 import gzip
 import json
 import pathlib
+import re
 
 import pendulum
-from dagster import OpExecutionContext, asset, config_from_files
+from dagster import AssetExecutionContext, asset, config_from_files
+from dagster_gcp import BigQueryResource
+from google.cloud import bigquery
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
 
@@ -55,7 +58,7 @@ def transform(data, file_suffix, file_encoding=None, file_format=None):
         return df_dict
 
 
-def load_sftp(context: OpExecutionContext, data, file_name, destination_config):
+def load_sftp(context: AssetExecutionContext, data, file_name, destination_config):
     destination_name = destination_config.get("name")
     destination_path = destination_config.get("path", "")
 
@@ -158,7 +161,7 @@ def gsheet_extract_asset_factory(
 
     @asset(name=asset_name, key_prefix=key_prefix, op_tags=op_tags)
     def gsheet_extract(
-        context: OpExecutionContext,
+        context: AssetExecutionContext,
         db_mssql: MSSQLResource,
         gsheets: GoogleSheetsResource,
     ):
@@ -273,3 +276,55 @@ def generate_extract_assets(code_location, name, extract_type, timezone):
             )
 
     return assets
+
+
+def build_bigquery_extract_asset(
+    code_location,
+    timezone,
+    dataset_config,
+    file_config,
+    # destination_config,
+    extract_job_config={},
+    op_tags={},
+):
+    now = pendulum.now(tz=timezone)
+
+    dataset_id = dataset_config["dataset_id"]
+
+    file_suffix = file_config["suffix"]
+    file_stem = file_config["stem"].format(
+        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    )
+
+    asset_name = (
+        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_config["stem"])
+        + f"_{file_suffix}"
+    )
+
+    @asset(
+        name=asset_name,
+        key_prefix=[code_location, dataset_id],
+        op_tags=op_tags,
+    )
+    def _asset(context: AssetExecutionContext, db_bigquery: BigQueryResource):
+        dataset_ref = bigquery.DatasetReference(
+            project=db_bigquery.project, dataset_id=f"{code_location}_{dataset_id}"
+        )
+
+        with db_bigquery.get_client() as bq_client:
+            extract_job = bq_client.extract_table(
+                source=dataset_ref.table(table_id=dataset_config["table_id"]),
+                destination_uris=[
+                    (
+                        f"gs://teamster-{code_location}/dagster/{code_location}/"
+                        f"extracts/{dataset_id}/{file_stem}.{file_suffix}"
+                    )
+                ],
+                job_config=bigquery.ExtractJobConfig(**extract_job_config),
+            )
+
+            result = extract_job.result()
+
+        context.log.info(result)
+
+    return _asset
