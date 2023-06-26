@@ -26,14 +26,14 @@ def build_dbt_assets(manifest):
 
 def build_external_source_asset_new(
     code_location,
+    name,
     dbt_package_name,
-    table_name,
     upstream_asset_key,
     group_name,
     manifest,
 ):
     @asset(
-        name=f"src_{dbt_package_name}__{table_name}",
+        name=name,
         key_prefix=[code_location, "dbt", dbt_package_name],
         non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
@@ -55,7 +55,7 @@ def build_external_source_asset_new(
                 "run_operation",
                 "stage_external_sources",
                 "--args",
-                f"{'select': 'src_{dbt_package_name}__{table_name}'}",
+                f"{'select': '{name}'}",
                 "--vars",
                 "'ext_full_refresh: true'",
             ],

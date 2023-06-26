@@ -43,8 +43,8 @@ dbt_assets = build_dbt_assets(manifest=manifest)
 fivetran_source_assets = [
     build_external_source_asset_new(
         code_location=CODE_LOCATION,
+        name="src_" + object_identifier.replace(".", "__"),
         dbt_package_name=object_identifier.split(sep=".")[0],
-        table_name=object_identifier.split(sep=".")[1],
         upstream_asset_key=asset_key,
         group_name=asset_key.path[1],
         manifest=manifest,
@@ -57,8 +57,8 @@ fivetran_source_assets = [
 gsheet_source_assets = [
     build_external_source_asset_new(
         code_location=CODE_LOCATION,
+        name="src_" + asset.key.path[-1],
         dbt_package_name=asset.key.path[-1].split("__")[0],
-        table_name=f"src_{asset.key.path[-1]}",
         upstream_asset_key=asset.key,
         group_name=asset.key.path[-1].split("__")[0],
         manifest=manifest,
