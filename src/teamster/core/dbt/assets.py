@@ -1,6 +1,13 @@
 import json
 
-from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    AssetOut,
+    AssetsDefinition,
+    asset,
+    multi_asset,
+)
 from dagster_dbt import load_assets_from_dbt_manifest
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtCli, DbtCliClientResource
@@ -64,12 +71,19 @@ def build_staging_asset_from_source(
     code_location,
     table_name,
     dbt_package_name,
-    upstream_asset_key,
+    upstream_asset_key: AssetKey,
     group_name,
 ):
-    @asset(
-        name=f"stg_{table_name}",
-        key_prefix=[code_location, "dbt", dbt_package_name],
+    @multi_asset(
+        outs={
+            f"src_{table_name}": AssetOut(
+                key_prefix=[code_location, "dbt", dbt_package_name]
+            ),
+            f"stg_{table_name}": AssetOut(
+                key_prefix=[code_location, "dbt", dbt_package_name]
+            ),
+        },
+        name=f"{upstream_asset_key.to_python_identifier()}__dbt",
         non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
