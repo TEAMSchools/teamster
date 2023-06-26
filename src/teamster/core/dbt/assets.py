@@ -14,7 +14,7 @@ from dagster_dbt.cli import DbtCli, DbtCliClientResource
 from dagster_gcp import BigQueryResource
 
 
-def build_dbt_assets(manifest):
+def build_dbt_assets(manifest, select="fqn:*", exclude=None):
     @dbt_assets(manifest=manifest)
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCli):
         dbt_run = dbt_cli.cli(args=["build"], manifest=manifest, context=context)
