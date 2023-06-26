@@ -110,6 +110,8 @@ def build_staging_asset_from_source(
             args=[
                 "run-operation",
                 "stage_external_sources",
+                "--project-dir",
+                dbt_cli.project_dir,
                 "--args",
                 f"{'select': '{source_model_name}'}",
                 "--vars",
