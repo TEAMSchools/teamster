@@ -38,7 +38,7 @@ with open(file=manifest_path) as f:
 
 manifest = CustomizedDbtManifest.read(path=manifest_path)
 
-dbt_assets = build_dbt_assets(manifest=manifest)
+dbt_assets = build_dbt_assets(manifest=manifest, select=CODE_LOCATION)
 
 fivetran_source_assets = [
     build_external_source_asset_new(
