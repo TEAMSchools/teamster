@@ -4,7 +4,7 @@ import pathlib
 import re
 
 import pendulum
-from dagster import AssetExecutionContext, asset, config_from_files
+from dagster import AssetExecutionContext, AssetKey, asset, config_from_files
 from dagster_gcp import BigQueryResource
 from google.cloud import bigquery
 from pandas import DataFrame
@@ -290,6 +290,7 @@ def build_bigquery_extract_asset(
     now = pendulum.now(tz=timezone)
 
     dataset_id = dataset_config["dataset_id"]
+    table_id = dataset_config["table_id"]
 
     file_suffix = file_config["suffix"]
     file_stem = file_config["stem"].format(
@@ -304,6 +305,7 @@ def build_bigquery_extract_asset(
     @asset(
         name=asset_name,
         key_prefix=[code_location, "extracts", destination_config["name"]],
+        non_argument_deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
     )
     def _asset(context: AssetExecutionContext, db_bigquery: BigQueryResource):
@@ -313,7 +315,7 @@ def build_bigquery_extract_asset(
 
         with db_bigquery.get_client() as bq_client:
             extract_job = bq_client.extract_table(
-                source=dataset_ref.table(table_id=dataset_config["table_id"]),
+                source=dataset_ref.table(table_id=table_id),
                 destination_uris=[
                     (
                         f"gs://teamster-{code_location}/dagster/{code_location}/"
