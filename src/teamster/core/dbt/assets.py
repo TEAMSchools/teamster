@@ -5,6 +5,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    Output,
     asset,
     multi_asset,
 )
@@ -21,9 +22,7 @@ def build_dbt_assets(manifest, select="fqn:*", exclude=None):
 
         yield from dbt_run.stream()
 
-        # context.log.info(dbt_run.get_artifact("run_results.json"))
-
-        return
+        return Output(value=None)
 
     return _assets
 
@@ -69,9 +68,7 @@ def build_external_source_asset_new(
 
         yield from dbt_run_operation.stream()
 
-        # context.log.info(dbt_run_operation.get_artifact("run_results.json"))
-
-        return
+        return Output(value=None)
 
     return _asset
 
