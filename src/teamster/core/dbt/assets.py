@@ -15,7 +15,7 @@ from dagster_gcp import BigQueryResource
 
 
 def build_dbt_assets(manifest):
-    @dbt_assets(manifest=manifest, exclude="tag:dagster")
+    @dbt_assets(manifest=manifest)
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCli):
         yield from dbt_cli.cli(
             args=["build"], manifest=manifest, context=context
