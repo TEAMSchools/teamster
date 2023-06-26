@@ -24,7 +24,57 @@ def build_dbt_assets(manifest):
     return _assets
 
 
-def build_staging_assets_from_source(
+def build_external_source_asset_new(
+    manifest,
+    code_location,
+    table_name,
+    dbt_package_name,
+    upstream_package_name,
+    group_name,
+):
+    @asset(
+        name=f"src_{dbt_package_name}__{table_name}",
+        key_prefix=[code_location, "dbt", dbt_package_name],
+        non_argument_deps=[
+            AssetKey(
+                [
+                    code_location,
+                    upstream_package_name,
+                    f"{dbt_package_name}__{table_name}",
+                ]
+            )
+        ],
+        compute_kind="dbt",
+        group_name=group_name,
+    )
+    def _asset(
+        context: AssetExecutionContext, dbt_cli: DbtCli, db_bigquery: BigQueryResource
+    ):
+        dataset_name = f"{code_location}_{dbt_package_name}"
+
+        # create BigQuery dataset, if not exists
+        context.log.info(f"Creating dataset {dataset_name}")
+        with db_bigquery.get_client() as bq:
+            bq.create_dataset(dataset=dataset_name, exists_ok=True)
+
+        # stage_external_sources
+        yield from dbt_cli.cli(
+            args=[
+                "run_operation",
+                "stage_external_sources",
+                "--args",
+                f"{'select': 'src_{dbt_package_name}__{table_name}'}",
+                "--vars",
+                "'ext_full_refresh: true'",
+            ],
+            manifest=manifest,
+            context=context,
+        ).stream()
+
+    return _asset
+
+
+def build_staging_asset_from_source(
     manifest,
     code_location,
     table_name,
