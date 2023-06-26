@@ -5,7 +5,7 @@ from dagster import (
     config_from_files,
     load_assets_from_modules,
 )
-from dagster_dbt import DbtCliClientResource
+from dagster_dbt.cli import DbtCli, DbtCliClientResource
 from dagster_gcp import BigQueryResource
 from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
@@ -98,6 +98,7 @@ defs = Definitions(
             project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
             profiles_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
         ),
+        "dbt_cli": DbtCli(project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
