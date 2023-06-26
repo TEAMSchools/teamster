@@ -1,0 +1,10 @@
+assets:
+  - dataset_config:
+      dataset_id: extracts
+      table_id: rpt_idauto__staff_roster
+    extract_job_config:
+      destinationFormat: CSV
+    file_config:
+      stem: AD
+      suffix: csv
+    # destination_config:

@@ -1,6 +1,13 @@
-from teamster.core.datagun.assets import generate_extract_assets
+from dagster import config_from_files
+
+from teamster.core.datagun.assets import (
+    build_bigquery_extract_asset,
+    generate_extract_assets,
+)
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
+
+config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
 
 adp_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
@@ -121,6 +128,15 @@ gsheet_extract_assets = generate_extract_assets(
     timezone=LOCAL_TIMEZONE,
 )
 
+bigquery_extract_assets = [
+    build_bigquery_extract_asset(
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        **a,
+    )
+    for a in config_from_files([f"{config_dir}/bigquery.yaml"])["assets"]
+]
+
 __all__ = [
     *adp_extract_assets,
     *alchemer_extract_assets,
@@ -139,4 +155,5 @@ __all__ = [
     *razkids_extract_assets,
     *read180_extract_assets,
     *whetstone_extract_assets,
+    *bigquery_extract_assets,
 ]
