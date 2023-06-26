@@ -17,9 +17,13 @@ from dagster_gcp import BigQueryResource
 def build_dbt_assets(manifest):
     @dbt_assets(manifest=manifest)
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCli):
-        yield from dbt_cli.cli(
-            args=["build"], manifest=manifest, context=context
-        ).stream()
+        dbt_run = dbt_cli.cli(args=["build"], manifest=manifest, context=context)
+
+        yield from dbt_run.stream()
+
+        context.log.info(dbt_run.get_artifact("run_results.json"))
+
+        return
 
     return _assets
 
@@ -50,7 +54,7 @@ def build_external_source_asset_new(
             bq.create_dataset(dataset=dataset_name, exists_ok=True)
 
         # stage_external_sources
-        yield from dbt_cli.cli(
+        dbt_run_operation = dbt_cli.cli(
             args=[
                 "run_operation",
                 "stage_external_sources",
@@ -61,7 +65,13 @@ def build_external_source_asset_new(
             ],
             manifest=manifest,
             context=context,
-        ).stream()
+        )
+
+        yield from dbt_run_operation.stream()
+
+        context.log.info(dbt_run_operation.get_artifact("run_results.json"))
+
+        return
 
     return _asset
 
