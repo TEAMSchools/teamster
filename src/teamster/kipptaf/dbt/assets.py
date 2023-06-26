@@ -1,21 +1,28 @@
 import json
 
-from dagster_dbt import load_assets_from_dbt_manifest
+# from dagster_dbt import load_assets_from_dbt_manifest
+from dagster_dbt.cli import DbtManifest
 
 from teamster.core.dbt.assets import (
+    build_dbt_assets,
     build_external_source_asset_from_key,
-    build_external_source_asset_from_params,
+    build_staging_assets_from_source,
 )
 from teamster.kipptaf import CODE_LOCATION, fivetran, google
 
-with open(file=f"teamster-dbt/{CODE_LOCATION}/target/manifest.json") as f:
+manifest_path = f"teamster-dbt/{CODE_LOCATION}/target/manifest.json"
+manifest = DbtManifest.read(path=manifest_path)
+
+with open(file=manifest_path) as f:
     manifest_json = json.load(f)
 
-dbt_assets = load_assets_from_dbt_manifest(
-    manifest_json=manifest_json,
-    key_prefix=[CODE_LOCATION, "dbt"],
-    source_key_prefix=[CODE_LOCATION, "dbt"],
-)
+
+# dbt_assets = load_assets_from_dbt_manifest(
+#     manifest_json=manifest_json,
+#     key_prefix=[CODE_LOCATION, "dbt"],
+#     source_key_prefix=[CODE_LOCATION, "dbt"],
+# )
+dbt_assets = build_dbt_assets(manifest=manifest)
 
 fivetran_source_assets = [
     build_external_source_asset_from_key(asset_key=asset_key)
@@ -25,8 +32,9 @@ fivetran_source_assets = [
 ]
 
 gsheet_source_assets = [
-    build_external_source_asset_from_params(
-        code_location=asset.key.path[0],
+    build_staging_assets_from_source(
+        manifest=manifest,
+        code_location=CODE_LOCATION,
         table_name=asset.key.path[-1].split("__")[1],
         dbt_package_name=asset.key.path[-1].split("__")[0],
         upstream_package_name=asset.key.path[1],
@@ -36,7 +44,7 @@ gsheet_source_assets = [
 ]
 
 __all__ = [
-    *dbt_assets,
+    dbt_assets,
     *fivetran_source_assets,
     *gsheet_source_assets,
 ]
