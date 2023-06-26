@@ -1,13 +1,6 @@
 import json
 
-from dagster import (
-    AssetExecutionContext,
-    AssetIn,
-    AssetKey,
-    AssetsDefinition,
-    Output,
-    asset,
-)
+from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, Output, asset
 from dagster_dbt import load_assets_from_dbt_manifest
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtCli, DbtCliClientResource
@@ -36,13 +29,7 @@ def build_external_source_asset_new(
         name=f"src_{dbt_package_name}__{table_name}",
         key_prefix=[code_location, "dbt", dbt_package_name],
         non_argument_deps=[
-            AssetKey(
-                [
-                    code_location,
-                    upstream_package_name,
-                    f"{dbt_package_name}__{table_name}",
-                ]
-            )
+            AssetKey([code_location, upstream_package_name, table_name])
         ],
         compute_kind="dbt",
         group_name=group_name,
@@ -86,13 +73,7 @@ def build_staging_asset_from_source(
         name=f"stg_{dbt_package_name}__{table_name}",
         key_prefix=[code_location, "dbt", dbt_package_name],
         non_argument_deps=[
-            AssetKey(
-                [
-                    code_location,
-                    upstream_package_name,
-                    f"{dbt_package_name}__{table_name}",
-                ]
-            )
+            AssetKey([code_location, upstream_package_name, table_name])
         ],
         compute_kind="dbt",
         group_name=group_name,
@@ -137,7 +118,7 @@ def build_external_source_asset(asset_definition: AssetsDefinition):
     @asset(
         name=f"src_{package_name}__{asset_name}",
         key_prefix=[code_location, "dbt", package_name],
-        ins={"upstream": AssetIn(key=[code_location, package_name, asset_name])},
+        non_argument_deps=[AssetKey([code_location, package_name, asset_name])],
         compute_kind="dbt",
         group_name="staging",
     )
