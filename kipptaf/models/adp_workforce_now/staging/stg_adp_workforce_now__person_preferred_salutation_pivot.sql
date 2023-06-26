@@ -1,3 +1,5 @@
+{{ config(tags="dagster") }}
+
 select
     worker_id,
     legal_name as legal_name,
