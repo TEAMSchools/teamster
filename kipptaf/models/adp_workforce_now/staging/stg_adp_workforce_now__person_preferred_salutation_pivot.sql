@@ -8,11 +8,7 @@ select
     preferred as preferred,
     alternate_preferred_name as alternate_preferred_name,
 from
-    {{
-        source(
-            "adp_workforce_now", "src_adp_workforce_now__person_preferred_salutation"
-        )
-    }} pivot (
+    {{ source("adp_workforce_now", "person_preferred_salutation") }} pivot (
         max(salutation) for `type` in (
             'legal_name',
             'birth_name',

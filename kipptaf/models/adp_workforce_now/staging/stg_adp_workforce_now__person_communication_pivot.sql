@@ -7,11 +7,11 @@ with
                 relations=[
                     source(
                         "adp_workforce_now",
-                        "src_adp_workforce_now__person_communication",
+                        "person_communication",
                     ),
                     source(
                         "adp_workforce_now",
-                        "src_adp_workforce_now__business_communication",
+                        "business_communication",
                     ),
                 ],
                 include=[
