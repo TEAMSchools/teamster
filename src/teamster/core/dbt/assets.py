@@ -56,10 +56,10 @@ def build_external_source_asset_new(
         # stage_external_sources
         dbt_run_operation = dbt_cli.cli(
             args=[
-                "run_operation",
+                "run-operation",
                 "stage_external_sources",
                 "--args",
-                f"{{'select': '{name}'}}",
+                f"'select': '{name}'",
                 "--vars",
                 "'ext_full_refresh: true'",
             ],
@@ -69,7 +69,7 @@ def build_external_source_asset_new(
 
         yield from dbt_run_operation.stream()
 
-        return Output(value=None)
+        return Output(value=dbt_run_operation)
 
     return _asset
 
@@ -108,7 +108,7 @@ def build_staging_asset_from_source(
         # stage_external_sources
         yield from dbt_cli.cli(
             args=[
-                "run_operation",
+                "run-operation",
                 "stage_external_sources",
                 "--args",
                 f"{'select': '{source_model_name}'}",
