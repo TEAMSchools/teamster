@@ -1,27 +1,21 @@
 {%- set src_work_assignment_history = source(
-    "adp_workforce_now", "src_adp_workforce_now__work_assignment_history"
+    "adp_workforce_now", "work_assignment_history"
 ) -%}
-{%- set src_worker = source("adp_workforce_now", "src_adp_workforce_now__worker") -%}
-{%- set src_worker_report_to = source(
-    "adp_workforce_now", "src_adp_workforce_now__worker_report_to"
-) -%}
-{%- set src_worker_group = source(
-    "adp_workforce_now", "src_adp_workforce_now__worker_group"
-) -%}
-{%- set src_groups = source("adp_workforce_now", "src_adp_workforce_now__groups") -%}
+{%- set src_worker = source("adp_workforce_now", "worker") -%}
+{%- set src_worker_report_to = source("adp_workforce_now", "worker_report_to") -%}
+{%- set src_worker_group = source("adp_workforce_now", "worker_group") -%}
+{%- set src_groups = source("adp_workforce_now", "groups") -%}
 {%- set src_worker_base_remuneration = source(
-    "adp_workforce_now", "src_adp_workforce_now__worker_base_remuneration"
+    "adp_workforce_now", "worker_base_remuneration"
 ) -%}
 {%- set src_worker_additional_remuneration = source(
     "adp_workforce_now",
-    "src_adp_workforce_now__worker_additional_remuneration",
+    "worker_additional_remuneration",
 ) -%}
 {%- set src_worker_assigned_location = source(
-    "adp_workforce_now", "src_adp_workforce_now__worker_assigned_location"
+    "adp_workforce_now", "worker_assigned_location"
 ) -%}
-{%- set src_location = source(
-    "adp_workforce_now", "src_adp_workforce_now__location"
-) -%}
+{%- set src_location = source("adp_workforce_now", "location") -%}
 {%- set ref_worker_organizational_unit = ref(
     "stg_adp_workforce_now__worker_organizational_unit_pivot"
 ) -%}

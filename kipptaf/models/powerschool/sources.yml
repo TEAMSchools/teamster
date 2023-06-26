@@ -65,7 +65,6 @@ sources:
       - name: stg_powerschool__u_def_ext_students
       - name: stg_powerschool__u_studentsuserfields
       - name: stg_powerschool__users
-
   - name: kippcamden_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
@@ -130,7 +129,6 @@ sources:
       - name: stg_powerschool__u_def_ext_students
       - name: stg_powerschool__u_studentsuserfields
       - name: stg_powerschool__users
-
   - name: kippmiami_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc

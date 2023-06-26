@@ -21,10 +21,7 @@
 {%- endif -%}
 
 with
-    using_clause as (
-        select id
-        from {{ source("adp_workforce_now", "src_adp_workforce_now__worker") }}
-    ),
+    using_clause as (select id from {{ source("adp_workforce_now", "worker") }}),
 
     updates as (
         select id
