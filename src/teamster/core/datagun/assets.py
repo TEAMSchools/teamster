@@ -6,8 +6,7 @@ import re
 import pendulum
 from dagster import AssetExecutionContext, AssetKey, asset, config_from_files
 from dagster_gcp import BigQueryResource
-from dagster_gcp.gcs import GCSResource
-from google.cloud import bigquery
+from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
 
@@ -317,9 +316,9 @@ def build_bigquery_extract_asset(
     )
     def _asset(context: AssetExecutionContext):
         # establish gcs blob
-        gcs: GCSResource = context.resources.gcs
+        gcs: storage.Client = context.resources.gcs
 
-        bucket = gcs.get_client().get_bucket(f"teamster-{code_location}")
+        bucket = gcs.get_bucket(f"teamster-{code_location}")
 
         blob = bucket.blob(
             blob_name=(
