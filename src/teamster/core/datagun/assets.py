@@ -6,6 +6,7 @@ import re
 import pendulum
 from dagster import AssetExecutionContext, AssetKey, asset, config_from_files
 from dagster_gcp import BigQueryResource
+from dagster_gcp.gcs import GCSResource
 from google.cloud import bigquery
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
@@ -293,42 +294,89 @@ def build_bigquery_extract_asset(
     table_id = dataset_config["table_id"]
 
     destination_name = destination_config["name"]
+    destination_path = destination_config.get("path", "")
 
     file_suffix = file_config["suffix"]
-    file_stem = file_config["stem"].format(
+    file_stem = file_config["stem"]
+
+    file_stem_fmt = file_stem.format(
         today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
     )
 
+    file_name = f"{file_stem_fmt}.{file_suffix}"
     asset_name = (
-        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_config["stem"])
-        + f"_{file_suffix}"
+        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
     )
 
     @asset(
         name=asset_name,
         key_prefix=[code_location, "extracts", destination_name],
         non_argument_deps=[AssetKey([code_location, dataset_id, table_id])],
+        required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
     )
-    def _asset(context: AssetExecutionContext, db_bigquery: BigQueryResource):
+    def _asset(context: AssetExecutionContext):
+        # establish gcs blob
+        gcs: GCSResource = context.resources.gcs
+
+        bucket = gcs.get_client().get_bucket(f"teamster-{code_location}")
+
+        blob = bucket.blob(
+            blob_name=(
+                f"dagster/{code_location}/extracts/data/{destination_name}/{file_name}"
+            )
+        )
+
+        # execute bq extract job
+        db_bigquery: BigQueryResource = context.resources.db_bigquery
+
         dataset_ref = bigquery.DatasetReference(
             project=db_bigquery.project, dataset_id=f"{code_location}_{dataset_id}"
         )
 
         with db_bigquery.get_client() as bq_client:
-            extract_job = bq_client.extract_view(
+            extract_job = bq_client.extract_table(
                 source=dataset_ref.table(table_id=table_id),
-                destination_uris=[
-                    (
-                        f"gs://teamster-{code_location}/dagster/{code_location}/"
-                        f"extracts/data/{destination_name}/{file_stem}.{file_suffix}"
-                    )
-                ],
+                destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
                 job_config=bigquery.ExtractJobConfig(**extract_job_config),
             )
 
-            result = extract_job.result()
+            extract_job.result()
 
-        context.log.info(result)
+        # transfer via sftp
+        ssh: SSHConfigurableResource = getattr(
+            context.resources, f"ssh_{destination_name}"
+        )
+
+        conn = ssh.get_connection()
+
+        with conn.open_sftp() as sftp:
+            sftp.chdir(".")
+            cwd_path = pathlib.Path(sftp.getcwd())
+
+            if destination_path != "":
+                destination_filepath = cwd_path / destination_path / file_name
+            else:
+                destination_filepath = cwd_path / file_name
+
+            context.log.debug(destination_filepath)
+
+            # confirm destination_filepath dir exists or create it
+            if str(destination_filepath.parent) != "/":
+                try:
+                    sftp.stat(str(destination_filepath.parent))
+                except IOError:
+                    path = pathlib.Path("/")
+                    for part in destination_filepath.parent.parts:
+                        path = path / part
+                        try:
+                            sftp.stat(str(path))
+                        except IOError:
+                            context.log.info(f"Creating directory: {path}")
+                            sftp.mkdir(path=str(path))
+
+            context.log.info(f"Saving file to {destination_filepath}")
+            with sftp.open(filename=str(destination_filepath), mode="w") as f:
+                blob.download_to_file(file_obj=f)
 
     return _asset
