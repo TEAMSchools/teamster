@@ -72,13 +72,6 @@ gam_extract_assets = generate_extract_assets(
     timezone=LOCAL_TIMEZONE,
 )
 
-idauto_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="idauto",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
 illuminate_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="illuminate",
@@ -128,13 +121,13 @@ gsheet_extract_assets = generate_extract_assets(
     timezone=LOCAL_TIMEZONE,
 )
 
-bigquery_extract_assets = [
+idauto_extract_assets = [
     build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION,
         timezone=LOCAL_TIMEZONE,
         **a,
     )
-    for a in config_from_files([f"{config_dir}/idauto_v2.yaml"])["assets"]
+    for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
 ]
 
 __all__ = [
@@ -145,15 +138,11 @@ __all__ = [
     *coupa_extract_assets,
     *deanslist_extract_assets,
     *egencia_extract_assets,
-    *fpodms_extract_assets,
     *gam_extract_assets,
     *gsheet_extract_assets,
     *idauto_extract_assets,
     *illuminate_extract_assets,
     *littlesis_extract_assets,
-    *njdoe_extract_assets,
-    *razkids_extract_assets,
     *read180_extract_assets,
     *whetstone_extract_assets,
-    *bigquery_extract_assets,
 ]

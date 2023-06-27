@@ -1,15 +1,10 @@
-key_prefix:
-  - kipptaf
-  - datagun
-  - idauto
 assets:
-  - asset_name: AD_csv
-    query_config:
+  - query_config:
       type: schema
       value:
         table:
-          name: idauto_staff_roster
-          schema: extracts
+          name: rpt_idauto__staff_roster
+          schema: kipptaf_extracts
     file_config:
       stem: AD
       suffix: csv
@@ -17,4 +12,4 @@ assets:
       format:
         quoting: 1
     destination_config:
-      name: kipptaf
+      name: idauto
