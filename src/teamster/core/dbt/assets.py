@@ -67,10 +67,7 @@ def build_external_source_asset_new(
             context=context,
         )
 
-        # yield from dbt_run_operation.stream()
-
-        for event in dbt_run_operation.stream_raw_events():
-            context.log.info(event)
+        yield from dbt_run_operation.stream_raw_events()
 
         if dbt_run_operation.is_successful():
             return Output(value=True)
@@ -117,9 +114,9 @@ def build_staging_asset_from_source(
                 "run-operation",
                 "stage_external_sources",
                 "--args",
-                rf"'select: {dbt_package_name}.{source_model_name}'",
+                json.dumps({"select": f"{dbt_package_name}.{source_model_name}"}),
                 "--vars",
-                r"'ext_full_refresh: true'",
+                json.dumps({"ext_full_refresh": True}),
             ],
             manifest=manifest,
             context=context,
