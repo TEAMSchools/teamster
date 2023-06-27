@@ -196,6 +196,11 @@ defs = Definitions(
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
+        "ssh_idauto": SSHConfigurableResource(
+            remote_host="sftp.kippnj.org",
+            username=EnvVar("KTAF_SFTP_USERNAME"),
+            password=EnvVar("KTAF_SFTP_PASSWORD"),
+        ),
         "ssh_littlesis": SSHConfigurableResource(
             remote_host="upload.littlesis.app",
             username=EnvVar("LITTLESIS_SFTP_USERNAME"),
