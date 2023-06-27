@@ -65,7 +65,8 @@ def build_external_source_asset_new(
             context=context,
         )
 
-        yield from dbt_run_operation.stream_raw_events()
+        for event in dbt_run_operation.stream_raw_events():
+            context.log.info(event)
 
         if dbt_run_operation.is_successful():
             return Output(value=True)
