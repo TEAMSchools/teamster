@@ -22,9 +22,9 @@ assets = load_assets_from_fivetran_instance(
     ),
     key_prefix=[CODE_LOCATION],
     connector_filter=(lambda meta: meta.connector_id in FIVETRAN_CONNECTOR_IDS),
-    schema_files=[
-        "src/teamster/core/fivetran/schema/jinx_credulous.json",
-        "src/teamster/core/fivetran/schema/genuine_describing.json",
+    connector_files=[
+        f"src/teamster/core/fivetran/schema/{connector_id}.pickle"
+        for connector_id in FIVETRAN_CONNECTOR_IDS
     ],
 )
 
