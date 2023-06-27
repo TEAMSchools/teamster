@@ -5,7 +5,6 @@ import re
 
 import pendulum
 from dagster import AssetExecutionContext, AssetKey, asset, config_from_files
-from dagster_gcp import BigQueryResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
@@ -327,13 +326,11 @@ def build_bigquery_extract_asset(
         )
 
         # execute bq extract job
-        db_bigquery: BigQueryResource = context.resources.db_bigquery
+        with context.resources.db_bigquery as bq_client:
+            dataset_ref = bigquery.DatasetReference(
+                project=bq_client.project, dataset_id=f"{code_location}_{dataset_id}"
+            )
 
-        dataset_ref = bigquery.DatasetReference(
-            project=db_bigquery.project, dataset_id=f"{code_location}_{dataset_id}"
-        )
-
-        with db_bigquery.get_client() as bq_client:
             extract_job = bq_client.extract_table(
                 source=dataset_ref.table(table_id=table_id),
                 destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
