@@ -5,6 +5,7 @@ import re
 
 import pendulum
 from dagster import AssetExecutionContext, AssetKey, asset, config_from_files
+from dagster_gcp import BigQueryResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
@@ -326,18 +327,19 @@ def build_bigquery_extract_asset(
         )
 
         # execute bq extract job
-        with context.resources.db_bigquery() as bq_client:
-            dataset_ref = bigquery.DatasetReference(
-                project=bq_client.project, dataset_id=f"{code_location}_{dataset_id}"
-            )
+        bq_client = context.resources.db_bigquery
 
-            extract_job = bq_client.extract_table(
-                source=dataset_ref.table(table_id=table_id),
-                destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
-                job_config=bigquery.ExtractJobConfig(**extract_job_config),
-            )
+        dataset_ref = bigquery.DatasetReference(
+            project=bq_client.project, dataset_id=f"{code_location}_{dataset_id}"
+        )
 
-            extract_job.result()
+        extract_job = bq_client.extract_table(
+            source=dataset_ref.table(table_id=table_id),
+            destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
+            job_config=bigquery.ExtractJobConfig(**extract_job_config),
+        )
+
+        extract_job.result()
 
         # transfer via sftp
         ssh: SSHConfigurableResource = getattr(
