@@ -17,7 +17,7 @@ from .schema import ORACLE_AVRO_SCHEMA_TYPES
 
 class SqlAlchemyEngineResource(ConfigurableResource):
     dialect: str
-    driver: str
+    driver: str = None
     username: str = None
     password: str = None
     host: str = None

@@ -1,3 +1,4 @@
+import gc
 import gzip
 import json
 import pathlib
@@ -15,7 +16,7 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
-def construct_sql(query_type, query_value, now):
+def construct_query(query_type, query_value, now):
     if query_type == "text":
         return text(query_value)
     elif query_type == "file":
@@ -32,76 +33,93 @@ def construct_sql(query_type, query_value, now):
         )
 
 
-def transform(data, file_suffix, file_encoding=None, file_format=None):
+def transform_data(data, file_suffix, file_encoding=None, file_format=None):
     if file_suffix == "json":
-        return json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
+        transformed_data = json.dumps(obj=data, cls=CustomJSONEncoder).encode(
+            file_encoding
+        )
+        del data
+        gc.collect()
     elif file_suffix == "json.gz":
-        return gzip.compress(
+        transformed_data = gzip.compress(
             json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
+        del data
+        gc.collect()
     elif file_suffix in ["csv", "txt", "tsv"]:
-        return (
+        transformed_data = (
             DataFrame(data=data)
             .to_csv(index=False, encoding=file_encoding, **file_format)
             .encode(file_encoding)
         )
+        del data
+        gc.collect()
     elif file_suffix == "gsheet":
         df = DataFrame(data=data)
+        del data
+        gc.collect()
 
         df_json = df.to_json(orient="split", date_format="iso", index=False)
+        del df
+        gc.collect()
 
-        df_dict = json.loads(df_json)
+        transformed_data = json.loads(df_json)
+        del df_json
+        gc.collect()
 
-        df_dict["shape"] = df.shape
+        transformed_data["shape"] = df.shape
 
-        return df_dict
+    return transformed_data
 
 
-def load_sftp(context: AssetExecutionContext, data, file_name, destination_config):
-    destination_name = destination_config.get("name")
-    destination_path = destination_config.get("path", "")
-
-    # context.resources is a namedtuple
-    ssh: SSHConfigurableResource = getattr(context.resources, f"ssh_{destination_name}")
-
+def load_sftp(
+    context: AssetExecutionContext,
+    ssh: SSHConfigurableResource,
+    data,
+    file_name,
+    destination_path,
+):
     conn = ssh.get_connection()
+
     with conn.open_sftp() as sftp:
         sftp.chdir(".")
+        cwd_path = pathlib.Path(sftp.getcwd())
 
         if destination_path != "":
-            destination_filepath = (
-                pathlib.Path(sftp.getcwd()) / destination_path / file_name
-            )
+            destination_filepath = cwd_path / destination_path / file_name
         else:
-            destination_filepath = pathlib.Path(sftp.getcwd()) / file_name
+            destination_filepath = cwd_path / file_name
 
-        # confirm destination_filepath dir exists or create it
         context.log.debug(destination_filepath)
 
-        destination_dir = destination_filepath.parent
-        if str(destination_dir) != "/":
+        # confirm destination_filepath dir exists or create it
+        if str(destination_filepath.parent) != "/":
             try:
-                sftp.stat(str(destination_dir))
+                sftp.stat(str(destination_filepath.parent))
             except IOError:
                 path = pathlib.Path("/")
-                for dir_parts in destination_dir.parts:
-                    path = path / dir_parts
+                for part in destination_filepath.parent.parts:
+                    path = path / part
                     try:
                         sftp.stat(str(path))
                     except IOError:
                         context.log.info(f"Creating directory: {path}")
                         sftp.mkdir(path=str(path))
 
-        # if destination_path given, chdir after confirming
-        if destination_path:
-            sftp.chdir(str(destination_dir))
-
         context.log.info(f"Saving file to {destination_filepath}")
-        with sftp.file(filename=file_name, mode="w") as f:
-            f.write(data)
+        if isinstance(data, storage.Blob):
+            with sftp.open(filename=str(destination_filepath), mode="w") as f:
+                data.download_to_file(file_obj=f)
+        else:
+            # if destination_path given, chdir after confirming
+            if destination_path:
+                sftp.chdir(str(destination_filepath.parent))
+
+            with sftp.file(filename=file_name, mode="w") as f:
+                f.write(data)
 
 
-def sftp_extract_asset_factory(
+def build_sql_query_sftp_asset(
     asset_name,
     key_prefix,
     query_config,
@@ -112,6 +130,21 @@ def sftp_extract_asset_factory(
 ):
     now = pendulum.now(tz=timezone)
 
+    destination_name = destination_config["name"]
+    destination_path = destination_config.get("path", "")
+
+    file_suffix = file_config["suffix"]
+    file_stem = file_config["stem"]
+
+    file_stem_fmt = file_stem.format(
+        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    )
+
+    file_name = f"{file_stem_fmt}.{file_suffix}"
+    # asset_name = (
+    #     re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
+    # )
+
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
@@ -119,12 +152,7 @@ def sftp_extract_asset_factory(
         op_tags=op_tags,
     )
     def sftp_extract(context):
-        file_suffix = file_config["suffix"]
-        file_stem = file_config["stem"].format(
-            today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-        )
-
-        sql = construct_sql(
+        sql = construct_query(
             query_type=query_config["type"], query_value=query_config["value"], now=now
         )
 
@@ -136,7 +164,7 @@ def sftp_extract_asset_factory(
 
         if data:
             context.log.info(f"Transforming data to {file_suffix}")
-            transformed_data = transform(
+            transformed_data = transform_data(
                 data=data,
                 file_suffix=file_suffix,
                 file_encoding=file_config.get("encoding", "utf-8"),
@@ -145,12 +173,156 @@ def sftp_extract_asset_factory(
 
             load_sftp(
                 context=context,
+                ssh=getattr(context.resources, f"ssh_{destination_name}"),
                 data=transformed_data,
-                file_name=f"{file_stem}.{file_suffix}",
-                destination_config=destination_config,
+                file_name=file_name,
+                destination_path=destination_path,
             )
 
     return sftp_extract
+
+
+def build_bigquery_query_sftp_asset(
+    code_location,
+    timezone,
+    query_config,
+    file_config,
+    destination_config,
+    op_tags={},
+):
+    now = pendulum.now(tz=timezone)
+
+    destination_name = destination_config["name"]
+    destination_path = destination_config.get("path", "")
+
+    file_suffix = file_config["suffix"]
+    file_stem = file_config["stem"]
+
+    file_stem_fmt = file_stem.format(
+        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    )
+
+    file_name = f"{file_stem_fmt}.{file_suffix}"
+    asset_name = (
+        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
+    )
+
+    @asset(
+        name=asset_name,
+        key_prefix=[code_location, "extracts", destination_name],
+        non_argument_deps=[
+            AssetKey(
+                [code_location, "extracts", query_config["value"]["table"]["name"]]
+            )
+        ],
+        required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
+        op_tags=op_tags,
+    )
+    def _asset(context: AssetExecutionContext):
+        query = construct_query(
+            query_type=query_config["type"], query_value=query_config["value"], now=now
+        )
+
+        db_bigquery: bigquery.Client = next(context.resources.db_bigquery)
+
+        query_job = db_bigquery.query(query=query)
+
+        data = [dict(row) for row in query_job.result()]
+
+        if data:
+            transformed_data = transform_data(
+                data=data,
+                file_suffix=file_suffix,
+                file_encoding=file_config.get("encoding", "utf-8"),
+                file_format=file_config.get("format", {}),
+            )
+            del data
+            gc.co
+
+            load_sftp(
+                context=context,
+                ssh=getattr(context.resources, f"ssh_{destination_name}"),
+                data=transformed_data,
+                file_name=file_name,
+                destination_path=destination_path,
+            )
+
+    return _asset
+
+
+def build_bigquery_extract_sftp_asset(
+    code_location,
+    timezone,
+    dataset_config,
+    file_config,
+    destination_config,
+    extract_job_config={},
+    op_tags={},
+):
+    now = pendulum.now(tz=timezone)
+
+    dataset_id = dataset_config["dataset_id"]
+    table_id = dataset_config["table_id"]
+
+    destination_name = destination_config["name"]
+    destination_path = destination_config.get("path", "")
+
+    file_suffix = file_config["suffix"]
+    file_stem = file_config["stem"]
+
+    file_stem_fmt = file_stem.format(
+        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    )
+
+    file_name = f"{file_stem_fmt}.{file_suffix}"
+    asset_name = (
+        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
+    )
+
+    @asset(
+        name=asset_name,
+        key_prefix=[code_location, "extracts", destination_name],
+        non_argument_deps=[AssetKey([code_location, dataset_id, table_id])],
+        required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
+        op_tags=op_tags,
+    )
+    def _asset(context: AssetExecutionContext):
+        # establish gcs blob
+        gcs: storage.Client = context.resources.gcs
+
+        bucket = gcs.get_bucket(f"teamster-{code_location}")
+
+        blob = bucket.blob(
+            blob_name=(
+                f"dagster/{code_location}/extracts/data/{destination_name}/{file_name}"
+            )
+        )
+
+        # execute bq extract job
+        bq_client = next(context.resources.db_bigquery)
+
+        dataset_ref = bigquery.DatasetReference(
+            project=bq_client.project, dataset_id=f"{code_location}_{dataset_id}"
+        )
+
+        extract_job = bq_client.extract_table(
+            source=dataset_ref.table(table_id=table_id),
+            destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
+            job_config=bigquery.ExtractJobConfig(**extract_job_config),
+        )
+
+        extract_job.result()
+
+        # transfer via sftp
+        load_sftp(
+            context=context,
+            ssh=getattr(context.resources, f"ssh_{destination_name}"),
+            data=blob,
+            file_name=file_name,
+            destination_path=destination_path,
+        )
+
+    return _asset
 
 
 def gsheet_extract_asset_factory(
@@ -173,7 +345,7 @@ def gsheet_extract_asset_factory(
             file_stem = "GS" + file_stem
 
         data = db_mssql.engine.execute_query(
-            query=construct_sql(
+            query=construct_query(
                 query_type=query_config["type"],
                 query_value=query_config["value"],
                 now=now,
@@ -186,7 +358,7 @@ def gsheet_extract_asset_factory(
             return None
 
         context.log.info("Transforming data to gsheet")
-        transformed_data = transform(data=data, file_suffix="gsheet")
+        transformed_data = transform_data(data=data, file_suffix="gsheet")
 
         context.log.info(f"Opening: {file_stem}")
         spreadsheet = gsheets.open_or_create_sheet(title=file_stem, folder_id=folder_id)
@@ -260,7 +432,7 @@ def generate_extract_assets(code_location, name, extract_type, timezone):
     for ac in cfg["assets"]:
         if extract_type == "sftp":
             assets.append(
-                sftp_extract_asset_factory(
+                build_sql_query_sftp_asset(
                     key_prefix=cfg["key_prefix"], timezone=timezone, **ac
                 )
             )
@@ -275,105 +447,3 @@ def generate_extract_assets(code_location, name, extract_type, timezone):
             )
 
     return assets
-
-
-def build_bigquery_extract_asset(
-    code_location,
-    timezone,
-    dataset_config,
-    file_config,
-    destination_config,
-    extract_job_config={},
-    op_tags={},
-):
-    now = pendulum.now(tz=timezone)
-
-    dataset_id = dataset_config["dataset_id"]
-    table_id = dataset_config["table_id"]
-
-    destination_name = destination_config["name"]
-    destination_path = destination_config.get("path", "")
-
-    file_suffix = file_config["suffix"]
-    file_stem = file_config["stem"]
-
-    file_stem_fmt = file_stem.format(
-        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    )
-
-    file_name = f"{file_stem_fmt}.{file_suffix}"
-    asset_name = (
-        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
-    )
-
-    @asset(
-        name=asset_name,
-        key_prefix=[code_location, "extracts", destination_name],
-        non_argument_deps=[AssetKey([code_location, dataset_id, table_id])],
-        required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
-        op_tags=op_tags,
-    )
-    def _asset(context: AssetExecutionContext):
-        # establish gcs blob
-        gcs: storage.Client = context.resources.gcs
-
-        bucket = gcs.get_bucket(f"teamster-{code_location}")
-
-        blob = bucket.blob(
-            blob_name=(
-                f"dagster/{code_location}/extracts/data/{destination_name}/{file_name}"
-            )
-        )
-
-        # execute bq extract job
-        bq_client = next(context.resources.db_bigquery)
-
-        dataset_ref = bigquery.DatasetReference(
-            project=bq_client.project, dataset_id=f"{code_location}_{dataset_id}"
-        )
-
-        extract_job = bq_client.extract_table(
-            source=dataset_ref.table(table_id=table_id),
-            destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
-            job_config=bigquery.ExtractJobConfig(**extract_job_config),
-        )
-
-        extract_job.result()
-
-        # transfer via sftp
-        ssh: SSHConfigurableResource = getattr(
-            context.resources, f"ssh_{destination_name}"
-        )
-
-        conn = ssh.get_connection()
-
-        with conn.open_sftp() as sftp:
-            sftp.chdir(".")
-            cwd_path = pathlib.Path(sftp.getcwd())
-
-            if destination_path != "":
-                destination_filepath = cwd_path / destination_path / file_name
-            else:
-                destination_filepath = cwd_path / file_name
-
-            context.log.debug(destination_filepath)
-
-            # confirm destination_filepath dir exists or create it
-            if str(destination_filepath.parent) != "/":
-                try:
-                    sftp.stat(str(destination_filepath.parent))
-                except IOError:
-                    path = pathlib.Path("/")
-                    for part in destination_filepath.parent.parts:
-                        path = path / part
-                        try:
-                            sftp.stat(str(path))
-                        except IOError:
-                            context.log.info(f"Creating directory: {path}")
-                            sftp.mkdir(path=str(path))
-
-            context.log.info(f"Saving file to {destination_filepath}")
-            with sftp.open(filename=str(destination_filepath), mode="w") as f:
-                blob.download_to_file(file_obj=f)
-
-    return _asset

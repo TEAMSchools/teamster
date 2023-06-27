@@ -1,11 +1,15 @@
 assets:
-  - dataset_config:
-      dataset_id: extracts
-      table_id: rpt_idauto__staff_roster
-    extract_job_config:
-      destination_format: CSV
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_idauto__staff_roster
+          schema: kipptaf_extracts
     file_config:
       stem: AD_bigquery
       suffix: csv
+      encoding: latin1
+      format:
+        quoting: 1
     destination_config:
       name: idauto

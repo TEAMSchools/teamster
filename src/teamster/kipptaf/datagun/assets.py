@@ -1,7 +1,7 @@
 from dagster import config_from_files
 
 from teamster.core.datagun.assets import (
-    build_bigquery_extract_asset,
+    build_bigquery_query_sftp_asset,
     generate_extract_assets,
 )
 
@@ -129,7 +129,7 @@ gsheet_extract_assets = generate_extract_assets(
 )
 
 bigquery_extract_assets = [
-    build_bigquery_extract_asset(
+    build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION,
         timezone=LOCAL_TIMEZONE,
         **a,
