@@ -1,4 +1,5 @@
 import argparse
+import json
 import pickle
 
 from dagster import EnvVar, build_resources
@@ -37,7 +38,11 @@ def main(args):
         connector = [conn for conn in groups if conn["id"] == connector_id][0]
         # print(connector)
 
-        schemas = instance.make_request("GET", f"connectors/{connector_id}/schemas")
+        if args.schema:
+            with open(file=args.schema, mode="r") as fp:
+                schemas = json.load(fp=fp)
+        else:
+            schemas = instance.make_request("GET", f"connectors/{connector_id}/schemas")
         # print(schemas)
 
     metadata = FivetranConnectionMetadata(
@@ -58,5 +63,6 @@ if __name__ == "__main__":
     args = argparse.ArgumentParser()
     args.add_argument("group_id")
     args.add_argument("connector_id")
+    args.add_argument("--schema")
 
     main(args.parse_args())
