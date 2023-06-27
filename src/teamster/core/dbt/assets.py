@@ -5,6 +5,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    Failure,
     Output,
     asset,
     multi_asset,
@@ -68,7 +69,12 @@ def build_external_source_asset_new(
 
         yield from dbt_run_operation.stream()
 
-        return Output(value=True)
+        yield from dbt_run_operation.stream_raw_events()
+
+        if dbt_run_operation.is_successful():
+            return Output(value=True)
+        else:
+            raise Failure()
 
     return _asset
 
