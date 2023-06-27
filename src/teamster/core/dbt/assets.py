@@ -23,8 +23,6 @@ def build_dbt_assets(manifest, select="fqn:*", exclude=None):
 
         yield from dbt_run.stream()
 
-        return Output(value=None)
-
     return _assets
 
 
