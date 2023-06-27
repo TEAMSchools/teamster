@@ -60,16 +60,14 @@ def build_external_source_asset_new(
                 "stage_external_sources",
                 "--args",
                 json.dumps({"select": f"{dbt_package_name}.{name}"}),
-                # rf"'select: {dbt_package_name}.{name}'",
                 "--vars",
                 json.dumps({"ext_full_refresh": True}),
-                # r"'ext_full_refresh: true'",
             ],
             manifest=manifest,
             context=context,
         )
 
-        yield from dbt_run_operation.stream()
+        # yield from dbt_run_operation.stream()
 
         for event in dbt_run_operation.stream_raw_events():
             context.log.info(event)
