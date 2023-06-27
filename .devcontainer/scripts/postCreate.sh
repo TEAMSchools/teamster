@@ -16,12 +16,6 @@ sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y autoremove &&
   sudo apt-get -y clean
 
-# export dev envvars
-export PYTHONDONTWRITEBYTECODE=1
-export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-export GOOGLE_APPLICATION_CREDENTIALS=/workspaces/teamster/env/gcloud_service_account_json
-export DBT_PROFILES_DIR=/workspaces/teamster/.dbt
-
 # create env folder
 mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
