@@ -227,7 +227,7 @@ def build_bigquery_query_sftp_asset(
 
         db_bigquery: bigquery.Client = next(context.resources.db_bigquery)
 
-        query_job = db_bigquery.query(query=query)
+        query_job = db_bigquery.query(query=str(query))
 
         data = [dict(row) for row in query_job.result()]
 
