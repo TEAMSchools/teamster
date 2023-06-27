@@ -326,7 +326,7 @@ def build_bigquery_extract_asset(
         )
 
         # execute bq extract job
-        bq_client = context.resources.db_bigquery
+        bq_client = next(context.resources.db_bigquery)
 
         dataset_ref = bigquery.DatasetReference(
             project=bq_client.project, dataset_id=f"{code_location}_{dataset_id}"
