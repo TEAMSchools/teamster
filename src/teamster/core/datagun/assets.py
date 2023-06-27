@@ -148,6 +148,7 @@ def build_sql_query_sftp_asset(
     @asset(
         name=asset_name,
         key_prefix=key_prefix,
+        metadata={**query_config, **file_config},
         required_resource_keys={"db_mssql", f"ssh_{destination_config['name']}"},
         op_tags=op_tags,
     )
@@ -215,6 +216,7 @@ def build_bigquery_query_sftp_asset(
                 [code_location, "extracts", query_config["value"]["table"]["name"]]
             )
         ],
+        metadata={**query_config, **file_config},
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
     )
