@@ -5,7 +5,7 @@ assets:
     extract_job_config:
       destination_format: CSV
     file_config:
-      stem: AD
+      stem: AD_bigquery
       suffix: csv
     destination_config:
       name: idauto
