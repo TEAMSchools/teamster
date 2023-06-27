@@ -134,7 +134,7 @@ bigquery_extract_assets = [
         timezone=LOCAL_TIMEZONE,
         **a,
     )
-    for a in config_from_files([f"{config_dir}/bigquery.yaml"])["assets"]
+    for a in config_from_files([f"{config_dir}/idauto_v2.yaml"])["assets"]
 ]
 
 __all__ = [
