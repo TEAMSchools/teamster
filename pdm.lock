@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "google-auth"
-version = "2.20.0"
+version = "2.21.0"
 requires_python = ">=3.6"
 summary = "Google Authentication Library"
 dependencies = [
@@ -503,7 +503,7 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-storage"
-version = "2.9.0"
+version = "2.10.0"
 requires_python = ">=3.7"
 summary = "Google Cloud Storage API client library"
 dependencies = [
@@ -1747,9 +1747,9 @@ content_hash = "sha256:ee115a096e2a9a66e18838236e09ed4e6e0aea5340e1dc3e59cef7de8
     {url = "https://files.pythonhosted.org/packages/35/8b/d990f947c261304a5c1599d45717d02c27d46af5f23e1fee5dc19c8fa79d/google-api-python-client-2.90.0.tar.gz", hash = "sha256:cbcb3ba8be37c6806676a49df16ac412077e5e5dc7fa967941eff977b31fba03"},
     {url = "https://files.pythonhosted.org/packages/39/03/209b5c36a621ae644dc7d4743746cd3b38b18e133f8779ecaf6b95cc01ce/google_api_python_client-2.90.0-py2.py3-none-any.whl", hash = "sha256:4a41ffb7797d4f28e44635fb1e7076240b741c6493e7c3233c0e4421cec7c913"},
 ]
-"google-auth 2.20.0" = [
-    {url = "https://files.pythonhosted.org/packages/4b/e0/d2c96098280f17eb626d4da0b7e553b8e5648d57514c8cefec851c16920c/google-auth-2.20.0.tar.gz", hash = "sha256:030af34138909ccde0fbce611afc178f1d65d32fbff281f25738b1fe1c6f3eaa"},
-    {url = "https://files.pythonhosted.org/packages/9a/1a/5866a7c6e16abc1df395e6d2b9808984d0905c747d75f5e20f1a052421d1/google_auth-2.20.0-py2.py3-none-any.whl", hash = "sha256:23b7b0950fcda519bfb6692bf0d5289d2ea49fc143717cc7188458ec620e63fa"},
+"google-auth 2.21.0" = [
+    {url = "https://files.pythonhosted.org/packages/0d/77/4737ca3b929e95df9234827f7ddcf66199df2d96057ba9a98168957de7fa/google_auth-2.21.0-py2.py3-none-any.whl", hash = "sha256:da3f18d074fa0f5a7061d99b9af8cee3aa6189c987af7c1b07d94566b6b11268"},
+    {url = "https://files.pythonhosted.org/packages/e6/76/2217d47be6a03dfd5f6bfe7432f87a5aa5ab6d85525a4dc546df9895f053/google-auth-2.21.0.tar.gz", hash = "sha256:b28e8048e57727e7cf0e5bd8e7276b212aef476654a09511354aa82753b45c66"},
 ]
 "google-auth-httplib2 0.1.0" = [
     {url = "https://files.pythonhosted.org/packages/ba/db/721e2f3f32339080153995d16e46edc3a7657251f167ddcb9327e632783b/google_auth_httplib2-0.1.0-py2.py3-none-any.whl", hash = "sha256:31e49c36c6b5643b57e82617cb3e021e3e1d2df9da63af67252c02fa9c1f4a10"},
@@ -1771,9 +1771,9 @@ content_hash = "sha256:ee115a096e2a9a66e18838236e09ed4e6e0aea5340e1dc3e59cef7de8
     {url = "https://files.pythonhosted.org/packages/0c/34/ca7342c6745048e4e7176678fffea3cd5df4b4a21582ef48b6eee1ad65dd/google-cloud-dataproc-5.4.1.tar.gz", hash = "sha256:1896e14f63c121a3f1e2c221287cc7fd00650d2a73f8b38f82040ae6d5aab7bf"},
     {url = "https://files.pythonhosted.org/packages/a5/58/a236f58159a5baaa593ad1d01db4c53308fdf5fe72fa70cdcb058a2e88d9/google_cloud_dataproc-5.4.1-py2.py3-none-any.whl", hash = "sha256:dfc6db122b38330779882652b10aa85ace45547433ca4af020c4c262660a4074"},
 ]
-"google-cloud-storage 2.9.0" = [
-    {url = "https://files.pythonhosted.org/packages/74/fb/3770e7f44cf6133f502e1b8503b6739351b53272cf8313b47f1de6cf4960/google_cloud_storage-2.9.0-py2.py3-none-any.whl", hash = "sha256:83a90447f23d5edd045e0037982c270302e3aeb45fc1288d2c2ca713d27bad94"},
-    {url = "https://files.pythonhosted.org/packages/fc/50/c9998f84fd8ce8799d7f8020466bbc5c9e3b1126b04a09fdb02378d451b0/google-cloud-storage-2.9.0.tar.gz", hash = "sha256:9b6ae7b509fc294bdacb84d0f3ea8e20e2c54a8b4bbe39c5707635fec214eff3"},
+"google-cloud-storage 2.10.0" = [
+    {url = "https://files.pythonhosted.org/packages/6b/20/51e9676cc112ec7344c0a8690361175dc1f41ed6edf618eae8af87d92a49/google-cloud-storage-2.10.0.tar.gz", hash = "sha256:934b31ead5f3994e5360f9ff5750982c5b6b11604dc072bc452c25965e076dc7"},
+    {url = "https://files.pythonhosted.org/packages/88/14/c9d4faae7ea4bff4405152cbc762b61100aa6949273b4eb3203d23308670/google_cloud_storage-2.10.0-py2.py3-none-any.whl", hash = "sha256:9433cf28801671de1c80434238fb1e7e4a1ba3087470e90f70c928ea77c2b9d7"},
 ]
 "google-crc32c 1.5.0" = [
     {url = "https://files.pythonhosted.org/packages/02/94/d2ea867760d5a27b3e9eb40ff31faf7f03f949e51d4e3b3ae24f759b5963/google_crc32c-1.5.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:72218785ce41b9cfd2fc1d6a017dc1ff7acfc4c17d01053265c41a2c0cc39b8c"},
