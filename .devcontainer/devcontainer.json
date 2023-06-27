@@ -12,6 +12,12 @@
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
+  "containerEnv": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "USE_GKE_GCLOUD_AUTH_PLUGIN": "True",
+    "GOOGLE_APPLICATION_CREDENTIALS": "/workspaces/teamster/env/gcloud_service_account_json",
+    "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt"
+  },
   "customizations": {
     "codespaces": {
       "repositories": {
