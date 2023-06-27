@@ -3,8 +3,8 @@
 # export dev envvars
 export PYTHONDONTWRITEBYTECODE=1
 export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+export GOOGLE_APPLICATION_CREDENTIALS=/workspaces/teamster/env/gcloud_service_account_json
 export DBT_PROFILES_DIR=/workspaces/teamster/.dbt
-export GOOGLE_APPLICATION_CREDENTIALS=/workspaces/teamster/env/gcloud-service-account.json
 
 # update apt packages
 sudo apt-get -y --no-install-recommends update &&
