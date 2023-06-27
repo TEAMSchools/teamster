@@ -239,7 +239,7 @@ def build_bigquery_query_sftp_asset(
                 file_format=file_config.get("format", {}),
             )
             del data
-            gc.co
+            gc.collect()
 
             load_sftp(
                 context=context,
