@@ -49,7 +49,7 @@ def main(args):
     # print(metadata)
 
     with open(
-        file=f"src/teamster/core/fivetran/schema/{connector_id}.py", mode="wb"
+        file=f"src/teamster/core/fivetran/schema/{connector_id}.pickle", mode="wb"
     ) as fp:
         pickle.dump(obj=metadata, file=fp)
 
