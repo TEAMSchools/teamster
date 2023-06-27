@@ -8,7 +8,6 @@ select
     department_assigned as `Business Unit Description`,
     department_assigned as `Home Department Description`,
     job_title as `Job Title Description`,
-    null as `Preferred Name`,
     report_to_employee_number as `Business Unit Code`,
     format_date('%m/%d/%Y', worker_rehire_date) as `Rehire Date`,
     format_date('%m/%d/%Y', worker_termination_date) as `Termination Date`,
@@ -16,6 +15,7 @@ select
     if(
         assignment_status = 'Pre-Start', 'Active', assignment_status
     ) as `Position Status`,
+    null as `Preferred Name`,
 from {{ ref("base_people__staff_roster") }}
 where
     coalesce(worker_rehire_date, worker_original_hire_date)
