@@ -5,7 +5,6 @@ import re
 
 import pendulum
 from dagster import AssetExecutionContext, AssetKey, asset, config_from_files
-from dagster_gcp import BigQueryResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
