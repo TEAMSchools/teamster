@@ -1,8 +1,17 @@
+import pendulum
 from dagster import build_resources
 from dagster_gcp import BigQueryResource
 from google.cloud import bigquery
 
+from teamster.core.datagun.assets import construct_query
 from teamster.kipptaf import GCS_PROJECT_NAME
+
+QUERY = {
+    "query_type": "schema",
+    "query_value": {
+        "table": {"name": "rpt_idauto__staff_roster", "schema": "kipptaf_extracts"},
+    },
+}
 
 
 def test_resource():
@@ -11,19 +20,10 @@ def test_resource():
     ) as resources:
         db_bigquery: bigquery.Client = next(resources.db_bigquery)
 
-        query_job = db_bigquery.query(
-            query="""
-                SELECT
-                CONCAT(
-                    'https://stackoverflow.com/questions/',
-                    CAST(id as STRING)) as url,
-                view_count
-                FROM `bigquery-public-data.stackoverflow.posts_questions`
-                WHERE tags like '%google-bigquery%'
-                ORDER BY view_count DESC
-                LIMIT 10
-            """
-        )
+        query = construct_query(now=pendulum.now(), **QUERY)
+        print(query)
+
+        query_job = db_bigquery.query(query=str(query))
 
         result = query_job.result()
 
