@@ -27,6 +27,7 @@ DATETIME_ATTRIBUTES = [
     "badPasswordTime",
     "dSCorePropagationData",
     "idautoChallengeSetTimestamp",
+    "idautoGroupLastSynced",
     "idautoPersonEndDate",
     "lastLogoff",
     "lastLogon",
