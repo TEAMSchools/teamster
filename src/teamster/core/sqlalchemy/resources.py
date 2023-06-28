@@ -159,8 +159,6 @@ class MSSQLResource(ConfigurableResource):
             )
         )
 
-        return super().setup_for_execution(context)
-
 
 class OracleResource(ConfigurableResource):
     engine: SqlAlchemyEngineResource

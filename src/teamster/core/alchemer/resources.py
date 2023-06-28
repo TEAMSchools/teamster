@@ -17,5 +17,3 @@ class AlchemerResource(ConfigurableResource):
             api_version=self.api_version,
             time_zone="US/Eastern",  # determined by Alchemer
         )
-
-        return super().setup_for_execution(context)

@@ -11,12 +11,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
         gnupg \
-        build-essential \
-        python3-dev \
-        libldap2-dev \
-        libsasl2-dev \
-        slapd \
-        ldap-utils \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

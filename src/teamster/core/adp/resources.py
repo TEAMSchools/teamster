@@ -22,8 +22,6 @@ class WorkforceManagerResource(ConfigurableResource):
 
         self._authenticate(grant_type="password")
 
-        return super().setup_for_execution(context)
-
     def _authenticate(self, grant_type):
         self._client.headers["Content-Type"] = "application/x-www-form-urlencoded"
         self._client.headers.pop(

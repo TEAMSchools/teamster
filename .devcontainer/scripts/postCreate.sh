@@ -3,16 +3,9 @@
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo DEBIAN_FRONTEND=noninteractive \
-    apt-get -y --no-install-recommends install \
+  sudo apt-get -y --no-install-recommends install \
     bash-completion \
-    google-cloud-sdk-gke-gcloud-auth-plugin \
-    build-essential \
-    python3-dev \
-    libldap2-dev \
-    libsasl2-dev \
-    slapd \
-    ldap-utils &&
+    google-cloud-sdk-gke-gcloud-auth-plugin &&
   sudo apt-get -y autoremove &&
   sudo apt-get -y clean
 
