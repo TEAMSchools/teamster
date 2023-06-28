@@ -24,7 +24,7 @@ echo "${DEANSLIST_API_KEY_MAP}" |
 python -m pip install --no-cache-dir --upgrade pip
 
 # authenticate gcloud
-gcloud auth activate-service-account --key-file=env/gcloud-service-account.json
+gcloud auth activate-service-account --key-file=env/gcloud_service_account_json
 
 # set gcloud project & region
 gcloud config set project teamster-332318

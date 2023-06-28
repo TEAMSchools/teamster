@@ -15,6 +15,7 @@ from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
 from teamster.core.google.resources.io import gcs_io_manager
 from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.ldap.resources import LdapResource
 from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineResource
@@ -34,6 +35,7 @@ from . import (
     fivetran,
     google,
     iready,
+    ldap,
     renlearn,
     schoolmint,
     smartrecruiters,
@@ -53,6 +55,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[fivetran]),
         *load_assets_from_modules(modules=[google], group_name="google"),
         *load_assets_from_modules(modules=[iready], group_name="iready"),
+        *load_assets_from_modules(modules=[ldap], group_name="ldap"),
         *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
         *load_assets_from_modules(
@@ -127,11 +130,17 @@ defs = Definitions(
             api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
             api_version="v5",
         ),
-        "mclass": MClassResource(
-            username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
-        ),
         "gsheets": GoogleSheetsResource(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+        ),
+        "ldap": LdapResource(
+            host="ldap1.kippnj.org",
+            port=636,
+            user=EnvVar("LDAP_USER"),
+            password=EnvVar("LDAP_PASSWORD"),
+        ),
+        "mclass": MClassResource(
+            username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
         ),
         "schoolmint_grow": SchoolMintGrowResource(
             client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),

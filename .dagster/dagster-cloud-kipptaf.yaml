@@ -46,6 +46,8 @@ locations:
           - kippnj-renlearn-sftp-username
           - ktaf-sftp-password
           - ktaf-sftp-username
+          - ldap-password
+          - ldap-user
           - littlesis-sftp-password
           - littlesis-sftp-username
           - mssql-password

@@ -11,10 +11,10 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 TESTS = [
-    # {
-    #     "local_filepath": "env/(&(objectClass=user)(objectCategory=person)).pickle",
-    #     "asset_name": "user_person",
-    # },
+    {
+        "local_filepath": "env/(&(objectClass=user)(objectCategory=person)).pickle",
+        "asset_name": "user_person",
+    },
     {"local_filepath": "env/(objectClass=group).pickle", "asset_name": "group"},
 ]
 
