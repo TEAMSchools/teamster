@@ -54,10 +54,12 @@ def build_ldap_asset_sensor(
                 cursor[asset_identifier] = now_timestamp
 
         return SensorResult(
-            run_requests=RunRequest(
-                run_key=f"{code_location}_ldap_sensor_{now_timestamp}",
-                asset_selection=asset_selection,
-            ),
+            run_requests=[
+                RunRequest(
+                    run_key=f"{code_location}_ldap_sensor_{now_timestamp}",
+                    asset_selection=asset_selection,
+                )
+            ],
             cursor=json.dumps(cursor),
         )
 
