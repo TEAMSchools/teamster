@@ -67,4 +67,5 @@ external_source_assets = [
 __all__ = [
     dbt_assets,
     *gsheet_external_source_assets,
+    *external_source_assets,
 ]
