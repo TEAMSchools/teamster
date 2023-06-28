@@ -30,9 +30,9 @@ def build_ldap_asset_sensor(
 
         for asset in asset_defs:
             asset_identifier = asset.key.to_python_identifier()
-            asset_metadata = asset.metadata_by_key[asset.key]
-
             context.log.info(asset_identifier)
+
+            asset_metadata = asset.metadata_by_key[asset.key]
             search_filter = asset_metadata["search_filter"]
 
             last_check_timestamp = pendulum.from_timestamp(
@@ -44,7 +44,7 @@ def build_ldap_asset_sensor(
                 search_filter=(
                     f"(&(whenChanged>={last_check_timestamp}){search_filter})"
                 ),
-                attributes=asset_metadata["attributes"],
+                attributes=["distinguishedName"],
                 size_limit=1,
             )
 
