@@ -23,6 +23,7 @@ dependencies = [
   "beautifulsoup4>=4.12.2",
   "dbt-bigquery>=1.5.2",
   "ldap3>=2.9.1",
+  "pycryptodome>=3.18.0",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }
