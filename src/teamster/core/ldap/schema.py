@@ -5,7 +5,6 @@ USER_PERSON_FIELDS = [
     {"name": "authOrig", "type": ["null", "bytes"], "default": None},
     {"name": "authOrigBL", "type": ["null", "string"], "default": None},
     {"name": "badPwdCount", "type": ["null", "long"], "default": None},
-    {"name": "badPwdCount", "type": ["null", "long"], "default": None},
     {"name": "c", "type": ["null", "string"], "default": None},
     {"name": "cn", "type": ["null", "string"], "default": None},
     {"name": "co", "type": ["null", "string"], "default": None},
