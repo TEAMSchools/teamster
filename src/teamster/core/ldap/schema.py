@@ -21,7 +21,6 @@ USER_PERSON_FIELDS = [
     {"name": "distinguishedName", "type": ["null", "string"], "default": None},
     {"name": "division", "type": ["null", "string"], "default": None},
     {"name": "dn", "type": ["null", "string"], "default": None},
-    {"name": "employeeId", "type": ["null", "string"], "default": None},
     {"name": "employeeID", "type": ["null", "string"], "default": None},
     {"name": "employeeNumber", "type": ["null", "string"], "default": None},
     {"name": "employeeType", "type": ["null", "string"], "default": None},
