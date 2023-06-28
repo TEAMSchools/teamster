@@ -6,8 +6,8 @@ from teamster.core.ldap.resources import LdapResource
 
 SEARCH_BASE = "dc=teamschools,dc=kipp,dc=org"
 SEARCH_FILTERS = [
-    "(&(whenChanged>=20230628000000.000000-0500)(&(objectClass=user)(objectCategory=person)))",
-    # "(&(objectClass=user)(objectCategory=person))",
+    # "(&(whenChanged>=20230628000000.000000-0500)(&(objectClass=user)(objectCategory=person)))",
+    "(&(objectClass=user)(objectCategory=person))",
     # "(objectClass=group)",
 ]
 
@@ -63,8 +63,9 @@ def test_resource():
             ldap._connection.search(
                 search_base=SEARCH_BASE,
                 search_filter=search_filter,
-                attributes=["distinguishedName"],
-                size_limit=1,
+                attributes=["*"],
+                # attributes=["distinguishedName"],
+                # size_limit=1,
             )
             # print(ldap._connection)
 
