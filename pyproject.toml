@@ -48,3 +48,4 @@ install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
 dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
+_.env_file = "env/.env"
