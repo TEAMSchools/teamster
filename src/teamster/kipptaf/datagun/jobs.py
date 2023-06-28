@@ -118,6 +118,5 @@ __all__ = [
     idauto_extract_asset_job,
     illuminate_extract_asset_job,
     littlesis_extract_asset_job,
-    read180_extract_asset_job,
     whetstone_extract_asset_job,
 ]
