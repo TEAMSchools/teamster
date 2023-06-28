@@ -2,17 +2,19 @@ import pickle
 import random
 
 from fastavro import parse_schema, validation, writer
-from numpy import nan
-from pandas import DataFrame, read_pickle
 
 from teamster.core.ldap.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
+# from numpy import nan
+# from pandas import DataFrame, read_pickle
+
+
 TESTS = [
-    {
-        "local_filepath": "env/(&(objectClass=user)(objectCategory=person)).pickle",
-        "asset_name": "user_person",
-    },
+    # {
+    #     "local_filepath": "env/(&(objectClass=user)(objectCategory=person)).pickle",
+    #     "asset_name": "user_person",
+    # },
     {"local_filepath": "env/(objectClass=group).pickle", "asset_name": "group"},
 ]
 
@@ -27,11 +29,8 @@ def test_schema():
         # df = DataFrame(
         #     data=read_pickle(filepath_or_buffer=test["local_filepath"])
         # ).replace({nan: None})
-
         # dtypes_dict = df.dtypes.to_dict()
         # print(dtypes_dict)
-
-        # count = df.shape[0]
         # records = df.to_dict(orient="records")
 
         count = len(records)
