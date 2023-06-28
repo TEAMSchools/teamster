@@ -89,6 +89,7 @@ defs = Definitions(
         *clever.sensors,
         *google.sensors,
         *iready.sensors,
+        *ldap.sensors,
         *renlearn.sensors,
     ],
     resources={
