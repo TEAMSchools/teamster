@@ -26,7 +26,7 @@ def build_dbt_assets(manifest, select="fqn:*", exclude=None):
     return _assets
 
 
-def build_external_source_asset_new(
+def build_external_source_asset_v2(
     code_location,
     name,
     dbt_package_name,
