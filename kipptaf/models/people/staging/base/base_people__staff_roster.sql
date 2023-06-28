@@ -153,6 +153,12 @@ select
 
     enm.employee_number as report_to_employee_number,
 
+    ldap.mail,
+    ldap.distinguished_name,
+    ldap.user_principal_name,
+    ldap.sam_account_name,
+    ldap.physical_delivery_office_name,
+    ldap.uac_account_disable,
 {#- work_assignment_id,
     work_assignment__fivetran_active,
     work_assignment__fivetran_start,
@@ -250,4 +256,7 @@ left join
     {{ ref("stg_people__employee_numbers") }} as enm
     on wp.report_to_report_to_worker_id = enm.adp_associate_id
     and enm.is_active
+left join
+    {{ ref("stg_ldap__user_person") }} as ldap
+    on en.employee_number = ldap.employee_number
 where wp.work_assignment__fivetran_active and wp.work_assignment_primary_indicator

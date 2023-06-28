@@ -35,6 +35,10 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+    ldap:
+      +schema: ldap
+      staging:
+        +materialized: table
     people:
       +schema: people
     powerschool:
