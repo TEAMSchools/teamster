@@ -5,7 +5,11 @@ from dagster import EnvVar, build_resources
 from teamster.core.ldap.resources import LdapResource
 
 SEARCH_BASE = "dc=teamschools,dc=kipp,dc=org"
-SEARCH_FILTERS = ["(&(objectClass=user)(objectCategory=person))", "(objectClass=group)"]
+SEARCH_FILTERS = [
+    "(&(whenChanged>=20230629000000.000000-0500)(&(objectClass=user)(objectCategory=person)))",
+    # "(&(objectClass=user)(objectCategory=person))",
+    # "(objectClass=group)",
+]
 
 # via http://www.phpldaptools.com/reference/Default-Schema-Attributes
 ARRAY_ATTRIBUTES = [
@@ -60,7 +64,9 @@ def test_resource():
                 search_base=SEARCH_BASE,
                 search_filter=search_filter,
                 attributes=["*"],
+                size_limit=1,
             )
+            # print(ldap._connection)
 
             entries = []
             for entry in ldap._connection.entries:
@@ -78,6 +84,8 @@ def test_resource():
                 }
 
                 entries.append({**primitive_items, **array_items})
+            print(len(entries))
+            print(entries[0])
 
-            with open(file=f"env/{search_filter}.pickle", mode="wb") as f:
-                pickle.dump(obj=entries, file=f)
+            # with open(file=f"env/{search_filter}.pickle", mode="wb") as f:
+            #     pickle.dump(obj=entries, file=f)
