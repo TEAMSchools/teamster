@@ -26,7 +26,7 @@ def build_ldap_asset_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
-        run_requests = []
+        asset_selection = []
 
         for asset in asset_defs:
             asset_identifier = asset.key.to_python_identifier()
@@ -49,15 +49,16 @@ def build_ldap_asset_sensor(
             )
 
             if len(ldap._connection.entries) > 0:
-                run_requests.append(
-                    RunRequest(
-                        run_key=f"{asset_identifier}_{now_timestamp}",
-                        asset_selection=[asset.key],
-                    )
-                )
+                asset_selection.append(asset.key)
 
                 cursor[asset_identifier] = now_timestamp
 
-        return SensorResult(run_requests=run_requests, cursor=json.dumps(cursor))
+        return SensorResult(
+            run_requests=RunRequest(
+                run_key=f"{code_location}_ldap_sensor_{now_timestamp}",
+                asset_selection=asset_selection,
+            ),
+            cursor=json.dumps(cursor),
+        )
 
     return _sensor
