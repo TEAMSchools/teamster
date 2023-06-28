@@ -25,8 +25,6 @@ class GoogleSheetsResource(ConfigurableResource):
 
             self._client = gspread.authorize(credentials=credentials)
 
-        return super().setup_for_execution(context)
-
     def open(self, **kwargs):
         kwargs_keys = kwargs.keys()
 

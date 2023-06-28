@@ -35,8 +35,6 @@ class SSHConfigurableResource(ConfigurableResource):
             logger=self.get_resource_context().log,
         )
 
-        return super().setup_for_execution(context)
-
     def get_connection(self):
         return self._internal_resource.get_connection()
 
