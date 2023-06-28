@@ -12,8 +12,6 @@ class SmartRecruitersResource(ConfigurableResource):
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._client.headers["X-SmartToken"] = self.smart_token
 
-        return super().setup_for_execution(context)
-
     def _get_url(self, endpoint, *args):
         return f"{self._base_url}/{endpoint}" + ("/" + "/".join(args) if args else "")
 

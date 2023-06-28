@@ -27,8 +27,6 @@ class MClassResource(ConfigurableResource):
             data={"username": self.username, "password": self.password},
         )
 
-        return super().setup_for_execution(context)
-
     def _get_url(self, path, *args):
         if args:
             return f"{self._base_url}/{path}/{'/'.join(args)}"
