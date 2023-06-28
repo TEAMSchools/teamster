@@ -20,8 +20,6 @@ class DeansListResource(ConfigurableResource):
         with open(self.api_key_map) as f:
             self._api_key_map = yaml.safe_load(f)["api_key_map"]
 
-        return super().setup_for_execution(context)
-
     def _get_url(self, api_version, endpoint, *args):
         if api_version == "beta":
             return (

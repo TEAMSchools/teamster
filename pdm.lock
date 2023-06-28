@@ -738,6 +738,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ldap3"
+version = "2.9.1"
+summary = "A strictly RFC 4510 conforming LDAP V3 pure Python client library"
+dependencies = [
+    "pyasn1>=0.4.6",
+]
+
+[[package]]
 name = "leather"
 version = "0.3.4"
 summary = "Python charting for 80% of humans."
@@ -1078,16 +1086,6 @@ requires_python = ">=3.8"
 summary = "Read key-value pairs from a .env file and set them as environment variables"
 
 [[package]]
-name = "python-ldap"
-version = "3.4.3"
-requires_python = ">=3.6"
-summary = "Python modules for implementing LDAP clients"
-dependencies = [
-    "pyasn1-modules>=0.1.5",
-    "pyasn1>=0.3.7",
-]
-
-[[package]]
 name = "python-slugify"
 version = "8.0.1"
 requires_python = ">=3.7"
@@ -1376,8 +1374,8 @@ dependencies = [
 [metadata]
 lock_version = "4.2"
 cross_platform = true
-groups = ["default"]
-content_hash = "sha256:ed54c1e7a61a79baa2716f099d2d02fbe265f57d8bb8c6af32db214587480f4f"
+groups = ["default", "dev"]
+content_hash = "sha256:7e4dc49d918623e26d7ea35d7b24ef747c49dc39d1e1d9fbe6c540d1238a39fc"
 
 [metadata.files]
 "agate 1.6.3" = [
@@ -2041,6 +2039,10 @@ content_hash = "sha256:ed54c1e7a61a79baa2716f099d2d02fbe265f57d8bb8c6af32db21458
     {url = "https://files.pythonhosted.org/packages/34/19/2f351c0eaf05234dc33a6e0ffc7894e9dedab0ff341311c5b4ba44f2d8ac/kubernetes-26.1.0.tar.gz", hash = "sha256:5854b0c508e8d217ca205591384ab58389abdae608576f9c9afc35a3c76a366c"},
     {url = "https://files.pythonhosted.org/packages/74/21/ada0c5eedb678ab663f8e387734418fdd1a26be28fc919a0c32e52964047/kubernetes-26.1.0-py2.py3-none-any.whl", hash = "sha256:e3db6800abf7e36c38d2629b5cb6b74d10988ee0cba6fba45595a7cbe60c0042"},
 ]
+"ldap3 2.9.1" = [
+    {url = "https://files.pythonhosted.org/packages/43/ac/96bd5464e3edbc61595d0d69989f5d9969ae411866427b2500a8e5b812c0/ldap3-2.9.1.tar.gz", hash = "sha256:f3e7fc4718e3f09dda568b57100095e0ce58633bcabbed8667ce3f8fbaa4229f"},
+    {url = "https://files.pythonhosted.org/packages/4e/f6/71d6ec9f18da0b2201287ce9db6afb1a1f637dedb3f0703409558981c723/ldap3-2.9.1-py2.py3-none-any.whl", hash = "sha256:5869596fc4948797020d3f03b7939da938778a0f9e2009f7a072ccf92b8e8d70"},
+]
 "leather 0.3.4" = [
     {url = "https://files.pythonhosted.org/packages/73/c5/5bc5a19a62147ee8ff2de7b416ee6534b5bd79f22c790d0365ebef223f34/leather-0.3.4.tar.gz", hash = "sha256:b43e21c8fa46b2679de8449f4d953c06418666dc058ce41055ee8a8d3bb40918"},
     {url = "https://files.pythonhosted.org/packages/eb/44/44da0f7c2a23b9fc38e2693ac86926375937880acfdb44307a3ccf762b68/leather-0.3.4-py2.py3-none-any.whl", hash = "sha256:5e741daee96e9f1e9e06081b8c8a10c4ac199301a0564cdd99b09df15b4603d2"},
@@ -2632,9 +2634,6 @@ content_hash = "sha256:ed54c1e7a61a79baa2716f099d2d02fbe265f57d8bb8c6af32db21458
 "python-dotenv 1.0.0" = [
     {url = "https://files.pythonhosted.org/packages/31/06/1ef763af20d0572c032fa22882cfbfb005fba6e7300715a37840858c919e/python-dotenv-1.0.0.tar.gz", hash = "sha256:a8df96034aae6d2d50a4ebe8216326c61c3eb64836776504fcca410e5937a3ba"},
     {url = "https://files.pythonhosted.org/packages/44/2f/62ea1c8b593f4e093cc1a7768f0d46112107e790c3e478532329e434f00b/python_dotenv-1.0.0-py3-none-any.whl", hash = "sha256:f5971a9226b701070a4bf2c38c89e5a3f0d64de8debda981d1db98583009122a"},
-]
-"python-ldap 3.4.3" = [
-    {url = "https://files.pythonhosted.org/packages/3a/7d/de9ae3e5843de77eae3a60c1e70ef5cad9960db50521e8459f7d567a1d1d/python-ldap-3.4.3.tar.gz", hash = "sha256:ab26c519a0ef2a443a2a10391fa3c5cb52d7871323399db949ebfaa9f25ee2a0"},
 ]
 "python-slugify 8.0.1" = [
     {url = "https://files.pythonhosted.org/packages/b4/85/6aa722a11307ec572682023b76cad4c52cda708dfc25fcb4b4a6051da7ab/python_slugify-8.0.1-py2.py3-none-any.whl", hash = "sha256:70ca6ea68fe63ecc8fa4fcf00ae651fc8a5d02d93dcd12ae6d4fc7ca46c4d395"},

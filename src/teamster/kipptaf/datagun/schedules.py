@@ -137,6 +137,5 @@ __all__ = [
     idauto_extract_assets_schedule,
     illuminate_extract_assets_schedule,
     littlesis_extract_assets_schedule,
-    read180_extract_assets_schedule,
     whetstone_extract_assets_schedule,
 ]

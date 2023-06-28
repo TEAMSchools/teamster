@@ -34,8 +34,6 @@ class SchoolMintGrowResource(ConfigurableResource):
             }
         )
 
-        return super().setup_for_execution(context)
-
     def _get_access_token(self):
         oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.client_id))
 

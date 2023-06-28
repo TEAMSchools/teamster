@@ -143,6 +143,5 @@ __all__ = [
     *idauto_extract_assets,
     *illuminate_extract_assets,
     *littlesis_extract_assets,
-    *read180_extract_assets,
     *whetstone_extract_assets,
 ]
