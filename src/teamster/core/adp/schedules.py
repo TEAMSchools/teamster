@@ -7,7 +7,7 @@ from dagster import (
     schedule,
 )
 
-from teamster.core.adp.resources import WorkforceManagerResource
+from teamster.core.adp.resources import AdpWorkforceManagerResource
 
 
 def build_dynamic_partition_schedule(
@@ -25,7 +25,7 @@ def build_dynamic_partition_schedule(
         job=job,
     )
     def _schedule(
-        context: ScheduleEvaluationContext, adp_wfm: WorkforceManagerResource
+        context: ScheduleEvaluationContext, adp_wfm: AdpWorkforceManagerResource
     ):
         for asset in asset_defs:
             date_partition: DynamicPartitionsDefinition = (
