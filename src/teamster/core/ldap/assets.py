@@ -65,14 +65,14 @@ def build_ldap_asset(
         entries = []
         for entry in ldap._connection.entries:
             primitive_items = {
-                key: values[0]
+                key.replace("-", "_"): values[0]
                 if key not in DATETIME_ATTRIBUTES
                 else values[0].timestamp()
                 for key, values in entry.entry_attributes_as_dict.items()
             }
 
             array_items = {
-                key: values
+                key.replace("-", "_"): values
                 for key, values in entry.entry_attributes_as_dict.items()
                 if key in ARRAY_ATTRIBUTES
             }
