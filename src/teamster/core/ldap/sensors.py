@@ -30,7 +30,7 @@ def build_ldap_asset_sensor(
 
         for asset in asset_defs:
             asset_identifier = asset.key.to_python_identifier()
-            asset_metadata = asset.metadata_by_key[context.assets_def.key]
+            asset_metadata = asset.metadata_by_key[asset.key]
 
             context.log.info(asset_identifier)
             search_filter = asset_metadata["search_filter"]
