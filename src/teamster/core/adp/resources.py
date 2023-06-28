@@ -1,9 +1,12 @@
+import requests
 from dagster import ConfigurableResource, InitResourceContext
+from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Session, exceptions
+from requests_oauthlib import OAuth2Session
 
 
-class WorkforceManagerResource(ConfigurableResource):
+class AdpWorkforceManagerResource(ConfigurableResource):
     subdomain: str
     app_key: str
     client_id: str
@@ -84,3 +87,71 @@ class WorkforceManagerResource(ConfigurableResource):
         self.get_resource_context().log.debug(f"POST: {url}")
 
         return self._request(method="POST", url=url, **kwargs)
+
+
+class AdpWorkforceNowResource(ConfigurableResource):
+    client_id: str
+    client_secret: str
+    cert_filepath: str
+    key_filepath: str
+
+    _service_root: str = PrivateAttr(default="https://api.adp.com")
+    _session: OAuth2Session = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        # instantiate client
+        auth = requests.auth.HTTPBasicAuth(self.client_id, self.client_secret)
+        client = BackendApplicationClient(client_id=self.client_id)
+        self._session = OAuth2Session(client=client)
+        self._session.cert = (self.cert_filepath, self.key_filepath)
+
+        # authorize client
+        token_dict = self._session.fetch_token(
+            token_url="https://accounts.adp.com/auth/oauth/v2/token", auth=auth
+        )
+        access_token = token_dict.get("access_token")
+        self._session.headers["Authorization"] = f"Bearer {access_token}"
+
+    def get_record(self, endpoint, querystring={}, id=None, object_name=None):
+        url = f"{self._service_root}{endpoint}"
+        if id:
+            url = f"{url}/{id}"
+
+        r = self._session.get(url=url, params=querystring)
+
+        if r.status_code == 204:
+            return None
+
+        if r.status_code == 200:
+            data = r.json()
+            object_name = object_name or endpoint.split("/")[-1]
+            return data.get(object_name)
+        else:
+            r.raise_for_status()
+
+    def get_all_records(self, endpoint, querystring={}, object_name=None):
+        querystring["$skip"] = querystring.get("$skip", 0)
+        all_data = []
+
+        while True:
+            data = self.get_record(
+                endpoint=endpoint, querystring=querystring, object_name=object_name
+            )
+
+            if data is None:
+                break
+            else:
+                all_data.extend(data)
+                querystring["$skip"] += 50
+
+        return all_data
+
+    def post(self, endpoint, subresource, verb, payload):
+        url = f"{self._service_root}{endpoint}.{subresource}.{verb}"
+
+        try:
+            r = self._session.post(url=url, json=payload)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            self.get_resource_context().log.error(e)
+            self.get_resource_context().log.error(r.json())

@@ -13,7 +13,7 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.adp.resources import WorkforceManagerResource
+from teamster.core.adp.resources import AdpWorkforceManagerResource
 from teamster.core.adp.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
@@ -42,7 +42,7 @@ def build_wfm_asset(
         op_tags=op_tags,
         output_required=False,
     )
-    def _asset(context: OpExecutionContext, adp_wfm: WorkforceManagerResource):
+    def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
         symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]
 

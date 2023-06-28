@@ -10,7 +10,7 @@ from dagster_gcp import BigQueryResource
 from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.adp.resources import WorkforceManagerResource
+from teamster.core.adp.resources import AdpWorkforceManagerResource
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
 from teamster.core.google.resources.io import gcs_io_manager
@@ -118,7 +118,7 @@ defs = Definitions(
             ),
             driver="ODBC Driver 18 for SQL Server",
         ),
-        "adp_wfm": WorkforceManagerResource(
+        "adp_wfm": AdpWorkforceManagerResource(
             subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
             app_key=EnvVar("ADP_WFM_APP_KEY"),
             client_id=EnvVar("ADP_WFM_CLIENT_ID"),
