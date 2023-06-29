@@ -1,7 +1,11 @@
 from dagster import OpExecutionContext, op
 from dagster_gcp import BigQueryResource
+from google.cloud import bigquery
+from pandas import DataFrame
 
 from teamster.core.adp.resources import AdpWorkforceNowResource
+
+from .. import CODE_LOCATION
 
 
 def get_event_payload(associate_oid, item_id, string_value):
@@ -31,15 +35,28 @@ worker_endpoint = "/events/hr/v1/worker"
 
 
 @op()
-def _op(
+def worker_fields_update_op(
     context: OpExecutionContext,
     db_bigquery: BigQueryResource,
     adp_wfn: AdpWorkforceNowResource,
 ):
     # query extract view
-    worker_extract = []
+    dataset_ref = bigquery.DatasetReference(
+        project=db_bigquery.project, dataset_id=f"{CODE_LOCATION}_extracts"
+    )
 
-    for i in worker_extract:
+    with db_bigquery.get_client() as bq:
+        table = bq.get_table(
+            dataset_ref.table(table_id="rpt_adp_workforce_now__worker_update")
+        )
+
+        rows = bq.list_rows(table=table)
+
+    df: DataFrame = rows.to_dataframe()
+
+    data = df.to_dict(orient="records")
+
+    for i in data:
         # update work email if new
         if i["mail"] != record_match.get("work_email").get("emailUri"):
             context.log.info(
