@@ -35,8 +35,7 @@ def build_external_source_asset_v2(
     manifest,
 ):
     @asset(
-        name=name,
-        key_prefix=[code_location, dbt_package_name],
+        key=[code_location, dbt_package_name, name],
         non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
