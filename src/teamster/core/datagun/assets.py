@@ -302,7 +302,7 @@ def build_bigquery_extract_sftp_asset(
         bq_client = next(context.resources.db_bigquery)
 
         dataset_ref = bigquery.DatasetReference(
-            project=bq_client.project, dataset_id=f"{code_location}_{dataset_id}"
+            project=bq_client.project, dataset_id=dataset_id
         )
 
         extract_job = bq_client.extract_table(
