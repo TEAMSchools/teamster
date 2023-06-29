@@ -56,7 +56,7 @@ external_source_assets = [
     build_external_source_asset_v2(
         code_location=CODE_LOCATION,
         name=f"src_{asset.key.path[1]}__{asset.key.path[-1]}",
-        dbt_package_name=asset.key.path[-1],
+        dbt_package_name=asset.key.path[1],
         upstream_asset_key=asset.key,
         group_name=asset.key.path[1],
         manifest=manifest,
