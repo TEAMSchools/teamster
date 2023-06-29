@@ -1,12 +1,7 @@
-key_prefix:
-  - kipptaf
-  - datagun
-  - egencia
 assets:
-  - asset_name: users_csv
-    query_config:
-      type: file
-      value: src/teamster/kipptaf/datagun/config/sql/egencia_users.sql
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_egencia__users
     file_config:
       stem: users_{today}
       suffix: csv
