@@ -282,7 +282,7 @@ def build_bigquery_extract_sftp_asset(
 
     @asset(
         key=[code_location, "extracts", destination_name, asset_name],
-        non_argument_deps=[AssetKey([code_location, dataset_id, table_id])],
+        non_argument_deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
     )
