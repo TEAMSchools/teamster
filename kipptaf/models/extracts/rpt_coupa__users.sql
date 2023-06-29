@@ -1,5 +1,3 @@
-{{ config(enabled=False) }}
-
 with
     roles_union as (
         select urm.user_id, r.name as role_name,
@@ -10,7 +8,7 @@ with
 
         select u.id as user_id, 'Expense User' as role_name,
         from {{ source("coupa", "user") }} as u
-    )
+    ),
 
     roles as (
         select user_id, string_agg(role_name) as roles,
@@ -31,15 +29,15 @@ with
         /* existing users */
         select
             sr.employee_number,
-            sr.first_name,
-            sr.last_name,
-            sr.position_status,
-            sr.business_unit_code,
-            sr.home_department,
+            sr.legal_name_given_name,
+            sr.legal_name_family_name,
+            sr.assignment_status,
+            sr.business_unit_home_code,
+            sr.department_home_name,
             sr.job_title,
-            sr.location,
-            sr.worker_category,
-            sr.wfmgr_pay_rule,
+            sr.home_work_location_name,
+            sr.worker_type,
+            sr.custom_wfmgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             lower(sr.sam_account_name) as sam_account_name,
@@ -47,205 +45,212 @@ with
             lower(sr.mail) as mail,
             cu.active,
             case
-                when cu.purchasing_user = 1
-                then 'Yes'
-                when cu.purchasing_user = 0
-                then 'No'
+                when cu.purchasing_user then 'Yes' when not cu.purchasing_user then 'No'
             end as purchasing_user,
             r.roles,
             bg.business_group_names as content_groups
         from {{ ref("base_people__staff_roster") }} as sr
         inner join
             {{ source("coupa", "user") }} as cu
-            on sr.employee_number = cu.employee_number
+            on sr.employee_number = safe_cast(cu.employee_number as int)
         inner join roles as r on cu.id = r.user_id
         left join business_groups as bg on cu.id = bg.user_id
         where
-            sr.position_status != 'Prestart'
-            and coalesce(sr.termination_date, cast(current_timestamp as date))
-            >= datefromparts(utilities.global_academic_year() - 1, 7, 1)
-            and isnull (sr.worker_category, '') not in ('Intern', 'Part Time')
-            and isnull (sr.wfmgr_pay_rule, '') != 'PT Hourly'
+            sr.assignment_status != 'Pre-Start'
+            and coalesce(sr.worker_termination_date, current_date('America/New_York'))
+            >= date({{ var("current_fiscal_year") }} - 2, 7, 1)
+            and not regexp_contains(worker_type, r'Part Time|Intern')
+            and (
+                sr.custom_wfmgr_pay_rule != 'PT Hourly'
+                or sr.custom_wfmgr_pay_rule is null
+            )
 
         union all
 
         /* new users */
         select
             sr.employee_number,
-            sr.first_name,
-            sr.last_name,
-            sr.position_status,
-            sr.business_unit_code,
-            sr.home_department,
+            sr.legal_name_given_name,
+            sr.legal_name_family_name,
+            sr.assignment_status,
+            sr.business_unit_home_code,
+            sr.department_home_name,
             sr.job_title,
-            sr.location,
-            sr.worker_category,
-            sr.wfmgr_pay_rule,
+            sr.home_work_location_name,
+            sr.worker_type,
+            sr.custom_wfmgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             lower(sr.sam_account_name) as sam_account_name,
             lower(sr.user_principal_name) as user_principal_name,
             lower(sr.mail) as mail,
-            1 as active,
+            true as active,
             'No' as purchasing_user,
             'Expense User' as roles,
             null as content_groups
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ source("coupa", "user") }} as cu
-            on sr.employee_number = cu.employee_number
+            on sr.employee_number = safe_cast(cu.employee_number as int)
         where
-            sr.position_status not in ('Prestart', 'Terminated')
-            and isnull (sr.worker_category, '') not in ('Intern', 'Part Time')
-            and isnull (sr.wfmgr_pay_rule, '') != 'PT Hourly'
+            sr.assignment_status not in ('Pre-Start', 'Terminated')
+            and not regexp_contains(worker_type, r'Part Time|Intern')
+            and (
+                sr.custom_wfmgr_pay_rule != 'PT Hourly'
+                or sr.custom_wfmgr_pay_rule is null
+            )
             and cu.employee_number is null
     ),
 
     sub as (
         select
             au.employee_number,
-            au.first_name,
-            au.last_name,
+            au.legal_name_given_name,
+            au.legal_name_family_name,
             au.roles,
-            au.position_status,
+            au.assignment_status,
             au.active,
             au.purchasing_user,
             au.content_groups,
-            au.business_unit_code,
-            au.worker_category,
-            au.wfmgr_pay_rule,
+            au.business_unit_home_code,
+            au.worker_type,
+            au.custom_wfmgr_pay_rule,
+            au.sam_account_name,
+            au.user_principal_name,
+            au.mail,
+
             a.location_code,
             a.street_1,
             a.city,
             a.state,
             a.postal_code,
             a.name as address_name,
-            case
-                /* no interns */
-                when au.worker_category = 'Intern'
-                then 'inactive'
-                /* keep Approvers active while on leave */
-                when
-                    (
-                        au.position_status = 'Leave'
-                        and (
-                            au.roles like '%Edit Expense Report AS Approver%'
-                            or au.roles like '%Edit Requisition AS Approver%'
-                        )
-                    )
-                then 'active'
-                /* deactivate all others on leave */
-                when au.position_status = 'Leave'
-                then 'inactive'
-                when ad.is_active = 1
-                then 'active'
-                else 'inactive'
-            end as coupa_status,
-            lower(ad.samaccountname) as samaccountname,
-            lower(ad.userprincipalname) as userprincipalname,
-            lower(ad.mail) as mail,
             case when a.street_2 != '' then a.street_2 end as street_2,
             case when a.attention != '' then a.attention end as attention,
 
             /*
-              override
-              > lookup table (content group/department/job)
-              > lookup table (content group/department)
+              > override
+              >> lookup table (content group/department/job)
+              >>> lookup table (content group/department)
             */
             coalesce(
                 x.coupa_school_name,
-                case
-                    when (sn.coupa_school_name = '<Use PhysicalDeliveryOfficeName>')
-                    then ad.physicaldeliveryofficename
-                    else sn.coupa_school_name
-                end,
-                case
-                    when (sn2.coupa_school_name = '<Use PhysicalDeliveryOfficeName>')
-                    then ad.physicaldeliveryofficename
-                    else sn2.coupa_school_name
-                end
-            ) as coupa_school_name
+                if(
+                    sn.coupa_school_name = '<Use PhysicalDeliveryOfficeName>',
+                    au.physical_delivery_office_name,
+                    sn.coupa_school_name
+                ),
+                if(
+                    sn2.coupa_school_name = '<Use PhysicalDeliveryOfficeName>',
+                    au.physical_delivery_office_name,
+                    sn2.coupa_school_name
+                )
+            ) as coupa_school_name,
+            case
+                /* no interns */
+                when au.worker_type like 'Intern%'
+                then 'inactive'
+                /* keep Approvers active while on leave */
+                when
+                    au.assignment_status = 'Leave'
+                    and (
+                        au.roles like '%Edit Expense Report AS Approver%'
+                        or au.roles like '%Edit Requisition AS Approver%'
+                    )
+                then 'active'
+                /* deactivate all others on leave */
+                when au.assignment_status = 'Leave'
+                then 'inactive'
+                when au.uac_account_disable = 0
+                then 'active'
+                else 'inactive'
+            end as coupa_status,
         from all_users as au
         left join
-            {{ source("coupa", "school_name_lookup") }} as sn
-            on au.business_unit_code = sn.business_unit_code
-            and au.home_department = sn.home_department
-            and au.job_title = sn.job_title
+            {{ source("coupa", "src_coupa__school_name_lookup") }} as sn
+            on au.business_unit_home_code = sn.adp_business_unit_home_code
+            and au.department_home_name = sn.adp_department_home_name
+            and au.job_title = sn.adp_job_title
         left join
-            {{ source("coupa", "school_name_lookup") }} as sn2
-            on au.business_unit_code = sn2.business_unit_code
-            and au.home_department = sn2.home_department
-            and sn2.job_title = 'Default'
+            {{ source("coupa", "src_coupa__school_name_lookup") }} as sn2
+            on au.business_unit_home_code = sn2.adp_business_unit_home_code
+            and au.department_home_name = sn2.adp_department_home_name
+            and sn2.adp_job_title = 'Default'
         left join
-            {{ source("coupa", "user_exceptions") }} as x
+            {{ source("coupa", "src_coupa__user_exceptions") }} as x
             on au.employee_number = x.employee_number
         left join
-            {{ source("coupa", "address_name_crosswalk") }} as anc
-            on au.location = anc.adp_location
+            {{ source("coupa", "src_coupa__address_name_crosswalk") }} as anc
+            on au.home_work_location_name = anc.adp_home_work_location_name
         left join
             {{ source("coupa", "address") }} as a
-            on anc.coupa_address_name = a.`name`
-            and a.active = 1
+            on anc.coupa_address_name = a.name
+            and a.active
     )
 
 select
-    sub.samaccountname as `login`,
-    sub.userprincipalname as `sso identifier`,
-    sub.mail as `email`,
-    sub.first_name as `first name`,
-    sub.last_name as `last name`,
-    sub.employee_number as `employee number`,
-    sub.roles as `user role names`,
-    sub.location_code as `default address location code`,
-    sub.street_1 as `default address street 1`,
-    sub.street_2 as `default address street 2`,
-    sub.city as `default address city`,
-    sub.`state` as `default address state`,
-    sub.postal_code as `default address postal code`,
-    'US' as `default address country code`,
-    sub.attention as `default address attention`,
-    sub.address_name as `default address name`,
-    sub.coupa_status as `status`,
-    'SAML' as `authentication method`,
-    'No' as `generate password and notify user`,
+    sub.sam_account_name as `Login`,
+    sub.user_principal_name as `Sso Identifier`,
+    sub.mail as `Email`,
+    sub.legal_name_given_name as `First Name`,
+    sub.legal_name_family_name as `Last Name`,
+    sub.employee_number as `Employee Number`,
+    sub.roles as `User Role Names`,
+    sub.location_code as `Default Address Location Code`,
+    sub.street_1 as `Default Address Street 1`,
+    sub.street_2 as `Default Address Street 2`,
+    sub.city as `Default Address City`,
+    sub.state as `Default Address State`,
+    sub.postal_code as `Default Address Postal Code`,
+    'US' as `Default Address Country Code`,
+    sub.attention as `Default Address Attention`,
+    sub.address_name as `Default Address Name`,
+    sub.coupa_status as `Status`,
+    'SAML' as `Authentication Method`,
+    'No' as `Generate Password And Notify User`,
     case
-        when sub.worker_category in ('Part Time', 'Intern')
+        when regexp_contains(sub.worker_type, r'Part Time|Intern')
         then 'No'
-        when sub.wfmgr_pay_rule = 'PT Hourly'
+        when sub.custom_wfmgr_pay_rule = 'PT Hourly'
         then 'No'
         when sub.coupa_status = 'inactive'
         then 'No'
         else 'Yes'
-    end as `expense user`,
+    end as `Expense User`,
     /* preserve Coupa, otherwise No */
     coalesce(
-        case when sub.coupa_status = 'inactive' then 'No' end, sub.purchasing_user, 'No'
-    ) as `purchasing user`,
+        if(sub.coupa_status = 'inactive', 'No', null), sub.purchasing_user, 'No'
+    ) as `Purchasing User`,
     /* preserve Coupa, otherwise use HRIS */
     coalesce(
         sub.content_groups,
         case
-            when sub.business_unit_code = 'KIPP_TAF'
+            sub.business_unit_home_code
+            when 'KIPP_TAF'
             then 'KIPP NJ'
-            when sub.business_unit_code = 'KIPP_MIAMI'
+            when 'KIPP_MIAMI'
             then 'MIA'
-            else sub.business_unit_code
+            else sub.business_unit_home_code
         end
-    ) as `content groups`,
+    ) as `Content Groups`,
     concat(
-        case when sub.position_status = 'Terminated' then 'X' end,
-        utilities.strip_characters(concat(sub.first_name, sub.last_name), '^A-Z'),
-        case
-            when isnumeric(right(sub.samaccountname, 1)) = 1
-            then right(sub.samaccountname, 1)
-        end
-    ) as `mention name`,
-    case
-        when sna.coupa_school_name = '<BLANK>'
-        then null
-        else coalesce(sna.coupa_school_name, sub.`coupa_school_name`)
-    end as `school name`
+        if(sub.assignment_status = 'Terminated', 'X', ''),
+        ifnull(
+            regexp_replace(
+                concat(sub.legal_name_given_name, sub.legal_name_family_name),
+                r'[^A-Za-z0-9]',
+                ''
+            ),
+            ''
+        ),
+        ifnull(regexp_extract(sam_account_name, r'\d+$'), '')
+    ) as `Mention Name`,
+    if(
+        sna.coupa_school_name = '<BLANK>',
+        null,
+        coalesce(sna.coupa_school_name, sub.coupa_school_name)
+    ) as `School Name`
 from sub
 left join
-    {{ source("coupa", "school_name_aliases") }} as sna
-    on sub.coupa_school_name = sna.physical_delivery_office_name
+    {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna
+    on sub.coupa_school_name = sna.ldap_physical_delivery_office_name

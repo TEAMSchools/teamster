@@ -107,11 +107,59 @@ sources:
       - name: user_group
       - name: user_group_membership
       - name: user_role_mapping
-      - name: src_people__employee_numbers_archive
+      - name: src_coupa__address_name_crosswalk
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-            sheet_range: src_people__employee_numbers_archive
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__address_name_crosswalk
             skip_leading_rows: 1
+        columns:
+          - name: adp_home_work_location_name
+            data_type: STRING
+          - name: coupa_address_name
+            data_type: STRING
+      - name: src_coupa__school_name_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__school_name_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: ldap_physical_delivery_office_name
+            data_type: STRING
+          - name: coupa_school_name
+            data_type: STRING
+      - name: src_coupa__school_name_lookup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__school_name_lookup
+            skip_leading_rows: 1
+        columns:
+          - name: adp_business_unit_home_code
+            data_type: STRING
+          - name: adp_department_home_name
+            data_type: STRING
+          - name: adp_job_title
+            data_type: STRING
+          - name: coupa_school_name
+            data_type: STRING
+      - name: src_coupa__user_exceptions
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__user_exceptions
+            skip_leading_rows: 1
+        columns:
+          - name: employee_number
+            data_type: INT
+          - name: coupa_school_name
+            data_type: STRING
