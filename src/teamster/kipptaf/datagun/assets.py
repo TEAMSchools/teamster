@@ -1,6 +1,7 @@
 from dagster import config_from_files
 
 from teamster.core.datagun.assets import (
+    build_bigquery_extract_sftp_asset,
     build_bigquery_query_sftp_asset,
     generate_extract_assets,
 )
@@ -8,6 +9,20 @@ from teamster.core.datagun.assets import (
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
+
+blissbook_extract_assets = [
+    build_bigquery_extract_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/blissbook.yaml"])["assets"]
+]
+
+idauto_extract_assets = [
+    build_bigquery_query_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
+]
 
 adp_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
@@ -19,13 +34,6 @@ adp_extract_assets = generate_extract_assets(
 alchemer_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="alchemer",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
-blissbook_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="blissbook",
     extract_type="sftp",
     timezone=LOCAL_TIMEZONE,
 )
@@ -120,15 +128,6 @@ gsheet_extract_assets = generate_extract_assets(
     extract_type="gsheet",
     timezone=LOCAL_TIMEZONE,
 )
-
-idauto_extract_assets = [
-    build_bigquery_query_sftp_asset(
-        code_location=CODE_LOCATION,
-        timezone=LOCAL_TIMEZONE,
-        **a,
-    )
-    for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
-]
 
 __all__ = [
     *adp_extract_assets,

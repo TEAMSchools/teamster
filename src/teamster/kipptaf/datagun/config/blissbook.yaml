@@ -1,15 +1,7 @@
-key_prefix:
-  - kipptaf
-  - datagun
-  - blissbook
 assets:
-  - asset_name: members_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: blissbook_employee_list
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_blissbook__employee_list
     file_config:
       stem: members
       suffix: csv
