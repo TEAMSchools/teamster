@@ -4,13 +4,13 @@ sources:
   - name: ldap
     schema: kipptaf_ldap
     tables:
-      - name: src_ldap_user_person
+      - name: src_ldap__user_person
         external:
           location: gs://teamster-kipptaf/dagster/kipptaf/ldap/user_person/*
           options:
             format: AVRO
             enable_logical_types: true
-      - name: src_ldap_group
+      - name: src_ldap__group
         external:
           location: gs://teamster-kipptaf/dagster/kipptaf/ldap/group/*
           options:
