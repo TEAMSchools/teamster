@@ -1,5 +1,11 @@
-# Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python
-# Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,python
+# Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python,dbt
+# Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,python,dbt
+
+### dbt ###
+target/
+dbt_modules/
+dbt_packages/
+logs/
 
 ### Linux ###
 *~
@@ -125,7 +131,6 @@ docs/_build/
 
 # PyBuilder
 .pybuilder/
-target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -159,6 +164,7 @@ ipython_config.py
 #   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
 #   in version control.
 #   https://pdm.fming.dev/#use-with-ide
+.pdm.toml
 .pdm-python
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
@@ -215,6 +221,11 @@ cython_debug/
 # Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
 poetry.toml
 
+# ruff
+.ruff_cache/
+
+# LSP config files
+pyrightconfig.json
 
 ### Windows ###
 # Windows thumbnail cache files
@@ -242,4 +253,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python
+# End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python,dbt
