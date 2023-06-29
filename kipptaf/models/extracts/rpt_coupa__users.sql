@@ -1,26 +1,29 @@
 {{ config(enabled=False) }}
 
 with
+    roles_union as (
+        select urm.user_id, r.name as role_name,
+        from {{ source("coupa", "user_role_mapping") }} as urm
+        inner join {{ source("coupa", "role") }} as r on urm.role_id = r.id
+
+        union distinct
+
+        select u.id as user_id, 'Expense User' as role_name,
+        from {{ source("coupa", "user") }} as u
+    )
+
     roles as (
-        select user_id, dbo.group_concat(role_name) as roles
-        from
-            (
-                select urm.user_id, r.`name` as role_name
-                from coupa.user_role_mapping as urm
-                inner join coupa.role as r on urm.role_id = r.id
-
-                union
-
-                select u.id as user_id, 'Expense User' as role_name
-                from coupa.user as u
-            ) as sub
+        select user_id, string_agg(role_name) as roles,
+        from roles_union
         group by user_id
     ),
 
     business_groups as (
-        select ubgm.user_id, dbo.group_concat_d(bg.name, ', ') as business_group_names
-        from coupa.user_business_group_mapping as ubgm
-        inner join coupa.business_group as bg on ubgm.business_group_id = bg.id
+        select ubgm.user_id, string_agg(bg.name, ', ') as business_group_names
+        from {{ source("coupa", "user_business_group_mapping") }} as ubgm
+        inner join
+            {{ source("coupa", "business_group") }} as bg
+            on ubgm.business_group_id = bg.id
         group by ubgm.user_id
     ),
 
@@ -37,6 +40,11 @@ with
             sr.location,
             sr.worker_category,
             sr.wfmgr_pay_rule,
+            sr.uac_account_disable,
+            sr.physical_delivery_office_name,
+            lower(sr.sam_account_name) as sam_account_name,
+            lower(sr.user_principal_name) as user_principal_name,
+            lower(sr.mail) as mail,
             cu.active,
             case
                 when cu.purchasing_user = 1
@@ -47,7 +55,9 @@ with
             r.roles,
             bg.business_group_names as content_groups
         from {{ ref("base_people__staff_roster") }} as sr
-        inner join coupa.user as cu on sr.employee_number = cu.employee_number
+        inner join
+            {{ source("coupa", "user") }} as cu
+            on sr.employee_number = cu.employee_number
         inner join roles as r on cu.id = r.user_id
         left join business_groups as bg on cu.id = bg.user_id
         where
@@ -71,12 +81,19 @@ with
             sr.location,
             sr.worker_category,
             sr.wfmgr_pay_rule,
+            sr.uac_account_disable,
+            sr.physical_delivery_office_name,
+            lower(sr.sam_account_name) as sam_account_name,
+            lower(sr.user_principal_name) as user_principal_name,
+            lower(sr.mail) as mail,
             1 as active,
             'No' as purchasing_user,
             'Expense User' as roles,
             null as content_groups
         from {{ ref("base_people__staff_roster") }} as sr
-        left join coupa.user as cu on sr.employee_number = cu.employee_number
+        left join
+            {{ source("coupa", "user") }} as cu
+            on sr.employee_number = cu.employee_number
         where
             sr.position_status not in ('Prestart', 'Terminated')
             and isnull (sr.worker_category, '') not in ('Intern', 'Part Time')
@@ -149,24 +166,26 @@ with
                 end
             ) as coupa_school_name
         from all_users as au
-        inner join
-            adsi.user_attributes_static as ad
-            on au.employee_number = ad.employeenumber
-            and isnumeric(ad.employeenumber) = 1
         left join
-            coupa.school_name_lookup as sn
+            {{ source("coupa", "school_name_lookup") }} as sn
             on au.business_unit_code = sn.business_unit_code
             and au.home_department = sn.home_department
             and au.job_title = sn.job_title
         left join
-            coupa.school_name_lookup as sn2
+            {{ source("coupa", "school_name_lookup") }} as sn2
             on au.business_unit_code = sn2.business_unit_code
             and au.home_department = sn2.home_department
             and sn2.job_title = 'Default'
-        left join coupa.user_exceptions as x on au.employee_number = x.employee_number
-        left join coupa.address_name_crosswalk as anc on au.location = anc.adp_location
         left join
-            coupa.address as a on anc.coupa_address_name = a.`name` and a.active = 1
+            {{ source("coupa", "user_exceptions") }} as x
+            on au.employee_number = x.employee_number
+        left join
+            {{ source("coupa", "address_name_crosswalk") }} as anc
+            on au.location = anc.adp_location
+        left join
+            {{ source("coupa", "address") }} as a
+            on anc.coupa_address_name = a.`name`
+            and a.active = 1
     )
 
 select
@@ -228,5 +247,5 @@ select
     end as `school name`
 from sub
 left join
-    coupa.school_name_aliases as sna
+    {{ source("coupa", "school_name_aliases") }} as sna
     on sub.coupa_school_name = sna.physical_delivery_office_name

@@ -3,10 +3,10 @@ select
     employee_number as `Position ID`,
     preferred_name_given_name as `First Name`,
     preferred_name_family_name as `Last Name`,
-    business_unit_assigned as `Company Code`,
+    business_unit_assigned_name as `Company Code`,
     home_work_location_name as `Location Description`,
-    department_assigned as `Business Unit Description`,
-    department_assigned as `Home Department Description`,
+    department_assigned_name as `Business Unit Description`,
+    department_assigned_name as `Home Department Description`,
     job_title as `Job Title Description`,
     report_to_employee_number as `Business Unit Code`,
     format_date('%m/%d/%Y', worker_rehire_date) as `Rehire Date`,
@@ -20,5 +20,5 @@ from {{ ref("base_people__staff_roster") }}
 where
     coalesce(worker_rehire_date, worker_original_hire_date)
     <= date_add(current_date('America/New_York'), interval 10 day)
-    and business_unit_assigned is not null
+    and business_unit_assigned_name is not null
     and home_work_location_name is not null
