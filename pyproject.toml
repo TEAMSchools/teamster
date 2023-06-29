@@ -22,4 +22,4 @@ dev = [
 [tool.pdm.scripts]
 scaffold_models = { shell = "python .pdm/scripts/scaffold_models.py" }
 stage-external-sources = { shell = "pdm run bash .pdm/scripts/stage_external_sources.sh" }
-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
+dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
