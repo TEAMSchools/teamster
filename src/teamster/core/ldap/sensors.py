@@ -38,13 +38,13 @@ def build_ldap_asset_sensor(
             last_check_timestamp = pendulum.from_timestamp(
                 cursor.get(asset_identifier, 0)
             ).format(fmt="YYYYMMDDHHmmss.SSSSSSZZ")
+            context.log.info(last_check_timestamp)
 
             ldap._connection.search(
                 search_base=asset_metadata["search_base"],
                 search_filter=(
                     f"(&(whenChanged>={last_check_timestamp}){search_filter})"
                 ),
-                attributes=["distinguishedName"],
                 size_limit=1,
             )
 

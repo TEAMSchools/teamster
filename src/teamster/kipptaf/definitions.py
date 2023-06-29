@@ -79,6 +79,7 @@ defs = Definitions(
         *amplify.schedules,
         *datagun.schedules,
         *fivetran.schedules,
+        *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
     ],
@@ -89,7 +90,6 @@ defs = Definitions(
         *clever.sensors,
         *google.sensors,
         *iready.sensors,
-        *ldap.sensors,
         *renlearn.sensors,
     ],
     resources={

@@ -6,9 +6,9 @@ from teamster.core.ldap.resources import LdapResource
 
 SEARCH_BASE = "dc=teamschools,dc=kipp,dc=org"
 SEARCH_FILTERS = [
-    # "(&(whenChanged>=20230628000000.000000-0500)(&(objectClass=user)(objectCategory=person)))",
+    "(&(whenChanged>=20230628000000.000000-0500)(&(objectClass=user)(objectCategory=person)))",
     "(&(objectClass=user)(objectCategory=person))",
-    # "(objectClass=group)",
+    "(objectClass=group)",
 ]
 
 # via http://www.phpldaptools.com/reference/Default-Schema-Attributes
