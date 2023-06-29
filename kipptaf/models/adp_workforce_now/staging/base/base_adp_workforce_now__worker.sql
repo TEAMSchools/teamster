@@ -90,7 +90,7 @@ select
     {{-
         dbt_utils.star(
             from=ref_worker_organizational_unit,
-            except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
+            except=["_fivetran_synced", "worker_assignment_id"],
             relation_alias="wou",
             prefix="organizational_unit_",
         )

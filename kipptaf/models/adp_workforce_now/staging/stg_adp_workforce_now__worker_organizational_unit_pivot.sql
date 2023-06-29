@@ -1,4 +1,17 @@
 with
+    ou_unpivot as (
+        select
+            id,
+            lower(regexp_replace(type_short_name, r'\W', '_')) as type_short_name,
+            name_column,
+            values_column,
+        from
+            {{ source("adp_workforce_now", "organizational_unit") }}
+            unpivot exclude nulls(
+                values_column for name_column in (name, name_long_name, name_short_name)
+            )
+    ),
+
     union_relations as (
         {{
             dbt_utils.union_relations(
@@ -16,37 +29,42 @@ with
             )
         }}
     ),
-    ou_coalesce as (
+
+    wou_join as (
         select
-            id,
-            type_short_name,
-            coalesce(name_short_name, name_long_name, `name`) as `name`
-        from {{ source("adp_workforce_now", "organizational_unit") }}
-    ),
-    ou_join as (
-        select
-            ouu.worker_assignment_id,
-            ouc.name,
-            (
-                lower(regexp_replace(ouc.type_short_name, r'\W', '_'))
-                || '_'
-                || regexp_extract(
-                    ouu._dbt_source_relation, r'worker_(\w+)_organizational_unit'
-                )
-            ) as input_column,
-        from union_relations as ouu
-        inner join ou_coalesce as ouc on ouu.id = ouc.id
+            ur.worker_assignment_id,
+
+            ouu.values_column,
+            lower(regexp_replace(ouu.type_short_name, r'\W', '_'))
+            || '_'
+            || regexp_extract(
+                ur._dbt_source_relation, r'worker_(\w+)_organizational_unit'
+            )
+            || '_'
+            || ouu.name_column as input_column,
+        from union_relations as ur
+        inner join ou_unpivot as ouu on ur.id = ouu.id
     )
 
 select *
 from
-    ou_join pivot (
-        max(`name`) for input_column in (
-            'business_unit_assigned',
-            'business_unit_home',
-            'cost_number_assigned',
-            'cost_number_home',
-            'department_assigned',
-            'department_home'
+    wou_join pivot (
+        max(values_column) for input_column in (
+            'business_unit_assigned_name_long_name',
+            'business_unit_assigned_name_short_name',
+            'business_unit_assigned_name',
+            'business_unit_home_name_long_name',
+            'business_unit_home_name_short_name',
+            'business_unit_home_name',
+            'cost_number_assigned_name_short_name',
+            'cost_number_assigned_name',
+            'cost_number_home_name_short_name',
+            'cost_number_home_name',
+            'department_assigned_name_long_name',
+            'department_assigned_name_short_name',
+            'department_assigned_name',
+            'department_home_name_long_name',
+            'department_home_name_short_name',
+            'department_home_name'
         )
     )

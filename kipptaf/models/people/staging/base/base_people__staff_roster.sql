@@ -123,9 +123,31 @@ select
 
     wp.disability_long_name as disability,
 
-    wp.organizational_unit_business_unit_assigned as business_unit_assigned,
-    wp.organizational_unit_department_assigned as department_assigned,
-    wp.organizational_unit_cost_number_assigned as cost_number_assigned,
+    coalesce(
+        wp.organizational_unit_business_unit_assigned_name_long_name,
+        wp.organizational_unit_business_unit_assigned_name_short_name
+    ) as business_unit_assigned_name,
+    wp.organizational_unit_business_unit_assigned_name as business_unit_assigned_code,
+    coalesce(
+        wp.organizational_unit_business_unit_home_name_long_name,
+        wp.organizational_unit_business_unit_home_name_short_name
+    ) as business_unit_home_name,
+    wp.organizational_unit_business_unit_home_name as business_unit_home_code,
+    wp.organizational_unit_cost_number_assigned_name_short_name
+    as cost_number_assigned_name,
+    wp.organizational_unit_cost_number_assigned_name as cost_number_assigned_code,
+    wp.organizational_unit_cost_number_home_name_short_name as cost_number_home_name,
+    wp.organizational_unit_cost_number_home_name as cost_number_home_code,
+    coalesce(
+        wp.organizational_unit_department_assigned_name_long_name,
+        wp.organizational_unit_department_assigned_name_short_name
+    ) as department_assigned_name,
+    wp.organizational_unit_department_assigned_name as department_assigned_code,
+    coalesce(
+        wp.organizational_unit_department_home_name_long_name,
+        wp.organizational_unit_department_home_name_short_name
+    ) as department_home_name,
+    wp.organizational_unit_department_home_name as department_home_code,
 
     wp.base_remuneration_effective_date,
     wp.base_remuneration_annual_rate_amount_amount_value,
@@ -200,9 +222,6 @@ select
     person_highest_education_level,
     person_highest_education_level_short_name,
     disability_value,
-    organizational_unit_business_unit_home,
-    organizational_unit_department_home,
-    organizational_unit_cost_number_home,
     base_remuneration_annual_rate_amount_name_short_name,
     base_remuneration_annual_rate_amount_currency_code,
     base_remuneration_pay_period_rate_amount_name_short_name,

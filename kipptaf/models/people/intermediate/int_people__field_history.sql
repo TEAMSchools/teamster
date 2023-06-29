@@ -1,11 +1,11 @@
 {%- set surrogate_key_field_list = [
     "base_remuneration_annual_rate_amount_amount_value",
-    "business_unit_assigned",
+    "business_unit_assigned_name",
     "custom_wfmgr_accrual_profile",
     "custom_wfmgr_badge_number",
     "custom_wfmgr_ee_type",
     "custom_wfmgr_pay_rule",
-    "department_assigned",
+    "department_assigned_name",
     "home_work_location_name",
     "job_title",
     "report_to_worker_id",
