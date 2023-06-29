@@ -6,4 +6,4 @@ select
     safe_cast(employeenumber as int) as employee_number,
     physicaldeliveryofficename as physical_delivery_office_name,
     useraccountcontrol & 2 as uac_account_disable,
-from {{ source("ldap", "src_ldap_user_person") }}
+from {{ source("ldap", "src_ldap__user_person") }}
