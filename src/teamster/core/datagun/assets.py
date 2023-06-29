@@ -209,7 +209,7 @@ def build_bigquery_query_sftp_asset(
     )
 
     @asset(
-        key_prefix=[code_location, "extracts", destination_name, asset_name],
+        key=[code_location, "extracts", destination_name, asset_name],
         non_argument_deps=[
             AssetKey(
                 [code_location, "extracts", query_config["value"]["table"]["name"]]
