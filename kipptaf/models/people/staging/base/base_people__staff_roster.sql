@@ -60,6 +60,7 @@ select
     wp.worker_termination_date,
     wp.worker_custom_miami_aces_number as custom_miami_aces_number,
     wp.worker_custom_nj_pension_number as custom_nj_pension_number,
+    wp.worker_custom_employee_number as custom_employee_number,
     wp.worker_custom_wfmgr_accrual_profile as custom_wfmgr_accrual_profile,
     wp.worker_custom_wfmgr_badge_number as custom_wfmgr_badge_number,
     wp.worker_custom_wfmgr_ee_type as custom_wfmgr_ee_type,

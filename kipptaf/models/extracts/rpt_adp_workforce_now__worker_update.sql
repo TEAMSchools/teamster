@@ -12,7 +12,9 @@ select
     sr.employee_number,
     sr.associate_oid,
     lower(sr.mail) as mail,
-
+    {# employee_number
+    wfm_badge_number
+    work_email #}
     case
         when wfm.worker_id is not null
         then concat('DR', current_date('America/New_York'))
