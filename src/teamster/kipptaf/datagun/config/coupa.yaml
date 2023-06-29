@@ -1,18 +1,10 @@
 assets:
-  - asset_name: users_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: coupa_users
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_coupa__users
     file_config:
       stem: users_{today}
       suffix: csv
     destination_config:
       name: coupa
       path: /Incoming/Users
-key_prefix:
-  - kipptaf
-  - datagun
-  - coupa
