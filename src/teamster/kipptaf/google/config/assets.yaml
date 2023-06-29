@@ -11,6 +11,24 @@ assets:
   - name: people__powerschool_crosswalk
     range_name: src_people__powerschool_crosswalk
     sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+  - name: egencia__traveler_groups
+    range_name: src_egencia__traveler_groups
+    sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+  - name: egencia__travel_managers
+    range_name: src_egencia__travel_managers
+    sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+  - name: coupa__school_name_lookup
+    range_name: src_coupa__school_name_lookup
+    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+  - name: coupa__user_exceptions
+    range_name: src_coupa__user_exceptions
+    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+  - name: coupa__school_name_crosswalk
+    range_name: src_coupa__school_crosswalk
+    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+  - name: coupa__address_name_crosswalk
+    range_name: src_coupa__address_name_crosswalk
+    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
   - name: people__id_crosswalk_adp
     range_name: fivetran_id_crosswalk_adp
     sheet_id: 1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik
@@ -50,21 +68,6 @@ assets:
   - name: surveys__surveygizmo_abnormal_respondents
     range_name: fivetran_surveygizmo_abnormal_respondents
     sheet_id: 15PIpnnKaU2NF42JzjUbnrocL_2F41JOVZP4dYDS7mME
-  - name: egencia__traveler_groups
-    range_name: fivetran_egencia_traveller_groups
-    sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
-  - name: coupa__school_name_lookup
-    range_name: fivetran_school_name_lookup
-    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
-  - name: coupa__user_exceptions
-    range_name: fivetran_user_exceptions
-    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
-  - name: coupa__school_name_aliases
-    range_name: fivetran_school_aliases
-    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
-  - name: coupa__address_name_crosswalk
-    range_name: fivetran_address_name_crosswalk
-    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
   - name: ops__income_form_data
     range_name: fivetran_ops_income_form_data
     sheet_id: 1NH6njTDdxrTRhCxz7G19iDsMD7aBQSH1d20PDr6iRyQ
