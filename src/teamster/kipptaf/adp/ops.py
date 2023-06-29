@@ -1,4 +1,4 @@
-from dagster import OpExecutionContext, op
+from dagster import AssetKey, In, OpExecutionContext, op
 from dagster_gcp import BigQueryResource
 from google.cloud import bigquery
 from pandas import DataFrame
@@ -34,7 +34,15 @@ def get_event_payload(associate_oid, item_id, string_value):
 worker_endpoint = "/events/hr/v1/worker"
 
 
-@op()
+@op(
+    ins={
+        "foo": In(
+            asset_key=AssetKey(
+                [CODE_LOCATION, "extracts", "rpt_adp_workforce_now__worker_update"]
+            )
+        )
+    }
+)
 def worker_fields_update_op(
     context: OpExecutionContext,
     db_bigquery: BigQueryResource,
