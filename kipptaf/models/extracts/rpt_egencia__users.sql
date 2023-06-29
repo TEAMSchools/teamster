@@ -6,11 +6,7 @@ select
     if(sr.assignment_status = 'Terminated', 'Disabled', 'Active') as `Status`,
     sr.legal_name_given_name as `First name`,  /* legal name */
     sr.legal_name_family_name as `Last name`,  /* legal name */
-    if(
-        sr.employee_number in (100219, 100412, 100566, 102298),
-        'Travel Manager',
-        'Traveler'
-    ) as `Role`,
+    if(tm.employee_number is not null, 'Travel Manager', 'Traveler') as `Role`,
 
     /* cascading match on home_work_location_name/dept/job */
     coalesce(
@@ -35,6 +31,9 @@ left join
     on sr.home_work_location_name = tg3.adp_home_work_location_name
     and tg3.adp_department_home_name = 'Default'
     and tg3.adp_job_title = 'Default'
+left join
+    {{ source("egencia", "src_egencia__travel_managers") }} as tm
+    on sr.employee_number = tm.employee_number
 where
     (sr.worker_type not in ('Intern', 'Part Time') or sr.worker_type is null)
     and coalesce(sr.worker_termination_date, current_date('America/New_York'))

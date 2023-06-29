@@ -31,4 +31,4 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: employee_number
-            data_type: STRING
+            data_type: INT
