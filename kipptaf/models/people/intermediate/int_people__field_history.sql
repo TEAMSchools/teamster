@@ -21,7 +21,7 @@ with
             effective_datetime,
             {{ dbt_utils.generate_surrogate_key(field_list=surrogate_key_field_list) }}
             as surrogate_key,
-        from {{ ref("base_people__staff_roster_history") }}
+        from {{ ref("snapshot_people__staff_roster") }}
         where
             position_id is not null
             and assignment_status != 'Terminated'
