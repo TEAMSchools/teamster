@@ -8,13 +8,17 @@ from teamster.core.adp.resources import AdpWorkforceNowResource
 from .. import CODE_LOCATION
 
 
-def get_event_payload(associate_oid, item_id, string_value):
-    payload = {
+def get_base_payload(associate_oid):
+    return {
         "data": {
             "eventContext": {"worker": {"associateOID": associate_oid}},
             "transform": {"worker": {}},
         }
     }
+
+
+def get_event_payload(associate_oid, item_id, string_value):
+    payload = get_base_payload(associate_oid)
 
     if item_id == "Business":
         payload["data"]["transform"]["worker"]["businessCommunication"] = {
@@ -31,22 +35,20 @@ def get_event_payload(associate_oid, item_id, string_value):
     return payload
 
 
-worker_endpoint = "/events/hr/v1/worker"
-
-
 @op(
     ins={
-        "foo": In(
+        "source_view": In(
             asset_key=AssetKey(
                 [CODE_LOCATION, "extracts", "rpt_adp_workforce_now__worker_update"]
             )
         )
     }
 )
-def worker_fields_update_op(
+def adp_wfn_worker_fields_update_op(
     context: OpExecutionContext,
     db_bigquery: BigQueryResource,
     adp_wfn: AdpWorkforceNowResource,
+    source_view,
 ):
     # query extract view
     dataset_ref = bigquery.DatasetReference(
@@ -62,88 +64,107 @@ def worker_fields_update_op(
 
     df: DataFrame = rows.to_dataframe()
 
-    data = df.to_dict(orient="records")
+    worker_data = df.to_dict(orient="records")
 
-    for i in data:
+    for worker in worker_data:
+        associate_oid = worker["associate_oid"]
+        employee_number = worker["employee_number"]
+
         # update work email if new
-        if i["mail"] != record_match.get("work_email").get("emailUri"):
-            context.log.info(
-                f"{i['employee_number']}\twork_email"
-                f"\t{record_match.get('work_email').get('emailUri')} => {i['mail']}"
-            )
+        mail = worker["mail"]
+        mail_adp = worker["communication_business_email"]
 
-            work_email_data = get_event_payload(
-                associate_oid=i["associate_oid"],
-                item_id="Business",
-                string_value=i["mail"],
-            )
-
+        if mail != mail_adp or mail_adp is None:
+            context.log.info(f"{employee_number}\twork_email\t{mail_adp} => {mail}")
             adp_wfn.post(
-                endpoint=worker_endpoint,
+                endpoint="/events/hr/v1/worker",
                 subresource="business-communication.email",
                 verb="change",
-                payload={"events": [work_email_data]},
+                payload={
+                    "events": [
+                        get_event_payload(
+                            associate_oid=associate_oid,
+                            item_id="Business",
+                            string_value=mail,
+                        )
+                    ]
+                },
             )
 
         # update employee number if missing
-        if not record_match.get("employee_number").get("stringValue"):
-            context.log.info(
-                f"{i['employee_number']}\temployee_number"
-                f"\t{record_match.get('employee_number').get('stringValue')}"
-                f" => {i['employee_number']}"
-            )
+        employee_number_adp = worker["custom_employee_number"]
 
-            emp_num_data = get_event_payload(
-                associate_oid=i["associate_oid"],
-                item_id=record_match.get("employee_number").get("itemID"),
-                string_value=i["employee_number"],
+        if employee_number_adp is None:
+            context.log.info(
+                f"{employee_number}\tcustom_employee_number\t{employee_number_adp}"
+                f" => {employee_number}"
             )
 
             adp_wfn.post(
-                endpoint=worker_endpoint,
+                endpoint="/events/hr/v1/worker",
                 subresource="custom-field.string",
                 verb="change",
-                payload={"events": [emp_num_data]},
+                payload={
+                    "events": [
+                        get_event_payload(
+                            associate_oid=associate_oid,
+                            item_id="9200112834881_1",
+                            string_value=employee_number,
+                        )
+                    ]
+                },
             )
 
         # update wfm badge number, if missing
-        if not record_match.get("wfm_badge_number").get("stringValue"):
-            context.log.info(
-                f"{i['employee_number']}\twfm_badge_number"
-                f"\t{record_match.get('wfm_badge_number').get('stringValue')}"
-                f" => {i['employee_number']}"
-            )
+        wfmgr_badge_number_adp = worker["custom_wfmgr_badge_number"]
 
-            wfm_badge_data = get_event_payload(
-                associate_oid=i["associate_oid"],
-                item_id=record_match.get("wfm_badge_number").get("itemID"),
-                string_value=i["employee_number"],
+        if wfmgr_badge_number_adp is None:
+            context.log.info(
+                f"{employee_number}\twfmgr_badge_number\t{wfmgr_badge_number_adp}"
+                f" => {employee_number}"
             )
 
             adp_wfn.post(
-                endpoint=worker_endpoint,
+                endpoint="/events/hr/v1/worker",
                 subresource="custom-field.string",
                 verb="change",
-                payload={"events": [wfm_badge_data]},
+                payload={
+                    "events": [
+                        get_event_payload(
+                            associate_oid=associate_oid,
+                            item_id="9200137663381_1",
+                            string_value=employee_number,
+                        )
+                    ]
+                },
             )
 
         # update wfm trigger if not null
-        if i["wfm_trigger"]:
-            context.log.info(
-                f"{i['employee_number']}\twfm_trigger"
-                f"\t{record_match.get('wfm_trigger').get('stringValue')}"
-                f" => {i['wfm_trigger']}"
-            )
+        wfmgr_trigger = worker["wfmgr_trigger"]
+        wfmgr_trigger_adp = worker["custom_wfmgr_trigger"]
 
-            wfm_trigger_data = get_event_payload(
-                associate_oid=i["associate_oid"],
-                item_id=record_match.get("wfm_trigger").get("itemID"),
-                string_value=i["wfm_trigger"],
+        if wfmgr_trigger is not None:
+            context.log.info(
+                f"{employee_number}\twfm_trigger\t{wfmgr_trigger_adp}"
+                f" => {wfmgr_trigger}"
             )
 
             adp_wfn.post(
-                endpoint=worker_endpoint,
+                endpoint="/events/hr/v1/worker",
                 subresource="custom-field.string",
                 verb="change",
-                payload={"events": [wfm_trigger_data]},
+                payload={
+                    "events": [
+                        get_event_payload(
+                            associate_oid=associate_oid,
+                            item_id="9200039822128_1",
+                            string_value=wfmgr_trigger,
+                        )
+                    ]
+                },
             )
+
+
+__all__ = [
+    adp_wfn_worker_fields_update_op,
+]
