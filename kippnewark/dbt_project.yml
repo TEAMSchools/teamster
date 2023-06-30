@@ -23,12 +23,14 @@ clean-targets: # directories to be removed by `dbt clean`
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
-  powerschool:
-    +schema: powerschool
+  deanslist:
+    +schema: deanslist
   edplan:
     +schema: edplan
+  powerschool:
+    +schema: powerschool
 
 vars:
-  powerschool_schema: kippnewark_powerschool
   deanslist_schema: kippnewark_deanslist
   edplan_schema: kippnewark_edplan
+  powerschool_schema: kippnewark_powerschool

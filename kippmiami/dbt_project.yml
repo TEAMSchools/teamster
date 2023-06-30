@@ -23,10 +23,11 @@ clean-targets: # directories to be removed by `dbt clean`
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
+  deanslist:
+    +schema: deanslist
   powerschool:
+    +schema: powerschool
     staging:
-      +schema: powerschool
-      # disable extensions here
       stg_powerschool__s_nj_crs_x:
         +enabled: false
       stg_powerschool__s_nj_ren_x:
@@ -41,5 +42,5 @@ models:
         +enabled: false
 
 vars:
-  powerschool_schema: kippmiami_powerschool
   deanslist_schema: kippmiami_deanslist
+  powerschool_schema: kippmiami_powerschool
