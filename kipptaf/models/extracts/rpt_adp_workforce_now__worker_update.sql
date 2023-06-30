@@ -19,7 +19,7 @@ select
     case
         when wfm.worker_id is not null
         then concat('DR', current_date('America/New_York'))
-    end as wfm_trigger,
+    end as wfmgr_trigger,
 from {{ ref("base_people__staff_roster") }} as sr
 left join wfm_updates as wfm on sr.worker_id = wfm.worker_id
 where
