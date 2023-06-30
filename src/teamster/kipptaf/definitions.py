@@ -10,7 +10,10 @@ from dagster_gcp import BigQueryResource
 from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.adp.resources import AdpWorkforceManagerResource
+from teamster.core.adp.resources import (
+    AdpWorkforceManagerResource,
+    AdpWorkforceNowResource,
+)
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
 from teamster.core.google.resources.io import gcs_io_manager
@@ -125,6 +128,12 @@ defs = Definitions(
             client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
             username=EnvVar("ADP_WFM_USERNAME"),
             password=EnvVar("ADP_WFM_PASSWORD"),
+        ),
+        "adp_wfn": AdpWorkforceNowResource(
+            client_id=EnvVar("ADP_WFN_CLIENT_ID"),
+            client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
+            cert_filepath="/etc/secret-volume/adp_wfn_cert",
+            key_filepath="/etc/secret-volume/adp_wfn_key",
         ),
         "alchemer": AlchemerResource(
             api_token=EnvVar("ALCHEMER_API_TOKEN"),

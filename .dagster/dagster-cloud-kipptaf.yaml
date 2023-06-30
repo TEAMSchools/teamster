@@ -19,6 +19,8 @@ locations:
           - adp-wfm-password
           - adp-wfm-subdomain
           - adp-wfm-username
+          - adp-wfn-client-id
+          - adp-wfn-client-secret
           - alchemer-api-token
           - alchemer-api-token-secret
           - amplify-password
