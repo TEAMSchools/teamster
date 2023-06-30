@@ -1,7 +1,7 @@
 from dagster import AssetSelection, define_asset_job, job
 
 from .assets import wfm_assets_daily, wfm_assets_dynamic
-from .ops import adp_wfn_worker_fields_update_op
+from .ops import adp_wfn_get_worker_update_data_op, adp_wfn_update_workers_op
 
 daily_partition_asset_job = define_asset_job(
     name="kipptaf_adp_wfm_daily_partition_asset_job",
@@ -17,12 +17,14 @@ dynamic_partition_asset_job = define_asset_job(
 
 
 @job
-def adp_wfn_worker_fields_update_job():
-    adp_wfn_worker_fields_update_op()
+def adp_wfn_update_workers_job():
+    worker_data = adp_wfn_get_worker_update_data_op()
+
+    adp_wfn_update_workers_op(worker_data)
 
 
 __all__ = [
     daily_partition_asset_job,
     dynamic_partition_asset_job,
-    adp_wfn_worker_fields_update_job,
+    adp_wfn_update_workers_job,
 ]

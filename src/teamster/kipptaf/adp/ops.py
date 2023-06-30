@@ -47,11 +47,8 @@ def get_event_payload(associate_oid, item_id, string_value):
         ),
     }
 )
-def adp_wfn_worker_fields_update_op(
-    context: OpExecutionContext,
-    db_bigquery: BigQueryResource,
-    adp_wfn: AdpWorkforceNowResource,
-    **kwargs,
+def adp_wfn_get_worker_update_data_op(
+    context: OpExecutionContext, db_bigquery: BigQueryResource, **kwargs
 ):
     # query extract view
     dataset_ref = bigquery.DatasetReference(
@@ -67,8 +64,13 @@ def adp_wfn_worker_fields_update_op(
 
     df: DataFrame = rows.to_dataframe()
 
-    worker_data = df.to_dict(orient="records")
+    return df.to_dict(orient="records")
 
+
+@op
+def adp_wfn_update_workers_op(
+    context: OpExecutionContext, adp_wfn: AdpWorkforceNowResource, worker_data
+):
     for worker in worker_data:
         associate_oid = worker["associate_oid"]
         employee_number = worker["employee_number"]
@@ -169,5 +171,6 @@ def adp_wfn_worker_fields_update_op(
 
 
 __all__ = [
-    adp_wfn_worker_fields_update_op,
+    adp_wfn_get_worker_update_data_op,
+    adp_wfn_update_workers_op,
 ]

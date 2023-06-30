@@ -5,13 +5,13 @@ from teamster.core.adp.schedules import build_dynamic_partition_schedule
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import wfm_assets_dynamic
 from .jobs import (
-    adp_wfn_worker_fields_update_job,
+    adp_wfn_update_workers_job,
     daily_partition_asset_job,
     dynamic_partition_asset_job,
 )
 
 adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
-    job=adp_wfn_worker_fields_update_job,
+    job=adp_wfn_update_workers_job,
     cron_schedule="10 2 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
