@@ -14,11 +14,15 @@ mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
 
 # save secrets to file
-echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud_service_account_json
+echo "${ADP_WFN_CERT}" |
+  sudo tee /etc/secret-volume/adp_wfn_cert >/dev/null
+echo "${ADP_WFN_KEY}" |
+  sudo tee /etc/secret-volume/adp_wfn_key >/dev/null
 echo "${DBT_USER_CREDS}" |
   sudo tee /etc/secret-volume/dbt_user_creds_json >/dev/null
 echo "${DEANSLIST_API_KEY_MAP}" |
   sudo tee /etc/secret-volume/deanslist_api_key_map_yaml >/dev/null
+echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud_service_account_json
 
 # update pip
 python -m pip install --no-cache-dir --upgrade pip
