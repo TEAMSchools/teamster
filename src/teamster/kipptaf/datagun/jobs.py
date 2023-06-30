@@ -1,28 +1,18 @@
 from dagster import AssetSelection, define_asset_job
 
 from .assets import (
-    adp_extract_assets,
     alchemer_extract_assets,
     blissbook_extract_assets,
     clever_extract_assets,
     coupa_extract_assets,
     deanslist_extract_assets,
     egencia_extract_assets,
-    fpodms_extract_assets,
     gam_extract_assets,
     gsheet_extract_assets,
     idauto_extract_assets,
     illuminate_extract_assets,
     littlesis_extract_assets,
-    njdoe_extract_assets,
-    razkids_extract_assets,
-    read180_extract_assets,
     whetstone_extract_assets,
-)
-
-adp_extract_asset_job = define_asset_job(
-    name="datagun_adp_extract_asset_job",
-    selection=AssetSelection.assets(*adp_extract_assets),
 )
 
 alchemer_extract_asset_job = define_asset_job(
@@ -55,11 +45,6 @@ egencia_extract_asset_job = define_asset_job(
     selection=AssetSelection.assets(*egencia_extract_assets),
 )
 
-fpodms_extract_asset_job = define_asset_job(
-    name="datagun_fpodms_extract_asset_job",
-    selection=AssetSelection.assets(*fpodms_extract_assets),
-)
-
 gam_extract_asset_job = define_asset_job(
     name="datagun_gam_extract_asset_job",
     selection=AssetSelection.assets(*gam_extract_assets),
@@ -80,21 +65,6 @@ littlesis_extract_asset_job = define_asset_job(
     selection=AssetSelection.assets(*littlesis_extract_assets),
 )
 
-njdoe_extract_asset_job = define_asset_job(
-    name="datagun_njdoe_extract_asset_job",
-    selection=AssetSelection.assets(*njdoe_extract_assets),
-)
-
-razkids_extract_asset_job = define_asset_job(
-    name="datagun_razkids_extract_asset_job",
-    selection=AssetSelection.assets(*razkids_extract_assets),
-)
-
-read180_extract_asset_job = define_asset_job(
-    name="datagun_read180_extract_asset_job",
-    selection=AssetSelection.assets(*read180_extract_assets),
-)
-
 whetstone_extract_asset_job = define_asset_job(
     name="datagun_whetstone_extract_asset_job",
     selection=AssetSelection.assets(*whetstone_extract_assets),
@@ -106,7 +76,6 @@ gsheet_extract_asset_job = define_asset_job(
 )
 
 __all__ = [
-    adp_extract_asset_job,
     alchemer_extract_asset_job,
     blissbook_extract_asset_job,
     clever_extract_asset_job,
@@ -120,3 +89,25 @@ __all__ = [
     littlesis_extract_asset_job,
     whetstone_extract_asset_job,
 ]
+
+# RETIRED #
+# adp_extract_asset_job = define_asset_job(
+#     name="datagun_adp_extract_asset_job",
+#     selection=AssetSelection.assets(*adp_extract_assets),
+# )
+# fpodms_extract_asset_job = define_asset_job(
+#     name="datagun_fpodms_extract_asset_job",
+#     selection=AssetSelection.assets(*fpodms_extract_assets),
+# )
+# njdoe_extract_asset_job = define_asset_job(
+#     name="datagun_njdoe_extract_asset_job",
+#     selection=AssetSelection.assets(*njdoe_extract_assets),
+# )
+# razkids_extract_asset_job = define_asset_job(
+#     name="datagun_razkids_extract_asset_job",
+#     selection=AssetSelection.assets(*razkids_extract_assets),
+# )
+# read180_extract_asset_job = define_asset_job(
+#     name="datagun_read180_extract_asset_job",
+#     selection=AssetSelection.assets(*read180_extract_assets),
+# )
