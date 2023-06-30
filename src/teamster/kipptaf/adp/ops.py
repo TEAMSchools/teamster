@@ -41,7 +41,10 @@ def get_event_payload(associate_oid, item_id, string_value):
             asset_key=AssetKey(
                 [CODE_LOCATION, "extracts", "rpt_adp_workforce_now__worker_update"]
             )
-        )
+        ),
+        "idauto_extract": In(
+            asset_key=AssetKey([CODE_LOCATION, "extracts", "idauto", "AD_csv"])
+        ),
     }
 )
 def adp_wfn_worker_fields_update_op(
@@ -49,6 +52,7 @@ def adp_wfn_worker_fields_update_op(
     db_bigquery: BigQueryResource,
     adp_wfn: AdpWorkforceNowResource,
     source_view,
+    idauto_extract,
 ):
     # query extract view
     dataset_ref = bigquery.DatasetReference(

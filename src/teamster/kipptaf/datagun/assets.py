@@ -38,13 +38,6 @@ idauto_extract_assets = [
     for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
 ]
 
-adp_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="adp",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
 alchemer_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="alchemer",
@@ -62,13 +55,6 @@ clever_extract_assets = generate_extract_assets(
 deanslist_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="deanslist",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
-fpodms_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="fpodms",
     extract_type="sftp",
     timezone=LOCAL_TIMEZONE,
 )
@@ -94,27 +80,6 @@ littlesis_extract_assets = generate_extract_assets(
     timezone=LOCAL_TIMEZONE,
 )
 
-njdoe_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="njdoe",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
-razkids_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="razkids",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
-read180_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="read180",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
 whetstone_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="whetstone",
@@ -130,7 +95,6 @@ gsheet_extract_assets = generate_extract_assets(
 )
 
 __all__ = [
-    *adp_extract_assets,
     *alchemer_extract_assets,
     *blissbook_extract_assets,
     *clever_extract_assets,
@@ -144,3 +108,35 @@ __all__ = [
     *littlesis_extract_assets,
     *whetstone_extract_assets,
 ]
+
+# RETIRED #
+# adp_extract_assets = generate_extract_assets(
+#     code_location=CODE_LOCATION,
+#     name="adp",
+#     extract_type="sftp",
+#     timezone=LOCAL_TIMEZONE,
+# )
+# fpodms_extract_assets = generate_extract_assets(
+#     code_location=CODE_LOCATION,
+#     name="fpodms",
+#     extract_type="sftp",
+#     timezone=LOCAL_TIMEZONE,
+# )
+# njdoe_extract_assets = generate_extract_assets(
+#     code_location=CODE_LOCATION,
+#     name="njdoe",
+#     extract_type="sftp",
+#     timezone=LOCAL_TIMEZONE,
+# )
+# razkids_extract_assets = generate_extract_assets(
+#     code_location=CODE_LOCATION,
+#     name="razkids",
+#     extract_type="sftp",
+#     timezone=LOCAL_TIMEZONE,
+# )
+# read180_extract_assets = generate_extract_assets(
+#     code_location=CODE_LOCATION,
+#     name="read180",
+#     extract_type="sftp",
+#     timezone=LOCAL_TIMEZONE,
+# )
