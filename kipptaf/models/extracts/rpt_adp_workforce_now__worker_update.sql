@@ -13,9 +13,9 @@ select
     sr.employee_number,
     sr.custom_employee_number,
     sr.custom_wfmgr_badge_number,
-    sr.communication_business_email,
     lower(sr.mail) as mail,
-
+    sr.communication_business_email,
+    sr.custom_wfmgr_trigger,
     case
         when wfm.worker_id is not null
         then concat('DR', current_date('America/New_York'))
