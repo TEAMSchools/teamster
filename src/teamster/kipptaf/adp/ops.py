@@ -51,8 +51,7 @@ def adp_wfn_worker_fields_update_op(
     context: OpExecutionContext,
     db_bigquery: BigQueryResource,
     adp_wfn: AdpWorkforceNowResource,
-    source_view,
-    idauto_extract,
+    **kwargs,
 ):
     # query extract view
     dataset_ref = bigquery.DatasetReference(

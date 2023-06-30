@@ -4,6 +4,7 @@ from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Session, exceptions
 from requests_oauthlib import OAuth2Session
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 class AdpWorkforceManagerResource(ConfigurableResource):
@@ -57,6 +58,9 @@ class AdpWorkforceManagerResource(ConfigurableResource):
             "Bearer " + response_data["access_token"]
         )
 
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
     def _request(self, method, url, **kwargs):
         try:
             response = self._client.request(method=method, url=url, **kwargs)
@@ -112,6 +116,21 @@ class AdpWorkforceNowResource(ConfigurableResource):
         access_token = token_dict.get("access_token")
         self._session.headers["Authorization"] = f"Bearer {access_token}"
 
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
+    def _request(self, method, url, **kwargs):
+        try:
+            response = self._session.request(method=method, url=url, **kwargs)
+
+            response.raise_for_status()
+
+            return response
+        except exceptions.HTTPError as e:
+            self.get_resource_context().log.error(e)
+
+            raise exceptions.HTTPError(response.text) from e
+
     def get_record(self, endpoint, querystring={}, id=None, object_name=None):
         url = f"{self._service_root}{endpoint}"
         if id:
@@ -149,9 +168,4 @@ class AdpWorkforceNowResource(ConfigurableResource):
     def post(self, endpoint, subresource, verb, payload):
         url = f"{self._service_root}{endpoint}.{subresource}.{verb}"
 
-        try:
-            r = self._session.post(url=url, json=payload)
-            r.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            self.get_resource_context().log.error(e)
-            self.get_resource_context().log.error(r.json())
+        return self._request(method="POST", url=url, json=payload)
