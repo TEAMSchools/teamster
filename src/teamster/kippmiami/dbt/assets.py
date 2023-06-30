@@ -1,27 +1,59 @@
-from teamster.core.dbt.assets import build_external_source_asset, build_staging_assets
+import json
+
+from dagster import AssetKey
+from dagster_dbt.cli import DbtManifest
+
+from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset_v2
 
 from .. import CODE_LOCATION, deanslist, powerschool
 
-powerschool_dbt_src_assets = [
-    build_external_source_asset(a) for a in [*powerschool.assets]
+
+class CustomizedDbtManifest(DbtManifest):
+    @classmethod
+    def node_info_to_asset_key(cls, node_info):
+        dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+
+        asset_key_config = dagster_metadata.get("asset_key", [])
+
+        if asset_key_config:
+            return AssetKey(asset_key_config)
+
+        components = [CODE_LOCATION]
+
+        if node_info["resource_type"] == "source":
+            components.extend([node_info["source_name"], node_info["name"]])
+        else:
+            configured_schema = node_info["config"].get("schema")
+            if configured_schema is not None:
+                components.extend([configured_schema, node_info["name"]])
+            else:
+                components.extend([node_info["name"]])
+
+        return AssetKey(components)
+
+
+manifest_path = f"teamster-dbt/{CODE_LOCATION}/target/manifest.json"
+
+with open(file=manifest_path) as f:
+    manifest_json = json.load(f)
+
+manifest = CustomizedDbtManifest.read(path=manifest_path)
+
+dbt_assets = build_dbt_assets(manifest=manifest)
+
+external_source_assets = [
+    build_external_source_asset_v2(
+        code_location=CODE_LOCATION,
+        name=f"src_{asset.key.path[1]}__{asset.key.path[-1]}",
+        dbt_package_name=asset.key.path[1],
+        upstream_asset_key=asset.key,
+        group_name=asset.key.path[1],
+        manifest=manifest,
+    )
+    for asset in [*powerschool.assets, *deanslist.assets]
 ]
 
-powerschool_dbt_stg_assets = build_staging_assets(
-    manifest_json_path=f"teamster-dbt/{CODE_LOCATION}/target/manifest.json",
-    key_prefix=[CODE_LOCATION, "dbt"],
-    assets=[*powerschool.assets],
-)
-
-deanslist_dbt_src_assets = [build_external_source_asset(a) for a in [*deanslist.assets]]
-
-deanslist_dbt_stg_assets = build_staging_assets(
-    manifest_json_path=f"teamster-dbt/{CODE_LOCATION}/target/manifest.json",
-    key_prefix=[CODE_LOCATION, "dbt"],
-    assets=[*deanslist.assets],
-)
-
 __all__ = [
-    *powerschool_dbt_src_assets,
-    *powerschool_dbt_stg_assets,
-    *deanslist_dbt_src_assets,
+    dbt_assets,
+    *external_source_assets,
 ]
