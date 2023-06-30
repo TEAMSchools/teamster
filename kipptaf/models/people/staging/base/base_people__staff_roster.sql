@@ -1,4 +1,5 @@
 select
+    wp.work_assignment_id,
     wp.work_assignment_worker_id as worker_id,
     wp.work_assignment_actual_start_date,
     wp.work_assignment_hire_date,
@@ -182,8 +183,8 @@ select
     ldap.sam_account_name,
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,
-{#- work_assignment_id,
-    work_assignment__fivetran_active,
+
+{#- work_assignment__fivetran_active,
     work_assignment__fivetran_start,
     work_assignment__fivetran_end,
     work_assignment_assignment_status_short_name,
