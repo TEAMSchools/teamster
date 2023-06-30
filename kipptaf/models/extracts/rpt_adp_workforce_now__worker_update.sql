@@ -1,3 +1,9 @@
+{{
+    config(
+        materialized="view",
+    )
+}}
+
 with
     wfm_updates as (
         select distinct worker_id
