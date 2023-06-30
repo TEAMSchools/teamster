@@ -30,6 +30,7 @@ dynamic_partition_asset_job_schedule = build_dynamic_partition_schedule(
 )
 
 __all__ = [
+    adp_wfn_worker_fields_update_schedule,
     daily_partition_asset_job_schedule,
     dynamic_partition_asset_job_schedule,
 ]

@@ -1,4 +1,4 @@
-from dagster import AssetKey, In, OpExecutionContext, op
+from dagster import OpExecutionContext, op
 from dagster_gcp import BigQueryResource
 from google.cloud import bigquery
 from pandas import DataFrame
@@ -36,19 +36,19 @@ def get_event_payload(associate_oid, item_id, string_value):
 
 
 @op(
-    ins={
-        "source_view": In(
-            asset_key=AssetKey(
-                [CODE_LOCATION, "extracts", "rpt_adp_workforce_now__worker_update"]
-            )
-        ),
-        "idauto_extract": In(
-            asset_key=AssetKey([CODE_LOCATION, "extracts", "idauto", "AD_csv"])
-        ),
-    }
+    # ins={
+    #     "source_view": In(
+    #         asset_key=AssetKey(
+    #             [CODE_LOCATION, "extracts", "rpt_adp_workforce_now__worker_update"]
+    #         )
+    #     ),
+    #     "idauto_extract": In(
+    #         asset_key=AssetKey([CODE_LOCATION, "extracts", "idauto", "AD_csv"])
+    #     ),
+    # }
 )
 def adp_wfn_get_worker_update_data_op(
-    context: OpExecutionContext, db_bigquery: BigQueryResource, **kwargs
+    context: OpExecutionContext, db_bigquery: BigQueryResource
 ):
     # query extract view
     dataset_ref = bigquery.DatasetReference(
