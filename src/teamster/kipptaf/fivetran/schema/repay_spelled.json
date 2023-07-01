@@ -1,0 +1,29 @@
+{
+  "group_name": "kippadb",
+  "connector_id": "repay_spelled",
+  "destination_tables": [
+    "kippadb.account",
+    "kippadb.application_status_history_c",
+    "kippadb.application_c",
+    "kippadb.attachment",
+    "kippadb.college_persistence_c",
+    "kippadb.contact",
+    "kippadb.contact_note_c",
+    "kippadb.content_document",
+    "kippadb.employment_c",
+    "kippadb.enrollment_history",
+    "kippadb.enrollment_c",
+    "kippadb.event",
+    "kippadb.gpa_c",
+    "kippadb.kipp_aid_c",
+    "kippadb.marking_period_c",
+    "kippadb.record_type",
+    "kippadb.relationship_c",
+    "kippadb.standardized_test_c",
+    "kippadb.subsequent_financial_aid_award_c",
+    "kippadb.task",
+    "kippadb.term_history",
+    "kippadb.term_c",
+    "kippadb.user"
+  ]
+}
