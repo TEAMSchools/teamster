@@ -1,0 +1,11 @@
+{
+  "group_name": "illuminate",
+  "connector_id": "genuine_describing",
+  "destination_tables": [
+    "illuminate_xmin_dna_assessments.agg_student_responses",
+    "illuminate_xmin_dna_assessments.agg_student_responses_group",
+    "illuminate_xmin_dna_assessments.agg_student_responses_standard",
+    "illuminate_xmin_dna_assessments.agg_students_assessments_scores",
+    "illuminate_xmin_dna_assessments.students_assessments_archive"
+  ]
+}

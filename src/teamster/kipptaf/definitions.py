@@ -1,3 +1,5 @@
+# import os
+
 from dagster import (
     AutoMaterializePolicy,
     Definitions,
@@ -6,6 +8,7 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_dbt.cli import DbtCli, DbtCliClientResource
+from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
@@ -139,6 +142,12 @@ defs = Definitions(
             api_token=EnvVar("ALCHEMER_API_TOKEN"),
             api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
             api_version="v5",
+        ),
+        "fivetran": FivetranResource(
+            # api_key=os.getenv("FIVETRAN_API_KEY"),
+            # api_secret=os.getenv("FIVETRAN_API_SECRET"),
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
         ),
         "gsheets": GoogleSheetsResource(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
