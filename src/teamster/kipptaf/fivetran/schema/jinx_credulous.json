@@ -1,5 +1,5 @@
 {
-  "group_name": "illuminate_xmin",
+  "group_name": "illuminate",
   "connector_id": "jinx_credulous",
   "destination_tables": [
     "illuminate_codes.dna_scopes",

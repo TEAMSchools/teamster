@@ -1,5 +1,3 @@
-# import os
-
 from dagster import (
     AutoMaterializePolicy,
     Definitions,

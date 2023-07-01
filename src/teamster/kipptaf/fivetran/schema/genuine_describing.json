@@ -1,5 +1,5 @@
 {
-  "group_name": "illuminate",
+  "group_name": "illuminate_xmin",
   "connector_id": "genuine_describing",
   "destination_tables": [
     "illuminate_xmin_dna_assessments.agg_student_responses",
