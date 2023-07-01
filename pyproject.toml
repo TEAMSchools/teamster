@@ -40,6 +40,7 @@ build-backend = "pdm.pep517.api"
 dev = ["pytest>=7.4.0"]
 
 [tool.pdm.scripts]
+_.env_file = "env/.env"
 clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
 docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
@@ -51,4 +52,4 @@ install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
 dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
-_.env_file = "env/.env"
+fivetran-schema = { shell = "python .pdm/scripts/fivetran-schema.py" }
