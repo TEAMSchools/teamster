@@ -14,7 +14,7 @@ for schema_file in schema_path.glob("*.json"):
 
     assets.extend(
         build_fivetran_assets(
-            asset_key_prefix=CODE_LOCATION, **build_fivetran_assets_kwargs
+            asset_key_prefix=[CODE_LOCATION], **build_fivetran_assets_kwargs
         )
     )
 
