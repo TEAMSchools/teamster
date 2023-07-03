@@ -1,34 +1,37 @@
 assets:
-  - name: people__employee_numbers_archive
-    range_name: src_people__employee_numbers_archive
-    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-  - name: people__location_crosswalk
-    range_name: src_people__location_crosswalk
-    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-  - name: people__campus_crosswalk
-    range_name: src_people__campus_crosswalk
-    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-  - name: people__powerschool_crosswalk
-    range_name: src_people__powerschool_crosswalk
-    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-  - name: egencia__traveler_groups
-    range_name: src_egencia__traveler_groups
-    sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
-  - name: egencia__travel_managers
-    range_name: src_egencia__travel_managers
-    sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+  - name: coupa__address_name_crosswalk
+    range_name: src_coupa__address_name_crosswalk
+    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+  - name: coupa__school_name_crosswalk
+    range_name: src_coupa__school_crosswalk
+    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
   - name: coupa__school_name_lookup
     range_name: src_coupa__school_name_lookup
     sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
   - name: coupa__user_exceptions
     range_name: src_coupa__user_exceptions
     sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
-  - name: coupa__school_name_crosswalk
-    range_name: src_coupa__school_crosswalk
-    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
-  - name: coupa__address_name_crosswalk
-    range_name: src_coupa__address_name_crosswalk
-    sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+  - name: egencia__travel_managers
+    range_name: src_egencia__travel_managers
+    sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+  - name: egencia__traveler_groups
+    range_name: src_egencia__traveler_groups
+    sheet_id: 1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+  - name: finance__enrollment_targets
+    range_name: src_finance__enrollment_targets
+    sheet_id: 1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
+  - name: people__campus_crosswalk
+    range_name: src_people__campus_crosswalk
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+  - name: people__employee_numbers_archive
+    range_name: src_people__employee_numbers_archive
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+  - name: people__location_crosswalk
+    range_name: src_people__location_crosswalk
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+  - name: people__powerschool_crosswalk
+    range_name: src_people__powerschool_crosswalk
+    sheet_id: 1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
   - name: people__id_crosswalk_adp
     range_name: fivetran_id_crosswalk_adp
     sheet_id: 1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik
@@ -47,9 +50,6 @@ assets:
   - name: lit__gleq
     range_name: fivetran_lit_gleq
     sheet_id: 1yiCP5pTnOplhRw4u4wZeg1hW7GAnI2Hci5yecO1qLow
-  - name: finance__enrollment_targets
-    range_name: fivetran_enrollment_targets
-    sheet_id: 1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
   - name: renaissance__ar_individualized_goals
     range_name: fivetran_ar_individualized_goals
     sheet_id: 1UXyQhjJbyge05ydZjWDY6KnbuqVOw-PZpnmbY_ic57Q
