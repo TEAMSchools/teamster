@@ -12,6 +12,6 @@ for asset in fivetran.assets:
                 f"{list(asset.group_names_by_key.values())[0]}_asset_job"
             ),
             selection=AssetSelection.keys(*list(asset.keys)),
-            tags={MAX_RUNTIME_SECONDS_TAG: (60 * 15)},
+            tags={MAX_RUNTIME_SECONDS_TAG: (60 * 25)},
         )
     )
