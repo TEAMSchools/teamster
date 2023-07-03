@@ -3,7 +3,7 @@ import json
 from dagster import AssetKey
 from dagster_dbt.cli import DbtManifest
 
-from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset_v2
+from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
 from teamster.kipptaf import CODE_LOCATION, google, ldap
 
 
@@ -41,7 +41,7 @@ manifest = CustomizedDbtManifest.read(path=manifest_path)
 dbt_assets = build_dbt_assets(manifest=manifest)
 
 gsheet_external_source_assets = [
-    build_external_source_asset_v2(
+    build_external_source_asset(
         code_location=CODE_LOCATION,
         name="src_" + asset.key.path[-1],
         dbt_package_name=asset.key.path[-1].split("__")[0],
@@ -53,7 +53,7 @@ gsheet_external_source_assets = [
 ]
 
 external_source_assets = [
-    build_external_source_asset_v2(
+    build_external_source_asset(
         code_location=CODE_LOCATION,
         name=f"src_{asset.key.path[1]}__{asset.key.path[-1]}",
         dbt_package_name=asset.key.path[1],

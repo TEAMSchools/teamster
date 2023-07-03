@@ -3,9 +3,8 @@ import json
 from dagster import AssetKey
 from dagster_dbt.cli import DbtManifest
 
-from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset_v2
-
-from .. import CODE_LOCATION, deanslist, powerschool
+from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
+from teamster.kippcamden import CODE_LOCATION, deanslist, powerschool
 
 
 class CustomizedDbtManifest(DbtManifest):
@@ -42,7 +41,7 @@ manifest = CustomizedDbtManifest.read(path=manifest_path)
 dbt_assets = build_dbt_assets(manifest=manifest)
 
 external_source_assets = [
-    build_external_source_asset_v2(
+    build_external_source_asset(
         code_location=CODE_LOCATION,
         name=f"src_{asset.key.path[1]}__{asset.key.path[-1]}",
         dbt_package_name=asset.key.path[1],
