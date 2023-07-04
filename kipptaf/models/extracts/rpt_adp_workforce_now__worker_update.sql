@@ -3,7 +3,7 @@ with
         select distinct worker_id
         from {{ ref("int_people__field_history") }}
         where
-            effective_datetime between date_sub(
+            dbt_valid_from between date_sub(
                 current_date('America/New_York'), interval 7 day
             ) and current_date('America/New_York')
     )

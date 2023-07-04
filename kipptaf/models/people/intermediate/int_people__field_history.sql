@@ -18,7 +18,7 @@ with
             worker_id,
             position_id,
             associate_oid,
-            effective_datetime,
+            dbt_valid_from,
             {{ dbt_utils.generate_surrogate_key(field_list=surrogate_key_field_list) }}
             as surrogate_key,
         from {{ ref("snapshot_people__staff_roster") }}
@@ -34,10 +34,10 @@ with
             associate_oid,
             position_id,
             worker_id,
-            effective_datetime,
+            dbt_valid_from,
             surrogate_key as surrogate_key_new,
             lag(surrogate_key, 1) over (
-                partition by position_id order by effective_datetime
+                partition by position_id order by dbt_valid_from
             ) as surrogate_key_prev
         from staff_roster_history
     )
@@ -46,7 +46,7 @@ select
     associate_oid,
     worker_id,
     position_id,
-    effective_datetime,
+    dbt_valid_from,
     surrogate_key_prev,
     surrogate_key_new,
 from surrogate_key_lag
