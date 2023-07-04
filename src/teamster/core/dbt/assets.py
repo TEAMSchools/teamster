@@ -13,9 +13,6 @@ def build_dbt_assets(manifest, select="fqn:*", exclude=None):
 
         yield from dbt_build.stream()
 
-        if not dbt_build.is_successful():
-            raise Failure()
-
     return _assets
 
 
