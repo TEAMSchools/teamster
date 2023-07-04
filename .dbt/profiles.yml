@@ -41,6 +41,13 @@ kipptaf:
       schema: kipptaf
       threads: 1
       keyfile: /etc/secret-volume/dbt_user_creds_json
+    zendesk:
+      type: bigquery
+      method: service-account
+      project: teamster-332318
+      schema: zendesk
+      threads: 1
+      keyfile: /etc/secret-volume/dbt_user_creds_json
 
 integration_tests:
   target: integration_tests
