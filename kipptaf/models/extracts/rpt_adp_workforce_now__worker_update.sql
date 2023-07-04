@@ -4,8 +4,8 @@ with
         from {{ ref("int_people__field_history") }}
         where
             dbt_valid_from between date_sub(
-                current_date('America/New_York'), interval 7 day
-            ) and current_date('America/New_York')
+                date_trunc(current_timestamp(), day), interval 7 day
+            ) and current_timestamp()
     )
 
 select
