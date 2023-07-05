@@ -1,15 +1,36 @@
-select
-    enr.cc_studentid as studentid,
-    enr.cc_student_number as student_number,
-    enr.cc_academic_year as academic_year,
-    enr.cc_schoolid as schoolid,
-    enr.cc_teachernumber as teachernumber,
-    enr.cc_teacher_name as teacher_name,
-    enr.cc_dateenrolled as dateenrolled,
-    enr.cc_dateleft as dateleft,
+with
+    hr_enrollments as (
+        select
+            cc_studentid as studentid,
+            cc_yearid as yearid,
+            cc_schoolid as schoolid,
+            cc_dateenrolled,
+            cc_dateleft,
+            teachernumber as teachernumber,
+            is_dropped_section,
+            sections_section_number,
+            teacher_lastfirst,
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where cc_course_number = 'HR' and not is_dropped_course
+    ),
 
-    {# from  staff_crosswalk #}
-    null as advisor_phone,
-    null as advisor_email,
-from {{ ref("base_powerschool__course_enrollments") }} as enr
-where enr.cc_course_number = 'HR' and enr.rn_course_number_year = 1
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="hr_enrollments",
+                partition_by="studentid, yearid, schoolid",
+                order_by="is_dropped_section asc, cc_dateleft desc, cc_dateenrolled desc",
+            )
+        }}
+    )
+
+select
+    studentid,
+    yearid,
+    schoolid,
+    teachernumber as advisor_teachernumber,
+    teacher_lastfirst as advisor_lastfirst,
+    coalesce(
+        nullif(regexp_extract(sections_section_number, r'(\D+)'), ''), teacher_lastfirst
+    ) as advisory_name,
+from deduplicate
