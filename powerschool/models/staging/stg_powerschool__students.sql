@@ -4,7 +4,7 @@
         transform_cols=[
             {"name": "dcid", "extract": "int_value"},
             {"name": "id", "extract": "int_value"},
-            {"name": "student_number", "extract": "int_value"},
+            {"name": "student_number", "extract": "double_value", "cast": "int"},
             {"name": "enroll_status", "extract": "int_value"},
             {"name": "grade_level", "extract": "int_value"},
             {"name": "balance1", "extract": "double_value"},
