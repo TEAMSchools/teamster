@@ -1,0 +1,621 @@
+version: 2
+
+sources:
+  - name: kippnewark_powerschool
+    tables:
+      - name: stg_powerschool__assignmentcategoryassoc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__assignmentcategoryassoc
+      - name: stg_powerschool__assignmentscore
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__assignmentscore
+      - name: stg_powerschool__assignmentsection
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__assignmentsection
+      - name: stg_powerschool__attendance
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__attendance
+      - name: stg_powerschool__attendance_code
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__attendance_code
+      - name: stg_powerschool__attendance_conversion_items
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__attendance_conversion_items
+      - name: stg_powerschool__bell_schedule
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__bell_schedule
+      - name: stg_powerschool__calendar_day
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__calendar_day
+      - name: stg_powerschool__cc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__cc
+      - name: stg_powerschool__codeset
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__codeset
+      - name: stg_powerschool__courses
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__courses
+      - name: stg_powerschool__cycle_day
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__cycle_day
+      - name: stg_powerschool__districtteachercategory
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__districtteachercategory
+      - name: stg_powerschool__emailaddress
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__emailaddress
+      - name: stg_powerschool__fte
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__fte
+      - name: stg_powerschool__gen
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gen
+      - name: stg_powerschool__gradecalcformulaweight
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradecalcformulaweight
+      - name: stg_powerschool__gradecalcschoolassoc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradecalcschoolassoc
+      - name: stg_powerschool__gradecalculationtype
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradecalculationtype
+      - name: stg_powerschool__gradeformulaset
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradeformulaset
+      - name: stg_powerschool__gradescaleitem
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradescaleitem
+      - name: stg_powerschool__gradeschoolconfig
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradeschoolconfig
+      - name: stg_powerschool__gradeschoolformulaassoc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradeschoolformulaassoc
+      - name: stg_powerschool__gradesectionconfig
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__gradesectionconfig
+      - name: stg_powerschool__log
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__log
+      - name: stg_powerschool__originalcontactmap
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__originalcontactmap
+      - name: stg_powerschool__period
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__period
+      - name: stg_powerschool__person
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__person
+      - name: stg_powerschool__personaddress
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__personaddress
+      - name: stg_powerschool__personaddressassoc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__personaddressassoc
+      - name: stg_powerschool__personemailaddressassoc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__personemailaddressassoc
+      - name: stg_powerschool__personphonenumberassoc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__personphonenumberassoc
+      - name: stg_powerschool__pgfinalgrades
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__pgfinalgrades
+      - name: stg_powerschool__phonenumber
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__phonenumber
+      - name: stg_powerschool__prefs
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__prefs
+      - name: stg_powerschool__reenrollments
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__reenrollments
+      - name: stg_powerschool__roledef
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__roledef
+      - name: stg_powerschool__s_nj_crs_x
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__s_nj_crs_x
+      - name: stg_powerschool__s_nj_ren_x
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__s_nj_ren_x
+      - name: stg_powerschool__s_nj_stu_x
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__s_nj_stu_x
+      - name: stg_powerschool__s_nj_usr_x
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__s_nj_usr_x
+      - name: stg_powerschool__schools
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__schools
+      - name: stg_powerschool__schoolstaff
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__schoolstaff
+      - name: stg_powerschool__sections
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__sections
+      - name: stg_powerschool__sectionteacher
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__sectionteacher
+      - name: stg_powerschool__spenrollments
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__spenrollments
+      - name: stg_powerschool__storedgrades
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__storedgrades
+      - name: stg_powerschool__studentcontactassoc
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__studentcontactassoc
+      - name: stg_powerschool__studentcontactdetail
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__studentcontactdetail
+      - name: stg_powerschool__studentcorefields
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__studentcorefields
+      - name: stg_powerschool__studentrace
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__studentrace
+      - name: stg_powerschool__students
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__students
+      - name: stg_powerschool__teachercategory
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__teachercategory
+      - name: stg_powerschool__termbins
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__termbins
+      - name: stg_powerschool__terms
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__terms
+      - name: stg_powerschool__test
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__test
+      - name: stg_powerschool__testscore
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__testscore
+      - name: stg_powerschool__u_clg_et_stu
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__u_clg_et_stu
+      - name: stg_powerschool__u_clg_et_stu_alt
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__u_clg_et_stu_alt
+      - name: stg_powerschool__u_def_ext_students
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__u_def_ext_students
+      - name: stg_powerschool__u_studentsuserfields
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__u_studentsuserfields
+      - name: stg_powerschool__users
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - stg_powerschool__users
+      - name: base_powerschool__course_enrollments
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - base_powerschool__course_enrollments
+      - name: base_powerschool__sections
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - base_powerschool__sections
+      - name: base_powerschool__student_enrollments
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - base_powerschool__student_enrollments
+      - name: int_powerschool__advisory
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__advisory
+      - name: int_powerschool__calendar_rollup
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__calendar_rollup
+      - name: int_powerschool__contacts
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__contacts
+      - name: int_powerschool__person_contacts
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__person_contacts
+      - name: int_powerschool__ps_attendance_daily
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__ps_attendance_daily
+      - name: int_powerschool__ps_adaadm_daily_ctod
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__ps_adaadm_daily_ctod
+      - name: int_powerschool__ps_enrollment_all
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__ps_enrollment_all
+      - name: int_powerschool__ps_membership_reg
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__ps_membership_reg
+      - name: int_powerschool__spenrollments
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__spenrollments
+      - name: int_powerschool__student_contacts
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__student_contacts
+      - name: int_powerschool__student_contacts_pivot
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__student_contacts_pivot
+      - name: int_powerschool__teachers
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__teachers

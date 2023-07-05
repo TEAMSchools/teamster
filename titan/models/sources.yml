@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: titan
+    schema: "{{ var('titan_schema', 'titan') }}"
+    database: "{% if target.type != 'spark' %}{{ var('titan_database', target.database) }}{% endif %}"
+
+    tables:
+      - name: src_titan__person_data
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/titan/person_data/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/titan/person_data/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_titan__income_form_data
+        external:
+          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/titan/income_form_data/*"
+          options:
+            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/titan/income_form_data/"
+            format: AVRO
+            enable_logical_types: true

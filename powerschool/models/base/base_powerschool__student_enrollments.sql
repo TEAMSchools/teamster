@@ -279,11 +279,11 @@ select
         else enr.yearid + 2003 + (-1 * enr.grade_level)
     end as cohort,
 
-    s.lastfirst,
+    s.state_studentnumber,
     s.first_name,
     s.middle_name,
     s.last_name,
-    s.state_studentnumber,
+    s.lastfirst,
     s.enroll_status,
     s.dob,
     s.street,
@@ -291,6 +291,8 @@ select
     s.state,
     s.zip,
     s.home_phone,
+    s.entrydate as current_entrydate,
+    s.lunchstatus as current_lunchstatus,
     s.grade_level as highest_grade_level_achieved,
     left(upper(s.gender), 1) as gender,
     left(upper(s.ethnicity), 1) as ethnicity,

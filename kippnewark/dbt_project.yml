@@ -29,8 +29,11 @@ models:
     +schema: edplan
   powerschool:
     +schema: powerschool
+  titan:
+    +schema: titan
 
 vars:
   deanslist_schema: kippnewark_deanslist
   edplan_schema: kippnewark_edplan
   powerschool_schema: kippnewark_powerschool
+  titan_schema: kippnewark_titan
