@@ -1,6 +1,6 @@
 {{
     teamster_utils.generate_staging_model(
-        unique_key="",
+        unique_key="FollowupID",
         transform_cols=[],
         except_cols=[
             "_dagster_partition_fiscal_year",
