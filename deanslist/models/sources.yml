@@ -13,13 +13,6 @@ sources:
             hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/behavior/"
             format: AVRO
             enable_logical_types: true
-      - name: src_deanslist__comm
-        external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/comm/*"
-          options:
-            hive_partition_uri_prefix: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/comm/"
-            format: AVRO
-            enable_logical_types: true
       - name: src_deanslist__comm_log
         external:
           location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/comm_log/*"
