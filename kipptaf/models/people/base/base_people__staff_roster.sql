@@ -296,6 +296,9 @@ select
 
     enm.employee_number as report_to_employee_number,
 
+    mgr.preferred_name_given_name as report_to_preferred_name_given_name,
+    mgr.preferred_name_family_name as report_to_preferred_name_family_name,
+
     ldap.mail,
     ldap.distinguished_name,
     ldap.user_principal_name,
@@ -318,6 +321,7 @@ left join
     {{ ref("stg_people__employee_numbers") }} as enm
     on wp.report_to_worker_id = enm.adp_associate_id
     and enm.is_active
+left join worker_person as mgr on wp.report_to_associate_oid = mgr.associate_oid
 left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on en.employee_number = ldap.employee_number
