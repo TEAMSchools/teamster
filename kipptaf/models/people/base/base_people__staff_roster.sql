@@ -311,7 +311,7 @@ select
     ) as powerschool_teacher_number,
 from worker_person as wp
 left join
-    {{ source("people", "src_people__location_crosswalk") }} as lc
+    {{ ref("stg_people__location_crosswalk") }} as lc
     on wp.home_work_location_name = lc.name
 inner join
     {{ ref("stg_people__employee_numbers") }} as en
@@ -326,6 +326,6 @@ left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on en.employee_number = ldap.employee_number
 left join
-    {{ source("people", "src_people__powerschool_crosswalk") }} as idps
+    {{ ref("stg_people__powerschool_crosswalk") }} as idps
     on en.employee_number = idps.employee_number
     and idps.is_active
