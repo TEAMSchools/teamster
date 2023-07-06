@@ -43,12 +43,16 @@ models:
       +materialized: table
     finance:
       +schema: finance
+      staging:
+        +materialized: table
     ldap:
       +schema: ldap
       staging:
         +materialized: table
     people:
       +schema: people
+      staging:
+        +materialized: table
     powerschool:
       +schema: powerschool
     surveys:

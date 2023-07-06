@@ -1,3 +1,5 @@
+{{ config(enabled=False) }}
+
 with
     attrition_dates as (
         select
