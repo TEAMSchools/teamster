@@ -15,14 +15,14 @@ lint:
     - sqlfluff
     - flake8
   enabled:
-    - ruff@0.0.275
+    - ruff@0.0.277
     - yamllint@1.32.0
     - isort@5.12.0
     - black@23.3.0
     - taplo@0.7.0
     - sqlfmt@0.19.0
     - markdownlint@0.35.0
-    - prettier@2.8.8
+    - prettier@3.0.0
     - shellcheck@0.9.0
     - gitleaks@8.17.0
     - git-diff-check

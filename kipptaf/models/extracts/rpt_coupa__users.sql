@@ -227,7 +227,7 @@ select
         case
             sub.business_unit_home_code
             when 'KIPP_TAF'
-            then 'KIPP NJ'
+            then 'KTAF'
             when 'KIPP_MIAMI'
             then 'MIA'
             else sub.business_unit_home_code
