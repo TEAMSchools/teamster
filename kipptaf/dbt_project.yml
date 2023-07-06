@@ -21,8 +21,8 @@ clean-targets: # directories to be removed by `dbt clean`
   - dbt_packages
 
 vars:
-  current_academic_year: 2022
-  current_fiscal_year: 2023
+  current_academic_year: 2023
+  current_fiscal_year: 2024
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -36,9 +36,13 @@ models:
           +materialized: view
     alchemer:
       +schema: alchemer
+    edplan:
+      +schema: edplan
     extracts:
       +schema: extracts
       +materialized: table
+    finance:
+      +schema: finance
     ldap:
       +schema: ldap
       staging:
@@ -49,3 +53,7 @@ models:
       +schema: powerschool
     surveys:
       +schema: surveys
+    tableau:
+      +schema: tableau
+    titan:
+      +schema: titan

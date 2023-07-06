@@ -291,8 +291,6 @@ select
     s.state,
     s.zip,
     s.home_phone,
-    s.entrydate as current_entrydate,
-    s.lunchstatus as current_lunchstatus,
     s.grade_level as highest_grade_level_achieved,
     left(upper(s.gender), 1) as gender,
     left(upper(s.ethnicity), 1) as ethnicity,
