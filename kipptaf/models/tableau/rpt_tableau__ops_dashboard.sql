@@ -24,9 +24,9 @@ with
             at_risk_only_ratio,
             lep_only_ratio,
             sped_ratio,
-            '{{ target.database }}'
+            '`{{ target.database }}`.`'
             || split(_dbt_source_relation, '.')[1]
-            || 'base_powerschool__student_enrollments' as _dbt_source_relation,
+            || '`.`base_powerschool__student_enrollments`' as _dbt_source_relation,
         from {{ ref("stg_finance__enrollment_targets") }}
 
         union all
@@ -90,13 +90,13 @@ select
     se.exitdate,
     se.exitcode,
     se.exitcomment,
-    se.iep_status,
-    se.specialed_classification,
+    se.spedlep as iep_status,
+    se.special_education_code as specialed_classification,
     se.lep_status,
     se.is_504 as c_504_status,
     se.is_self_contained as is_pathways,
-    se.lunchstatus,
-    se.lunch_app_status,
+    se.lunch_status as lunchstatus,
+    se.lunch_application_status as lunch_app_status,
     se.ethnicity,
     se.gender,
     se.is_enrolled_y1,
