@@ -57,3 +57,6 @@ models:
       +schema: tableau
     titan:
       +schema: titan
+    utils:
+      +schema: utils
+      +materialized: table
