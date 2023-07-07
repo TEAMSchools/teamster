@@ -281,6 +281,9 @@ with
 
 select
     wp.*,
+    wp.preferred_name_family_name
+    || ', '
+    || wp.preferred_name_given_name as preferred_name_lastfirst,
 
     lc.reporting_school_id as home_work_location_reporting_school_id,
     lc.powerschool_school_id as home_work_location_powerschool_school_id,
@@ -298,6 +301,9 @@ select
 
     mgr.preferred_name_given_name as report_to_preferred_name_given_name,
     mgr.preferred_name_family_name as report_to_preferred_name_family_name,
+    mgr.preferred_name_family_name
+    || ', '
+    || mgr.preferred_name_given_name as report_to_preferred_name_lastfirst,
 
     ldap.mail,
     ldap.distinguished_name,
@@ -305,6 +311,16 @@ select
     ldap.sam_account_name,
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,
+
+    regexp_replace(
+        lower(ldap.user_principal_name),
+        r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
+        if(
+            wp.business_unit_home_name = 'KIPP Miami',
+            r'\1kippmiami\2',
+            r'\1apps.teamschools\2'
+        )
+    ) as google_email,
 
     coalesce(
         idps.powerschool_teacher_number, safe_cast(en.employee_number as string)

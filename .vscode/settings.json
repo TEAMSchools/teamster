@@ -45,5 +45,6 @@
     "editor.defaultFormatter": "trunk.io"
   },
   "dbt.versionCheck": "status bar",
+  "dbt.prefixGenerateModel": "stg",
   "dbt.queryLimit": 500
 }

@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: smartrecruiters
+    schema: kipptaf_smartrecruiters
+    tables:
+      - name: src_smartrecruiters__applicants
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/smartrecruiters/applicants/*
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_smartrecruiters__applications
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/smartrecruiters/applications/*
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_smartrecruiters__offered_hired
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/smartrecruiters/offered_hired/*
+          options:
+            format: AVRO
+            enable_logical_types: true

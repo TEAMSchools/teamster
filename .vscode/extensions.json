@@ -3,6 +3,7 @@
     "innoverio.vscode-dbt-power-user",
     "ms-python.python",
     "trunk.io",
-    "eamodio.gitlens"
+    "eamodio.gitlens",
+    "ms-python.vscode-pylance"
   ]
 }

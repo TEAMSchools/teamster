@@ -57,6 +57,11 @@ models:
         +materialized: table
     powerschool:
       +schema: powerschool
+    schoolmint:
+      grow:
+        +schema: schoolmint_grow
+        staging:
+          +materialized: table
     surveys:
       +schema: surveys
     tableau:

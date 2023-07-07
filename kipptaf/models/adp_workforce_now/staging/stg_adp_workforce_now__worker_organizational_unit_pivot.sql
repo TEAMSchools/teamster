@@ -8,7 +8,8 @@ with
         from
             {{ source("adp_workforce_now", "organizational_unit") }}
             unpivot exclude nulls(
-                values_column for name_column in (name, name_long_name, name_short_name)
+                values_column for name_column
+                in (`name`, name_long_name, name_short_name)
             )
     ),
 
