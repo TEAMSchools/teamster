@@ -41,6 +41,8 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+      gsheets:
+        +materialized: view
     finance:
       +schema: finance
       staging:

@@ -1,5 +1,3 @@
-{{ config(enabled=False) }}
-
 select
     student_number,
     if(region = 'Miami', fleid, newark_enrollment_number) as newark_enrollment_number,
@@ -8,20 +6,19 @@ select
     schoolid,
     school_name,
     if(grade_level = 0, 'K', safe_cast(grade_level as string)) as grade_level,
-    team,
-    advisor_name,
+    advisory_name as team,
+    advisor_lastfirst as advisor_name,
     entrydate,
-    boy_status,
+    null as boy_status,
     dob,
     gender,
-    lunchstatus,
+    lunch_status as lunchstatus,
     case
-        lunch_app_status
-        when null
+        when lunch_application_status is null
         then 'N'
-        when 'No Application'
+        when lunch_application_status = 'No Application'
         then 'N'
-        when lunch_app_status like 'Prior%'
+        when lunch_application_status like 'Prior%'
         then 'N'
         else 'Y'
     end as lunch_app_status,
@@ -42,17 +39,17 @@ select
     last_name,
     student_web_id,
     student_web_password,
-    student_web_id + '.fam' as family_web_id,
+    student_web_id || '.fam' as family_web_id,
     student_web_password as family_web_password,
     media_release,
     region,
-    iep_status,
+    spedlep as iep_status,
     lep_status,
-    c_504_status,
+    is_504 as c_504_status,
     is_homeless,
     infosnap_opt_in,
     city,
-    is_pathways as is_selfcontained,
+    is_self_contained as is_selfcontained,
     infosnap_id,
     rides_staff,
 from {{ ref("base_powerschool__student_enrollments") }}
