@@ -277,71 +277,81 @@ with
         #}
         from {{ ref("base_adp_workforce_now__worker_person") }}
         where work_assignment__fivetran_active and work_assignment_primary_indicator
+    ),
+
+    crosswalk as (
+        select
+            wp.*,
+            wp.preferred_name_family_name
+            || ', '
+            || wp.preferred_name_given_name as preferred_name_lastfirst,
+
+            mgr.preferred_name_given_name as report_to_preferred_name_given_name,
+            mgr.preferred_name_family_name as report_to_preferred_name_family_name,
+            mgr.preferred_name_family_name
+            || ', '
+            || mgr.preferred_name_given_name as report_to_preferred_name_lastfirst,
+
+            lc.reporting_school_id as home_work_location_reporting_school_id,
+            lc.powerschool_school_id as home_work_location_powerschool_school_id,
+            lc.deanslist_school_id as home_work_location_deanslist_school_id,
+            lc.clean_name as home_work_location_reporting_name,
+            lc.abbreviation as home_work_location_abbreviation,
+            lc.grade_band as home_work_location_grade_band,
+            lc.region as home_work_location_region,
+            lc.is_campus as home_work_location_is_campus,
+            lc.is_pathways as home_work_location_is_pathways,
+
+            en.employee_number,
+
+            enm.employee_number as report_to_employee_number,
+
+            ldap.mail,
+            ldap.distinguished_name,
+            ldap.user_principal_name,
+            ldap.sam_account_name,
+            ldap.physical_delivery_office_name,
+            ldap.uac_account_disable,
+
+            regexp_replace(
+                lower(ldap.user_principal_name),
+                r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
+                if(
+                    wp.business_unit_home_name = 'KIPP Miami',
+                    r'\1kippmiami\2',
+                    r'\1apps.teamschools\2'
+                )
+            ) as google_email,
+
+            coalesce(
+                idps.powerschool_teacher_number, safe_cast(en.employee_number as string)
+            ) as powerschool_teacher_number,
+        from worker_person as wp
+        left join worker_person as mgr on wp.report_to_associate_oid = mgr.associate_oid
+        left join
+            {{ ref("stg_people__location_crosswalk") }} as lc
+            on wp.home_work_location_name = lc.name
+        inner join
+            {{ ref("stg_people__employee_numbers") }} as en
+            on wp.worker_id = en.adp_associate_id
+            and en.is_active
+        left join
+            {{ ref("stg_people__employee_numbers") }} as enm
+            on wp.report_to_worker_id = enm.adp_associate_id
+            and enm.is_active
+        left join
+            {{ ref("stg_ldap__user_person") }} as ldap
+            on en.employee_number = ldap.employee_number
+        left join
+            {{ ref("stg_people__powerschool_crosswalk") }} as idps
+            on en.employee_number = idps.employee_number
+            and idps.is_active
     )
 
-select
-    wp.*,
-    wp.preferred_name_family_name
-    || ', '
-    || wp.preferred_name_given_name as preferred_name_lastfirst,
-
-    lc.reporting_school_id as home_work_location_reporting_school_id,
-    lc.powerschool_school_id as home_work_location_powerschool_school_id,
-    lc.deanslist_school_id as home_work_location_deanslist_school_id,
-    lc.clean_name as home_work_location_reporting_name,
-    lc.abbreviation as home_work_location_abbreviation,
-    lc.grade_band as home_work_location_grade_band,
-    lc.region as home_work_location_region,
-    lc.is_campus as home_work_location_is_campus,
-    lc.is_pathways as home_work_location_is_pathways,
-
-    en.employee_number,
-
-    enm.employee_number as report_to_employee_number,
-
-    mgr.preferred_name_given_name as report_to_preferred_name_given_name,
-    mgr.preferred_name_family_name as report_to_preferred_name_family_name,
-    mgr.preferred_name_family_name
-    || ', '
-    || mgr.preferred_name_given_name as report_to_preferred_name_lastfirst,
-
-    ldap.mail,
-    ldap.distinguished_name,
-    ldap.user_principal_name,
-    ldap.sam_account_name,
-    ldap.physical_delivery_office_name,
-    ldap.uac_account_disable,
-
-    regexp_replace(
-        lower(ldap.user_principal_name),
-        r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
-        if(
-            wp.business_unit_home_name = 'KIPP Miami',
-            r'\1kippmiami\2',
-            r'\1apps.teamschools\2'
-        )
-    ) as google_email,
-
-    coalesce(
-        idps.powerschool_teacher_number, safe_cast(en.employee_number as string)
-    ) as powerschool_teacher_number,
-from worker_person as wp
+select cw.*, tgl.grade_level as primary_grade_level_taught
+from crosswalk as cw
 left join
-    {{ ref("stg_people__location_crosswalk") }} as lc
-    on wp.home_work_location_name = lc.name
-inner join
-    {{ ref("stg_people__employee_numbers") }} as en
-    on wp.worker_id = en.adp_associate_id
-    and en.is_active
-left join
-    {{ ref("stg_people__employee_numbers") }} as enm
-    on wp.report_to_worker_id = enm.adp_associate_id
-    and enm.is_active
-left join worker_person as mgr on wp.report_to_associate_oid = mgr.associate_oid
-left join
-    {{ ref("stg_ldap__user_person") }} as ldap
-    on en.employee_number = ldap.employee_number
-left join
-    {{ ref("stg_people__powerschool_crosswalk") }} as idps
-    on en.employee_number = idps.employee_number
-    and idps.is_active
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on cw.powerschool_teacher_number = tgl.teachernumber
+    and tgl.academic_year = {{ var("current_academic_year") }}
+    and tgl.grade_level_rank = 1

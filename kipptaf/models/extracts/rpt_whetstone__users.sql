@@ -1,26 +1,36 @@
 with
     people as (
         select
-            scw.df_employee_number as user_internal_id,
-            scw.manager_df_employee_number as manager_internal_id,
-            scw.google_email as user_email,
-            scw.primary_on_site_department as course_name,
-            scw.preferred_first_name || ' ' || scw.preferred_last_name as user_name,
-            if(scw.primary_site_schoolid != 0, scw.primary_site, null) as school_name,
-            if(scw.status = 'Terminated', 1, 0) as inactive,
-            if(scw.grades_taught = 0, 'K', scw.grades_taught) as grade_abbreviation,
+            sr.employee_number as user_internal_id,
+            sr.report_to_employee_number as manager_internal_id,
+            sr.google_email as user_email,
+            sr.department_home_name as course_name,
+            sr.preferred_name_given_name
+            || ' '
+            || sr.preferred_name_family_name as user_name,
+            if(
+                sr.home_work_location_powerschool_school_id != 0,
+                sr.home_work_location_name,
+                null
+            ) as school_name,
+            if(sr.assignment_status in ('Terminated', 'Deceased'), 1, 0) as inactive,
+            if(
+                sr.primary_grade_level_taught = 0,
+                'K',
+                safe_cast(sr.primary_grade_level_taught as string)
+            ) as grade_abbreviation,
 
             case
                 /* network admins */
-                when scw.primary_on_site_department = 'Executive'
+                when sr.department_home_name = 'Executive'
                 then 'Regional Admin'
                 when
-                    scw.primary_on_site_department in (
+                    sr.department_home_name in (
                         'Teaching and Learning',
                         'School Support',
                         'New Teacher Development'
                     )
-                    and scw.primary_job in (
+                    and sr.job_title in (
                         'Achievement Director',
                         'Chief Academic Officer',
                         'Chief Of Staff',
@@ -42,18 +52,18 @@ with
                     )
                 then 'Sub Admin'
                 when
-                    scw.primary_on_site_department = 'Special Education'
-                    and scw.primary_job
+                    sr.department_home_name = 'Special Education'
+                    and sr.job_title
                     in ('Managing Director', 'Director', 'Achievement Director')
                 then 'Sub Admin'
-                when scw.primary_on_site_department = 'Human Resources'
+                when sr.department_home_name = 'Human Resources'
                 then 'Sub Admin'
                 /* school admins */
-                when scw.primary_job = 'School Leader'
+                when sr.job_title = 'School Leader'
                 then 'School Admin'
                 when
-                    scw.primary_on_site_department = 'School Leadership'
-                    and scw.primary_job in (
+                    sr.department_home_name = 'School Leadership'
+                    and sr.job_title in (
                         'Assistant Dean',
                         'Assistant School Leader',
                         'Assistant School Leader, SPED',
@@ -64,10 +74,10 @@ with
                     )
                 then 'School Assistant Admin'
                 /* basic roles */
-                when scw.is_manager = 1
+                when sr.management_position_indicator
                 then 'Coach'
                 when
-                    scw.primary_job in (
+                    sr.job_title in (
                         'Teacher',
                         'Teacher ESL',
                         'Co-Teacher',
@@ -79,12 +89,12 @@ with
                 then 'Teacher'
                 else 'No Role'
             end as role_name
-        from {{ ref("base_people__staff_roster") }} as scw
+        from {{ ref("base_people__staff_roster") }} as sr
         where
-            scw.userprincipalname is not null
-            and coalesce(scw.termination_date, current_date('America/New_York'))
+            sr.user_principal_name is not null
+            and coalesce(sr.worker_termination_date, current_date('America/New_York'))
             >= date({{ var("current_academic_year") }} - 1, 7, 1)
-            and scw.primary_on_site_department != 'Data'
+            and sr.department_home_name != 'Data'
     ),
 
     observation_group_membership_union as (
@@ -127,7 +137,7 @@ with
         from {{ ref("stg_schoolmint_grow__users_roles") }}
         where role_name != 'No Role'
 
-        union all
+        union distinct
 
         select og.user_id, r.role_id, r.name as role_name,
         from observation_groups as og
@@ -139,7 +149,7 @@ with
         from {{ ref("base_people__staff_roster") }} as s
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u
-            on s.employee_number = u.internal_id
+            on s.employee_number = u.internalid
         inner join
             {{ ref("stg_schoolmint_grow__roles") }} as r on r.name = 'School Admin'
         where s.job_title = 'School Leader'
@@ -179,22 +189,22 @@ select
     end as group_name,
 
     u.user_id,
-    u.user_email as user_email_ws,
-    u.user_name as user_name_ws,
+    u.email as user_email_ws,
+    u.name as user_name_ws,
     u.inactive as inactive_ws,
-    u.default_school_id as school_id_ws,
-    u.default_grade_level_id as grade_id_ws,
-    u.default_course_id as course_id_ws,
-    u.coach_id as coach_id_ws,
-    u.archived_at,
+    u.defaultinformation_school as school_id_ws,
+    u.defaultinformation_gradelevel as grade_id_ws,
+    u.defaultinformation_course as course_id_ws,
+    u.coach as coach_id_ws,
+    u.archivedat as archived_at,
 
     um.user_id as coach_id,
 
     sch.school_id,
 
-    gr.grade_id,
+    gr.tag_id as grade_id,
 
-    cou.course_id,
+    cou.tag_id as course_id,
 
     '[' || er.role_ids || ']' as role_id_ws,
 
@@ -239,21 +249,21 @@ select
     || ']' as role_id
 from people as p
 left join
-    {{ ref("stg_schoolmint_grow__users") }} as u on p.user_internal_id = u.internal_id
+    {{ ref("stg_schoolmint_grow__users") }} as u on p.user_internal_id = u.internalid
 left join
     {{ ref("stg_schoolmint_grow__users") }} as um
-    on p.manager_internal_id = um.internal_id
+    on p.manager_internal_id = um.internalid
 left join {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as cou
     on p.course_name = cou.name
     and cou.tag_type = 'courses'
-    and cou.archived_at is null
+    and cou.archivedat is null
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gr
     on p.grade_abbreviation = gr.abbreviation
     and gr.tag_type = 'grades'
-    and gr.archived_at is null
+    and gr.archivedat is null
 left join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
 left join roles_agg as er on u.user_id = er.user_id
 left join
