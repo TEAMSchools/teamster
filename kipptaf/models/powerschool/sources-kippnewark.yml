@@ -619,3 +619,19 @@ sources:
               - kippnewark
               - powerschool
               - int_powerschool__teachers
+      - name: int_powerschool__teacher_grade_levels
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__teacher_grade_levels
+      - name: int_powerschool__district_entry_date
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__district_entry_date
