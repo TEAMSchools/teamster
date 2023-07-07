@@ -38,8 +38,6 @@ models:
         +enabled: false
       stg_powerschool__u_def_ext_students:
         +enabled: false
-      stg_powerschool__u_studentsuserfields:
-        +enabled: false
 
 vars:
   deanslist_schema: kippmiami_deanslist

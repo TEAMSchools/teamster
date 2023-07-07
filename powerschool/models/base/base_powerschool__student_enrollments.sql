@@ -1,4 +1,5 @@
 {% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
+{% set lep_status_true = ["1", "YES", "Y"] %}
 {%- set self_contained_specprog_names = [
     "Self-Contained Special Education",
     "Pathways ES",
@@ -298,6 +299,10 @@ select
     sch.name as school_name,
     sch.abbreviation as school_abbreviation,
 
+    scf.spedlep,
+    if(scf.lep_status in unnest({{ lep_status_true }}), true, false) as lep_status,
+    if(scf.homeless_code in ('Y1', 'Y2'), true, false) as is_homeless,
+
     adv.advisory_name,
     adv.advisor_teachernumber,
     adv.advisor_lastfirst,
@@ -312,6 +317,12 @@ select
     scw.contact_2_phone_mobile,
     scw.contact_2_phone_daytime,
     scw.contact_2_email_current,
+    scw.pickup_1_name,
+    scw.pickup_1_phone_mobile,
+    scw.pickup_2_name,
+    scw.pickup_2_phone_mobile,
+    scw.pickup_3_name,
+    scw.pickup_3_phone_mobile,
 
     if(
         sp.specprog_name in unnest({{ self_contained_specprog_names }}), true, false
@@ -363,6 +374,9 @@ from enr_order_window as enr
 inner join {{ ref("stg_powerschool__students") }} as s on enr.studentid = s.id
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on enr.schoolid = sch.school_number
+left join
+    {{ ref("stg_powerschool__studentcorefields") }} as scf
+    on enr.students_dcid = scf.studentsdcid
 left join
     {{ ref("int_powerschool__advisory") }} as adv
     on enr.studentid = adv.studentid
