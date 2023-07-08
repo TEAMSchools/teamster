@@ -210,43 +210,35 @@ select
 
     og.role_names as group_type_ws,
 
-    '[' || (
-        case
-            /* removing last year roles every August*/
-            when
-                current_date('America/New_York')
-                = date({{ var("current_academic_year") }}, 8, 1)
-            then '"' || p.role_name || '"'
-            /* no roles = add assigned role */
-            when er.role_names is null
-            then '"' || p.role_name || '"'
-            /* assigned role already exists = use existing */
-            when charindex(p.role_name, er.role_names) > 0
-            then er.role_names
-            /* add assigned role */
-            else '"' || p.role_name || '",' || er.role_names
-        end
-    )
+    '[' || case
+        /* removing last year roles every August*/
+        when current_date('America/New_York') = date(2023, 8, 1)
+        then '"' || p.role_name || '"'
+        /* no roles = add assigned role */
+        when er.role_names is null
+        then '"' || p.role_name || '"'
+        /* assigned role already exists = use existing */
+        when regexp_contains(er.role_names, p.role_name)
+        then er.role_names
+        /* add assigned role */
+        else '"' || p.role_name || '",' || er.role_names
+    end
     || ']' as role_names,
 
-    '[' || (
-        case
-            /* removing last year roles every August*/
-            when
-                current_date('America/New_York')
-                = date({{ var("current_academic_year") }}, 8, 1)
-            then '"' || r.role_id || '"'
-            /* no roles = add assigned role */
-            when er.role_ids is null
-            then '"' || r.role_id || '"'
-            /* assigned role already exists = use existing */
-            when charindex(r.role_id, er.role_ids) > 0
-            then er.role_ids
-            /* add assigned role */
-            else '"' || r.role_id || '",' || er.role_ids
-        end
-    )
-    || ']' as role_id
+    '[' || case
+        /* removing last year roles every August*/
+        when current_date('America/New_York') = date(2023, 8, 1)
+        then '"' || r.role_id || '"'
+        /* no roles = add assigned role */
+        when er.role_ids is null
+        then '"' || r.role_id || '"'
+        /* assigned role already exists = use existing */
+        when regexp_contains(er.role_ids, r.role_id)
+        then er.role_ids
+        /* add assigned role */
+        else '"' || r.role_id || '",' || er.role_ids
+    end
+    || ']' as role_id,
 from people as p
 left join
     {{ ref("stg_schoolmint_grow__users") }} as u on p.user_internal_id = u.internalid
