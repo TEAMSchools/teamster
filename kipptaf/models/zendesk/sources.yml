@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: zendesk
+    schema: kipptaf_zendesk
+    tables:
+      - name: groups
+      - name: ticket_audits
+      - name: ticket_fields
+      - name: ticket_fields_custom_field_options
+      - name: ticket_metrics
+      - name: tickets
+      - name: tickets_custom_fields
+      - name: users
