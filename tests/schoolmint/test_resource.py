@@ -1,10 +1,9 @@
-# import json
 import random
 
-from dagster import build_resources, config_from_files
+from dagster import EnvVar, build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
-from teamster.core.schoolmint.resources import Grow, schoolmint_grow_resource
+from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.schoolmint.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
@@ -13,16 +12,16 @@ ASSET_CONFIG = config_from_files(["tests/schoolmint/config.yaml"])
 
 def test_schoolmint_grow_schema():
     with build_resources(
-        resources={"grow": schoolmint_grow_resource},
-        resource_config={
-            "grow": {
-                "config": config_from_files(
-                    ["src/teamster/core/config/resources/schoolmint.yaml"]
-                )
-            }
+        resources={
+            "grow": SchoolMintGrowResource(
+                client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
+                client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
+                district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
+                api_response_limit=3200,
+            )
         },
     ) as resources:
-        grow: Grow = resources.grow
+        grow: SchoolMintGrowResource = resources.grow
 
         for endpoint in ASSET_CONFIG["endpoints"]:
             endpoint_name = endpoint["asset_name"]
@@ -41,7 +40,6 @@ def test_schoolmint_grow_schema():
 
             if count > 0:
                 sample_record = records[random.randint(a=0, b=(count - 1))]
-                # sample_record = [r for r in records if "" in json.dumps(obj=r)]
 
                 assert validation.validate(
                     datum=sample_record, schema=parsed_schema, strict=True

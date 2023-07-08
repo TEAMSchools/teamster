@@ -41,11 +41,11 @@ ROLE_FIELDS = [
 
 GENERIC_TAG_TYPE_FIELDS = [
     *CORE_FIELDS,
-    {"name": "__v", "type": ["null", "int"], "default": None},
+    {"name": "__v", "type": ["null", "long"], "default": None},
     {"name": "abbreviation", "type": ["null", "string"], "default": None},
     {"name": "color", "type": ["null", "string"], "default": None},
     {"name": "creator", "type": ["null", "string"], "default": None},
-    {"name": "order", "type": ["null", "int"], "default": None},
+    {"name": "order", "type": ["null", "long"], "default": None},
     {"name": "parent", "type": ["null", "string"], "default": None},
     {"name": "showOnDash", "type": ["null", "boolean"], "default": None},
     {"name": "type", "type": ["null", "string"], "default": None},
@@ -75,7 +75,7 @@ ADDITIONAL_FIELD_FIELDS = [
         "type": [
             "null",
             "string",
-            "int",
+            "long",
             "boolean",
             get_avro_record_schema(name="content", fields=CONTENT_FIELDS),
         ],
@@ -215,8 +215,8 @@ MEASUREMENT_OPTION_FIELDS = [
     {"name": "label", "type": ["null", "string"], "default": None},
     {"name": "description", "type": ["null", "string"], "default": None},
     {"name": "_id", "type": ["null", "string"], "default": None},
-    {"name": "value", "type": ["null", "int"], "default": None},
-    {"name": "percentage", "type": ["null", "float"], "default": None},
+    {"name": "value", "type": ["null", "long"], "default": None},
+    {"name": "percentage", "type": ["null", "double"], "default": None},
     {
         "name": "created",
         "type": ["null", "string"],
@@ -229,8 +229,8 @@ MEASUREMENT_FIELDS = [
     *CORE_FIELDS,
     {"name": "description", "type": ["null", "string"], "default": None},
     {"name": "rowStyle", "type": ["null", "string"], "default": None},
-    {"name": "scaleMax", "type": ["null", "int"], "default": None},
-    {"name": "scaleMin", "type": ["null", "int"], "default": None},
+    {"name": "scaleMax", "type": ["null", "long"], "default": None},
+    {"name": "scaleMin", "type": ["null", "long"], "default": None},
     {
         "name": "textBoxes",
         "type": [
@@ -385,6 +385,35 @@ RESOURCE_FIELDS = [
     {"name": "url", "type": ["null", "string"], "default": None},
 ]
 
+ROLES_EXCLUDED_FIELDS = [
+    {"name": "_id", "type": ["null", "string"], "default": None},
+    {"name": "district", "type": ["null", "string"], "default": None},
+    {"name": "name", "type": ["null", "string"], "default": None},
+    {"name": "category", "type": ["null", "string"], "default": None},
+    {
+        "name": "created",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
+        "default": None,
+    },
+    {
+        "name": "lastModified",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-millis",
+        "default": None,
+    },
+    {
+        "name": "privileges",
+        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "default": None,
+    },
+    {
+        "name": "visibleRoles",
+        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "default": None,
+    },
+]
+
 SETTING_FIELDS = [
     {"name": "actionStep", "type": ["null", "boolean"], "default": None},
     {"name": "actionStepCreate", "type": ["null", "boolean"], "default": None},
@@ -417,6 +446,7 @@ SETTING_FIELDS = [
     {"name": "displayLabels", "type": ["null", "boolean"], "default": None},
     {"name": "displayNumbers", "type": ["null", "boolean"], "default": None},
     {"name": "enableClickToFill", "type": ["null", "boolean"], "default": None},
+    {"name": "enablePolongClick", "type": ["null", "boolean"], "default": None},
     {"name": "enablePointClick", "type": ["null", "boolean"], "default": None},
     {"name": "filters", "type": ["null", "boolean"], "default": None},
     {"name": "goalCreate", "type": ["null", "boolean"], "default": None},
@@ -440,7 +470,7 @@ SETTING_FIELDS = [
     {"name": "isScorePrivate", "type": ["null", "boolean"], "default": None},
     {"name": "isSiteVisit", "type": ["null", "boolean"], "default": None},
     {"name": "locked", "type": ["null", "boolean"], "default": None},
-    {"name": "lockScoreAfterDays", "type": ["null", "int", "string"], "default": None},
+    {"name": "lockScoreAfterDays", "type": ["null", "long", "string"], "default": None},
     {"name": "meetingQuickCreate", "type": ["null", "boolean"], "default": None},
     {
         "name": "meetingTypesExcludedFromScheduling",
@@ -449,6 +479,7 @@ SETTING_FIELDS = [
     },
     {"name": "nameAndSignatureDisplay", "type": ["null", "boolean"], "default": None},
     {"name": "notification", "type": ["null", "boolean"], "default": None},
+    {"name": "notificationNote", "type": ["null", "boolean"], "default": None},
     {"name": "obsShowEndDate", "type": ["null", "boolean"], "default": None},
     {"name": "obsTypeFinalize", "type": ["null", "boolean"], "default": None},
     {"name": "prepopulateActionStep", "type": ["null", "string"], "default": None},
@@ -486,7 +517,19 @@ SETTING_FIELDS = [
     },
     {
         "name": "rolesExcluded",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": [
+                    "string",
+                    get_avro_record_schema(
+                        name="roles_excluded", fields=ROLES_EXCLUDED_FIELDS
+                    ),
+                ],
+                "default": [],
+            },
+        ],
         "default": None,
     },
     {
@@ -607,7 +650,7 @@ MEASUREMENT_GROUP_MEASUREMENT_FIELDS = [
     {"name": "key", "type": ["null", "string"], "default": None},
     {"name": "measurement", "type": ["null", "string"], "default": None},
     {"name": "require", "type": ["null", "boolean"], "default": None},
-    {"name": "weight", "type": ["null", "int"], "default": None},
+    {"name": "weight", "type": ["null", "double"], "default": None},
 ]
 
 MEASUREMENT_GROUP_FIELDS = [
@@ -615,7 +658,7 @@ MEASUREMENT_GROUP_FIELDS = [
     {"name": "description", "type": ["null", "string"], "default": None},
     {"name": "key", "type": ["null", "string"], "default": None},
     {"name": "name", "type": ["null", "string"], "default": None},
-    {"name": "weight", "type": ["null", "int"], "default": None},
+    {"name": "weight", "type": ["null", "long"], "default": None},
     {
         "name": "measurements",
         "type": [
@@ -636,9 +679,9 @@ RUBRIC_FIELDS = [
     *CORE_FIELDS,
     {"name": "isPrivate", "type": ["null", "boolean"], "default": None},
     {"name": "isPublished", "type": ["null", "boolean"], "default": None},
-    {"name": "order", "type": ["null", "int"], "default": None},
-    {"name": "scaleMax", "type": ["null", "int"], "default": None},
-    {"name": "scaleMin", "type": ["null", "int"], "default": None},
+    {"name": "order", "type": ["null", "long"], "default": None},
+    {"name": "scaleMax", "type": ["null", "long"], "default": None},
+    {"name": "scaleMin", "type": ["null", "long"], "default": None},
     {
         "name": "settings",
         "type": ["null", get_avro_record_schema(name="setting", fields=SETTING_FIELDS)],
@@ -704,7 +747,7 @@ SCHOOL_FIELDS = [
     {"name": "city", "type": ["null", "string"], "default": None},
     {"name": "gradeSpan", "type": ["null", "string"], "default": None},
     {"name": "highGrade", "type": ["null", "string"], "default": None},
-    {"name": "internalId", "type": ["null", "string"], "default": None},
+    {"name": "longernalId", "type": ["null", "string"], "default": None},
     {"name": "lowGrade", "type": ["null", "string"], "default": None},
     {"name": "phone", "type": ["null", "string"], "default": None},
     {"name": "principal", "type": ["null", "string"], "default": None},
@@ -769,7 +812,7 @@ SCHOOL_FIELDS = [
 
 VIDEO_NOTE_FIELDS = [
     {"name": "_id", "type": ["null", "string"], "default": None},
-    {"name": "createdOnMillisecond", "type": ["null", "int"], "default": None},
+    {"name": "createdOnMillisecond", "type": ["null", "long"], "default": None},
     {"name": "creator", "type": ["null", "string"], "default": None},
     {"name": "text", "type": ["null", "string"], "default": None},
 ]
@@ -857,7 +900,7 @@ VIDEO_FIELDS = [
 ]
 
 PLU_CONFIG_FIELDS = [
-    {"name": "required", "type": ["null", "int"], "default": None},
+    {"name": "required", "type": ["null", "long"], "default": None},
     {
         "name": "startDate",
         "type": ["null", "string"],
@@ -873,7 +916,7 @@ PLU_CONFIG_FIELDS = [
 ]
 
 USER_TYPE_FIELDS = [
-    {"name": "__v", "type": ["null", "int"], "default": None},
+    {"name": "__v", "type": ["null", "long"], "default": None},
     {"name": "_id", "type": ["null", "string"], "default": None},
     {"name": "abbreviation", "type": ["null", "string"], "default": None},
     {"name": "archivedAt", "type": ["null", "string"], "default": None},
@@ -895,10 +938,10 @@ USER_TYPE_FIELDS = [
 ]
 
 EXPECTATION_FIELDS = [
-    {"name": "meeting", "type": ["null", "int"], "default": None},
-    {"name": "exceeding", "type": ["null", "int"], "default": None},
-    {"name": "meetingAggregate", "type": ["null", "int"], "default": None},
-    {"name": "exceedingAggregate", "type": ["null", "int"], "default": None},
+    {"name": "meeting", "type": ["null", "long"], "default": None},
+    {"name": "exceeding", "type": ["null", "long"], "default": None},
+    {"name": "meetingAggregate", "type": ["null", "long"], "default": None},
+    {"name": "exceedingAggregate", "type": ["null", "long"], "default": None},
     {"name": "summary", "type": ["null", "string"], "default": None},
 ]
 
@@ -923,7 +966,7 @@ DISTRICT_DATA_FIELDS = [
     {"name": "district", "type": ["null", "string"], "default": None},
     {"name": "grade", "type": ["null", "string"], "default": None},
     {"name": "inactive", "type": ["null", "boolean"], "default": None},
-    {"name": "internalId", "type": ["null", "string"], "default": None},
+    {"name": "longernalId", "type": ["null", "string"], "default": None},
     {"name": "locked", "type": ["null", "boolean"], "default": None},
     {"name": "nonInstructional", "type": ["null", "boolean"], "default": None},
     {"name": "readonly", "type": ["null", "boolean"], "default": None},
@@ -969,7 +1012,7 @@ PREFERENCE_FIELDS = [
     {"name": "showDCPSMessage", "type": ["null", "boolean"], "default": None},
     {"name": "showSystemWideMessage", "type": ["null", "boolean"], "default": None},
     {"name": "showTutorial", "type": ["null", "boolean"], "default": None},
-    {"name": "timezone", "type": ["null", "int"], "default": None},
+    {"name": "timezone", "type": ["null", "long"], "default": None},
     {"name": "timezoneText", "type": ["null", "string"], "default": None},
     {
         "name": "unsubscribedTo",
@@ -1040,10 +1083,10 @@ PREFERENCE_FIELDS = [
 ]
 
 USER_EXPECTATION_FIELDS = [
-    {"name": "meeting", "type": ["null", "int"], "default": None},
-    {"name": "exceeding", "type": ["null", "int"], "default": None},
-    {"name": "meetingAggregate", "type": ["null", "int"], "default": None},
-    {"name": "exceedingAggregate", "type": ["null", "int"], "default": None},
+    {"name": "meeting", "type": ["null", "long"], "default": None},
+    {"name": "exceeding", "type": ["null", "long"], "default": None},
+    {"name": "meetingAggregate", "type": ["null", "long"], "default": None},
+    {"name": "exceedingAggregate", "type": ["null", "long"], "default": None},
     {"name": "summary", "type": ["null", "string"], "default": None},
 ]
 
@@ -1074,7 +1117,7 @@ USER_FIELDS = [
     {"name": "first", "type": ["null", "string"], "default": None},
     {"name": "googleid", "type": ["null", "string"], "default": None},
     {"name": "inactive", "type": ["null", "boolean"], "default": None},
-    {"name": "internalId", "type": ["null", "string"], "default": None},
+    {"name": "longernalId", "type": ["null", "string"], "default": None},
     {"name": "isPracticeUser", "type": ["null", "boolean"], "default": None},
     {"name": "last", "type": ["null", "string"], "default": None},
     {"name": "locked", "type": ["null", "boolean"], "default": None},
@@ -1148,13 +1191,13 @@ USER_FIELDS = [
         "default": None,
     },
     {
-        "name": "externalIntegrations",
+        "name": "externallongegrations",
         "type": [
             "null",
             {
                 "type": "array",
                 "items": get_avro_record_schema(
-                    name="external_integration",
+                    name="external_longegration",
                     fields=[
                         {"name": "id", "type": ["null", "string"], "default": None},
                         {"name": "type", "type": ["null", "string"], "default": None},
@@ -1225,7 +1268,7 @@ PROGRESS_FIELDS = [
     {"name": "_id", "type": ["null", "string"], "default": None},
     {"name": "assigner", "type": ["null", "string"], "default": None},
     {"name": "justification", "type": ["null", "string"], "default": None},
-    {"name": "percent", "type": ["null", "int"], "default": None},
+    {"name": "percent", "type": ["null", "long"], "default": None},
     {
         "name": "date",
         "type": ["null", "string"],
@@ -1316,8 +1359,8 @@ ASSIGNMENT_FIELDS = [
 OBSERVATION_SCORE_FIELDS = [
     {"name": "measurement", "type": ["null", "string"], "default": None},
     {"name": "measurementGroup", "type": ["null", "string"], "default": None},
-    {"name": "percentage", "type": ["null", "float"], "default": None},
-    {"name": "valueScore", "type": ["null", "int"], "default": None},
+    {"name": "percentage", "type": ["null", "double"], "default": None},
+    {"name": "valueScore", "type": ["null", "long"], "default": None},
     {"name": "valueText", "type": ["null", "string"], "default": None},
     {
         "name": "lastModified",
@@ -1434,8 +1477,8 @@ OBSERVATION_FIELDS = [
     {"name": "privateNotes4", "type": ["null", "string"], "default": None},
     {"name": "quickHits", "type": ["null", "string"], "default": None},
     {"name": "requireSignature", "type": ["null", "boolean"], "default": None},
-    {"name": "score", "type": ["null", "float"], "default": None},
-    {"name": "scoreAveragedByStrand", "type": ["null", "float"], "default": None},
+    {"name": "score", "type": ["null", "double"], "default": None},
+    {"name": "scoreAveragedByStrand", "type": ["null", "double"], "default": None},
     {"name": "sendEmail", "type": ["null", "boolean"], "default": None},
     {"name": "sharedNotes1", "type": ["null", "string"], "default": None},
     {"name": "sharedNotes2", "type": ["null", "string"], "default": None},
