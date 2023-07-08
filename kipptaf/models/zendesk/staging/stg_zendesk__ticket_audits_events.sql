@@ -1,16 +1,11 @@
-{{ config(enabled=false) }}
+select
+    ta.id,
+    ta.ticket_id,
+    ta.created_at,
 
-with
-    events as (
-        select
-            ticket_id,
-            created_at,
-            json_value(e, '$.type') as `type`,
-            json_value(e, '$.field_name') as field_name,
-            json_value(e, '$.value') as `value`,
-        from {{ source("zendesk", "src_zendesk__ticket_audits") }}
-        cross join unnest(events) as e
-    )
-
-select *
-from events
+    json_value(e, '$.type') as `type`,
+    json_value(e, '$.field_name') as field_name,
+    json_value(e, '$.value') as `value`,
+    json_value(e, '$.previous_value') as previous_value,
+from {{ source("zendesk", "ticket_audits") }} as ta
+cross join unnest(ta.events) as e

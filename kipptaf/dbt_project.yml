@@ -71,3 +71,7 @@ models:
     utils:
       +schema: utils
       +materialized: table
+    zendesk:
+      +schema: zendesk
+      staging:
+        +materialized: table

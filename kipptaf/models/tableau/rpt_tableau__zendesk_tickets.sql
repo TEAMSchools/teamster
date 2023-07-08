@@ -1,48 +1,40 @@
-{{ config(enabled=false) }}
-
+{# {{ config(enabled=false) }} #}
 with
-    field_crosswalk as (
-        select id, `name` as field_value, 'group_id' as field_name
-        from zendesk.group
-
-        union all
-
-        select id, email as field_value, 'assignee_id' as field_name
-        from zendesk.user
+    group_updated as (
+        select ticket_id, max(created_at) as max_created_at
+        from {{ ref("stg_zendesk__ticket_audits_events") }}
+        where field_name = 'group_id'
+        group by ticket_id
     ),
 
     original_value as (
-        select
-            fh.ticket_id,
-            fh.field_name,
-
-            fc.field_value,
-
-            row_number() over (
-                partition by fh.ticket_id, fh.field_name order by fh.updated asc
-            ) as field_rn
-        from zendesk.ticket_field_history as fh
+        select tae.ticket_id, tae.field_name, g.name as field_value,
+        from {{ ref("stg_zendesk__ticket_audits_events") }} as tae
         left join
-            field_crosswalk as fc on fh.field_name = fc.field_name and fh.value = fc.id
-        where fh.field_name in ('group_id', 'assignee_id')
-    ),
+            {{ source("zendesk", "groups") }} as g
+            on tae.value = safe_cast(g.id as string)
+        where tae.type = 'Create' and tae.field_name = 'group_id'
 
-    group_updated as (
-        select ticket_id, max(updated) as group_updated
-        from zendesk.ticket_field_history
-        where field_name = 'group_id'
-        group by ticket_id
+        union all
+
+        select tae.ticket_id, tae.field_name, u.email as field_value,
+        from {{ ref("stg_zendesk__ticket_audits_events") }} as tae
+        left join
+            {{ source("zendesk", "users") }} as u
+            on tae.value = safe_cast(u.id as string)
+        where tae.type = 'Create' and tae.field_name = 'assignee_id'
     )
 
 select
     t.id as ticket_id,
     t.created_at,
     t.status as ticket_status,
-    t.custom_category as category,
-    t.custom_tech_tier as tech_tier,
-    t.custom_location as `location`,
     t.subject as ticket_subject,
     concat('https://teamschools.zendesk.com/agent/tickets/', t.id) as ticket_url,
+
+    cf.category,
+    cf.tech_tier,
+    cf.location,
 
     s.name as submitter_name,
 
@@ -53,56 +45,56 @@ select
     tm.assignee_updated_at,
     tm.initially_assigned_at,
     tm.solved_at,
-    tm.replies as comments_count,
-    tm.full_resolution_time_in_minutes_business as total_bh_minutes,
-    tm.reply_time_in_minutes_business,
     tm.assignee_stations,
     tm.group_stations,
+    tm.replies as comments_count,
+    json_value(tm.full_resolution_time_in_minutes, '$.business') as total_bh_minutes,
+    json_value(
+        tm.reply_time_in_minutes, '$.business'
+    ) as reply_time_in_minutes_business,
 
-    gu.group_updated as group_updated,
+    gu.max_created_at as group_updated,
 
     og.field_value as original_group,
 
-    datediff(weekday, t.created_at, gu.group_updated) as weekdays_created_to_last_group,
+    oa.field_value as original_assignee,
 
-    datediff(weekday, t.created_at, tm.solved_at) as weekdays_created_to_solved,
+    sx.department_home_name as submitter_dept,
+    sx.job_title as submitter_job,
+    sx.home_work_location_name as submitter_site,
+    sx.business_unit_home_name as submitter_entity,
 
-    datediff(
-        weekday, t.created_at, tm.initially_assigned_at
-    ) as weekdays_created_to_first_assigned,
-    datediff(
-        weekday, t.created_at, tm.assignee_updated_at
-    ) as weekdays_created_to_last_assigned,
+    c.job_title as assignee_primary_job,
+    c.home_work_location_name as assignee_primary_site,
+    c.business_unit_home_name as assignee_legal_entity,
 
-    c.primary_job as assignee_primary_job,
-    c.primary_site as assignee_primary_site,
-    c.legal_entity_name as assignee_legal_entity,
+    oad.preferred_name_lastfirst as original_assignee,
+    oad.job_title as orig_assignee_job,
+    oad.department_home_name as orig_assignee_dept,
 
-    sx.primary_on_site_department as submitter_dept,
-    sx.primary_job as submitter_job,
-    sx.primary_site as submitter_site,
-    sx.legal_entity_name as submitter_entity,
-
-    oad.preferred_name as original_assignee,
-    oad.primary_job as orig_assignee_job,
-    oad.primary_on_site_department as orig_assignee_dept
-from zendesk.ticket as t
-left join zendesk.user as s on t.submitter_id = s.id
-left join zendesk.user as a on t.assignee_id = a.id
-left join zendesk.group as g on t.group_id = g.id
-left join zendesk.ticket_metrics_clean as tm on t.id = tm.ticket_id
+    {{ teamster_utils.date_diff_weekday("gu.max_created_at", "t.created_at") }}
+    as weekdays_created_to_last_group,
+    {{ teamster_utils.date_diff_weekday("tm.solved_at", "t.created_at") }}
+    as weekdays_created_to_solved,
+    {{ teamster_utils.date_diff_weekday("tm.initially_assigned_at", "t.created_at") }}
+    as weekdays_created_to_first_assigned,
+    {{ teamster_utils.date_diff_weekday("tm.assignee_updated_at", "t.created_at") }}
+    as weekdays_created_to_last_assigned,
+from {{ source("zendesk", "tickets") }} as t
+left join
+    {{ ref("stg_zendesk__ticket_custom_fields_pivot") }} as cf
+    on t._airbyte_tickets_hashid = cf._airbyte_tickets_hashid
+left join {{ source("zendesk", "users") }} as s on t.submitter_id = s.id
+left join {{ source("zendesk", "users") }} as a on t.assignee_id = a.id
+left join {{ source("zendesk", "groups") }} as g on t.group_id = g.id
+left join {{ source("zendesk", "ticket_metrics") }} as tm on t.id = tm.ticket_id
 left join group_updated as gu on t.id = gu.ticket_id
+left join original_value as og on t.id = og.ticket_id and og.field_name = 'group_id'
+left join original_value as oa on t.id = oa.ticket_id and oa.field_name = 'assignee_id'
 left join
-    original_value as og
-    on t.id = og.ticket_id
-    and og.field_name = 'group_id'
-    and og.field_rn = 1
+    {{ ref("base_people__staff_roster") }} as sx on s.email = sx.user_principal_name
+left join {{ ref("base_people__staff_roster") }} as c on a.email = c.user_principal_name
 left join
-    original_value as oa
-    on t.id = oa.ticket_id
-    and oa.field_name = 'assignee_id'
-    and oa.field_rn = 1
-left join people.staff_crosswalk_static as c on a.email = c.userprincipalname
-left join people.staff_crosswalk_static as sx on s.email = sx.userprincipalname
-left join people.staff_crosswalk_static as oad on oa.field_value = oad.userprincipalname
+    {{ ref("base_people__staff_roster") }} as oad
+    on oa.field_value = oad.user_principal_name
 where t.status != 'deleted'
