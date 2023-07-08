@@ -24,7 +24,7 @@ COMPREHENSIVE_BENEFIT_FIELDS = [
 ]
 
 PENSION_BENEFIT_FIELDS = [
-    {"name": "employee_number", "type": ["null", "long"], "default": None},
+    {"name": "employee_number", "type": ["null", "double"], "default": None},
     {"name": "position_id", "type": ["null", "string"], "default": None},
     {"name": "plan_type", "type": ["null", "string"], "default": None},
     {"name": "plan_name", "type": ["null", "string"], "default": None},
