@@ -1,9 +1,3 @@
 endpoints:
   - asset_name: observations
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            limits:
-              memory: 1.0Gi
   - asset_name: assignments

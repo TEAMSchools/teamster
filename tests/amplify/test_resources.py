@@ -8,7 +8,7 @@ from teamster.core.amplify.resources import MClassResource
 def test_resource():
     with build_resources(
         resources={
-            "amplify": MClassResource(
+            "mclass": MClassResource(
                 username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
             )
         }
