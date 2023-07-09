@@ -9,7 +9,6 @@ from .jobs import (
     deanslist_extract_asset_job,
     egencia_extract_asset_job,
     gam_extract_asset_job,
-    gsheet_extract_asset_job,
     idauto_extract_asset_job,
     illuminate_extract_asset_job,
     littlesis_extract_asset_job,
@@ -40,11 +39,6 @@ idauto_extract_assets_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-gsheet_extract_assets_schedule = ScheduleDefinition(
-    job=gsheet_extract_asset_job,
-    cron_schedule="0 6 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
-)
 
 deanslist_extract_assets_schedule = ScheduleDefinition(
     job=deanslist_extract_asset_job,
@@ -96,7 +90,6 @@ __all__ = [
     deanslist_extract_assets_schedule,
     egencia_extract_assets_schedule,
     gam_extract_assets_schedule,
-    gsheet_extract_assets_schedule,
     idauto_extract_assets_schedule,
     illuminate_extract_assets_schedule,
     littlesis_extract_assets_schedule,
@@ -112,6 +105,11 @@ __all__ = [
 # fpodms_extract_assets_schedule = ScheduleDefinition(
 #     job=fpodms_extract_asset_job,
 #     cron_schedule="40 2 * * *",
+#     execution_timezone=LOCAL_TIMEZONE.name,
+# )
+# gsheet_extract_assets_schedule = ScheduleDefinition(
+#     job=gsheet_extract_asset_job,
+#     cron_schedule="0 6 * * *",
 #     execution_timezone=LOCAL_TIMEZONE.name,
 # )
 # njdoe_extract_assets_schedule = ScheduleDefinition(
