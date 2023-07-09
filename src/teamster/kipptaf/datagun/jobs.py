@@ -8,7 +8,6 @@ from .assets import (
     deanslist_extract_assets,
     egencia_extract_assets,
     gam_extract_assets,
-    gsheet_extract_assets,
     idauto_extract_assets,
     illuminate_extract_assets,
     littlesis_extract_assets,
@@ -70,11 +69,6 @@ whetstone_extract_asset_job = define_asset_job(
     selection=AssetSelection.assets(*whetstone_extract_assets),
 )
 
-gsheet_extract_asset_job = define_asset_job(
-    name="datagun_gsheet_extract_asset_job",
-    selection=AssetSelection.assets(*gsheet_extract_assets),
-)
-
 __all__ = [
     alchemer_extract_asset_job,
     blissbook_extract_asset_job,
@@ -83,7 +77,6 @@ __all__ = [
     deanslist_extract_asset_job,
     egencia_extract_asset_job,
     gam_extract_asset_job,
-    gsheet_extract_asset_job,
     idauto_extract_asset_job,
     illuminate_extract_asset_job,
     littlesis_extract_asset_job,
@@ -98,6 +91,10 @@ __all__ = [
 # fpodms_extract_asset_job = define_asset_job(
 #     name="datagun_fpodms_extract_asset_job",
 #     selection=AssetSelection.assets(*fpodms_extract_assets),
+# )
+# gsheet_extract_asset_job = define_asset_job(
+#     name="datagun_gsheet_extract_asset_job",
+#     selection=AssetSelection.assets(*gsheet_extract_assets),
 # )
 # njdoe_extract_asset_job = define_asset_job(
 #     name="datagun_njdoe_extract_asset_job",

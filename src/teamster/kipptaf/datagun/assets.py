@@ -87,13 +87,6 @@ whetstone_extract_assets = generate_extract_assets(
     timezone=LOCAL_TIMEZONE,
 )
 
-gsheet_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="gsheets",
-    extract_type="gsheet",
-    timezone=LOCAL_TIMEZONE,
-)
-
 __all__ = [
     *alchemer_extract_assets,
     *blissbook_extract_assets,
@@ -102,7 +95,6 @@ __all__ = [
     *deanslist_extract_assets,
     *egencia_extract_assets,
     *gam_extract_assets,
-    *gsheet_extract_assets,
     *idauto_extract_assets,
     *illuminate_extract_assets,
     *littlesis_extract_assets,
@@ -120,6 +112,12 @@ __all__ = [
 #     code_location=CODE_LOCATION,
 #     name="fpodms",
 #     extract_type="sftp",
+#     timezone=LOCAL_TIMEZONE,
+# )
+# gsheet_extract_assets = generate_extract_assets(
+#     code_location=CODE_LOCATION,
+#     name="gsheets",
+#     extract_type="gsheet",
 #     timezone=LOCAL_TIMEZONE,
 # )
 # njdoe_extract_assets = generate_extract_assets(
