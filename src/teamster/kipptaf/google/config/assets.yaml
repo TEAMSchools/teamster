@@ -1,4 +1,7 @@
 assets:
+  - name: surveys__staff_info_certification
+    range_name: src_surveys__staff_info_certification
+    sheet_id: 13bajVOf0otCUZCyLYk3KaTAr2yoOZ2IZGedGYIGwN8Q
   - name: coupa__address_name_crosswalk
     range_name: src_coupa__address_name_crosswalk
     sheet_id: 1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
