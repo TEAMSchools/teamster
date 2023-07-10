@@ -293,7 +293,7 @@ from
             'pickup_5_phone_home',
             'pickup_5_phone_mobile',
             'pickup_5_phone_primary',
-            'pickup_5_phone_work'
-            'pickup_5_relationship',
+            'pickup_5_phone_work',
+            'pickup_5_relationship'
         )
     )

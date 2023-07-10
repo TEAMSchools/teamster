@@ -17,7 +17,7 @@ with
     ),
 
     business_groups as (
-        select ubgm.user_id, string_agg(bg.name, ', ') as business_group_names
+        select ubgm.user_id, string_agg(bg.name, ', ') as business_group_names,
         from {{ source("coupa", "user_business_group_mapping") }} as ubgm
         inner join
             {{ source("coupa", "business_group") }} as bg
@@ -43,12 +43,15 @@ with
             lower(sr.sam_account_name) as sam_account_name,
             lower(sr.user_principal_name) as user_principal_name,
             lower(sr.mail) as mail,
+
             cu.active,
             case
                 when cu.purchasing_user then 'Yes' when not cu.purchasing_user then 'No'
             end as purchasing_user,
+
             r.roles,
-            bg.business_group_names as content_groups
+
+            bg.business_group_names as content_groups,
         from {{ ref("base_people__staff_roster") }} as sr
         inner join
             {{ source("coupa", "user") }} as cu
@@ -87,7 +90,7 @@ with
             true as active,
             'No' as purchasing_user,
             'Expense User' as roles,
-            null as content_groups
+            null as content_groups,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ source("coupa", "user") }} as cu
@@ -245,11 +248,12 @@ select
         ),
         ifnull(regexp_extract(sam_account_name, r'\d+$'), '')
     ) as `Mention Name`,
+
     if(
         sna.coupa_school_name = '<BLANK>',
         null,
         coalesce(sna.coupa_school_name, sub.coupa_school_name)
-    ) as `School Name`
+    ) as `School Name`,
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna
