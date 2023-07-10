@@ -9,7 +9,20 @@ select
     advisory_name as team,
     advisor_lastfirst as advisor_name,
     entrydate,
-    null as boy_status,
+    case
+        when grade_level = 99
+        then 'Graduated'
+        when year_in_network = 1
+        then 'New'
+        when grade_level_prev is null
+        then 'New'
+        when grade_level_prev < grade_level
+        then 'Promoted'
+        when grade_level_prev = grade_level
+        then 'Retained'
+        when grade_level_prev > grade_level
+        then 'Demoted'
+    end as boy_status,
     dob,
     gender,
     lunch_status as lunchstatus,
