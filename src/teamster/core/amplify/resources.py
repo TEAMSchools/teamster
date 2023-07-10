@@ -16,8 +16,8 @@ class MClassResource(ConfigurableResource):
     def setup_for_execution(self, context: InitResourceContext) -> None:
         error_response = self._session.get(url=f"{self._base_url}/reports/api/report")
 
-        portal_response = self._request(
-            method="GET", url=error_response.json()["authentication_path"]
+        portal_response = self._session.get(
+            url=error_response.json()["authentication_path"]
         )
 
         soup = BeautifulSoup(markup=portal_response.text, features="html.parser")
