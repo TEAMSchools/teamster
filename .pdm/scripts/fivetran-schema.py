@@ -14,6 +14,8 @@ philosophical_overbite  # zendesk
 repay_spelled  # kippadb
 genuine_describing  # illuminate_xmin
 jinx_credulous  # illuminate
+regency_carrying  # facebook_pages
+muskiness_cumulative  # instagram_business
 """
 
 
@@ -56,7 +58,7 @@ def main(args):
 
     with open(
         file=f"src/teamster/{args.code_location}/fivetran/schema/{connector_id}.json",
-        mode="w",
+        mode="w+",
     ) as fp:
         json.dump(
             obj={
