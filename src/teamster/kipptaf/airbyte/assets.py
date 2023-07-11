@@ -5,11 +5,9 @@ from .. import CODE_LOCATION
 
 config_dir = f"src/teamster/{CODE_LOCATION}/airbyte/config"
 
-airbyte_assets = [
-    build_airbyte_assets(**a, asset_key_prefix=[CODE_LOCATION])
-    for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
-]
+__all__ = []
 
-__all__ = [
-    *airbyte_assets,
-]
+for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]:
+    __all__.extend(
+        build_airbyte_assets(**a, asset_key_prefix=[CODE_LOCATION, a["group_name"]])
+    )

@@ -54,12 +54,10 @@ defs = Definitions(
     assets=[
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
         *load_assets_from_modules(modules=[adp], group_name="adp"),
-        *load_assets_from_modules(modules=[airbyte], group_name="airbyte"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
         *load_assets_from_modules(modules=[amplify], group_name="amplify"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
-        *load_assets_from_modules(modules=[fivetran]),
         *load_assets_from_modules(modules=[google], group_name="google"),
         *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
@@ -68,12 +66,15 @@ defs = Definitions(
         *load_assets_from_modules(
             modules=[smartrecruiters], group_name="smartrecruiters"
         ),
+        *load_assets_from_modules(modules=[airbyte]),
+        *load_assets_from_modules(modules=[fivetran]),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
     jobs=[
         *adp.jobs,
+        *airbyte.jobs,
         *amplify.jobs,
         *datagun.jobs,
         *fivetran.jobs,
@@ -83,6 +84,7 @@ defs = Definitions(
     ],
     schedules=[
         *adp.schedules,
+        *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
         *fivetran.schedules,
