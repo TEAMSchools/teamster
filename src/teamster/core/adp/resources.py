@@ -131,40 +131,6 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
             raise exceptions.HTTPError(response.text) from e
 
-    def get_record(self, endpoint, querystring={}, id=None, object_name=None):
-        url = f"{self._service_root}{endpoint}"
-        if id:
-            url = f"{url}/{id}"
-
-        r = self._session.get(url=url, params=querystring)
-
-        if r.status_code == 204:
-            return None
-
-        if r.status_code == 200:
-            data = r.json()
-            object_name = object_name or endpoint.split("/")[-1]
-            return data.get(object_name)
-        else:
-            r.raise_for_status()
-
-    def get_all_records(self, endpoint, querystring={}, object_name=None):
-        querystring["$skip"] = querystring.get("$skip", 0)
-        all_data = []
-
-        while True:
-            data = self.get_record(
-                endpoint=endpoint, querystring=querystring, object_name=object_name
-            )
-
-            if data is None:
-                break
-            else:
-                all_data.extend(data)
-                querystring["$skip"] += 50
-
-        return all_data
-
     def post(self, endpoint, subresource, verb, payload):
         url = f"{self._service_root}{endpoint}.{subresource}.{verb}"
 

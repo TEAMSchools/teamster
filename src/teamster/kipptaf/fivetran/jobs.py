@@ -1,4 +1,4 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG, AssetSelection, define_asset_job
+from dagster import AssetSelection, define_asset_job
 
 from teamster.kipptaf import CODE_LOCATION, fivetran
 
@@ -12,6 +12,5 @@ for asset in fivetran.assets:
                 f"{list(asset.group_names_by_key.values())[0]}_asset_job"
             ),
             selection=AssetSelection.keys(*list(asset.keys)),
-            tags={MAX_RUNTIME_SECONDS_TAG: (60 * 25)},
         )
     )
