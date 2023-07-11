@@ -1,5 +1,6 @@
 assets:
   - connection_id: 90ed663f-6399-4afd-9db0-1c025464671b
+    group_name: zendesk
     destination_tables:
       - groups
       - ticket_audits
