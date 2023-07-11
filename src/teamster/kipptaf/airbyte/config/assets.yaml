@@ -1,0 +1,9 @@
+assets:
+  - connection_id: 90ed663f-6399-4afd-9db0-1c025464671b
+    destination_tables:
+      - groups
+      - ticket_audits
+      - ticket_fields
+      - ticket_metrics
+      - tickets
+      - users

@@ -5,6 +5,7 @@ from dagster import (
     config_from_files,
     load_assets_from_modules,
 )
+from dagster_airbyte import AirbyteCloudResource
 from dagster_dbt.cli import DbtCli, DbtCliClientResource
 from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
@@ -31,6 +32,7 @@ from . import (
     GCS_PROJECT_NAME,
     achieve3k,
     adp,
+    airbyte,
     alchemer,
     amplify,
     clever,
@@ -52,6 +54,7 @@ defs = Definitions(
     assets=[
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
         *load_assets_from_modules(modules=[adp], group_name="adp"),
+        *load_assets_from_modules(modules=[airbyte], group_name="airbyte"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
         *load_assets_from_modules(modules=[amplify], group_name="amplify"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
@@ -136,16 +139,14 @@ defs = Definitions(
             cert_filepath="/etc/secret-volume/adp_wfn_cert",
             key_filepath="/etc/secret-volume/adp_wfn_key",
         ),
+        "airbyte": AirbyteCloudResource(api_key=EnvVar("AIRBYTE_API_KEY")),
         "alchemer": AlchemerResource(
             api_token=EnvVar("ALCHEMER_API_TOKEN"),
             api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
             api_version="v5",
         ),
         "fivetran": FivetranResource(
-            # api_key=os.getenv("FIVETRAN_API_KEY"),
-            # api_secret=os.getenv("FIVETRAN_API_SECRET"),
-            api_key=EnvVar("FIVETRAN_API_KEY"),
-            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+            api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
         ),
         "gsheets": GoogleSheetsResource(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
