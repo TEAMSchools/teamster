@@ -6,7 +6,7 @@ assets:
       field_delimiter: "\t"
       print_header: False
     file_config:
-      stem: powerschool_autocomm_students_accessaccounts
+      stem: powerschool_autocomm_teachers_accounts
       suffix: txt
     destination_config:
       name: powerschool
