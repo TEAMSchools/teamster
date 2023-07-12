@@ -276,7 +276,10 @@ with
             location_address_name_short_name, 
         #}
         from {{ ref("base_adp_workforce_now__worker_person") }}
-        where work_assignment__fivetran_active and work_assignment_primary_indicator
+        where
+            work_assignment__fivetran_active
+            and work_assignment_primary_indicator
+            and not worker__fivetran_deleted
     ),
 
     crosswalk as (
