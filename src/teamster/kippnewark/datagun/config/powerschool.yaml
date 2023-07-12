@@ -3,8 +3,8 @@ assets:
       dataset_id: kippnewark_extracts
       table_id: rpt_powerschool__autocomm_teachers
     extract_job_config:
-      fieldDelimiter: "\t"
-      printHeader: False
+      field_delimiter: "\t"
+      print_header: False
     file_config:
       stem: powerschool_autocomm_students_accessaccounts
       suffix: txt
