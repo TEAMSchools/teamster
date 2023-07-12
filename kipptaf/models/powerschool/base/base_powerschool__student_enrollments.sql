@@ -60,8 +60,8 @@ with
             sr.mail as advisor_email,
             sr.communication_business_mobile as advisor_phone,
 
-            null as student_web_id,
-            null as student_web_password,
+            sl.username as student_web_id,
+            sl.default_password as student_web_password,
         from student_enrollments_union as seu
         left join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
@@ -74,9 +74,9 @@ with
         left join
             {{ ref("base_people__staff_roster") }} as sr
             on seu.advisor_teachernumber = sr.powerschool_teacher_number
-    {# left join
-    {{ ref("stg_students__access_accounts") }} as saa
-    on seu.student_number = saa.student_number #}
+        left join
+            {{ ref("stg_people__student_logins") }} as sl
+            on seu.student_number = sl.student_number
     )
 
 select
