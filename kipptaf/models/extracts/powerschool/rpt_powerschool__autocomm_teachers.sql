@@ -1,5 +1,3 @@
-{{ config(materialized="view") }}
-
 with
     users_union as (
         {# existing users: ADP-derived schoolid matches PS homeschoolid #}

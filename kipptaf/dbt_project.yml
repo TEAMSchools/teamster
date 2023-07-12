@@ -43,6 +43,8 @@ models:
       +materialized: table
       gsheets:
         +materialized: view
+      powerschool:
+        +materialized: view
     finance:
       +schema: finance
       staging:
