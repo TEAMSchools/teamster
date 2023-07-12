@@ -57,8 +57,6 @@ select
 
     og.field_value as original_group,
 
-    oa.field_value as original_assignee,
-
     sx.department_home_name as submitter_dept,
     sx.job_title as submitter_job,
     sx.home_work_location_name as submitter_site,
