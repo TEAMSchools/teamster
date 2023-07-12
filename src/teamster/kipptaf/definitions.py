@@ -8,8 +8,11 @@ from dagster import (
 from dagster_airbyte import AirbyteCloudResource
 from dagster_dbt.cli import DbtCli, DbtCliClientResource
 from dagster_fivetran import FivetranResource
-from dagster_gcp import BigQueryResource
-from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+from dagster_gcp import (
+    BigQueryResource,
+    ConfigurablePickledObjectGCSIOManager,
+    GCSResource,
+)
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.adp.resources import (

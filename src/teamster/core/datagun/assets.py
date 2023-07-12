@@ -6,6 +6,7 @@ import re
 
 import pendulum
 from dagster import AssetExecutionContext, AssetKey, asset, config_from_files
+from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
@@ -321,6 +322,69 @@ def build_bigquery_extract_sftp_asset(
             file_name=file_name,
             destination_path=destination_path,
         )
+
+    return _asset
+
+
+def build_bigquery_extract_asset(
+    code_location,
+    timezone,
+    dataset_config,
+    file_config,
+    destination_config,
+    extract_job_config={},
+    op_tags={},
+):
+    now = pendulum.now(tz=timezone)
+
+    dataset_id = dataset_config["dataset_id"]
+    table_id = dataset_config["table_id"]
+
+    destination_name = destination_config["name"]
+    destination_path = destination_config.get("path", "")
+
+    file_suffix = file_config["suffix"]
+    file_stem = file_config["stem"]
+
+    file_stem_fmt = file_stem.format(
+        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    )
+
+    file_name = f"{file_stem_fmt}.{file_suffix}"
+    asset_name = (
+        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
+    )
+
+    @asset(
+        key=[code_location, "extracts", destination_name, asset_name],
+        non_argument_deps=[AssetKey([code_location, "extracts", table_id])],
+        op_tags=op_tags,
+    )
+    def _asset(
+        context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource
+    ):
+        # establish gcs blob
+        gcs_client = gcs.get_client()
+
+        bucket = gcs_client.get_bucket(f"teamster-{code_location}")
+
+        blob = bucket.blob(
+            blob_name=f"{destination_path}/{destination_name}/{file_name}"
+        )
+
+        # execute bq extract job
+        with db_bigquery.get_client() as bq_client:
+            dataset_ref = bigquery.DatasetReference(
+                project=bq_client.project, dataset_id=dataset_id
+            )
+
+            extract_job = bq_client.extract_table(
+                source=dataset_ref.table(table_id=table_id),
+                destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
+                job_config=bigquery.ExtractJobConfig(**extract_job_config),
+            )
+
+            extract_job.result()
 
     return _asset
 

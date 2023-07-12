@@ -6,8 +6,11 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_dbt.cli import DbtCli, DbtCliClientResource
-from dagster_gcp import BigQueryResource
-from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+from dagster_gcp import (
+    BigQueryResource,
+    ConfigurablePickledObjectGCSIOManager,
+    GCSResource,
+)
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.deanslist.resources import DeansListResource
