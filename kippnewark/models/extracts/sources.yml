@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: kipptaf_extracts
+    tables:
+      - name: rpt_powerschool__autocomm_teachers
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kipptaf
+              - extracts
+              - rpt_powerschool__autocomm_teachers

@@ -1,3 +1,5 @@
+{{ config(materialized="view") }}
+
 with
     users_union as (
         {# existing users: ADP-derived schoolid matches PS homeschoolid #}
@@ -117,5 +119,5 @@ select
     if(`status` = 1, 1, 0) as adminldapenabled,
     if(`status` = 1, 1, 0) as ptaccess,
     format_date('%m/%d/%Y', birth_date) as dob,
-    region as legal_entity_name,
+    region,
 from user_status
