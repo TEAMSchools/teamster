@@ -129,7 +129,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
         except exceptions.HTTPError as e:
             self.get_resource_context().log.error(e, response.text)
 
-            raise exceptions.HTTPError(response.text) from e
+            raise exceptions.HTTPError() from e
 
     def post(self, endpoint, subresource, verb, payload):
         url = f"{self._service_root}{endpoint}.{subresource}.{verb}"
