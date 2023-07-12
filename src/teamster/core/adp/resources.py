@@ -127,7 +127,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.error(e)
+            self.get_resource_context().log.error(e, response.text)
 
             raise exceptions.HTTPError(response.text) from e
 
