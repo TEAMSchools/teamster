@@ -31,6 +31,15 @@ class CustomizedDbtManifest(DbtManifest):
 
         return AssetKey(components)
 
+    # workaround for similarly named sources overriding model name
+    @property
+    def node_info_by_output_name(self):
+        return {
+            node["unique_id"].split(".")[-1]: node
+            for node in self.node_info_by_dbt_unique_id.values()
+            if node["resource_type"] != "source"
+        }
+
 
 manifest_path = f"teamster-dbt/{CODE_LOCATION}/target/manifest.json"
 
