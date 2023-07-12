@@ -304,6 +304,7 @@ with
             lc.region as home_work_location_region,
             lc.is_campus as home_work_location_is_campus,
             lc.is_pathways as home_work_location_is_pathways,
+            lc.dagster_code_location as home_work_location_dagster_code_location,
 
             en.employee_number,
 
