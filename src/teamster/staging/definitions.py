@@ -10,8 +10,8 @@ from dagster_k8s import k8s_job_executor
 from teamster.core.adp.resources import AdpWorkforceManagerResource
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.deanslist.resources import DeansListResource
-from teamster.core.google.resources.io import gcs_io_manager
-from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.google.io.resources import gcs_io_manager
+from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import (

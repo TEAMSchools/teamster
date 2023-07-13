@@ -11,7 +11,7 @@ from dagster import (
 )
 from gspread.exceptions import APIError
 
-from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.utils.jobs import asset_observation_job
 from teamster.core.utils.ops import ObservationOpConfig
 

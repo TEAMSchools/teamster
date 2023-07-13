@@ -2,7 +2,7 @@ import json
 
 from dagster import build_resources
 
-from teamster.core.google.resources.forms import GoogleFormsResource
+from teamster.core.google.forms.resources import GoogleFormsResource
 
 FORM_ID = "1-YHFfRxZtEtXO7lMpTnINMWkpIbXzPh0p-56AZ5qBc4"
 

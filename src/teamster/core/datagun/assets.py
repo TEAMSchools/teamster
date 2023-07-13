@@ -11,7 +11,7 @@ from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.sqlalchemy.resources import MSSQLResource
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.classes import CustomJSONEncoder

@@ -14,7 +14,7 @@ from dagster_gcp import (
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.deanslist.resources import DeansListResource
-from teamster.core.google.resources.io import gcs_io_manager
+from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import (
     MSSQLResource,
     OracleResource,

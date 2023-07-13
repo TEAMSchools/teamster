@@ -1,8 +1,8 @@
 import pendulum
 from dagster import build_resources, config_from_files
 
-from teamster.core.google.assets import build_gsheet_asset
-from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.google.sheets.assets import build_gsheet_asset
+from teamster.core.google.sheets.resources import GoogleSheetsResource
 
 CODE_LOCATION = "kipptaf"
 

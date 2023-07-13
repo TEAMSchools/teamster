@@ -3,7 +3,7 @@ import random
 
 from fastavro import parse_schema, validation, writer
 
-from teamster.core.google.schema.forms import ASSET_FIELDS
+from teamster.core.google.forms.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 TESTS = [

@@ -21,8 +21,8 @@ from teamster.core.adp.resources import (
 )
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
-from teamster.core.google.resources.io import gcs_io_manager
-from teamster.core.google.resources.sheets import GoogleSheetsResource
+from teamster.core.google.io.resources import gcs_io_manager
+from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.ldap.resources import LdapResource
 from teamster.core.schoolmint.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource

@@ -1,6 +1,6 @@
 from dagster import config_from_files
 
-from teamster.core.google.assets import build_gsheet_asset
+from teamster.core.google.sheets.assets import build_gsheet_asset
 
 from .. import CODE_LOCATION
 
