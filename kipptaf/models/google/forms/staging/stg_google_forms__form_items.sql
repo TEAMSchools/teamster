@@ -1,7 +1,7 @@
 select
-    f.formid,
+    f.formid as form_id,
 
-    i.itemid,
+    i.itemid as item_id,
     i.title,
     i.description,
 
