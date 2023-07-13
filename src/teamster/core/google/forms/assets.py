@@ -15,7 +15,7 @@ def build_google_forms_assets(code_location, partitions_def):
         data = google_forms.get_form(form_id=context.partition_key)
         schema = get_avro_record_schema(name="form", fields=ASSET_FIELDS["form"])
 
-        yield Output(value=(data, schema), metadata={"record_count": len(data)})
+        yield Output(value=([data], schema), metadata={"record_count": len(data)})
 
     @asset(
         key=[code_location, "google", "forms", "responses"],
@@ -29,7 +29,8 @@ def build_google_forms_assets(code_location, partitions_def):
         )
 
         yield Output(
-            value=(data, schema), metadata={"record_count": len(data.get("responses"))}
+            value=([data], schema),
+            metadata={"record_count": len(data.get("responses"))},
         )
 
     return [form, responses]
