@@ -347,7 +347,7 @@ with
                 idps.powerschool_teacher_number, safe_cast(en.employee_number as string)
             ) as powerschool_teacher_number,
         from deduplicate as wp
-        left join worker_person as mgr on wp.report_to_associate_oid = mgr.associate_oid
+        left join deduplicate as mgr on wp.report_to_associate_oid = mgr.associate_oid
         left join
             {{ ref("stg_people__location_crosswalk") }} as lc
             on wp.home_work_location_name = lc.name
