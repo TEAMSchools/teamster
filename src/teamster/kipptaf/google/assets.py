@@ -19,7 +19,6 @@ google_forms_assets = build_google_forms_assets(
     ),
 )
 
-
 __all__ = [
     *google_sheets_assets,
     *google_forms_assets,

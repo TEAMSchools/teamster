@@ -26,5 +26,5 @@ def test_resource():
     with open(file="env/form.json", mode="w") as f:
         json.dump(form_data, f)
 
-    with open(file="env/form_responses.json", mode="w") as f:
+    with open(file="env/responses.json", mode="w") as f:
         json.dump(form_response_data, f)
