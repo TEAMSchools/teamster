@@ -1,4 +1,4 @@
-from teamster.core.google.sensors import build_gsheet_sensor
+from teamster.core.google.sheets.sensors import build_gsheet_sensor
 
 from .. import CODE_LOCATION
 from .assets import gsheet_assets

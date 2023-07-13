@@ -1,8 +1,8 @@
 from dagster import build_sensor_context, instance_for_test
 
-from teamster.core.google.assets import build_gsheet_asset
-from teamster.core.google.resources.sheets import GoogleSheetsResource
-from teamster.core.google.sensors import build_gsheet_sensor
+from teamster.core.google.sheets.assets import build_gsheet_asset
+from teamster.core.google.sheets.resources import GoogleSheetsResource
+from teamster.core.google.sheets.sensors import build_gsheet_sensor
 
 CODE_LOCATION = "kipptaf"
 

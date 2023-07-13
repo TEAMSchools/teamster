@@ -1,6 +1,6 @@
 version: 0.1
 cli:
-  version: 1.11.1
+  version: 1.12.0
 plugins:
   sources:
     - id: trunk
@@ -22,7 +22,7 @@ lint:
         - .helm/**/values.yaml
   enabled:
     - isort@5.12.0
-    - ruff@0.0.277
+    - ruff@0.0.278
     - actionlint@1.6.25
     - black@23.7.0
     - git-diff-check

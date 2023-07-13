@@ -1274,8 +1274,8 @@ dependencies = [
 
 [[package]]
 name = "starlette"
-version = "0.28.0"
-requires_python = ">=3.7"
+version = "0.30.0"
+requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
 dependencies = [
     "anyio<5,>=3.4.0",
@@ -3012,9 +3012,9 @@ content_hash = "sha256:f1d09b31174134bf6703af1aa4280de25367095e3a7a170898e2d6e58
     {url = "https://files.pythonhosted.org/packages/58/13/8476c4328dcadfe26f8bd7f3a1a03bf9ddb890a7e7b692f54a179bc525bf/sshtunnel-0.4.0-py2.py3-none-any.whl", hash = "sha256:98e54c26f726ab8bd42b47a3a21fca5c3e60f58956f0f70de2fb8ab0046d0606"},
     {url = "https://files.pythonhosted.org/packages/8d/ad/4c587adf79865be268ee0b6bd52cfaa7a75d827a23ced072dc5ab554b4af/sshtunnel-0.4.0.tar.gz", hash = "sha256:e7cb0ea774db81bf91844db22de72a40aae8f7b0f9bb9ba0f666d474ef6bf9fc"},
 ]
-"starlette 0.28.0" = [
-    {url = "https://files.pythonhosted.org/packages/ba/f3/3cca6acd03eb7e2da1dcf35148815d94e588bf7c1e555a002c888d8a23ee/starlette-0.28.0-py3-none-any.whl", hash = "sha256:e58b9fc402c579950260fbb6d57173395c4e62804c40d3ede7e9ef1074f0c579"},
-    {url = "https://files.pythonhosted.org/packages/f2/7b/05e2ddc8d0da28c3c916d637cfe509d16e7a2e2cf7faa7cb888446326a30/starlette-0.28.0.tar.gz", hash = "sha256:7bf3da5e997e796cc202cef2bd3f96a7d9b1e1943203c2fe2b42e020bc658482"},
+"starlette 0.30.0" = [
+    {url = "https://files.pythonhosted.org/packages/39/64/5196e0d9c0bf1319e843bc2186f6ca7d090cb87174282360269420f28e4c/starlette-0.30.0.tar.gz", hash = "sha256:9cf6bd5f2fbc091c2f22701f9b7f7dfcbd304a567845cffbf89d706543fd2a03"},
+    {url = "https://files.pythonhosted.org/packages/48/ac/a61494868aa18d606cd4b0e4619c112a2e55f6638ced63ccb22817d66135/starlette-0.30.0-py3-none-any.whl", hash = "sha256:cb15a5dfbd8de70c999bd1ae4b7e1ba625d74520bc57b28cc4086c7969431f2d"},
 ]
 "tabulate 0.9.0" = [
     {url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"},
