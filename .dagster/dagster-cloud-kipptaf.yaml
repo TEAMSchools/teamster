@@ -21,6 +21,7 @@ locations:
           - adp-wfm-username
           - adp-wfn-client-id
           - adp-wfn-client-secret
+          - airbyte-api-key
           - alchemer-api-token
           - alchemer-api-token-secret
           - amplify-password
