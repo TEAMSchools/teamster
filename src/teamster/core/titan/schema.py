@@ -5,8 +5,12 @@ PERSON_DATA_FIELDS = [
     {"name": "eligibility", "type": ["null", "long", "string"], "default": None},
     {"name": "is_directly_certified", "type": ["null", "boolean"], "default": None},
     {"name": "person_identifier", "type": ["null", "long"], "default": None},
-    {"name": "total_balance", "type": ["null", "string"], "default": None},
-    {"name": "total_positive_balance", "type": ["null", "string"], "default": None},
+    {"name": "total_balance", "type": ["null", "string", "double"], "default": None},
+    {
+        "name": "total_positive_balance",
+        "type": ["null", "string", "double"],
+        "default": None,
+    },
     {
         "name": "application_academic_school_year",
         "type": ["null", "string"],
