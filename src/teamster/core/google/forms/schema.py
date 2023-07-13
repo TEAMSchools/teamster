@@ -814,10 +814,20 @@ RESPONSE_ANSWER_FIELDS = [
 FORM_RESPONSE_FIELDS = [
     {"name": "formId", "type": ["null", "string"], "default": None},
     {"name": "responseId", "type": ["null", "string"], "default": None},
-    {"name": "createTime", "type": ["null", "string"], "default": None},
-    {"name": "lastSubmittedTime", "type": ["null", "string"], "default": None},
     {"name": "respondentEmail", "type": ["null", "string"], "default": None},
     {"name": "totalScore", "type": ["null", "double"], "default": None},
+    {
+        "name": "createTime",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "lastSubmittedTime",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
     {
         "name": "answers",
         "type": [
