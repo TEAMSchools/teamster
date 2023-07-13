@@ -49,6 +49,11 @@ models:
       +schema: finance
       staging:
         +materialized: table
+    google:
+      forms:
+        +schema: google_forms
+        staging:
+          +materialized: table
     ldap:
       +schema: ldap
       staging:
