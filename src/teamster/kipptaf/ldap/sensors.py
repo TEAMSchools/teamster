@@ -4,7 +4,7 @@ from .. import CODE_LOCATION
 from . import assets
 
 ldap_asset_sensor = build_ldap_asset_sensor(
-    code_location=CODE_LOCATION, asset_defs=assets, minimum_interval_seconds=600
+    code_location=CODE_LOCATION, asset_defs=assets, minimum_interval_seconds=(60 * 10)
 )
 
 __all__ = [

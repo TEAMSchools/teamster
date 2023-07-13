@@ -8,7 +8,7 @@ powerschool_dynamic_partition_sensor = build_dynamic_partition_sensor(
     name=f"{CODE_LOCATION}_powerschool_dynamic_partition_sensor",
     asset_defs=partition_assets,
     timezone=LOCAL_TIMEZONE,
-    minimum_interval_seconds=3600,
+    minimum_interval_seconds=(60 * 60),
 )
 
 __all__ = [

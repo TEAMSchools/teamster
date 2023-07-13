@@ -1,3 +1,9 @@
 {
-  "recommendations": ["github.codespaces", "eamodio.gitlens"]
+  "recommendations": [
+    "github.codespaces",
+    "eamodio.gitlens",
+    "ms-python.vscode-pylance",
+    "ms-python.python",
+    "trunk.io"
+  ]
 }

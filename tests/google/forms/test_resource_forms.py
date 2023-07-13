@@ -4,11 +4,17 @@ from dagster import build_resources
 
 from teamster.core.google.forms.resources import GoogleFormsResource
 
-FORM_ID = "1-YHFfRxZtEtXO7lMpTnINMWkpIbXzPh0p-56AZ5qBc4"
+FORM_ID = "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA"
 
 
 def test_resource():
-    with build_resources(resources={"forms": GoogleFormsResource()}) as resources:
+    with build_resources(
+        resources={
+            "forms": GoogleFormsResource(
+                service_account_file_path="env/gcloud_service_account_json"
+            )
+        }
+    ) as resources:
         forms: GoogleFormsResource = resources.forms
 
         form_data = forms.get_form(form_id=FORM_ID)

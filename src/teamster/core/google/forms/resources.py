@@ -6,6 +6,7 @@ from pydantic import PrivateAttr
 
 
 class GoogleFormsResource(ConfigurableResource):
+    service_account_file_path: str = None
     version: str = "v1"
     scopes: list = [
         "https://www.googleapis.com/auth/forms.body.readonly",
@@ -15,7 +16,12 @@ class GoogleFormsResource(ConfigurableResource):
     _service: discovery.Resource = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        credentials, _ = google.auth.default(scopes=self.scopes)
+        if self.service_account_file_path is not None:
+            credentials, project_id = google.auth.load_credentials_from_file(
+                filename=self.service_account_file_path, scopes=self.scopes
+            )
+        else:
+            credentials, project_id = google.auth.default(scopes=self.scopes)
 
         self._service = discovery.build(
             serviceName="forms",

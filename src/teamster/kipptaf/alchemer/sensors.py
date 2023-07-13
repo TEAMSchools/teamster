@@ -9,11 +9,13 @@ from .assets import survey_metadata_assets, survey_response
 survey_metadata_asset_sensor = build_survey_metadata_asset_sensor(
     code_location=CODE_LOCATION,
     asset_defs=survey_metadata_assets,
-    minimum_interval_seconds=600,
+    minimum_interval_seconds=(60 * 10),
 )
 
 survey_response_asset_sensor = build_survey_response_asset_sensor(
-    code_location=CODE_LOCATION, asset_def=survey_response, minimum_interval_seconds=600
+    code_location=CODE_LOCATION,
+    asset_def=survey_response,
+    minimum_interval_seconds=(60 * 10),
 )
 
 __all__ = [
