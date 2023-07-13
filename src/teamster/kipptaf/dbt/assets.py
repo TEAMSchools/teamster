@@ -4,7 +4,8 @@ from dagster import AssetKey
 from dagster_dbt.cli import DbtManifest
 
 from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
-from teamster.kipptaf import CODE_LOCATION, google, ldap
+from teamster.kipptaf import CODE_LOCATION, ldap
+from teamster.kipptaf.google.assets import google_forms_assets, google_sheets_assets
 
 
 class CustomizedDbtManifest(DbtManifest):
@@ -58,7 +59,7 @@ gsheet_external_source_assets = [
         group_name=asset.key.path[-1].split("__")[0],
         manifest=manifest,
     )
-    for asset in google.assets
+    for asset in google_sheets_assets
 ]
 
 external_source_assets = [
@@ -70,7 +71,7 @@ external_source_assets = [
         group_name=asset.key.path[1],
         manifest=manifest,
     )
-    for asset in ldap.assets
+    for asset in [*ldap.assets, *google_forms_assets]
 ]
 
 __all__ = [
