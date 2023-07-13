@@ -24,10 +24,7 @@ def test_schema():
         parsed_schema = parse_schema(schema)
 
         with open(file=f"env/{asset_name}.json", mode="r") as fp:
-            records = json.load(fp=fp)
-
-        if isinstance(records, dict):
-            records = [records]
+            records = [json.load(fp=fp)]
 
         count = len(records)
 

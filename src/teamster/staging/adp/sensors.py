@@ -8,7 +8,7 @@ sftp_sensor = build_sftp_sensor(
     source_system="adp",
     asset_defs=sftp_assets,
     timezone=LOCAL_TIMEZONE,
-    minimum_interval_seconds=600,
+    minimum_interval_seconds=(60 * 10),
 )
 
 __all__ = [

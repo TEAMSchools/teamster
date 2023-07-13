@@ -78,7 +78,7 @@ def get_option_fields(namespace):
                         "GO_TO_ACTION_UNSPECIFIED",
                         "NEXT_SECTION",
                         "RESTART_FORM",
-                        "SUBMIT_FOR",
+                        "SUBMIT_FORM",
                     ],
                 },
             ],
@@ -704,7 +704,157 @@ FORM_FIELDS = [
     },
 ]
 
-RESPONSE_FIELDS = []
+GRADE_FIELDS = [
+    {"name": "score", "type": ["null", "double"], "default": None},
+    {"name": "correct", "type": ["null", "boolean"], "default": None},
+    {
+        "name": "feedback",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="feedback",
+                fields=get_feedback_fields(
+                    namespace="response.responses.answers.grade.feedback"
+                ),
+                namespace="response.responses.answers.grade.feedback",
+            ),
+        ],
+        "default": None,
+    },
+]
+
+TEXT_ANSWER_FIELDS = [
+    {"name": "value", "type": ["null", "string"], "default": None},
+]
+
+TEXT_ANSWERS_FIELDS = [
+    {
+        "name": "answers",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="text_answer",
+                    fields=TEXT_ANSWER_FIELDS,
+                    namespace="response.responses.answers.text_answers.answers",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+]
+
+FILE_UPLOAD_ANSWER_FIELDS = [
+    {"name": "fileId", "type": ["null", "string"], "default": None},
+    {"name": "fileName", "type": ["null", "string"], "default": None},
+    {"name": "mimeType", "type": ["null", "string"], "default": None},
+]
+
+FILE_UPLOAD_ANSWERS_FIELDS = [
+    {
+        "name": "answers",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="file_upload_answer",
+                    fields=FILE_UPLOAD_ANSWER_FIELDS,
+                    namespace="response.responses.answers.file_upload_answers.answers",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+]
+
+RESPONSE_ANSWER_FIELDS = [
+    {"name": "questionId", "type": ["null", "string"], "default": None},
+    {
+        "name": "grade",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="grade",
+                fields=GRADE_FIELDS,
+                namespace="response.responses.answers.grade",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "textAnswers",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="text_answers",
+                fields=TEXT_ANSWERS_FIELDS,
+                namespace="response.responses.answers.text_answers",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "fileUploadAnswers",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="file_upload_answer",
+                fields=FILE_UPLOAD_ANSWERS_FIELDS,
+                namespace="response.responses.answers.file_upload_answers",
+            ),
+        ],
+        "default": None,
+    },
+]
+
+FORM_RESPONSE_FIELDS = [
+    {"name": "formId", "type": ["null", "string"], "default": None},
+    {"name": "responseId", "type": ["null", "string"], "default": None},
+    {"name": "createTime", "type": ["null", "string"], "default": None},
+    {"name": "lastSubmittedTime", "type": ["null", "string"], "default": None},
+    {"name": "respondentEmail", "type": ["null", "string"], "default": None},
+    {"name": "totalScore", "type": ["null", "double"], "default": None},
+    {
+        "name": "answers",
+        "type": [
+            "null",
+            {
+                "type": "map",
+                "values": get_avro_record_schema(
+                    name="answer",
+                    fields=RESPONSE_ANSWER_FIELDS,
+                    namespace="response.responses.answers",
+                ),
+                "default": {},
+            },
+        ],
+        "default": None,
+    },
+]
+
+RESPONSE_FIELDS = [
+    {"name": "nextPageToken", "type": ["null", "string"], "default": None},
+    {
+        "name": "responses",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="form_response",
+                    fields=FORM_RESPONSE_FIELDS,
+                    namespace="response.responses",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+]
 
 ASSET_FIELDS = {
     "form": FORM_FIELDS,
