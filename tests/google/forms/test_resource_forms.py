@@ -12,7 +12,13 @@ def test_resource():
         forms: GoogleFormsResource = resources.forms
 
         form_data = forms.get_form(form_id=FORM_ID)
-        print(form_data)
+        # print(form_data)
 
         form_response_data = forms.list_responses(form_id=FORM_ID)
-        print(form_response_data)
+        # print(form_response_data)
+
+    with open(file="env/form.json", mode="w") as f:
+        json.dump(form_data, f)
+
+    with open(file="env/form_responses.json", mode="w") as f:
+        json.dump(form_response_data, f)
