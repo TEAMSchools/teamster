@@ -12,9 +12,7 @@ select
     format_date('%m/%d/%Y', worker_rehire_date) as `Rehire Date`,
     format_date('%m/%d/%Y', worker_termination_date) as `Termination Date`,
     format_date('%m/%d/%Y', birth_date) as `Birth Date`,
-    if(
-        assignment_status = 'Pre-Start', 'Active', assignment_status
-    ) as `Position Status`,
+    if(is_prestart, 'Active', assignment_status) as `Position Status`,
     null as `Preferred Name`,
 from {{ ref("base_people__staff_roster") }}
 where

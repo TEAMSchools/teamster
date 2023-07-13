@@ -59,7 +59,7 @@ with
         inner join roles as r on cu.id = r.user_id
         left join business_groups as bg on cu.id = bg.user_id
         where
-            sr.assignment_status != 'Pre-Start'
+            not sr.is_prestart
             and coalesce(sr.worker_termination_date, current_date('America/New_York'))
             >= date({{ var("current_fiscal_year") }} - 2, 7, 1)
             and not regexp_contains(worker_type, r'Part Time|Intern')
@@ -96,7 +96,8 @@ with
             {{ source("coupa", "user") }} as cu
             on sr.employee_number = safe_cast(cu.employee_number as int)
         where
-            sr.assignment_status not in ('Pre-Start', 'Terminated')
+            not sr.is_prestart
+            and sr.assignment_status not in ('Terminated', 'Deceased')
             and not regexp_contains(worker_type, r'Part Time|Intern')
             and (
                 sr.custom_wfmgr_pay_rule != 'PT Hourly'
