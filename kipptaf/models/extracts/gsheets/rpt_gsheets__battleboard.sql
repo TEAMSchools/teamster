@@ -49,7 +49,7 @@ with
     ) #}
 select
     c.employee_number as df_employee_number,
-    c.assignment_status as status,
+    if(c.is_prestart, 'Pre-Start', c.assignment_status) as `status`,
     c.preferred_name_lastfirst as preferred_name,
     c.home_work_location_name as primary_site,
     c.job_title as primary_job,

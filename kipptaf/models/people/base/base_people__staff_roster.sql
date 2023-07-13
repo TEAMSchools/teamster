@@ -6,18 +6,8 @@ with
             work_assignment_actual_start_date,
             work_assignment_hire_date,
             work_assignment_termination_date,
-            if
-            (
-                work_assignment_assignment_status_effective_date
-                > current_date('America/New_York')
-                and work_assignment_assignment_status_long_name = 'Active'
-                and (
-                    work_assignment_assignment_status_long_name_prev is null
-                    or work_assignment_assignment_status_long_name_prev = 'Terminated'
-                ),
-                'Pre-Start',
-                work_assignment_assignment_status_long_name
-            ) as assignment_status,
+            work_assignment_assignment_status_long_name as assignment_status,
+            work_assignment_assignment_status_long_name_prev as assignment_status_prev,
             coalesce(
                 work_assignment_assignment_status_reason_long_name,
                 work_assignment_assignment_status_reason_short_name
@@ -68,7 +58,6 @@ with
             worker_original_hire_date,
             worker_rehire_date,
             worker_termination_date,
-            worker_custom_miami_aces_number as custom_miami_aces_number,
             worker_custom_nj_pension_number as custom_nj_pension_number,
             worker_custom_employee_number as custom_employee_number,
             worker_custom_wfmgr_accrual_profile as custom_wfmgr_accrual_profile,
@@ -79,6 +68,9 @@ with
             worker_custom_wfmgr_loa as custom_wfmgr_loa,
             worker_custom_wfmgr_pay_rule as custom_wfmgr_pay_rule,
             worker_custom_wfmgr_trigger as custom_wfmgr_trigger,
+            safe_cast(
+                worker_custom_miami_aces_number as int
+            ) as custom_miami_aces_number,
 
             preferred_salutation_legal_name,
             person_legal_name_given_name as legal_name_given_name,
@@ -276,10 +268,34 @@ with
             location_address_name_short_name, 
         #}
         from {{ ref("base_adp_workforce_now__worker_person") }}
+        where work_assignment__fivetran_active and not worker__fivetran_deleted
+    ),
+
+    prestart as (
+        select *, false as is_prestart
+        from worker_person
+        where assignment_status_effective_date <= current_date('America/New_York')
+
+        union all
+
+        select *, true as is_prestart,
+        from worker_person
         where
-            work_assignment__fivetran_active
-            and work_assignment_primary_indicator
-            and not worker__fivetran_deleted
+            assignment_status_effective_date > current_date('America/New_York')
+            and assignment_status = 'Active'
+            and (
+                assignment_status_prev is null or assignment_status_prev = 'Terminated'
+            )
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="prestart",
+                partition_by="associate_oid",
+                order_by="is_prestart desc, primary_indicator desc, assignment_status_effective_date desc",
+            )
+        }}
     ),
 
     crosswalk as (
@@ -330,7 +346,7 @@ with
             coalesce(
                 idps.powerschool_teacher_number, safe_cast(en.employee_number as string)
             ) as powerschool_teacher_number,
-        from worker_person as wp
+        from deduplicate as wp
         left join worker_person as mgr on wp.report_to_associate_oid = mgr.associate_oid
         left join
             {{ ref("stg_people__location_crosswalk") }} as lc

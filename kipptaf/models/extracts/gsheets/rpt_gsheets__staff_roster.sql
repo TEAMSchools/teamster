@@ -15,7 +15,7 @@ select
     || ', '
     || report_to_preferred_name_given_name as reports_to,
     report_to_worker_id as manager_custom_assoc_id,
-    assignment_status as position_status,
+    if(is_prestart, 'Pre-Start', assignment_status) as position_status,
     worker_termination_date as termination_date,
     mail as email_addr,
     coalesce(worker_rehire_date, worker_original_hire_date) as hire_date,
