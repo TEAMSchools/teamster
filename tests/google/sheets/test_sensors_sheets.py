@@ -20,7 +20,7 @@ gsheets_sensor = build_gsheet_sensor(
 
 def test_sensor():
     with instance_for_test() as instance:
-        result = gsheets_sensor(
+        gsheets_sensor(
             build_sensor_context(
                 instance=instance,
                 resources={
