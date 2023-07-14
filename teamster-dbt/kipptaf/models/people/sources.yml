@@ -1,0 +1,46 @@
+version: 2
+
+sources:
+  - name: people
+    schema: kipptaf_people
+    tables:
+      - name: src_people__employee_numbers_archive
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__employee_numbers_archive
+            skip_leading_rows: 1
+      - name: src_people__location_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__location_crosswalk
+            skip_leading_rows: 1
+      - name: src_people__campus_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__campus_crosswalk
+            skip_leading_rows: 1
+      - name: src_people__powerschool_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__powerschool_crosswalk
+            skip_leading_rows: 1
+      - name: src_people__student_logins_archive
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__student_logins_archive
+            skip_leading_rows: 1

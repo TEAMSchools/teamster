@@ -1,0 +1,34 @@
+version: 2
+
+sources:
+  - name: alchemer
+    schema: kipptaf_alchemer
+    tables:
+      - name: src_alchemer__survey
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_alchemer__survey_campaign
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_campaign/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_campaign/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_alchemer__survey_question
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_question/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_question/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_alchemer__survey_response
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_response/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_response/
+            format: AVRO
+            enable_logical_types: true

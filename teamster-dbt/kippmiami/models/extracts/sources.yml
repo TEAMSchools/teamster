@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: kipptaf_extracts
+    tables:
+      - name: rpt_powerschool__autocomm_teachers
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kipptaf
+              - extracts
+              - rpt_powerschool__autocomm_teachers
+      - name: rpt_powerschool__autocomm_students
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kipptaf
+              - extracts
+              - rpt_powerschool__autocomm_students
+      - name: rpt_powerschool__autocomm_students_iep
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kipptaf
+              - extracts
+              - rpt_powerschool__autocomm_students_iep

@@ -1,0 +1,165 @@
+version: 2
+
+sources:
+  - name: coupa
+    tables:
+      - name: account
+      - name: account_group
+      - name: account_type
+      - name: address
+      - name: address_business_group_relation
+      - name: address_tax_registration_relation
+      - name: approval
+      - name: approval_limit
+      - name: attachment
+      - name: budget_line
+      - name: business_group
+      - name: business_group_contract_mapping
+      - name: commodity
+      - name: contact
+      - name: contract
+      - name: country
+      - name: currency
+      - name: data_file_source
+      - name: dispute_reason
+      - name: enterprise
+      - name: expense_artifact
+      - name: expense_attendee
+      - name: expense_category
+      - name: expense_line
+      - name: expense_line_allocation
+      - name: expense_line_imported_data
+      - name: expense_policy
+      - name: expense_policy_violation
+      - name: expense_report
+      - name: expense_report_approval_mapping
+      - name: expense_report_comment_mapping
+      - name: expense_report_event_history
+      - name: expense_trip
+      - name: expense_trip_mileage
+      - name: expense_trip_segment
+      - name: expense_violation
+      - name: fivetran_audit
+      - name: integration
+      - name: integration_error
+      - name: integration_history_record
+      - name: integration_record_response
+      - name: integration_run
+      - name: inventory_transaction
+      - name: inventory_transaction_attachment_mapping
+      - name: inventory_txn_allocation
+      - name: invoice_charge
+      - name: invoice_charge_tax_line_mapping
+      - name: invoice_failed_tolerance
+      - name: invoice_header
+      - name: invoice_header_approval_mapping
+      - name: invoice_header_attachment_mapping
+      - name: invoice_line
+      - name: invoice_line_allocation
+      - name: invoice_reconciliation_line
+      - name: item
+      - name: lookup
+      - name: lookup_business_group_mapping
+      - name: lookup_value
+      - name: order_header
+      - name: order_header_attachment_mapping
+      - name: order_line
+      - name: order_line_allocation
+      - name: order_pad
+      - name: order_pad_business_group_mapping
+      - name: payment
+      - name: payment_business_group_mapping
+      - name: payment_term
+      - name: period
+      - name: project
+      - name: project_business_group_mapping
+      - name: punchout_site
+      - name: purpose
+      - name: quote_request
+      - name: quote_request_business_group_mapping
+      - name: quote_request_line
+      - name: registered_company
+      - name: remit_to_address
+      - name: req_line_allocation
+      - name: requisition_header
+      - name: requisition_header_approval_mapping
+      - name: requisition_header_attachment_mapping
+      - name: requisition_line
+      - name: role
+      - name: supplier
+      - name: supplier_address
+      - name: supplier_address_mapping
+      - name: supplier_business_group_mapping
+      - name: supplier_contact_mapping
+      - name: supplier_item
+      - name: supplier_remit_to
+      - name: supplier_remit_to_address_mapping
+      - name: tax_line
+      - name: tax_registration
+      - name: unit_of_measure
+      - name: upload_error
+      - name: user
+      - name: user_account_group_mapping
+      - name: user_approval_group_mapping
+      - name: user_business_group_mapping
+      - name: user_can_expense_for_mapping
+      - name: user_expenses_delegated_to_mapping
+      - name: user_group
+      - name: user_group_membership
+      - name: user_role_mapping
+      - name: src_coupa__address_name_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__address_name_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: adp_home_work_location_name
+            data_type: STRING
+          - name: coupa_address_name
+            data_type: STRING
+      - name: src_coupa__school_name_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__school_name_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: ldap_physical_delivery_office_name
+            data_type: STRING
+          - name: coupa_school_name
+            data_type: STRING
+      - name: src_coupa__school_name_lookup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__school_name_lookup
+            skip_leading_rows: 1
+        columns:
+          - name: adp_business_unit_home_code
+            data_type: STRING
+          - name: adp_department_home_name
+            data_type: STRING
+          - name: adp_job_title
+            data_type: STRING
+          - name: coupa_school_name
+            data_type: STRING
+      - name: src_coupa__user_exceptions
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__user_exceptions
+            skip_leading_rows: 1
+        columns:
+          - name: employee_number
+            data_type: INT
+          - name: coupa_school_name
+            data_type: STRING

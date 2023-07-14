@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: google_forms
+    schema: kipptaf_google_forms
+    tables:
+      - name: src_google_forms__form
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/google_forms/form/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/google_forms/form/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_google_forms__responses
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/google_forms/responses/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/google_forms/responses/
+            format: AVRO
+            enable_logical_types: true

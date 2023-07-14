@@ -1,0 +1,10 @@
+kippnewark:
+  target: kippnewark
+  outputs:
+    kippnewark:
+      type: bigquery
+      method: service-account
+      project: teamster-332318
+      schema: kippnewark
+      threads: 1
+      keyfile: /etc/secret-volume/dbt_user_creds_json
