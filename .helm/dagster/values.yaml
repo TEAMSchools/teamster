@@ -74,6 +74,7 @@ dagsterCloudAgent:
   env: {}
 
   annotations: {}
+  labels: {}
   nodeSelector: {}
   affinity: {}
   tolerations: []

@@ -5,6 +5,10 @@ from teamster.core.google.sheets.assets import build_gsheet_asset
 
 from .. import CODE_LOCATION
 
+FORM_IDS = [
+    "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",
+]
+
 config_dir = f"src/teamster/{CODE_LOCATION}/google/config"
 
 google_sheets_assets = [
@@ -14,9 +18,7 @@ google_sheets_assets = [
 
 google_forms_assets = build_google_forms_assets(
     code_location=CODE_LOCATION,
-    partitions_def=StaticPartitionsDefinition(
-        ["1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA"]
-    ),
+    partitions_def=StaticPartitionsDefinition(FORM_IDS),
 )
 
 __all__ = [
