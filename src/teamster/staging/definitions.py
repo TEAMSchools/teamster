@@ -89,8 +89,8 @@ defs = Definitions(
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt": DbtCliClientResource(
-            project_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
-            profiles_dir=f"/root/app/teamster-dbt/{CODE_LOCATION}",
+            project_dir=f"/root/app/dbt/{CODE_LOCATION}",
+            profiles_dir=f"/root/app/dbt/{CODE_LOCATION}",
         ),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_mssql": MSSQLResource(

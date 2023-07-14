@@ -11,7 +11,7 @@ on:
       - .dagster/dagster-cloud-kippnewark.yaml
       - src/teamster/core/**
       - src/teamster/kippnewark/**
-      - teamster-dbt
+      - dbt
 
 env:
   CODE_LOCATION: kippnewark

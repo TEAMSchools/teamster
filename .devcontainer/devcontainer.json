@@ -6,7 +6,6 @@
     "ghcr.io/devcontainers-contrib/features/mkdocs:2": {
       "mkdocstringsPlugin": "latest"
     },
-    "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
     "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
   },
@@ -16,17 +15,6 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "USE_GKE_GCLOUD_AUTH_PLUGIN": "True",
     "GOOGLE_APPLICATION_CREDENTIALS": "/workspaces/teamster/env/gcloud_service_account_json",
-    "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt"
-  },
-  "customizations": {
-    "codespaces": {
-      "repositories": {
-        "TEAMSchools/teamster-dbt": {
-          "permissions": {
-            "contents": "write"
-          }
-        }
-      }
-    }
+    "DBT_PROFILES_DIR": "/workspaces/teamster/dbt/.dbt"
   }
 }

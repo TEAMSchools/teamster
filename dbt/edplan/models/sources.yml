@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: edplan
+    schema: "{{ var('edplan_schema', 'edplan') }}"
+    database:
+      "{% if target.type != 'spark' %}{{ var('edplan_database', target.database) }}{% endif %}"
+
+    tables:
+      - name: src_edplan__njsmart_powerschool
+        external:
+          location:
+            "gs://teamster-{{ project_name }}/dagster/{{ project_name
+            }}/edplan/njsmart_powerschool/*"
+          options:
+            hive_partition_uri_prefix:
+              "gs://teamster-{{ project_name }}/dagster/{{ project_name
+              }}/edplan/njsmart_powerschool/"
+            format: AVRO
+            enable_logical_types: true

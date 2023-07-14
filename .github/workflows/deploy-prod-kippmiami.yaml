@@ -11,7 +11,7 @@ on:
       - .dagster/dagster-cloud-kippmiami.yaml
       - src/teamster/core/**
       - src/teamster/kippmiami/**
-      - teamster-dbt
+      - dbt
 
 env:
   CODE_LOCATION: kippmiami

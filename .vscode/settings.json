@@ -1,4 +1,7 @@
 {
+  "dbt.dbtPythonPathOverride": "/workspaces/teamster/.venv/bin/python",
+  "dbt.versionCheck": "status bar",
+  "dbt.prefixGenerateModel": "stg",
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.renderWhitespace": "all",
@@ -8,7 +11,8 @@
   "editor.wordWrapColumn": 88,
   "files.associations": {
     "*.toml": "toml",
-    "*.env": "shellscript"
+    "*.env": "shellscript",
+    "*.sql": "jinja-sql"
   },
   "files.exclude": {
     "**/.trunk/*out": true
