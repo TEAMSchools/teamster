@@ -38,9 +38,9 @@ COPY src/teamster ./src/teamster
 RUN pip install --no-cache-dir .
 
 # install dbt
-COPY dbt ./dbt
-ENV DBT_PROFILES_DIR=/root/app/dbt/kippnewark
-WORKDIR /root/app/dbt/kippnewark
+COPY src/dbt ./src/dbt
+ENV DBT_PROFILES_DIR=/root/app/src/dbt/kippnewark
+WORKDIR /root/app/src/dbt/kippnewark
 RUN dbt clean && dbt deps && dbt list
 
 WORKDIR /root/app

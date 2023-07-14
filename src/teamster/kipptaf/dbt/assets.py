@@ -41,7 +41,7 @@ class CustomizedDbtManifest(DbtManifest):
         }
 
 
-manifest_path = f"dbt/{CODE_LOCATION}/target/manifest.json"
+manifest_path = f"src/dbt/{CODE_LOCATION}/target/manifest.json"
 
 with open(file=manifest_path) as f:
     manifest_json = json.load(f)
