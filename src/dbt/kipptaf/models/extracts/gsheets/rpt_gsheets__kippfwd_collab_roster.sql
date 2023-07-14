@@ -1,3 +1,4 @@
+{{ config(enabled=False) }}
 with
     transition as (
         select
