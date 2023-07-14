@@ -1,3 +1,0 @@
-[submodule "teamster-dbt"]
-	path = teamster-dbt
-	url = https://github.com/TEAMSchools/teamster-dbt.git

@@ -1,0 +1,34 @@
+version: 2
+
+sources:
+  - name: egencia
+    schema: kipptaf_egencia
+    tables:
+      - name: src_egencia__traveler_groups
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+            sheet_range: src_egencia__traveler_groups
+            skip_leading_rows: 1
+        columns:
+          - name: adp_home_work_location_name
+            data_type: STRING
+          - name: adp_department_home_name
+            data_type: STRING
+          - name: adp_job_title
+            data_type: STRING
+          - name: egencia_traveler_group
+            data_type: STRING
+      - name: src_egencia__travel_managers
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+            sheet_range: src_egencia__travel_managers
+            skip_leading_rows: 1
+        columns:
+          - name: employee_number
+            data_type: INT

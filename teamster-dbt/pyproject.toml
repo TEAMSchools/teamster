@@ -1,0 +1,26 @@
+[project]
+name = ""
+version = ""
+description = ""
+authors = [
+  { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
+]
+dependencies = ["dbt-bigquery>=1.4.0", "pyyaml>=6.0"]
+requires-python = ">=3.10,<3.11"
+license = { text = "MIT" }
+
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+  "lxml>=4.9.2",
+  "pandas>=1.5.3",
+  "beautifulsoup4>=4.11.2",
+  "pytest>=7.3.1",
+  "sqlfluff-templater-dbt>=2.1.1",
+]
+
+[tool.pdm.scripts]
+scaffold_models = { shell = "python .pdm/scripts/scaffold_models.py" }
+stage-external-sources = { shell = "pdm run bash .pdm/scripts/stage_external_sources.sh" }
+dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
+dbt = { shell = "bash .pdm/scripts/dbt.sh" }

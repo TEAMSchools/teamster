@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: surveys
+    schema: kipptaf_surveys
+    tables:
+      - name: src_surveys__staff_info_certification
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/13bajVOf0otCUZCyLYk3KaTAr2yoOZ2IZGedGYIGwN8Q/edit?resourcekey#gid=840601827
+            sheet_range: src_surveys__staff_info_certification
+            skip_leading_rows: 2
