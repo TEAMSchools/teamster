@@ -1,4 +1,5 @@
 {{ config(enabled=False) }}
+
 with
     transition as (
         select
@@ -63,12 +64,11 @@ with
             if(cn.subject_c is null, 'No', 'Yes') as 'CCDM Complete',
 
             row_number() over (partition by ktc.id order by cn.date_c desc) as rn_ccdm
-        from alumni.ktc_roster as kt
+        from {{ ref("int_kippadb__roster") }} as kt
         left join
-            alumni.contact_note_c as cn
-            on ktc.sf_contact_id = cn.contact_c
-            and cn.subject_c = 'CCDM'
-            and cn.is_deleted = 0
+            {{ ref("stg_kippadb__contact_note") }} as cn
+            on ktc.contact_id = cn.contact
+            and cn.subject = 'CCDM'
         where ktc.is_deleted = 0
     )
 
@@ -125,5 +125,5 @@ left join
     on ktc.sf_contact_id = ap.sf_contact_id
     and ap.matriculation_decision = 'Matriculated (Intent to Enroll)'
 left join alumni.enrollment_identifiers as ei on ei.student_c = ktc.sf_contact_id
-left join alumni.account as ac on ac.ncesid_c = ei.ugrad_ncesid
+left join {{ ref("stg_kippadb__account") }} as ac on ac.ncesid_c = ei.ugrad_ncesid
 where t.rn_ccdm = 1

@@ -1,8 +1,8 @@
 import json
 
 from dagster import AssetExecutionContext, Failure, Output, asset
+from dagster_dbt import DbtCli
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtCli
 from dagster_gcp import BigQueryResource
 
 

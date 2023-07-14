@@ -1,4 +1,3 @@
-{{ config(enabled=False) }}
 with
     roster as (
         select
@@ -10,164 +9,165 @@ with
             co.grade_level as exit_grade_level,
             co.exitdate as exit_date,
             co.exitcode as exit_code,
-            co.db_name as exit_db_name,
-
-            c.id as sf_contact_id,
-            c.kipp_region_name_c as kipp_region_name,
-            c.kipp_region_school_c as kipp_region_school,
-            c.kipp_ms_graduate_c as is_kipp_ms_graduate,
-            c.kipp_hs_graduate_c as is_kipp_hs_graduate,
-            c.informed_consent_c as is_informed_consent,
-            c.transcript_release_c as is_transcript_release,
-            c.expected_hs_graduation_c as expected_hs_graduation_date,
-            c.actual_hs_graduation_date_c as actual_hs_graduation_date,
-            c.expected_college_graduation_c as expected_college_graduation_date,
-            c.actual_college_graduation_date_c as actual_college_graduation_date,
-            c.latest_transcript_c as latest_transcript_date,
-            c.latest_fafsa_date_c as latest_fafsa_date,
-            c.latest_state_financial_aid_app_date_c
-            as latest_state_financial_aid_app_date,
-            c.cumulative_gpa_c as cumulative_gpa,
-            c.current_college_cumulative_gpa_c as current_college_cumulative_gpa,
-            c.current_college_semester_gpa_c as current_college_semester_gpa,
-            c.college_match_display_gpa_c as college_match_display_gpa,
-            c.highest_act_score_c as highest_act_score,
-            c.college_credits_attempted_c as college_credits_attempted,
-            c.accumulated_credits_college_c as accumulated_credits_college,
-            c.mobile_phone as sf_mobile_phone,
-            c.home_phone as sf_home_phone,
-            c.other_phone as sf_other_phone,
-            c.email as sf_email,
-            c.post_hs_simple_admin_c as post_hs_simple_admin,
-            c.postsecondary_status_c as postsecondary_status,
-            c.college_status_c as college_status,
-            c.currently_enrolled_school_c as currently_enrolled_school,
-            c.middle_school_attended_c as middle_school_attended,
-            c.high_school_graduated_from_c as high_school_graduated_from,
-            c.college_graduated_from_c as college_graduated_from,
-            c.gender_c as gender,
-            c.ethnicity_c as ethnicity,
-            c.most_recent_iep_date_c as most_recent_iep_date,
-            c.latest_resume_c as latest_resume_date,
-            c.last_outreach_c as last_outreach_date,
-            c.last_successful_contact_c as last_successful_contact_date,
-            c.last_successful_advisor_contact_c as last_successful_advisor_contact_date,
-            c.efc_from_fafsa_c as efc_from_fafsa,
-            c.description as contact_description,
-
-            rt.name as record_type_name,
-
-            u.id as counselor_sf_id,
-            u.name as counselor_name,
-            u.email as counselor_email,
-            u.mobile_phone as counselor_phone,
-
-            (utilities.global_academic_year() - co.academic_year)
+            co._dbt_source_relation as exit_db_name,
+            ({{ var("current_academic_year") }} - co.academic_year)
             + co.grade_level as current_grade_level_projection,
-            coalesce(
-                c.current_kipp_student_c, 'Missing from Salesforce'
-            ) as current_kipp_student,
-            coalesce(c.kipp_hs_class_c, co.cohort) as ktc_cohort,
-            (utilities.global_academic_year() + 1)
-            - datepart(year, c.actual_hs_graduation_date_c) as years_out_of_hs,
-            coalesce(c.first_name, co.first_name) as first_name,
-            coalesce(c.last_name, co.last_name) as last_name,
-            coalesce(c.last_name + ', ' + c.first_name, co.lastfirst) as lastfirst,
+
+            c.contact_id as sf_contact_id,
+            c.contact_kipp_region_name,
+            c.contact_kipp_region_school,
+            c.contact_kipp_ms_graduate,
+            c.contact_kipp_hs_graduate,
+            c.contact_informed_consent,
+            c.contact_transcript_release,
+            c.contact_actual_hs_graduation_date,
+            c.contact_actual_college_graduation_date,
+            c.contact_latest_fafsa_date,
+            c.contact_latest_state_financial_aid_app_date,
+            c.contact_cumulative_gpa,
+            c.contact_current_college_cumulative_gpa,
+            c.contact_current_college_semester_gpa,
+            c.contact_college_match_display_gpa,
+            c.contact_highest_act_score,
+            c.contact_college_credits_attempted,
+            c.contact_accumulated_credits_college,
+            c.contact_mobile_phone,
+            c.contact_home_phone,
+            c.contact_other_phone,
+            c.contact_email,
+            c.contact_postsecondary_status,
+            c.contact_college_status,
+            c.contact_currently_enrolled_school,
+            c.contact_middle_school_attended,
+            c.contact_high_school_graduated_from,
+            c.contact_college_graduated_from,
+            c.contact_gender,
+            c.contact_ethnicity,
+            c.contact_most_recent_iep_date,
+            c.contact_efc_from_fafsa,
+            c.contact_description,
+            c.contact_expected_hs_graduation,
+            c.contact_expected_college_graduation,
+            c.contact_latest_transcript,
+            c.contact_latest_resume,
+            c.contact_last_outreach,
+            c.contact_last_successful_contact,
+            c.contact_last_successful_advisor_contact,
+            c.contact_dep_post_hs_simple_admin,
+            c.contact_owner_id,
+            c.contact_owner_name,
+            c.contact_owner_email,
+            c.contact_owner_mobile_phone,
+            c.record_type_name,
+            ifnull(
+                c.contact_current_kipp_student, 'Missing from Salesforce'
+            ) as contact_current_kipp_student,
+            if(
+                c.contact_advising_provider = 'KIPP NYC', 'KNYC', 'KTAF'
+            ) as contact_advising_provider,
+            {{ var("current_fiscal_year") }}
+            - extract(year from c.contact_actual_hs_graduation_date) as years_out_of_hs,
+
+            ifnull(safe_cast(c.contact_kipp_hs_class as int), co.cohort) as ktc_cohort,
+            ifnull(c.contact_first_name, co.first_name) as first_name,
+            ifnull(c.contact_last_name, co.last_name) as last_name,
+            ifnull(
+                c.contact_last_name || ', ' || c.contact_first_name, co.lastfirst
+            ) as lastfirst,
+
             case
                 when co.enroll_status = 0
                 then concat(co.school_level, co.grade_level)
-                when c.kipp_hs_graduate_c = 1
+                when c.contact_kipp_hs_graduate
                 then 'HSG'
                 /* identify HS grads before SF enr update */
                 when (co.school_level = 'HS' and co.exitcode = 'G1')
                 then 'HSG'
                 when
                     (
-                        c.kipp_ms_graduate_c = 1
-                        and c.kipp_hs_graduate_c = 0
-                        and rt.name = 'HS Student'
+                        c.contact_kipp_ms_graduate
+                        and not c.contact_kipp_hs_graduate
+                        and c.record_type_name = 'HS Student'
                     )
                 then 'TAFHS'
-                when (c.kipp_ms_graduate_c = 1 and c.kipp_hs_graduate_c = 0)
+                when (c.contact_kipp_ms_graduate and not c.contact_kipp_hs_graduate)
                 then 'TAF'
             end as ktc_status,
-            case
-                when c.advising_provider_c = 'KIPP NYC' then 'KNYC' else 'KTAF'
-            end as advising_provider
-        from powerschool.cohort_identifiers_static as co
+        from {{ ref("base_powerschool__student_enrollments") }} as co
         left join
-            alumni.contact as c
-            on co.student_number = c.school_specific_id_c
-            and c.is_deleted = 0
-        left join alumni.record_type as rt on c.record_type_id = rt.id
-        left join alumni.user as u on c.owner_id = u.id
+            {{ ref("base_kippadb__contact") }} as c
+            on co.student_number = safe_cast(c.contact_school_specific_id as int)
         where co.rn_undergrad = 1 and co.grade_level between 8 and 12
     )
 
 select
-    sub.student_number,
-    sub.studentid,
-    sub.lastfirst,
-    sub.first_name,
-    sub.last_name,
-    sub.exit_academic_year,
-    sub.exit_schoolid,
-    sub.exit_school_name,
-    sub.exit_grade_level,
-    sub.exit_date,
-    sub.exit_code,
-    sub.exit_db_name,
-    sub.current_grade_level_projection,
-    sub.sf_contact_id,
-    sub.ktc_cohort,
-    sub.kipp_region_name,
-    sub.kipp_region_school,
-    sub.is_kipp_ms_graduate,
-    sub.is_kipp_hs_graduate,
-    sub.is_informed_consent,
-    sub.is_transcript_release,
-    sub.expected_hs_graduation_date,
-    sub.actual_hs_graduation_date,
-    sub.expected_college_graduation_date,
-    sub.actual_college_graduation_date,
-    sub.latest_transcript_date,
-    sub.latest_fafsa_date,
-    sub.latest_state_financial_aid_app_date,
-    sub.efc_from_fafsa,
-    sub.cumulative_gpa,
-    sub.current_college_cumulative_gpa,
-    sub.current_college_semester_gpa,
-    sub.college_match_display_gpa,
-    sub.highest_act_score,
-    sub.college_credits_attempted,
-    sub.accumulated_credits_college,
-    sub.sf_mobile_phone,
-    sub.sf_home_phone,
-    sub.sf_other_phone,
-    sub.sf_email,
-    sub.current_kipp_student,
-    sub.post_hs_simple_admin,
-    sub.postsecondary_status,
-    sub.college_status,
-    sub.currently_enrolled_school,
-    sub.middle_school_attended,
-    sub.high_school_graduated_from,
-    sub.college_graduated_from,
-    sub.gender,
-    sub.ethnicity,
-    sub.contact_description,
-    sub.most_recent_iep_date,
-    sub.latest_resume_date,
-    sub.last_outreach_date,
-    sub.last_successful_contact_date,
-    sub.last_successful_advisor_contact_date,
-    sub.years_out_of_hs,
-    sub.record_type_name,
-    sub.counselor_sf_id,
-    sub.counselor_name,
-    sub.counselor_email,
-    sub.counselor_phone,
-    sub.ktc_status,
-    sub.advising_provider
+    student_number,
+    studentid,
+    lastfirst,
+    first_name,
+    last_name,
+    exit_academic_year,
+    exit_schoolid,
+    exit_school_name,
+    exit_grade_level,
+    exit_date,
+    exit_code,
+    exit_db_name,
+    current_grade_level_projection,
+    sf_contact_id,
+    ktc_cohort,
+
+    contact_accumulated_credits_college,
+    contact_actual_college_graduation_date,
+    contact_actual_hs_graduation_date,
+    contact_advising_provider,
+    contact_college_credits_attempted,
+    contact_college_graduated_from,
+    contact_college_match_display_gpa,
+    contact_college_status,
+    contact_cumulative_gpa,
+    contact_current_college_cumulative_gpa,
+    contact_current_college_semester_gpa,
+    contact_current_kipp_student,
+    contact_currently_enrolled_school,
+    contact_dep_post_hs_simple_admin,
+    contact_description,
+    contact_efc_from_fafsa,
+    contact_email,
+    contact_ethnicity,
+    contact_expected_college_graduation,
+    contact_expected_hs_graduation,
+    contact_gender,
+    contact_high_school_graduated_from,
+    contact_highest_act_score,
+    contact_home_phone,
+    contact_informed_consent,
+    contact_kipp_hs_graduate,
+    contact_kipp_ms_graduate,
+    contact_kipp_region_name,
+    contact_kipp_region_school,
+    contact_last_outreach,
+    contact_last_successful_advisor_contact,
+    contact_last_successful_contact,
+    contact_latest_fafsa_date,
+    contact_latest_resume,
+    contact_latest_state_financial_aid_app_date,
+    contact_latest_transcript,
+    contact_middle_school_attended,
+    contact_mobile_phone,
+    contact_most_recent_iep_date,
+    contact_other_phone,
+    contact_postsecondary_status,
+    contact_transcript_release,
+
+    contact_owner_email,
+    contact_owner_id,
+    contact_owner_mobile_phone,
+    contact_owner_name,
+
+    record_type_name,
+
+    years_out_of_hs,
+    ktc_status,
 from roster
-where sub.ktc_status is not null
+where ktc_status is not null

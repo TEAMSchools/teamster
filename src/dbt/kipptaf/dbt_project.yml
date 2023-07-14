@@ -54,6 +54,10 @@ models:
         +schema: google_forms
         staging:
           +materialized: table
+    kippadb:
+      +schema: kippadb
+      staging:
+        +materialized: table
     ldap:
       +schema: ldap
       staging:

@@ -1,7 +1,7 @@
 import json
 
 from dagster import AssetKey
-from dagster_dbt.cli import DbtManifest
+from dagster_dbt import DbtManifest
 
 from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
 from teamster.kippcamden import CODE_LOCATION, deanslist, powerschool
