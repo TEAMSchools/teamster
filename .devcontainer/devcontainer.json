@@ -15,6 +15,6 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "USE_GKE_GCLOUD_AUTH_PLUGIN": "True",
     "GOOGLE_APPLICATION_CREDENTIALS": "/workspaces/teamster/env/gcloud_service_account_json",
-    "DBT_PROFILES_DIR": "/workspaces/teamster/dbt/.dbt"
+    "DBT_PROFILES_DIR": "/workspaces/teamster/dbt"
   }
 }
