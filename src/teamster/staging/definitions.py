@@ -1,5 +1,4 @@
 from dagster import Definitions, EnvVar, config_from_files, load_assets_from_modules
-from dagster_dbt import DbtCliClientResource
 from dagster_gcp import (
     BigQueryResource,
     ConfigurablePickledObjectGCSIOManager,
@@ -88,10 +87,6 @@ defs = Definitions(
             config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
-        "dbt": DbtCliClientResource(
-            project_dir=f"/root/app/src/dbt/{CODE_LOCATION}",
-            profiles_dir=f"/root/app/src/dbt/{CODE_LOCATION}",
-        ),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
