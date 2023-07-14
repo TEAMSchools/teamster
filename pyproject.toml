@@ -21,7 +21,7 @@ dependencies = [
   "python-snappy>=0.6.1",
   "dagster-graphql>=1.3.3",
   "beautifulsoup4>=4.12.2",
-  "dbt-bigquery>=1.5.2",
+  "dbt-bigquery>=1.5.3",
   "ldap3>=2.9.1",
   "pycryptodome>=3.18.0",
   "pandas>=2.0.3",
@@ -52,5 +52,6 @@ install-dagster = { shell = "bash .pdm/scripts/install-dagster.sh", help = "Inst
 install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "Install 1Password Connect via Helm" }
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
-dbt-manifest = { shell = "bash .pdm/scripts/dbt-manifest.sh" }
 fivetran-schema = { shell = "python .pdm/scripts/fivetran-schema.py" }
+dbt = { shell = "bash .pdm/scripts/dbt.sh" }
+dbt-stage-external = { shell = "pdm run bash .pdm/scripts/dbt-stage-external.sh" }

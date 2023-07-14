@@ -11,7 +11,7 @@ on:
       - .dagster/dagster-cloud-kippcamden.yaml
       - src/teamster/core/**
       - src/teamster/kippcamden/**
-      - teamster-dbt
+      - dbt
 
 env:
   CODE_LOCATION: kippcamden
