@@ -1,129 +1,90 @@
-{{ config(enabled=False) }}
-
 with
-    transition as (
-        select
-            ktc.id as `Salesforce ID`,
-            ktc.school_specific_id_c as `SIS ID`,
-            ktc.first_name as `First Name`,
-            ktc.last_name as `Last Name`,
-            ktc.currently_enrolled_school_c as `Current Enrolled High School`,
-            ktc.mobile_phone as `Student Cell Phone`,
-            ktc.df_has_fafsa_c as `FAFSA Complete`,
-            ktc.efc_from_fafsa_c as `EFC Actual`,
-            ktc.expected_hs_graduation_c,
-            ktc.college_match_display_gpa,
-            ktc.highest_act_score,
-            ktc.name as `College Counselor`,
-            ktc.ps_contact_1_phone_primary as `Primary Phone`,
-            ktc.ps_c_504_status as `504 Plan`,
-            if(ktc.most_recent_iep_date_c is not null, 1, null) as `IEP`,
-            if(
-                ktc.latest_state_financial_aid_app_date_c is not null, 'Yes', 'No'
-            ) as `HESAA Complete`,
-            if(ktc.college_match_display_gpa >= 3.0, 1, 0) as gpa_higher_than_3,
-            if(
-                ktc.college_match_display_gpa between 2.5 and 2.9, 1, 0
-            ) as gpa_between_25_29,
-            if(
-                ktc.ktc_status like 'TAF%',
-                ktc.mailing_street
-                || ' '
-                || ktc.mailing_city
-                || ', '
-                || ktc.mailing_state
-                || ' '
-                || ktc.mailing_postal_code,
-                ktc.ps_street
-                || ' '
-                || ktc.ps_city
-                || ', '
-                || ktc.ps_state
-                || ' '
-                || ktc.ps_zip
-            ) as `Mailing Address`,
-            if(
-                ktc.ps_enroll_status = 0,
-                coalesce(ktc.email, ktc.ps_student_web_id || '@teamstudents.org'),
-                ktc.email
-            ) as `Personal Email Address`,
-            if(
-                ktc.ktc_status like 'TAF%', null, ktc.ps_contact_1_name
-            ) as `Primary Parent Name`,
-            if(
-                ktc.ktc_status like 'TAF%',
-                ktc.sf_home_phone,
-                ktc.ps_contact_1_phone_mobile
-            ) as `Primary Parent Cell Phone`,
-            if(
-                ktc.ktc_status like 'TAF%',
-                ktc.secondary_email_c,
-                ktc.ps_contact_1_email_current
-            ) as `Primary Parent Email`,
+    ccdm as (
+        select contact, `date`
+        from {{ ref("stg_kippadb__contact_note") }}
+        where `subject` = 'CCDM'
+    ),
 
-            if(cn.subject_c is null, 'No', 'Yes') as 'CCDM Complete',
-
-            row_number() over (partition by ktc.id order by cn.date_c desc) as rn_ccdm
-        from {{ ref("int_kippadb__roster") }} as kt
-        left join
-            {{ ref("stg_kippadb__contact_note") }} as cn
-            on ktc.contact_id = cn.contact
-            and cn.subject = 'CCDM'
-        where ktc.is_deleted = 0
+    ccdm_deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="ccdm", partition_by="contact", order_by="date desc"
+            )
+        }}
     )
 
 select
-    t.`Salesforce ID`,
-    t.`SIS ID`,
-    t.`College Counselor`,
-    t.`First Name`,
-    t.`Last Name`,
-    t.`Current Enrolled High School`,
-    t.`Student Cell Phone`,
-    t.`Personal Email Address`,
-    t.`Primary Parent Name`,
-    t.`Primary Parent Cell Phone`,
-    t.`Primary Parent Email`,
-    t.`Mailing Address`,
-    t.`IEP`,
-    t.`504 Plan`,
-    t.`FAFSA Complete`,
-    t.`HESAA Complete`,
-    t.`EFC Actual`,
-    t.expected_hs_grad_date,
-    t.college_match_display_gpa,
-    t.highest_act_score,
+    ktc.contact_id as `Salesforce ID`,
+    ktc.contact_school_specific_id as `SIS ID`,
+    ktc.contact_owner_name as `College Counselor`,
+    ktc.first_name as `First Name`,
+    ktc.last_name as `Last Name`,
+    ktc.contact_currently_enrolled_school as `Current Enrolled High School`,
+    ktc.contact_mobile_phone as `Student Cell Phone`,
+    ktc.email as `Personal Email Address`,
+    if(
+        ktc.ktc_status like 'TAF%', null, ktc.powerschool_contact_1_name
+    ) as `Primary Parent Name`,
+    if(
+        ktc.ktc_status like 'TAF%',
+        ktc.contact_home_phone,
+        ktc.powerschool_contact_1_phone_mobile
+    ) as `Primary Parent Cell Phone`,
+    if(
+        ktc.ktc_status like 'TAF%',
+        ktc.contact_secondary_email,
+        ktc.powerschool_contact_1_email_current
+    ) as `Primary Parent Email`,
+    if(
+        ktc.ktc_status like 'TAF%',
+        ktc.contact_mailing_address,
+        ktc.powerschool_mailing_address
+    ) as `Mailing Address`,
+    if(ktc.contact_most_recent_iep_date is not null, true, false) as `IEP`,
+    ktc.powerschool_is_504 as `504 Plan`,
+    ktc.contact_df_has_fafsa as `FAFSA Complete`,
+    if(
+        ktc.contact_latest_state_financial_aid_app_date is not null, 'Yes', 'No'
+    ) as `HESAA Complete`,
+    ktc.contact_efc_from_fafsa as `EFC Actual`,
+    ktc.contact_expected_hs_graduation as expected_hs_grad_date,
+    ktc.contact_college_match_display_gpa as college_match_display_gpa,
+    ktc.contact_highest_act_score as highest_act_score,
 
-    ap.application_id,
-    ap.application_name,
-    ap.matriculation_decision,
+    app.id as application_id,
+    app.name as application_name,
+    app.matriculation_decision,
 
-    t.`CCDM Complete`,
-    t.gpa_higher_than_3,
+    if(cn.contact is null, 'No', 'Yes') as `CCDM Complete`,
 
-    if(ac.x_6_yr_minority_completion_rate_c < 50, 1, 0) as minor_grad_rate_under50,
+    if(ktc.contact_college_match_display_gpa >= 3.0, 1, 0) as gpa_higher_than_3,
 
-    t.gpa_between_25_29,
-
-    if(ac.x_6_yr_minority_completion_rate_c < 40, 1, 0) as minor_grad_rate_under40,
+    if(ac.x6_yr_minority_completion_rate < 50, 1, 0) as minor_grad_rate_under50,
 
     if(
-        ktc.college_match_display_gpa >= 3.0
-        and ac.x_6_yr_minority_completion_rate_c < 50,
+        ktc.contact_college_match_display_gpa between 2.5 and 2.9, 1, 0
+    ) as gpa_between_25_29,
+
+    if(ac.x6_yr_minority_completion_rate < 40, 1, 0) as minor_grad_rate_under40,
+
+    if(
+        ktc.contact_college_match_display_gpa >= 3.0
+        and ac.x6_yr_minority_completion_rate < 50,
         1,
         0
     ) as undermatch_3gpa,
     if(
-        ktc.college_match_display_gpa between 2.5 and 2.9
-        and ac.x_6_yr_minority_completion_rate_c < 40,
+        ktc.contact_college_match_display_gpa between 2.5 and 2.9
+        and ac.x6_yr_minority_completion_rate < 40,
         1,
         0
     ) as undermatch_25_29gpa,
-from transition as t
+from {{ ref("int_kippadb__roster") }} as ktc
 left join
-    alumni.application_identifiers as ap
-    on ktc.sf_contact_id = ap.sf_contact_id
-    and ap.matriculation_decision = 'Matriculated (Intent to Enroll)'
-left join alumni.enrollment_identifiers as ei on ei.student_c = ktc.sf_contact_id
-left join {{ ref("stg_kippadb__account") }} as ac on ac.ncesid_c = ei.ugrad_ncesid
-where t.rn_ccdm = 1
+    {{ ref("base_kippadb__application") }} as app
+    on ktc.contact_id = app.applicant
+    and app.matriculation_decision = 'Matriculated (Intent to Enroll)'
+left join
+    {{ ref("int_kippadb__enrollment_pivot") }} as ei on ktc.contact_id = ei.student
+left join {{ ref("stg_kippadb__account") }} as ac on ei.ugrad_nces_id = ac.nces_id
+left join ccdm_deduplicate as cn on ktc.contact_id = cn.contact

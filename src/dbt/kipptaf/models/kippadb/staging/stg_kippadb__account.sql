@@ -108,7 +108,7 @@ select
     matriculation_target_progress_max__c as matriculation_target_progress_max,
     matriculation_target_progress_min__c as matriculation_target_progress_min,
     metro_area__c as metro_area,
-    ncesid__c as nce_sid,
+    ncesid__c as nces_id,
     net_price__c as net_price,
     net_price_0_30k_income__c as net_price_0_30k_income,
     net_price_30_48k_income__c as net_price_30_48k_income,
