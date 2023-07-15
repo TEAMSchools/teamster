@@ -11,7 +11,8 @@ on:
       - .dagster/dagster-cloud-kipptaf.yaml
       - src/teamster/core/**
       - src/teamster/kipptaf/**
-      - dbt
+      - src/dbt/teamster_utils
+      - src/dbt/kipptaf
 
 env:
   CODE_LOCATION: kipptaf
