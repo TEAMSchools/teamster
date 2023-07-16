@@ -141,13 +141,13 @@ with
             rp.respondent_userprincipalname as nonstaff_email
         from identifier_responses_pivot as rp
         left join
-            people.staff_crosswalk_static as upn
+            {{ ref("base_people__staff_roster") }} as upn
             on (rp.respondent_userprincipalname = upn.userprincipalname)
         left join
-            people.staff_crosswalk_static as adp
+            {{ ref("base_people__staff_roster") }} as adp
             on (rp.respondent_associate_id = adp.adp_associate_id_legacy)
         left join
-            people.staff_crosswalk_static as mail
+            {{ ref("base_people__staff_roster") }} as mail
             on (rp.respondent_userprincipalname = mail.mail)
         left join
             surveys.surveygizmo_abnormal_respondents as ab
@@ -221,25 +221,25 @@ select
 from
     identifier_responses_deduplicate as rc
     {# left join
-    people.staff_crosswalk_static as resp
+    {{ ref("base_people__staff_roster") }} as resp
     on rc.respondent_employee_number = resp.df_employee_number
 left join
     people.employment_history_static as reh
     on resp.position_id = reh.position_id
     and sc.link_close_date between reh.effective_start_date and reh.effective_end_date
 left join
-    people.staff_crosswalk_static as rmgr
+    {{ ref("base_people__staff_roster") }} as rmgr
     on reh.reports_to_employee_number = rmgr.df_employee_number
 left join people.school_crosswalk as rsch on reh.location = rsch.site_name
 left join
-    people.staff_crosswalk_static as subj
+    {{ ref("base_people__staff_roster") }} as subj
     on rc.subject_employee_number = subj.df_employee_number
 left join
     people.employment_history_static as seh
     on subj.position_id = seh.position_id
     and sc.link_close_date between seh.effective_start_date and seh.effective_end_date
 left join
-    people.staff_crosswalk_static as smgr
+    {{ ref("base_people__staff_roster") }} as smgr
     on seh.reports_to_employee_number = smgr.df_employee_number
 left join people.school_crosswalk as ssch on seh.location = ssch.site_name #}
     
