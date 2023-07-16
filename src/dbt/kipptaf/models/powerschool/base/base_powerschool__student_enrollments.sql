@@ -62,7 +62,7 @@ with
 
             sl.username as student_web_id,
             sl.default_password as student_web_password,
-            sl.username || '@teamstudents.org' as student_email_google,
+            sl.google_email as student_email_google,
         from student_enrollments_union as seu
         left join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
