@@ -1,5 +1,5 @@
 select
-    enr.student_number as `01 Student Id`,
+    co.student_number as `01 Student Id`,
     null as `02 Ssid`,
     null as `03 Last Name`,
     null as `04 First Name`,
@@ -16,7 +16,7 @@ select
         end,
         enr.sectionid
     ) as `07 Section Id`,
-    enr.schoolid as `08 Site Id`,
+    co.schoolid as `08 Site Id`,
     enr.course_number as `09 Course Id`,
     enr.teachernumber as `10 User Id`,
     enr.dateenrolled as `11 Entry Date`,
@@ -28,13 +28,13 @@ select
         then 14
         else co.grade_level + 1
     end as `13 Grade Level Id`,
-    concat(enr.academic_year, '-', (enr.academic_year + 1)) as `14 Academic Year`,
+    concat(co.academic_year, '-', (co.academic_year + 1)) as `14 Academic Year`,
     null as `15 Session Type Id`
-from {{ ref("base_powerschool__course_enrollments") }} as enr
+from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
-    on enr.student_number = co.student_number
-    and enr.academic_year = co.academic_year
-    and enr.`Db_Name` = co.`Db_Name`
-    and co.rn_year = 1
-where enr.course_enroll_status = 0 and enr.section_enroll_status = 0
+    {{ ref("base_powerschool__course_enrollments") }} as enr
+    on co.student_number = enr.student_number
+    and co.academic_year = enr.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
+    and not enr.is_enrolled_section
+where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1

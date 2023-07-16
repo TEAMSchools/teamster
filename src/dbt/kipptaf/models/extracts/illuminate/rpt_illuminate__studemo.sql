@@ -15,25 +15,25 @@ select
     null as `14 English Proficiency`,
     null as `15 Redesignation Date`,
     case
-        when specialed_classification in ('PSD', 'CMO', 'CMI')
+        when special_education_code in ('PSD', 'CMO', 'CMI')
         then '210'
-        when specialed_classification in ('CI', 'ESLS')
+        when special_education_code in ('CI', 'ESLS')
         then '240'
-        when specialed_classification = 'VI'
+        when special_education_code = 'VI'
         then '250'
-        when specialed_classification = 'ED'
+        when special_education_code = 'ED'
         then '260'
-        when specialed_classification = 'OI'
+        when special_education_code = 'OI'
         then '270'
-        when specialed_classification = 'OHI'
+        when special_education_code = 'OHI'
         then '280'
-        when specialed_classification = 'SLD'
+        when special_education_code = 'SLD'
         then '290'
-        when specialed_classification = 'MD'
+        when special_education_code = 'MD'
         then '310'
-        when specialed_classification in ('AI', 'AUT')
+        when special_education_code in ('AI', 'AUT')
         then '320'
-        when specialed_classification = 'TBI'
+        when special_education_code = 'TBI'
         then '330'
     end as `16 Primary Disability`,
     null as `17 Migrant Ed Student Id`,

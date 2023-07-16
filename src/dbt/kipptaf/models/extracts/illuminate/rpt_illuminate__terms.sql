@@ -12,5 +12,5 @@ from {{ ref("stg_powerschool__terms") }} as t
 inner join
     {{ ref("stg_powerschool__schools") }} as s
     on t.schoolid = s.school_number
-    and t.`db_name` = s.`db_name`
+    and {{ union_dataset_join_clause(left_alias="t", right_alias="s") }}
     and s.state_excludefromreporting = 0
