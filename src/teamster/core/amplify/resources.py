@@ -14,13 +14,9 @@ class MClassResource(ConfigurableResource):
     _session: Session = PrivateAttr(default_factory=Session)
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        error_response = self._session.get(url=f"{self._base_url}/reports/api/report")
+        portal_redirect = self.get(path="reports/myReports")
 
-        portal_response = self._session.get(
-            url=error_response.json()["authentication_path"]
-        )
-
-        soup = BeautifulSoup(markup=portal_response.text, features="html.parser")
+        soup = BeautifulSoup(markup=portal_redirect.text, features="html.parser")
 
         kc_form_login = soup.find(name="form", id="kc-form-login")
 
