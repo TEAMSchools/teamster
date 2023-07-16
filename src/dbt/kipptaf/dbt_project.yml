@@ -45,6 +45,8 @@ models:
         +materialized: view
       powerschool:
         +materialized: view
+      illuminate:
+        +enabled: False
     finance:
       +schema: finance
       staging:
