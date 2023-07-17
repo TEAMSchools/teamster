@@ -1,0 +1,85 @@
+version: 2
+
+sources:
+  - name: kippmiami_deanslist
+    tables:
+      - name: stg_deanslist__behavior
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__behavior
+      - name: stg_deanslist__comm_log
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__comm_log
+      - name: stg_deanslist__followups
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__followups
+      - name: stg_deanslist__homework
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__homework
+      - name: stg_deanslist__incidents
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__incidents
+      - name: stg_deanslist__lists
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__lists
+      - name: stg_deanslist__roster_assignments
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__roster_assignments
+      - name: stg_deanslist__rosters
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__rosters
+      - name: stg_deanslist__terms
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__terms
+      - name: stg_deanslist__users
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__users
