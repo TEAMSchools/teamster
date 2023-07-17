@@ -1,22 +1,14 @@
 select
     concat(
-        case
-            when tr.`Db_Name` = 'kippnewark'
-            then 'NWK'
-            when tr.`Db_Name` = 'kippcamden'
-            then 'CMD'
-            when tr.`Db_Name` = 'kippmiami'
-            then 'MIA'
-        end,
-        sec.id
-    ) as `01 Section Id`,
+        regexp_extract(enr._dbt_source_relation, r'(kipp\w+)'), sec.id
+    ) as `01 Section ID`,
 
-    tr.schoolid as `02 Site Id`,
-    tr.`Name` as `03 Term Name`,
+    tr.schoolid as `02 Site ID`,
+    tr.name as `03 Term Name`,
 
-    sec.course_number as `04 Course Id`,
+    sec.course_number as `04 Course ID`,
 
-    t.teachernumber as `05 User Id`,
+    t.teachernumber as `05 User ID`,
 
     case
         when tr.schoolid = 73253 then sec.expression else sec.section_number
@@ -25,8 +17,8 @@ select
     concat((tr.yearid + 1990), '-', (tr.yearid + 1991)) as `07 Academic Year`,
 
     null as `08 Room Number`,
-    null as `09 Session Type Id`,
-    null as `10 Local Term Id`,
+    null as `09 Session Type ID`,
+    null as `10 Local Term ID`,
     null as `11 Quarter Num`,
 
     tr.firstday as `12 User Start Date`,
