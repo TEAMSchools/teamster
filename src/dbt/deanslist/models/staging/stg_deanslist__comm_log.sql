@@ -10,11 +10,12 @@ with
     )
 
 select
-    recordid as `record_id`,
-    callstatusid as `call_status_id`,
-    reasonid as `reason_id`,
-    userid as `user_id`,
-    isdraft as `is_draft`,
+    safe_cast(recordid as int) as `record_id`,
+    safe_cast(callstatusid as int) as `call_status_id`,
+    safe_cast(reasonid as int) as `reason_id`,
+    safe_cast(userid as int) as `user_id`,
+
+    safe_cast(nullif(calldatetime, '') as datetime) as `call_date_time`,
 
     nullif(callstatus, '') as `call_status`,
     nullif(calltype, '') as `call_type`,
@@ -26,7 +27,8 @@ select
     nullif(recordtype, '') as `record_type`,
     nullif(response, '') as `response`,
     nullif(topic, '') as `topic`,
-    safe_cast(nullif(calldatetime, '') as datetime) as `call_date_time`,
+
+    isdraft as `is_draft`,
 
     {# records #}
     safe_cast(
@@ -37,8 +39,8 @@ select
         nullif(student.studentschoolid, '') as int
     ) as `student_student_school_id`,
     nullif(student.studentfirstname, '') as `student_student_first_name`,
-    nullif(student.studentlastname, '') as `student_student_last_name`,
     nullif(student.studentmiddlename, '') as `student_student_middle_name`,
+    nullif(student.studentlastname, '') as `student_student_last_name`,
 
     {# repeated records #}
     followups as `followups`,

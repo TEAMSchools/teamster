@@ -1,16 +1,19 @@
 select
-    nullif(academicyearid, '') as `academic_year_id`,
+    safe_cast(nullif(termid, '') as int) as `term_id`,
+
+    safe_cast(nullif(academicyearid, '') as int) as `academic_year_id`,
+    safe_cast(nullif(integrationid, '') as int) as `integration_id`,
+    safe_cast(nullif(schoolid, '') as int) as `school_id`,
+    safe_cast(nullif(secondaryintegrationid, '') as int) as `secondary_integration_id`,
+    safe_cast(nullif(termtypeid, '') as int) as `term_type_id`,
+
     nullif(academicyearname, '') as `academic_year_name`,
     nullif(`days`, '') as `days`,
     nullif(gradekey, '') as `grade_key`,
-    nullif(integrationid, '') as `integration_id`,
-    nullif(schoolid, '') as `school_id`,
     nullif(secondarygradekey, '') as `secondary_grade_key`,
-    nullif(secondaryintegrationid, '') as `secondary_integration_id`,
-    nullif(termid, '') as `term_id`,
     nullif(termname, '') as `term_name`,
     nullif(termtype, '') as `term_type`,
-    nullif(termtypeid, '') as `term_type_id`,
+
     storedgrades as `stored_grades`,
 
     {# records #}

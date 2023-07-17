@@ -11,6 +11,20 @@ with
 
 select
     safe_cast(nullif(followupid, '') as int) as `followup_id`,
+
+    safe_cast(nullif(extstatus, '') as int) as `ext_status`,
+    safe_cast(nullif(initby, '') as int) as `init_by`,
+    safe_cast(nullif(responseid, '') as int) as `response_id`,
+    safe_cast(nullif(schoolid, '') as int) as `school_id`,
+    safe_cast(nullif(sourceid, '') as int) as `source_id`,
+    safe_cast(nullif(studentid, '') as int) as `student_id`,
+    safe_cast(nullif(studentschoolid, '') as int) as `student_school_id`,
+    safe_cast(nullif(tickettypeid, '') as int) as `ticket_type_id`,
+
+    safe_cast(nullif(initts, '') as datetime) as `init_ts`,
+    safe_cast(nullif(opents, '') as datetime) as `open_ts`,
+    safe_cast(nullif(closets, '') as datetime) as `close_ts`,
+
     nullif(cfirst, '') as `c_first`,
     nullif(clast, '') as `c_last`,
     nullif(closeby, '') as `close_by`,
@@ -32,16 +46,5 @@ select
     nullif(responsetype, '') as `response_type`,
     nullif(ticketstatus, '') as `ticket_status`,
     nullif(tickettype, '') as `ticket_type`,
-    nullif(tickettypeid, '') as `ticket_type_id`,
     nullif(`url`, '') as `url`,
-    safe_cast(nullif(closets, '') as datetime) as `close_ts`,
-    safe_cast(nullif(extstatus, '') as int) as `ext_status`,
-    safe_cast(nullif(initby, '') as int) as `init_by`,
-    safe_cast(nullif(initts, '') as datetime) as `init_ts`,
-    safe_cast(nullif(opents, '') as datetime) as `open_ts`,
-    safe_cast(nullif(responseid, '') as int) as `response_id`,
-    safe_cast(nullif(schoolid, '') as int) as `school_id`,
-    safe_cast(nullif(sourceid, '') as int) as `source_id`,
-    safe_cast(nullif(studentid, '') as int) as `student_id`,
-    safe_cast(nullif(studentschoolid, '') as int) as `student_school_id`,
 from deduplicate
