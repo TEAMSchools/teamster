@@ -1,4 +1,7 @@
 assets:
+  - name: reporting__terms
+    range_name: src_reporting__terms
+    sheet_id: 1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
   - name: surveys__staff_info_certification
     range_name: src_surveys__staff_info_certification
     sheet_id: 13bajVOf0otCUZCyLYk3KaTAr2yoOZ2IZGedGYIGwN8Q
@@ -38,9 +41,6 @@ assets:
   - name: people__id_crosswalk_adp
     range_name: fivetran_id_crosswalk_adp
     sheet_id: 1xSa3dznVaGeqjo3Y0tS9GzkhVrpeCQ0aaKWlgI3kHik
-  - name: reporting__reporting_terms
-    range_name: fivetran_reporting_terms
-    sheet_id: 1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
   - name: reporting__reporting_term_map
     range_name: fivetran_reporting_term_map
     sheet_id: 1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
