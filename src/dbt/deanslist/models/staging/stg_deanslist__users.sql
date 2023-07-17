@@ -1,16 +1,17 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="DLUserID",
-        transform_cols=[],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-            "_dagster_partition_school",
-        ],
-    )
-}}
-
-select *
-from staging
+select
+    safe_cast(nullif(dluserid, '') as int) as `dl_user_id`,
+    safe_cast(nullif(accountid, '') as int) as `account_id`,
+    safe_cast(nullif(dlschoolid, '') as int) as `dl_school_id`,
+    nullif(email, '') as `email`,
+    nullif(firstname, '') as `first_name`,
+    nullif(groupname, '') as `group_name`,
+    nullif(lastname, '') as `last_name`,
+    nullif(middlename, '') as `middle_name`,
+    nullif(schoolname, '') as `school_name`,
+    nullif(staffrole, '') as `staff_role`,
+    nullif(title, '') as `title`,
+    nullif(username, '') as `username`,
+    nullif(userschoolid, '') as `user_school_id`,
+    nullif(userstateid, '') as `user_state_id`,
+    if(active = 'Y', true, false) as `active`,
+from {{ source("deanslist", "src_deanslist__users") }}

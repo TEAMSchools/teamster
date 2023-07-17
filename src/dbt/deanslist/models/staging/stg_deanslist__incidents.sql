@@ -1,16 +1,13 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="IncidentID",
-        transform_cols=[],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-            "_dagster_partition_school",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("deanslist", "src_deanslist__incidents"),
+                partition_by="IncidentID",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
 select *
-from staging
+from deduplicate
