@@ -11,12 +11,12 @@ on:
       - .dagster/dagster-cloud-kippnewark.yaml
       - src/teamster/core/**
       - src/teamster/kippnewark/**
-      - src/dbt/deanslist
-      - src/dbt/edplan
-      - src/dbt/powerschool
-      - src/dbt/teamster_utils
-      - src/dbt/titan
-      - src/dbt/kippnewark
+      - src/dbt/deanslist/**
+      - src/dbt/edplan/**
+      - src/dbt/powerschool/**
+      - src/dbt/teamster_utils/**
+      - src/dbt/titan/**
+      - src/dbt/kippnewark/**
 
 env:
   CODE_LOCATION: kippnewark

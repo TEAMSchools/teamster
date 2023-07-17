@@ -330,15 +330,15 @@ files = [
 
 [[package]]
 name = "click"
-version = "8.1.5"
+version = "8.1.3"
 requires_python = ">=3.7"
 summary = "Composable command line interface toolkit"
 dependencies = [
     "colorama; platform_system == \"Windows\"",
 ]
 files = [
-    {file = "click-8.1.5-py3-none-any.whl", hash = "sha256:e576aa487d679441d7d30abb87e1b43d24fc53bffb8758443b1a9e1cee504548"},
-    {file = "click-8.1.5.tar.gz", hash = "sha256:4be4b1af8d665c6d942909916d31a213a106800c47d0eeba73d34da3cbc11367"},
+    {file = "click-8.1.3-py3-none-any.whl", hash = "sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48"},
+    {file = "click-8.1.3.tar.gz", hash = "sha256:7682dc8afb30297001674575ea00d1814d808d6a36af415a82bd481d37ba7b8e"},
 ]
 
 [[package]]
@@ -635,14 +635,14 @@ files = [
 
 [[package]]
 name = "dbt-core"
-version = "1.5.2"
+version = "1.5.3"
 requires_python = ">=3.7.2"
 summary = "With dbt, data analysts and engineers can build analytics the way engineers build applications."
 dependencies = [
     "Jinja2==3.1.2",
     "agate<1.7.1,>=1.6",
     "cffi<2.0.0,>=1.9",
-    "click<9,>=7.0",
+    "click<8.1.4,>=7.0",
     "colorama<0.4.7,>=0.3.9",
     "dbt-extractor~=0.4.1",
     "hologram<=0.0.16,>=0.0.14",
@@ -658,13 +658,13 @@ dependencies = [
     "pytz>=2015.7",
     "pyyaml>=6.0",
     "requests<3.0.0",
-    "sqlparse<0.4.4,>=0.2.3",
+    "sqlparse>=0.2.3",
     "typing-extensions>=3.7.4",
     "werkzeug<3,>=1",
 ]
 files = [
-    {file = "dbt-core-1.5.2.tar.gz", hash = "sha256:e206563dd591f94573e56b19818d5cd87c462b1f1ad8f34eb88a2761bcc25b25"},
-    {file = "dbt_core-1.5.2-py3-none-any.whl", hash = "sha256:f0e30547d3207b18663f995261b76d5de785935b60030d53c626276dcbff9e61"},
+    {file = "dbt-core-1.5.3.tar.gz", hash = "sha256:4abac0431a4b09c2b00c2971932cc6be0c66ab2414db98e124878b06cb0fcbfa"},
+    {file = "dbt_core-1.5.3-py3-none-any.whl", hash = "sha256:f27601061d7303a1bd95bc803625e4957d33bcd2b20292dab7280c5801ca37a6"},
 ]
 
 [[package]]
@@ -2874,12 +2874,12 @@ files = [
 
 [[package]]
 name = "sqlparse"
-version = "0.4.3"
+version = "0.4.4"
 requires_python = ">=3.5"
 summary = "A non-validating SQL parser."
 files = [
-    {file = "sqlparse-0.4.3-py3-none-any.whl", hash = "sha256:0323c0ec29cd52bceabc1b4d9d579e311f3e4961b98d174201d5622a23b85e34"},
-    {file = "sqlparse-0.4.3.tar.gz", hash = "sha256:69ca804846bb114d2ec380e4360a8a340db83f0ccf3afceeb1404df028f57268"},
+    {file = "sqlparse-0.4.4-py3-none-any.whl", hash = "sha256:5430a4fe2ac7d0f93e66f1efc6e1338a41884b7ddf2a350cedd20ccc4d9d28f3"},
+    {file = "sqlparse-0.4.4.tar.gz", hash = "sha256:d446183e84b8349fa3061f0fe7f06ca94ba65b426946ffebe6e3e8295332420c"},
 ]
 
 [[package]]
