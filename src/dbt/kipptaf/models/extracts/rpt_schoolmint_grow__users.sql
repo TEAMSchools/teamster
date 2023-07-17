@@ -98,13 +98,13 @@ with
     ),
 
     observation_group_membership_union as (
-        select observation_group_id, user_id, 'Teacher' as role_name,
-        from {{ ref("stg_schoolmint_grow__schools_observationgroups_observees") }}
+        select observation_group_id, observee_id as user_id, 'Teacher' as role_name,
+        from {{ ref("stg_schoolmint_grow__schools__observation_groups__observees") }}
 
         union all
 
-        select observation_group_id, user_id, 'Coach' as role_name,
-        from {{ ref("stg_schoolmint_grow__schools_observationgroups_observers") }}
+        select observation_group_id, observer_id as user_id, 'Coach' as role_name,
+        from {{ ref("stg_schoolmint_grow__schools__observation_groups__observers") }}
     ),
 
     observation_groups as (
@@ -115,7 +115,7 @@ with
 
             ogm.user_id,
             ogm.role_name,
-        from {{ ref("stg_schoolmint_grow__schools_observationgroups") }} as sog
+        from {{ ref("stg_schoolmint_grow__schools__observation_groups") }} as sog
         inner join
             observation_group_membership_union as ogm
             on sog.observation_group_id = ogm.observation_group_id
@@ -134,7 +134,7 @@ with
 
     roles_union as (
         select user_id, role_id, role_name,
-        from {{ ref("stg_schoolmint_grow__users_roles") }}
+        from {{ ref("stg_schoolmint_grow__users__roles") }}
         where role_name != 'No Role'
 
         union distinct
@@ -149,7 +149,7 @@ with
         from {{ ref("base_people__staff_roster") }} as s
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u
-            on s.employee_number = u.internalid
+            on s.employee_number = safe_cast(u.internal_id as int)
         inner join
             {{ ref("stg_schoolmint_grow__roles") }} as r on r.name = 'School Admin'
         where s.job_title = 'School Leader'
@@ -192,11 +192,11 @@ select
     u.email as user_email_ws,
     u.name as user_name_ws,
     u.inactive as inactive_ws,
-    u.defaultinformation_school as school_id_ws,
-    u.defaultinformation_gradelevel as grade_id_ws,
-    u.defaultinformation_course as course_id_ws,
+    u.default_information_school as school_id_ws,
+    u.default_information_grade_level as grade_id_ws,
+    u.default_information_course as course_id_ws,
     u.coach as coach_id_ws,
-    u.archivedat as archived_at,
+    u.archived_at,
 
     um.user_id as coach_id,
 
@@ -241,10 +241,11 @@ select
     || ']' as role_id,
 from people as p
 left join
-    {{ ref("stg_schoolmint_grow__users") }} as u on p.user_internal_id = u.internalid
+    {{ ref("stg_schoolmint_grow__users") }} as u
+    on p.user_internal_id = safe_cast(u.internal_id as int)
 left join
     {{ ref("stg_schoolmint_grow__users") }} as um
-    on p.manager_internal_id = um.internalid
+    on p.manager_internal_id = safe_cast(um.internal_id as int)
 left join {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as cou
