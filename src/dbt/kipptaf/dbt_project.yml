@@ -75,6 +75,8 @@ models:
         +schema: schoolmint_grow
         staging:
           +materialized: table
+    smartrecruiters:
+      +schema: smartrecruiters
     surveys:
       +schema: surveys
     tableau:
