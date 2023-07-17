@@ -18,7 +18,7 @@ assets:
       field_delimiter: "\t"
       print_header: False
     file_config:
-      stem: rpt_powerschool__autocomm_students
+      stem: powerschool_autocomm_students
       suffix: txt
     destination_config:
       name: powerschool
