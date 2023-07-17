@@ -4,7 +4,7 @@ from dagster import AssetKey
 from dagster_dbt import DbtManifest
 
 from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
-from teamster.kippcamden import CODE_LOCATION, deanslist, powerschool
+from teamster.kippcamden import CODE_LOCATION, deanslist, edplan, powerschool, titan
 
 
 class CustomizedDbtManifest(DbtManifest):
@@ -49,7 +49,7 @@ external_source_assets = [
         group_name=asset.key.path[1],
         manifest=manifest,
     )
-    for asset in [*powerschool.assets, *deanslist.assets]
+    for asset in [*powerschool.assets, *deanslist.assets, *edplan.assets, *titan.assets]
 ]
 
 __all__ = [
