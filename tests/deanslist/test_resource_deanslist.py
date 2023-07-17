@@ -1,26 +1,26 @@
 import json
 import random
 
-from dagster import build_resources, config_from_files
+import pendulum
+from dagster import build_resources
 from fastavro import parse_schema, validation, writer
 
-from teamster.core.deanslist.resources import DeansList, deanslist_resource
+from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.deanslist.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
-from teamster.core.utils.variables import NOW
 
-asset_config = config_from_files(["tests/deanslist/config.yaml"])
-resource_config = config_from_files(
-    ["src/teamster/core/config/resources/deanslist.yaml"]
-)
+asset_config = {}
+# asset_config = config_from_files(["tests/deanslist/config.yaml"])
+# resource_config = config_from_files(
+#     ["src/teamster/core/config/resources/deanslist.yaml"]
+# )
 
 
 def test_deanslist_schema():
-    with build_resources(
-        resources={"deanslist": deanslist_resource},
-        resource_config={"deanslist": {"config": resource_config}},
-    ) as resources:
-        dl: DeansList = resources.deanslist
+    now = pendulum.now()
+
+    with build_resources(resources={"deanslist": DeansListResource()}) as resources:
+        dl: DeansListResource = resources.deanslist
 
         for endpoint in asset_config["endpoints"]:
             endpoint_name = endpoint["asset_name"]
@@ -37,7 +37,7 @@ def test_deanslist_schema():
                 endpoint=endpoint_name,
                 api_version=endpoint_version,
                 school_id=asset_config["school_id"],
-                UpdatedSince=NOW.to_date_string(),
+                UpdatedSince=now.to_date_string(),
                 **endpoint.get("params", {}),
             )
 
