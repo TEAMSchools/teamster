@@ -1,16 +1,15 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="DLRosterID, DLStudentID",
-        transform_cols=[],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-            "_dagster_partition_school",
-        ],
-    )
-}}
-
-select *
-from staging
+select
+    nullif(dlrosterid, '') as `dl_roster_id`,
+    nullif(dlschoolid, '') as `dl_school_id`,
+    nullif(dlstudentid, '') as `dl_student_id`,
+    nullif(firstname, '') as `first_name`,
+    nullif(gradelevel, '') as `grade_level`,
+    nullif(integrationid, '') as `integration_id`,
+    nullif(lastname, '') as `last_name`,
+    nullif(middlename, '') as `middle_name`,
+    nullif(rostername, '') as `roster_name`,
+    nullif(schoolname, '') as `school_name`,
+    nullif(secondaryintegrationid, '') as `secondary_integration_id`,
+    nullif(secondarystudentid, '') as `secondary_student_id`,
+    nullif(studentschoolid, '') as `student_school_id`,
+from {{ source("deanslist", "src_deanslist__roster_assignments") }}
