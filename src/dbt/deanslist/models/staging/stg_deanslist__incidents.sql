@@ -11,6 +11,7 @@ with
 
 select
     safe_cast(nullif(incidentid, '') as int) as `incident_id`,
+
     safe_cast(nullif(categoryid, '') as int) as `category_id`,
     safe_cast(nullif(createstaffschoolid, '') as int) as `create_staff_school_id`,
     safe_cast(nullif(infractiontypeid, '') as int) as `infraction_type_id`,
@@ -52,6 +53,7 @@ select
     nullif(updatelast, '') as `update_last`,
     nullif(updatemiddle, '') as `update_middle`,
     nullif(updatetitle, '') as `update_title`,
+
     hearingflag as `hearing_flag`,
     isactive as `is_active`,
     isreferral as `is_referral`,
