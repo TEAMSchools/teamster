@@ -36,6 +36,8 @@ models:
         +materialized: view
     alchemer:
       +schema: alchemer
+    deanslist:
+      +schema: deanslist
     edplan:
       +schema: edplan
     extracts:
