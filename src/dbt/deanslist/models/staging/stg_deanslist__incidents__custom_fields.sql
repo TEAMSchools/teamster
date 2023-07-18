@@ -25,3 +25,4 @@ select
     cf.selectedoptions as `selected_options`,
 from {{ ref("stg_deanslist__incidents") }} as i
 cross join unnest(i.custom_fields) as cf
+where nullif(cf.value, '') is not null
