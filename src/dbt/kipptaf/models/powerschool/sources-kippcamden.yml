@@ -635,3 +635,27 @@ sources:
               - kippcamden
               - powerschool
               - int_powerschool__district_entry_date
+      - name: base_powerschool__final_grades
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - base_powerschool__final_grades
+      - name: int_powerschool__gpa_term
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - int_powerschool__gpa_term
+      - name: int_powerschool__gradescaleitem_lookup
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - int_powerschool__gradescaleitem_lookup

@@ -3,18 +3,9 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source(
-                        "kippnewark_powerschool",
-                        "base_powerschool__student_enrollments",
-                    ),
-                    source(
-                        "kippcamden_powerschool",
-                        "base_powerschool__student_enrollments",
-                    ),
-                    source(
-                        "kippmiami_powerschool",
-                        "base_powerschool__student_enrollments",
-                    ),
+                    source("kippnewark_powerschool", model.name),
+                    source("kippcamden_powerschool", model.name),
+                    source("kippmiami_powerschool", model.name),
                 ]
             )
         }}
