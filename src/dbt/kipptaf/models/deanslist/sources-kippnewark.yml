@@ -107,3 +107,11 @@ sources:
               - kippnewark
               - deanslist
               - stg_deanslist__incidents__custom_fields
+      - name: int_deanslist__incidents__custom_fields__pivot
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - stg_deanslist__incidents__custom_fields
