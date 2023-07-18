@@ -83,3 +83,27 @@ sources:
               - kippmiami
               - deanslist
               - stg_deanslist__users
+      - name: stg_deanslist__incidents__penalties
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__incidents__penalties
+      - name: stg_deanslist__incidents__actions
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__incidents__actions
+      - name: stg_deanslist__incidents__custom_fields
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippmiami
+              - deanslist
+              - stg_deanslist__incidents__custom_fields

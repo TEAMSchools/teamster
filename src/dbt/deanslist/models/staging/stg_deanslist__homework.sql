@@ -24,7 +24,7 @@ select
     safe_cast(nullif(studentschoolid, '') as int) as `student_school_id`,
 
     safe_cast(nullif(behaviordate, '') as date) as `behavior_date`,
-    safe_cast(nullif(dl_lastupdate, '') as datetime) as `dl_lastupdate`,
+    safe_cast(nullif(dl_lastupdate, '') as datetime) as `dl_last_update`,
 
     nullif(assignment, '') as `assignment`,
     nullif(behavior, '') as `behavior`,
