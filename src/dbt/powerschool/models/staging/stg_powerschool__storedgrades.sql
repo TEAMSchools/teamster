@@ -37,5 +37,10 @@
     )
 }}
 
-select *
+select
+    *,
+    left(storecode, 2) as storecode_type,
+    cast(left(cast(termid as string), 2) as int) as yearid,
+    cast(left(cast(termid as string), 2) as int) + 1990 as academic_year,
+    cast(left(cast(termid as string), 2) as int) + 1991 as fiscal_year,
 from staging
