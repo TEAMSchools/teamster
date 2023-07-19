@@ -8,8 +8,8 @@ from dagster import (
     asset,
 )
 
-from teamster.core.schoolmint.resources import SchoolMintGrowResource
-from teamster.core.schoolmint.schema import ASSET_FIELDS
+from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.core.schoolmint.grow.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 

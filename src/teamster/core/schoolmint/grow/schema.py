@@ -170,7 +170,7 @@ GT_TAG_FIELDS = [
     },
     {
         "name": "rows",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "type": ["null", {"type": "array", "items": ["string", "null"], "default": []}],
         "default": None,
     },
 ]
@@ -1268,7 +1268,7 @@ PROGRESS_FIELDS = [
     {"name": "_id", "type": ["null", "string"], "default": None},
     {"name": "assigner", "type": ["null", "string"], "default": None},
     {"name": "justification", "type": ["null", "string"], "default": None},
-    {"name": "percent", "type": ["null", "long"], "default": None},
+    {"name": "percent", "type": ["null", "int", "long"], "default": None},
     {
         "name": "date",
         "type": ["null", "string"],

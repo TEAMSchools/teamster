@@ -4,7 +4,19 @@ from dagster import AssetKey
 from dagster_dbt import DbtManifest
 
 from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
-from teamster.kipptaf import CODE_LOCATION, ldap
+from teamster.kipptaf import (
+    CODE_LOCATION,
+    achieve3k,
+    adp,
+    alchemer,
+    amplify,
+    clever,
+    iready,
+    ldap,
+    renlearn,
+    schoolmint,
+    smartrecruiters,
+)
 from teamster.kipptaf.google.assets import google_forms_assets, google_sheets_assets
 
 
@@ -62,7 +74,19 @@ external_source_assets = [
         group_name=asset.key.path[1],
         manifest=manifest,
     )
-    for asset in [*ldap.assets, *google_forms_assets]
+    for asset in [
+        *achieve3k.assets,
+        *adp.assets,
+        *alchemer.assets,
+        *amplify.assets,
+        *clever.assets,
+        *google_forms_assets,
+        *iready.assets,
+        *ldap.assets,
+        *renlearn.assets,
+        *schoolmint.assets,
+        *smartrecruiters.assets,
+    ]
 ]
 
 __all__ = [
