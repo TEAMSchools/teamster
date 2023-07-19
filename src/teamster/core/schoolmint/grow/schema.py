@@ -468,7 +468,6 @@ SETTING_FIELDS = [
     {"name": "displayLabels", "type": ["null", "boolean"], "default": None},
     {"name": "displayNumbers", "type": ["null", "boolean"], "default": None},
     {"name": "enableClickToFill", "type": ["null", "boolean"], "default": None},
-    {"name": "enablePolongClick", "type": ["null", "boolean"], "default": None},
     {"name": "enablePointClick", "type": ["null", "boolean"], "default": None},
     {"name": "filters", "type": ["null", "boolean"], "default": None},
     {"name": "goalCreate", "type": ["null", "boolean"], "default": None},
@@ -769,7 +768,7 @@ SCHOOL_FIELDS = [
     {"name": "city", "type": ["null", "string"], "default": None},
     {"name": "gradeSpan", "type": ["null", "string"], "default": None},
     {"name": "highGrade", "type": ["null", "string"], "default": None},
-    {"name": "longernalId", "type": ["null", "string"], "default": None},
+    {"name": "internalId", "type": ["null", "string"], "default": None},
     {"name": "lowGrade", "type": ["null", "string"], "default": None},
     {"name": "phone", "type": ["null", "string"], "default": None},
     {"name": "principal", "type": ["null", "string"], "default": None},
@@ -988,7 +987,7 @@ DISTRICT_DATA_FIELDS = [
     {"name": "district", "type": ["null", "string"], "default": None},
     {"name": "grade", "type": ["null", "string"], "default": None},
     {"name": "inactive", "type": ["null", "boolean"], "default": None},
-    {"name": "longernalId", "type": ["null", "string"], "default": None},
+    {"name": "internalId", "type": ["null", "string"], "default": None},
     {"name": "locked", "type": ["null", "boolean"], "default": None},
     {"name": "nonInstructional", "type": ["null", "boolean"], "default": None},
     {"name": "readonly", "type": ["null", "boolean"], "default": None},
@@ -1139,7 +1138,7 @@ USER_FIELDS = [
     {"name": "first", "type": ["null", "string"], "default": None},
     {"name": "googleid", "type": ["null", "string"], "default": None},
     {"name": "inactive", "type": ["null", "boolean"], "default": None},
-    {"name": "longernalId", "type": ["null", "string"], "default": None},
+    {"name": "internalId", "type": ["null", "string"], "default": None},
     {"name": "isPracticeUser", "type": ["null", "boolean"], "default": None},
     {"name": "last", "type": ["null", "string"], "default": None},
     {"name": "locked", "type": ["null", "boolean"], "default": None},
@@ -1213,13 +1212,13 @@ USER_FIELDS = [
         "default": None,
     },
     {
-        "name": "externallongegrations",
+        "name": "externalIntegrations",
         "type": [
             "null",
             {
                 "type": "array",
                 "items": get_avro_record_schema(
-                    name="external_longegration",
+                    name="external_integration",
                     fields=[
                         {"name": "id", "type": ["null", "string"], "default": None},
                         {"name": "type", "type": ["null", "string"], "default": None},
