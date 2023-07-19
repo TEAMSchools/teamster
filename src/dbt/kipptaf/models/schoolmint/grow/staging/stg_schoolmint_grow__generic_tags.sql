@@ -23,6 +23,38 @@ with
                         "schoolmint_grow",
                         "src_schoolmint_grow__generic_tags_tags",
                     ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_eventtag1",
+                    ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_goaltypes",
+                    ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_measurementgroups",
+                    ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_meetingtypes",
+                    ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_rubrictag1",
+                    ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_schooltag1",
+                    ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_usertag1",
+                    ),
+                    source(
+                        "schoolmint_grow",
+                        "src_schoolmint_grow__generic_tags_usertypes",
+                    ),
                 ]
             )
         }}

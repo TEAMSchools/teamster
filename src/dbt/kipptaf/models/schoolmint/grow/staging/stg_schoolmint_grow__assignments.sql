@@ -15,17 +15,19 @@ select
     _id as assignment_id,
     `name`,
     district,
-    created,
-    lastmodified,
-    archivedat,
-    coachingactivity,
-    excludefrombank,
-    goaltype,
+    cast(created as timestamp) as created,
+    cast(lastmodified as timestamp) as last_modified,
+    cast(archivedat as timestamp) as archived_at,
+    coachingactivity as coaching_activity,
+    excludefrombank as exclude_from_bank,
+    goaltype as goal_type,
     locked,
     parent,
     `private`,
     `type`,
     observation,
+
+    {# records #}
     user._id as user_id,
     user.name as user_name,
     user.email as user_email,
@@ -43,6 +45,8 @@ select
     grade.name as grade_name,
     course._id as course_id,
     course.name as course_name,
+
+    {# repeated records #}
     tags,
 from deduplicate
 where _dagster_partition_archived = 'f'

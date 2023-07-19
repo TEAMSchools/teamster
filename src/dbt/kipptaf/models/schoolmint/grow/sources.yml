@@ -123,3 +123,45 @@ sources:
             hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/assignments/
             format: AVRO
             enable_logical_types: true
+      - name: src_schoolmint_grow__generic_tags_eventtag1
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_eventtag1/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_eventtag1/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint_grow__generic_tags_goaltypes
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_goaltypes/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_goaltypes/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint_grow__generic_tags_rubrictag1
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_rubrictag1/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_rubrictag1/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint_grow__generic_tags_schooltag1
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_schooltag1/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_schooltag1/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint_grow__generic_tags_usertag1
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertag1/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertag1/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_schoolmint_grow__generic_tags_usertypes
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertypes/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertypes/
+            format: AVRO
+            enable_logical_types: true

@@ -16,7 +16,7 @@ class SchoolMintGrowResource(ConfigurableResource):
     api_response_limit: int = 100
 
     _client: Session = PrivateAttr(default_factory=Session)
-    _base_url: str = PrivateAttr(default="https://api.whetstoneeducation.com")
+    _base_url: str = PrivateAttr(default="https://grow-api.schoolmint.com")
     _default_params: dict = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:

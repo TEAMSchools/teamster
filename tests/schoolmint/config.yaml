@@ -1,13 +1,25 @@
 endpoints:
-  - asset_name: assignments
-    params:
-      lastModified: 1688187600,1719810000
-
-  - asset_name: assignments
-    params:
-      lastModified: 1688187600,1719810000
-
-      archived: True
+  - asset_name: generic-tags/assignmentpresets
+  - asset_name: generic-tags/courses
+  - asset_name: generic-tags/eventtag1
+  - asset_name: generic-tags/goaltypes
+  - asset_name: generic-tags/grades
+  - asset_name: generic-tags/measurementgroups
+  - asset_name: generic-tags/meetingtypes
+  - asset_name: generic-tags/observationtypes
+  - asset_name: generic-tags/rubrictag1
+  - asset_name: generic-tags/schooltag1
+  - asset_name: generic-tags/tags
+  - asset_name: generic-tags/usertag1
+  - asset_name: generic-tags/usertypes
+  # - asset_name: generic-tags
+  # - asset_name: assignments
+  #   params:
+  #     lastModified: 1688187600,1719810000
+  # - asset_name: assignments
+  #   params:
+  #     lastModified: 1688187600,1719810000
+  #     archived: True
   # - asset_name: rubrics
   # - asset_name: rubrics
   #   params:
@@ -16,13 +28,6 @@ endpoints:
   # - asset_name: schools
   # - asset_name: users
   # - asset_name: videos
-  # - asset_name: generic-tags/assignmentpresets
-  # - asset_name: generic-tags/courses
-  # - asset_name: generic-tags/grades
-  # - asset_name: generic-tags/measurementgroups
-  # - asset_name: generic-tags/observationtypes
-  # - asset_name: generic-tags/tags
-  # - asset_name: generic-tags/meetingtypes
   # - asset_name: informals
   # - asset_name: measurements
   # - asset_name: meetings
@@ -36,27 +41,6 @@ endpoints:
   #   params:
   #     archived: True
   # - asset_name: videos
-  #   params:
-  #     archived: True
-  # - asset_name: generic-tags/assignmentpresets
-  #   params:
-  #     archived: True
-  # - asset_name: generic-tags/courses
-  #   params:
-  #     archived: True
-  # - asset_name: generic-tags/grades
-  #   params:
-  #     archived: True
-  # - asset_name: generic-tags/measurementgroups
-  #   params:
-  #     archived: True
-  # - asset_name: generic-tags/observationtypes
-  #   params:
-  #     archived: True
-  # - asset_name: generic-tags/tags
-  #   params:
-  #     archived: True
-  # - asset_name: generic-tags/meetingtypes
   #   params:
   #     archived: True
   # - asset_name: informals

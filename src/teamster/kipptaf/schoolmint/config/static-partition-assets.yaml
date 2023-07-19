@@ -1,16 +1,22 @@
 endpoints:
-  - asset_name: rubrics
-  - asset_name: schools
-  - asset_name: users
-  - asset_name: videos
   - asset_name: generic-tags/assignmentpresets
   - asset_name: generic-tags/courses
+  - asset_name: generic-tags/eventtag1
+  - asset_name: generic-tags/goaltypes
   - asset_name: generic-tags/grades
   - asset_name: generic-tags/measurementgroups
-  - asset_name: generic-tags/observationtypes
-  - asset_name: generic-tags/tags
   - asset_name: generic-tags/meetingtypes
+  - asset_name: generic-tags/observationtypes
+  - asset_name: generic-tags/rubrictag1
+  - asset_name: generic-tags/schooltag1
+  - asset_name: generic-tags/tags
+  - asset_name: generic-tags/usertag1
+  - asset_name: generic-tags/usertypes
   - asset_name: informals
   - asset_name: measurements
   - asset_name: meetings
   - asset_name: roles
+  - asset_name: rubrics
+  - asset_name: schools
+  - asset_name: users
+  - asset_name: videos
