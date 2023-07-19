@@ -55,7 +55,8 @@ with
                         "schoolmint_grow",
                         "src_schoolmint_grow__generic_tags_usertypes",
                     ),
-                ]
+                ],
+                exclude=["additionalFields"],
             )
         }}
     )
