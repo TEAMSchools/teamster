@@ -1,3 +1,5 @@
 endpoints:
   - asset_name: observations
+    start_date: 2023-07-19
   - asset_name: assignments
+    start_date: 2023-07-19
