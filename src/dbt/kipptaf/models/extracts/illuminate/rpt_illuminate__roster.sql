@@ -8,7 +8,8 @@ select
     null as `06 Birth Date`,
 
     concat(
-        regexp_extract(s._dbt_source_relation, r'(kipp\w+)'), enr.cc_sectionid
+        regexp_extract(s._dbt_source_relation, r'(kipp\w+)_powerschool'),
+        enr.cc_sectionid
     ) as `07 Section ID`,
 
     s.schoolid as `08 Site ID`,
