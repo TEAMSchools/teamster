@@ -83,6 +83,28 @@ ADDITIONAL_FIELD_FIELDS = [
     },
 ]
 
+GT_USERTYPE_EXPECTATION_FIELDS = [
+    {"name": "meeting", "type": ["null", "long"], "default": None},
+    {"name": "exceeding", "type": ["null", "long"], "default": None},
+    {"name": "meetingAggregate", "type": ["null", "long"], "default": None},
+    {"name": "exceedingAggregate", "type": ["null", "long"], "default": None},
+    {"name": "summary", "type": ["null", "string"], "default": None},
+]
+
+GT_USERTYPE_FIELDS = [
+    *GENERIC_TAG_TYPE_FIELDS,
+    {
+        "name": "expectations",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="expectation", fields=GT_USERTYPE_EXPECTATION_FIELDS
+            ),
+        ],
+        "default": None,
+    },
+]
+
 GT_MEETINGTYPE_FIELDS = [
     *GENERIC_TAG_TYPE_FIELDS,
     {"name": "canBePrivate", "type": ["null", "boolean"], "default": None},
@@ -1711,9 +1733,15 @@ OBSERVATION_FIELDS = [
 ASSET_FIELDS = {
     "generic-tags/assignmentpresets": GENERIC_TAG_TYPE_FIELDS,
     "generic-tags/courses": GENERIC_TAG_TYPE_FIELDS,
+    "generic-tags/eventtag1": GENERIC_TAG_TYPE_FIELDS,
+    "generic-tags/goaltypes": GENERIC_TAG_TYPE_FIELDS,
     "generic-tags/grades": GENERIC_TAG_TYPE_FIELDS,
     "generic-tags/measurementgroups": GENERIC_TAG_TYPE_FIELDS,
     "generic-tags/observationtypes": GENERIC_TAG_TYPE_FIELDS,
+    "generic-tags/rubrictag1": GENERIC_TAG_TYPE_FIELDS,
+    "generic-tags/schooltag1": GENERIC_TAG_TYPE_FIELDS,
+    "generic-tags/usertag1": GENERIC_TAG_TYPE_FIELDS,
+    "generic-tags/usertypes": GT_USERTYPE_FIELDS,
     "generic-tags/meetingtypes": GT_MEETINGTYPE_FIELDS,
     "generic-tags/tags": GT_TAG_FIELDS,
     "informals": INFORMAL_FIELDS,
