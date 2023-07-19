@@ -64,7 +64,6 @@ def build_sftp_asset(
         io_manager_key="gcs_avro_io",
         partitions_def=partitions_def,
         op_tags=op_tags,
-        output_required=False,
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: OpExecutionContext):

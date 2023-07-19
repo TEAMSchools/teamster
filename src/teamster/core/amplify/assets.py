@@ -31,7 +31,6 @@ def build_mclass_asset(
         ),
         io_manager_key="gcs_avro_io",
         op_tags=op_tags,
-        output_required=False,
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
     )
@@ -56,15 +55,14 @@ def build_mclass_asset(
 
         row_count = df.shape[0]
 
-        if row_count > 0:
-            yield Output(
-                value=(
-                    df.to_dict(orient="records"),
-                    get_avro_record_schema(
-                        name=asset_name, fields=ASSET_FIELDS[asset_name]
-                    ),
+        yield Output(
+            value=(
+                df.to_dict(orient="records"),
+                get_avro_record_schema(
+                    name=asset_name, fields=ASSET_FIELDS[asset_name]
                 ),
-                metadata={"records": row_count},
-            )
+            ),
+            metadata={"records": row_count},
+        )
 
     return _asset
