@@ -10,6 +10,7 @@ from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
 
+# BQ extract job
 blissbook_extract_assets = [
     build_bigquery_extract_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
@@ -31,6 +32,14 @@ egencia_extract_assets = [
     for a in config_from_files([f"{config_dir}/egencia.yaml"])["assets"]
 ]
 
+illuminate_extract_assets = [
+    build_bigquery_extract_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/illuminate.yaml"])["assets"]
+]
+
+# BQ query
 idauto_extract_assets = [
     build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
@@ -38,6 +47,8 @@ idauto_extract_assets = [
     for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
 ]
 
+
+# OLD
 alchemer_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="alchemer",
@@ -62,13 +73,6 @@ deanslist_extract_assets = generate_extract_assets(
 gam_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="gam",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
-illuminate_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="illuminate",
     extract_type="sftp",
     timezone=LOCAL_TIMEZONE,
 )
