@@ -32,7 +32,6 @@ def build_static_partition_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         io_manager_key="gcs_avro_io",
-        output_required=False,
     )
     def _asset(context: OpExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
@@ -44,16 +43,15 @@ def build_static_partition_asset(
 
         row_count = endpoint_content["row_count"]
 
-        if row_count > 0:
-            yield Output(
-                value=(
-                    endpoint_content["data"],
-                    get_avro_record_schema(
-                        name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-                    ),
+        yield Output(
+            value=(
+                endpoint_content["data"],
+                get_avro_record_schema(
+                    name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
                 ),
-                metadata={"records": row_count},
-            )
+            ),
+            metadata={"records": row_count},
+        )
 
     return _asset
 
@@ -74,7 +72,6 @@ def build_multi_partition_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         io_manager_key="gcs_avro_io",
-        output_required=False,
     )
     def _asset(context: OpExecutionContext, deanslist: DeansListResource):
         asset_key = context.asset_key_for_output()

@@ -28,7 +28,6 @@ def build_powerschool_table_asset(
         metadata={"partition_column": partition_column},
         op_tags=op_tags,
         io_manager_key="gcs_fp_io",
-        output_required=False,
     )
     def _asset(
         context: OpExecutionContext,
@@ -77,8 +76,7 @@ def build_powerschool_table_asset(
             except FileNotFoundError:
                 num_records = 0
 
-            if num_records > 0:
-                yield Output(value=file_path, metadata={"records": num_records})
+            yield Output(value=file_path, metadata={"records": num_records})
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()

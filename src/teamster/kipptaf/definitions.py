@@ -66,7 +66,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
         *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
-        *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint"),
+        *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
         *load_assets_from_modules(
             modules=[smartrecruiters], group_name="smartrecruiters"
         ),

@@ -40,7 +40,6 @@ def build_wfm_asset(
         ),
         io_manager_key="gcs_avro_io",
         op_tags=op_tags,
-        output_required=False,
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
@@ -116,15 +115,14 @@ def build_wfm_asset(
 
         row_count = df.shape[0]
 
-        if row_count > 0:
-            yield Output(
-                value=(
-                    df.to_dict(orient="records"),
-                    get_avro_record_schema(
-                        name=asset_name, fields=ASSET_FIELDS[asset_name]
-                    ),
+        yield Output(
+            value=(
+                df.to_dict(orient="records"),
+                get_avro_record_schema(
+                    name=asset_name, fields=ASSET_FIELDS[asset_name]
                 ),
-                metadata={"records": row_count},
-            )
+            ),
+            metadata={"records": row_count},
+        )
 
     return _asset
