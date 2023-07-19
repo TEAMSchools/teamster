@@ -1,8 +1,17 @@
 endpoints:
-  - asset_name: rubrics
-  - asset_name: rubrics
+  - asset_name: assignments
     params:
+      lastModified: 1688187600,1719810000
+
+  - asset_name: assignments
+    params:
+      lastModified: 1688187600,1719810000
+
       archived: True
+  # - asset_name: rubrics
+  # - asset_name: rubrics
+  #   params:
+  #     archived: True
   # - asset_name: roles
   # - asset_name: schools
   # - asset_name: users
@@ -59,16 +68,9 @@ endpoints:
   # - asset_name: meetings
   #   params:
   #     archived: True
-  # - asset_name: assignments
-  #   params:
-  #     lastModified: 1656633600,1688169600
   # - asset_name: observations
   #   params:
   #     lastModified: 1625097600,1656633600
-  # - asset_name: assignments
-  #   params:
-  #     lastModified: 1656633600,1688169600
-  #     archived: True
   # - asset_name: observations
   #   params:
   #     lastModified: 1625097600,1656633600

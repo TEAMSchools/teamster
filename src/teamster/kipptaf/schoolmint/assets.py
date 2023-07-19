@@ -5,7 +5,7 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.schoolmint.assets import (
+from teamster.core.schoolmint.grow.assets import (
     build_multi_partition_asset,
     build_static_partition_asset,
 )

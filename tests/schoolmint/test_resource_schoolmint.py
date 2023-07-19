@@ -3,8 +3,8 @@ import random
 from dagster import EnvVar, build_resources, config_from_files
 from fastavro import parse_schema, validation, writer
 
-from teamster.core.schoolmint.resources import SchoolMintGrowResource
-from teamster.core.schoolmint.schema import ASSET_FIELDS
+from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.core.schoolmint.grow.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 ASSET_CONFIG = config_from_files(["tests/schoolmint/config.yaml"])

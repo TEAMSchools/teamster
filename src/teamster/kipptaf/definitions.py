@@ -25,7 +25,7 @@ from teamster.core.google.forms.resources import GoogleFormsResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.ldap.resources import LdapResource
-from teamster.core.schoolmint.resources import SchoolMintGrowResource
+from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource

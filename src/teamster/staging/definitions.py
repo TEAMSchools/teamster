@@ -11,7 +11,7 @@ from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.google.sheets.resources import GoogleSheetsResource
-from teamster.core.schoolmint.resources import SchoolMintGrowResource
+from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import (
     MSSQLResource,
