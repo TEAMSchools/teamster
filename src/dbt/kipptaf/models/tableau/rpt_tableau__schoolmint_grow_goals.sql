@@ -1,4 +1,3 @@
-{{ config(enabled=False) }}
 select
     gt.tag_id,
     gt.name as tag_name,

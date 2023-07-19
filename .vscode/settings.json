@@ -36,5 +36,6 @@
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "githubPullRequests.ignoredPullRequestBranches": ["main"]
+  "githubPullRequests.ignoredPullRequestBranches": ["main"],
+  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}"
 }
