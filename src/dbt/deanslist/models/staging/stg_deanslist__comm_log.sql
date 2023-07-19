@@ -31,16 +31,12 @@ select
     isdraft as `is_draft`,
 
     {# records #}
-    safe_cast(
-        nullif(student.secondarystudentid, '') as int
-    ) as `student_secondary_student_id`,
-    safe_cast(nullif(student.studentid, '') as int) as `student_student_id`,
-    safe_cast(
-        nullif(student.studentschoolid, '') as int
-    ) as `student_student_school_id`,
-    nullif(student.studentfirstname, '') as `student_student_first_name`,
-    nullif(student.studentmiddlename, '') as `student_student_middle_name`,
-    nullif(student.studentlastname, '') as `student_student_last_name`,
+    safe_cast(nullif(student.secondarystudentid, '') as int) as `secondary_student_id`,
+    safe_cast(nullif(student.studentid, '') as int) as `student_id`,
+    safe_cast(nullif(student.studentschoolid, '') as int) as `student_school_id`,
+    nullif(student.studentfirstname, '') as `student_first_name`,
+    nullif(student.studentmiddlename, '') as `student_middle_name`,
+    nullif(student.studentlastname, '') as `student_last_name`,
 
     {# repeated records #}
     followups as `followups`,
