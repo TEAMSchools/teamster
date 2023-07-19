@@ -1,57 +1,39 @@
-key_prefix:
-  - kipptaf
-  - datagun
-  - illuminate
 assets:
-  - asset_name: courses_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_courses
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__courses
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: courses
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: enrollment_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_enrollment
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__enrollment
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: enrollment
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: mastschd_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_mastschd
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__mastschd
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: mastschd
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: roles_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_roles
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__roles
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: roles
       suffix: txt
@@ -59,87 +41,63 @@ assets:
         sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: roster_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_roster
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__roster
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: roster
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: users_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_users
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__users
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: users
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: terms_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_terms
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__terms
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: terms
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: student_portal_accounts_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_student_portal_accounts
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__student_portal_accounts
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: student_portal_accounts
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: studemo_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_studemo
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__studemo
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: studemo
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
-  - asset_name: sites_txt
-    query_config:
-      type: schema
-      value:
-        table:
-          name: illuminate_sites
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__sites
+    extract_job_config:
+      field_delimiter: "\t"
     file_config:
       stem: sites
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
