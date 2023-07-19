@@ -45,10 +45,6 @@ models:
       +materialized: table
       gsheets:
         +materialized: view
-      powerschool:
-        +materialized: view
-      illuminate:
-        +enabled: False
     finance:
       +schema: finance
       staging:
