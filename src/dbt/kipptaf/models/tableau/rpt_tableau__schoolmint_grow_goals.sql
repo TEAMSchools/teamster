@@ -37,7 +37,7 @@ inner join
     on u.internal_id = safe_cast(sr.employee_number as string)
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on a.created between rt.start_date and rt.end_date
+    on cast(a.created as date) between rt.start_date and rt.end_date
     and rt.type = 'RT'
     and rt.school_id = 0
 where a.type = 'goal'
