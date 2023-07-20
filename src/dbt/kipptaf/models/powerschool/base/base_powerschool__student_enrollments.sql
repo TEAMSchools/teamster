@@ -237,6 +237,8 @@ select
     ar.other_related_services_yn,
     ar.lepbegindate,
     ar.lependdate,
+
+    {# regional differences #}
     case
         when ar.region = 'Miami'
         then ar.lep_status
@@ -285,15 +287,17 @@ left join
     {{ ref("stg_edplan__njsmart_powerschool") }} as sped
     on ar.student_number = sped.student_number
     and ar.academic_year = sped.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="sped") }}
-    and ar.academic_year = {{ var("current_academic_year") }}
+    and regexp_extract(ar._dbt_source_relation, r'(\w+)_powerschool')
+    = regexp_extract(sped._dbt_source_relation, r'(\w+)_edplan')
 left join
     {{ ref("stg_titan__person_data") }} as tpd
     on ar.student_number = tpd.person_identifier
     and ar.academic_year = tpd.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="tpd") }}
+    and regexp_extract(ar._dbt_source_relation, r'(\w+)_powerschool')
+    = regexp_extract(tpd._dbt_source_relation, r'(\w+)_titan')
 left join
     {{ ref("stg_titan__income_form_data") }} as ifd
     on ar.student_number = ifd.student_identifier
     and ar.academic_year = ifd.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="ifd") }}
+    and regexp_extract(ar._dbt_source_relation, r'(\w+)_powerschool')
+    = regexp_extract(ifd._dbt_source_relation, r'(\w+)_titan')

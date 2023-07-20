@@ -50,7 +50,9 @@ with
 
 select
     *,
-    case month(transcript_date) when 1 then 'fall' when 5 then 'spr' end as semester,
+    case
+        extract(month from transcript_date) when 1 then 'fall' when 5 then 'spr'
+    end as semester,
     {{
         teamster_utils.date_to_fiscal_year(
             date_field="transcript_date", start_month=7, year_source="start"
