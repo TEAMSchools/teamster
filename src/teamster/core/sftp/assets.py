@@ -94,7 +94,15 @@ def build_sftp_asset(
         if remote_file_regex_matches:
             remote_filename = remote_file_regex_matches[0]
         else:
-            return None
+            return Output(
+                value=(
+                    [],
+                    get_avro_record_schema(
+                        name=asset_name, fields=asset_fields[asset_name]
+                    ),
+                ),
+                metadata={"records": 0},
+            )
 
         # download file from sftp
         local_filepath = ssh.sftp_get(

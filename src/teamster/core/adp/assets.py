@@ -43,15 +43,6 @@ def build_wfm_asset(
         op_tags=op_tags,
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
-        # TODO: delete after run successfully
-        context.instance.delete_dynamic_partition(
-            partitions_def_name=date_partitions_def.name,
-            partition_key=[
-                "2023-05-18|Current_SchedPeriod",
-                "2023-05-03|Previous_SchedPeriod",
-            ],
-        )
-
         asset = context.assets_def
         symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]
 
