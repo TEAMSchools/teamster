@@ -86,8 +86,7 @@ with
             end as ktc_status,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
-            {{ ref_contact }} as c
-            on se.student_number = safe_cast(c.contact_school_specific_id as int)
+            {{ ref_contact }} as c on se.student_number = c.contact_school_specific_id
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

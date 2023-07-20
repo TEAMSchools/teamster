@@ -36,6 +36,8 @@ models:
         +materialized: view
     alchemer:
       +schema: alchemer
+      staging:
+        +materialized: table
     deanslist:
       +schema: deanslist
     edplan:
