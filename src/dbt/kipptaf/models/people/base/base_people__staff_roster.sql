@@ -271,7 +271,7 @@ with
         where work_assignment__fivetran_active and not worker__fivetran_deleted
     ),
 
-    prestart as (
+    with_prestart as (
         select *, false as is_prestart
         from worker_person
         where assignment_status_effective_date <= current_date('America/New_York')
@@ -291,7 +291,7 @@ with
     deduplicate as (
         {{
             dbt_utils.deduplicate(
-                relation="prestart",
+                relation="with_prestart",
                 partition_by="associate_oid",
                 order_by="is_prestart desc, primary_indicator desc, assignment_status_effective_date desc",
             )
@@ -305,12 +305,6 @@ with
             || ', '
             || wp.preferred_name_given_name as preferred_name_lastfirst,
 
-            mgr.preferred_name_given_name as report_to_preferred_name_given_name,
-            mgr.preferred_name_family_name as report_to_preferred_name_family_name,
-            mgr.preferred_name_family_name
-            || ', '
-            || mgr.preferred_name_given_name as report_to_preferred_name_lastfirst,
-
             lc.reporting_school_id as home_work_location_reporting_school_id,
             lc.powerschool_school_id as home_work_location_powerschool_school_id,
             lc.deanslist_school_id as home_work_location_deanslist_school_id,
@@ -323,8 +317,6 @@ with
             lc.dagster_code_location as home_work_location_dagster_code_location,
 
             en.employee_number,
-
-            enm.employee_number as report_to_employee_number,
 
             ldap.mail,
             ldap.distinguished_name,
@@ -347,7 +339,6 @@ with
                 idps.powerschool_teacher_number, safe_cast(en.employee_number as string)
             ) as powerschool_teacher_number,
         from deduplicate as wp
-        left join deduplicate as mgr on wp.report_to_associate_oid = mgr.associate_oid
         left join
             {{ ref("stg_people__location_crosswalk") }} as lc
             on wp.home_work_location_name = lc.name
@@ -356,22 +347,31 @@ with
             on wp.worker_id = en.adp_associate_id
             and en.is_active
         left join
-            {{ ref("stg_people__employee_numbers") }} as enm
-            on wp.report_to_worker_id = enm.adp_associate_id
-            and enm.is_active
-        left join
             {{ ref("stg_ldap__user_person") }} as ldap
             on en.employee_number = ldap.employee_number
         left join
             {{ ref("stg_people__powerschool_crosswalk") }} as idps
             on en.employee_number = idps.employee_number
             and idps.is_active
+    ),
+
+    with_manager as (
+        select
+            cw.*,
+
+            mgr.employee_number as report_to_employee_number,
+            mgr.user_principal_name as report_to_user_principal_name,
+            mgr.preferred_name_given_name as report_to_preferred_name_given_name,
+            mgr.preferred_name_family_name as report_to_preferred_name_family_name,
+            mgr.preferred_name_lastfirst as report_to_preferred_name_lastfirst,
+        from crosswalk as cw
+        left join crosswalk as mgr on cw.report_to_associate_oid = mgr.associate_oid
     )
 
-select cw.*, tgl.grade_level as primary_grade_level_taught
-from crosswalk as cw
+select wm.*, tgl.grade_level as primary_grade_level_taught
+from with_manager as wm
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-    on cw.powerschool_teacher_number = tgl.teachernumber
+    on wm.powerschool_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
