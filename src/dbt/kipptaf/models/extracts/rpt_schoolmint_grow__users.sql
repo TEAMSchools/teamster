@@ -251,12 +251,12 @@ left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as cou
     on p.course_name = cou.name
     and cou.tag_type = 'courses'
-    and cou.archivedat is null
+    and cou.archived_at is null
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gr
     on p.grade_abbreviation = gr.abbreviation
     and gr.tag_type = 'grades'
-    and gr.archivedat is null
+    and gr.archived_at is null
 left join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
 left join roles_agg as er on u.user_id = er.user_id
 left join
