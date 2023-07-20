@@ -1,3 +1,4 @@
+# trunk-ignore-all(yamllint/quoted-strings)
 assets:
   - asset_name: accelerated_reader
     remote_filepath: .
