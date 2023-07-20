@@ -33,15 +33,6 @@ with
                 partition by student, academic_year, semester
                 order by transcript_date desc
             ) as rn_semester,
-        {#
-            utilities.date_to_sy(transcript_date) as academic_year,
-            case
-                when month(transcript_date) = 1
-                then 'fall'
-                when month(transcript_date) = 5
-                then 'spr'
-            end as semester
-        #}
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
@@ -51,89 +42,61 @@ with
             )
     ),
 
-    semester_gpa_unpivot as (
-        select student, academic_year, value, semester + '_' + field as pivot_field,
-        from
-            semester_gpa unpivot (
-                value for field in (
-                    transcript_date,
-                    semester_gpa,
-                    cumulative_gpa,
-                    semester_credits_earned,
-                    cumulative_credits_earned,
-                    credits_required_for_graduation
-                )
-            ) as u
-        where rn_semester = 1
-    ),
-
-    semester_gpa_pivot as (
-        select
-            sf_contact_id,
-            academic_year,
-            cast(fall_transcript_date as date) as fall_transcript_date,
-            cast(
-                fall_credits_required_for_graduation as float
-            ) as fall_credits_required_for_graduation,
-            cast(
-                fall_cumulative_credits_earned as float
-            ) as fall_cumulative_credits_earned,
-            cast(fall_semester_credits_earned as float) as fall_semester_credits_earned,
-            cast(fall_semester_gpa as float) as fall_semester_gpa,
-            cast(fall_cumulative_gpa as float) as fall_cumulative_gpa,
-            cast(spr_transcript_date as date) as spr_transcript_date,
-            cast(
-                spr_credits_required_for_graduation as float
-            ) as spr_credits_required_for_graduation,
-            cast(
-                spr_cumulative_credits_earned as float
-            ) as spr_cumulative_credits_earned,
-            cast(spr_semester_credits_earned as float) as spr_semester_credits_earned,
-            cast(spr_semester_gpa as float) as spr_semester_gpa,
-            cast(spr_cumulative_gpa as float) as spr_cumulative_gpa
-        from
-            semster_gpa_unpivot pivot (
-                max(value) for pivot_field in (
-                    fall_credits_required_for_graduation,
-                    fall_cumulative_credits_earned,
-                    fall_cumulative_gpa,
-                    fall_semester_credits_earned,
-                    fall_semester_gpa,
-                    fall_transcript_date,
-                    spr_credits_required_for_graduation,
-                    spr_cumulative_credits_earned,
-                    spr_cumulative_gpa,
-                    spr_semester_credits_earned,
-                    spr_semester_gpa,
-                    spr_transcript_date
-                )
-            )
-    ),
-
     latest_note as (
         select
             contact,
             comments,
             next_steps,
-            subject,
-            utilities.date_to_sy(date) as academic_year,
+            `subject`,
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="date", start_month=7, year_source="start"
+                )
+            }} as academic_year,
             row_number() over (
-                partition by contact, utilities.date_to_sy(date) order by date desc
+                partition by
+                    contact,
+                    {{
+                        teamster_utils.date_to_fiscal_year(
+                            date_field="date", start_month=7, year_source="start"
+                        )
+                    }}
+                order by `date` desc
             ) as rn
         from {{ ref("stg_kippadb__contact_note") }}
-        where subject like 'AS[0-9]%'
+        where regexp_contains(`subject`, r'^AS\d')
     ),
 
     tier as (
         select
             contact,
-            subject as tier,
-            utilities.date_to_sy(date) as academic_year,
+            `subject` as tier,
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="date", start_month=7, year_source="start"
+                )
+            }} as academic_year,
             row_number() over (
-                partition by contact, utilities.date_to_sy(date) order by date desc
+                partition by
+                    contact,
+                    {{
+                        teamster_utils.date_to_fiscal_year(
+                            date_field="date", start_month=7, year_source="start"
+                        )
+                    }}
+                order by `date` desc
             ) as rn
         from {{ ref("stg_kippadb__contact_note") }}
-        where subject like 'Tier [0-9]'
+        where `subject` like 'Tier [0-9]'
+    ),
+
+    grad_plan as (
+        select
+            contact,
+            `subject` as grad_plan_year,
+            row_number() over (partition by contact order by `date` desc) as rn
+        from {{ ref("stg_kippadb__contact_note") }}
+        where `subject` like 'Grad Plan FY%'
     ),
 
     matric as (
@@ -163,19 +126,8 @@ with
         where e.rn_matric = 1
     ),
 
-    grad_plan as (
-        select
-            kt.sf_contact_id,
-            c.subject as grad_plan_year,
-            row_number() over (partition by kt.sf_contact_id order by c.date desc) as rn
-        from {{ ref("stg_kippadb__contact_note") }} as c
-        left join
-            {{ ref("int_kippadb__ktc_roster") }} as kt on kt.sf_contact_id = c.contact
-        where c.subject like 'Grad Plan FY%'
-    )
-
 select
-    c.sf_contact_id,
+    c.contact_id,
     c.lastfirst as student_name,
     c.ktc_cohort,
     c.is_kipp_ms_graduate,
@@ -329,40 +281,42 @@ select
     cnr.bgp_workforce,
     cnr.bgp_unknown,
 
-    gpa.fall_transcript_date,
-    gpa.fall_semester_gpa,
-    gpa.fall_cumulative_gpa,
-    gpa.fall_semester_credits_earned,
-    gpa.spr_transcript_date,
-    gpa.spr_semester_gpa,
-    gpa.spr_cumulative_gpa,
-    gpa.spr_semester_credits_earned,
+    gpa_fall.transcript_date as fall_transcript_date,
+    gpa_fall.semester_gpa as fall_semester_gpa,
+    gpa_fall.cumulative_gpa as fall_cumulative_gpa,
+    gpa_fall.semester_credits_earned as fall_semester_credits_earned,
+
+    gpa_spr.transcript_date as spr_transcript_date,
+    gpa_spr.semester_gpa as spr_semester_gpa,
+    gpa_spr.cumulative_gpa as spr_cumulative_gpa,
+    gpa_spr.semester_credits_earned as spr_semester_credits_earned,
+    lag(gpa_spr.semester_credits_earned, 1) over (
+        partition by c.contact_id order by ay.academic_year asc
+    ) as prev_spr_semester_credits_earned,
+
     coalesce(
-        gpa.fall_cumulative_credits_earned,
+        gpa_fall.cumulative_credits_earned,
         /* prev spring */
-        lag(gpa.spr_cumulative_credits_earned, 1) over (
-            partition by c.sf_contact_id order by ay.academic_year asc
+        lag(gpa_spr.cumulative_credits_earned, 1) over (
+            partition by c.contact_id order by ay.academic_year asc
         ),
         /* prev fall */
-        lag(gpa.fall_cumulative_credits_earned, 1) over (
-            partition by c.sf_contact_id order by ay.academic_year asc
+        lag(gpa_fall.cumulative_credits_earned, 1) over (
+            partition by c.contact_id order by ay.academic_year asc
         )
     ) as fall_cumulative_credits_earned,
     coalesce(
-        gpa.spr_cumulative_credits_earned,
-        gpa.fall_cumulative_credits_earned,
+        gpa_spr.cumulative_credits_earned,
+        gpa_fall.cumulative_credits_earned,
         /* prev spring */
-        lag(gpa.spr_cumulative_credits_earned, 1) over (
-            partition by c.sf_contact_id order by ay.academic_year asc
+        lag(gpa_spr.cumulative_credits_earned, 1) over (
+            partition by c.contact_id order by ay.academic_year asc
         ),
         /* prev fall */
-        lag(gpa.fall_cumulative_credits_earned, 1) over (
-            partition by c.sf_contact_id order by ay.academic_year asc
+        lag(gpa_fall.cumulative_credits_earned, 1) over (
+            partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
-    lag(gpa.spr_semester_credits_earned, 1) over (
-        partition by c.sf_contact_id order by ay.academic_year asc
-    ) as prev_spr_semester_credits_earned,
 
     ln.comments as latest_as_comments,
     ln.next_steps as latest_as_next_steps,
@@ -376,35 +330,42 @@ select
     c.advising_provider,
 from {{ ref("int_kippadb__ktc_roster") }} as c
 cross join academic_years as ay
-left join
-    {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.sf_contact_id = ei.student
+left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
 left join
     {{ ref("base_kippadb__application") }}
     on c.contact_id = apps.applicant
     and apps.matriculation_decision = 'Matriculated (Intent to Enroll)'
     and apps.transfer_application = 0
     and apps.rn = 1
-left join app_rollup as ar on c.sf_contact_id = ar.sf_contact_id
+left join app_rollup as ar on c.contact_id = ar.contact_id
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cnr
-    on c.sf_contact_id = cnr.contact_id
+    on c.contact_id = cnr.contact_id
     and ay.academic_year = cnr.academic_year
 left join
-    semester_gpa_pivot as gpa
-    on c.sf_contact_id = gpa.sf_contact_id
-    and ay.academic_year = gpa.academic_year
+    semester_gpa as gpa_fall
+    on c.contact_id = gpa_fall.contact_id
+    and ay.academic_year = gpa_fall.academic_year
+    and gpa_fall.semester = 'Fall'
+    and gpa_fall.rn_semester = 1
+left join
+    semester_gpa as gpa_spr
+    on c.contact_id = gpa_spr.contact_id
+    and ay.academic_year = gpa_spr.academic_year
+    and gpa_spr.semester = 'Spring'
+    and gpa_spr.rn_semester = 1
 left join
     latest_note as ln
-    on c.sf_contact_id = ln.contact
+    on c.contact_id = ln.contact
     and ay.academic_year = ln.academic_year
     and ln.rn = 1
-left join finaid as fa on c.sf_contact_id = fa.contact_id and fa.rn_finaid = 1
+left join finaid as fa on c.contact_id = fa.contact_id and fa.rn_finaid = 1
 left join
     tier
-    on c.sf_contact_id = tier.contact
+    on c.contact_id = tier.contact
     and ay.academic_year = tier.academic_year
     and tier.rn = 1
-left join grad_plan as gp on c.sf_contact_id = gp.sf_contact_id and gp.rn = 1
+left join grad_plan as gp on c.contact_id = gp.contact_id and gp.rn = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
-    and c.sf_contact_id is not null
+    and c.contact_id is not null
