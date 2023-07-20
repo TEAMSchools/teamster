@@ -1,79 +1,99 @@
-{{ config(enabled=False) }}
 with
     boxes as (
         select
-            tb.observation_id,
-            tb.score_measurement_id,
-            tb.text_box_label as label,
-            tb.text_box_text as `value`,
-            tb.text_box_text,
+            observation_id,
+            measurement,
+            `key` as label,
+            `value` as `value`,
+            `value` as text_box_value,
             null as checkbox_value,
             'textbox' as `type`,
-        from whetstone.observations_scores_text_boxes_static as tb
+        from
+            {{
+                ref(
+                    "stg_schoolmint_grow__observations__observation_scores__text_boxes"
+                )
+            }}
 
         union all
 
         select
-            cc.observation_id,
-            cc.score_measurement_id,
-            cc.checkbox_label as label,
-            cast(cc.checkbox_value as string) as `value`,
-            null as text_box_text,
-            cast(cc.checkbox_value as numeric) as checkbox_value,
+            observation_id,
+            measurement,
+            label as label,
+            cast(`value` as string) as `value`,
+            null as text_box_value,
+            cast(`value` as int) as checkbox_value,
             'checkbox' as `type`,
-        from whetstone.observations_scores_checkboxes_static as cc
+        from
+            {{
+                ref(
+                    "stg_schoolmint_grow__observations__observation_scores__checkboxes"
+                )
+            }}
     ),
 
-    observation_scaffold as (
+    observations as (
         select
-            sr.df_employee_number,
-            sr.preferred_name,
-            sr.primary_site,
-            sr.primary_on_site_department as dayforce_department,
-            sr.grades_taught as dayforce_grade_team,
-            sr.primary_job as dayforce_role,
-            sr.legal_entity_name,
-            sr.is_active,
-            sr.primary_site_schoolid,
-            sr.manager_name,
-            sr.original_hire_date,
-            sr.primary_ethnicity as observee_ethnicity,
-            sr.gender as observee_gender,
-            sr.status,
-            sr.primary_site_school_level,
-            left(
-                sr.userprincipalname, charindex('@', sr.userprincipalname) - 1
-            ) as staff_username,
-            left(
-                sr.manager_userprincipalname,
-                charindex('@', sr.manager_userprincipalname) - 1
-            ) as manager_username,
+            o.observation_id,
+            o.rubric_name,
+            o.created,
+            o.observed_at,
+            o.observer_name,
+            o.observer_email,
+            o.score,
+            o.list_two_column_b as grows,
+            o.list_two_column_a as glows,
 
-            osr.gender as observer_gender,
-            osr.primary_ethnicity as observer_ethnicity,
+            tsr.employee_number,
+            tsr.preferred_name_lastfirst,
+            tsr.business_unit_home_name,
+            tsr.home_work_location_name,
+            tsr.home_work_location_grade_band,
+            tsr.home_work_location_powerschool_school_id,
+            tsr.department_home_name,
+            tsr.primary_grade_level_taught,
+            tsr.job_title,
+            tsr.report_to_preferred_name_lastfirst,
+            tsr.worker_original_hire_date,
+            tsr.assignment_status,
+            {# TODO #}
+            null as is_active,
+            null as observee_gender,
+            null as observee_ethnicity,
+            regexp_extract(tsr.user_principal_name, r'(\w+)@') as teacher_username,
+            regexp_extract(
+                tsr.report_to_user_principal_name, r'(\w+)@'
+            ) as observer_username,
 
-            wo.observation_id,
-            wo.observed_at,
-            wo.created,
-            wo.observer_name,
-            wo.observer_email,
-            wo.rubric_name,
-            wo.list_two_column_a as glows,
-            wo.list_two_column_b as grows,
-            wo.score,
-
+            {# TODO #}
+            null as observer_gender,
+            null as observer_ethnicity,
             rt.academic_year,
-            rt.time_per_name as reporting_term,
+            rt.code as reporting_term,
 
             row_number() over (
-                partition by sr.df_employee_number, wo.rubric_name
-                order by wo.observed_at desc
+                partition by o.rubric_name, o.teacher_id order by o.observed_at desc
             ) as rn_observation
-        from people.staff_crosswalk_static as sr
+        from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
-            whetstone.observations_clean as wo
-            on sr.df_employee_number = wo.teacher_internal_id
-            and wo.rubric_name in (
+            {{ ref("stg_schoolmint_grow__users") }} as ti on o.teacher_id = ti.user_id
+        inner join
+            {{ ref("base_people__staff_roster") }} as tsr
+            on ti.internal_id = safe_cast(tsr.employee_number as string)
+        inner join
+            {{ ref("stg_schoolmint_grow__users") }} as oi on o.observer_id = oi.user_id
+        left join
+            {{ ref("base_people__staff_roster") }} as osr
+            on oi.internal_id = safe_cast(osr.employee_number as string)
+        inner join
+            {{ ref("stg_reporting__terms") }} as rt
+            on cast(o.observed_at as date) between rt.start_date and rt.end_date
+            and rt.type = 'ETR'
+            and rt.school_id = 0
+        where
+            o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
+            and o.rubric_name in (
                 'Development Roadmap',
                 'Shadow Session',
                 'Assistant Principal PM Rubric',
@@ -87,109 +107,95 @@ with
                 'O3 Form v3',
                 'Extraordinary Focus Areas Ratings v.1'
             )
-        left join
-            people.staff_crosswalk_static as osr
-            on wo.observer_internal_id = osr.df_employee_number
-        inner join
-            reporting.reporting_terms as rt
-            on wo.observed_at between rt.start_date and rt.end_date
-            and rt.identifier = 'ETR'
-            and rt.schoolid = 0
-            and rt._fivetran_deleted = 0
-        where
-            ifnull(sr.termination_date, current_timestamp)
-            >= date({{ var("current_academic_year") }}, 7, 1)
     )
+
 select
     os.*,
 
-    wos.score_measurement_id,
-    wos.score_percentage,
+    oos.measurement as score_measurement_id,
+    oos.percentage as score_percentage,
     case
-        when wos.score_value_text = 'Yes'
+        oos.value_text
+        when 'Yes'
         then 3
-        when wos.score_value_text = 'Almost'
+        when 'Almost'
         then 2
-        when wos.score_value_text = 'No'
+        when 'No'
         then 1
-        when wos.score_value_text = 'On Track'
+        when 'On Track'
         then 3
-        when wos.score_value_text = 'Off Track'
+        when 'Off Track'
         then 1
-        else wos.score_value
+        else oos.value_score
     end as measure_value,
 
-    wm.name as measurement_name,
-    wm.scale_min as measurement_scale_min,
-    wm.scale_max as measurement_scale_max,
+    m.name as measurement_name,
+    m.scale_min as measurement_scale_min,
+    m.scale_max as measurement_scale_max,
+
+    if(b.type = 'checkbox', m.name || ' - ' || b.label, m.name) as measurement_label,
+
+    case
+        when os.rubric_name = 'School Leader Moments' and m.name like '%- type'
+        then
+            case
+                oos.value_score
+                when 1
+                then 'Observed'
+                when 2
+                then 'Co-Led/Planned'
+                when 3
+                then 'Led'
+            end
+        when b.type is not null
+        then b.value
+        else oos.value_text
+    end as score_value_text,
 
     max(
         case
-            when os.rubric_name != 'School Leader Moments'
-            then null
-            when wm.name not like '%- type'
-            then null
-            when wos.score_value = 1
-            then 'Observed'
-            when wos.score_value = 2
-            then 'Co-Led/Planned'
-            when wos.score_value = 3
-            then 'Led'
+            when os.rubric_name = 'School Leader Moments' and m.name like '%- type'
+            then
+                case
+                    oos.value_score
+                    when 1
+                    then 'Observed'
+                    when 2
+                    then 'Co-Led/Planned'
+                    when 3
+                    then 'Led'
+                end
         end
-    ) over (
-        partition by os.observation_id, ltrim(rtrim(replace(wm.name, '- type', '')))
-    ) as score_type,
-    case
-        when
-            os.rubric_name = 'School Leader Moments'
-            and wm.name like '%- type'
-            and wos.score_value = 1
-        then 'Observed'
-        when
-            os.rubric_name = 'School Leader Moments'
-            and wm.name like '%- type'
-            and wos.score_value = 2
-        then 'Co-Led/Planned'
-        when
-            os.rubric_name = 'School Leader Moments'
-            and wm.name like '%- type'
-            and wos.score_value = 3
-        then 'Led'
-        when b.type is not null
-        then b.value
-        else wos.score_value_text
-    end as score_value_text,
-    case
-        when b.type = 'checkbox' then wm.name + ' - ' + b.label else wm.name
-    end as measurement_label,
+    ) over (partition by os.observation_id, regexp_extract(m.name, r'(\w+)- type'))
+    as score_type,
+
     coalesce(
-        case
-            when
-                sum(b.checkbox_value) over (
-                    partition by os.observation_id, wos.score_measurement_id
-                )
-                > 0
-            then b.checkbox_value
-        end,
-        wos.score_value
+        if(
+            sum(b.checkbox_value) over (partition by os.observation_id, oos.measurement)
+            > 0,
+            b.checkbox_value,
+            null
+        ),
+        oos.value_score
     ) as score_value,
+
     case
         when b.type != 'checkbox'
         then null
         when
-            sum(b.checkbox_value) over (
-                partition by os.observation_id, b.score_measurement_id
-            )
+            sum(b.checkbox_value) over (partition by os.observation_id, oos.measurement)
             > 0
         then 1
         else 0
-    end as checkbox_observed
-from observation_scaffold as os
+    end as checkbox_observed,
+from observations as os
 left join
-    whetstone.observations_scores_static as wos
-    on os.observation_id = wos.observation_id
-left join whetstone.measurements as wm on wos.score_measurement_id = wm._id
+    {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as oos
+    on os.observation_id = oos.observation_id
+left join
+    {{ ref("stg_schoolmint_grow__measurements") }} as m
+    on oos.measurement = m.measurement_id
 left join
     boxes as b
-    on os.observation_id = b.observation_id
-    and wos.score_measurement_id = b.score_measurement_id
+    on oos.observation_id = b.observation_id
+    and oos.measurement = b.measurement
