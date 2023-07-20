@@ -1,3 +1,3 @@
 packages:
-  - local: ../deanslist
-  - local: ../powerschool
+  - local: ../packages/deanslist
+  - local: ../packages/powerschool
