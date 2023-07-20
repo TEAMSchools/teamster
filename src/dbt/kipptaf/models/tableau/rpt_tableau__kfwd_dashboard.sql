@@ -1,48 +1,21 @@
 {{ config(enabled=False) }}
 with
-    apps_rollup as (
+    app_rollup as (
         select
-            sf_contact_id,
+            applicant,
             max(is_eof) as is_eof_applicant,
             max(is_matriculated) as is_matriculated,
+            max(is_submitted_aa) as is_submitted_aa,
+            max(is_submitted_ba) as is_submitted_ba,
+            max(is_submitted_certificate) as is_submitted_certificate,
+            max(is_accepted_aa) as is_accepted_aa,
+            max(is_accepted_ba) as is_accepted_ba,
+            max(is_accepted_certificate) as is_accepted_certificate,
+
             sum(is_submitted) as n_submitted,
-            max(
-                case when is_submitted = 1 and is_college = 1 and is_2yr = 1 then 1 end
-            ) as is_submitted_aa,
-            max(
-                case when is_submitted = 1 and is_college = 1 and is_4yr = 1 then 1 end
-            ) as is_submitted_ba,
-            max(
-                case when is_submitted = 1 and is_cert = 1 then 1 end
-            ) as is_submitted_cert,
             sum(is_accepted) as n_accepted,
-            max(
-                case
-                    when
-                        is_submitted = 1
-                        and is_college = 1
-                        and is_2yr = 1
-                        and is_accepted = 1
-                    then 1
-                end
-            ) as is_accepted_aa,
-            max(
-                case
-                    when
-                        is_submitted = 1
-                        and is_college = 1
-                        and is_4yr = 1
-                        and is_accepted = 1
-                    then 1
-                end
-            ) as is_accepted_ba,
-            max(
-                case
-                    when is_submitted = 1 and is_cert = 1 and is_accepted = 1 then 1
-                end
-            ) as is_accepted_cert
         from {{ ref("base_kippadb__application") }}
-        group by sf_contact_id
+        group by applicant
     ),
 
     semester_gpa as (
@@ -404,11 +377,11 @@ left join
     {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.sf_contact_id = ei.student
 left join
     {{ ref("base_kippadb__application") }}
-    on c.sf_contact_id = apps.sf_contact_id
+    on c.contact_id = apps.applicant
     and apps.matriculation_decision = 'Matriculated (Intent to Enroll)'
     and apps.transfer_application = 0
     and apps.rn = 1
-left join apps_rollup as ar on c.sf_contact_id = ar.sf_contact_id
+left join app_rollup as ar on c.sf_contact_id = ar.sf_contact_id
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cnr
     on c.sf_contact_id = cnr.contact_id
