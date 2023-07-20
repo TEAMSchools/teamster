@@ -16,24 +16,23 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
 
 
-def compose_remote_file_regex(remote_file_regex, context: OpExecutionContext):
+def compose_remote_file_regex(regexp, context: OpExecutionContext):
     try:
         partitions_def = context.asset_partitions_def_for_output()
     except DagsterInvariantViolationError:
-        return remote_file_regex
+        return regexp
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
         return regex_pattern_replace(
-            pattern=remote_file_regex,
-            replacements=context.partition_key.keys_by_dimension,
+            pattern=regexp, replacements=context.partition_key.keys_by_dimension
         )
     else:
-        compiled_regex = re.compile(pattern=remote_file_regex)
+        compiled_regex = re.compile(pattern=regexp)
 
         pattern_keys = compiled_regex.groupindex.keys()
 
         return regex_pattern_replace(
-            pattern=remote_file_regex,
+            pattern=regexp,
             replacements={key: context.partition_key for key in pattern_keys},
         )
 
@@ -52,57 +51,58 @@ def build_sftp_asset(
     op_tags={},
     **kwargs,
 ):
+    ssh_resource_key = f"ssh_{source_system}"
+
+    asset_metadata = {
+        "remote_filepath": remote_filepath,
+        "remote_file_regex": remote_file_regex,
+        "archive_filepath": archive_filepath,
+    }
+
+    avro_schema = get_avro_record_schema(
+        name=asset_name, fields=asset_fields[asset_name]
+    )
+
     @asset(
-        name=asset_name,
-        key_prefix=[code_location, source_system],
-        metadata={
-            "remote_filepath": remote_filepath,
-            "remote_file_regex": remote_file_regex,
-            "archive_filepath": archive_filepath,
-        },
-        required_resource_keys={f"ssh_{source_system}"},
+        key=[code_location, source_system, asset_name],
+        metadata=asset_metadata,
+        required_resource_keys={ssh_resource_key},
         io_manager_key="gcs_avro_io",
         partitions_def=partitions_def,
         op_tags=op_tags,
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: OpExecutionContext):
-        ssh: SSHConfigurableResource = getattr(
-            context.resources, f"ssh_{source_system}"
-        )
-        asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
+        ssh: SSHConfigurableResource = getattr(context.resources, ssh_resource_key)
 
-        remote_filepath = asset_metadata["remote_filepath"]
-        archive_filepath = asset_metadata["archive_filepath"]
-        remote_file_regex = compose_remote_file_regex(
-            remote_file_regex=asset_metadata["remote_file_regex"], context=context
+        remote_file_regex_composed = compose_remote_file_regex(
+            regexp=remote_file_regex, context=context
         )
 
         # list files remote filepath
         conn = ssh.get_connection()
+
         with conn.open_sftp() as sftp_client:
             ls = sftp_client.listdir_attr(path=remote_filepath)
+
         conn.close()
 
         # find matching file for partition
         remote_file_regex_matches = [
             f.filename
             for f in ls
-            if re.match(pattern=remote_file_regex, string=f.filename) is not None
+            if re.match(pattern=remote_file_regex_composed, string=f.filename)
+            is not None
         ]
 
+        # exit if no matches
         if remote_file_regex_matches:
             remote_filename = remote_file_regex_matches[0]
         else:
-            return Output(
-                value=(
-                    [],
-                    get_avro_record_schema(
-                        name=asset_name, fields=asset_fields[asset_name]
-                    ),
-                ),
-                metadata={"records": 0},
+            context.log.warning(
+                f"Found no files matching: {remote_file_regex_composed}"
             )
+            return Output(value=([], avro_schema), metadata={"records": 0})
 
         # download file from sftp
         local_filepath = ssh.sftp_get(
@@ -125,14 +125,6 @@ def build_sftp_asset(
 
         df_records = df.to_dict(orient="records")
 
-        yield Output(
-            value=(
-                df_records,
-                get_avro_record_schema(
-                    name=asset_name, fields=asset_fields[asset_name]
-                ),
-            ),
-            metadata={"records": df.shape[0]},
-        )
+        yield Output(value=(df_records, avro_schema), metadata={"records": df.shape[0]})
 
     return _asset
