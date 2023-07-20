@@ -46,7 +46,7 @@ def build_wfm_asset(
         # TODO: delete after run successfully
         context.instance.delete_dynamic_partition(
             partitions_def_name=date_partitions_def.name,
-            partition_keys=[
+            partition_key=[
                 "2023-05-18|Current_SchedPeriod",
                 "2023-05-03|Previous_SchedPeriod",
             ],
