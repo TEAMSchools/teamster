@@ -3,6 +3,7 @@ from io import StringIO
 
 from dagster import (
     AssetsDefinition,
+    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
@@ -22,7 +23,7 @@ def build_wfm_asset(
     asset_name,
     code_location,
     source_system,
-    date_partitions_def,
+    date_partitions_def: DynamicPartitionsDefinition,
     symbolic_ids,
     hyperfind,
     op_tags={},
@@ -42,6 +43,15 @@ def build_wfm_asset(
         op_tags=op_tags,
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
+        # TODO: delete after run successfully
+        context.instance.delete_dynamic_partition(
+            partitions_def_name=date_partitions_def.name,
+            partition_keys=[
+                "2023-05-18|Current_SchedPeriod",
+                "2023-05-03|Previous_SchedPeriod",
+            ],
+        )
+
         asset = context.assets_def
         symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]
 

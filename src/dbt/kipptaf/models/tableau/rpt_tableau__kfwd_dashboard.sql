@@ -41,7 +41,7 @@ with
                     when is_submitted = 1 and is_cert = 1 and is_accepted = 1 then 1
                 end
             ) as is_accepted_cert
-        from apps
+        from {{ ref("base_kippadb__application") }}
         group by sf_contact_id
     ),
 
@@ -167,7 +167,7 @@ with
             row_number() over (
                 partition by student order by start_date desc
             ) as rn_matric
-        from alumni.enrollment
+        from {{ ref("stg_kippadb__enrollment") }}
         where status = 'Matriculated'
     ),
 
@@ -180,7 +180,7 @@ with
             ) as rn_finaid
         from matric as e
         inner join
-            alumni.subsequent_financial_aid_award as fa
+            {{ ref("stg_kippadb__subsequent_financial_aid_award") }} as fa
             on e.enrollment_id = fa.enrollment
             and fa.is_deleted = 0
             and fa.status = 'Offered'
@@ -193,7 +193,8 @@ with
             c.subject as grad_plan_year,
             row_number() over (partition by kt.sf_contact_id order by c.date desc) as rn
         from {{ ref("stg_kippadb__contact_note") }} as c
-        left join gabby.alumni.ktc_roster as kt on kt.sf_contact_id = c.contact
+        left join
+            {{ ref("int_kippadb__ktc_roster") }} as kt on kt.sf_contact_id = c.contact
         where c.subject like 'Grad Plan FY%'
     )
 
@@ -397,18 +398,19 @@ select
     gp.grad_plan_year as most_recent_grad_plan_year,
 
     c.advising_provider,
-from alumni.ktc_roster as c
+from {{ ref("int_kippadb__ktc_roster") }} as c
 cross join academic_years as ay
-left join alumni.enrollment_identifiers as ei on c.sf_contact_id = ei.student
 left join
-    apps
+    {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.sf_contact_id = ei.student
+left join
+    {{ ref("base_kippadb__application") }}
     on c.sf_contact_id = apps.sf_contact_id
     and apps.matriculation_decision = 'Matriculated (Intent to Enroll)'
     and apps.transfer_application = 0
     and apps.rn = 1
 left join apps_rollup as ar on c.sf_contact_id = ar.sf_contact_id
 left join
-    alumni.contact_note_rollup as cnr
+    {{ ref("int_kippadb__contact_note_rollup") }} as cnr
     on c.sf_contact_id = cnr.contact_id
     and ay.academic_year = cnr.academic_year
 left join
