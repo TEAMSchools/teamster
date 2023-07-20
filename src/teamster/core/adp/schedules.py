@@ -35,6 +35,15 @@ def build_dynamic_partition_schedule(
                 asset.partitions_def.get_partitions_def_for_dimension("symbolic_id")
             )
 
+            # TODO: delete after run successfully
+            context.instance.delete_dynamic_partition(
+                partitions_def_name=date_partition.name,
+                partition_keys=[
+                    "2023-05-18|Current_SchedPeriod",
+                    "2023-05-03|Previous_SchedPeriod",
+                ],
+            )
+
             for symbolic_id in symbolic_id_partition.get_partition_keys():
                 symbolic_period_record = adp_wfm.post(
                     endpoint="v1/commons/symbolicperiod/read",
