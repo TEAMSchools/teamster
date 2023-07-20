@@ -44,8 +44,11 @@ with
         #}
         from {{ ref("stg_kippadb__gpa") }}
         where
-            record_type_id
-            in (select id from alumni.record_type where name = 'Cumulative College')
+            record_type_id in (
+                select id
+                from {{ ref("stg_kippadb__record_type") }}
+                where name = 'Cumulative College'
+            )
     ),
 
     semester_gpa_unpivot as (
