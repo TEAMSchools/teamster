@@ -20,12 +20,10 @@ select
         true,
         false
     ) as is_certificate,
-
     if(app.match_type in ('Likely Plus', 'Target', 'Reach'), true, false) as is_ltr,
     if(app.starting_application_status = 'Wishlist', true, false) as is_wishlist,
     if(app.application_submission_status = 'Submitted', true, false) as is_submitted,
     if(app.application_status = 'Accepted', true, false) as is_accepted,
-
     if(app.application_admission_type = 'Early Action', true, false) as is_early_action,
     if(
         app.application_admission_type = 'Early Decision', true, false
@@ -35,7 +33,6 @@ select
         true,
         false
     ) as is_early_action_decision,
-
     if(
         app.honors_special_program_name = 'EOF'
         and app.honors_special_program_status in ('Applied', 'Accepted'),
@@ -48,7 +45,6 @@ select
         true,
         false
     ) as is_eof_accepted,
-
     if(
         app.matriculation_decision = 'Matriculated (Intent to Enroll)'
         and app.transfer_application = false,
