@@ -1,5 +1,5 @@
 select
-    id as id,
+    id,
     `name` as `name`,
     `description` as `description`,
     accountid as account_id,
@@ -173,7 +173,6 @@ select
     kca_kipp_id__c as kca_kipp_id,
     kipp_college_class__c as kipp_college_class,
     kipp_foundation_id__c as kipp_foundation_id,
-    kipp_hs_class__c as kipp_hs_class,
     kipp_hs_graduate__c as kipp_hs_graduate,
     kipp_ms_graduate__c as kipp_ms_graduate,
     kipp_region_name__c as kipp_region_name,
@@ -269,7 +268,6 @@ select
     salesforce_id__c as salesforce_id,
     sat_superscore__c as sat_superscore,
     school_sis_id__c as school_sis_id,
-    school_specific_id__c as school_specific_id,
     secondary_email__c as secondary_email,
     socio_emotional__c as socio_emotional,
     socio_emotional_status__c as socio_emotional_status,
@@ -284,5 +282,8 @@ select
     x2year_college_enrollments__c as x2year_college_enrollments,
     x8th_grade_promotion_date__c as x8th_grade_promotion_date,
     ytd_gpa__c as ytd_gpa,
+
+    safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
+    safe_cast(school_specific_id__c as int) as school_specific_id,
 from {{ source("kippadb", "contact") }} as c
 where not isdeleted

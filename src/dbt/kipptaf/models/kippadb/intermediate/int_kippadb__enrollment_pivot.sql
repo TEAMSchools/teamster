@@ -37,7 +37,7 @@ with
 
             if(
                 date(
-                    extract(year from c.actual_hs_graduation_date),
+                    extract(year from c.contact_actual_hs_graduation_date),
                     10,
                     31
                 ) between e.start_date and ifnull(
@@ -49,7 +49,7 @@ with
 
             0 as is_employment,
         from {{ ref("stg_kippadb__enrollment") }} as e
-        inner join {{ ref("stg_kippadb__contact") }} as c on e.student = c.id
+        inner join {{ ref("base_kippadb__contact") }} as c on e.student = c.contact_id
         where e.status != 'Did Not Enroll'
 
         union all

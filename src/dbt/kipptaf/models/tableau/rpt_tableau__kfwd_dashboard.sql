@@ -1,5 +1,10 @@
-{{ config(enabled=False) }}
 with
+    year_scaffold as (
+        select {{ var("current_academic_year") }} as academic_year
+        union distinct
+        select {{ var("current_academic_year") }} - 1 as academic_year
+    ),
+
     app_rollup as (
         select
             applicant,
@@ -12,8 +17,8 @@ with
             max(is_accepted_ba) as is_accepted_ba,
             max(is_accepted_certificate) as is_accepted_certificate,
 
-            sum(is_submitted) as n_submitted,
-            sum(is_accepted) as n_accepted,
+            sum(if(is_submitted, 1, 0)) as n_submitted,
+            sum(if(is_accepted, 1, 0)) as n_accepted,
         from {{ ref("base_kippadb__application") }}
         group by applicant
     ),
@@ -62,7 +67,7 @@ with
                         )
                     }}
                 order by `date` desc
-            ) as rn
+            ) as rn,
         from {{ ref("stg_kippadb__contact_note") }}
         where regexp_contains(`subject`, r'^AS\d')
     ),
@@ -85,7 +90,7 @@ with
                         )
                     }}
                 order by `date` desc
-            ) as rn
+            ) as rn,
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` like 'Tier [0-9]'
     ),
@@ -94,75 +99,79 @@ with
         select
             contact,
             `subject` as grad_plan_year,
-            row_number() over (partition by contact order by `date` desc) as rn
+            row_number() over (partition by contact order by `date` desc) as rn,
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` like 'Grad Plan FY%'
     ),
 
     matric as (
         select
-            student as contact_id,
-            id as enrollment_id,
+            id,
+            student,
+
             row_number() over (
-                partition by student order by start_date desc
-            ) as rn_matric
+                partition by student order by `start_date` desc
+            ) as rn_matric,
         from {{ ref("stg_kippadb__enrollment") }}
         where status = 'Matriculated'
     ),
 
     finaid as (
         select
-            e.contact_id,
+            e.student,
+
             fa.unmet_need,
+
             row_number() over (
-                partition by e.enrollment_id order by fa.offer_date desc
-            ) as rn_finaid
+                partition by e.id order by fa.offer_date desc
+            ) as rn_finaid,
         from matric as e
         inner join
             {{ ref("stg_kippadb__subsequent_financial_aid_award") }} as fa
-            on e.enrollment_id = fa.enrollment
-            and fa.is_deleted = 0
+            on e.id = fa.enrollment
             and fa.status = 'Offered'
         where e.rn_matric = 1
-    ),
+    )
 
 select
     c.contact_id,
     c.lastfirst as student_name,
     c.ktc_cohort,
-    c.is_kipp_ms_graduate,
-    c.is_kipp_hs_graduate,
-    c.expected_hs_graduation_date,
-    c.actual_hs_graduation_date,
-    c.expected_college_graduation_date,
-    c.actual_college_graduation_date,
-    c.current_kipp_student,
-    c.highest_act_score,
-    c.record_type_name,
-    c.counselor_name,
-    c.college_match_display_gpa,
-    c.current_college_cumulative_gpa,
-    c.kipp_region_name,
-    c.post_hs_simple_admin,
-    c.currently_enrolled_school,
-    c.latest_fafsa_date,
-    c.latest_state_financial_aid_app_date,
-    c.most_recent_iep_date,
-    c.latest_resume_date,
-    c.efc_from_fafsa,
-    c.ethnicity,
-    c.gender,
-    c.last_successful_contact_date,
-    c.last_successful_advisor_contact_date,
-    c.last_outreach_date,
-    c.contact_description,
-    c.high_school_graduated_from,
-    c.college_graduated_from,
-    c.current_college_semester_gpa,
-    c.sf_email as email,
-    c.sf_mobile_phone as mobile_phone,
-    c.middle_school_attended,
-    c.postsecondary_status,
+    c.record_type_name as record_type_name,
+    c.contact_owner_name as counselor_name,
+    c.contact_kipp_ms_graduate as is_kipp_ms_graduate,
+    c.contact_kipp_hs_graduate as is_kipp_hs_graduate,
+    c.contact_current_kipp_student as current_kipp_student,
+    c.contact_highest_act_score as highest_act_score,
+    c.contact_college_match_display_gpa as college_match_display_gpa,
+    c.contact_current_college_cumulative_gpa as current_college_cumulative_gpa,
+    c.contact_kipp_region_name as kipp_region_name,
+    c.contact_dep_post_hs_simple_admin as post_hs_simple_admin,
+    c.contact_currently_enrolled_school as currently_enrolled_school,
+    c.contact_efc_from_fafsa as efc_from_fafsa,
+    c.contact_ethnicity as ethnicity,
+    c.contact_gender as gender,
+    c.contact_description as contact_description,
+    c.contact_high_school_graduated_from as high_school_graduated_from,
+    c.contact_college_graduated_from as college_graduated_from,
+    c.contact_current_college_semester_gpa as current_college_semester_gpa,
+    c.contact_middle_school_attended as middle_school_attended,
+    c.contact_postsecondary_status as postsecondary_status,
+    c.contact_advising_provider as advising_provider,
+    c.contact_email as email,
+    c.contact_mobile_phone as mobile_phone,
+    c.contact_expected_hs_graduation as expected_hs_graduation_date,
+    c.contact_actual_hs_graduation_date as actual_hs_graduation_date,
+    c.contact_actual_college_graduation_date as actual_college_graduation_date,
+    c.contact_latest_fafsa_date as latest_fafsa_date,
+    c.contact_most_recent_iep_date as most_recent_iep_date,
+    c.contact_latest_state_financial_aid_app_date
+    as latest_state_financial_aid_app_date,
+    c.contact_expected_college_graduation as expected_college_graduation_date,
+    c.contact_latest_resume as latest_resume_date,
+    c.contact_last_successful_contact as last_successful_contact_date,
+    c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
+    c.contact_last_outreach as last_outreach_date,
 
     ay.academic_year,
 
@@ -198,17 +207,17 @@ select
     ei.cte_actual_end_date,
     ei.hs_account_name,
 
-    apps.application_name,
-    apps.application_account_type,
+    apps.name as application_name,
+    apps.account_type as application_account_type,
 
     ar.n_submitted,
     ar.is_submitted_aa,
     ar.is_submitted_ba,
-    ar.is_submitted_cert,
+    ar.is_submitted_certificate as is_submitted_cert,
     ar.n_accepted,
     ar.is_accepted_aa,
     ar.is_accepted_ba,
-    ar.is_accepted_cert,
+    ar.is_accepted_certificate as is_accepted_cert,
     ar.is_eof_applicant,
     ar.is_matriculated,
 
@@ -305,6 +314,7 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as fall_cumulative_credits_earned,
+
     coalesce(
         gpa_spr.cumulative_credits_earned,
         gpa_fall.cumulative_credits_earned,
@@ -321,36 +331,34 @@ select
     ln.comments as latest_as_comments,
     ln.next_steps as latest_as_next_steps,
 
-    fa.unmet_need as unmet_need,
-
     tier.tier,
 
     gp.grad_plan_year as most_recent_grad_plan_year,
 
-    c.advising_provider,
-from {{ ref("int_kippadb__ktc_roster") }} as c
-cross join academic_years as ay
+    fa.unmet_need as unmet_need,
+from {{ ref("int_kippadb__roster") }} as c
+cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
 left join
-    {{ ref("base_kippadb__application") }}
+    {{ ref("base_kippadb__application") }} as apps
     on c.contact_id = apps.applicant
     and apps.matriculation_decision = 'Matriculated (Intent to Enroll)'
-    and apps.transfer_application = 0
-    and apps.rn = 1
-left join app_rollup as ar on c.contact_id = ar.contact_id
+    and not apps.transfer_application
+    and apps.rn_app_enr = 1
+left join app_rollup as ar on c.contact_id = ar.applicant
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cnr
     on c.contact_id = cnr.contact_id
     and ay.academic_year = cnr.academic_year
 left join
     semester_gpa as gpa_fall
-    on c.contact_id = gpa_fall.contact_id
+    on c.contact_id = gpa_fall.student
     and ay.academic_year = gpa_fall.academic_year
     and gpa_fall.semester = 'Fall'
     and gpa_fall.rn_semester = 1
 left join
     semester_gpa as gpa_spr
-    on c.contact_id = gpa_spr.contact_id
+    on c.contact_id = gpa_spr.student
     and ay.academic_year = gpa_spr.academic_year
     and gpa_spr.semester = 'Spring'
     and gpa_spr.rn_semester = 1
@@ -359,13 +367,13 @@ left join
     on c.contact_id = ln.contact
     and ay.academic_year = ln.academic_year
     and ln.rn = 1
-left join finaid as fa on c.contact_id = fa.contact_id and fa.rn_finaid = 1
 left join
     tier
     on c.contact_id = tier.contact
     and ay.academic_year = tier.academic_year
     and tier.rn = 1
-left join grad_plan as gp on c.contact_id = gp.contact_id and gp.rn = 1
+left join grad_plan as gp on c.contact_id = gp.contact and gp.rn = 1
+left join finaid as fa on c.contact_id = fa.student and fa.rn_finaid = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
