@@ -9,7 +9,7 @@ from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 from . import assets
 
 
-def build_fivetran_async_asset_sensor(asset_defs, minimum_interval_seconds=None):
+def build_fivetran_sync_monitor_sensor(asset_defs, minimum_interval_seconds=None):
     @sensor(
         name="fivetran_async_asset_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -61,8 +61,8 @@ def build_fivetran_async_asset_sensor(asset_defs, minimum_interval_seconds=None)
     return _sensor
 
 
-fivetran_async_asset_sensor = build_fivetran_async_asset_sensor(asset_defs=assets)
+fivetran_sync_monitor_sensor = build_fivetran_sync_monitor_sensor(asset_defs=assets)
 
 __all__ = [
-    fivetran_async_asset_sensor,
+    fivetran_sync_monitor_sensor,
 ]
