@@ -1,4 +1,5 @@
 import json
+import re
 
 import pendulum
 from dagster import (
@@ -14,7 +15,8 @@ from . import assets
 
 
 @multi_asset_sensor(
-    monitored_assets=AssetSelection.assets(*assets), minimum_interval_seconds=(60 * 10)
+    monitored_assets=AssetSelection.assets(*assets),
+    # minimum_interval_seconds=(60 * 10),
 )
 def fivetran_async_asset_sensor(
     context: MultiAssetSensorEvaluationContext, fivetran: FivetranResource
@@ -29,9 +31,10 @@ def fivetran_async_asset_sensor(
     for asset_def in asset_defs:
         poll_start = pendulum.now()
 
-        connector_id = asset_def.node_def.name
-
-        initial_last_sync_completion = cursor.get(connector_id, 0)
+        connector_id = re.match(
+            pattern=r"fivetran_sync_(?P<connector_id>\w+)",
+            string=asset_def.node_def.name,
+        ).groupdict()["connector_id"]
 
         (
             curr_last_sync_completion,
@@ -40,12 +43,14 @@ def fivetran_async_asset_sensor(
         ) = fivetran.get_connector_sync_status(connector_id)
         context.log.info(f"Polled '{connector_id}'. Status: [{curr_sync_state}]")
 
+        curr_last_sync_completion_timestamp = curr_last_sync_completion.timestamp()
+
         if (
             curr_last_sync_succeeded
-            and curr_last_sync_completion > initial_last_sync_completion
+            and curr_last_sync_completion_timestamp > cursor.get(connector_id, 0)
         ):
             # ...  # materialize assets
-            cursor[connector_id] = curr_last_sync_completion.timestamp()
+            cursor[connector_id] = curr_last_sync_completion_timestamp
 
         now = pendulum.now()
         if now > poll_start.add(seconds=DEFAULT_POLL_INTERVAL):
