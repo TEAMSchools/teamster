@@ -6,8 +6,8 @@ select
     eligibility_benefit_type,
     eligibility_determination_reason,
     is_directly_certified,
-    total_balance,
-    total_positive_balance,
+    total_balance.double_value as total_balance,
+    total_positive_balance.double_value as total_positive_balance,
     total_negative_balance.double_value as total_negative_balance,
     parse_date('%m/%d/%Y', eligibility_start_date) as eligibility_start_date,
     parse_date('%m/%d/%Y', eligibility_end_date) as eligibility_end_date,
@@ -21,5 +21,5 @@ select
         when 3
         then 'P'
         else safe_cast(eligibility.long_value as string)
-    end as eligibility_name
+    end as eligibility_name,
 from {{ source("titan", "src_titan__person_data") }}
