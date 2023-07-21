@@ -104,6 +104,7 @@ defs = Definitions(
         *adp.sensors,
         *alchemer.sensors,
         *clever.sensors,
+        *fivetran.sensors,
         *google.sensors,
         *iready.sensors,
         *renlearn.sensors,
