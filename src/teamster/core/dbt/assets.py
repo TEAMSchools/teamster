@@ -63,7 +63,7 @@ def build_external_source_asset(
 
     @asset(
         key=[code_location, dbt_package_name, name],
-        non_argument_deps=[upstream_asset_key],
+        deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
     )
