@@ -1,7 +1,10 @@
+import json
+
 import pendulum
 from dagster import (
     AssetSelection,
     MultiAssetSensorEvaluationContext,
+    SensorResult,
     multi_asset_sensor,
 )
 from dagster_fivetran import FivetranResource
@@ -16,16 +19,19 @@ from . import assets
 def fivetran_async_asset_sensor(
     context: MultiAssetSensorEvaluationContext, fivetran: FivetranResource
 ):
+    cursor: dict = json.loads(context.cursor or "{}")
+
     asset_defs = set()
     for asset_key, asset_def in context.assets_defs_by_key.items():
         asset_defs.add(asset_def)
 
+    context.log.debug(asset_defs)
     for asset_def in asset_defs:
         poll_start = pendulum.now()
 
         connector_id = asset_def.node_def.name
 
-        initial_last_sync_completion = context.cursor.get(connector_id, 0)
+        initial_last_sync_completion = cursor.get(connector_id, 0)
 
         (
             curr_last_sync_completion,
@@ -39,7 +45,7 @@ def fivetran_async_asset_sensor(
             and curr_last_sync_completion > initial_last_sync_completion
         ):
             # ...  # materialize assets
-            context.cursor[connector_id] = curr_last_sync_completion.timestamp()
+            cursor[connector_id] = curr_last_sync_completion.timestamp()
 
         now = pendulum.now()
         if now > poll_start.add(seconds=DEFAULT_POLL_INTERVAL):
@@ -47,6 +53,8 @@ def fivetran_async_asset_sensor(
                 f"Sync for connector '{connector_id}' timed out after "
                 f"{now - poll_start}."
             )
+
+    return SensorResult(cursor=cursor)
 
 
 __all__ = [
