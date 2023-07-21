@@ -2,9 +2,11 @@ import json
 from typing import Any, Mapping
 
 from dagster import AssetExecutionContext, AssetKey, Failure, Output, asset
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource
+from dagster_dbt import DagsterDbtTranslator  # , DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_gcp import BigQueryResource
+
+from teamster.core.dbt.resources import DbtCliResource
 
 
 def get_custom_dagster_dbt_translator(code_location):
@@ -42,20 +44,6 @@ def build_dbt_assets(code_location):
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        context.log.debug(
-            f"selected_output_names: {len(context.selected_output_names)}"
-        )
-        context.log.debug(f"assets_def.keys: {len(context.assets_def.keys)}")
-        context.log.debug(
-            (
-                "assets_def.node_keys_by_output_name: "
-                + str(len(context.assets_def.node_keys_by_output_name))
-            )
-        )
-
-        context.log.debug(context.selected_output_names)
-        context.log.debug(context.assets_def.keys)
-        context.log.debug(context.assets_def.node_keys_by_output_name)
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
         yield from dbt_build.stream()
