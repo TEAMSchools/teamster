@@ -42,6 +42,12 @@ def build_dbt_assets(code_location):
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+        context.log.debug(
+            f"selected_output_names: {len(context.selected_output_names)}"
+        )
+        context.log.debug(f"assets_def.keys: {len(context.assets_def.keys)}")
+        context.log.debug(context.selected_output_names)
+        context.log.debug(context.assets_def.keys)
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
         yield from dbt_build.stream()

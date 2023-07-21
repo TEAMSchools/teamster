@@ -1,4 +1,4 @@
-from dagster import AssetSelection, define_asset_job
+from dagster import AssetSelection, define_asset_job, job
 
 from teamster.kipptaf import CODE_LOCATION, fivetran
 
@@ -14,3 +14,8 @@ for asset in fivetran.assets:
             selection=AssetSelection.keys(*list(asset.keys)),
         )
     )
+
+
+@job
+def _job():
+    ...
