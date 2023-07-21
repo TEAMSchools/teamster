@@ -40,13 +40,9 @@ def build_dbt_assets(code_location):
     with open(file=f"src/dbt/{code_location}/target/manifest.json") as fp:
         manifest = json.load(fp=fp)
 
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        dbt_build = dbt_cli.cli(
-            args=["build"],
-            dagster_dbt_translator=dagster_dbt_translator,
-            context=context,
-        )
+        dbt_build = dbt_cli.cli(args=["build"], context=context)
 
         yield from dbt_build.stream()
 
