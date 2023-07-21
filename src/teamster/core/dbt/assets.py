@@ -46,8 +46,16 @@ def build_dbt_assets(code_location):
             f"selected_output_names: {len(context.selected_output_names)}"
         )
         context.log.debug(f"assets_def.keys: {len(context.assets_def.keys)}")
+        context.log.debug(
+            (
+                "assets_def.node_keys_by_output_name: "
+                + str(len(context.assets_def.node_keys_by_output_name))
+            )
+        )
+
         context.log.debug(context.selected_output_names)
         context.log.debug(context.assets_def.keys)
+        context.log.debug(context.assets_def.node_keys_by_output_name)
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
         yield from dbt_build.stream()
