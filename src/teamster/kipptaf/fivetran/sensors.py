@@ -21,7 +21,7 @@ from . import assets
 def fivetran_async_asset_sensor(
     context: MultiAssetSensorEvaluationContext, fivetran: FivetranResource
 ):
-    cursor: dict = json.loads(context.cursor or "{}")
+    cursor: dict = json.loads(s=(context.cursor or "{}"))
 
     asset_defs = set()
     for asset_key, asset_def in context.assets_defs_by_key.items():
@@ -59,7 +59,7 @@ def fivetran_async_asset_sensor(
                 f"{now - poll_start}."
             )
 
-    return SensorResult(cursor=cursor)
+    return SensorResult(cursor=json.dumps(obj=cursor))
 
 
 __all__ = [
