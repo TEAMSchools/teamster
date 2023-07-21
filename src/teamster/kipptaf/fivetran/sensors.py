@@ -2,7 +2,7 @@ import json
 import re
 
 import pendulum
-from dagster import AssetSelection, SensorEvaluationContext, SensorResult, sensor
+from dagster import SensorEvaluationContext, SensorResult, sensor
 from dagster_fivetran import FivetranResource
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 
@@ -12,7 +12,6 @@ from . import assets
 def build_fivetran_async_asset_sensor(asset_defs, minimum_interval_seconds=None):
     @sensor(
         name="fivetran_async_asset_sensor",
-        asset_selection=AssetSelection.assets(*asset_defs),
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, fivetran: FivetranResource):
@@ -45,7 +44,9 @@ def build_fivetran_async_asset_sensor(asset_defs, minimum_interval_seconds=None)
                 curr_last_sync_succeeded
                 and curr_last_sync_completion_timestamp > cursor.get(connector_id, 0)
             ):
-                # ...  # materialize assets
+                # TODO: materialize assets
+                ...
+
                 cursor[connector_id] = curr_last_sync_completion_timestamp
 
             now = pendulum.now()
