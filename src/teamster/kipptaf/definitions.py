@@ -6,7 +6,7 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_airbyte import AirbyteCloudResource
-from dagster_dbt import DbtCli
+from dagster_dbt import DbtCliResource
 from dagster_fivetran import FivetranResource
 from dagster_gcp import (
     BigQueryResource,
@@ -117,7 +117,7 @@ defs = Definitions(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
-        "dbt_cli": DbtCli(project_dir=f"/root/app/src/dbt/{CODE_LOCATION}"),
+        "dbt_cli": DbtCliResource(project_dir=f"/root/app/src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
