@@ -1,44 +1,15 @@
 import json
-from typing import Any, Mapping
 
-from dagster import AssetExecutionContext, AssetKey, Failure, Output, asset
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource
+from dagster import AssetExecutionContext, Failure, Output, asset
+from dagster_dbt import DbtCli
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_gcp import BigQueryResource
 
 
-def build_dbt_assets(code_location):
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-            node_info = dbt_resource_props
-
-            dagster_metadata = node_info.get("meta", {}).get("dagster", {})
-
-            asset_key_config = dagster_metadata.get("asset_key", [])
-
-            if asset_key_config:
-                return AssetKey(asset_key_config)
-
-            if node_info["resource_type"] == "source":
-                components = [node_info["source_name"], node_info["name"]]
-            else:
-                configured_schema = node_info["config"].get("schema")
-                if configured_schema is not None:
-                    components = [configured_schema, node_info["name"]]
-                else:
-                    components = [node_info["name"]]
-
-            components.insert(0, code_location)
-
-            return AssetKey(components)
-
-    with open(file=f"src/dbt/{code_location}/target/manifest.json") as f:
-        manifest = json.load(f)
-
-    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomDagsterDbtTranslator)
-    def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        dbt_build = dbt_cli.cli(args=["build"], context=context)
+def build_dbt_assets(manifest):
+    @dbt_assets(manifest=manifest)
+    def _assets(context: AssetExecutionContext, dbt_cli: DbtCli):
+        dbt_build = dbt_cli.cli(args=["build"], manifest=manifest, context=context)
 
         yield from dbt_build.stream()
 
@@ -46,21 +17,21 @@ def build_dbt_assets(code_location):
 
 
 def build_external_source_asset(
-    code_location, name, dbt_package_name, upstream_asset_key, group_name
+    code_location,
+    name,
+    dbt_package_name,
+    upstream_asset_key,
+    group_name,
+    manifest,
 ):
-    with open(file=f"src/dbt/{code_location}/target/manifest.json") as f:
-        manifest = json.load(f)
-
     @asset(
         key=[code_location, dbt_package_name, name],
-        deps=[upstream_asset_key],
+        non_argument_deps=[upstream_asset_key],
         compute_kind="dbt",
         group_name=group_name,
     )
     def _asset(
-        context: AssetExecutionContext,
-        dbt_cli: DbtCliResource,
-        db_bigquery: BigQueryResource,
+        context: AssetExecutionContext, dbt_cli: DbtCli, db_bigquery: BigQueryResource
     ):
         dataset_name = f"{code_location}_{dbt_package_name}"
 

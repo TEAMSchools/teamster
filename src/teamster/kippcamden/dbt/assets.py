@@ -1,7 +1,44 @@
+import json
+
+from dagster import AssetKey
+from dagster_dbt import DbtManifest
+
 from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
 from teamster.kippcamden import CODE_LOCATION, deanslist, edplan, powerschool, titan
 
-dbt_assets = build_dbt_assets(code_location=CODE_LOCATION)
+
+class CustomizedDbtManifest(DbtManifest):
+    @classmethod
+    def node_info_to_asset_key(cls, node_info):
+        dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+
+        asset_key_config = dagster_metadata.get("asset_key", [])
+
+        if asset_key_config:
+            return AssetKey(asset_key_config)
+
+        components = [CODE_LOCATION]
+
+        if node_info["resource_type"] == "source":
+            components.extend([node_info["source_name"], node_info["name"]])
+        else:
+            configured_schema = node_info["config"].get("schema")
+            if configured_schema is not None:
+                components.extend([configured_schema, node_info["name"]])
+            else:
+                components.extend([node_info["name"]])
+
+        return AssetKey(components)
+
+
+manifest_path = f"src/dbt/{CODE_LOCATION}/target/manifest.json"
+
+with open(file=manifest_path) as f:
+    manifest_json = json.load(f)
+
+manifest = CustomizedDbtManifest.read(path=manifest_path)
+
+dbt_assets = build_dbt_assets(manifest=manifest)
 
 external_source_assets = [
     build_external_source_asset(
@@ -10,6 +47,7 @@ external_source_assets = [
         dbt_package_name=asset.key.path[1],
         upstream_asset_key=asset.key,
         group_name=asset.key.path[1],
+        manifest=manifest,
     )
     for asset in [*powerschool.assets, *deanslist.assets, *edplan.assets, *titan.assets]
 ]
