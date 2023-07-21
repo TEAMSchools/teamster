@@ -11,11 +11,11 @@ on:
       - .dagster/dagster-cloud-kippcamden.yaml
       - src/teamster/core/**
       - src/teamster/kippcamden/**
-      - src/dbt/deanslist/**
-      - src/dbt/edplan/**
-      - src/dbt/powerschool/**
+      - src/dbt/packages/deanslist/**
+      - src/dbt/packages/edplan/**
+      - src/dbt/packages/powerschool/**
+      - src/dbt/packages/titan/**
       - src/dbt/teamster_utils/**
-      - src/dbt/titan/**
       - src/dbt/kippcamden/**
 
 env:
