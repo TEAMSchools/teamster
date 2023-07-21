@@ -1,5 +1,5 @@
 # forked from dagster_fivetran/ops.py
-from typing import Any, Mapping
+from typing import Any
 
 from dagster import In, Nothing, Out, Output, op
 from dagster_fivetran import FivetranResource
@@ -9,7 +9,7 @@ from dagster_fivetran.ops import FivetranResyncConfig, SyncConfig
 @op(
     ins={"start_after": In(Nothing)},
     out=Out(
-        Mapping[str, Any],
+        dict,
         description=(
             "Parsed json data representing the connector details API response after "
             "the sync is started."
@@ -26,7 +26,7 @@ def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
 @op(
     ins={"start_after": In(Nothing)},
     out=Out(
-        Mapping[str, Any],
+        dict,
         description=(
             "Parsed json data representing the connector details API response after "
             "the sync is started."

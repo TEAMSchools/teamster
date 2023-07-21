@@ -6,7 +6,6 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_airbyte import AirbyteCloudResource
-from dagster_dbt import DbtCliResource
 from dagster_fivetran import FivetranResource
 from dagster_gcp import (
     BigQueryResource,
@@ -21,6 +20,9 @@ from teamster.core.adp.resources import (
 )
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
+
+# from dagster_dbt import DbtCliResource
+from teamster.core.dbt.resources import DbtCliResource
 from teamster.core.google.forms.resources import GoogleFormsResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.google.sheets.resources import GoogleSheetsResource
