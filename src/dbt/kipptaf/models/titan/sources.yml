@@ -19,13 +19,13 @@ sources:
               - kippnewark
               - titan
               - stg_titan__income_form_data
-  # - name: kippcamden_titan
-  #   tables:
-  #     - name: stg_titan__person_data
-  #       meta:
-  #         dagster:
-  #           group: titan
-  #           asset_key:
-  #             - kippcamden
-  #             - titan
-  #             - stg_titan__person_data
+  - name: kippcamden_titan
+    tables:
+      - name: stg_titan__person_data
+        meta:
+          dagster:
+            group: titan
+            asset_key:
+              - kippcamden
+              - titan
+              - stg_titan__person_data

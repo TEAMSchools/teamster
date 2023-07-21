@@ -46,5 +46,3 @@ models:
     staging:
       stg_titan__income_form_data:
         +enabled: False
-      stg_titan__person_data:
-        +enabled: False
