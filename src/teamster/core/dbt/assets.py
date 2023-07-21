@@ -2,11 +2,9 @@ import json
 from typing import Any, Mapping
 
 from dagster import AssetExecutionContext, AssetKey, Failure, Output, asset
-from dagster_dbt import DagsterDbtTranslator  # , DbtCliResource
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_gcp import BigQueryResource
-
-from teamster.core.dbt.resources import DbtCliResource
 
 
 def get_custom_dagster_dbt_translator(code_location):
