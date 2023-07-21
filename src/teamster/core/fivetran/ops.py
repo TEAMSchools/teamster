@@ -17,7 +17,7 @@ from dagster_fivetran.ops import FivetranResyncConfig, SyncConfig
     ),
     tags={"kind": "fivetran"},
 )
-def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
+def fivetran_start_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
     fivetran_output = fivetran.start_sync(connector_id=config.connector_id)
 
     yield Output(fivetran_output)
@@ -34,7 +34,7 @@ def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
     ),
     tags={"kind": "fivetran"},
 )
-def fivetran_resync_op(
+def fivetran_start_resync_op(
     config: FivetranResyncConfig,
     fivetran: FivetranResource,
 ) -> Any:
