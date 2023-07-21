@@ -87,7 +87,6 @@ def build_external_source_asset(
             ],
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
-            context=context,
         )
 
         for event in dbt_run_operation.stream_raw_events():
