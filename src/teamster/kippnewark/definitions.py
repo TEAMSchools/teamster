@@ -5,8 +5,7 @@ from dagster import (
     config_from_files,
     load_assets_from_modules,
 )
-
-# from dagster_dbt import DbtCliResource
+from dagster_dbt import DbtCliResource
 from dagster_gcp import (
     BigQueryResource,
     ConfigurablePickledObjectGCSIOManager,
@@ -14,7 +13,6 @@ from dagster_gcp import (
 )
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.dbt.resources import DbtCliResource
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import (
