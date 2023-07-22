@@ -72,12 +72,13 @@ def build_fivetran_sync_monitor_sensor(
                 and curr_last_sync_completion_timestamp > last_update.timestamp()
             ):
                 # get fivetran_audit table
-                with db_bigquery.get_client() as bq:
-                    query_job = bq.query(
-                        query=render_fivetran_audit_query(
-                            dataset=connector_name, done=last_update.to_iso8601_string()
-                        )
+                bq = next(db_bigquery)
+
+                query_job = bq.query(
+                    query=render_fivetran_audit_query(
+                        dataset=connector_name, done=last_update.to_iso8601_string()
                     )
+                )
 
                 for row in query_job.result():
                     asset_keys.append(
