@@ -93,7 +93,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         cursor_timestamp = float(partition_key_split[1])
 
         date_submitted = pendulum.from_timestamp(
-            cursor_timestamp, tz="US/Eastern"
+            cursor_timestamp, tz="America/New_York"
         ).to_datetime_string()
 
         if cursor_timestamp == 0:
