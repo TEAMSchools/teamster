@@ -1,0 +1,6 @@
+connector_name: illuminate_standards
+connector_id: jinx_credulous
+group_name: illuminate
+destination_tables:
+  - standards
+  - subjects

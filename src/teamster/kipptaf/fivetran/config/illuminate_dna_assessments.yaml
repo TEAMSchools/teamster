@@ -1,0 +1,16 @@
+connector_name: illuminate_dna_assessments
+connector_id: jinx_credulous
+group_name: illuminate
+destination_tables:
+  - assessment_grade_levels
+  - assessment_standards
+  - assessments
+  - assessments_reporting_groups
+  - field_standards
+  - fields
+  - fields_reporting_groups
+  - performance_band_sets
+  - performance_bands
+  - reporting_groups
+  - students_assessments
+  - tags

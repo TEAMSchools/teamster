@@ -1,0 +1,8 @@
+connector_name: illuminate_public
+connector_id: jinx_credulous
+group_name: illuminate
+destination_tables:
+  - grade_levels
+  - student_session_aff
+  - students
+  - users
