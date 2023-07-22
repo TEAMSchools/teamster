@@ -2,4 +2,4 @@ assets:
   - asset_name: person_data
     remote_filepath: .
     remote_file_regex: 'persondata(?P<fiscal_year>\d{4})\.csv'
-    partition_start_date: 2023-07-01
+    partition_start_date: 2020-07-01

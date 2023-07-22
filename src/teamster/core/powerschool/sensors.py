@@ -16,7 +16,7 @@ from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
-def get_asset_count(asset, db, window_start):
+def get_asset_count(asset: AssetsDefinition, db, window_start):
     partition_column = asset.metadata_by_key[asset.key]["partition_column"]
     window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
@@ -24,7 +24,7 @@ def get_asset_count(asset, db, window_start):
         text=" ".join(
             [
                 "SELECT COUNT(*)",
-                f"FROM {asset.asset_key.path[-1]}",
+                f"FROM {asset.key.path[-1]}",
                 f"WHERE {partition_column} >=",
                 f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
             ]
