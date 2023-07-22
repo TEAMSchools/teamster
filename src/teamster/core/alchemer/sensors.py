@@ -32,7 +32,7 @@ def build_survey_metadata_asset_sensor(
         asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(context: SensorEvaluationContext, alchemer: AlchemerResource):
-        now = pendulum.now(tz="US/Eastern").start_of("minute")
+        now = pendulum.now(tz="America/New_York").start_of("minute")
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
@@ -49,7 +49,7 @@ def build_survey_metadata_asset_sensor(
             modified_on = pendulum.from_format(
                 string=survey["modified_on"],
                 fmt="YYYY-MM-DD HH:mm:ss",
-                tz="US/Eastern",
+                tz="America/New_York",
             )
 
             survey_cursor_timestamp = cursor.get(survey_id)
@@ -61,7 +61,7 @@ def build_survey_metadata_asset_sensor(
                 is_run_request = True
                 context.log.info("INITIAL RUN")
             elif modified_on > pendulum.from_timestamp(
-                timestamp=survey_cursor_timestamp, tz="US/Eastern"
+                timestamp=survey_cursor_timestamp, tz="America/New_York"
             ):
                 is_run_request = True
                 context.log.info(f"MODIFIED: {modified_on}")
@@ -119,7 +119,9 @@ def build_survey_response_asset_sensor(
         response is submitted (even those submitted via the API) and when the data is
         available via the API can be upwards of 5 minutes.
         """
-        now = pendulum.now(tz="US/Eastern").subtract(minutes=15).start_of("minute")
+        now = (
+            pendulum.now(tz="America/New_York").subtract(minutes=15).start_of("minute")
+        )
 
         try:
             surveys = alchemer._client.survey.list()
@@ -148,7 +150,7 @@ def build_survey_response_asset_sensor(
                     survey = alchemer._client.survey.get(id=survey_id)
 
                     date_submitted = pendulum.from_timestamp(
-                        timestamp=survey_cursor_timestamp, tz="US/Eastern"
+                        timestamp=survey_cursor_timestamp, tz="America/New_York"
                     )
 
                     survey_response_data = survey.response.filter(

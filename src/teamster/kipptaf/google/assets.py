@@ -2,8 +2,7 @@ from dagster import StaticPartitionsDefinition, config_from_files
 
 from teamster.core.google.forms.assets import build_google_forms_assets
 from teamster.core.google.sheets.assets import build_gsheet_asset
-
-from .. import CODE_LOCATION
+from teamster.kipptaf import CODE_LOCATION
 
 FORM_IDS = [
     "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",

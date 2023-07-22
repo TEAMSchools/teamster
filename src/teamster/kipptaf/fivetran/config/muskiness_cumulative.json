@@ -1,0 +1,11 @@
+{
+  "group_name": "instagram_business",
+  "connector_id": "muskiness_cumulative",
+  "destination_tables": [
+    "instagram_business.media_history",
+    "instagram_business.media_insights",
+    "instagram_business.user_history",
+    "instagram_business.user_insights",
+    "instagram_business.user_lifetime_insights"
+  ]
+}

@@ -15,5 +15,5 @@ class AlchemerResource(ConfigurableResource):
             api_token=self.api_token,
             api_token_secret=self.api_token_secret,
             api_version=self.api_version,
-            time_zone="US/Eastern",  # determined by Alchemer
+            time_zone="America/New_York",  # determined by Alchemer
         )

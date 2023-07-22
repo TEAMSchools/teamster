@@ -142,7 +142,7 @@ def test_schema():
         check_schema(records=survey.campaign.list(), endpoint_name="survey_campaign")
 
         if int(survey.id) in FILTER_SURVEY_IDS:
-            start_date = pendulum.now(tz="US/Eastern").subtract(days=1)
+            start_date = pendulum.now(tz="America/New_York").subtract(days=1)
 
             survey_response = survey.response.filter(
                 "date_submitted", ">=", start_date.to_datetime_string()

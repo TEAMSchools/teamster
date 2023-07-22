@@ -1,19 +1,29 @@
-import json
 import pathlib
 
-from dagster_fivetran import build_fivetran_assets
+import yaml
 
+from teamster.core.fivetran.assets import build_fivetran_asset
 from teamster.kipptaf import CODE_LOCATION
 
-schema_path = pathlib.Path(__file__).parent / "schema"
+config_path = pathlib.Path(__file__).parent / "config"
 
-assets = []
-for schema_file in schema_path.glob("*.json"):
-    with schema_file.open(mode="r") as fp:
-        kwargs = json.load(fp=fp)
+__all__ = []
 
-    assets.extend(build_fivetran_assets(asset_key_prefix=[CODE_LOCATION], **kwargs))
+for config_file in config_path.glob("*.yaml"):
+    config = yaml.safe_load(config_file.read_text())
 
-__all__ = [
-    *assets,
-]
+    connector_name = config["connector_name"]
+    destination_tables = config["destination_tables"]
+
+    for name in destination_tables:
+        __all__.append(
+            build_fivetran_asset(
+                name=name,
+                code_location=CODE_LOCATION,
+                connector_name=connector_name,
+                connector_id=config["connector_id"],
+                group_name=config.get("group_name", connector_name),
+            )
+        )
+
+print()
