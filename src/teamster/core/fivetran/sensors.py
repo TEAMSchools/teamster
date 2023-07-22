@@ -10,14 +10,12 @@ from dagster import (
     SourceAsset,
     sensor,
 )
-
-# from dagster_fivetran import FivetranResource
+from dagster_fivetran import FivetranResource
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
+from dagster_gcp import BigQueryResource
 
 from teamster.core.utils.jobs import asset_observation_job
 from teamster.core.utils.ops import ObservationOpConfig
-
-# from dagster_gcp import BigQueryResource
 
 
 def render_fivetran_audit_query(dataset, done):
@@ -40,14 +38,14 @@ def build_fivetran_sync_monitor_sensor(
         name=f"{code_location}_fivetran_async_asset_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         job=asset_observation_job,
-        required_resource_keys={"fivetran", "db_bigquery"},
     )
     def _sensor(
         context: SensorEvaluationContext,
-        # fivetran: FivetranResource,
-        # db_bigquery: BigQueryResource,
+        fivetran: FivetranResource,
+        db_bigquery: BigQueryResource,
     ):
         cursor: dict = json.loads(s=(context.cursor or "{}"))
+        bq = next(db_bigquery)
 
         asset_keys = []
         for connector_id, connector_name in connectors.items():
@@ -59,7 +57,7 @@ def build_fivetran_sync_monitor_sensor(
                 curr_last_sync_completion,
                 curr_last_sync_succeeded,
                 curr_sync_state,
-            ) = context.resources.fivetran.get_connector_sync_status(connector_id)
+            ) = fivetran.get_connector_sync_status(connector_id)
 
             context.log.info(
                 (
@@ -75,8 +73,6 @@ def build_fivetran_sync_monitor_sensor(
                 and curr_last_sync_completion_timestamp > last_update.timestamp()
             ):
                 # get fivetran_audit table
-                bq = next(context.resources.db_bigquery)
-
                 query_job = bq.query(
                     query=render_fivetran_audit_query(
                         dataset=connector_name, done=last_update.to_iso8601_string()
