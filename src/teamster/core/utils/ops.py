@@ -2,7 +2,7 @@ from dagster import AssetObservation, Config, OpExecutionContext, op
 
 
 class ObservationOpConfig(Config):
-    asset_keys: list[str]
+    asset_keys: list
 
 
 @op
