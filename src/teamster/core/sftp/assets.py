@@ -1,3 +1,4 @@
+import os
 import re
 import zipfile
 
@@ -117,6 +118,12 @@ def build_sftp_asset(
                 zf.extract(member=archive_filepath, path="./data")
 
             local_filepath = f"./data/{archive_filepath}"
+
+        # exit if file is empty
+        if os.path.getsize(local_filepath) == 0:
+            context.log.warning(f"File is empty: {local_filepath}")
+            yield Output(value=([{}], avro_schema), metadata={"records": 0})
+            return
 
         # load file into pandas and prep for output
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
