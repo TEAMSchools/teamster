@@ -627,3 +627,11 @@ sources:
               - kippmiami
               - powerschool
               - int_powerschool__gradescaleitem_lookup
+      - name: int_powerschool__gpa_cumulative
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__gpa_cumulative
