@@ -3,6 +3,8 @@ with
         select
             enr.cc_studentid,
             enr.cc_abs_sectionid,
+            enr.cc_yearid,
+            enr.cc_academic_year,
             enr.cc_abs_termid,
             enr.cc_dateenrolled,
             enr.cc_dateleft,
@@ -27,7 +29,6 @@ with
                 else enr.courses_gradescaleid
             end as gradescaleid_unweighted,
 
-            tb.yearid,
             tb.storecode,
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
@@ -57,6 +58,8 @@ with
         select
             te.cc_studentid,
             te.cc_schoolid,
+            te.cc_yearid,
+            te.cc_academic_year,
             te.cc_dateenrolled,
             te.cc_dateleft,
             te.cc_abs_sectionid,
@@ -67,7 +70,6 @@ with
             te.courses_credit_hours,
             te.is_dropped_section,
             te.gradescaleid_unweighted,
-            te.yearid,
             te.storecode,
             te.termbin_start_date,
             te.termbin_end_date,
@@ -138,7 +140,7 @@ with
 
             row_number() over (
                 partition by
-                    te.cc_studentid, te.cc_course_number, te.yearid, te.storecode
+                    te.cc_studentid, te.cc_course_number, te.cc_yearid, te.storecode
                 order by
                     sg.percent desc,
                     te.is_dropped_section desc,
@@ -172,6 +174,8 @@ with
         select
             cc_studentid,
             cc_schoolid,
+            cc_yearid,
+            cc_academic_year,
             cc_dateenrolled,
             cc_dateleft,
             cc_abs_sectionid,
@@ -182,7 +186,6 @@ with
             courses_credit_hours,
             is_dropped_section,
             gradescaleid_unweighted,
-            yearid,
             storecode,
             termbin_start_date,
             termbin_end_date,
@@ -213,10 +216,10 @@ with
             coalesce(sg_grade_points, fg_grade_points) as term_grade_points,
 
             sum(term_weighted_points_possible) over (
-                partition by cc_course_number, cc_studentid, yearid
+                partition by cc_course_number, cc_studentid, cc_yearid
             ) as y1_weighted_points_possible,
             sum(term_weighted_points_possible) over (
-                partition by cc_course_number, cc_studentid, yearid
+                partition by cc_course_number, cc_studentid, cc_yearid
                 order by termbin_end_date asc
             ) as y1_weighted_points_possible_running,
         from enr_grades
@@ -227,6 +230,8 @@ with
         select
             cc_studentid,
             cc_schoolid,
+            cc_yearid,
+            cc_academic_year,
             cc_dateenrolled,
             cc_dateleft,
             cc_abs_sectionid,
@@ -237,7 +242,6 @@ with
             courses_credit_hours,
             is_dropped_section,
             gradescaleid_unweighted,
-            yearid,
             storecode,
             termbin_start_date,
             termbin_end_date,
@@ -270,11 +274,11 @@ with
             * term_weighted_points_possible as term_weighted_points_earned_adjusted,
 
             sum(term_percent_grade * term_weighted_points_possible) over (
-                partition by cc_studentid, cc_course_number, yearid
+                partition by cc_studentid, cc_course_number, cc_yearid
                 order by storecode asc
             ) as y1_weighted_points_earned_running,
             sum(term_percent_grade_adjusted * term_weighted_points_possible) over (
-                partition by cc_studentid, cc_course_number, yearid
+                partition by cc_studentid, cc_course_number, cc_yearid
                 order by storecode asc
             ) as y1_weighted_points_earned_adjusted_running,
         from final_grades
@@ -284,6 +288,8 @@ with
         select
             cc_studentid,
             cc_schoolid,
+            cc_yearid,
+            cc_academic_year,
             cc_dateenrolled,
             cc_dateleft,
             cc_abs_sectionid,
@@ -294,7 +300,6 @@ with
             courses_credit_hours,
             is_dropped_section,
             gradescaleid_unweighted,
-            yearid,
             storecode,
             termbin_start_date,
             termbin_end_date,
@@ -384,7 +389,8 @@ select
     y1.cc_studentid as studentid,
     y1.cc_abs_sectionid as sectionid,
     y1.cc_course_number as course_number,
-    y1.yearid,
+    y1.cc_yearid as yearid,
+    y1.cc_academic_year as academic_year,
     y1.cc_abs_termid as termid,
     y1.cc_dateenrolled as dateenrolled,
     y1.cc_dateleft as dateleft,
