@@ -35,7 +35,7 @@ PERSON_DATA_FIELDS = [
 
 INCOME_FORM_DATA_FIELDS = [
     {"name": "student_identifier", "type": ["null", "long"], "default": None},
-    {"name": "eligibility_result", "type": ["null", "long"], "default": None},
+    {"name": "eligibility_result", "type": ["null", "long", "string"], "default": None},
     {"name": "academic_year", "type": ["null", "string"], "default": None},
     {"name": "reference_code", "type": ["null", "string"], "default": None},
     {"name": "date_signed", "type": ["null", "string"], "default": None},
