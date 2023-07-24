@@ -3,19 +3,12 @@ with
         select
             reference_code,
             student_identifier,
-            eligibility_result,
             parse_date('%m/%d/%Y', date_signed) as date_signed,
+            coalesce(
+                safe_cast(eligibility_result.long_value as string),
+                eligibility_result.string_value
+            ) as eligibility_result,
             safe_cast(split(academic_year, '/')[0] as int) as academic_year,
-            case
-                eligibility_result
-                when 1
-                then 'F'
-                when 2
-                then 'R'
-                when 3
-                then 'P'
-                else safe_cast(eligibility_result as string)
-            end as eligibility_name,
         from {{ source("titan", "src_titan__income_form_data") }}
     ),
 
@@ -27,7 +20,23 @@ with
                 order_by="date_signed desc",
             )
         }}
+    ),
+
+    with_eligibility_name as (
+        select
+            *,
+            case
+                eligibility_result
+                when '1'
+                then 'F'
+                when '2'
+                then 'R'
+                when '3'
+                then 'P'
+                else eligibility_result
+            end as eligibility_name,
+        from deduplicate
     )
 
 select *, eligibility_name || ' - Income Form' as lunch_application_status,
-from deduplicate
+from with_eligibility_name

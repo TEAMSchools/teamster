@@ -41,5 +41,9 @@ models:
     +schema: edplan
   powerschool:
     +schema: powerschool
+    base:
+      +materialized: table
+    staging:
+      +materialized: table
   titan:
     +schema: titan
