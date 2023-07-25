@@ -1,4 +1,3 @@
-{{ config(enabled=False) }}
 select
     cast(sr.schoolid as string) as school_id,
     cast(sr.student_number as string) as student_id,
@@ -10,13 +9,13 @@ select
     if(sr.grade_level = 0, 'Kindergarten', cast(sr.grade_level as string)) as grade,
     sr.gender as gender,
     sr.cohort as graduation_year,
-    {# format(sr.dob, 101) as dob, #}
+    format_date('%m/%d/%Y', sr.dob) as dob,
     sr.ethnicity as race,
 
     null as hispanic_latino,
     null as home_language,
 
-    if(sr.is_lep, 'Y', 'N') as ell_status,
+    if(sr.lep_status, 'Y', 'N') as ell_status,
 
     null as frl_status,
 
@@ -29,13 +28,13 @@ select
 
     sr.student_email_google as student_email,
 
-    sc.person_relationship as contact_relationship,
+    sc.relationship_type as contact_relationship,
     if(
         sc.person_type in ('mother', 'father', 'contact1', 'contact2'),
         'primary',
         sc.person_type
     ) as contact_type,
-    coalesce(sc.person_name, sc.person_type) as contact_name,
+    coalesce(sc.contact_name, sc.person_type) as contact_name,
     left(regexp_replace(sc.contact, r'\W', ''), 10) as contact_phone,
     case
         when sc.contact_type = 'home'
