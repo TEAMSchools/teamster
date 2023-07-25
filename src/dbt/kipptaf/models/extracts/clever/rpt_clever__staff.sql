@@ -1,119 +1,137 @@
-{{ config(enabled=False) }}
+with
+    staff_union as (
+        {#
+            School staff assigned to primary school only
+            Campus staff assigned to all schools at campus
+        #}
+        select
+            sr.powerschool_teacher_number,
+            sr.user_principal_name,
+            sr.preferred_name_given_name,
+            sr.preferred_name_family_name,
+            sr.department_home_name,
+            sr.sam_account_name,
 
-/*
-School staff assigned to primary school only
-Campus staff assigned to all schools at campus
-*/
-select
-    cast(coalesce(ccw.ps_school_id, df.primary_site_schoolid) as varchar(25)) as [
-        school_id
-    ],
-    df.ps_teachernumber as staff_id,
-    df.userprincipalname as staff_email,
-    df.preferred_first_name as first_name,
-    df.preferred_last_name as last_name,
-    df.primary_on_site_department as department,
-    'School Admin' as title,
-    df.samaccountname as username,
-    null as password,
-    case
-        when df.primary_on_site_department = 'Operations' then 'School Tech Lead'
-    end as role
-from people.staff_crosswalk_static as df
-left join
-    people.campus_crosswalk as ccw
-    on df.primary_site = ccw.campus_name
-    and ccw._fivetran_deleted = 0
-    and ccw.is_pathways = 0
-where
-    df.status not in ('TERMINATED', 'PRESTART')
-    and df.primary_on_site_department not in ('Data', 'Teaching and Learning')
-    and coalesce(ccw.ps_school_id, df.primary_site_schoolid) != 0
+            cast(
+                coalesce(
+                    ccw.powerschool_school_id,
+                    sr.home_work_location_powerschool_school_id
+                ) as string
+            ) as school_id,
+        from {{ ref("base_people__staff_roster") }} as sr
+        left join
+            {{ source("people", "src_people__campus_crosswalk") }} as ccw
+            on sr.home_work_location_name = ccw.name
+            and not ccw.is_pathways
+        where
+            sr.assignment_status not in ('Terminated', 'Deceased')
+            and not sr.is_prestart
+            and sr.department_home_name not in ('Data', 'Teaching and Learning')
+            and coalesce(
+                ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
+            )
+            != 0
 
-union all
+        union all
 
-/* T&L/EDs/Data to all schools under CMO */
-select
-    cast(sch.school_number as varchar(25)) as school_id,
-    df.ps_teachernumber as staff_id,
-    df.userprincipalname as staff_email,
-    df.preferred_first_name as first_name,
-    df.preferred_last_name as last_name,
-    df.primary_on_site_department as department,
-    'School Admin' as title,
-    df.samaccountname as username,
-    null as password,
-    case
-        when df.primary_on_site_department = 'Operations' then 'School Tech Lead'
-    end as role
-from people.staff_crosswalk_static as df
-inner join powerschool.schools as sch on (sch.state_excludefromreporting = 0)
-where
-    df.status not in ('TERMINATED', 'PRESTART')
-    and df.legal_entity_name = 'KIPP TEAM and Family Schools Inc.'
-    and (
-        df.primary_on_site_department in ('Data', 'Teaching and Learning')
-        or df.primary_job in ('Executive Director', 'Managing Director')
+        {# T&L/EDs/Data to all schools under CMO #}
+        select
+            sr.powerschool_teacher_number,
+            sr.user_principal_name,
+            sr.preferred_name_given_name,
+            sr.preferred_name_family_name,
+            sr.department_home_name,
+            sr.sam_account_name,
+
+            cast(sch.school_number as string) as school_id,
+        from {{ ref("base_people__staff_roster") }} as sr
+        inner join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on (sch.state_excludefromreporting = 0)
+        where
+            sr.assignment_status not in ('Terminated', 'Deceased')
+            and not sr.is_prestart
+            and sr.business_unit_home_name = 'KIPP TEAM and Family Schools Inc.'
+            and (
+                sr.department_home_name in ('Data', 'Teaching and Learning')
+                or sr.job_title in ('Executive Director', 'Managing Director')
+            )
+
+        union all
+
+        {# all region #}
+        select
+            sr.powerschool_teacher_number,
+            sr.user_principal_name,
+            sr.preferred_name_given_name,
+            sr.preferred_name_family_name,
+            sr.department_home_name,
+            sr.sam_account_name,
+
+            cast(sch.school_number as string) as school_id,
+        from {{ ref("base_people__staff_roster") }} as sr
+        inner join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on sr.home_work_location_dagster_code_location
+            = regexp_extract(sch._dbt_source_relation, r'kipp\w+')
+            and sch.state_excludefromreporting = 0
+        where
+            sr.assignment_status not in ('Terminated', 'Deceased')
+            and not sr.is_prestart
+            and (
+                sr.job_title in (
+                    'Assistant Superintendent',
+                    'Head of Schools',
+                    'Head of Schools in Residence'
+                )
+                or (
+                    sr.department_home_name = 'Special Education'
+                    and sr.job_title like '%Director%'
+                )
+            )
+
+        union all
+
+        {# all NJ #}
+        select
+            sr.powerschool_teacher_number,
+            sr.user_principal_name,
+            sr.preferred_name_given_name,
+            sr.preferred_name_family_name,
+            sr.department_home_name,
+            sr.sam_account_name,
+
+            cast(sch.school_number as string) as school_id,
+        from {{ ref("stg_ldap__group") }} as g
+        cross join unnest(g.member) as group_member_distinguished_name
+        inner join
+            {{ ref("stg_ldap__user_person") }} as up
+            on group_member_distinguished_name = up.distinguished_name
+        inner join
+            {{ ref("base_people__staff_roster") }} as sr
+            on up.employee_number = sr.employee_number
+            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and not sr.is_prestart
+        inner join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on sch.schoolstate = 'NJ'
+            and sch.state_excludefromreporting = 0
+        where g.cn = 'Group Staff NJ Regional'
     )
 
-union all
-
-/* All region */
 select
-    cast(sch.school_number as varchar(25)) as school_id,
-    df.ps_teachernumber as staff_id,
-    df.userprincipalname as staff_email,
-    df.preferred_first_name as first_name,
-    df.preferred_last_name as last_name,
-    df.primary_on_site_department as department,
-    'School Admin' as title,
-    df.samaccountname as username,
-    null as password,
-    case
-        when df.primary_on_site_department = 'Operations' then 'School Tech Lead'
-    end as role
-from people.staff_crosswalk_static as df
-inner join
-    powerschool.schools as sch
-    on df.db_name = sch.db_name
-    and sch.state_excludefromreporting = 0
-where
-    df.status not in ('TERMINATED', 'PRESTART')
-    and (
-        df.primary_job in (
-            'Assistant Superintendent',
-            'Head of Schools',
-            'Head of Schools in Residence'
-        )
-        or (
-            df.primary_on_site_department = 'Special Education'
-            and df.primary_job like '%Director%'
-        )
-    )
+    school_id,
+    powerschool_teacher_number as staff_id,
+    user_principal_name as staff_email,
+    preferred_name_given_name as first_name,
+    preferred_name_family_name as last_name,
+    department_home_name as department,
 
-union all
-
-/* All NJ */
-select
-    cast(sch.school_number as varchar(25)) as school_id,
-    df.ps_teachernumber as staff_id,
-    df.userprincipalname as staff_email,
-    df.preferred_first_name as first_name,
-    df.preferred_last_name as last_name,
-    df.primary_on_site_department as department,
     'School Admin' as title,
-    df.samaccountname as username,
-    null as password,
-    case
-        when df.primary_on_site_department = 'Operations' then 'School Tech Lead'
-    end as role
-from adsi.group_membership as adg
-inner join
-    people.staff_crosswalk_static as df
-    on adg.employee_number = df.df_employee_number
-    and df.status not in ('TERMINATED', 'PRESTART')
-inner join
-    powerschool.schools as sch
-    on sch.schoolstate = 'NJ'
-    and sch.state_excludefromreporting = 0
-where adg.group_cn = 'Group Staff NJ Regional'
+
+    sam_account_name as username,
+
+    null as `password`,
+
+    if(department_home_name = 'Operations', 'School Tech Lead', null) as `role`,
+from staff_union
