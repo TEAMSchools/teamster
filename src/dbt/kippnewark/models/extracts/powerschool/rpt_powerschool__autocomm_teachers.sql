@@ -13,4 +13,4 @@ select
     ptaccess,
     dob,
 from {{ source("kipptaf_extracts", "rpt_powerschool__autocomm_teachers") }}
-where region = 'TEAM Academy Charter School'
+where home_work_location_dagster_code_location = '{{ project_name }}'
