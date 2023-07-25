@@ -1,22 +1,14 @@
 from dagster import AssetSelection, define_asset_job
 
 from .assets import (
-    alchemer_extract_assets,
     blissbook_extract_assets,
     clever_extract_assets,
     coupa_extract_assets,
     deanslist_extract_assets,
     egencia_extract_assets,
-    gam_extract_assets,
     idauto_extract_assets,
     illuminate_extract_assets,
     littlesis_extract_assets,
-    whetstone_extract_assets,
-)
-
-alchemer_extract_asset_job = define_asset_job(
-    name="datagun_alchemer_extract_asset_job",
-    selection=AssetSelection.assets(*alchemer_extract_assets),
 )
 
 blissbook_extract_asset_job = define_asset_job(
@@ -44,10 +36,6 @@ egencia_extract_asset_job = define_asset_job(
     selection=AssetSelection.assets(*egencia_extract_assets),
 )
 
-gam_extract_asset_job = define_asset_job(
-    name="datagun_gam_extract_asset_job",
-    selection=AssetSelection.assets(*gam_extract_assets),
-)
 
 idauto_extract_asset_job = define_asset_job(
     name="datagun_idauto_extract_asset_job",
@@ -64,23 +52,16 @@ littlesis_extract_asset_job = define_asset_job(
     selection=AssetSelection.assets(*littlesis_extract_assets),
 )
 
-whetstone_extract_asset_job = define_asset_job(
-    name="datagun_whetstone_extract_asset_job",
-    selection=AssetSelection.assets(*whetstone_extract_assets),
-)
 
 __all__ = [
-    alchemer_extract_asset_job,
     blissbook_extract_asset_job,
     clever_extract_asset_job,
     coupa_extract_asset_job,
     deanslist_extract_asset_job,
     egencia_extract_asset_job,
-    gam_extract_asset_job,
     idauto_extract_asset_job,
     illuminate_extract_asset_job,
     littlesis_extract_asset_job,
-    whetstone_extract_asset_job,
 ]
 
 # RETIRED #
@@ -88,9 +69,17 @@ __all__ = [
 #     name="datagun_adp_extract_asset_job",
 #     selection=AssetSelection.assets(*adp_extract_assets),
 # )
+# alchemer_extract_asset_job = define_asset_job(
+#     name="datagun_alchemer_extract_asset_job",
+#     selection=AssetSelection.assets(*alchemer_extract_assets),
+# )
 # fpodms_extract_asset_job = define_asset_job(
 #     name="datagun_fpodms_extract_asset_job",
 #     selection=AssetSelection.assets(*fpodms_extract_assets),
+# )
+# gam_extract_asset_job = define_asset_job(
+#     name="datagun_gam_extract_asset_job",
+#     selection=AssetSelection.assets(*gam_extract_assets),
 # )
 # gsheet_extract_asset_job = define_asset_job(
 #     name="datagun_gsheet_extract_asset_job",
@@ -107,4 +96,8 @@ __all__ = [
 # read180_extract_asset_job = define_asset_job(
 #     name="datagun_read180_extract_asset_job",
 #     selection=AssetSelection.assets(*read180_extract_assets),
+# )
+# whetstone_extract_asset_job = define_asset_job(
+#     name="datagun_whetstone_extract_asset_job",
+#     selection=AssetSelection.assets(*whetstone_extract_assets),
 # )
