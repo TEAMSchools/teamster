@@ -1,6 +1,6 @@
 {{
     teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
+        unique_key="id.int_value, schoolid.int_value",
         transform_cols=[
             {"name": "dcid", "extract": "int_value"},
             {"name": "id", "extract": "int_value"},

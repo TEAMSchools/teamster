@@ -1,57 +1,40 @@
-# import sys
-# from typing import Dict, List, cast
+import json
+from urllib.parse import urlencode
 
-# import pendulum
-# from dagster import Failure, SensorEvaluationContext
-# from dagster_airbyte import AirbyteCloudResource, AirbyteState
+import pendulum
+from dagster import SensorEvaluationContext
+from dagster_airbyte import AirbyteCloudResource, AirbyteOutput
 
 
-# def _sensor(context: SensorEvaluationContext, airbyte: AirbyteCloudResource):
-#     if context.cursor is not None:
-#         last_checked = pendulum.from_timestamp(timestamp=context.cursor)
-#     else:
-#         last_checked = pendulum.from_timestamp(timestamp=0)
+def _sensor(context: SensorEvaluationContext, airbyte: AirbyteCloudResource):
+    now = pendulum.now()
+    cursor = json.loads(context.cursor or "{}")
 
-#     jobs = airbyte.make_request(
-#         endpoint="/jobs",
-#         data={"updatedAtStart": last_checked.format("YYYY-MM-DDTHH:mm:sszz")},
-#         method="GET",
-#     )
+    connections = airbyte.make_request(endpoint="/connections", method="GET")["data"]
 
-#     job_details = airbyte.get_job_status(connection_id, job_id)
+    for connection in connections:
+        connection_id = connection["connectionId"]
 
-#     attempts = cast(List, job_details.get("attempts", []))
+        last_updated = pendulum.from_timestamp(timestamp=cursor.get(connection_id, 0))
 
-#     cur_attempt = len(attempts)
+        params = urlencode(
+            query={
+                "connectionId": connection_id,
+                "updatedAtStart": last_updated.format("YYYY-MM-DDTHH:mm:ss[Z]"),
+                "status": "succeeded",
+            }
+        )
 
-#     # spit out the available Airbyte log info
-#     if cur_attempt:
-#         if airbyte._should_forward_logs:
-#             log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
+        successful_jobs = airbyte.make_request(
+            endpoint=f"/jobs?{params}", method="GET"
+        ).get("data", [])
 
-#             for line in log_lines[logged_lines:]:
-#                 sys.stdout.write(line + "\n")
-#                 sys.stdout.flush()
-#             logged_lines = len(log_lines)
+        for job in successful_jobs:
+            job_details = airbyte.get_job_status(
+                connection_id=connection_id, job_id=job["jobId"]
+            )
 
-#         # if there's a next attempt, this one will have no more log messages
-#         if logged_attempts < cur_attempt - 1:
-#             logged_lines = 0
-#             logged_attempts += 1
+            (AirbyteOutput(job_details=job_details, connection_details=connection), [])
 
-#     job_info = cast(Dict[str, object], job_details.get("job", {}))
-
-#     state = job_info.get("status")
-
-#     if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
-#         # continue
-#         ...
-#     elif state == AirbyteState.SUCCEEDED:
-#         # break
-#         ...
-#     elif state == AirbyteState.ERROR:
-#         raise Failure(f"Job failed: {job_id}")
-#     elif state == AirbyteState.CANCELLED:
-#         raise Failure(f"Job was cancelled: {job_id}")
-#     else:
-#         raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
+        if successful_jobs:
+            cursor[connection_id] = now.timestamp()
