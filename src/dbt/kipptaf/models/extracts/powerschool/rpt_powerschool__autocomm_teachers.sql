@@ -13,12 +13,8 @@ with
             sr.sam_account_name,
             sr.mail,
             sr.assignment_status,
-
-            sc.region,
+            sr.home_work_location_dagster_code_location,
         from {{ ref("base_people__staff_roster") }} as sr
-        inner join
-            {{ ref("stg_people__location_crosswalk") }} as sc
-            on sr.home_work_location_name = sc.name
         inner join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
@@ -50,12 +46,8 @@ with
             sr.sam_account_name,
             sr.mail,
             sr.assignment_status,
-
-            sc.region,
+            sr.home_work_location_dagster_code_location,
         from {{ ref("base_people__staff_roster") }} as sr
-        inner join
-            {{ ref("stg_people__location_crosswalk") }} as sc
-            on sr.home_work_location_name = sc.name
         left join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
@@ -78,9 +70,9 @@ with
             powerschool_teacher_number,
             preferred_name_given_name,
             preferred_name_family_name,
-            region,
-            home_work_location_powerschool_school_id,
             birth_date,
+            home_work_location_powerschool_school_id,
+            home_work_location_dagster_code_location,
             lower(sam_account_name) as sam_account_name,
             lower(mail) as mail,
             case
@@ -117,5 +109,5 @@ select
     if(`status` = 1, 1, 0) as adminldapenabled,
     if(`status` = 1, 1, 0) as ptaccess,
     format_date('%m/%d/%Y', birth_date) as dob,
-    region,
+    home_work_location_dagster_code_location,
 from user_status
