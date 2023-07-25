@@ -1,75 +1,47 @@
-key_prefix:
-  - kipptaf
-  - datagun
-  - clever
 assets:
-  - asset_name: enrollments_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: clever_enrollments
-          schema: extracts
+  - dataset_config:
+      table_id: rpt_clever__enrollments
+      dataset_id: kipptaf_extracts
     file_config:
       stem: enrollments
       suffix: csv
     destination_config:
       name: clever
-  - asset_name: teachers_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: clever_teachers
-          schema: extracts
+  - dataset_config:
+      table_id: rpt_clever__teachers
+      dataset_id: kipptaf_extracts
     file_config:
       stem: teachers
       suffix: csv
     destination_config:
       name: clever
-  - asset_name: students_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: clever_students
-          schema: extracts
+  - dataset_config:
+      table_id: rpt_clever__students
+      dataset_id: kipptaf_extracts
     file_config:
       stem: students
       suffix: csv
     destination_config:
       name: clever
-  - asset_name: staff_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: clever_staff
-          schema: extracts
+  - dataset_config:
+      table_id: rpt_clever__staff
+      dataset_id: kipptaf_extracts
     file_config:
       stem: staff
       suffix: csv
     destination_config:
       name: clever
-  - asset_name: sections_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: clever_sections
-          schema: extracts
+  - dataset_config:
+      table_id: rpt_clever__sections
+      dataset_id: kipptaf_extracts
     file_config:
       stem: sections
       suffix: csv
     destination_config:
       name: clever
-  - asset_name: schools_csv
-    query_config:
-      type: schema
-      value:
-        table:
-          name: clever_schools
-          schema: extracts
+  - dataset_config:
+      table_id: rpt_clever__schools
+      dataset_id: kipptaf_extracts
     file_config:
       stem: schools
       suffix: csv
