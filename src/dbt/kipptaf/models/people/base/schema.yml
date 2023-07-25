@@ -7,3 +7,9 @@ models:
         tests:
           - unique
           - not_null
+    config:
+      meta:
+        dagster:
+          freshness_policy:
+            cron_schedule: 0 0 * * *
+            cron_schedule_timezone: America/New_York
