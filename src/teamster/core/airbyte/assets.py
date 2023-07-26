@@ -92,6 +92,7 @@ def build_airbyte_cloud_assets(
         internal_asset_deps=internal_deps,
         compute_kind="airbyte",
         group_name=group_name,
+        can_subset=True,
     )
     def _assets(context: AssetExecutionContext):
         # No connection details (e.g. using Airbyte Cloud) means we just assume

@@ -77,6 +77,7 @@ def build_fivetran_assets(
         resource_defs=resource_defs,
         group_name=group_name,
         op_tags=op_tags,
+        can_subset=True,
     )
     def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
         materialized_asset_keys = set()
