@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 import pendulum
 from dagster import RunConfig, RunRequest, SensorEvaluationContext, SensorResult, sensor
-from dagster_airbyte import AirbyteCloudResource, AirbyteOutput
+from dagster_airbyte import AirbyteCloudResource
 
 from teamster.core.airbyte.jobs import airbyte_materialization_job
 from teamster.core.airbyte.ops import AirbyteMaterializationOpConfig
@@ -43,7 +43,7 @@ def airbyte_job_status_sensor(
             )
 
             airbyte_outputs.append(
-                AirbyteOutput(job_details=job_details, connection_details=connection)
+                {"job_details": job_details, "connection_details": connection}
             )
 
         if successful_jobs:
