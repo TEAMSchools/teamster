@@ -31,5 +31,3 @@ for config_file in config_path.glob("*.yaml"):
             group_name=config.get("group_name", connector_name),
         )
     )
-
-print()

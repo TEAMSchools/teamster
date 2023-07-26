@@ -26,15 +26,14 @@ def render_fivetran_audit_query(dataset, done):
 def build_fivetran_sync_monitor_sensor(
     code_location, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
 ):
-    connectors = {
-        re.match(
+    connectors = {}
+    for asset in asset_defs:
+        connector_id = re.match(
             pattern=r"fivetran_sync_(\w+)",
             string=asset.op.name,
-        ).group(1): list(
-            asset.group_names_by_key.values()
-        )[0]
-        for asset in asset_defs
-    }
+        ).group(1)
+
+        connectors[connector_id] = set(["_".join(key.path[1:-1]) for key in asset.keys])
 
     @sensor(
         name=f"{code_location}_fivetran_async_asset_sensor",
@@ -50,9 +49,9 @@ def build_fivetran_sync_monitor_sensor(
         bq = next(db_bigquery)
 
         asset_keys = []
-        for connector_id, connector_name in connectors.items():
+        for connector_id, connector_schemas in connectors.items():
             # check if fivetran sync has completed
-            last_update = pendulum.from_timestamp(cursor.get(connector_name, 0))
+            last_update = pendulum.from_timestamp(cursor.get(connector_id, 0))
 
             (
                 curr_last_sync_completion,
@@ -73,19 +72,18 @@ def build_fivetran_sync_monitor_sensor(
                 curr_last_sync_succeeded
                 and curr_last_sync_completion_timestamp > last_update.timestamp()
             ):
-                # get fivetran_audit table
-                query_job = bq.query(
-                    query=render_fivetran_audit_query(
-                        dataset=connector_name, done=last_update.to_iso8601_string()
-                    )
-                )
-
-                for row in query_job.result():
-                    asset_keys.append(
-                        AssetKey([code_location, connector_name, row.table])
+                for schema in connector_schemas:
+                    # get fivetran_audit table
+                    query_job = bq.query(
+                        query=render_fivetran_audit_query(
+                            dataset=schema, done=last_update.to_iso8601_string()
+                        )
                     )
 
-                cursor[connector_name] = curr_last_sync_completion_timestamp
+                    for row in query_job.result():
+                        asset_keys.append(AssetKey([code_location, schema, row.table]))
+
+                cursor[connector_id] = curr_last_sync_completion_timestamp
 
         if asset_keys:
             return SensorResult(
