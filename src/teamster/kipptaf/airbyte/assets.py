@@ -1,7 +1,7 @@
 from dagster import config_from_files
 from dagster_airbyte import build_airbyte_assets
 
-from .. import CODE_LOCATION
+from teamster.kipptaf import CODE_LOCATION
 
 config_dir = f"src/teamster/{CODE_LOCATION}/airbyte/config"
 
