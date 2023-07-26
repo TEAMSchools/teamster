@@ -24,7 +24,7 @@ def build_airbyte_materialization_op(asset_defs: list[AssetsDefinition]):
                 asset_key_prefix=[namespace[0], "_".join(namespace[1:])],
             ):
                 yield Output(
-                    value=None,
+                    value=True,
                     output_name=materialization.asset_key.path[-1],
                     metadata=materialization.metadata,
                 )

@@ -111,7 +111,6 @@ def infer_avro_schema_fields(list_of_dicts):
 
         for k in all_keys.copy():
             v = d.get(k)
-            print(k, v)
 
             avro_type = get_avro_type(v)
             if avro_type:
