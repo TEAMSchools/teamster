@@ -2,16 +2,24 @@ import json
 from urllib.parse import urlencode
 
 import pendulum
-from dagster import SensorEvaluationContext
+from dagster import RunConfig, RunRequest, SensorEvaluationContext, SensorResult, sensor
 from dagster_airbyte import AirbyteCloudResource, AirbyteOutput
 
+from teamster.core.airbyte.jobs import airbyte_materialization_job
+from teamster.core.airbyte.ops import AirbyteMaterializationOpConfig
 
-def _sensor(context: SensorEvaluationContext, airbyte: AirbyteCloudResource):
+
+@sensor(job=airbyte_materialization_job)
+def airbyte_job_status_sensor(
+    context: SensorEvaluationContext, airbyte: AirbyteCloudResource
+):
     now = pendulum.now()
+
     cursor = json.loads(context.cursor or "{}")
 
     connections = airbyte.make_request(endpoint="/connections", method="GET")["data"]
 
+    airbyte_outputs = []
     for connection in connections:
         connection_id = connection["connectionId"]
 
@@ -34,7 +42,25 @@ def _sensor(context: SensorEvaluationContext, airbyte: AirbyteCloudResource):
                 connection_id=connection_id, job_id=job["jobId"]
             )
 
-            (AirbyteOutput(job_details=job_details, connection_details=connection), [])
+            airbyte_outputs.append(
+                AirbyteOutput(job_details=job_details, connection_details=connection)
+            )
 
         if successful_jobs:
             cursor[connection_id] = now.timestamp()
+
+    if airbyte_outputs:
+        run_requests = [
+            RunRequest(
+                run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
+                run_config=RunConfig(
+                    ops={
+                        "airbyte_materialization_op": AirbyteMaterializationOpConfig(
+                            airbyte_outputs=airbyte_outputs
+                        )
+                    }
+                ),
+            )
+        ]
+
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
