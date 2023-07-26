@@ -14,10 +14,9 @@ from dagster_airbyte import AirbyteCloudResource
 
 
 def build_airbyte_job_status_sensor(asset_defs):
-    @sensor(
-        name="airbyte_job_status_sensor",
-        asset_selection=AssetSelection.assets(*asset_defs),
-    )
+    sensor_asset_selection = AssetSelection.assets(*asset_defs)
+
+    @sensor(name="airbyte_job_status_sensor", asset_selection=sensor_asset_selection)
     def _sensor(context: SensorEvaluationContext, airbyte: AirbyteCloudResource):
         now_timestamp = pendulum.now().timestamp()
 
@@ -53,15 +52,16 @@ def build_airbyte_job_status_sensor(asset_defs):
                 namespace_parts = connection["namespaceFormat"].split("_")
 
                 for stream in connection["configurations"]["streams"]:
-                    asset_selection.append(
-                        AssetKey(
-                            [
-                                namespace_parts[0],
-                                "_".join(namespace_parts[1:]),
-                                stream["name"],
-                            ]
-                        )
+                    asset_key = AssetKey(
+                        [
+                            namespace_parts[0],
+                            "_".join(namespace_parts[1:]),
+                            stream["name"],
+                        ]
                     )
+
+                    if asset_key in sensor_asset_selection._keys:
+                        asset_selection.append(asset_key)
 
         if asset_selection:
             return SensorResult(
