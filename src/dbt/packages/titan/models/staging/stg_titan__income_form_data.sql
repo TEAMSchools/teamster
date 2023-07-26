@@ -8,7 +8,7 @@ with
                 safe_cast(eligibility_result.long_value as string),
                 eligibility_result.string_value
             ) as eligibility_result,
-            safe_cast(split(academic_year, '/')[0] as int) as academic_year,
+            _dagster_partition_key as academic_year,
         from {{ source("titan", "src_titan__income_form_data") }}
     ),
 

@@ -1,4 +1,4 @@
 {% macro union_dataset_join_clause(left_alias, right_alias) -%}
-    split({{ left_alias }}._dbt_source_relation, '.')[1]
-    = split({{ right_alias }}._dbt_source_relation, '.')[1]
+    regexp_extract({{ left_alias }}._dbt_source_relation, r'(kipp\w+)_')
+    = regexp_extract({{ right_alias }}._dbt_source_relation, r'(kipp\w+)_')
 {%- endmacro %}

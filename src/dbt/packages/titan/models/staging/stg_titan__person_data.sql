@@ -11,7 +11,7 @@ select
     total_negative_balance.double_value as total_negative_balance,
     parse_date('%m/%d/%Y', eligibility_start_date) as eligibility_start_date,
     parse_date('%m/%d/%Y', eligibility_end_date) as eligibility_end_date,
-    safe_cast(split(application_academic_school_year, '/')[0] as int) as academic_year,
+    _dagster_partition_key as academic_year,
     case
         eligibility.long_value
         when 1
