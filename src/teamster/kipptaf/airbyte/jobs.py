@@ -1,27 +1,32 @@
-from dagster import AssetSelection, define_asset_job, job
+from dagster import AssetSelection, define_asset_job
 
-from teamster.core.airbyte.ops import build_airbyte_materialization_op
+from teamster.core.airbyte.jobs import build_airbyte_start_sync_job
 from teamster.kipptaf import CODE_LOCATION, airbyte
 
-airbyte_materialization_op = build_airbyte_materialization_op(asset_defs=airbyte.assets)
-
-
-@job
-def airbyte_materialization_job():
-    airbyte_materialization_op()
-
-
-__all__ = [
-    airbyte_materialization_job,
-]
-
+airbyte_materialization_jobs = []
+airbyte_start_sync_jobs = []
 for asset in airbyte.assets:
-    __all__.append(
+    connection_name = list(asset.group_names_by_key.values())[0]
+    connection_id = list(
+        set([m["connection_id"] for m in asset.metadata_by_key.values()])
+    )[0]
+
+    airbyte_materialization_jobs.append(
         define_asset_job(
-            name=(
-                f"{CODE_LOCATION}_airbyte_"
-                f"{list(asset.group_names_by_key.values())[0]}_asset_job"
-            ),
+            name=(f"{CODE_LOCATION}_airbyte_{connection_name}_asset_job"),
             selection=AssetSelection.keys(*list(asset.keys)),
         )
     )
+
+    airbyte_start_sync_jobs.append(
+        build_airbyte_start_sync_job(
+            code_location=CODE_LOCATION,
+            connection_id=connection_id,
+            connection_name=connection_name,
+        )
+    )
+
+__all__ = [
+    *airbyte_materialization_jobs,
+    *airbyte_start_sync_jobs,
+]
