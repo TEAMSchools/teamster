@@ -1,25 +1,25 @@
 connector_name: illuminate
 connector_id: jinx_credulous
 schemas:
-  - name: illuminate_codes
+  - name: codes
     destination_tables:
       - dna_scopes
       - dna_subject_areas
-  - name: illuminate_groups
+  - name: groups
     destination_tables:
       - group_student_aff
       - groups
-  - name: illuminate_public
+  - name: public
     destination_tables:
       - grade_levels
       - student_session_aff
       - students
       - users
-  - name: illuminate_standards
+  - name: standards
     destination_tables:
       - standards
       - subjects
-  - name: illuminate_dna_assessments
+  - name: dna_assessments
     destination_tables:
       - assessment_grade_levels
       - assessment_standards
@@ -33,7 +33,7 @@ schemas:
       - reporting_groups
       - students_assessments
       - tags
-  - name: illuminate_dna_repositories
+  - name: dna_repositories
     destination_tables:
       - expressions
       - fields

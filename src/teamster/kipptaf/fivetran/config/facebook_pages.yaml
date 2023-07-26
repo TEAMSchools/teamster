@@ -1,8 +1,7 @@
 connector_name: facebook_pages
 connector_id: regency_carrying
 schemas:
-  - name: facebook_pages
-    destination_tables:
+  - destination_tables:
       - daily_page_metrics_by_action_type
       - daily_page_metrics_by_age_gender
       - daily_page_metrics_by_city

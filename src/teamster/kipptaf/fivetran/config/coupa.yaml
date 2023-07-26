@@ -1,8 +1,7 @@
 connector_name: coupa
 connector_id: bellows_curliness
 schemas:
-  - name: coupa
-    destination_tables:
+  - destination_tables:
       - account
       - account_group
       - account_type
