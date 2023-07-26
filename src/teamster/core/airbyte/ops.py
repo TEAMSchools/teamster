@@ -1,4 +1,4 @@
-from dagster import Config, OpExecutionContext, op
+from dagster import Config, OpExecutionContext, Output, op
 from dagster_airbyte import AirbyteOutput
 from dagster_airbyte.utils import generate_materializations
 
@@ -12,17 +12,17 @@ def airbyte_materialization_op(
     context: OpExecutionContext, config: AirbyteMaterializationOpConfig
 ):
     for output in config.airbyte_outputs:
-        airbyte_output = AirbyteOutput(**output)
         namespace_format = output["connection_details"]["namespaceFormat"].split("_")
 
-        asset_key_prefix = [namespace_format[0], "_".join(namespace_format[1:])]
-
-        context.log.debug(airbyte_output)
-        context.log.debug(asset_key_prefix)
-
-        yield from generate_materializations(
-            output=airbyte_output, asset_key_prefix=asset_key_prefix
-        )
+        for materialization in generate_materializations(
+            output=AirbyteOutput(**output),
+            asset_key_prefix=[namespace_format[0], "_".join(namespace_format[1:])],
+        ):
+            yield Output(
+                value=None,
+                output_name=materialization.asset_key.path[-1],
+                metadata=materialization.metadata,
+            )
 
 
 __all__ = [
