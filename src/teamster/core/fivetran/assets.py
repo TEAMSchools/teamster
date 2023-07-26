@@ -1,38 +1,45 @@
 from typing import Any, Mapping, Optional, Sequence
 
-import pendulum
 from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
     DagsterStepOutputNotFoundError,
-    DataVersion,
     Nothing,
     OpExecutionContext,
     Output,
     ResourceDefinition,
 )
 from dagster import _check as check
-from dagster import multi_asset, observable_source_asset
+from dagster import multi_asset
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster_fivetran import FivetranOutput, FivetranResource
 from dagster_fivetran.utils import generate_materializations
 
 
-def build_fivetran_asset(
-    name, code_location, schema_name, connector_id, group_name, **kwargs
-):
-    @observable_source_asset(
-        name=name,
-        key_prefix=[code_location, schema_name],
-        metadata={"connector_id": connector_id, "schema_name": schema_name},
-        group_name=group_name,
-        **kwargs,
-    )
-    def _asset():
-        return DataVersion(str(pendulum.now().timestamp()))
+def asset_keys_to_schema_config(asset_keys: list[AssetKey]):
+    schemas = {}
 
-    return _asset
+    # build unique schema objects
+    for key in asset_keys:
+        schema_name = "_".join(key.path[1:-1])
+        schemas[schema_name] = {
+            "name_in_destination": schema_name,
+            "enabled": True,
+            "tables": {},
+        }
+
+    # add tables to schemas
+    for key in asset_keys:
+        schema_name = "_".join(key.path[1:-1])
+        table_name = key.path[-1]
+
+        schemas[schema_name]["tables"][table_name] = {
+            "name_in_destination": table_name,
+            "enabled": True,
+        }
+
+    return {"schemas": schemas}
 
 
 def build_fivetran_assets(
@@ -55,6 +62,8 @@ def build_fivetran_assets(
         table: AssetKey([*asset_key_prefix, *table.split(".")])
         for table in destination_tables
     }
+
+    schema_config = asset_keys_to_schema_config(tracked_asset_keys.values())
 
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
 
@@ -84,7 +93,7 @@ def build_fivetran_assets(
         for materialization in generate_materializations(
             fivetran_output=FivetranOutput(
                 connector_details=fivetran.get_connector_details(connector_id),
-                schema_config={},
+                schema_config=schema_config,
             ),
             asset_key_prefix=asset_key_prefix,
         ):
