@@ -1,8 +1,7 @@
 connector_name: hubspot
 connector_id: aspirate_uttering
 schemas:
-  - name: hubspot
-    destination_tables:
+  - destination_tables:
       - association_type
       - calendar_event
       - calendar_topic

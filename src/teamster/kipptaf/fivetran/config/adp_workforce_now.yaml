@@ -1,8 +1,7 @@
 connector_name: adp_workforce_now
 connector_id: sameness_cunning
 schemas:
-  - name: adp_workforce_now
-    destination_tables:
+  - destination_tables:
       - additional_remuneration_associated_rate_qualifier
       - assigned_work_communication
       - associated_rate_qualifier

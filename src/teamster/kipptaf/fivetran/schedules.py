@@ -1,11 +1,11 @@
 from dagster import ScheduleDefinition
 
 from .. import LOCAL_TIMEZONE
-from . import jobs
+from .jobs import fivetran_materialization_jobs
 
 __all__ = []
 
-for job in jobs:
+for job in fivetran_materialization_jobs:
     __all__.append(
         ScheduleDefinition(
             cron_schedule="0 * * * *",
