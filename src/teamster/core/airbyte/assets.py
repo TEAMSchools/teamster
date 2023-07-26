@@ -97,7 +97,7 @@ def build_airbyte_cloud_assets(
     def _assets(context: AssetExecutionContext):
         # No connection details (e.g. using Airbyte Cloud) means we just assume
         # that the outputs were produced
-        for table_name in destination_tables:
+        for table_name in context.selected_output_names:
             yield Output(
                 value=None,
                 output_name=table_name,
