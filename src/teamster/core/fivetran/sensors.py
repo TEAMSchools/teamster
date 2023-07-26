@@ -33,7 +33,7 @@ def build_fivetran_sync_monitor_sensor(
             string=asset.op.name,
         ).group(1)
 
-        connectors[connector_id] = set(["_".join(key.path[1:-1]) for key in asset.keys])
+        connectors[connector_id] = set([".".join(key.path[1:-1]) for key in asset.keys])
 
     @sensor(
         name=f"{code_location}_fivetran_async_asset_sensor",
@@ -76,12 +76,15 @@ def build_fivetran_sync_monitor_sensor(
                     # get fivetran_audit table
                     query_job = bq.query(
                         query=render_fivetran_audit_query(
-                            dataset=schema, done=last_update.to_iso8601_string()
+                            dataset=schema.replace(".", "_"),
+                            done=last_update.to_iso8601_string(),
                         )
                     )
 
                     for row in query_job.result():
-                        asset_keys.append(AssetKey([code_location, schema, row.table]))
+                        asset_keys.append(
+                            AssetKey([code_location, schema.split("."), row.table])
+                        )
 
                 cursor[connector_id] = curr_last_sync_completion_timestamp
 
