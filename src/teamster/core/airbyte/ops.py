@@ -12,11 +12,16 @@ def airbyte_materialization_op(
     context: OpExecutionContext, config: AirbyteMaterializationOpConfig
 ):
     for output in config.airbyte_outputs:
+        airbyte_output = AirbyteOutput(**output)
         namespace_format = output["connection_details"]["namespaceFormat"].split("_")
 
+        asset_key_prefix = [namespace_format[0], "_".join(namespace_format[1:])]
+
+        context.log.debug(airbyte_output)
+        context.log.debug(asset_key_prefix)
+
         yield from generate_materializations(
-            output=AirbyteOutput(**output),
-            asset_key_prefix=[namespace_format[0], "_".join(namespace_format[1:])],
+            output=airbyte_output, asset_key_prefix=asset_key_prefix
         )
 
 
