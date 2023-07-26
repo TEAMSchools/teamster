@@ -26,6 +26,8 @@ def render_fivetran_audit_query(dataset, done):
 def build_fivetran_sync_status_sensor(
     code_location, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
 ):
+    sensor_asset_selection = AssetSelection.assets(*asset_defs)
+
     connectors = {}
     for asset in asset_defs:
         connector_id = re.match(
@@ -37,7 +39,7 @@ def build_fivetran_sync_status_sensor(
     @sensor(
         name=f"{code_location}_fivetran_sync_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=sensor_asset_selection,
     )
     def _sensor(
         context: SensorEvaluationContext,
@@ -81,9 +83,12 @@ def build_fivetran_sync_status_sensor(
                     )
 
                     for row in query_job.result():
-                        asset_keys.append(
-                            AssetKey([code_location, *schema.split("."), row.table])
+                        asset_key = AssetKey(
+                            [code_location, *schema.split("."), row.table]
                         )
+
+                        if asset_key in sensor_asset_selection._keys:
+                            asset_keys.append(asset_key)
 
                 cursor[connector_id] = curr_last_sync_completion_timestamp
 
