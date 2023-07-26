@@ -8,6 +8,11 @@ assets:
       - ticket_metrics
       - tickets
       - users
+    normalization_tables:
+      ticket_fields:
+        - ticket_fields_custom_field_options
+      tickets:
+        - tickets_custom_fields
   - connection_id: e4856fb7-1f97-4bcd-bc4e-e616c5ae4e52
     group_name: kippadb
     destination_tables:
