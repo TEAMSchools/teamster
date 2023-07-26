@@ -1,32 +1,39 @@
-from dagster import AssetsDefinition, Config, OpExecutionContext, Out, Output, op
+# forked from dagster_airbyte.ops and dagster_airbyte.resources
+from typing import Any, Dict, Iterable, cast
+
+from dagster import In, Nothing, OpExecutionContext, Out, op
 from dagster_airbyte import AirbyteOutput
-from dagster_airbyte.utils import generate_materializations
+from dagster_airbyte.ops import AirbyteSyncConfig
+from dagster_airbyte.resources import BaseAirbyteResource
 
 
-class AirbyteMaterializationOpConfig(Config):
-    airbyte_outputs: list[dict]
+@op(
+    ins={"start_after": In(Nothing)},
+    out=Out(
+        AirbyteOutput,
+        description=(
+            "Parsed json dictionary representing the details of the Airbyte connector "
+            "after the sync successfully completes. See the [Airbyte API Docs](https://"
+            "airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs."
+            "html#overview) to see detailed information on this response."
+        ),
+    ),
+    tags={"kind": "airbyte"},
+)
+def airbyte_start_sync_op(
+    context: OpExecutionContext, config: AirbyteSyncConfig, airbyte: BaseAirbyteResource
+) -> Iterable[Any]:
+    job_details = airbyte.start_sync(config.connection_id)
 
+    job_info = cast(Dict[str, object], job_details.get("job", {}))
 
-def build_airbyte_materialization_op(asset_defs: list[AssetsDefinition]):
-    outputs = {
-        asset_key.path[-1]: Out(is_required=False)
-        for asset_def in asset_defs
-        for asset_key in asset_def.keys
-    }
+    job_id = cast(int, job_info.get("id"))
 
-    @op(name="airbyte_materialization_op", out=outputs)
-    def _op(context: OpExecutionContext, config: AirbyteMaterializationOpConfig):
-        for output in config.airbyte_outputs:
-            namespace = output["connection_details"]["namespaceFormat"].split("_")
+    context.log.info(
+        f"Job {job_id} initialized for connection_id={config.connection_id}."
+    )
 
-            for materialization in generate_materializations(
-                output=AirbyteOutput(**output),
-                asset_key_prefix=[namespace[0], "_".join(namespace[1:])],
-            ):
-                yield Output(
-                    value=True,
-                    output_name=materialization.asset_key.path[-1],
-                    metadata=materialization.metadata,
-                )
-
-    return _op
+    return AirbyteOutput(
+        job_details=job_details,
+        connection_details=airbyte.get_connection_details(config.connection_id),
+    )
