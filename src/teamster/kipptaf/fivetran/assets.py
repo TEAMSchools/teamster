@@ -17,11 +17,14 @@ for config_file in config_path.glob("*.yaml"):
     destination_tables = []
     for schema in config["schemas"]:
         schema_name = schema.get("name")
+
+        if schema_name:
+            destination_table_schema_name = f"{connector_name}.{schema_name}"
+        else:
+            destination_table_schema_name = connector_name
+
         for table in schema["destination_tables"]:
-            if schema_name:
-                destination_tables.append(f"{connector_name}.{schema_name}.{table}")
-            else:
-                destination_tables.append(f"{connector_name}.{table}")
+            destination_tables.append(f"{destination_table_schema_name}.{table}")
 
     __all__.extend(
         build_fivetran_assets(
