@@ -1,10 +1,10 @@
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     AssetOut,
     AssetsDefinition,
-    DagsterStepOutputNotFoundError,
     Nothing,
     OpExecutionContext,
     Output,
@@ -13,33 +13,15 @@ from dagster import (
 from dagster import _check as check
 from dagster import multi_asset
 from dagster._core.definitions.metadata import MetadataUserInput
-from dagster_fivetran import FivetranOutput, FivetranResource
-from dagster_fivetran.utils import generate_materializations
 
 
-def asset_keys_to_schema_config(asset_keys: list[AssetKey]):
-    schemas = {}
-
-    # build unique schema objects
-    for key in asset_keys:
-        schema_name = "_".join(key.path[1:-1])
-        schemas[schema_name] = {
-            "name_in_destination": schema_name,
-            "enabled": True,
-            "tables": {},
-        }
-
-    # add tables to schemas
-    for key in asset_keys:
-        schema_name = "_".join(key.path[1:-1])
-        table_name = key.path[-1]
-
-        schemas[schema_name]["tables"][table_name] = {
-            "name_in_destination": table_name,
-            "enabled": True,
-        }
-
-    return {"schemas": schemas}
+def generate_materializations(
+    tracked_asset_keys: list[AssetKey],
+) -> Iterator[AssetMaterialization]:
+    for asset_key in tracked_asset_keys:
+        yield AssetMaterialization(
+            asset_key=asset_key, description="Table generated via Fivetran sync"
+        )
 
 
 def build_fivetran_assets(
@@ -51,7 +33,6 @@ def build_fivetran_assets(
     table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
-    infer_missing_tables: bool = False,
     op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(
@@ -63,8 +44,6 @@ def build_fivetran_assets(
         for table in destination_tables
     }
 
-    schema_config = asset_keys_to_schema_config(tracked_asset_keys.values())
-
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
 
     _metadata_by_table_name = check.opt_mapping_param(
@@ -75,10 +54,10 @@ def build_fivetran_assets(
         name=f"fivetran_sync_{connector_id}",
         outs={
             "_".join(key.path): AssetOut(
-                io_manager_key=io_manager_key,
                 key=user_facing_asset_keys[table],
-                metadata=_metadata_by_table_name.get(table),
                 dagster_type=Nothing,
+                io_manager_key=io_manager_key,
+                metadata=_metadata_by_table_name.get(table),
             )
             for table, key in tracked_asset_keys.items()
         },
@@ -88,15 +67,9 @@ def build_fivetran_assets(
         op_tags=op_tags,
         can_subset=True,
     )
-    def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
+    def _assets(context: OpExecutionContext) -> Any:
         materialized_asset_keys = set()
-        for materialization in generate_materializations(
-            fivetran_output=FivetranOutput(
-                connector_details=fivetran.get_connector_details(connector_id),
-                schema_config=schema_config,
-            ),
-            asset_key_prefix=asset_key_prefix,
-        ):
+        for materialization in generate_materializations(tracked_asset_keys):
             # scan through all tables actually created, if it was expected then emit an
             # Output. otherwise, emit a runtime AssetMaterialization
             if materialization.asset_key in tracked_asset_keys.values():
@@ -106,28 +79,7 @@ def build_fivetran_assets(
                     metadata=materialization.metadata,
                 )
                 materialized_asset_keys.add(materialization.asset_key)
-
             else:
                 yield materialization
-
-        unmaterialized_asset_keys = (
-            set(tracked_asset_keys.values()) - materialized_asset_keys
-        )
-        if infer_missing_tables:
-            for asset_key in unmaterialized_asset_keys:
-                yield Output(value=None, output_name="_".join(asset_key.path))
-
-        else:
-            if unmaterialized_asset_keys:
-                asset_key = list(unmaterialized_asset_keys)[0]
-                output_name = "_".join(asset_key.path)
-                raise DagsterStepOutputNotFoundError(
-                    (
-                        f"Core compute for {context.op_def.name} did not return an "
-                        f"output for non-optional output '{output_name}'."
-                    ),
-                    step_key=context.get_step_execution_context().step.key,
-                    output_name=output_name,
-                )
 
     return [_assets]
