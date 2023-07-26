@@ -1,10 +1,24 @@
-from dagster import OpExecutionContext, op
+from dagster import Config, OpExecutionContext, op
 from dagster_airbyte.utils import generate_materializations
 
 
+class AirbyteMaterializationOpConfig(Config):
+    airbyte_outputs: list
+
+
 @op
-def foo(context: OpExecutionContext, config: ...):
-    for job in config.jobs:
+def airbyte_materialization_op(
+    context: OpExecutionContext, config: AirbyteMaterializationOpConfig
+):
+    for output in config.airbyte_outputs:
+        namespace_format = output.connection_details["namespaceFormat"].split("_")
+
         yield from generate_materializations(
-            output=job.airbyte_output, asset_key_prefix=job.asset_key_prefix
+            output=output,
+            asset_key_prefix=[namespace_format[0], "_".join(namespace_format[1:])],
         )
+
+
+__all__ = [
+    airbyte_materialization_op,
+]

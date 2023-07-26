@@ -19,6 +19,8 @@ from teamster.core.adp.resources import (
     AdpWorkforceManagerResource,
     AdpWorkforceNowResource,
 )
+from teamster.core.airbyte.jobs import airbyte_materialization_job
+from teamster.core.airbyte.sensors import airbyte_job_status_sensor
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
 from teamster.core.google.forms.resources import GoogleFormsResource
@@ -86,6 +88,7 @@ defs = Definitions(
         *schoolmint.jobs,
         *smartrecruiters.jobs,
         asset_observation_job,
+        airbyte_materialization_job,
     ],
     schedules=[
         *adp.schedules,
@@ -108,6 +111,7 @@ defs = Definitions(
         *google.sensors,
         *iready.sensors,
         *renlearn.sensors,
+        airbyte_job_status_sensor,
     ],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
