@@ -30,7 +30,7 @@ def build_fivetran_sync_monitor_sensor(
     code_location, asset_defs: list[SourceAsset], minimum_interval_seconds=None
 ):
     connectors = {
-        asset.metadata["connector_id"].value: asset.metadata["connector_name"].value
+        asset.metadata["connector_id"].value: asset.metadata["schema_name"].value
         for asset in asset_defs
     }
 

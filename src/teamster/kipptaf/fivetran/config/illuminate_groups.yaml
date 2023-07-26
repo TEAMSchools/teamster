@@ -1,6 +1,0 @@
-connector_name: illuminate_groups
-connector_id: jinx_credulous
-group_name: illuminate
-destination_tables:
-  - group_student_aff
-  - groups

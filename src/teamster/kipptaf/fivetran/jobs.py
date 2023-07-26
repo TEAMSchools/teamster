@@ -12,13 +12,10 @@ __all__ = []
 for config_file in config_path.glob("*.yaml"):
     config = yaml.safe_load(config_file.read_text())
 
-    connector_id = config["connector_id"]
-    connector_name = config["connector_name"]
-
     __all__.append(
         build_fivetran_start_sync_job(
             code_location=CODE_LOCATION,
-            connector_id=connector_id,
-            connector_name=connector_name,
+            connector_id=config["connector_id"],
+            connector_name=config["connector_name"],
         )
     )
