@@ -103,10 +103,10 @@ def build_dynamic_partition_sensor(
                     # )
 
                     cursor[asset_key_string] = now.timestamp()
+                    context.update_cursor(json.dumps(obj=cursor))
+
         finally:
             context.log.debug("Stopping SSH tunnel")
             ssh_tunnel.stop()
-
-        yield SensorResult(cursor=json.dumps(obj=cursor))
 
     return _sensor
