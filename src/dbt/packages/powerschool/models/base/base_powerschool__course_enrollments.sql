@@ -8,6 +8,7 @@ with
 
             {{ dbt_utils.star(from=ref_sections, relation_alias="sec") }},
 
+            s.dcid as students_dcid,
             case
                 when
                     cc.sectionid < 0
