@@ -87,42 +87,26 @@ def build_dynamic_partition_sensor(
                     partition_key = window_start.to_iso8601_string()
 
                     # dynamic_partitions_requests.append(
-                    #     AddDynamicPartitionsRequest(
-                    #         partitions_def_name=asset.partitions_def.name,
-                    #         partition_keys=[partition_key],
-                    #     )
+                    yield AddDynamicPartitionsRequest(
+                        partitions_def_name=asset.partitions_def.name,
+                        partition_keys=[partition_key],
+                    )
                     # )
 
                     # run_requests.append(
-                    #     RunRequest(
-                    #         run_key=f"{asset_key_string}_{partition_key}",
-                    #         run_config=run_config,
-                    #         asset_selection=[asset.key],
-                    #         partition_key=partition_key,
-                    #     )
-                    # )
-
-                    yield SensorResult(
-                        run_requests=[
-                            RunRequest(
-                                run_key=f"{asset_key_string}_{partition_key}",
-                                run_config=run_config,
-                                asset_selection=[asset.key],
-                                partition_key=partition_key,
-                            )
-                        ],
-                        cursor=json.dumps(obj=cursor),
-                        dynamic_partitions_requests=[
-                            AddDynamicPartitionsRequest(
-                                partitions_def_name=asset.partitions_def.name,
-                                partition_keys=[partition_key],
-                            )
-                        ],
+                    yield RunRequest(
+                        run_key=f"{asset_key_string}_{partition_key}",
+                        run_config=run_config,
+                        asset_selection=[asset.key],
+                        partition_key=partition_key,
                     )
+                    # )
 
                     cursor[asset_key_string] = now.timestamp()
         finally:
             context.log.debug("Stopping SSH tunnel")
             ssh_tunnel.stop()
+
+        yield SensorResult(cursor=json.dumps(obj=cursor))
 
     return _sensor
