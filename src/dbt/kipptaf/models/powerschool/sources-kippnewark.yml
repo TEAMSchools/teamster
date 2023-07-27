@@ -667,3 +667,27 @@ sources:
               - kippnewark
               - powerschool
               - int_powerschool__gpa_cumulative
+      - name: int_powerschool__gradebook_assignment_scores
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__gradebook_assignment_scores
+      - name: int_powerschool__gradebook_assignments
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__gradebook_assignments
+      - name: int_powerschool__section_grade_config
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__section_grade_config
