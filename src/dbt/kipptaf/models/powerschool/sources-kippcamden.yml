@@ -664,7 +664,7 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippnewark
+              - kippcamden
               - powerschool
               - int_powerschool__gpa_cumulative
       - name: int_powerschool__gradebook_assignment_scores
@@ -672,7 +672,7 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippnewark
+              - kippcamden
               - powerschool
               - int_powerschool__gradebook_assignment_scores
       - name: int_powerschool__gradebook_assignments
@@ -680,7 +680,7 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippnewark
+              - kippcamden
               - powerschool
               - int_powerschool__gradebook_assignments
       - name: int_powerschool__section_grade_config
@@ -688,6 +688,14 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippnewark
+              - kippcamden
               - powerschool
               - int_powerschool__section_grade_config
+      - name: int_powerschool__category_grades
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - int_powerschool__category_grades

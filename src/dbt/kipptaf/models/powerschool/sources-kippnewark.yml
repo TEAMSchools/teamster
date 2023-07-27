@@ -691,3 +691,11 @@ sources:
               - kippnewark
               - powerschool
               - int_powerschool__section_grade_config
+      - name: int_powerschool__category_grades
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__category_grades
