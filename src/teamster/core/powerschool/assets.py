@@ -34,6 +34,8 @@ def build_powerschool_table_asset(
         ssh_powerschool: SSHConfigurableResource,
         db_powerschool: OracleResource,
     ):
+        now = pendulum.now()
+
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         partition_column = asset_metadata["partition_column"]
@@ -76,7 +78,13 @@ def build_powerschool_table_asset(
             except FileNotFoundError:
                 num_records = 0
 
-            yield Output(value=file_path, metadata={"records": num_records})
+            yield Output(
+                value=file_path,
+                metadata={
+                    "records": num_records,
+                    "latest_materialization_timestamp": now.timestamp(),
+                },
+            )
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
