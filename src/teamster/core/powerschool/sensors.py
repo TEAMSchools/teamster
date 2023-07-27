@@ -2,12 +2,10 @@ import json
 
 import pendulum
 from dagster import (
-    AddDynamicPartitionsRequest,
     AssetsDefinition,
     AssetSelection,
     RunRequest,
     SensorEvaluationContext,
-    SensorResult,
     sensor,
 )
 from sqlalchemy import text
@@ -87,11 +85,15 @@ def build_dynamic_partition_sensor(
                     partition_key = window_start.to_iso8601_string()
 
                     # dynamic_partitions_requests.append(
-                    yield AddDynamicPartitionsRequest(
+                    #     AddDynamicPartitionsRequest(
+                    #         partitions_def_name=asset.partitions_def.name,
+                    #         partition_keys=[partition_key],
+                    #     )
+                    # )
+                    context.instance.add_dynamic_partitions(
                         partitions_def_name=asset.partitions_def.name,
                         partition_keys=[partition_key],
                     )
-                    # )
 
                     # run_requests.append(
                     yield RunRequest(
