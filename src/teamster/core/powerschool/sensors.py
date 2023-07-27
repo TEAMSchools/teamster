@@ -68,11 +68,11 @@ def build_dynamic_partition_sensor(
 
                     [(count,)] = db_powerschool.engine.execute_query(
                         query=text(
-                            "SELECT COUNT(*) ",
-                            f"FROM {asset.key.path[-1]} ",
-                            f"WHERE {partition_column} >= ",
+                            "SELECT COUNT(*) "
+                            f"FROM {asset.key.path[-1]} "
+                            f"WHERE {partition_column} >= "
                             f"TO_TIMESTAMP('{window_start_fmt}', "
-                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')",
+                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
                         ),
                         partition_size=1,
                         output_format=None,
