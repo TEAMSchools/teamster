@@ -43,8 +43,8 @@ def build_dynamic_partition_sensor(
             context.log.debug("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            run_requests = []
-            dynamic_partitions_requests = []
+            # run_requests = []
+            # dynamic_partitions_requests = []
 
             for asset in asset_defs:
                 is_requested = False
@@ -86,31 +86,39 @@ def build_dynamic_partition_sensor(
                 if is_requested:
                     partition_key = window_start.to_iso8601_string()
 
-                    dynamic_partitions_requests.append(
-                        AddDynamicPartitionsRequest(
-                            partitions_def_name=asset.partitions_def.name,
-                            partition_keys=[partition_key],
-                        )
-                    )
+                    # dynamic_partitions_requests.append(
+                    #     AddDynamicPartitionsRequest(
+                    #         partitions_def_name=asset.partitions_def.name,
+                    #         partition_keys=[partition_key],
+                    #     )
+                    # )
 
-                    run_requests.append(
-                        RunRequest(
+                    # run_requests.append(
+                    #     RunRequest(
+                    #         run_key=f"{asset_key_string}_{partition_key}",
+                    #         run_config=run_config,
+                    #         asset_selection=[asset.key],
+                    #         partition_key=partition_key,
+                    #     )
+                    # )
+
+                    yield SensorResult(
+                        run_requests=RunRequest(
                             run_key=f"{asset_key_string}_{partition_key}",
                             run_config=run_config,
                             asset_selection=[asset.key],
                             partition_key=partition_key,
-                        )
+                        ),
+                        cursor=json.dumps(obj=cursor),
+                        dynamic_partitions_requests=AddDynamicPartitionsRequest(
+                            partitions_def_name=asset.partitions_def.name,
+                            partition_keys=[partition_key],
+                        ),
                     )
 
                     cursor[asset_key_string] = now.timestamp()
         finally:
             context.log.debug("Stopping SSH tunnel")
             ssh_tunnel.stop()
-
-        return SensorResult(
-            run_requests=run_requests,
-            cursor=json.dumps(obj=cursor),
-            dynamic_partitions_requests=dynamic_partitions_requests,
-        )
 
     return _sensor
