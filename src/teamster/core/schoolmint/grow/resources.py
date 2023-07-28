@@ -56,9 +56,9 @@ class SchoolMintGrowResource(ConfigurableResource):
 
             return response
         except HTTPError as e:
-            self.get_resource_context().log.error(e)
+            self.get_resource_context().log.error(response.text)
 
-            raise HTTPError(response.text) from e
+            raise HTTPError() from e
 
     def get(self, endpoint, *args, **kwargs):
         context = self.get_resource_context()
