@@ -266,3 +266,4 @@ left join
     observation_groups_agg as og
     on u.user_id = og.user_id
     and sch.school_id = og.school_id
+where p.role_name != 'No Role'
