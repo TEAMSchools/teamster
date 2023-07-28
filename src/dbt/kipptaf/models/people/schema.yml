@@ -11,6 +11,6 @@ models:
       meta:
         dagster:
           freshness_policy:
-            maximum_lag_minutes: 0
+            maximum_lag_minutes: 1440
             cron_schedule: 0 0 * * *
             cron_schedule_timezone: America/New_York
