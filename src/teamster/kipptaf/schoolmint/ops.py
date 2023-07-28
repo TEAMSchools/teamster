@@ -33,28 +33,26 @@ def schoolmint_grow_get_user_update_data_op(
 def schoolmint_grow_user_update_op(
     context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
 ):
-    context.log.info("Processing user creation/updates...")
     for u in users:
         user_id = u["user_id"]
+        inactive = u["inactive"]
+        user_email = u["user_email"]
 
-        # restore
-        if u["inactive"] == 0 and u["inactive_ws"] == 1:
-            try:
+        try:
+            # restore
+            if inactive == 0 and u["inactive_ws"] == 1:
+                context.log.info(f"RESTORING\t{user_email}")
                 schoolmint_grow.put("users", user_id, "restore")
-
-                context.log.info(
-                    f"{u['user_name']} ({u['user_internal_id']}) - RESTORED"
-                )
-            except Exception:
-                continue
+        except Exception:
+            continue
 
         # build user payload
         user_payload = {
             "district": schoolmint_grow.district_id,
             "name": u["user_name"],
-            "email": u["user_email"],
+            "email": user_email,
             "internalId": u["user_internal_id"],
-            "inactive": u["inactive"],
+            "inactive": inactive,
             "defaultInformation": {
                 "school": u["school_id"],
                 "gradeLevel": u["grade_id"],
@@ -64,45 +62,39 @@ def schoolmint_grow_user_update_op(
             "roles": json.loads(u["role_id"]),
         }
 
-        # create or update
-        if user_id is None:
-            try:
+        try:
+            # create
+            if inactive == 0 and user_id is None:
+                context.log.info(f"CREATING\t{user_email}")
                 create_resp = schoolmint_grow.post("users", json=user_payload)
-
                 user_id = create_resp["_id"]
-
                 u["user_id"] = user_id
-
-                context.log.info(
-                    f"{u['user_name']} ({u['user_internal_id']}) - CREATED"
-                )
-            except Exception:
-                continue
-        else:
-            try:
+            # update
+            elif inactive == 0:
+                context.log.info(f"UPDATING\t{user_email}")
                 schoolmint_grow.put("users", user_id, json=user_payload)
+        except Exception:
+            continue
 
-                context.log.info(
-                    f"{u['user_name']} ({u['user_internal_id']}) - UPDATED"
-                )
-            except Exception:
-                continue
-
-        # archive
-        if u["inactive"] == 1 and u["archived_at"] is None:
-            try:
+        try:
+            # archive
+            if inactive == 1 and u["archived_at"] is None:
+                context.log.info(f"ARCHIVING\t{user_email}")
                 schoolmint_grow.delete("users", user_id)
+        except Exception:
+            continue
 
-                context.log.info(
-                    f"{u['user_name']} ({u['user_internal_id']}) - ARCHIVED"
-                )
-            finally:
-                continue
+    return users
 
-    context.log.info("Processing school role changes...")
+
+@op
+def schoolmint_grow_school_update_op(
+    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
+):
     schools = schoolmint_grow.get("schools")["data"]
+
     for s in schools:
-        context.log.info(f"{s['name']}")
+        context.log.info(f"UPDATING\t{s['name']}")
 
         role_change = False
         schools_payload = {
@@ -127,11 +119,13 @@ def schoolmint_grow_user_update_op(
             for role, membership in grp_roles.items():
                 mem_ids = [m["_id"] for m in membership]
                 role_users = [gu for gu in grp_users if role in gu["group_type"]]
+
                 for ru in role_users:
                     if ru["user_id"] not in mem_ids:
                         context.log.info(
-                            f"Adding {ru['user_name']} to {grp['name']}/{role}"
+                            f"Adding {ru['user_email']} to {grp['name']}/{role}"
                         )
+
                         mem_ids.append(ru["user_id"])
                         role_change = True
 
@@ -140,37 +134,29 @@ def schoolmint_grow_user_update_op(
             schools_payload["observationGroups"].append(grp_update)
 
         # school admins
-        school_admins = s["admins"]
-        new_school_admins = [
-            {"_id": su["user_id"], "name": su["user_name"]}
-            for su in school_users
-            if "School Admin" in su.get("role_names", [])
-        ]
+        admin_roles = {
+            "admins": "School Admin",
+            "assistantAdmins": "School Assistant Admin",
+        }
 
-        for nsa in new_school_admins:
-            sa_match = [sa for sa in school_admins if sa["_id"] == nsa["_id"]]
-            if not sa_match:
-                context.log.info(f"Adding {nsa['name']} to School Admins")
-                school_admins.append(nsa)
-                role_change = True
+        for key, role_name in admin_roles.items():
+            existing = s[key]
+            new = [
+                {"_id": su["user_id"], "name": su["user_name"]}
+                for su in school_users
+                if role_name in su.get("role_names", [])
+            ]
 
-        schools_payload["admins"] = school_admins
+            for n in new:
+                match = [sa for sa in existing if sa["_id"] == n["_id"]]
 
-        # school assistant admins
-        asst_admins = s["assistantAdmins"]
-        new_asst_admins = [
-            {"_id": su["user_id"], "name": su["user_name"]}
-            for su in school_users
-            if "School Assistant Admin" in su.get("role_names", [])
-        ]
-        for naa in new_asst_admins:
-            aa_match = [aa for aa in asst_admins if aa["_id"] == naa["_id"]]
-            if not aa_match:
-                context.log.info(f"Adding {naa['name']} to School Assistant Admins")
-                asst_admins.append(naa)
-                role_change = True
+                if not match:
+                    context.log.info(f"Adding {n['user_email']} to {role_name}")
 
-        schools_payload["assistantAdmins"] = asst_admins
+                    existing.append(n)
+                    role_change = True
+
+            schools_payload[key] = existing
 
         if role_change:
             schoolmint_grow.put("schools", s["_id"], json=schools_payload)
