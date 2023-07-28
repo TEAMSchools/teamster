@@ -27,6 +27,12 @@ echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud_service_account_json
 # update pip
 python -m pip install --no-cache-dir --upgrade pip
 
+# update pdm
+sudo /usr/local/py-utils/bin/pdm self update
+
+# install pdm dependencies
+pdm install --no-lock
+
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=env/gcloud_service_account_json
 
