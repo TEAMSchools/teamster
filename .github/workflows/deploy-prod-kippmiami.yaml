@@ -11,8 +11,8 @@ on:
       - .dagster/dagster-cloud-kippmiami.yaml
       - src/teamster/core/**
       - src/teamster/kippmiami/**
-      - src/dbt/packages/deanslist/**
-      - src/dbt/packages/powerschool/**
+      - src/dbt/deanslist/**
+      - src/dbt/powerschool/**
       - src/dbt/teamster_utils/**
       - src/dbt/kippmiami/**
 
