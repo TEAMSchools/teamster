@@ -1,46 +1,99 @@
-from dagster import (  # RunRequest,
+import pendulum
+from dagster import (
+    AddDynamicPartitionsRequest,
     AssetsDefinition,
-    DynamicPartitionsDefinition,
+    RunRequest,
     ScheduleEvaluationContext,
     schedule,
 )
+from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def build_dynamic_partition_schedule(
     cron_schedule,
     code_location,
-    source_system,
     execution_timezone,
     asset_defs: list[AssetsDefinition],
 ):
     @schedule(
         cron_schedule=cron_schedule,
-        name=f"{code_location}_{source_system}_dynamic_partition_schedule",
+        job_name="foo",
+        name=f"{code_location}_powerschool_dynamic_partition_schedule",
         execution_timezone=execution_timezone,
     )
-    def _schedule(context: ScheduleEvaluationContext, db_powerschool: OracleResource):
-        for asset in asset_defs:
-            partitions_def: DynamicPartitionsDefinition = asset.partitions_def
+    def _schedule(
+        context: ScheduleEvaluationContext,
+        ssh_powerschool: SSHConfigurableResource,
+        db_powerschool: OracleResource,
+    ):
+        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
-            partitions = sorted(
-                context.instance.get_dynamic_partitions(partitions_def.name)
-            )
+        try:
+            context.log.debug("Starting SSH tunnel")
+            ssh_tunnel.start()
 
-            context.log.info(asset.key.to_user_string())
-            context.log.info(partitions)
-            context.log.info(partitions[-1])
+            for asset in asset_defs:
+                event = context.instance.get_latest_materialization_event(asset.key)
 
-            # context.instance.add_dynamic_partitions(
-            #     partitions_def_name=partitions_def.name,
-            #     partition_keys=[...],
-            # )
+                latest_materialization = pendulum.from_timestamp(
+                    event.asset_materialization.metadata.get(
+                        "latest_materialization_timestamp", 0
+                    )
+                )
 
-        # yield RunRequest(
-        #     run_key=f"{code_location}_powerschool_dynamic_schedule_{...}",
-        #     asset_selection=[...],
-        #     partition_key=partition_key,
-        # )
+                is_requested = False
+                run_config = None
+
+                asset_key_string = asset.key.to_python_identifier()
+                context.log.debug(asset_key_string)
+
+                if latest_materialization.timestamp() == 0:
+                    is_requested = True
+                else:
+                    partition_column = asset.metadata_by_key[asset.key][
+                        "partition_column"
+                    ]
+
+                    latest_materialization_fmt = latest_materialization.in_timezone(
+                        execution_timezone
+                    ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+
+                    [(count,)] = db_powerschool.engine.execute_query(
+                        query=text(
+                            "SELECT COUNT(*) "
+                            f"FROM {asset.key.path[-1]} "
+                            f"WHERE {partition_column} >= "
+                            f"TO_TIMESTAMP('{latest_materialization_fmt}', "
+                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                        ),
+                        partition_size=1,
+                        output_format=None,
+                    )
+
+                    context.log.debug(f"count: {count}")
+
+                    if count > 0:
+                        is_requested = True
+
+                if is_requested:
+                    partition_key = latest_materialization.to_iso8601_string()
+
+                    yield AddDynamicPartitionsRequest(
+                        partitions_def_name=asset.partitions_def.name,
+                        partition_keys=[partition_key],
+                    )
+
+                    yield RunRequest(
+                        run_key=f"{asset_key_string}_{partition_key}",
+                        run_config=run_config,
+                        asset_selection=[asset.key],
+                        partition_key=partition_key,
+                    )
+        finally:
+            context.log.debug("Stopping SSH tunnel")
+            ssh_tunnel.stop()
 
     return _schedule
