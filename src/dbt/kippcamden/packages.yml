@@ -1,5 +1,5 @@
 packages:
-  - local: ../packages/deanslist
-  - local: ../packages/edplan
-  - local: ../packages/powerschool
-  - local: ../packages/titan
+  - local: ../deanslist
+  - local: ../edplan
+  - local: ../powerschool
+  - local: ../titan

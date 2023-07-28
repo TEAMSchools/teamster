@@ -29,20 +29,13 @@ def build_dynamic_partition_sensor(
     ):
         cursor = json.loads(context.cursor or "{}")
 
-        now = (
-            pendulum.now(tz=timezone)
-            .subtract(minutes=1)  # 1 min grace period in case of lag
-            .start_of("minute")
-        )
+        now = pendulum.now(timezone).start_of("minute")
 
         ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
         try:
             context.log.debug("Starting SSH tunnel")
             ssh_tunnel.start()
-
-            # run_requests = []
-            # dynamic_partitions_requests = []
 
             for asset in asset_defs:
                 is_requested = False
@@ -51,16 +44,21 @@ def build_dynamic_partition_sensor(
                 asset_key_string = asset.key.to_python_identifier()
                 context.log.debug(asset_key_string)
 
-                window_start = pendulum.from_timestamp(
-                    cursor.get(asset_key_string, 0), tz=timezone
-                )
+                last_updated = cursor.get(asset_key_string)
 
-                if window_start.timestamp() == 0:
+                if last_updated is None:
+                    partition_key = pendulum.from_timestamp(
+                        timestamp=0
+                    ).to_iso8601_string()
                     is_requested = True
                 else:
                     partition_column = asset.metadata_by_key[asset.key][
                         "partition_column"
                     ]
+
+                    window_start = pendulum.from_timestamp(
+                        timestamp=last_updated, tz=timezone
+                    )
 
                     window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
@@ -79,30 +77,21 @@ def build_dynamic_partition_sensor(
                     context.log.debug(f"count: {count}")
 
                     if count > 0:
+                        partition_key = window_start.to_iso8601_string()
                         is_requested = True
 
                 if is_requested:
-                    partition_key = window_start.to_iso8601_string()
-
-                    # dynamic_partitions_requests.append(
-                    #     AddDynamicPartitionsRequest(
-                    #         partitions_def_name=asset.partitions_def.name,
-                    #         partition_keys=[partition_key],
-                    #     )
-                    # )
                     context.instance.add_dynamic_partitions(
                         partitions_def_name=asset.partitions_def.name,
                         partition_keys=[partition_key],
                     )
 
-                    # run_requests.append(
                     yield RunRequest(
                         run_key=f"{asset_key_string}_{partition_key}",
                         run_config=run_config,
                         asset_selection=[asset.key],
                         partition_key=partition_key,
                     )
-                    # )
 
                     cursor[asset_key_string] = now.timestamp()
                     context.update_cursor(json.dumps(obj=cursor))

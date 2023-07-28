@@ -37,6 +37,12 @@ gcloud config set compute/region us-central1
 # update the kubectl configuration to use the plugin
 gcloud container clusters get-credentials dagster-cloud
 
-# initialize dbt submodule
-git submodule init
-git submodule update --remote
+# install dbt deps and generate manifests
+# trunk-ignore(shellcheck/SC2312)
+find ./src/dbt -maxdepth 2 -name "dbt_project.yml" -print0 |
+  while IFS= read -r -d "" file; do
+    directory=$(dirname "${file}")
+    project_name=$(basename "${directory}")
+
+    pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" list
+  done
