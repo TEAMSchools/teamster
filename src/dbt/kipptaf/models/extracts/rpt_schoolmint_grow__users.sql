@@ -171,7 +171,7 @@ select
     p.user_internal_id,
     p.user_name,
     p.user_email,
-    case when p.role_name = 'No Role' then 1 else p.inactive end as inactive,
+    p.inactive,
     case
         when
             current_date('America/New_York')
