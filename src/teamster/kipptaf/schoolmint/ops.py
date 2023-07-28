@@ -83,6 +83,7 @@ def schoolmint_grow_user_update_op(
         else:
             try:
                 schoolmint_grow.put("users", user_id, json=user_payload)
+
                 context.log.info(
                     f"{u['user_name']} ({u['user_internal_id']}) - UPDATED"
                 )
@@ -93,6 +94,7 @@ def schoolmint_grow_user_update_op(
         if u["inactive"] and not u["archived_at"]:
             try:
                 schoolmint_grow.delete("users", user_id)
+
                 context.log.info(
                     f"{u['user_name']} ({u['user_internal_id']}) - ARCHIVED"
                 )
