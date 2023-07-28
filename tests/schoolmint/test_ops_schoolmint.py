@@ -10,7 +10,7 @@ from teamster.kipptaf.schoolmint.ops import (
 )
 
 
-def test_op():
+def test_user_update_job():
     context = build_op_context()
 
     schoolmint_grow = SchoolMintGrowResource(

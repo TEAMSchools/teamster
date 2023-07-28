@@ -162,3 +162,17 @@ def schoolmint_grow_school_update_op(
             schoolmint_grow.put("schools", s["_id"], json=schools_payload)
         else:
             context.log.info("No school role changes")
+
+
+@op
+def schoolmint_grow_user_delete_op(
+    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
+):
+    for u in users:
+        user_id = u["user_id"]
+
+        try:
+            context.log.info(f"ARCHIVING\t{user_id}")
+            schoolmint_grow.delete("users", user_id)
+        except Exception:
+            continue
