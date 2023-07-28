@@ -41,6 +41,7 @@ def schoolmint_grow_user_update_op(
         if u["inactive"] == 0 and u["inactive_ws"] == 1:
             try:
                 schoolmint_grow.put("users", user_id, "restore")
+
                 context.log.info(
                     f"{u['user_name']} ({u['user_internal_id']}) - RESTORED"
                 )
@@ -67,6 +68,7 @@ def schoolmint_grow_user_update_op(
         if user_id is None:
             try:
                 create_resp = schoolmint_grow.post("users", json=user_payload)
+
                 user_id = create_resp["_id"]
 
                 u["user_id"] = user_id
