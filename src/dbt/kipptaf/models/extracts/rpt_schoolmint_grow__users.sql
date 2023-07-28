@@ -171,7 +171,7 @@ select
     p.user_internal_id,
     p.user_name,
     p.user_email,
-    p.inactive,
+    case when p.role_name = 'No Role' then 1 else p.inactive end as inactive,
     case
         when
             current_date('America/New_York')
@@ -266,4 +266,3 @@ left join
     observation_groups_agg as og
     on u.user_id = og.user_id
     and sch.school_id = og.school_id
-where p.role_name != 'No Role'
