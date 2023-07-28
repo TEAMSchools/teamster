@@ -74,7 +74,10 @@ with
                     )
                 then 'School Assistant Admin'
                 /* basic roles */
-                when sr.management_position_indicator
+                when
+                    sr.management_position_indicator
+                    and sr.job_title
+                    in ('Teacher', 'Teacher ESL', 'Learning Specialist')
                 then 'Coach'
                 when
                     sr.job_title in (
