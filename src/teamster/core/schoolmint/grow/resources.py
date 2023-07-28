@@ -62,7 +62,7 @@ class SchoolMintGrowResource(ConfigurableResource):
 
     def get(self, endpoint, *args, **kwargs):
         context = self.get_resource_context()
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(endpoint, *args)
         params = copy.deepcopy(self._default_params)
 
         params.update(kwargs)
@@ -115,21 +115,21 @@ class SchoolMintGrowResource(ConfigurableResource):
             return all_data
 
     def post(self, endpoint, *args, **kwargs):
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(endpoint, *args)
 
         self.get_resource_context().log.debug(f"POST: {url}")
 
         return self._request(method="POST", url=url, **kwargs).json()
 
     def put(self, endpoint, *args, **kwargs):
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(endpoint, *args)
 
         self.get_resource_context().log.debug(f"PUT: {url}")
 
         return self._request(method="PUT", url=url, **kwargs).json()
 
     def delete(self, endpoint, *args):
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(endpoint, *args)
 
         self.get_resource_context().log.debug(f"DELETE: {url}")
 
