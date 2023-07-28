@@ -35,18 +35,14 @@ def schoolmint_grow_user_update_op(
 ):
     context.log.info("Processing user creation/updates...")
     for u in users:
-        # skip if inactive and already archived
-        if u["inactive"] and u["inactive_ws"] and u["archived_at"]:
-            continue
-
         user_id = u["user_id"]
 
         # restore
-        if not u["inactive"] and u["archived_at"]:
+        if u["inactive"] == 0 and u["inactive_ws"] == 1:
             try:
                 schoolmint_grow.put("users", user_id, "restore")
                 context.log.info(
-                    f"{u['user_name']} ({u['user_internal_id']}) - REACTIVATED"
+                    f"{u['user_name']} ({u['user_internal_id']}) - RESTORED"
                 )
             except Exception:
                 continue
@@ -68,7 +64,7 @@ def schoolmint_grow_user_update_op(
         }
 
         # create or update
-        if not user_id:
+        if user_id is None:
             try:
                 create_resp = schoolmint_grow.post("users", json=user_payload)
                 user_id = create_resp["_id"]
@@ -91,7 +87,7 @@ def schoolmint_grow_user_update_op(
                 continue
 
         # archive
-        if u["inactive"] and not u["archived_at"]:
+        if u["inactive"] == 1 and u["archived_at"] is None:
             try:
                 schoolmint_grow.delete("users", user_id)
 
@@ -115,7 +111,9 @@ def schoolmint_grow_user_update_op(
         school_users = [
             u
             for u in users
-            if u["school_id"] == s["_id"] and u["user_id"] and not u["inactive"]
+            if u["school_id"] == s["_id"]
+            and u["user_id"] is not None
+            and u["inactive"] == 0
         ]
 
         # observation groups
