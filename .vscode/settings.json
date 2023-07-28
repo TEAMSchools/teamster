@@ -1,5 +1,4 @@
 {
-  "dbt.dbtPythonPathOverride": "/workspaces/teamster/.venv/bin/python",
   "dbt.versionCheck": "status bar",
   "dbt.prefixGenerateModel": "stg",
   "editor.defaultFormatter": "trunk.io",
