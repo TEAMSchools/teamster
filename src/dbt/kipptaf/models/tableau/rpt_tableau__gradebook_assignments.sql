@@ -1,125 +1,124 @@
-{{ config(enabled=False) }}
 select
-    enr.sectionid,
-    enr.academic_year,
-    enr.credittype,
-    enr.course_number,
-    enr.course_name,
-    enr.section_number,
-    enr.teacher_name,
-    enr.student_number,
-    enr.schoolid,
-    enr.db_name,
+    enr.cc_sectionid as sectionid,
+    enr.cc_section_number as section_number,
+    enr.cc_course_number as course_number,
+    enr.courses_course_name as course_name,
+    enr.courses_credittype as credittype,
+    enr.teacher_lastfirst as teacher_name,
+    regexp_extract(enr._dbt_source_relation, r'(kippw\+)_') as db_name,
 
+    co.student_number,
     co.lastfirst,
+    co.academic_year,
+    co.schoolid,
     co.grade_level,
-    co.iep_status,
+    co.spedlep as iep_status,
 
     gb.term_abbreviation,
     gb.storecode as finalgradename,
-    gb.finalgradesetuptype,
-    gb.gradingformulaweightingtype,
+    gb.grading_formula_weighting_type as finalgradesetuptype,
+    gb.grading_formula_weighting_type as gradingformulaweightingtype,
     gb.category_name as grade_category,
-    gb.category_abbreviation as grade_category_abbreviation,
-    gb.weight as weighting,
-    gb.includeinfinalgrades,
+    gb.storecode as grade_category_abbreviation,
+    gb.grade_calc_formula_weight as weighting,
+    gb.is_in_final_grades as includeinfinalgrades,
     left(gb.storecode, 1) as finalgrade_category,
 
-    a1.assignmentid,
-    a1.assign_date,
-    a1.assign_name,
-    a1.pointspossible,
-    a1.weight,
-    a1.extracreditpoints,
-    a1.isfinalscorecalculated,
+    a.assignmentid,
+    a.duedate as assign_date,
+    a.name as assign_name,
+    a.totalpointvalue as pointspossible,
+    a.weight,
+    a.extracreditpoints,
+    a.iscountedinfinalgrade as isfinalscorecalculated,
 
-    s1.scorepoints,
-    s1.islate,
-    s1.isexempt,
-    s1.ismissing,
-from powerschool.course_enrollments_current_static as enr
+    s.scorepoints,
+    s.islate,
+    s.isexempt,
+    s.ismissing,
+from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
-    powerschool.cohort_identifiers_static as co
-    on enr.student_number = co.student_number
-    and enr.academic_year = co.academic_year
-    and enr.db_name = co.db_name
+    {{ ref("base_powerschool__student_enrollments") }} as co
+    on enr.cc_studentid = co.studentid
+    and enr.cc_yearid = co.yearid
+    and {{ union_dataset_join_clause(left_alias="enr", right_alias="co") }}
     and co.rn_year = 1
 inner join
-    powerschool.gradebook_setup_static as gb
-    on enr.sections_dcid = gb.sectionsdcid
-    and enr.db_name = gb.db_name
-    and gb.finalgradesetuptype = 'Total_Points'
+    {{ ref("int_powerschool__section_grade_config") }} as gb
+    on enr.sections_dcid = gb.sections_dcid
+    and {{ union_dataset_join_clause(left_alias="enr", right_alias="gb") }}
+    and gb.grading_formula_weighting_type = 'Total_Points'
 left join
-    powerschool.gradebook_assignments_current_static as a1
-    on gb.sectionsdcid = a1.sectionsdcid
-    and a1.assign_date between gb.term_start_date and gb.term_end_date
-    and gb.db_name = a1.db_name
+    {{ ref("int_powerschool__gradebook_assignments") }} as a
+    on gb.sections_dcid = a.sectionsdcid
+    and a.duedate between gb.term_start_date and gb.term_end_date
+    and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
 left join
-    powerschool.gradebook_assignments_scores_current_static as s1
-    on a1.assignmentsectionid = s1.assignmentsectionid
-    and a1.db_name = s1.db_name
-    and enr.students_dcid = s1.studentsdcid
+    {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
+    on a.assignmentsectionid = s.assignmentsectionid
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+    and enr.students_dcid = s.studentsdcid
 
 union all
 
 select
-    enr.sectionid,
-    enr.academic_year,
-    enr.credittype,
-    enr.course_number,
-    enr.course_name,
-    enr.section_number,
-    enr.teacher_name,
-    enr.student_number,
-    enr.schoolid,
-    enr.db_name,
+    enr.cc_sectionid as sectionid,
+    enr.cc_section_number as section_number,
+    enr.cc_course_number as course_number,
+    enr.courses_course_name as course_name,
+    enr.courses_credittype as credittype,
+    enr.teacher_lastfirst as teacher_name,
+    regexp_extract(enr._dbt_source_relation, r'(kippw\+)_') as db_name,
 
+    co.student_number,
     co.lastfirst,
+    co.academic_year,
+    co.schoolid,
     co.grade_level,
-    co.iep_status,
+    co.spedlep as iep_status,
 
     gb.term_abbreviation,
     gb.storecode as finalgradename,
-    gb.finalgradesetuptype,
-    gb.gradingformulaweightingtype,
+    gb.grading_formula_weighting_type as finalgradesetuptype,
+    gb.grading_formula_weighting_type as gradingformulaweightingtype,
     gb.category_name as grade_category,
-    gb.category_abbreviation as grade_category_abbreviation,
-    gb.weight as weighting,
-    gb.includeinfinalgrades,
+    gb.storecode as grade_category_abbreviation,
+    gb.grade_calc_formula_weight as weighting,
+    gb.is_in_final_grades as includeinfinalgrades,
     left(gb.storecode, 1) as finalgrade_category,
 
-    a2.assignmentid,
-    a2.assign_date,
-    a2.assign_name,
-    a2.pointspossible,
-    a2.weight,
-    a2.extracreditpoints,
-    a2.isfinalscorecalculated,
+    a.assignmentid,
+    a.duedate as assign_date,
+    a.name as assign_name,
+    a.totalpointvalue as pointspossible,
+    a.weight,
+    a.extracreditpoints,
+    a.iscountedinfinalgrade as isfinalscorecalculated,
 
-    s2.scorepoints,
-    s2.islate,
-    s2.isexempt,
-    s2.ismissing,
-from powerschool.course_enrollments_current_static as enr
+    s.scorepoints,
+    s.islate,
+    s.isexempt,
+    s.ismissing,
+from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
-    powerschool.cohort_identifiers_static as co
-    on enr.student_number = co.student_number
-    and enr.academic_year = co.academic_year
-    and enr.db_name = co.db_name
+    {{ ref("base_powerschool__student_enrollments") }} as co
+    on enr.cc_studentid = co.studentid
+    and enr.cc_yearid = co.yearid
+    and {{ union_dataset_join_clause(left_alias="enr", right_alias="co") }}
     and co.rn_year = 1
 inner join
-    powerschool.gradebook_setup_static as gb
-    on enr.sections_dcid = gb.sectionsdcid
-    and enr.db_name = gb.db_name
-    and gb.finalgradesetuptype != 'Total_Points'
+    {{ ref("int_powerschool__section_grade_config") }} as gb
+    on enr.sections_dcid = gb.sections_dcid
+    and {{ union_dataset_join_clause(left_alias="enr", right_alias="gb") }}
+    and gb.grading_formula_weighting_type != 'Total_Points'
 left join
-    powerschool.gradebook_assignments_current_static as a2
-    on gb.sectionsdcid = a2.sectionsdcid
-    and gb.assignmentcategoryid = a2.categoryid
-    and a2.assign_date between gb.term_start_date and gb.term_end_date
-    and gb.db_name = a2.db_name
+    {{ ref("int_powerschool__gradebook_assignments") }} as a
+    on gb.sections_dcid = a.sectionsdcid
+    and gb.category_id = a.category_id
+    and a.duedate between gb.term_start_date and gb.term_end_date
+    and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
 left join
-    powerschool.gradebook_assignments_scores_current_static as s2
-    on a2.assignmentsectionid = s2.assignmentsectionid
-    and a2.db_name = s2.db_name
-    and enr.students_dcid = s2.studentsdcid
+    {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
+    on a.assignmentsectionid = s.assignmentsectionid
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+    and enr.students_dcid = s.studentsdcid
