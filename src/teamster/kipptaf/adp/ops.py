@@ -35,18 +35,7 @@ def get_event_payload(associate_oid, item_id, string_value):
     return payload
 
 
-@op(
-    # ins={
-    #     "source_view": In(
-    #         asset_key=AssetKey(
-    #             [CODE_LOCATION, "extracts", "rpt_adp_workforce_now__worker_update"]
-    #         )
-    #     ),
-    #     "idauto_extract": In(
-    #         asset_key=AssetKey([CODE_LOCATION, "extracts", "idauto", "AD_csv"])
-    #     ),
-    # }
-)
+@op
 def adp_wfn_get_worker_update_data_op(
     context: OpExecutionContext, db_bigquery: BigQueryResource
 ):

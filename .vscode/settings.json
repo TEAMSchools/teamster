@@ -36,5 +36,6 @@
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "githubPullRequests.ignoredPullRequestBranches": ["main"],
-  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}"
+  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
+  "dbt.queryLimit": 500
 }

@@ -165,105 +165,162 @@ with
             '"' || string_agg(distinct role_name, '" , "') || '"' as role_names,
         from roles_union
         group by user_id
+    ),
+
+    roster as (
+        select
+            p.user_internal_id,
+            p.user_name,
+            p.user_email,
+            p.inactive,
+            case
+                when
+                    current_date('America/New_York')
+                    = date({{ var("current_academic_year") }}, 8, 1)
+                then null
+                when p.role_name = 'Coach'
+                then 'observees;observers'
+                when p.role_name like '%Admin%'
+                then 'observers'
+                else 'observees'
+            end as group_type,
+            case
+                when
+                    current_date('America/New_York')
+                    = date({{ var("current_academic_year") }}, 8, 1)
+                then null
+                else 'Teachers'
+            end as group_name,
+
+            u.user_id,
+            u.email as user_email_ws,
+            u.name as user_name_ws,
+            if(u.inactive, 1, 0) as inactive_ws,
+            u.default_information_school as school_id_ws,
+            u.default_information_grade_level as grade_id_ws,
+            u.default_information_course as course_id_ws,
+            u.coach as coach_id_ws,
+            u.archived_at,
+
+            um.user_id as coach_id,
+
+            sch.school_id,
+
+            gr.tag_id as grade_id,
+
+            cou.tag_id as course_id,
+
+            '[' || er.role_ids || ']' as role_id_ws,
+
+            og.role_names as group_type_ws,
+
+            '[' || case
+                /* removing last year roles every August */
+                when
+                    current_date('America/New_York')
+                    = date({{ var("current_academic_year") }}, 8, 1)
+                then '"' || p.role_name || '"'
+                /* no roles = add assigned role */
+                when er.role_names is null
+                then '"' || p.role_name || '"'
+                /* assigned role already exists = use existing */
+                when regexp_contains(er.role_names, p.role_name)
+                then er.role_names
+                /* add assigned role */
+                else '"' || p.role_name || '",' || er.role_names
+            end
+            || ']' as role_names,
+
+            '[' || case
+                /* removing last year roles every August */
+                when
+                    current_date('America/New_York')
+                    = date({{ var("current_academic_year") }}, 8, 1)
+                then '"' || r.role_id || '"'
+                /* no roles = add assigned role */
+                when er.role_ids is null
+                then '"' || r.role_id || '"'
+                /* assigned role already exists = use existing */
+                when regexp_contains(er.role_ids, r.role_id)
+                then er.role_ids
+                /* add assigned role */
+                else '"' || r.role_id || '",' || er.role_ids
+            end
+            || ']' as role_id,
+        from people as p
+        left join
+            {{ ref("stg_schoolmint_grow__users") }} as u
+            on p.user_internal_id = safe_cast(u.internal_id as int)
+        left join
+            {{ ref("stg_schoolmint_grow__users") }} as um
+            on p.manager_internal_id = safe_cast(um.internal_id as int)
+        left join
+            {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
+        left join
+            {{ ref("stg_schoolmint_grow__generic_tags") }} as cou
+            on p.course_name = cou.name
+            and cou.tag_type = 'courses'
+            and cou.archived_at is null
+        left join
+            {{ ref("stg_schoolmint_grow__generic_tags") }} as gr
+            on p.grade_abbreviation = gr.abbreviation
+            and gr.tag_type = 'grades'
+            and gr.archived_at is null
+        left join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
+        left join roles_agg as er on u.user_id = er.user_id
+        left join
+            observation_groups_agg as og
+            on u.user_id = og.user_id
+            and sch.school_id = og.school_id
+        where p.role_name != 'No Role'
+    ),
+
+    surrogate_keys as (
+        select
+            *,
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "coach_id",
+                        "course_id",
+                        "grade_id",
+                        "group_type",
+                        "inactive",
+                        "role_id",
+                        "school_id",
+                        "user_email",
+                        "user_name",
+                    ]
+                )
+            }} as surrogate_key_source,
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "coach_id_ws",
+                        "course_id_ws",
+                        "grade_id_ws",
+                        "group_type_ws",
+                        "inactive_ws",
+                        "role_id_ws",
+                        "school_id_ws",
+                        "user_email_ws",
+                        "user_name_ws",
+                    ]
+                )
+            }} as surrogate_key_destination,
+        from roster
     )
 
-select
-    p.user_internal_id,
-    p.user_name,
-    p.user_email,
-    p.inactive,
-    case
-        when
-            current_date('America/New_York')
-            = date({{ var("current_academic_year") }}, 8, 1)
-        then null
-        when p.role_name = 'Coach'
-        then 'observees;observers'
-        when p.role_name like '%Admin%'
-        then 'observers'
-        else 'observees'
-    end as group_type,
-    case
-        when
-            current_date('America/New_York')
-            = date({{ var("current_academic_year") }}, 8, 1)
-        then null
-        else 'Teachers'
-    end as group_name,
-
-    u.user_id,
-    u.email as user_email_ws,
-    u.name as user_name_ws,
-    u.inactive as inactive_ws,
-    u.default_information_school as school_id_ws,
-    u.default_information_grade_level as grade_id_ws,
-    u.default_information_course as course_id_ws,
-    u.coach as coach_id_ws,
-    u.archived_at,
-
-    um.user_id as coach_id,
-
-    sch.school_id,
-
-    gr.tag_id as grade_id,
-
-    cou.tag_id as course_id,
-
-    '[' || er.role_ids || ']' as role_id_ws,
-
-    og.role_names as group_type_ws,
-
-    '[' || case
-        /* removing last year roles every August*/
-        when current_date('America/New_York') = date(2023, 8, 1)
-        then '"' || p.role_name || '"'
-        /* no roles = add assigned role */
-        when er.role_names is null
-        then '"' || p.role_name || '"'
-        /* assigned role already exists = use existing */
-        when regexp_contains(er.role_names, p.role_name)
-        then er.role_names
-        /* add assigned role */
-        else '"' || p.role_name || '",' || er.role_names
-    end
-    || ']' as role_names,
-
-    '[' || case
-        /* removing last year roles every August*/
-        when current_date('America/New_York') = date(2023, 8, 1)
-        then '"' || r.role_id || '"'
-        /* no roles = add assigned role */
-        when er.role_ids is null
-        then '"' || r.role_id || '"'
-        /* assigned role already exists = use existing */
-        when regexp_contains(er.role_ids, r.role_id)
-        then er.role_ids
-        /* add assigned role */
-        else '"' || r.role_id || '",' || er.role_ids
-    end
-    || ']' as role_id,
-from people as p
-left join
-    {{ ref("stg_schoolmint_grow__users") }} as u
-    on p.user_internal_id = safe_cast(u.internal_id as int)
-left join
-    {{ ref("stg_schoolmint_grow__users") }} as um
-    on p.manager_internal_id = safe_cast(um.internal_id as int)
-left join {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
-left join
-    {{ ref("stg_schoolmint_grow__generic_tags") }} as cou
-    on p.course_name = cou.name
-    and cou.tag_type = 'courses'
-    and cou.archived_at is null
-left join
-    {{ ref("stg_schoolmint_grow__generic_tags") }} as gr
-    on p.grade_abbreviation = gr.abbreviation
-    and gr.tag_type = 'grades'
-    and gr.archived_at is null
-left join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
-left join roles_agg as er on u.user_id = er.user_id
-left join
-    observation_groups_agg as og
-    on u.user_id = og.user_id
-    and sch.school_id = og.school_id
-where p.role_name != 'No Role'
+select *
+from surrogate_keys
+where
+    {# create/update in SMG #}
+    (user_id is null or surrogate_key_source != surrogate_key_destination)
+    and (
+        {# active in SMG #}
+        (inactive_ws = 0)
+        {# to reactivate in SMG #}
+        or (inactive = 0 and inactive_ws = 1)
+        {# to archive in SMG #}
+        or (inactive = 1 and inactive_ws = 1 and archived_at is null)
+    )
