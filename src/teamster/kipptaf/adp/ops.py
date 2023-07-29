@@ -1,11 +1,6 @@
 from dagster import OpExecutionContext, op
-from dagster_gcp import BigQueryResource
-from google.cloud import bigquery
-from pandas import DataFrame
 
 from teamster.core.adp.resources import AdpWorkforceNowResource
-
-from .. import CODE_LOCATION
 
 
 def get_base_payload(associate_oid):
@@ -33,27 +28,6 @@ def get_event_payload(associate_oid, item_id, string_value):
         }
 
     return payload
-
-
-@op
-def adp_wfn_get_worker_update_data_op(
-    context: OpExecutionContext, db_bigquery: BigQueryResource
-):
-    # query extract view
-    dataset_ref = bigquery.DatasetReference(
-        project=db_bigquery.project, dataset_id=f"{CODE_LOCATION}_extracts"
-    )
-
-    with db_bigquery.get_client() as bq:
-        table = bq.get_table(
-            dataset_ref.table(table_id="rpt_adp_workforce_now__worker_update")
-        )
-
-        rows = bq.list_rows(table=table)
-
-    df: DataFrame = rows.to_dataframe()
-
-    return df.to_dict(orient="records")
 
 
 @op
@@ -160,6 +134,5 @@ def adp_wfn_update_workers_op(
 
 
 __all__ = [
-    adp_wfn_get_worker_update_data_op,
     adp_wfn_update_workers_op,
 ]
