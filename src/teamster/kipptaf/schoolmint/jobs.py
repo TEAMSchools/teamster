@@ -1,16 +1,25 @@
-from dagster import AssetSelection, define_asset_job, job
+from dagster import AssetSelection, RunConfig, define_asset_job, job
 
-from .assets import multi_partition_assets, static_partition_assets
-from .ops import (
-    schoolmint_grow_get_user_update_data_op,
-    schoolmint_grow_school_update_op,
-    schoolmint_grow_user_update_op,
+from teamster.core.google.bigquery.ops import (
+    BigQueryGetTableOpConfig,
+    bigquery_get_table_op,
 )
 
+from .assets import multi_partition_assets, static_partition_assets
+from .ops import schoolmint_grow_school_update_op, schoolmint_grow_user_update_op
 
-@job
+
+@job(
+    config=RunConfig(
+        ops={
+            "bigquery_get_table_op": BigQueryGetTableOpConfig(
+                dataset_id="kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
+            )
+        }
+    )
+)
 def schoolmint_grow_user_update_job():
-    users = schoolmint_grow_get_user_update_data_op()
+    users = bigquery_get_table_op()
 
     updated_users = schoolmint_grow_user_update_op(users=users)
 

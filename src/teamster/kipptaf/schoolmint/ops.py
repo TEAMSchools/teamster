@@ -1,32 +1,8 @@
 import json
 
 from dagster import OpExecutionContext, op
-from dagster_gcp import BigQueryResource
-from google.cloud import bigquery
-from pandas import DataFrame
 
 from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
-
-from .. import CODE_LOCATION
-
-
-@op
-def schoolmint_grow_get_user_update_data_op(
-    context: OpExecutionContext, db_bigquery: BigQueryResource
-):
-    # query extract view
-    dataset_ref = bigquery.DatasetReference(
-        project=db_bigquery.project, dataset_id=f"{CODE_LOCATION}_extracts"
-    )
-
-    with db_bigquery.get_client() as bq:
-        table = bq.get_table(dataset_ref.table(table_id="rpt_schoolmint_grow__users"))
-
-        rows = bq.list_rows(table=table)
-
-    df: DataFrame = rows.to_dataframe()
-
-    return df.to_dict(orient="records")
 
 
 @op
