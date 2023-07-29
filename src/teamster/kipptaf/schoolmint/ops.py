@@ -47,7 +47,7 @@ def schoolmint_grow_user_update_op(
             continue
 
         # build user payload
-        user_payload = {
+        payload = {
             "district": schoolmint_grow.district_id,
             "name": u["user_name"],
             "email": user_email,
@@ -66,13 +66,13 @@ def schoolmint_grow_user_update_op(
             # create
             if inactive == 0 and user_id is None:
                 context.log.info(f"CREATING\t{user_email}")
-                create_resp = schoolmint_grow.post("users", json=user_payload)
+                create_resp = schoolmint_grow.post("users", json=payload)
                 user_id = create_resp["_id"]
                 u["user_id"] = user_id
             # update
             elif inactive == 0:
                 context.log.info(f"UPDATING\t{user_email}")
-                schoolmint_grow.put("users", user_id, json=user_payload)
+                schoolmint_grow.put("users", user_id, json=payload)
         except Exception:
             continue
 
@@ -152,7 +152,7 @@ def schoolmint_grow_school_update_op(
             ]
 
             for user in new_users:
-                match = [u for u in existing_users if u["_id"] == user["_id"]]
+                match = [u for u in existing_users if u["_id"] == user["user_id"]]
 
                 if not match:
                     context.log.info(f"Adding {user['user_email']} to {role_name}")
