@@ -93,45 +93,51 @@ def schoolmint_grow_school_update_op(
 ):
     schools = schoolmint_grow.get("schools")["data"]
 
-    for s in schools:
-        context.log.info(f"UPDATING\t{s['name']}")
+    for school in schools:
+        school_id = school["_id"]
+
+        context.log.info(f"UPDATING\t{school['name']}")
 
         role_change = False
-        schools_payload = {
-            "district": schoolmint_grow.district_id,
-            "observationGroups": [],
-        }
+        payload = {"district": schoolmint_grow.district_id, "observationGroups": []}
 
         school_users = [
             u
             for u in users
-            if u["school_id"] == s["_id"]
+            if u["school_id"] == school_id
             and u["user_id"] is not None
             and u["inactive"] == 0
         ]
 
         # observation groups
-        for grp in s["observationGroups"]:
-            grp_users = [su for su in school_users if su["group_name"] == grp["name"]]
-            grp_roles = {k: grp[k] for k in grp if k in ["observees", "observers"]}
-            grp_update = {"_id": grp["_id"], "name": grp["name"]}
+        for group in school["observationGroups"]:
+            group_name = group["name"]
 
-            for role, membership in grp_roles.items():
+            group_update = {"_id": group["_id"], "name": group_name}
+
+            group_users = [u for u in school_users if u["group_name"] == group_name]
+            group_roles = {
+                k: group[k] for k in group if k in ["observees", "observers"]
+            }
+
+            for role, membership in group_roles.items():
                 mem_ids = [m["_id"] for m in membership]
-                role_users = [gu for gu in grp_users if role in gu["group_type"]]
+                role_users = [u for u in group_users if role in u["group_type"]]
 
-                for ru in role_users:
-                    if ru["user_id"] not in mem_ids:
+                for user in role_users:
+                    user_id = user["user_id"]
+
+                    if user_id not in mem_ids:
                         context.log.info(
-                            f"Adding {ru['user_email']} to {grp['name']}/{role}"
+                            f"Adding {user['user_email']} to {group_name}/{role}"
                         )
 
-                        mem_ids.append(ru["user_id"])
+                        mem_ids.append(user_id)
                         role_change = True
 
-                grp_update[role] = mem_ids
+                group_update[role] = mem_ids
 
-            schools_payload["observationGroups"].append(grp_update)
+            payload["observationGroups"].append(group_update)
 
         # school admins
         admin_roles = {
@@ -140,26 +146,26 @@ def schoolmint_grow_school_update_op(
         }
 
         for key, role_name in admin_roles.items():
-            existing = s[key]
-            new = [
-                {"_id": su["user_id"], "name": su["user_name"]}
-                for su in school_users
-                if role_name in su.get("role_names", [])
+            existing_users = school[key]
+            new_users = [
+                u for u in school_users if role_name in u.get("role_names", [])
             ]
 
-            for n in new:
-                match = [sa for sa in existing if sa["_id"] == n["_id"]]
+            for user in new_users:
+                match = [u for u in existing_users if u["_id"] == user["_id"]]
 
                 if not match:
-                    context.log.info(f"Adding {n['user_email']} to {role_name}")
+                    context.log.info(f"Adding {user['user_email']} to {role_name}")
 
-                    existing.append(n)
                     role_change = True
+                    existing_users.append(
+                        {"_id": user["user_id"], "name": user["user_name"]}
+                    )
 
-            schools_payload[key] = existing
+            payload[key] = existing_users
 
         if role_change:
-            schoolmint_grow.put("schools", s["_id"], json=schools_payload)
+            schoolmint_grow.put("schools", school_id, json=payload)
         else:
             context.log.info("No school role changes")
 
