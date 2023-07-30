@@ -22,7 +22,8 @@ echo "${DBT_USER_CREDS}" |
   sudo tee /etc/secret-volume/dbt_user_creds_json >/dev/null
 echo "${DEANSLIST_API_KEY_MAP}" |
   sudo tee /etc/secret-volume/deanslist_api_key_map_yaml >/dev/null
-echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" >env/gcloud_service_account_json
+echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" |
+  sudo tee /etc/secret-volume/gcloud_service_account_json >/dev/null
 
 # update pip
 python -m pip install --no-cache-dir --upgrade pip
@@ -34,7 +35,7 @@ sudo /usr/local/py-utils/bin/pdm self update
 pdm install --no-lock
 
 # authenticate gcloud
-gcloud auth activate-service-account --key-file=env/gcloud_service_account_json
+gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
 
 # set gcloud project & region
 gcloud config set project teamster-332318

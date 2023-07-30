@@ -18,7 +18,7 @@ def test_gsheet_resource():
     with build_resources(
         resources={
             "gsheets": GoogleSheetsResource(
-                service_account_file_path="env/gcloud_service_account_json"
+                service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
             )
         }
     ) as resources:
