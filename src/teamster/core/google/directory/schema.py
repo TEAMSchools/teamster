@@ -433,6 +433,85 @@ USER_FIELDS = [
     },
 ]
 
+GROUP_FIELDS = [
+    {"name": "id", "type": ["null", "string"], "default": None},
+    {"name": "email", "type": ["null", "string"], "default": None},
+    {"name": "name", "type": ["null", "string"], "default": None},
+    {"name": "description", "type": ["null", "string"], "default": None},
+    {"name": "adminCreated", "type": ["null", "boolean"], "default": None},
+    {"name": "directMembersCount", "type": ["null", "string"], "default": None},
+    {"name": "kind", "type": ["null", "string"], "default": None},
+    {"name": "etag", "type": ["null", "string"], "default": None},
+    {
+        "name": "aliases",
+        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "default": None,
+    },
+    {
+        "name": "nonEditableAliases",
+        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "default": None,
+    },
+]
+
+MEMBER_FIELDS = [
+    {"name": "kind", "type": ["null", "string"], "default": None},
+    {"name": "email", "type": ["null", "string"], "default": None},
+    {"name": "role", "type": ["null", "string"], "default": None},
+    {"name": "etag", "type": ["null", "string"], "default": None},
+    {"name": "type", "type": ["null", "string"], "default": None},
+    {"name": "status", "type": ["null", "string"], "default": None},
+    {"name": "delivery_settings", "type": ["null", "string"], "default": None},
+    {"name": "id", "type": ["null", "string"], "default": None},
+]
+
+ROLE_PRIVILEGE_FIELDS = [
+    {"name": "serviceId", "type": ["null", "string"], "default": None},
+    {"name": "privilegeName", "type": ["null", "string"], "default": None},
+]
+
+ROLE_FIELDS = [
+    {"name": "roleId", "type": ["null", "string"], "default": None},
+    {"name": "roleName", "type": ["null", "string"], "default": None},
+    {"name": "roleDescription", "type": ["null", "string"], "default": None},
+    {"name": "isSystemRole", "type": ["null", "boolean"], "default": None},
+    {"name": "isSuperAdminRole", "type": ["null", "boolean"], "default": None},
+    {"name": "kind", "type": ["null", "string"], "default": None},
+    {"name": "etag", "type": ["null", "string"], "default": None},
+    {
+        "name": "rolePrivileges",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="role_privileges",
+                    fields=ROLE_PRIVILEGE_FIELDS,
+                    namespace="role",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+]
+
+ROLE_ASSIGNMENT_FIELDS = [
+    {"name": "roleAssignmentId", "type": ["null", "string"], "default": None},
+    {"name": "roleId", "type": ["null", "string"], "default": None},
+    {"name": "kind", "type": ["null", "string"], "default": None},
+    {"name": "etag", "type": ["null", "string"], "default": None},
+    {"name": "assignedTo", "type": ["null", "string"], "default": None},
+    {"name": "assigneeType", "type": ["null", "string"], "default": None},
+    {"name": "scopeType", "type": ["null", "string"], "default": None},
+    {"name": "orgUnitId", "type": ["null", "string"], "default": None},
+    {"name": "condition", "type": ["null", "string"], "default": None},
+]
+
 ASSET_FIELDS = {
     "users": USER_FIELDS,
+    "groups": GROUP_FIELDS,
+    "members": MEMBER_FIELDS,
+    "roles": ROLE_FIELDS,
+    "role_assignments": ROLE_ASSIGNMENT_FIELDS,
 }
