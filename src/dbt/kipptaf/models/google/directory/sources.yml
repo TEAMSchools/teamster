@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: google_directory
+    schema: kipptaf_google_directory
+    tables:
+      - name: src_google_directory__users
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/google/directory/users/*
+          options:
+            format: AVRO
+            enable_logical_types: true
