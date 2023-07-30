@@ -25,7 +25,7 @@ def test_sensor():
                 instance=instance,
                 resources={
                     "gsheets": GoogleSheetsResource(
-                        service_account_file_path="env/gcloud_service_account_json"
+                        service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
                     )
                 },
             )
