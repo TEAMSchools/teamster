@@ -160,7 +160,7 @@ defs = Definitions(
         ),
         "google_directory": GoogleDirectoryResource(
             customer_id="C029u7m0n",
-            service_account_file_path="env/gcloud_service_account_json",
+            service_account_file_path="/etc/secret-volume/gcloud_service_account_json",
             delegated_account="dagster@apps.teamschools.org",
         ),
         "gsheets": GoogleSheetsResource(
