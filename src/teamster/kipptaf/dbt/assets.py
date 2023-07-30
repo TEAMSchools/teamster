@@ -12,7 +12,11 @@ from teamster.kipptaf import (
     schoolmint,
     smartrecruiters,
 )
-from teamster.kipptaf.google.assets import google_forms_assets, google_sheets_assets
+from teamster.kipptaf.google.assets import (
+    google_directory_assets,
+    google_forms_assets,
+    google_sheets_assets,
+)
 
 dbt_assets = build_dbt_assets(code_location=CODE_LOCATION)
 
@@ -41,12 +45,13 @@ external_source_assets = [
         *alchemer.assets,
         *amplify.assets,
         *clever.assets,
-        *google_forms_assets,
         *iready.assets,
         *ldap.assets,
         *renlearn.assets,
         *schoolmint.assets,
         *smartrecruiters.assets,
+        *google_forms_assets,
+        *google_directory_assets,
     ]
 ]
 

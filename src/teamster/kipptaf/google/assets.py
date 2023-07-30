@@ -21,10 +21,10 @@ google_forms_assets = build_google_forms_assets(
     partitions_def=StaticPartitionsDefinition(FORM_IDS),
 )
 
-google_directory_assets = build_google_directory_assets(code_location=CODE_LOCATION)
+google_directory_assets = [build_google_directory_assets(code_location=CODE_LOCATION)]
 
 __all__ = [
     *google_sheets_assets,
     *google_forms_assets,
-    google_directory_assets,
+    *google_directory_assets,
 ]

@@ -56,3 +56,6 @@ class GoogleDirectoryResource(ConfigurableResource):
                 break
 
         return users
+
+    def get_user(self, user_key, **kwargs):
+        return self._service.users().get(userKey=user_key, **kwargs).execute()

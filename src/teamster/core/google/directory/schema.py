@@ -125,7 +125,25 @@ IM_FIELDS = [
     {"name": "type", "type": ["null", "string"], "default": None},
 ]
 
-CUSTOM_SCHEMA_FIELDS = []
+STUDENT_ATTRIBUTE_FIELDS = [
+    {"name": "Student_Number", "type": ["null", "long"], "default": None},
+]
+
+CUSTOM_SCHEMA_FIELDS = [
+    {
+        "name": "Student_attributes",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="student_attribute",
+                fields=STUDENT_ATTRIBUTE_FIELDS,
+                namespace="user.custom_schema",
+            ),
+        ],
+        "default": None,
+    },
+]
+
 PASSWORD_FIELDS = []
 
 NAME_FIELDS = [

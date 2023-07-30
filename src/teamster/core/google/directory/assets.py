@@ -13,7 +13,7 @@ def build_google_directory_assets(code_location):
     def _asset(
         context: AssetExecutionContext, google_directory: GoogleDirectoryResource
     ):
-        data = google_directory.list_users()
+        data = google_directory.list_users(projection="full")
         schema = get_avro_record_schema(name="users", fields=ASSET_FIELDS["users"])
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})

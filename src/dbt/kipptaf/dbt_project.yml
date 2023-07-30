@@ -58,6 +58,10 @@ models:
         +schema: google_forms
         staging:
           +materialized: table
+      directory:
+        +schema: google_directory
+        staging:
+          +materialized: table
     kippadb:
       +schema: kippadb
       staging:
