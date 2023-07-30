@@ -21,6 +21,7 @@ from teamster.core.adp.resources import (
 )
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
+from teamster.core.google.directory.resources import GoogleDirectoryResource
 from teamster.core.google.forms.resources import GoogleFormsResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.google.sheets.resources import GoogleSheetsResource
@@ -156,6 +157,11 @@ defs = Definitions(
         ),
         "google_forms": GoogleFormsResource(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+        ),
+        "google_directory": GoogleDirectoryResource(
+            customer_id="C029u7m0n",
+            service_account_file_path="env/gcloud_service_account_json",
+            delegated_account="dagster@apps.teamschools.org",
         ),
         "gsheets": GoogleSheetsResource(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"

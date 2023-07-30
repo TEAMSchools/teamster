@@ -1,5 +1,4 @@
-from dagster import ConfigurableResource
-from dagster._core.execution.context.init import InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext
 from ldap3 import ALL, NTLM, Connection, Server
 from pydantic import PrivateAttr
 

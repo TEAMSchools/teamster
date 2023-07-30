@@ -1,6 +1,5 @@
 import google.auth
-from dagster import ConfigurableResource
-from dagster._core.execution.context.init import InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext
 from googleapiclient import discovery
 from pydantic import PrivateAttr
 
@@ -24,10 +23,7 @@ class GoogleFormsResource(ConfigurableResource):
             credentials, project_id = google.auth.default(scopes=self.scopes)
 
         self._service = discovery.build(
-            serviceName="forms",
-            version=self.version,
-            credentials=credentials,
-            discoveryServiceUrl="https://forms.googleapis.com/$discovery/rest",
+            serviceName="forms", version=self.version, credentials=credentials
         ).forms()
 
     def get_form(self, form_id):

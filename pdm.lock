@@ -527,7 +527,7 @@ files = [
 
 [[package]]
 name = "dbt-core"
-version = "1.5.3"
+version = "1.5.4"
 requires_python = ">=3.7.2"
 summary = "With dbt, data analysts and engineers can build analytics the way engineers build applications."
 dependencies = [
@@ -555,8 +555,8 @@ dependencies = [
     "werkzeug<3,>=1",
 ]
 files = [
-    {file = "dbt-core-1.5.3.tar.gz", hash = "sha256:4abac0431a4b09c2b00c2971932cc6be0c66ab2414db98e124878b06cb0fcbfa"},
-    {file = "dbt_core-1.5.3-py3-none-any.whl", hash = "sha256:f27601061d7303a1bd95bc803625e4957d33bcd2b20292dab7280c5801ca37a6"},
+    {file = "dbt-core-1.5.4.tar.gz", hash = "sha256:384355c21a882cd03c4a0ee54f9e2439e7273af5b8ad597e236a426fbd624fe4"},
+    {file = "dbt_core-1.5.4-py3-none-any.whl", hash = "sha256:bb485ec2da05d5847313ea56454b96b0bbc146ea96a52a2cadeaab478e66794f"},
 ]
 
 [[package]]
@@ -1510,7 +1510,7 @@ files = [
 
 [[package]]
 name = "paramiko"
-version = "3.2.0"
+version = "3.3.1"
 requires_python = ">=3.6"
 summary = "SSH2 protocol library"
 dependencies = [
@@ -1519,8 +1519,8 @@ dependencies = [
     "pynacl>=1.5",
 ]
 files = [
-    {file = "paramiko-3.2.0-py3-none-any.whl", hash = "sha256:df0f9dd8903bc50f2e10580af687f3015bf592a377cd438d2ec9546467a14eb8"},
-    {file = "paramiko-3.2.0.tar.gz", hash = "sha256:93cdce625a8a1dc12204439d45033f3261bdb2c201648cfcdc06f9fd0f94ec29"},
+    {file = "paramiko-3.3.1-py3-none-any.whl", hash = "sha256:b7bc5340a43de4287bbe22fe6de728aa2c22468b2a849615498dd944c2f275eb"},
+    {file = "paramiko-3.3.1.tar.gz", hash = "sha256:6a3777a961ac86dbef375c5f5b8d50014a1a96d0fd7f054a43bc880134b0ff77"},
 ]
 
 [[package]]
@@ -1536,12 +1536,12 @@ files = [
 
 [[package]]
 name = "pathspec"
-version = "0.11.1"
+version = "0.11.2"
 requires_python = ">=3.7"
 summary = "Utility library for gitignore style pattern matching of file paths."
 files = [
-    {file = "pathspec-0.11.1-py3-none-any.whl", hash = "sha256:d8af70af76652554bd134c22b3e8a1cc46ed7d91edcdd721ef1a0c51a84a5293"},
-    {file = "pathspec-0.11.1.tar.gz", hash = "sha256:2798de800fa92780e33acca925945e9a19a133b715067cf165b8866c15a31687"},
+    {file = "pathspec-0.11.2-py3-none-any.whl", hash = "sha256:1d6ed233af05e679efb96b1851550ea95bbb64b7c490b0f5aa52996c11e92a20"},
+    {file = "pathspec-0.11.2.tar.gz", hash = "sha256:e0d8d0ac2f12da61956eb2306b69f9469b42f4deb0f3cb6ed47b9cce9996ced3"},
 ]
 
 [[package]]
@@ -2022,7 +2022,7 @@ files = [
 
 [[package]]
 name = "rich"
-version = "13.4.2"
+version = "13.5.0"
 requires_python = ">=3.7.0"
 summary = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 dependencies = [
@@ -2030,8 +2030,8 @@ dependencies = [
     "pygments<3.0.0,>=2.13.0",
 ]
 files = [
-    {file = "rich-13.4.2-py3-none-any.whl", hash = "sha256:8f87bc7ee54675732fa66a05ebfe489e27264caeeff3728c945d25971b6485ec"},
-    {file = "rich-13.4.2.tar.gz", hash = "sha256:d653d6bccede5844304c605d5aac802c7cf9621efd700b46c7ec2b51ea914898"},
+    {file = "rich-13.5.0-py3-none-any.whl", hash = "sha256:996670a7618ccce27c55ba6fc0142e6e343773e11d34c96566a17b71b0e6f179"},
+    {file = "rich-13.5.0.tar.gz", hash = "sha256:62c81e88dc078d2372858660e3d5566746870133e51321f852ccc20af5c7e7b2"},
 ]
 
 [[package]]
