@@ -36,6 +36,8 @@ select
     name.givenname as `name__given_name`,
     notes.contenttype as `notes__content_type`,
     notes.value as `notes__value`,
+    customschemas.student_attributes.student_number
+    as `custom_schemas__student_attributes__student_number`,
 
     {# repeated #}
     aliases as `aliases`,
