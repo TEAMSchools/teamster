@@ -4,8 +4,7 @@ import pathlib
 from typing import Iterator, Sequence
 
 import oracledb
-from dagster import ConfigurableResource
-from dagster._core.execution.context.init import InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, create_engine, result, row
