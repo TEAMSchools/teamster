@@ -45,7 +45,9 @@ def build_powerschool_table_asset(
         else:
             window_start = pendulum.from_format(
                 string=context.partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
-            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            )
+
+            window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
             window_end = (
                 window_start.add(years=1)
@@ -55,7 +57,8 @@ def build_powerschool_table_asset(
 
             constructed_where = (
                 f"{partition_column} BETWEEN "
-                f"TO_TIMESTAMP('{window_start}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
+                f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
+                "AND "
                 f"TO_TIMESTAMP('{window_end}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
 
