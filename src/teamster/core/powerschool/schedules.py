@@ -3,6 +3,7 @@ from dagster import (
     AssetMaterialization,
     AssetsDefinition,
     AssetSelection,
+    MetadataValue,
     RunRequest,
     ScheduleEvaluationContext,
     define_asset_job,
@@ -48,10 +49,12 @@ def build_last_modified_schedule(
 
                 asset_materialization = (
                     event.asset_materialization
-                    if event
+                    if event is not None
                     else AssetMaterialization(
                         asset_key=asset_key,
-                        metadata={"latest_materialization_timestamp": 0},
+                        metadata={
+                            "latest_materialization_timestamp": MetadataValue.float(0.0)
+                        },
                     )
                 )
 
