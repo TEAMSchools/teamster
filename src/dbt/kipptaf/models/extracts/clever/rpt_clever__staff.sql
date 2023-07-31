@@ -82,7 +82,8 @@ with
                 sr.job_title in (
                     'Assistant Superintendent',
                     'Head of Schools',
-                    'Head of Schools in Residence'
+                    'Head of Schools in Residence',
+                    'Managing Director'
                 )
                 or (
                     sr.department_home_name = 'Special Education'
