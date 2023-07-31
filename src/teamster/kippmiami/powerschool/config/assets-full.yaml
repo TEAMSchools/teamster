@@ -1,41 +1,80 @@
 assets:
   # not using partitions
-  - asset_name: assignmentcategoryassoc
-  - asset_name: assignmentsection
   - asset_name: cc
-  - asset_name: codeset
+    partition_column: transaction_date
   - asset_name: courses
-  - asset_name: districtteachercategory
-  - asset_name: emailaddress
-  - asset_name: gradecalcformulaweight
-  - asset_name: gradecalcschoolassoc
-  - asset_name: gradecalculationtype
-  - asset_name: gradeformulaset
-  - asset_name: gradescaleitem
-  - asset_name: gradeschoolconfig
-  - asset_name: gradeschoolformulaassoc
-  - asset_name: gradesectionconfig
-  - asset_name: originalcontactmap
-  - asset_name: person
-  - asset_name: personaddress
-  - asset_name: personaddressassoc
-  - asset_name: personemailaddressassoc
-  - asset_name: personphonenumberassoc
-  - asset_name: phonenumber
+    partition_column: transaction_date
   - asset_name: prefs
-  - asset_name: roledef
+    partition_column: transaction_date
   - asset_name: schools
-  - asset_name: schoolstaff
+    partition_column: transaction_date
   - asset_name: sections
-  - asset_name: sectionteacher
-  - asset_name: studentcontactassoc
-  - asset_name: studentcontactdetail
-  - asset_name: studentcorefields
+    partition_column: transaction_date
   - asset_name: students
-  - asset_name: teachercategory
+    partition_column: transaction_date
   - asset_name: termbins
+    partition_column: transaction_date
   - asset_name: terms
+    partition_column: transaction_date
+  - asset_name: assignmentcategoryassoc
+    partition_column: whenmodified
+  - asset_name: assignmentsection
+    partition_column: whenmodified
+  - asset_name: codeset
+    partition_column: whenmodified
+  - asset_name: districtteachercategory
+    partition_column: whenmodified
+  - asset_name: emailaddress
+    partition_column: whenmodified
+  - asset_name: gradecalcformulaweight
+    partition_column: whenmodified
+  - asset_name: gradecalcschoolassoc
+    partition_column: whenmodified
+  - asset_name: gradecalculationtype
+    partition_column: whenmodified
+  - asset_name: gradeformulaset
+    partition_column: whenmodified
+  - asset_name: gradescaleitem
+    partition_column: whenmodified
+  - asset_name: gradeschoolconfig
+    partition_column: whenmodified
+  - asset_name: gradeschoolformulaassoc
+    partition_column: whenmodified
+  - asset_name: gradesectionconfig
+    partition_column: whenmodified
+  - asset_name: originalcontactmap
+    partition_column: whenmodified
+  - asset_name: person
+    partition_column: whenmodified
+  - asset_name: personaddress
+    partition_column: whenmodified
+  - asset_name: personaddressassoc
+    partition_column: whenmodified
+  - asset_name: personemailaddressassoc
+    partition_column: whenmodified
+  - asset_name: personphonenumberassoc
+    partition_column: whenmodified
+  - asset_name: phonenumber
+    partition_column: whenmodified
+  - asset_name: roledef
+    partition_column: whenmodified
+  - asset_name: schoolstaff
+    partition_column: whenmodified
+  - asset_name: sectionteacher
+    partition_column: whenmodified
+  - asset_name: studentcontactassoc
+    partition_column: whenmodified
+  - asset_name: studentcontactdetail
+    partition_column: whenmodified
+  - asset_name: studentcorefields
+    partition_column: whenmodified
+  - asset_name: teachercategory
+    partition_column: whenmodified
   - asset_name: u_clg_et_stu
+    partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
+    partition_column: whenmodified
   - asset_name: u_studentsuserfields
+    partition_column: whenmodified
   - asset_name: users
+    partition_column: whenmodified
