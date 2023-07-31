@@ -112,7 +112,6 @@ def build_partition_sensor(
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
 
-        context.log.info(cursor)
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
     return _sensor
