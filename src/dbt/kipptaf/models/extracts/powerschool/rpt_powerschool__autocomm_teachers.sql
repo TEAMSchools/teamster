@@ -20,7 +20,7 @@ with
             on sr.powerschool_teacher_number = u.teachernumber
             and sr.home_work_location_powerschool_school_id = u.homeschoolid
             and sr.home_work_location_dagster_code_location
-            = regexp_extract(u._dbt_source_relation, r'(kipp\w+)_\w+')
+            = regexp_extract(u._dbt_source_relation, r'(kipp\w+)_')
         where
             {# import terminated staff up to a week after termination date #}
             date_diff(
@@ -52,7 +52,7 @@ with
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
             and sr.home_work_location_dagster_code_location
-            = regexp_extract(u._dbt_source_relation, r'(kipp\w+)_\w+')
+            = regexp_extract(u._dbt_source_relation, r'(kipp\w+)_')
         where
             {# import terminated staff up to a week after termination date #}
             date_diff(

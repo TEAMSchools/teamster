@@ -31,8 +31,7 @@ with
             format_date('%m/%d/%Y', sec.terms_firstday) as terms_firstday,
             format_date('%m/%d/%Y', sec.terms_lastday) as terms_lastday,
             concat(
-                regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_\w+'),
-                sec.sections_id
+                regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_'), sec.sections_id
             ) as section_id,
             case
                 sec.courses_credittype

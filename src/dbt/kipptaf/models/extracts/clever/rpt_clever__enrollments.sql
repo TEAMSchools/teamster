@@ -1,7 +1,7 @@
 select
     cc.schoolid as school_id,
     concat(
-        regexp_extract(cc._dbt_source_relation, r'(kipp\w+)_\w+'), cc.sectionid
+        regexp_extract(cc._dbt_source_relation, r'(kipp\w+)_'), cc.sectionid
     ) as section_id,
 
     s.student_number as student_id,

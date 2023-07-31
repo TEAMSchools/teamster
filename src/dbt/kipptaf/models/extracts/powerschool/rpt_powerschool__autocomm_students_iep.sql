@@ -30,7 +30,7 @@ select
     if(ti_serv_other, 1, 0) as s_nj_stu_x__other_related_services_yn,
     spedlep as studentcorefields__spedlep,
     if(special_education_code = '00', '1', '0') as s_nj_stu_x__determined_ineligible_yn,
-    regexp_extract(_dbt_source_relation, r'(kipp\w+)_\w+') as code_location,
+    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 from {{ ref("stg_edplan__njsmart_powerschool") }}
 where
     academic_year = {{ var("current_academic_year") }}

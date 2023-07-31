@@ -21,7 +21,7 @@ select
     y1.grade_level,
     y1.entrydate,
     y1.exitdate as y1_exitdate,
-    regexp_extract(y1._dbt_source_relation, r'(kipp\w+)_\w+') as db_name,
+    regexp_extract(y1._dbt_source_relation, r'(kipp\w+)_') as db_name,
 
     s.exitdate,
     s.exitcode,

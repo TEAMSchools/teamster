@@ -73,7 +73,7 @@ with
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sr.home_work_location_dagster_code_location
-            = regexp_extract(sch._dbt_source_relation, r'kipp\w+')
+            = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
             and sch.state_excludefromreporting = 0
         where
             sr.assignment_status not in ('Terminated', 'Deceased')
