@@ -1,11 +1,5 @@
 import pendulum
-from dagster import (
-    AddDynamicPartitionsRequest,
-    AssetsDefinition,
-    RunRequest,
-    ScheduleEvaluationContext,
-    schedule,
-)
+from dagster import AssetsDefinition, RunRequest, ScheduleEvaluationContext, schedule
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
@@ -18,10 +12,12 @@ def build_dynamic_partition_schedule(
     execution_timezone,
     asset_defs: list[AssetsDefinition],
 ):
+    schedule_name = f"{code_location}_powerschool_last_modified_schedule"
+
     @schedule(
         cron_schedule=cron_schedule,
         job_name="foo",
-        name=f"{code_location}_powerschool_dynamic_partition_schedule",
+        name=schedule_name,
         execution_timezone=execution_timezone,
     )
     def _schedule(
@@ -35,8 +31,11 @@ def build_dynamic_partition_schedule(
             context.log.debug("Starting SSH tunnel")
             ssh_tunnel.start()
 
+            asset_selection = []
             for asset in asset_defs:
-                event = context.instance.get_latest_materialization_event(asset.key)
+                asset_key = asset.key
+
+                event = context.instance.get_latest_materialization_event(asset_key)
 
                 latest_materialization = pendulum.from_timestamp(
                     event.asset_materialization.metadata.get(
@@ -45,15 +44,14 @@ def build_dynamic_partition_schedule(
                 )
 
                 is_requested = False
-                run_config = None
 
-                asset_key_string = asset.key.to_python_identifier()
+                asset_key_string = asset_key.to_python_identifier()
                 context.log.debug(asset_key_string)
 
                 if latest_materialization.timestamp() == 0:
                     is_requested = True
                 else:
-                    partition_column = asset.metadata_by_key[asset.key][
+                    partition_column = asset.metadata_by_key[asset_key][
                         "partition_column"
                     ]
 
@@ -64,7 +62,7 @@ def build_dynamic_partition_schedule(
                     [(count,)] = db_powerschool.engine.execute_query(
                         query=text(
                             "SELECT COUNT(*) "
-                            f"FROM {asset.key.path[-1]} "
+                            f"FROM {asset_key.path[-1]} "
                             f"WHERE {partition_column} >= "
                             f"TO_TIMESTAMP('{latest_materialization_fmt}', "
                             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
@@ -79,21 +77,12 @@ def build_dynamic_partition_schedule(
                         is_requested = True
 
                 if is_requested:
-                    partition_key = latest_materialization.to_iso8601_string()
+                    asset_selection.append(asset_key)
 
-                    yield AddDynamicPartitionsRequest(
-                        partitions_def_name=asset.partitions_def.name,
-                        partition_keys=[partition_key],
-                    )
-
-                    yield RunRequest(
-                        run_key=f"{asset_key_string}_{partition_key}",
-                        run_config=run_config,
-                        asset_selection=[asset.key],
-                        partition_key=partition_key,
-                    )
         finally:
             context.log.debug("Stopping SSH tunnel")
             ssh_tunnel.stop()
+
+        yield RunRequest(run_key=schedule_name, asset_selection=asset_selection)
 
     return _schedule
