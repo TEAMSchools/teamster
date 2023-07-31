@@ -1,22 +1,17 @@
 import pendulum
-from dagster import (
-    AssetsDefinition,
-    DynamicPartitionsDefinition,
-    OpExecutionContext,
-    Output,
-    asset,
-)
+from dagster import AssetExecutionContext, AssetsDefinition, Output, asset
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_powerschool_table_asset(
     asset_name,
     code_location,
-    partitions_def: DynamicPartitionsDefinition = None,
+    partitions_def: FiscalYearPartitionsDefinition = None,
     select_columns=["*"],
     partition_column=None,
     op_tags={},
@@ -30,7 +25,7 @@ def build_powerschool_table_asset(
         io_manager_key="gcs_fp_io",
     )
     def _asset(
-        context: OpExecutionContext,
+        context: AssetExecutionContext,
         ssh_powerschool: SSHConfigurableResource,
         db_powerschool: OracleResource,
     ):
@@ -42,18 +37,26 @@ def build_powerschool_table_asset(
 
         if not context.has_partition_key:
             constructed_where = ""
-        elif context.partition_key == pendulum.from_timestamp(0).to_iso8601_string():
+        elif (
+            context.partition_key
+            == context.assets_def.partitions_def.get_first_partition_key()
+        ):
             constructed_where = ""
         else:
             window_start = pendulum.from_format(
-                string=context.partition_key, fmt="YYYY-MM-DDTHH:mm:ssZ"
+                string=context.partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
+            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+
+            window_end = (
+                window_start.add(years=1)
+                .subtract(days=1)
+                .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
             )
 
-            window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-
             constructed_where = (
-                f"{partition_column} >= "
-                f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                f"{partition_column} BETWEEN "
+                f"TO_TIMESTAMP('{window_start}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
+                f"TO_TIMESTAMP('{window_end}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
 
         sql = (
