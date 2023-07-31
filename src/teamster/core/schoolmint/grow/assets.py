@@ -20,8 +20,12 @@ def build_static_partition_asset(
     asset_name, code_location, op_tags={}
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name.replace("-", "_").replace("/", "_"),
-        key_prefix=[code_location, "schoolmint_grow"],
+        key=[
+            code_location,
+            "schoolmint",
+            "grow",
+            asset_name.replace("-", "_").replace("/", "_"),
+        ],
         partitions_def=STATIC_PARTITONS_DEF,
         op_tags=op_tags,
         io_manager_key="gcs_avro_io",
@@ -50,8 +54,12 @@ def build_multi_partition_asset(
     asset_name, code_location, start_date, timezone, op_tags={}
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name.replace("-", "_").replace("/", "_"),
-        key_prefix=[code_location, "schoolmint_grow"],
+        key=[
+            code_location,
+            "schoolmint",
+            "grow",
+            asset_name.replace("-", "_").replace("/", "_"),
+        ],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "archived": STATIC_PARTITONS_DEF,

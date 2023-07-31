@@ -1,7 +1,8 @@
 import json
+import pathlib
 from typing import Any, Mapping
 
-from dagster import AssetExecutionContext, AssetKey, Failure, Output, asset
+from dagster import AssetExecutionContext, AssetKey, asset
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_gcp import BigQueryResource
@@ -36,9 +37,9 @@ def get_custom_dagster_dbt_translator(code_location):
 
 def build_dbt_assets(code_location):
     dagster_dbt_translator = get_custom_dagster_dbt_translator(code_location)
+    manifest_file = pathlib.Path(f"src/dbt/{code_location}/target/manifest.json")
 
-    with open(file=f"src/dbt/{code_location}/target/manifest.json") as fp:
-        manifest = json.load(fp=fp)
+    manifest = json.loads(s=manifest_file.read_text())
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
@@ -53,9 +54,9 @@ def build_external_source_asset(
     code_location, name, dbt_package_name, upstream_asset_key, group_name
 ):
     dagster_dbt_translator = get_custom_dagster_dbt_translator(code_location)
+    manifest_file = pathlib.Path(f"src/dbt/{code_location}/target/manifest.json")
 
-    with open(file=f"src/dbt/{code_location}/target/manifest.json") as fp:
-        manifest = json.load(fp=fp)
+    manifest = json.loads(s=manifest_file.read_text())
 
     @asset(
         key=[code_location, dbt_package_name, name],
@@ -91,10 +92,5 @@ def build_external_source_asset(
 
         for event in dbt_run_operation.stream_raw_events():
             context.log.info(event)
-
-        if dbt_run_operation.is_successful():
-            return Output(value=True)
-        else:
-            raise Failure()
 
     return _asset
