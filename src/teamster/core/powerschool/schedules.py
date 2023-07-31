@@ -1,5 +1,6 @@
 import pendulum
 from dagster import (
+    AssetMaterialization,
     AssetsDefinition,
     AssetSelection,
     RunRequest,
@@ -45,10 +46,19 @@ def build_last_modified_schedule(
 
                 event = context.instance.get_latest_materialization_event(asset_key)
 
-                latest_materialization = pendulum.from_timestamp(
-                    event.asset_materialization.metadata.get(
-                        "latest_materialization_timestamp", 0
+                asset_materialization = (
+                    event.asset_materialization
+                    if event
+                    else AssetMaterialization(
+                        asset_key=asset_key,
+                        metadata={"latest_materialization_timestamp": 0},
                     )
+                )
+
+                latest_materialization = pendulum.from_timestamp(
+                    asset_materialization.metadata.get(
+                        "latest_materialization_timestamp"
+                    ).value
                 )
 
                 is_requested = False
@@ -59,7 +69,6 @@ def build_last_modified_schedule(
                 if latest_materialization.timestamp() == 0:
                     is_requested = True
                 else:
-                    job.asse
                     partition_column = asset.metadata_by_key[asset_key][
                         "partition_column"
                     ]
