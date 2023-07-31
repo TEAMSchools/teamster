@@ -25,7 +25,7 @@ with
             lep_only_ratio,
             sped_ratio,
             '`{{ target.database }}`.`'
-            || regexp_extract(_dbt_source_relation, r'(kipp\w+)_\w+')
+            || regexp_extract(_dbt_source_relation, r'(kipp\w+)_')
             || '_powerschool'
             || '`.`base_powerschool__student_enrollments`' as _dbt_source_relation,
         from {{ ref("stg_finance__enrollment_targets") }}
@@ -50,7 +50,7 @@ with
         where
             (is_self_contained or is_out_of_district)
             and rn_year = 1
-            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_\w+')
+            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_')
             in ('kippnewark', 'kippmiami')
     ),
 

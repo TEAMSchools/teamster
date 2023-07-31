@@ -1,6 +1,6 @@
 select
     concat(
-        regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_powerschool'), sec.id
+        regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_'), sec.id
     ) as `01 Section ID`,
 
     tr.schoolid as `02 Site ID`,

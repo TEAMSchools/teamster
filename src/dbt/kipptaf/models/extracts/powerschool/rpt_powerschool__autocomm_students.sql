@@ -23,7 +23,7 @@ select
     se.lunch_balance as total_balance,
     se.advisor_lastfirst as home_room,
     se.academic_year + (13 - se.grade_level) as graduation_year,
-    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_\w+') as code_location,
+    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 
     format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
     format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
