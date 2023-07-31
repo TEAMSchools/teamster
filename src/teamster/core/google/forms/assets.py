@@ -7,7 +7,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 def build_google_forms_assets(code_location, partitions_def):
     @asset(
-        key=[code_location, "google_forms", "form"],
+        key=[code_location, "google", "forms", "form"],
         io_manager_key="gcs_avro_io",
         partitions_def=partitions_def,
     )
@@ -18,7 +18,7 @@ def build_google_forms_assets(code_location, partitions_def):
         yield Output(value=([data], schema), metadata={"record_count": len(data)})
 
     @asset(
-        key=[code_location, "google_forms", "responses"],
+        key=[code_location, "google", "forms", "responses"],
         io_manager_key="gcs_avro_io",
         partitions_def=partitions_def,
     )
