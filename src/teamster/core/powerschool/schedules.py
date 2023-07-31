@@ -38,12 +38,13 @@ def build_last_modified_schedule(
         ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
         try:
-            context.log.debug("Starting SSH tunnel")
+            context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
             asset_selection = []
             for asset in asset_defs:
                 asset_key = asset.key
+                context.log.info(asset_key)
 
                 event = context.instance.get_latest_materialization_event(asset_key)
 
@@ -58,17 +59,20 @@ def build_last_modified_schedule(
                     )
                 )
 
-                latest_materialization = pendulum.from_timestamp(
+                latest_materialization_timestamp = (
                     asset_materialization.metadata.get(
                         "latest_materialization_timestamp"
-                    ).value
+                    )
+                    or 0.0
+                )
+
+                latest_materialization = pendulum.from_timestamp(
+                    latest_materialization_timestamp.value
+                    if isinstance(latest_materialization_timestamp, MetadataValue)
+                    else latest_materialization_timestamp
                 )
 
                 is_requested = False
-
-                asset_key_string = asset_key.to_python_identifier()
-                context.log.debug(asset_key_string)
-
                 if latest_materialization.timestamp() == 0:
                     is_requested = True
                 else:
@@ -92,7 +96,7 @@ def build_last_modified_schedule(
                         output_format=None,
                     )
 
-                    context.log.debug(f"count: {count}")
+                    context.log.info(f"count: {count}")
 
                     if count > 0:
                         is_requested = True
@@ -101,7 +105,7 @@ def build_last_modified_schedule(
                     asset_selection.append(asset_key)
 
         finally:
-            context.log.debug("Stopping SSH tunnel")
+            context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
 
         yield RunRequest(run_key=schedule_name, asset_selection=asset_selection)

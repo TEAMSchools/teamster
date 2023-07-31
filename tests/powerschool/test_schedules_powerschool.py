@@ -1,13 +1,15 @@
-from dagster import EnvVar, build_schedule_context, instance_for_test
+from dagster import EnvVar, build_schedule_context
 
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.utils.functions import get_dagster_cloud_instance
 from teamster.kippnewark.powerschool.schedules import last_modified_schedule
 
 
 def test_schedule():
-    with instance_for_test() as instance:
-        context = build_schedule_context(instance=instance)
+    context = build_schedule_context(
+        instance=get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
+    )
 
     output = last_modified_schedule(
         context=context,
