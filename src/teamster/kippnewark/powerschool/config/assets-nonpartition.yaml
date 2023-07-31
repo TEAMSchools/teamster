@@ -1,5 +1,5 @@
-# not partitionable
 assets:
+  # not partitionable
   - asset_name: attendance_code
   - asset_name: attendance_conversion_items
   - asset_name: bell_schedule

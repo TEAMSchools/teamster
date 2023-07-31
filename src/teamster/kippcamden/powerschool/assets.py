@@ -6,6 +6,11 @@ from .. import CODE_LOCATION, CURRENT_FISCAL_YEAR
 
 config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
 
+full_assets = [
+    build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
+    for cfg in config_from_files([(f"{config_dir}/assets-full.yaml")])["assets"]
+]
+
 nonpartition_assets = [
     build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
     for cfg in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
@@ -43,6 +48,7 @@ partition_assets = [
 ]
 
 __all__ = [
+    *full_assets,
     *transaction_date_partition_assets,
     *whenmodified_partition_assets,
     *nonpartition_assets,
