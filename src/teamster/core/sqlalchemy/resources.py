@@ -7,7 +7,7 @@ import oracledb
 from dagster import ConfigurableResource, InitResourceContext
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
-from sqlalchemy.engine import URL, Engine, create_engine, result, row
+from sqlalchemy.engine import URL, Engine, Row, create_engine, result
 
 from teamster.core.utils.classes import CustomJSONEncoder
 
@@ -117,7 +117,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
     def result_to_avro(
         self,
-        partitions: Iterator[Sequence[row.Row[result._TP]]],
+        partitions: Iterator[Sequence[Row[result._TP]]],
         schema,
         data_filepath: pathlib.Path,
     ):
@@ -125,6 +125,9 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
         context.log.info(f"Saving results to {data_filepath}")
         data_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        if len(partitions) == 0:
+            data_filepath.touch()
 
         len_data = 0
         for i, pt in enumerate(partitions):
