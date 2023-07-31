@@ -2,62 +2,45 @@ import json
 
 from dagster import EnvVar, build_sensor_context, instance_for_test
 
-from teamster.core.powerschool.sensors import build_dynamic_partition_sensor
+from teamster.core.powerschool.sensors import build_partition_sensor
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.kippnewark import LOCAL_TIMEZONE
 from teamster.kippnewark.powerschool.assets import partition_assets
 
 CURSOR = {
-    "kippnewark__powerschool__attendance": 1689012240.0,
-    "kippnewark__powerschool__cc": 1690381980.0,
-    "kippnewark__powerschool__courses": 1689862140.0,
-    "kippnewark__powerschool__pgfinalgrades": 1689012240.0,
-    "kippnewark__powerschool__prefs": 1690381980.0,
-    "kippnewark__powerschool__schools": 1689862140.0,
-    "kippnewark__powerschool__sections": 1690381980.0,
-    "kippnewark__powerschool__storedgrades": 1690360380.0,
-    "kippnewark__powerschool__students": 1690381980.0,
-    "kippnewark__powerschool__termbins": 1689012240.0,
-    "kippnewark__powerschool__terms": 1690299180.0,
-    "kippnewark__powerschool__assignmentcategoryassoc": 1689012240.0,
-    "kippnewark__powerschool__assignmentscore": 1689012240.0,
-    "kippnewark__powerschool__assignmentsection": 1689012240.0,
-    "kippnewark__powerschool__codeset": 1689012240.0,
-    "kippnewark__powerschool__districtteachercategory": 1689012240.0,
-    "kippnewark__powerschool__emailaddress": 1690381980.0,
-    "kippnewark__powerschool__gradecalcformulaweight": 1689012240.0,
-    "kippnewark__powerschool__gradecalcschoolassoc": 1689012240.0,
-    "kippnewark__powerschool__gradecalculationtype": 1689012240.0,
-    "kippnewark__powerschool__gradeformulaset": 1689012240.0,
-    "kippnewark__powerschool__gradescaleitem": 1689012240.0,
-    "kippnewark__powerschool__gradeschoolconfig": 1689012240.0,
-    "kippnewark__powerschool__gradeschoolformulaassoc": 1689012240.0,
-    "kippnewark__powerschool__gradesectionconfig": 1689012240.0,
-    "kippnewark__powerschool__originalcontactmap": 1690381980.0,
-    "kippnewark__powerschool__person": 1690381980.0,
-    "kippnewark__powerschool__personaddress": 1690381980.0,
-    "kippnewark__powerschool__personaddressassoc": 1690381980.0,
-    "kippnewark__powerschool__personemailaddressassoc": 1690381980.0,
-    "kippnewark__powerschool__personphonenumberassoc": 1690381980.0,
-    "kippnewark__powerschool__phonenumber": 1690381980.0,
-    "kippnewark__powerschool__roledef": 1689012240.0,
-    "kippnewark__powerschool__s_nj_crs_x": 1689858480.0,
-    "kippnewark__powerschool__s_nj_ren_x": 1690381980.0,
-    "kippnewark__powerschool__s_nj_stu_x": 1690381980.0,
-    "kippnewark__powerschool__s_nj_usr_x": 1689012240.0,
-    "kippnewark__powerschool__schoolstaff": 1690299180.0,
-    "kippnewark__powerschool__sectionteacher": 1690299180.0,
-    "kippnewark__powerschool__studentcontactassoc": 1690381980.0,
-    "kippnewark__powerschool__studentcontactdetail": 1690381980.0,
-    "kippnewark__powerschool__studentcorefields": 1690381980.0,
-    "kippnewark__powerschool__studentrace": 1690381980.0,
-    "kippnewark__powerschool__teachercategory": 1689012240.0,
-    "kippnewark__powerschool__u_clg_et_stu": 1690381980.0,
-    "kippnewark__powerschool__u_clg_et_stu_alt": 1690381980.0,
-    "kippnewark__powerschool__u_def_ext_students": 1690381980.0,
-    "kippnewark__powerschool__u_studentsuserfields": 1690381980.0,
-    "kippnewark__powerschool__users": 1689946260.0,
+    "kippnewark__powerschool__attendance__2016-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__attendance__2017-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__attendance__2018-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__attendance__2019-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__attendance__2020-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__attendance__2021-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__attendance__2022-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__attendance__2023-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2016-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2017-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2018-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2019-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2020-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2021-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2022-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__pgfinalgrades__2023-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2016-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2017-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2018-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2019-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2020-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2021-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2022-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__storedgrades__2023-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2016-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2017-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2018-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2019-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2020-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2021-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2022-07-01T00:00:00-0400": 1690836840.0,
+    "kippnewark__powerschool__assignmentscore__2023-07-01T00:00:00-0400": 1690836840.0,
 }
 
 
@@ -65,7 +48,7 @@ def test_sensor():
     with instance_for_test() as instance:
         context = build_sensor_context(instance=instance, cursor=json.dumps(CURSOR))
 
-        dynamic_partition_sensor = build_dynamic_partition_sensor(
+        dynamic_partition_sensor = build_partition_sensor(
             name="test", asset_defs=partition_assets, timezone=LOCAL_TIMEZONE.name
         )
 

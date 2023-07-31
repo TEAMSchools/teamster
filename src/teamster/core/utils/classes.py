@@ -37,8 +37,8 @@ class FiscalYearPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
         start_date: Union[pendulum.DateTime, str],
-        timezone: Optional[str],
         start_month: int,
+        timezone: Optional[str],
         start_day: int = 1,
         fmt: Optional[str] = None,
         end_offset: int = 1,
