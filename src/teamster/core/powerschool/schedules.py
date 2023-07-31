@@ -1,24 +1,32 @@
 import pendulum
-from dagster import AssetsDefinition, RunRequest, ScheduleEvaluationContext, schedule
+from dagster import (
+    AssetsDefinition,
+    AssetSelection,
+    RunRequest,
+    ScheduleEvaluationContext,
+    define_asset_job,
+    schedule,
+)
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
-def build_dynamic_partition_schedule(
-    cron_schedule,
-    code_location,
-    execution_timezone,
-    asset_defs: list[AssetsDefinition],
+def build_last_modified_schedule(
+    code_location, cron_schedule, execution_timezone, asset_defs: list[AssetsDefinition]
 ):
-    schedule_name = f"{code_location}_powerschool_last_modified_schedule"
+    job_name = f"{code_location}_powerschool_last_modified_job"
+
+    job = define_asset_job(name=job_name, selection=AssetSelection.assets(*asset_defs))
+
+    schedule_name = f"{job_name}_schedule"
 
     @schedule(
         cron_schedule=cron_schedule,
-        job_name="foo",
         name=schedule_name,
         execution_timezone=execution_timezone,
+        job=job,
     )
     def _schedule(
         context: ScheduleEvaluationContext,
@@ -51,6 +59,7 @@ def build_dynamic_partition_schedule(
                 if latest_materialization.timestamp() == 0:
                     is_requested = True
                 else:
+                    job.asse
                     partition_column = asset.metadata_by_key[asset_key][
                         "partition_column"
                     ]
