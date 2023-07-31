@@ -1,5 +1,8 @@
+import os
+import pathlib
+
 import pendulum
-from dagster import MultiPartitionKey
+from dagster import DagsterInstance, MultiPartitionKey
 
 from teamster.core.utils.classes import FiscalYear
 
@@ -123,3 +126,11 @@ def infer_avro_schema_fields(list_of_dicts):
         fields.append({"name": k, "type": v})
 
     return fields
+
+
+def get_dagster_cloud_instance(dagster_home_path):
+    os.environ["DAGSTER_HOME"] = dagster_home_path
+
+    pathlib.Path(dagster_home_path).mkdir(parents=True, exist_ok=True)
+
+    return DagsterInstance.get()
