@@ -108,7 +108,7 @@ def build_last_modified_schedule(
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
 
-        context.log.info(asset_selection)
-        yield RunRequest(run_key=schedule_name, asset_selection=asset_selection)
+        if asset_selection:
+            return RunRequest(run_key=schedule_name, asset_selection=asset_selection)
 
     return _schedule
