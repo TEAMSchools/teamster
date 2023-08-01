@@ -125,9 +125,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
         context.log.info(f"Saving results to {data_filepath}")
         data_filepath.parent.mkdir(parents=True, exist_ok=True)
-
-        if len(partitions) == 0:
-            data_filepath.touch()
+        data_filepath.touch()
 
         len_data = 0
         for i, pt in enumerate(partitions):
