@@ -18,6 +18,11 @@ select
             except=["form_id", "item_id", "question_id", "response_id"],
         )
     }},
+
+    row_number() over (
+        partition by f.form_id, f.item_id, r.respondent_email, rata.is_null_value
+        order by r.last_submitted_time desc
+    ) as rn_form_item_respondent_submitted_desc
 from {{ ref_form }} as f
 left join {{ ref_responses }} as r on f.form_id = r.form_id
 left join
