@@ -286,6 +286,7 @@ left join
     on ar.student_number = sped.student_number
     and ar.academic_year = sped.academic_year
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="sped") }}
+    and sped.rn_student_year_desc = 1
 left join
     {{ ref("stg_titan__person_data") }} as tpd
     on ar.student_number = tpd.person_identifier
