@@ -37,10 +37,8 @@ models:
     +schema: deanslist
   powerschool:
     +schema: powerschool
-    base:
-      +materialized: table
+    +materialized: table
     staging:
-      +materialized: table
       stg_powerschool__s_nj_crs_x:
         +enabled: false
       stg_powerschool__s_nj_ren_x:
