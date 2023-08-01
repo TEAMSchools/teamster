@@ -18,3 +18,24 @@ sources:
             hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/google_forms/responses/
             format: AVRO
             enable_logical_types: true
+      - name: src_google_forms__form_items_extension
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw
+            sheet_range: src_google_forms__form_items_extension
+            skip_leading_rows: 1
+        columns:
+          - name: form_id
+            data_type: STRING
+          - name: item_id
+            data_type: STRING
+          - name: question_id
+            data_type: STRING
+          - name: url_id
+            data_type: STRING
+          - name: abbreviation
+            data_type: STRING
+          - name: title
+            data_type: STRING
