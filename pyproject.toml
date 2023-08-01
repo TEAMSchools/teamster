@@ -54,4 +54,4 @@ validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster i
 stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
 fivetran-schema = { shell = "python .pdm/scripts/fivetran-schema.py" }
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
-dbt-stage-external = { shell = "pdm run bash .pdm/scripts/dbt-stage-external.sh" }
+dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
