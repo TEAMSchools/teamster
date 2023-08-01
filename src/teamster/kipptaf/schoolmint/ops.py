@@ -153,8 +153,12 @@ def schoolmint_grow_user_delete_op(
     for u in users:
         user_id = u["user_id"]
 
-        try:
-            context.log.info(f"ARCHIVING\t{user_id}")
-            schoolmint_grow.delete("users", user_id)
-        except Exception:
-            continue
+        context.log.info(f"DEACTIVATING\t{user_id}")
+        schoolmint_grow.put(
+            "users",
+            user_id,
+            json={"district": schoolmint_grow.district_id, "inactive": 1},
+        )
+
+        context.log.info(f"ARCHIVING\t{user_id}")
+        schoolmint_grow.delete("users", user_id)

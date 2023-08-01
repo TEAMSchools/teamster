@@ -34,3 +34,24 @@ def bigquery_get_table_op(
     arrow = rows.to_arrow()
 
     return arrow.to_pylist()
+
+
+@op
+def bigquery_query_op(
+    context: OpExecutionContext,
+    db_bigquery: BigQueryResource,
+    config: BigQueryGetTableOpConfig,
+):
+    project = config.project or db_bigquery.project
+
+    object_id = f"{config.dataset_id}.{config.table_id}"
+    context.log.info(msg=f"Querying table: {object_id}")
+
+    with db_bigquery.get_client() as bq:
+        query = bq.query(query=f"select * from {object_id}", project=project)
+
+    arrow = query.to_arrow()
+
+    context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
+
+    return arrow.to_pylist()
