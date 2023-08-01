@@ -2,19 +2,19 @@ select
     f.formid as form_id,
 
     i.itemid as item_id,
-    i.title,
-    i.description,
+    i.title as item_title,
+    i.description as item_description,
 
     i.questionitem.question.questionid as question_item__question__question_id,
     i.questionitem.question.required as question_item__question__required,
     i.questionitem.question.grading.pointvalue
     as question_item__question__grading__point_value,
     i.questionitem.question.grading.whenright.text
-    as questionitem__question__grading__whenright__text,
+    as question_item__question__grading__whenright__text,
     i.questionitem.question.grading.whenwrong.text
-    as questionitem__question__grading__whenwrong__text,
+    as question_item__question__grading__whenwrong__text,
     i.questionitem.question.grading.generalfeedback.text
-    as questionitem__question__grading__generalfeedback__text,
+    as question_item__question__grading__generalfeedback__text,
     i.questionitem.question.choicequestion.shuffle
     as question_item__question__choice_question__shuffle,
     i.questionitem.question.choicequestion.`type`
@@ -65,12 +65,6 @@ select
     as question_group_item__grid__columns__shuffle,
     i.questiongroupitem.grid.columns.`type` as question_group_item__grid__columns__type,
 
-    i.pagebreakitem.string_field_for_empty_message
-    as page_break_item__string_field_for_empty_message,
-
-    i.textitem.string_field_for_empty_message
-    as text_item__string_field_for_empty_message,
-
     i.imageitem.image.contenturi as image_item__image__content_uri,
     i.imageitem.image.alttext as image_item__image__alt_text,
     i.imageitem.image.sourceuri as image_item__image__source_uri,
@@ -82,6 +76,8 @@ select
     i.videoitem.video.properties.width as video_item__video__properties__width,
     i.videoitem.video.properties.alignment as video_item__video__properties__alignment,
 
+{# i.pagebreakitem.string_field_for_empty_message #}
+{# i.textitem.string_field_for_empty_message #}
 {# i.questionItem.question.grading.correctAnswers.answers	REPEATED #}
 {# i.questionItem.question.grading.whenRight.material	REPEATED #}
 {# i.questionItem.question.grading.whenWrong.material	REPEATED #}
