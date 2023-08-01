@@ -1,3 +1,5 @@
+{{ config(materialized="table") }}
+
 with
     pre_pivot as (
         select
