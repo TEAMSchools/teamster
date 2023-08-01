@@ -1,3 +1,5 @@
+-- depends_on: {{ ref('stg_powerschool__students') }}
+
 {{-
     config(
         materialized="incremental",
@@ -20,6 +22,7 @@
     {%- endif -%}
 {%- endif -%}
 
+{% if is_incremental() %}
 with
     components as (
         select
@@ -86,7 +89,6 @@ with
         where username not in (select username from {{ this }})
     )
 
-{% if is_incremental() %}
     select
         c.student_number,
         coalesce(u1.username, u2.username, u3.username) as username,
