@@ -41,7 +41,7 @@ def build_dbt_assets(code_location):
 
     manifest = json.loads(s=manifest_file.read_text())
 
-    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator())
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
@@ -87,7 +87,7 @@ def build_external_source_asset(
                 json.dumps({"ext_full_refresh": True}),
             ],
             manifest=manifest,
-            dagster_dbt_translator=dagster_dbt_translator,
+            dagster_dbt_translator=dagster_dbt_translator(),
         )
 
         for event in dbt_run_operation.stream_raw_events():
