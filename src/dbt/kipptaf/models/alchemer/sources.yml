@@ -32,3 +32,14 @@ sources:
             hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_response/
             format: AVRO
             enable_logical_types: true
+      - name: src_alchemer__response_id_override
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15PIpnnKaU2NF42JzjUbnrocL_2F41JOVZP4dYDS7mME
+            sheet_range: src_alchemer__response_id_override
+            skip_leading_rows: 1
+        # columns:
+        #   - name:
+        #     data_type:

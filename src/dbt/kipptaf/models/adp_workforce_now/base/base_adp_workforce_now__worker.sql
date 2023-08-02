@@ -29,9 +29,6 @@ select
             prefix="work_assignment_",
         )
     }},
-    lag(wah.assignment_status_long_name) over (
-        partition by wah.worker_id order by wah.assignment_status_effective_date asc
-    ) as work_assignment_assignment_status_long_name_prev,
 
     {{
         dbt_utils.star(
@@ -95,6 +92,10 @@ select
             prefix="organizational_unit_",
         )
     }},
+
+    lag(wah.assignment_status_long_name) over (
+        partition by wah.worker_id order by wah.assignment_status_effective_date asc
+    ) as work_assignment_assignment_status_long_name_prev,
 from {{ src_work_assignment_history }} as wah
 inner join {{ src_worker }} as w on wah.worker_id = w.id
 left join {{ src_worker_report_to }} as wrt on wah.id = wrt.worker_assignment_id

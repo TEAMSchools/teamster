@@ -1,4 +1,4 @@
-{%- set source_model_ref = source("alchemer", model.name | replace("stg", "src")) -%}
+{%- set src_campaign = source("alchemer", "src_alchemer__survey_campaign") -%}
 
 with
     parse_partition_key as (
@@ -8,8 +8,8 @@ with
                 regexp_extract(
                     safe_cast(_dagster_partition_key as string), r'\d+', 1, 1
                 ) as int
-            ) as survey_id
-        from {{ source_model_ref }}
+            ) as survey_id,
+        from {{ src_campaign }}
     ),
 
     deduplicate as (
@@ -47,7 +47,7 @@ with
             ) as link_close_date,
             {{
                 dbt_utils.star(
-                    from=source_model_ref,
+                    from=src_campaign,
                     except=[
                         "_dagster_partition_key",
                         "id",
@@ -60,7 +60,7 @@ with
                         "link_close_date",
                     ],
                 )
-            }}
+            }},
         from deduplicate
     )
 
@@ -70,5 +70,5 @@ select
         teamster_utils.date_to_fiscal_year(
             date_field="link_open_date", start_month=7, year_source="end"
         )
-    }} as fiscal_year
+    }} as fiscal_year,
 from campaign_clean
