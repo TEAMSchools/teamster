@@ -37,5 +37,5 @@ select
             from=source_model_ref,
             except=["_dagster_partition_key", "id", "created_on", "modified_on"],
         )
-    }}
+    }},
 from deduplicate
