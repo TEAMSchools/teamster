@@ -1,5 +1,4 @@
 {{ config(enabled=False) }}
-
 {%- set identifier_shortnames = [
     "respondent_df_employee_number",
     "respondent_userprincipalname",
@@ -29,6 +28,7 @@ with
 
             sc.fiscal_year as campaign_fiscal_year,
             sc.name as campaign_name,
+            sc.link_close_date as campaign_link_close_date,
             regexp_extract(sc.name, r'\d+s+(\w+)') as campaign_reporting_term,
         from {{ ref("stg_alchemer__survey_question") }} as sq
         inner join
@@ -61,8 +61,11 @@ with
             campaign_fiscal_year,
             campaign_name,
             campaign_reporting_term,
+            campaign_link_close_date,
             salesforce_id as respondent_salesforce_id,
-            safe_cast(respondent_adp_worker_id as string) as respondent_associate_id,
+            safe_cast(
+                respondent_adp_associate_id as string
+            ) as respondent_adp_worker_id,
             safe_cast(
                 lower(ifnull(respondent_userprincipalname, email)) as string
             ) as respondent_user_principal_name,
@@ -104,7 +107,7 @@ with
                 when 'No - I am their peer.'
                 then false
                 else safe_cast(safe_cast(is_manager as int) as boolean)
-            end as is_manager,
+            end as respondent_is_manager,
         from
             identifier_responses pivot (
                 max(answer) for shortname
@@ -124,42 +127,41 @@ with
 
     response_clean as (
         select
-            rp.survey_response_id,
             rp.survey_id,
-            rp.date_started,
-            rp.subject_preferred_name,
-            rp.is_manager,
-            rp.salesforce_id,
-            rp.respondent_user_principal_name as nonstaff_email,
+            rp.survey_response_id,
+            rp.response_status,
+            rp.response_contact_id,
+            rp.response_date_started,
+            rp.response_date_submitted,
+            rp.response_time,
+            rp.campaign_fiscal_year,
+            rp.campaign_name,
+            rp.campaign_reporting_term,
+            rp.campaign_link_close_date,
+            rp.respondent_salesforce_id,
+            rp.respondent_is_manager,
+            rp.respondent_user_principal_name,
 
-            ab.subject_preferred_name_duplicate,
-
-            coalesce(
+            ifnull(
                 rp.subject_employee_number, ab.subject_employee_number
             ) as subject_employee_number,
 
-            coalesce(
-                rp.respondent_employee_number,
-                upn.employee_number,
-                adp.employee_number,
-                mail.employee_number,
-                ab.employee_number
+            ifnull(
+                rp.respondent_employee_number, ab.respondent_employee_number
             ) as respondent_employee_number,
         from identifier_responses_deduplicate as rp
-        left join
-            {{ ref("base_people__staff_roster") }} as upn
-            on rp.respondent_user_principal_name = upn.user_principal_name
-        left join
-            {{ ref("base_people__staff_roster") }} as adp
-            on rp.respondent_associate_id = adp.adp_worker_id_legacy
-        left join
-            {{ ref("base_people__staff_roster") }} as mail
-            on rp.respondent_user_principal_name = mail.mail
         left join
             {{ source("alchemer", "src_alchemer__response_id_override") }} as ab
             on rp.survey_id = ab.survey_id
             and rp.survey_response_id = ab.survey_response_id
     )
+
+    worker_person as (
+        select *
+        from {{ ref("base_adp_workforce_now__worker_person") }} wp
+
+        where not not wp.worker__fivetran_deleted
+    ),
 
 select
     rc.survey_response_id,
@@ -172,6 +174,7 @@ select
     rc.campaign_name,
     rc.campaign_fiscal_year,
     rc.campaign_reporting_term,
+    rc.campaign_link_close_date,
     rc.subject_employee_number,
     rc.respondent_employee_number,
     rc.respondent_salesforce_id,
@@ -187,14 +190,12 @@ select
     reh.job_title as respondent_primary_job,
     reh.assignment_status as respondent_assignment_status,
     reh.report_to_employee_number as respondent_manager_df_employee_number,
-
-    rsch.powerschool_school_id as respondent_primary_site_schoolid,
-    rsch.grade_band as respondent_primary_site_grade_band,
-
-    rmgr.preferred_name_lastfirst as respondent_manager_name,
-    rmgr.mail as respondent_manager_mail,
-    rmgr.user_principal_name as respondent_manager_user_principal_name,
-    rmgr.sam_account_name as respondent_manager_sam_account_name,
+    reh.powerschool_school_id as respondent_primary_site_schoolid,
+    reh.grade_band as respondent_primary_site_grade_band,
+    reh.preferred_name_lastfirst as respondent_manager_name,
+    reh.mail as respondent_manager_mail,
+    reh.user_principal_name as respondent_manager_user_principal_name,
+    reh.sam_account_name as respondent_manager_sam_account_name,
 
     subj.preferred_name_lastfirst as subject_preferred_name,
     subj.worker_id as subject_adp_worker_id,
@@ -207,14 +208,12 @@ select
     seh.department_home_name as subject_department_name,
     seh.job_title as subject_primary_job,
     seh.report_to_employee_number as subject_manager_df_employee_number,
-
-    ssch.powerschool_school_id as subject_powerschool_school_id,
-    ssch.grade_band as subject_primary_site_grade_band,
-
-    smgr.preferred_name_lastfirst as subject_manager_name,
-    smgr.mail as subject_manager_mail,
-    smgr.user_principal_name as subject_manager_user_principal_name,
-    smgr.sam_account_name as subject_manager_sam_account_name,
+    seh.powerschool_school_id as subject_powerschool_school_id,
+    seh.grade_band as subject_primary_site_grade_band,
+    seh.preferred_name_lastfirst as subject_manager_name,
+    seh.mail as subject_manager_mail,
+    seh.user_principal_name as subject_manager_user_principal_name,
+    seh.sam_account_name as subject_manager_sam_account_name,
 
     ifnull(
         rc.is_manager,
@@ -222,30 +221,24 @@ select
     ) as is_manager,
 
     ifnull(
-        resp.user_principal_name, rc.nonstaff_email
+        resp.user_principal_name, rc.respondent_user_principal_name
     ) as respondent_user_principal_name,
-from identifier_responses_deduplicate as rc
+from response_clean as rc
 left join
     {{ ref("base_people__staff_roster") }} as resp
     on rc.respondent_employee_number = resp.employee_number
 left join
-    people.employment_history_static as reh
-    on resp.position_id = reh.position_id
-    and sc.link_close_date between reh.effective_start_date and reh.effective_end_date
-left join
-    {{ ref("base_people__staff_roster") }} as rmgr
-    on reh.report_to_employee_number = rmgr.employee_number
-left join
-    people.school_crosswalk as rsch on reh.home_work_location_name = rsch.site_name
+    {{ ref("base_adp_workforce_now__worker_person") }} as reh
+    on resp.worker_id = reh.work_assignment_worker_id
+    and rc.campaign_link_close_date
+    between reh.work_assignment__fivetran_start and reh.work_assignment__fivetran_end
+    and not reh.worker__fivetran_deleted
 left join
     {{ ref("base_people__staff_roster") }} as subj
     on rc.subject_employee_number = subj.employee_number
 left join
-    people.employment_history_static as seh
-    on subj.position_id = seh.position_id
-    and sc.link_close_date between seh.effective_start_date and seh.effective_end_date
-left join
-    {{ ref("base_people__staff_roster") }} as smgr
-    on seh.report_to_employee_number = smgr.employee_number
-left join
-    people.school_crosswalk as ssch on seh.home_work_location_name = ssch.site_name
+    {{ ref("base_adp_workforce_now__worker_person") }} as seh
+    on subj.worker_id = seh.work_assignment_worker_id
+    and rc.campaign_link_close_date
+    between seh.work_assignment__fivetran_start and seh.work_assignment__fivetran_end
+    and not seh.worker__fivetran_deleted
