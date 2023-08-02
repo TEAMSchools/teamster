@@ -1,7 +1,6 @@
 with
     terminations as (
         select
-            employee_number,
             position_id,
             status_effective_date,
             status_effective_end_date,
@@ -10,7 +9,7 @@ with
                 partition by position_id order by status_effective_date
             ) as prev_end_date,
         from people.status_history_static
-        where position_status = 'Terminated'
+        where assignment_status = 'Terminated'
     )
 
     /* final termination record */
