@@ -49,6 +49,9 @@ models:
         +materialized: view
       powerschool:
         +materialized: view
+      tableau:
+        +schema: tableau
+        +materialized: view
     finance:
       +schema: finance
       staging:
@@ -87,8 +90,6 @@ models:
       +schema: smartrecruiters
     surveys:
       +schema: surveys
-    tableau:
-      +schema: tableau
     titan:
       +schema: titan
     utils:

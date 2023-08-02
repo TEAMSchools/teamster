@@ -360,15 +360,16 @@ with
             cw.*,
 
             mgr.employee_number as report_to_employee_number,
-            mgr.user_principal_name as report_to_user_principal_name,
             mgr.preferred_name_given_name as report_to_preferred_name_given_name,
             mgr.preferred_name_family_name as report_to_preferred_name_family_name,
             mgr.preferred_name_lastfirst as report_to_preferred_name_lastfirst,
+            mgr.user_principal_name as report_to_user_principal_name,
+            mgr.mail as report_to_mail,
         from crosswalk as cw
         left join crosswalk as mgr on cw.report_to_associate_oid = mgr.associate_oid
     )
 
-select wm.*, tgl.grade_level as primary_grade_level_taught
+select wm.*, tgl.grade_level as primary_grade_level_taught,
 from with_manager as wm
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
