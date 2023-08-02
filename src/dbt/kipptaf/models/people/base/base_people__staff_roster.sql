@@ -8,7 +8,7 @@ with
             work_assignment_termination_date,
             work_assignment_assignment_status_long_name as assignment_status,
             work_assignment_assignment_status_long_name_prev as assignment_status_prev,
-            coalesce(
+            ifnull(
                 work_assignment_assignment_status_reason_long_name,
                 work_assignment_assignment_status_reason_short_name
             ) as assignment_status_reason,
@@ -24,7 +24,7 @@ with
             work_assignment_position_id as position_id,
             work_assignment_primary_indicator as primary_indicator,
             work_assignment_pay_cycle_short_name as pay_cycle_short_name,
-            coalesce(
+            ifnull(
                 work_assignment_home_work_location_name_long_name,
                 work_assignment_home_work_location_name_short_name
             ) as home_work_location_name,
@@ -34,7 +34,7 @@ with
             work_assignment_wage_law_coverage_short_name
             as wage_law_coverage_short_name,
             work_assignment_seniority_date,
-            coalesce(
+            ifnull(
                 work_assignment_worker_type_long_name,
                 work_assignment_worker_type_short_name
             ) as worker_type,
@@ -80,13 +80,13 @@ with
             person_legal_name_nick_name as legal_name_nick_name,
             person_legal_name_generation_affix as legal_name_generation_affix,
             person_legal_name_qualification_affix as legal_name_qualification_affix,
-            coalesce(
+            ifnull(
                 person_preferred_name_given_name, person_legal_name_given_name
             ) as preferred_name_given_name,
-            coalesce(
+            ifnull(
                 person_preferred_name_middle_name, person_legal_name_middle_name
             ) as preferred_name_middle_name,
-            coalesce(
+            ifnull(
                 person_preferred_name_family_name_1, person_legal_name_family_name_1
             ) as preferred_name_family_name,
             person_birth_name_family_name_1 as birth_name_family_name,
@@ -129,13 +129,13 @@ with
 
             disability_long_name as disability,
 
-            coalesce(
+            ifnull(
                 organizational_unit_business_unit_assigned_name_long_name,
                 organizational_unit_business_unit_assigned_name_short_name
             ) as business_unit_assigned_name,
             organizational_unit_business_unit_assigned_name
             as business_unit_assigned_code,
-            coalesce(
+            ifnull(
                 organizational_unit_business_unit_home_name_long_name,
                 organizational_unit_business_unit_home_name_short_name
             ) as business_unit_home_name,
@@ -146,12 +146,12 @@ with
             organizational_unit_cost_number_home_name_short_name
             as cost_number_home_name,
             organizational_unit_cost_number_home_name as cost_number_home_code,
-            coalesce(
+            ifnull(
                 organizational_unit_department_assigned_name_long_name,
                 organizational_unit_department_assigned_name_short_name
             ) as department_assigned_name,
             organizational_unit_department_assigned_name as department_assigned_code,
-            coalesce(
+            ifnull(
                 organizational_unit_department_home_name_long_name,
                 organizational_unit_department_home_name_short_name
             ) as department_home_name,
@@ -169,9 +169,7 @@ with
             communication_business_email,
 
             group_name_long_name as worker_group_name,
-            coalesce(
-                group_group_long_name, group_group_short_name
-            ) as worker_group_value,
+            ifnull(group_group_long_name, group_group_short_name) as worker_group_value,
 
             report_to_id as report_to_associate_oid,
             report_to_position_id,
@@ -335,7 +333,7 @@ with
                 )
             ) as google_email,
 
-            coalesce(
+            ifnull(
                 idps.powerschool_teacher_number, safe_cast(en.employee_number as string)
             ) as powerschool_teacher_number,
         from deduplicate as wp
