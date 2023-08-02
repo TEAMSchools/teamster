@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: amplify
+    schema: kipptaf_amplify
+    tables:
+      - name: src_amplify__benchmark_student_summary
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/amplify/benchmark_student_summary/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/amplify/benchmark_student_summary/
+            format: AVRO
+            enable_logical_types: true
+      - name: src_amplify__pm_student_summary
+        external:
+          location: gs://teamster-kipptaf/dagster/kipptaf/amplify/pm_student_summary/*
+          options:
+            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/amplify/pm_student_summary/
+            format: AVRO
+            enable_logical_types: true
