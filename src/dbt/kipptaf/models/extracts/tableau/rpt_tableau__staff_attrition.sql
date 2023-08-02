@@ -34,6 +34,7 @@ with
         select
             r.work_assignment_id,
             r.employee_number,
+            r.worker_id,
             r.position_id,
             r.assignment_status,
             r.preferred_name_given_name,
@@ -67,13 +68,11 @@ with
                 extract(month from most_recent_hire_date) >= 9,
                 extract(year from most_recent_hire_date),
                 extract(year from most_recent_hire_date) - 1
-
             ) as start_academic_year,
             if(
                 extract(month from worker_termination_date) >= 9,
                 extract(year from worker_termination_date),
                 extract(year from worker_termination_date) - 1
-
             ) as end_academic_year,
         from roster_terminations
     ),
@@ -146,8 +145,12 @@ with
         from with_academic_year_exitdate as rys
         left join
             {{ ref("base_adp_workforce_now__worker_person") }} as w
-            on rys.work_assignment_id = w.work_assignment_id
-            and w.work_assignment__fivetran_active
+            on rys.worker_id = w.work_assignment_worker_id
+            and rys.effective_date
+            between cast(w.work_assignment__fivetran_start as date) and cast(
+                w.work_assignment__fivetran_end as date
+            )
+            and not w.worker__fivetran_deleted
         where rys.academic_year_exitdate > rys.academic_year_entrydate
     ),
 
