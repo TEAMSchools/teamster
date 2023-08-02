@@ -10,6 +10,7 @@ with
                 ) as int
             ) as survey_id,
         from {{ src_campaign }}
+        where `status` != 'Deleted'
     ),
 
     deduplicate as (

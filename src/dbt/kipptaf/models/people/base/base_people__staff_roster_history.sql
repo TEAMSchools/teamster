@@ -357,6 +357,7 @@ with
 
             ldap.user_principal_name as report_to_user_principal_name,
             ldap.mail as report_to_mail,
+            ldap.sam_account_name as report_to_sam_account_name,
         from crosswalk as cw
         left join
             {{ ref("stg_adp_workforce_now__person_history") }} as ph

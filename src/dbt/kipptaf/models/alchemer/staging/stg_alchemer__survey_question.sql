@@ -25,6 +25,7 @@ with
 select
     survey_id,
     nullif(shortname, '') as shortname,
+    (select t.value from unnest(title) as t where t.key = "English") as title_english,
     {{
         dbt_utils.star(
             from=src_question, except=["_dagster_partition_key", "shortname"]
