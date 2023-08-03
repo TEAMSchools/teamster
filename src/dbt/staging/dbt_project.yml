@@ -55,14 +55,6 @@ models:
       +schema: adp_workforce_now
     alchemer:
       +schema: alchemer
-    deanslist:
-      +schema: deanslist
-    edplan:
-      +schema: edplan
-    extracts:
-      +schema: extracts
-      tableau:
-        +schema: tableau
     finance:
       +schema: finance
     google:
@@ -76,19 +68,11 @@ models:
       +schema: ldap
     people:
       +schema: people
-    powerschool:
-      +schema: powerschool
     reporting:
       +schema: reporting
     schoolmint:
       grow:
         +schema: schoolmint_grow
-    smartrecruiters:
-      +schema: smartrecruiters
-    surveys:
-      +schema: surveys
-    titan:
-      +schema: titan
     utils:
       +schema: utils
     zendesk:
