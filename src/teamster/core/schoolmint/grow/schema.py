@@ -64,12 +64,27 @@ CONTENT_FIELDS = [
 ADDITIONAL_FIELD_FIELDS = [
     *REF_FIELDS,
     {"name": "description", "type": ["null", "string"], "default": None},
-    {"name": "enableParticipantsCopy", "type": ["null", "boolean"], "default": None},
-    {"name": "hiddenUntilMeetingStart", "type": ["null", "boolean"], "default": None},
-    {"name": "isPrivate", "type": ["null", "boolean"], "default": None},
+    {"name": "key", "type": ["null", "string"], "default": None},
     {"name": "leftName", "type": ["null", "string"], "default": None},
     {"name": "rightName", "type": ["null", "string"], "default": None},
     {"name": "type", "type": ["null", "string"], "default": None},
+    {"name": "disablePrivateToggle", "type": ["null", "boolean"], "default": None},
+    {"name": "disableDeleting", "type": ["null", "boolean"], "default": None},
+    {"name": "enableHiding", "type": ["null", "boolean"], "default": None},
+    {"name": "enableParticipantsCopy", "type": ["null", "boolean"], "default": None},
+    {"name": "hidden", "type": ["null", "boolean"], "default": None},
+    {"name": "hiddenUntilMeetingStart", "type": ["null", "boolean"], "default": None},
+    {"name": "isPrivate", "type": ["null", "boolean"], "default": None},
+    {
+        "name": "disableHideUntilMeetingStartToggle",
+        "type": ["null", "boolean"],
+        "default": None,
+    },
+    {
+        "name": "disableEnableParticipantCopyToggle",
+        "type": ["null", "boolean"],
+        "default": None,
+    },
     {
         "name": "content",
         "type": [
@@ -105,6 +120,12 @@ GT_USERTYPE_FIELDS = [
     },
 ]
 
+RESOURCE_FIELDS = [
+    {"name": "_id", "type": ["null", "string"], "default": None},
+    {"name": "label", "type": ["null", "string"], "default": None},
+    {"name": "url", "type": ["null", "string"], "default": None},
+]
+
 GT_MEETINGTYPE_FIELDS = [
     *GENERIC_TAG_TYPE_FIELDS,
     {"name": "canBePrivate", "type": ["null", "boolean"], "default": None},
@@ -118,6 +139,7 @@ GT_MEETINGTYPE_FIELDS = [
     {"name": "enableTag2", "type": ["null", "boolean"], "default": None},
     {"name": "enableTag3", "type": ["null", "boolean"], "default": None},
     {"name": "enableTag4", "type": ["null", "boolean"], "default": None},
+    {"name": "enableClickToFill", "type": ["null", "boolean"], "default": None},
     {"name": "hideFromLists", "type": ["null", "boolean"], "default": None},
     {"name": "isWeeklyDataMeeting", "type": ["null", "boolean"], "default": None},
     {"name": "videoForm", "type": ["null", "boolean"], "default": None},
@@ -148,7 +170,18 @@ GT_MEETINGTYPE_FIELDS = [
     },
     {
         "name": "resources",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="resource",
+                    fields=RESOURCE_FIELDS,
+                    namespace="generic_tags_meetingtypes",
+                ),
+                "default": [],
+            },
+        ],
         "default": None,
     },
     {
@@ -399,12 +432,6 @@ FEATURE_INSTRUCTION_FIELDS = [
     {"name": "section", "type": ["null", "string"], "default": None},
     {"name": "text", "type": ["null", "string"], "default": None},
     {"name": "titleOverride", "type": ["null", "string"], "default": None},
-]
-
-RESOURCE_FIELDS = [
-    {"name": "_id", "type": ["null", "string"], "default": None},
-    {"name": "label", "type": ["null", "string"], "default": None},
-    {"name": "url", "type": ["null", "string"], "default": None},
 ]
 
 ROLES_EXCLUDED_FIELDS = [
