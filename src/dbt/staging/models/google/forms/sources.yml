@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: google_forms
-    schema: kipptaf_google_forms
+    schema: staging_google_forms
     tags:
       - stage_external_sources
     tables:

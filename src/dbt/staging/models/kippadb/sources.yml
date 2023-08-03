@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: kippadb
-    schema: kipptaf_kippadb
+    schema: staging_kippadb
     tables:
       - name: account
         identifier: Account
@@ -10,7 +10,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Account
       - name: application
@@ -19,7 +19,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Application__c
       - name: application__history
@@ -28,7 +28,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Application__History
       - name: application_history
@@ -37,7 +37,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Application_History__c
       - name: application_status_history
@@ -46,7 +46,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Application_Status_History__c
       - name: attachment
@@ -55,7 +55,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - attachment
       - name: college_persistence
@@ -64,7 +64,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - College_Persistence__c
       - name: contact
@@ -73,7 +73,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Contact
       - name: contact_note
@@ -82,7 +82,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Contact_Note__c
       - name: content_document
@@ -91,7 +91,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - ContentDocument
       - name: employment
@@ -100,7 +100,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Employment__c
       - name: enrollment
@@ -109,7 +109,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Enrollment__c
       - name: enrollment__history
@@ -118,7 +118,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Enrollment__History
       - name: event
@@ -127,7 +127,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Event
       - name: gpa
@@ -136,7 +136,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - GPA__c
       - name: kipp_aid
@@ -145,7 +145,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - KIPP_Aid__c
       - name: marking_period
@@ -154,7 +154,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Marking_Period__c
       - name: record_type
@@ -163,7 +163,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - RecordType
       - name: relationship
@@ -172,7 +172,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Relationship__c
       - name: standardized_test
@@ -181,7 +181,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Standardized_Test__c
       - name: subsequent_financial_aid_award
@@ -190,7 +190,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Subsequent_Financial_Aid_Award__c
       - name: task
@@ -199,7 +199,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Task
       - name: term
@@ -208,7 +208,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Term__c
       - name: term__history
@@ -217,7 +217,7 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - Term__History
       - name: user
@@ -226,6 +226,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
+              - staging
               - kippadb
               - User

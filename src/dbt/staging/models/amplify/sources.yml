@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: amplify
-    schema: kipptaf_amplify
+    schema: staging_amplify
     tags:
       - stage_external_sources
     tables:

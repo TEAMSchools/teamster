@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: ldap
-    schema: kipptaf_ldap
+    schema: staging_ldap
     tags:
       - stage_external_sources
     tables:

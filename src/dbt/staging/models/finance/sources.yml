@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: finance
-    schema: kipptaf_finance
+    schema: staging_finance
     tags:
       - stage_external_sources
     tables:
