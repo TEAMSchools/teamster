@@ -1,7 +1,7 @@
 from dagster import AssetSelection, define_asset_job
 
 from teamster.core.airbyte.jobs import build_airbyte_start_sync_job
-from teamster.kipptaf import CODE_LOCATION, airbyte
+from teamster.staging import CODE_LOCATION, airbyte
 
 airbyte_materialization_jobs = []
 airbyte_start_sync_jobs = []

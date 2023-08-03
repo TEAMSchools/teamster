@@ -3,7 +3,7 @@ import pathlib
 import yaml
 
 from teamster.core.fivetran.assets import build_fivetran_assets
-from teamster.kipptaf import CODE_LOCATION
+from teamster.staging import CODE_LOCATION
 
 config_path = pathlib.Path(__file__).parent / "config"
 
