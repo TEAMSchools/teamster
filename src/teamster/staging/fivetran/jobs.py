@@ -6,7 +6,7 @@ from teamster.core.fivetran.jobs import (
     build_fivetran_start_resync_job,
     build_fivetran_start_sync_job,
 )
-from teamster.kipptaf import CODE_LOCATION, fivetran
+from teamster.staging import CODE_LOCATION, fivetran
 
 fivetran_materialization_jobs = []
 fivetran_start_sync_jobs = []

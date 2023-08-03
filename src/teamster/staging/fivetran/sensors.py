@@ -1,5 +1,5 @@
 from teamster.core.fivetran.sensors import build_fivetran_sync_status_sensor
-from teamster.kipptaf.fivetran import assets
+from teamster.staging.fivetran import assets
 
 from .. import CODE_LOCATION
 

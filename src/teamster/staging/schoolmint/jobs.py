@@ -5,6 +5,7 @@ from teamster.core.google.bigquery.ops import (
     bigquery_get_table_op,
 )
 
+from .. import CODE_LOCATION
 from .assets import multi_partition_assets, static_partition_assets
 from .ops import schoolmint_grow_school_update_op, schoolmint_grow_user_update_op
 
@@ -13,7 +14,8 @@ from .ops import schoolmint_grow_school_update_op, schoolmint_grow_user_update_o
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
-                dataset_id="kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
+                dataset_id=f"{CODE_LOCATION}_extracts",
+                table_id="rpt_schoolmint_grow__users",
             )
         }
     )
