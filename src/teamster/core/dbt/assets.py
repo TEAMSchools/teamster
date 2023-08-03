@@ -117,7 +117,8 @@ def build_dbt_external_source_assets(code_location):
                 "--vars",
                 json.dumps({"ext_full_refresh": True}),
             ],
-            context=context,
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator(),
         )
 
         for event in dbt_run_operation.stream_raw_events():
