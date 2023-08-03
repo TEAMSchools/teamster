@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: finance
+    schema: kipptaf_finance
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_finance__enrollment_targets
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
+            sheet_range: src_finance__enrollment_targets
+            skip_leading_rows: 1

@@ -1,0 +1,231 @@
+version: 2
+
+sources:
+  - name: kippadb
+    schema: kipptaf_kippadb
+    tables:
+      - name: account
+        identifier: Account
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Account
+      - name: application
+        identifier: Application__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Application__c
+      - name: application__history
+        identifier: Application__History
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Application__History
+      - name: application_history
+        identifier: Application_History__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Application_History__c
+      - name: application_status_history
+        identifier: Application_Status_History__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Application_Status_History__c
+      - name: attachment
+        identifier: Attachment
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - attachment
+      - name: college_persistence
+        identifier: College_Persistence__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - College_Persistence__c
+      - name: contact
+        identifier: Contact
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Contact
+      - name: contact_note
+        identifier: Contact_Note__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Contact_Note__c
+      - name: content_document
+        identifier: ContentDocument
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - ContentDocument
+      - name: employment
+        identifier: Employment__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Employment__c
+      - name: enrollment
+        identifier: Enrollment__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Enrollment__c
+      - name: enrollment__history
+        identifier: Enrollment__History
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Enrollment__History
+      - name: event
+        identifier: Event
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Event
+      - name: gpa
+        identifier: GPA__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - GPA__c
+      - name: kipp_aid
+        identifier: KIPP_Aid__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - KIPP_Aid__c
+      - name: marking_period
+        identifier: Marking_Period__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Marking_Period__c
+      - name: record_type
+        identifier: RecordType
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - RecordType
+      - name: relationship
+        identifier: Relationship__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Relationship__c
+      - name: standardized_test
+        identifier: Standardized_Test__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Standardized_Test__c
+      - name: subsequent_financial_aid_award
+        identifier: Subsequent_Financial_Aid_Award__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Subsequent_Financial_Aid_Award__c
+      - name: task
+        identifier: Task
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Task
+      - name: term
+        identifier: Term__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Term__c
+      - name: term__history
+        identifier: Term__History
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Term__History
+      - name: user
+        identifier: User
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - User
