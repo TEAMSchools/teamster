@@ -62,6 +62,28 @@ dagsterCloudAgent:
   # initContainers are used for testing, since the host cloud will not be available while it is starting
   initContainers: []
 
+  # # When the agent has completed its first reconciliation loop, it writes an empty
+  # # sentinel file. We can check for the completion of this first reconciliation loop
+  # # (which means all code servers are running) by checking for the existence of this file.
+  # # When attempting zero downtime agent updates, this readiness probe should be set.
+  # readinessProbe:
+  #   exec:
+  #     command:
+  #       - /bin/bash
+  #       - -c
+  #       - test -f /tmp/finished_initial_reconciliation_sentinel.txt
+  #   failureThreshold: 60
+  #   initialDelaySeconds: 0
+  #   periodSeconds: 10
+
+  # # Set the type of update strategy to use. The default settings provided here will
+  # # ensure that updates happen with zero downtime.
+  # deploymentStrategy:
+  #   type: "RollingUpdate"
+  #   rollingUpdate:
+  #     maxUnavailable: 0%
+  #     maxSurge: 200%
+
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/
@@ -310,10 +332,14 @@ computeLogs:
 pythonLogs: {}
 
 ####################################################################################################
-# Agent Replicas: (Optional, Experimental) Enable a new feature for running multiple agents.
-# Requires both the agent and user code to be on 0.13.10 or later.
+# Isolated Agents: (Optional, Experimental) When running multiple agents for the same
+# Dagster Cloud deployment, set this flag to true if the agents are running in
+# environments that do not have access to each others resources (for example, if they
+# are running in different Kubernetes clusters or in different namespaces within the
+# same cluster). Setting this flag to true ensures that features like run termination
+# will still work correctly.
 ####################################################################################################
-agentReplicas:
+isolatedAgents:
   enabled: false
 
 ####################################################################################################
