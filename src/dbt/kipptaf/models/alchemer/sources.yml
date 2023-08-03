@@ -3,33 +3,38 @@ version: 2
 sources:
   - name: alchemer
     schema: kipptaf_alchemer
+    tags:
+      - stage_external_sources
     tables:
       - name: src_alchemer__survey
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey/*
+          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey/
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/alchemer/survey/"
             format: AVRO
             enable_logical_types: true
       - name: src_alchemer__survey_campaign
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_campaign/*
+          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_campaign/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/"
             format: AVRO
             enable_logical_types: true
       - name: src_alchemer__survey_question
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_question/*
+          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_question/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/"
             format: AVRO
             enable_logical_types: true
       - name: src_alchemer__survey_response
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_response/*
+          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/alchemer/survey_response/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/"
             format: AVRO
             enable_logical_types: true
       - name: src_alchemer__response_id_override
@@ -40,6 +45,3 @@ sources:
               - https://docs.google.com/spreadsheets/d/15PIpnnKaU2NF42JzjUbnrocL_2F41JOVZP4dYDS7mME
             sheet_range: src_alchemer__response_id_override
             skip_leading_rows: 1
-        # columns:
-        #   - name:
-        #     data_type:

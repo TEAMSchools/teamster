@@ -107,6 +107,11 @@ sources:
       - name: user_group
       - name: user_group_membership
       - name: user_role_mapping
+
+  - name: coupa
+    tags:
+      - stage_external_sources
+    tables:
       - name: src_coupa__address_name_crosswalk
         external:
           options:

@@ -3,16 +3,18 @@ version: 2
 sources:
   - name: ldap
     schema: kipptaf_ldap
+    tags:
+      - stage_external_sources
     tables:
       - name: src_ldap__user_person
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/ldap/user_person/*
+          location: "{{ var('cloud_storage_uri_base') }}/ldap/user_person/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_ldap__group
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/ldap/group/*
+          location: "{{ var('cloud_storage_uri_base') }}/ldap/group/*"
           options:
             format: AVRO
             enable_logical_types: true

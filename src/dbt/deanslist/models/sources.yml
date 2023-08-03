@@ -5,59 +5,49 @@ sources:
     schema: "{{ var('deanslist_schema', 'deanslist') }}"
     database:
       "{% if target.type != 'spark' %}{{ var('deanslist_database', target.database) }}{% endif %}"
-
+    tags:
+      - stage_external_sources
     tables:
       - name: src_deanslist__behavior
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/behavior/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/behavior/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/behavior/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/behavior/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__comm_log
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/comm_log/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/comm_log/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/comm_log/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/comm_log/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__followups
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/followups/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/followups/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/followups/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/followups/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__homework
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/homework/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/homework/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/homework/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/homework/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__incidents
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/incidents/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/incidents/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/incidents/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/incidents/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__lists
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/lists/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/lists/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/lists/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/lists/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__roster_assignments
@@ -73,26 +63,22 @@ sources:
             enable_logical_types: true
       - name: src_deanslist__rosters
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/rosters/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/rosters/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/rosters/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/rosters/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__terms
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/terms/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/terms/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/terms/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/terms/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__users
         external:
-          location: "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/users/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/users/*"
           options:
-            hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name }}/deanslist/users/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/users/"
             format: AVRO
             enable_logical_types: true

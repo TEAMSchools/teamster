@@ -41,11 +41,43 @@ def build_dbt_assets(code_location):
 
     manifest = json.loads(s=manifest_file.read_text())
 
-    @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator())
+    @dbt_assets(
+        manifest=manifest,
+        # exclude="tag:stage_external_sources",
+        dagster_dbt_translator=dagster_dbt_translator(),
+    )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
         yield from dbt_build.stream()
+
+    return _assets
+
+
+def build_dbt_external_source_assets(code_location):
+    dagster_dbt_translator = get_custom_dagster_dbt_translator(code_location)
+    manifest_file = pathlib.Path(f"src/dbt/{code_location}/target/manifest.json")
+
+    manifest = json.loads(s=manifest_file.read_text())
+
+    @dbt_assets(
+        manifest=manifest,
+        select="tag:stage_external_sources",
+        dagster_dbt_translator=dagster_dbt_translator(),
+    )
+    def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+        dbt_run_operation = dbt_cli.cli(
+            args=[
+                "run-operation",
+                "stage_external_sources",
+                "--vars",
+                json.dumps({"ext_full_refresh": True}),
+            ],
+            context=context,
+        )
+
+        for event in dbt_run_operation.stream_raw_events():
+            context.log.info(event)
 
     return _assets
 

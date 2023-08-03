@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: people
     schema: kipptaf_people
+    tags:
+      - stage_external_sources
     tables:
       - name: src_people__employee_numbers_archive
         external:

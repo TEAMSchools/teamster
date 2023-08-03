@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: reporting
     schema: kipptaf_reporting
+    tags:
+      - stage_external_sources
     tables:
       - name: src_reporting__terms
         external:

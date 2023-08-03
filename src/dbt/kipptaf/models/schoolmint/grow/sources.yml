@@ -3,165 +3,191 @@ version: 2
 sources:
   - name: schoolmint_grow
     schema: kipptaf_schoolmint_grow
+    tags:
+      - stage_external_sources
     tables:
       - name: src_schoolmint_grow__rubrics
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/rubrics/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/rubrics/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/rubrics/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/rubrics/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__schools
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/schools/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/schools/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/schools/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/schools/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__users
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/users/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/users/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/users/
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/users/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__videos
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/videos/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/videos/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/videos/
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/videos/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_assignmentpresets
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_assignmentpresets/*
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_assignmentpresets/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_assignmentpresets/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_assignmentpresets/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_courses
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_courses/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_courses/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_courses/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_courses/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_grades
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_grades/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_grades/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_grades/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_grades/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_measurementgroups
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_measurementgroups/*
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_measurementgroups/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_measurementgroups/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_measurementgroups/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_observationtypes
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_observationtypes/*
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_observationtypes/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_observationtypes/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_observationtypes/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_tags
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_tags/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_tags/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_tags/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_tags/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_meetingtypes
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_meetingtypes/*
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_meetingtypes/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_meetingtypes/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_meetingtypes/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__informals
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/informals/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/informals/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/informals/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/informals/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__measurements
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/measurements/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/measurements/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/measurements/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/measurements/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__meetings
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/meetings/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/meetings/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/meetings/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/meetings/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__roles
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/roles/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/roles/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/roles/
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/roles/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__observations
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/observations/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/observations/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/observations/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/observations/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__assignments
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/assignments/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/assignments/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/assignments/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/assignments/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_eventtag1
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_eventtag1/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_eventtag1/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_eventtag1/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_eventtag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_goaltypes
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_goaltypes/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_goaltypes/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_goaltypes/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_goaltypes/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_rubrictag1
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_rubrictag1/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_rubrictag1/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_rubrictag1/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_rubrictag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_schooltag1
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_schooltag1/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_schooltag1/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_schooltag1/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_schooltag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_usertag1
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertag1/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertag1/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertag1/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_usertypes
         external:
-          location: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertypes/*
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertypes/*"
           options:
-            hive_partition_uri_prefix: gs://teamster-kipptaf/dagster/kipptaf/schoolmint_grow/generic_tags_usertypes/
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertypes/"
             format: AVRO
             enable_logical_types: true
