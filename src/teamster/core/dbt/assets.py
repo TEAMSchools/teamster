@@ -2,15 +2,15 @@ import json
 import pathlib
 from typing import Any, Mapping
 
-from dagster import AssetExecutionContext, AssetKey, asset, multi_asset
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
-from dagster_dbt.asset_decorator import get_dbt_multi_asset_args
-from dagster_dbt.asset_utils import get_deps
-from dagster_dbt.utils import (
-    ASSET_RESOURCE_TYPES,
-    get_node_info_by_dbt_unique_id_from_manifest,
-    select_unique_ids_from_manifest,
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    AssetOut,
+    Output,
+    asset,
+    multi_asset,
 )
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from dagster_gcp import BigQueryResource
 
 
@@ -34,6 +34,7 @@ def get_custom_dagster_dbt_translator(code_location):
                 else:
                     components = [node_info["name"]]
 
+            # components.insert(0, "dbt")
             components.insert(0, code_location)
 
             return AssetKey(components)
@@ -66,33 +67,44 @@ def build_dbt_external_source_assets(code_location):
 
     manifest = json.loads(s=manifest_file.read_text())
 
-    unique_ids = select_unique_ids_from_manifest(
-        select="tag:stage_external_sources", exclude="", manifest_json=manifest
-    )
-    node_info_by_dbt_unique_id = get_node_info_by_dbt_unique_id_from_manifest(manifest)
+    outs = {}
+    internal_asset_deps = {}
+    deps = []
+    for source in manifest["sources"].values():
+        if "stage_external_sources" not in source["tags"]:
+            continue
 
-    deps = get_deps(
-        dbt_nodes=node_info_by_dbt_unique_id,
-        selected_unique_ids=unique_ids,
-        asset_resource_types=ASSET_RESOURCE_TYPES,
-    )
+        source_name = source["source_name"]
+        table_name = source["name"]
+        key_prefix = source["fqn"][1:-2]
 
-    (
-        non_argument_deps,
-        outs,
-        internal_asset_deps,
-    ) = get_dbt_multi_asset_args(
-        dbt_nodes=node_info_by_dbt_unique_id,
-        deps=deps,
-        io_manager_key=None,
-        manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
-    )
+        if not key_prefix:
+            key_prefix = [source["source_name"]]
+
+        identifier = source["identifier"]
+
+        if identifier[-3:].lower() == "__c":
+            dep_name = identifier
+        else:
+            dep_name = identifier.split("__")[-1]
+
+        out_key = dagster_dbt_translator.get_asset_key(source)
+
+        asset_out = AssetOut(key=out_key, group_name=source_name)
+        dep_key = AssetKey([code_location, *key_prefix, dep_name])
+        deps_set = set()
+
+        deps.append(dep_key)
+        deps_set.add(dep_key)
+
+        outs[table_name] = asset_out
+        internal_asset_deps[table_name] = deps_set
 
     @multi_asset(
+        name="dbt_external_source_assets",
         outs=outs,
+        deps=deps,
         internal_asset_deps=internal_asset_deps,
-        deps=non_argument_deps,
         compute_kind="dbt",
         can_subset=True,
         op_tags={"dagster-dbt/select": "tag:stage_external_sources"},
@@ -110,6 +122,9 @@ def build_dbt_external_source_assets(code_location):
 
         for event in dbt_run_operation.stream_raw_events():
             context.log.info(event)
+
+        for output_name in context.selected_output_names:
+            yield Output(value=None, output_name=output_name)
 
     return _assets
 
