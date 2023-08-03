@@ -28,45 +28,44 @@ dagsterCloudAgent:
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
-# workspace:
-# Default compute resource requirements for the pods created by the agent. See:
-# https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-# resources:
-#   limits:
-#     cpu: 500m
-#     memory: 1.0Gi
-#   requests:
-#     cpu: 500m
-#     memory: 1.0Gi
+workspace:
+  # Specify TTL for user code servers.
+  # By default full deployment servers do not have a TTL.
+  # Branch deployments servers have a default TTL of 24 hours.
+  # The max code servers defaults to 25, and only applies to servers with TTL.
+  serverTTL:
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 60
+    branchDeployments:
+      ttlSeconds: 60
 
-# Specify TTL for user code servers.
-# By default full deployment servers do not have a TTL.
-# Branch deployments servers have a default TTL of 24 hours
-# The max code servers defaults to 25, and only applies to servers with TTL.
-# serverTTL:
-#   fullDeployments:
-#     enabled: true
-#     ttlSeconds: 300 # 5 min
-#   branchDeployments:
-#     ttlSeconds: 300 # 5 min
+  # # Default compute resource requirements for the pods created by the agent. See:
+  # # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  # resources:
+  #   limits:
+  #     cpu: 500m
+  #     memory: 1.0Gi
+  #   requests:
+  #     cpu: 500m
+  #     memory: 1.0Gi
 
-# Raw k8s configuration for the Kubernetes Deployment created for each code location.
-# serverK8sConfig:
-#   containerConfig: # raw config for the pod's main container
-#     resources:
-#       limits:
-#         cpu: 1000m
-#         memory: 1.5Gi
-#       requests:
-#         cpu: 1000m
-#         memory: 1.5Gi
+  # # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  # serverK8sConfig:
+  #   containerConfig: # raw config for the pod's main container
+  #     resources:
+  #       limits:
+  #         cpu: 1000m
+  #         memory: 1.5Gi
+  #       requests:
+  #         cpu: 1000m
+  #         memory: 1.5Gi
 
-# Specifies the timeout in seconds the agent should use when waiting for a code
-# server to be ready after the Kubernetes deployment is created. If not set, defaults
-# to 180 seconds.
-# This timeout should be increased if your code locations can take more than 3
-# minutes to load your Dagster definitions.
-# serverProcessStartupTimeout: 360
+  # # Specifies the timeout in seconds the agent should use when waiting for a code
+  # # server to be ready after the Kubernetes deployment is created.
+  # # If not set, defaults to 180 seconds. This timeout should be increased if your code
+  # # locations can take more than 3 minutes to load your Dagster definitions.
+  # serverProcessStartupTimeout: 360
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
