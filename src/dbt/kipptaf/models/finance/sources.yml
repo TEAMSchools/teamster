@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: finance
     schema: kipptaf_finance
+    tags:
+      - stage_external_sources
     tables:
       - name: src_finance__enrollment_targets
         external:

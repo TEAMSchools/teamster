@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: egencia
     schema: kipptaf_egencia
+    tags:
+      - stage_external_sources
     tables:
       - name: src_egencia__traveler_groups
         external:

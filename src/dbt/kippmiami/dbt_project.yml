@@ -21,6 +21,7 @@ clean-targets: # directories to be removed by `dbt clean`
   - dbt_packages
 
 vars:
+  cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
   deanslist_schema: kippmiami_deanslist
   powerschool_schema: kippmiami_powerschool
   current_academic_year: 2023
