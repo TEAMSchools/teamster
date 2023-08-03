@@ -1,0 +1,43 @@
+assets:
+  - connection_id: ee23720c-c82f-45be-ab40-f72dcf8ac3cd
+    group_name: zendesk
+    destination_tables:
+      - groups
+      - ticket_audits
+      - ticket_fields
+      - ticket_metrics
+      - tickets
+      - users
+    normalization_tables:
+      ticket_fields:
+        - ticket_fields_custom_field_options
+      tickets:
+        - tickets_custom_fields
+  - connection_id: e4856fb7-1f97-4bcd-bc4e-e616c5ae4e52
+    group_name: kippadb
+    destination_tables:
+      - Account
+      - Application__c
+      - Application__History
+      - Application_History__c
+      - Application_Status_History__c
+      - Attachment
+      - College_Persistence__c
+      - Contact
+      - Contact_Note__c
+      - ContentDocument
+      - Employment__c
+      - Enrollment__c
+      - Enrollment__History
+      - Event
+      - GPA__c
+      - KIPP_Aid__c
+      - Marking_Period__c
+      - RecordType
+      - Relationship__c
+      - Standardized_Test__c
+      - Subsequent_Financial_Aid_Award__c
+      - Task
+      - Term__c
+      - Term__History
+      - User

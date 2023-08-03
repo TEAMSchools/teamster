@@ -1,1 +1,5 @@
-endpoints: []
+endpoints:
+  - asset_name: observations
+    start_date: 2023-07-31
+  - asset_name: assignments
+    start_date: 2023-07-31

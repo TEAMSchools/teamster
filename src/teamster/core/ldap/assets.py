@@ -49,7 +49,7 @@ def build_ldap_asset(
             "search_filter": search_filter,
             "attributes": attributes,
         },
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
     )
     def _asset(context: AssetExecutionContext, ldap: LdapResource):

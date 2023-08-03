@@ -31,7 +31,7 @@ def build_static_partition_asset(
         metadata=params,
         partitions_def=partitions_def,
         op_tags=op_tags,
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def _asset(context: OpExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
@@ -71,7 +71,7 @@ def build_multi_partition_asset(
         metadata=params,
         partitions_def=partitions_def,
         op_tags=op_tags,
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def _asset(context: OpExecutionContext, deanslist: DeansListResource):
         asset_key = context.asset_key_for_output()

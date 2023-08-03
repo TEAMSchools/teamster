@@ -68,7 +68,7 @@ def build_sftp_asset(
         key=[code_location, source_system, asset_name],
         metadata=asset_metadata,
         required_resource_keys={ssh_resource_key},
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
         auto_materialize_policy=auto_materialize_policy,
