@@ -58,7 +58,10 @@ left join
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-where enr.cc_academic_year >= {{ var("current_academic_year") }} - 1  -- TODO: update filter for prod
+{# TODO: update filter for prod #}
+where
+    enr.cc_academic_year = {{ var("current_academic_year") }} - 1
+    and enr.cc_termid = 3203
 
 union all
 
@@ -123,4 +126,7 @@ left join
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-where enr.cc_academic_year >= {{ var("current_academic_year") }} - 1  -- TODO: update filter for prod
+{# TODO: update filter for prod #}
+where
+    enr.cc_academic_year = {{ var("current_academic_year") }} - 1
+    and enr.cc_termid = 3203
