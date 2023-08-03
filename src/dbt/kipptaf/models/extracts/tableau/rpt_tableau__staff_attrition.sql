@@ -1,4 +1,20 @@
 with
+    dates as (
+        select
+            extract(year from date_day) as academic_year,
+            extract(year from date_day) + 1 as next_academic_year,
+
+            date(extract(year from date_day), 7, 1) as default_entry_date,
+            date((extract(year from date_day) + 1), 6, 30) as default_exit_date,
+
+            date(extract(year from date_day), 9, 1) as denominator_start_date,
+            date((extract(year from date_day) + 1), 8, 31) as attrition_date,
+
+            date((extract(year from date_day) + 1), 4, 30) as effective_date,
+        from {{ ref("utils__date_spine") }}
+        where extract(month from date_day) = 7 and extract(day from date_day) = 1
+    ),
+
     terminations as (
         select
             position_id,
@@ -11,7 +27,7 @@ with
                 partition by position_id order by assignment_status_effective_date
             ) as termination_effective_date_prev
         from {{ source("adp_workforce_now", "work_assignment_history") }}
-        where assignment_status_long_name = 'Terminated' and not _fivetran_deleted
+        where assignment_status_long_name = 'Terminated'
     ),
 
     /* final termination record */
@@ -43,7 +59,6 @@ with
             r.gender_long_name,
             r.worker_original_hire_date,
             r.worker_rehire_date,
-            r.worker_termination_date,
             r.home_work_location_grade_band,
             r.home_work_location_reporting_school_id,
             null as kipp_alumni_status,
@@ -51,8 +66,11 @@ with
                 r.worker_rehire_date, r.worker_original_hire_date
             ) as most_recent_hire_date,
 
-            t.termination_effective_date,
-
+            coalesce(
+                t.termination_effective_date,
+                r.worker_termination_date,
+                date(9999, 12, 31)
+            ) as most_recent_termination_date,
             ifnull(t.termination_reason, r.assignment_status_reason) as status_reason,
         from {{ ref("base_people__staff_roster") }} as r
         left join
@@ -70,27 +88,11 @@ with
                 extract(year from most_recent_hire_date) - 1
             ) as start_academic_year,
             if(
-                extract(month from worker_termination_date) >= 9,
-                extract(year from worker_termination_date),
-                extract(year from worker_termination_date) - 1
+                extract(month from most_recent_termination_date) >= 9,
+                extract(year from most_recent_termination_date),
+                extract(year from most_recent_termination_date) - 1
             ) as end_academic_year,
         from roster_terminations
-    ),
-
-    dates as (
-        select
-            extract(year from date_day) as academic_year,
-            extract(year from date_day) + 1 as next_academic_year,
-
-            date(extract(year from date_day), 7, 1) as default_entry_date,
-            date((extract(year from date_day) + 1), 6, 30) as default_exit_date,
-
-            date(extract(year from date_day), 9, 1) as denominator_start_date,
-            date((extract(year from date_day) + 1), 8, 31) as attrition_date,
-
-            date((extract(year from date_day) + 1), 4, 30) as effective_date,
-        from {{ ref("utils__date_spine") }}
-        where extract(month from date_day) = 7 and extract(day from date_day) = 1
     ),
 
     roster_year_scaffold as (
@@ -102,7 +104,7 @@ with
             if(
                 r.assignment_status = 'Terminated'
                 and r.end_academic_year = y.academic_year,
-                ifnull(r.termination_effective_date, r.worker_termination_date),
+                most_recent_termination_date,
                 null
             ) as termination_date,
 
@@ -131,26 +133,23 @@ with
         select
             rys.*,
 
-            w.work_assignment_job_title as job_title,
-            w.organizational_unit_business_unit_home_name as business_unit_home_name,
-            w.organizational_unit_department_home_name as department_home_name,
-            ifnull(
-                w.work_assignment_home_work_location_name_long_name,
-                w.work_assignment_home_work_location_name_short_name
-            ) as home_work_location_name,
+            w.job_title,
+            w.business_unit_home_name,
+            w.department_home_name,
+            w.home_work_location_name,
 
             lead(rys.academic_year_exitdate, 1) over (
                 partition by rys.position_id order by rys.academic_year
             ) as academic_year_exitdate_next,
         from with_academic_year_exitdate as rys
         left join
-            {{ ref("base_adp_workforce_now__worker_person") }} as w
-            on rys.worker_id = w.work_assignment_worker_id
+            {{ ref("base_people__staff_roster_history") }} as w
+            on rys.worker_id = w.worker_id
             and rys.effective_date
             between cast(w.work_assignment__fivetran_start as date) and cast(
                 w.work_assignment__fivetran_end as date
             )
-            and not w.worker__fivetran_deleted
+            and w.primary_indicator
         where rys.academic_year_exitdate > rys.academic_year_entrydate
     ),
 

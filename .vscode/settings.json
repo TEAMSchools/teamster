@@ -37,5 +37,6 @@
   },
   "githubPullRequests.ignoredPullRequestBranches": ["main"],
   "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
-  "dbt.queryLimit": 500
+  "dbt.queryLimit": 500,
+  "trunk.numJobs": 1
 }
