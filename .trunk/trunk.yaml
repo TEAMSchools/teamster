@@ -17,7 +17,23 @@ lint:
     - sql-formatter
     - sqlfluff
   ignore:
-    - linters: [ALL]
+    - linters:
+        - sqlfmt
+      paths:
+        - src/teamster/**
+    - linters:
+        - isort
+        - ruff
+        - actionlint
+        - black
+        - hadolint
+        - shellcheck
+        - shfmt
+        - taplo
+      paths:
+        - src/dbt/**
+    - linters:
+        - ALL
       paths:
         - .helm/**/values.yaml
   enabled:
