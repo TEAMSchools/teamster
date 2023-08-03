@@ -1,1 +1,19 @@
-assets: []
+assets:
+  - asset_name: accelerated_reader
+    remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
+    remote_file_regex: 'KIPP TEAM & Family\.zip'
+    archive_filepath: AR.csv
+    partition_start_date: 2022-07-01
+  - asset_name: star_reading
+    remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
+    remote_file_regex: 'KIPP TEAM & Family\.zip'
+    archive_filepath: SR.csv
+    partition_start_date: 2022-07-01
+  - asset_name: star_math
+    remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
+    remote_file_regex: 'KIPP TEAM & Family\.zip'
+    archive_filepath: SM.csv
+    partition_start_date: 2022-07-01

@@ -1,1 +1,13 @@
-assets: []
+assets:
+  - asset_name: pension_and_benefits_enrollments
+    remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
+    remote_file_regex: 'pension_and_benefits_enrollments\.csv'
+  - asset_name: comprehensive_benefits_report
+    remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
+    remote_file_regex: 'comprehensive_benefits_report\.csv'
+  - asset_name: additional_earnings_report
+    remote_filepath: .
+    # trunk-ignore(yamllint/quoted-strings)
+    remote_file_regex: 'additional_earnings_report\.csv'

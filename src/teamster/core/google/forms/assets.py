@@ -8,7 +8,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 def build_google_forms_assets(code_location, partitions_def):
     @asset(
         key=[code_location, "google", "forms", "form"],
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
     )
     def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
@@ -19,7 +19,7 @@ def build_google_forms_assets(code_location, partitions_def):
 
     @asset(
         key=[code_location, "google", "forms", "responses"],
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
     )
     def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):

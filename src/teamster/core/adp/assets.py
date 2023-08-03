@@ -39,7 +39,7 @@ def build_wfm_asset(
                 "date": date_partitions_def,
             }
         ),
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):

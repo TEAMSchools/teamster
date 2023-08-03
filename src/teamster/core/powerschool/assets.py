@@ -22,7 +22,7 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         metadata={"partition_column": partition_column},
         op_tags=op_tags,
-        io_manager_key="gcs_fp_io",
+        io_manager_key="io_manager_gcs_file",
     )
     def _asset(
         context: AssetExecutionContext,

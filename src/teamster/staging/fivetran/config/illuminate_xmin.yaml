@@ -1,0 +1,11 @@
+connector_name: illuminate_xmin
+connector_id: genuine_describing
+group_name: illuminate
+schemas:
+  - name: dna_assessments
+    destination_tables:
+      - agg_student_responses
+      - agg_student_responses_group
+      - agg_student_responses_standard
+      - agg_students_assessments_scores
+      - students_assessments_archive

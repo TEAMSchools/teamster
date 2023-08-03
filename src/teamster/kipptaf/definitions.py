@@ -113,7 +113,7 @@ defs = Definitions(
         "io_manager": ConfigurablePickledObjectGCSIOManager(
             gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kipptaf"
         ),
-        "gcs_avro_io": gcs_io_manager.configured(
+        "io_manager_gcs_avro": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
