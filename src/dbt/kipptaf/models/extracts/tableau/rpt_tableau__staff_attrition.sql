@@ -11,7 +11,7 @@ with
                 partition by position_id order by assignment_status_effective_date
             ) as termination_effective_date_prev
         from {{ source("adp_workforce_now", "work_assignment_history") }}
-        where assignment_status_long_name = 'Terminated' and _fivetran_active
+        where assignment_status_long_name = 'Terminated' and not _fivetran_deleted
     ),
 
     /* final termination record */
