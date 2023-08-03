@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: google_directory
-    schema: kipptaf_google_directory
+    schema: staging_google_directory
     tags:
       - stage_external_sources
     tables:

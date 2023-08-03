@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: schoolmint_grow
-    schema: kipptaf_schoolmint_grow
+    schema: staging_schoolmint_grow
     tags:
       - stage_external_sources
     tables:

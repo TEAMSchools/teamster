@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: alchemer
-    schema: kipptaf_alchemer
+    schema: staging_alchemer
     tags:
       - stage_external_sources
     tables:

@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: zendesk
-    schema: kipptaf_zendesk
+    schema: staging_zendesk
     tables:
       - name: groups
       - name: ticket_audits
