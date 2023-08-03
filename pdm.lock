@@ -1136,7 +1136,7 @@ files = [
 
 [[package]]
 name = "jsonschema"
-version = "4.18.4"
+version = "4.18.6"
 requires_python = ">=3.8"
 summary = "An implementation of JSON Schema validation for Python"
 dependencies = [
@@ -1146,8 +1146,8 @@ dependencies = [
     "rpds-py>=0.7.1",
 ]
 files = [
-    {file = "jsonschema-4.18.4-py3-none-any.whl", hash = "sha256:971be834317c22daaa9132340a51c01b50910724082c2c1a2ac87eeec153a3fe"},
-    {file = "jsonschema-4.18.4.tar.gz", hash = "sha256:fb3642735399fa958c0d2aad7057901554596c63349f4f6b283c493cf692a25d"},
+    {file = "jsonschema-4.18.6-py3-none-any.whl", hash = "sha256:dc274409c36175aad949c68e5ead0853aaffbe8e88c830ae66bb3c7a1728ad2d"},
+    {file = "jsonschema-4.18.6.tar.gz", hash = "sha256:ce71d2f8c7983ef75a756e568317bf54bc531dc3ad7e66a128eae0d51623d8a3"},
 ]
 
 [[package]]
@@ -2342,15 +2342,15 @@ files = [
 
 [[package]]
 name = "universal-pathlib"
-version = "0.0.24"
+version = "0.1.0"
 requires_python = ">=3.8"
 summary = "pathlib api extended to use fsspec backends"
 dependencies = [
     "fsspec",
 ]
 files = [
-    {file = "universal_pathlib-0.0.24-py3-none-any.whl", hash = "sha256:a2e907b11b1b3f6e982275e5ac0c58a4d34dba2b9e703ecbe2040afa572c741b"},
-    {file = "universal_pathlib-0.0.24.tar.gz", hash = "sha256:fcbffb95e4bc69f704af5dde4f9a624b2269f251a38c81ab8bec19dfeaad830f"},
+    {file = "universal_pathlib-0.1.0-py3-none-any.whl", hash = "sha256:307cf3963eb2396728aca76c3c886e3e73d6569bd4dfa399c954b617a972dd4d"},
+    {file = "universal_pathlib-0.1.0.tar.gz", hash = "sha256:2eace58c8654661f331ef73206a14705bba7a4955816993a99fb9eb151b2a238"},
 ]
 
 [[package]]
