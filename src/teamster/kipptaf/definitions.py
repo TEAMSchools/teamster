@@ -31,8 +31,7 @@ from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.jobs import asset_observation_job
-
-from . import (
+from teamster.kipptaf import (
     CODE_LOCATION,
     GCS_PROJECT_NAME,
     achieve3k,

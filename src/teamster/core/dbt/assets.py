@@ -2,9 +2,15 @@ import json
 import pathlib
 from typing import Any, Mapping
 
-from dagster import AssetExecutionContext, AssetKey, asset
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource
-from dagster_dbt.asset_decorator import dbt_assets
+from dagster import AssetExecutionContext, AssetKey, asset, multi_asset
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from dagster_dbt.asset_decorator import get_dbt_multi_asset_args
+from dagster_dbt.asset_utils import get_deps
+from dagster_dbt.utils import (
+    ASSET_RESOURCE_TYPES,
+    get_node_info_by_dbt_unique_id_from_manifest,
+    select_unique_ids_from_manifest,
+)
 from dagster_gcp import BigQueryResource
 
 
@@ -43,7 +49,7 @@ def build_dbt_assets(code_location):
 
     @dbt_assets(
         manifest=manifest,
-        # exclude="tag:stage_external_sources",
+        exclude="tag:stage_external_sources",
         dagster_dbt_translator=dagster_dbt_translator(),
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
@@ -60,10 +66,36 @@ def build_dbt_external_source_assets(code_location):
 
     manifest = json.loads(s=manifest_file.read_text())
 
-    @dbt_assets(
+    unique_ids = select_unique_ids_from_manifest(
+        select="tag:stage_external_sources", exclude="", manifest_json=manifest
+    )
+    node_info_by_dbt_unique_id = get_node_info_by_dbt_unique_id_from_manifest(manifest)
+
+    deps = get_deps(
+        dbt_nodes=node_info_by_dbt_unique_id,
+        selected_unique_ids=unique_ids,
+        asset_resource_types=ASSET_RESOURCE_TYPES,
+    )
+
+    (
+        non_argument_deps,
+        outs,
+        internal_asset_deps,
+    ) = get_dbt_multi_asset_args(
+        dbt_nodes=node_info_by_dbt_unique_id,
+        deps=deps,
+        io_manager_key=None,
         manifest=manifest,
-        select="tag:stage_external_sources",
-        dagster_dbt_translator=dagster_dbt_translator(),
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
+
+    @multi_asset(
+        outs=outs,
+        internal_asset_deps=internal_asset_deps,
+        deps=non_argument_deps,
+        compute_kind="dbt",
+        can_subset=True,
+        op_tags={"dagster-dbt/select": "tag:stage_external_sources"},
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         dbt_run_operation = dbt_cli.cli(
