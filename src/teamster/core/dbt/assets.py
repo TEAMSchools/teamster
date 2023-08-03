@@ -6,11 +6,17 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetOut,
+    Nothing,
     Output,
     asset,
     multi_asset,
 )
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
+    MANIFEST_METADATA_KEY,
+)
+from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 from dagster_gcp import BigQueryResource
 
 
@@ -90,7 +96,19 @@ def build_dbt_external_source_assets(code_location):
 
         out_key = dagster_dbt_translator.get_asset_key(source)
 
-        asset_out = AssetOut(key=out_key, group_name=source_name)
+        asset_out = AssetOut(
+            key=out_key,
+            group_name=source_name,
+            dagster_type=Nothing,
+            description=dagster_dbt_translator.get_description(source),
+            is_required=False,
+            metadata={
+                **dagster_dbt_translator.get_metadata(source),
+                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
+                "dataset": source["schema"],
+            },
+        )
         dep_key = AssetKey([code_location, *key_prefix, dep_name])
         deps_set = set()
 
@@ -110,6 +128,7 @@ def build_dbt_external_source_assets(code_location):
         op_tags={"dagster-dbt/select": "tag:stage_external_sources"},
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+        context.get_output_metadata()
         dbt_run_operation = dbt_cli.cli(
             args=[
                 "run-operation",
