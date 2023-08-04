@@ -347,11 +347,17 @@ with
         select
             cw.*,
 
-            ph.preferred_name_given_name as report_to_preferred_name_given_name,
-            ph.preferred_name_family_name_1 as report_to_preferred_name_family_name,
-            ph.preferred_name_family_name_1
+            coalesce(
+                ph.preferred_name_given_name, ph.legal_name_given_name
+            ) as report_to_preferred_name_given_name,
+            coalesce(
+                ph.preferred_name_family_name_1, ph.legal_name_family_name_1
+            ) as report_to_preferred_name_family_name,
+            coalesce(ph.preferred_name_family_name_1, ph.legal_name_family_name_1)
             || ', '
-            || ph.preferred_name_given_name as report_to_preferred_name_lastfirst,
+            || coalesce(
+                ph.preferred_name_given_name, ph.legal_name_given_name
+            ) as report_to_preferred_name_lastfirst,
 
             en.employee_number as report_to_employee_number,
 
