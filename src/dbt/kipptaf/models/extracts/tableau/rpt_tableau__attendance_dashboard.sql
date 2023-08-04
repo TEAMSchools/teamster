@@ -80,5 +80,8 @@ left join
     and dt.type = 'RT'
 where
     mem.attendancevalue is not null
-    and mem.calendardate <= current_date('America/New_York')
     and mem.membershipvalue > 0
+    and mem.calendardate
+    between date(({{ var("current_academic_year") }} - 1), 7, 1) and current_date(
+        'America/New_York'
+    )
