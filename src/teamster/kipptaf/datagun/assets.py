@@ -46,6 +46,13 @@ illuminate_extract_assets = [
     for a in config_from_files([f"{config_dir}/illuminate.yaml"])["assets"]
 ]
 
+littlesis_extract_assets = [
+    build_bigquery_extract_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/littlesis.yaml"])["assets"]
+]
+
 # BQ query
 idauto_extract_assets = [
     build_bigquery_query_sftp_asset(
@@ -58,13 +65,6 @@ idauto_extract_assets = [
 deanslist_extract_assets = generate_extract_assets(
     code_location=CODE_LOCATION,
     name="deanslist",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
-
-littlesis_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="littlesis",
     extract_type="sftp",
     timezone=LOCAL_TIMEZONE,
 )
