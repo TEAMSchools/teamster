@@ -41,9 +41,10 @@ with
             o.observed_at,
             o.observer_name,
             o.observer_email,
-            o.score,
-            o.list_two_column_b as grows,
+            o.score as overall_score,
+
             o.list_two_column_a as glows,
+            o.list_two_column_b as grows,
 
             tsr.employee_number,
             tsr.preferred_name_lastfirst,
@@ -73,7 +74,7 @@ with
             rt.code as reporting_term,
 
             row_number() over (
-                partition by o.rubric_name, o.teacher_id order by o.observed_at desc
+                partition by o.rubric_name, o.teacher_id, rt.code order by o.observed_at desc
             ) as rn_observation
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
@@ -91,22 +92,7 @@ with
             on cast(o.observed_at as date) between rt.start_date and rt.end_date
             and rt.type = 'ETR'
             and rt.school_id = 0
-        where
-            o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
-            and o.rubric_name in (
-                'Development Roadmap',
-                'Shadow Session',
-                'Assistant Principal PM Rubric',
-                'School Leader Moments',
-                'Readiness Reflection',
-                'Monthly Triad Meeting Form',
-                'New Leader Talent Review',
-                'Extraordinary Focus Areas Ratings',
-                'O3 Form',
-                'O3 Form v2',
-                'O3 Form v3',
-                'Extraordinary Focus Areas Ratings v.1'
-            )
+        where o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
     )
 
 select
@@ -114,60 +100,13 @@ select
 
     oos.measurement as score_measurement_id,
     oos.percentage as score_percentage,
-    case
-        oos.value_text
-        when 'Yes'
-        then 3
-        when 'Almost'
-        then 2
-        when 'No'
-        then 1
-        when 'On Track'
-        then 3
-        when 'Off Track'
-        then 1
-        else oos.value_score
-    end as measure_value,
-
+    oos.value_text as score_value_text,
     m.name as measurement_name,
     m.scale_min as measurement_scale_min,
     m.scale_max as measurement_scale_max,
 
     if(b.type = 'checkbox', m.name || ' - ' || b.label, m.name) as measurement_label,
-
-    case
-        when os.rubric_name = 'School Leader Moments' and m.name like '%- type'
-        then
-            case
-                oos.value_score
-                when 1
-                then 'Observed'
-                when 2
-                then 'Co-Led/Planned'
-                when 3
-                then 'Led'
-            end
-        when b.type is not null
-        then b.value
-        else oos.value_text
-    end as score_value_text,
-
-    max(
-        case
-            when os.rubric_name = 'School Leader Moments' and m.name like '%- type'
-            then
-                case
-                    oos.value_score
-                    when 1
-                    then 'Observed'
-                    when 2
-                    then 'Co-Led/Planned'
-                    when 3
-                    then 'Led'
-                end
-        end
-    ) over (partition by os.observation_id, regexp_extract(m.name, r'(\w+)- type'))
-    as score_type,
+    null as score_type,
 
     coalesce(
         if(
@@ -177,7 +116,7 @@ select
             null
         ),
         oos.value_score
-    ) as score_value,
+    ) as row_score_value,
 
     case
         when b.type != 'checkbox'
@@ -188,6 +127,19 @@ select
         then 1
         else 0
     end as checkbox_observed,
+    case
+        when lower(os.rubric_name) not like '%coach etr%'
+        then null
+        when os.overall_score < 1.75
+        then 1
+        when os.overall_score >= 1.75 and os.overall_score < 2.75
+        then 2
+        when os.overall_score >= 2.75 and os.overall_score < 3.5
+        then 3
+        when os.overall_score > 3.5
+        then 4
+        else null
+    end as tier
 from observations as os
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as oos
