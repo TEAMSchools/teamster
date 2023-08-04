@@ -52,3 +52,19 @@ models:
         +enabled: false
       stg_powerschool__studentrace:
         +enabled: false
+
+sources:
+  powerschool:
+    powerschool:
+      src_powerschool__s_nj_crs_x:
+        +enabled: false
+      src_powerschool__s_nj_ren_x:
+        +enabled: false
+      src_powerschool__s_nj_stu_x:
+        +enabled: false
+      src_powerschool__s_nj_usr_x:
+        +enabled: false
+      src_powerschool__u_def_ext_students:
+        +enabled: false
+      src_powerschool__studentrace:
+        +enabled: false
