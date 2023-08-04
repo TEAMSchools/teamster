@@ -10,7 +10,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 def build_partition_assets(code_location, op_tags={}) -> list:
-    io_manager_key = "gcs_avro_io"
+    io_manager_key = "io_manager_gcs_avro"
     key_prefix = [code_location, "alchemer"]
     partitions_def_name = f"{code_location}_alchemer_survey_id"
 

@@ -1,21 +1,13 @@
-from teamster.core.dbt.assets import build_dbt_assets, build_external_source_asset
+from teamster.core.dbt.assets import build_dbt_assets, build_dbt_external_source_assets
 
-from .. import CODE_LOCATION, deanslist, powerschool
+from .. import CODE_LOCATION
 
 dbt_assets = build_dbt_assets(code_location=CODE_LOCATION)
-
-external_source_assets = [
-    build_external_source_asset(
-        code_location=CODE_LOCATION,
-        name=f"src_{asset.key.path[1]}__{asset.key.path[-1]}",
-        dbt_package_name=asset.key.path[1],
-        upstream_asset_key=asset.key,
-        group_name=asset.key.path[1],
-    )
-    for asset in [*powerschool.assets, *deanslist.assets]
-]
+dbt_external_source_assets = build_dbt_external_source_assets(
+    code_location=CODE_LOCATION
+)
 
 __all__ = [
     dbt_assets,
-    *external_source_assets,
+    dbt_external_source_assets,
 ]

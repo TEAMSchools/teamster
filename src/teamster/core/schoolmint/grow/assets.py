@@ -28,7 +28,7 @@ def build_static_partition_asset(
         ],
         partitions_def=STATIC_PARTITONS_DEF,
         op_tags=op_tags,
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         response = schoolmint_grow.get(
@@ -69,7 +69,7 @@ def build_multi_partition_asset(
             }
         ),
         op_tags=op_tags,
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         asset_key = context.asset_key_for_output()

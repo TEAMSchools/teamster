@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: reporting
+    schema: staging_reporting
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_reporting__terms
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
+            sheet_range: src_reporting__terms
+            skip_leading_rows: 1
