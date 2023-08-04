@@ -14,6 +14,7 @@ google_sheets_assets = [
     build_gsheet_asset(
         code_location=CODE_LOCATION,
         name=source["name"].split("__")[-1],
+        source_name=source["source_name"],
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
