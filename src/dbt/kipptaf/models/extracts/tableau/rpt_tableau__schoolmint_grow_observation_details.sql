@@ -74,7 +74,8 @@ with
             rt.code as reporting_term,
 
             row_number() over (
-                partition by o.rubric_name, o.teacher_id, rt.code order by o.observed_at desc
+                partition by o.rubric_name, o.teacher_id, rt.code
+                order by o.observed_at desc
             ) as rn_observation
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
