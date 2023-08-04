@@ -1,0 +1,157 @@
+/* This query combines data from mCLASS benchmark data and mCLASS progress monitoring data.  In order to use this code there are a few tables that must be created.
+	--Benchmark Data (b) mclass.studentsummary_2023
+		--Download the benchmark data from mCLASS, I saved mine as studentsummary_2023 and import it as a flat file in SQL Server
+	--Progress Monitor Data (pm) mclass.progressmonitor
+		--Download the progress monitoring data from mCLASS, I saved mine as progressmonitor and import is as a flat file in SQL Server
+	--Goals (g) mclass.goals
+		--Create a goals table, there is a table you can use to import in the Google Sheet provided (this may change over time)*/
+
+
+WITH student AS
+(
+     select _dbt_source_relation
+           ,academic_year as Academic_Year
+           ,school_level as School_Level
+           ,schoolid as School_ID
+           ,school_name as School
+           ,school_abbreviation as School_Abbreviation
+           ,studentid as Student_ID
+           ,students_dcid as Student_DCID
+           ,student_number as Student_Number
+           ,state_studentnumber as State_Student_Number
+           ,fleid as FL_ID
+           ,lastfirst as Student_Name
+           ,first_name as Student_First_Name
+           ,last_name as Student_Last_Name
+           ,case when cast(grade_level as string) = '0' then 'K'
+                 else cast(grade_level as string) end as Grade_Level
+           ,case when is_out_of_district = TRUE then 1
+                 else 0 end as OOD
+           ,gender as Gender
+           ,ethnicity as Ethnicity
+           ,case when is_homeless = TRUE then 1
+                 else 0 end as Homeless
+           ,case when is_504 = TRUE then 1
+                 else 0 end as Is_504
+           ,case when spedlep in ('No IEP',NULL) then 0
+                      else 1 end as SPED 
+           ,case when lep_status = TRUE then 1
+                 else 0 end as LEP
+           ,lunch_application_status as Economically_Disadvantaged
+     from {{ ref("base_powerschool__student_enrollments") }}
+     where academic_year = 2022 and enroll_status = 0 and rn_year = 1 and grade_level in (0,1,2,3,4)
+),
+
+schedule as
+(
+      select _dbt_source_relation
+            ,cc_academic_year as Academic_Year
+            ,cc_studentid as Student_ID
+            ,cc_dcid as Student_DCID
+            ,cc_teacherid as Teacher_ID
+            ,teacher_lastfirst as Teacher_Number
+            ,teacher_lastfirst AS Teacher_Name
+            ,courses_course_name as Course_Name
+            ,cc_course_number as Course_Number
+            ,cc_section_number as Section_Number
+      from {{ ref("base_powerschool__course_enrollments") }}
+      where cc_academic_year = 2022 and not is_dropped_course and not is_dropped_section and rn_course_number_year = 1 
+            and courses_course_name in ('ELA GrK','ELA K','ELA Gr1','ELA Gr2','ELA Gr3','ELA Gr4')
+),
+
+benchmark as
+(
+      select left(School_Year,4) as MCLASS_Academic_Year
+            ,Primary_School_ID as MCLASS_Primary_School_ID
+            ,District_Name as MCLASS_District_Name
+            ,School_Name as MCLASS_School_Name
+            ,Student_Primary_ID as MCLASS_Student_Number
+            ,Student_Last_Name as MCLASS_Student_Last_Name
+            ,Student_First_Name as MCLASS_Student_First_Name
+            ,Enrollment_Grade as MCLASS_Enrollment_Grade
+            ,Reporting_Class_Name as MCLASS_Reporting_Class_Name
+            ,Reporting_Class_ID as MCLASS_Reporting_Class_ID
+            ,Official_Teacher_Name as MCLASS_Official_Teacher_Name
+            ,Official_Teacher_Staff_ID as MCLASS_Official_Teacher_Staff_ID
+            ,Assessing_Teacher_Name as MCLASS_Assessing_Teacher_Name
+            ,Assessing_Teacher_Staff_ID as MCLASS_Assessing_Teacher_Staff_ID
+            ,Assessment as MCLASS_Assessment
+            ,Assessment_Edition as MCLASS_Assessment_Edition
+            ,Assessment_Grade as MCLASS_Assessment_Grade
+            ,Benchmark_Period as MCLASS_Period
+            ,Client_Date as MCLASS_Client_Date
+            ,Sync_Date as MCLASS_Sync_Date
+            ,Attribute as 
+            ,Value as MCLASS_MeasureScore
+      from {{ ref("src_amplify__benchmark_student_summary") }}
+      unpivot
+      (
+            Value for Attribute in (Letter_Names_LNF_Score,Letter_Sounds_NWF_CLS_Score,Phonemic_Awareness_PSF_Score,Decoding_NWF_WRC_Score,Word_Reading_WRF_Score,Reading_Accuracy_ORF_Accu_Score,Reading_Fluency_ORF_Score,Reading_Comprehension_Maze_Score)                   
+      ) as u
+	left join
+      (
+            select left(School_Year,4) as MCLASS_Academic_Year
+                  ,Primary_School_ID as MCLASS_Primary_School_ID
+                  ,District_Name as MCLASS_District_Name
+                  ,School_Name as MCLASS_School_Name
+                  ,Student_Primary_ID as MCLASS_Student_Number
+                  ,Student_Last_Name as MCLASS_Student_Last_Name
+                  ,Student_First_Name as MCLASS_Student_First_Name
+                  ,Enrollment_Grade as MCLASS_Enrollment_Grade
+                  ,Reporting_Class_Name as MCLASS_Reporting_Class_Name
+                  ,Reporting_Class_ID as MCLASS_Reporting_Class_ID
+                  ,Official_Teacher_Name as MCLASS_Official_Teacher_Name
+                  ,Official_Teacher_Staff_ID as MCLASS_Official_Teacher_Staff_ID
+                  ,Assessing_Teacher_Name as MCLASS_Assessing_Teacher_Name
+                  ,Assessing_Teacher_Staff_ID as MCLASS_Assessing_Teacher_Staff_ID
+                  ,Assessment as MCLASS_Assessment
+                  ,Assessment_Edition as MCLASS_Assessment_Edition
+                  ,Assessment_Grade as MCLASS_Assessment_Grade
+                  ,Benchmark_Period as MCLASS_Period
+                  ,Client_Date as MCLASS_Client_Date
+                  ,Sync_Date as MCLASS_Sync_Date
+            from {{ ref("src_amplify__benchmark_student_summary") }}
+      ) as percentile
+               /*Letter_Names_LNF_National_Norm_Percentile,Letter_Sounds_NWF_CLS_National_Norm_Percentile,Phonemic_Awareness_PSF_National_Norm_Percentile,Decoding_NWF_WRC_National_Norm_Percentile,Word_Reading_WRF_National_Norm_Percentile,Reading_Accuracy_ORF_Accu_National_Norm_Percentile,
+             Reading_Fluency_ORF_National_Norm_Percentile,Reading_Comprehension_Maze_National_Norm_Percentile*/)
+      
+      Values
+	 (,,,Letter_Names_LNF_Semester_Growth,Letter_Names_LNF_Year_Growth,'Letter_Names_LNF')
+	,(,Letter_Sounds_NWF_CLS_Level,,Letter_Sounds_NWF_CLS_Semester_Growth,Letter_Sounds_NWF_CLS_Year_Growth,'Letter Sounds (NWF-CLS)')
+	,(,Phonemic_Awareness_PSF_Level,,Phonemic_Awareness_PSF_Semester_Growth,Phonemic_Awareness_PSF_Year_Growth,'Phonemic Awareness (PSF)')
+	,(,Decoding_NWF_WRC_Level,,Decoding_NWF_WRC_Semester_Growth,Decoding_NWF_WRC_Year_Growth,'Decoding (NWF-WRC)')
+	,(,Word_Reading_WRF_Level,,Word_Reading_WRF_Semester_Growth,Word_Reading_WRF_Year_Growth,'Word Reading (WRF)')
+	,(,Reading_Accuracy_ORF_Accu_Level,,Reading_Accuracy_ORF_Accu_Semester_Growth,Reading_Accuracy_ORF_Accu_Year_Growth,'Reading Accuracy (ORF-Accu)')
+	,(,Reading_Fluency_ORF_Level,,Reading_Fluency_ORF_Semester_Growth,Reading_Fluency_ORF_Year_Growth,'Reading Fluency (ORF)')
+	,(,Reading_Comprehension_Maze_Level,,Reading_Comprehension_Maze_Semester_Growth,Reading_Comprehension_Maze_Year_Growth,'Reading Comprehension (Maze)')
+	) x(score, level, percentile, sgrowth, ygrowth, measure)	
+),
+
+progress_monitoring as
+(
+      select left(School_Year,4) as MCLASS_Academic_Year
+            ,Primary_School_ID as MCLASS_Primary_School_ID
+            ,District_Name as MCLASS_District_Name
+            ,School_Name as MCLASS_School_Name
+            ,Student_Primary_ID as MCLASS_Student_Number
+            ,Student_Last_Name as MCLASS_Student_Last_Name
+            ,Student_First_Name as MCLASS_Student_First_Name
+            ,Enrollment_Grade as MCLASS_Enrollment_Grade
+            ,Reporting_Class_Name as MCLASS_Reporting_Class_Name
+            ,Reporting_Class_ID as MCLASS_Reporting_Class_ID
+            ,Official_Teacher_Name as MCLASS_Official_Teacher_Name
+            ,Official_Teacher_Staff_ID as MCLASS_Official_Teacher_Staff_ID
+            ,Assessing_Teacher_Name as MCLASS_Assessing_Teacher_Name
+            ,Assessing_Teacher_Staff_ID as MCLASS_Assessing_Teacher_Staff_ID
+            ,Assessment as MCLASS_Assessment
+            ,Assessment_Edition as MCLASS_Assessment_Edition
+            ,Assessment_Grade as MCLASS_Assessment_Grade
+            ,PM_Period as MCLASS_Period
+            ,Client_Date as MCLASS_Client_Date
+            ,Sync_Date as MCLASS_Sync_Date
+            ,Probe_Number as MCLASS_Probe_Number
+            ,Total_Number_of_Probes as MCLASS_Total_Number_of_Probes
+            ,Measure as MCLASS_Measure
+            ,Score as MCLASS_Measure_Score
+      from {{ ref("src_amplify__pm_student_summary") }}
+)
