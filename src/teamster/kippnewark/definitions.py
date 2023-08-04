@@ -54,10 +54,10 @@ defs = Definitions(
         "io_manager": ConfigurablePickledObjectGCSIOManager(
             gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kippnewark"
         ),
-        "gcs_avro_io": gcs_io_manager.configured(
+        "io_manager_gcs_avro": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
-        "gcs_fp_io": gcs_io_manager.configured(
+        "io_manager_gcs_file": gcs_io_manager.configured(
             config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
@@ -104,11 +104,6 @@ defs = Definitions(
             username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
             password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST"),
-        ),
-        "ssh_pythonanywhere": SSHConfigurableResource(
-            remote_host="ssh.pythonanywhere.com",
-            username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
-            password=EnvVar("PYTHONANYWHERE_SFTP_PASSWORD"),
         ),
         "ssh_titan": SSHConfigurableResource(
             remote_host="sftp.titank12.com",

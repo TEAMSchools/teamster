@@ -8,7 +8,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 def build_google_directory_assets(code_location):
     @asset(
         key=[code_location, "google", "directory", "users"],
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def users(
         context: AssetExecutionContext, google_directory: GoogleDirectoryResource
@@ -20,7 +20,7 @@ def build_google_directory_assets(code_location):
 
     @asset(
         key=[code_location, "google", "directory", "groups"],
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def groups(
         context: AssetExecutionContext, google_directory: GoogleDirectoryResource
@@ -32,7 +32,7 @@ def build_google_directory_assets(code_location):
 
     @asset(
         key=[code_location, "google", "directory", "roles"],
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def roles(
         context: AssetExecutionContext, google_directory: GoogleDirectoryResource
@@ -44,7 +44,7 @@ def build_google_directory_assets(code_location):
 
     @asset(
         key=[code_location, "google", "directory", "role_assignments"],
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
     )
     def role_assignments(
         context: AssetExecutionContext, google_directory: GoogleDirectoryResource
@@ -62,7 +62,7 @@ def build_google_directory_assets(code_location):
 def build_google_directory_partitioned_assets(code_location, partitions_def):
     @asset(
         key=[code_location, "google", "directory", "members"],
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
     )
     def members(

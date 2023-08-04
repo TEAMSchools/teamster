@@ -7,7 +7,9 @@ from .. import CODE_LOCATION
 from .assets import survey_metadata_assets, survey_response
 
 survey_metadata_asset_sensor = build_survey_metadata_asset_sensor(
-    code_location=CODE_LOCATION, asset_defs=survey_metadata_assets
+    code_location=CODE_LOCATION,
+    asset_defs=survey_metadata_assets,
+    minimum_interval_seconds=(60 * 10),
 )
 
 survey_response_asset_sensor = build_survey_response_asset_sensor(

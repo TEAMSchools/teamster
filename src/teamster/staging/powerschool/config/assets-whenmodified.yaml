@@ -1,2 +1,3 @@
+partition_column: whenmodified
 assets:
-  - asset_name: codeset
+  - asset_name: assignmentscore

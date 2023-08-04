@@ -29,7 +29,7 @@ def build_mclass_asset(
         partitions_def=FiscalYearPartitionsDefinition(
             start_date=partition_start_date, timezone=timezone.name, start_month=7
         ),
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,

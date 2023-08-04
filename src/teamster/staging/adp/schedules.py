@@ -1,10 +1,20 @@
-from dagster import build_schedule_from_partitioned_job
+from dagster import ScheduleDefinition, build_schedule_from_partitioned_job
 
 from teamster.core.adp.schedules import build_dynamic_partition_schedule
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import wfm_assets_dynamic
-from .jobs import daily_partition_asset_job, dynamic_partition_asset_job
+from .jobs import (
+    adp_wfn_update_workers_job,
+    daily_partition_asset_job,
+    dynamic_partition_asset_job,
+)
+
+adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
+    job=adp_wfn_update_workers_job,
+    cron_schedule="30 2 * * *",
+    execution_timezone=LOCAL_TIMEZONE.name,
+)
 
 daily_partition_asset_job_schedule = build_schedule_from_partitioned_job(
     job=daily_partition_asset_job, hour_of_day=23, minute_of_hour=50
@@ -20,6 +30,7 @@ dynamic_partition_asset_job_schedule = build_dynamic_partition_schedule(
 )
 
 __all__ = [
+    adp_wfn_worker_fields_update_schedule,
     daily_partition_asset_job_schedule,
     dynamic_partition_asset_job_schedule,
 ]

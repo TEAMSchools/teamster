@@ -22,7 +22,7 @@ def build_smartrecruiters_report_asset(
         name=asset_name,
         key_prefix=[code_location, source_system],
         metadata={"report_id": report_id},
-        io_manager_key="gcs_avro_io",
+        io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
     )
     def _asset(context: OpExecutionContext, smartrecruiters: SmartRecruitersResource):
