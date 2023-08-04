@@ -48,3 +48,9 @@ models:
     staging:
       stg_titan__income_form_data:
         +enabled: False
+
+sources:
+  titan:
+    titan:
+      src_titan__income_form_data:
+        +enabled: False
