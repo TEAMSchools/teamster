@@ -27,6 +27,8 @@ with
             *,
             case
                 eligibility_result
+                when 'NJEIE'
+                then 'F'
                 when '1'
                 then 'F'
                 when '2'

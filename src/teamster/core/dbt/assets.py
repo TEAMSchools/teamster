@@ -1,5 +1,4 @@
 import json
-import pathlib
 from typing import Any, Mapping
 
 from dagster import (
@@ -10,7 +9,7 @@ from dagster import (
     Output,
     multi_asset,
 )
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     MANIFEST_METADATA_KEY,
@@ -46,45 +45,17 @@ def get_custom_dagster_dbt_translator(code_location):
     return CustomDagsterDbtTranslator
 
 
-def build_dbt_assets(code_location):
-    dagster_dbt_translator = get_custom_dagster_dbt_translator(code_location)
-    manifest_file = pathlib.Path(f"src/dbt/{code_location}/target/manifest.json")
+def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
+    external_sources = [
+        source
+        for source in manifest["sources"].values()
+        if "stage_external_sources" in source["tags"]
+    ]
 
-    manifest = json.loads(s=manifest_file.read_text())
-
-    @dbt_assets(
-        manifest=manifest,
-        exclude="tag:stage_external_sources",
-        dagster_dbt_translator=dagster_dbt_translator(),
-    )
-    def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        dbt_build = dbt_cli.cli(args=["build"], context=context)
-
-        yield from dbt_build.stream()
-
-    return _assets
-
-
-def build_dbt_external_source_assets(code_location):
-    dagster_dbt_translator = get_custom_dagster_dbt_translator(code_location)
-    manifest = json.loads(
-        s=pathlib.Path(f"src/dbt/{code_location}/target/manifest.json").read_text()
-    )
-
-    outs = {}
-    deps = []
-    internal_asset_deps = {}
-    for source in manifest["sources"].values():
-        if "stage_external_sources" not in source["tags"]:
-            continue
-
-        source_name = source["source_name"]
-        table_name = source["name"]
-        key_prefix = source["fqn"][1:-2]
-
-        outs[table_name] = AssetOut(
+    outs = {
+        source["name"]: AssetOut(
             key=dagster_dbt_translator.get_asset_key(source),
-            group_name=source_name,
+            group_name=source["source_name"],
             dagster_type=Nothing,
             description=dagster_dbt_translator.get_description(source),
             is_required=False,
@@ -94,9 +65,18 @@ def build_dbt_external_source_assets(code_location):
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
         )
+        for source in external_sources
+    }
 
-        if not key_prefix:
-            key_prefix = [source_name]
+    deps = []
+    internal_asset_deps = {}
+    for source in external_sources:
+        source_name = source["source_name"]
+        table_name = source["name"]
+        dep_key_prefix = source["fqn"][1:-2]
+
+        if not dep_key_prefix:
+            dep_key_prefix = [source_name]
 
         identifier = source["identifier"]
 
@@ -105,7 +85,7 @@ def build_dbt_external_source_assets(code_location):
         else:
             dep_name = identifier.split("__")[-1]
 
-        dep_key = AssetKey([code_location, *key_prefix, dep_name])
+        dep_key = AssetKey([code_location, *dep_key_prefix, dep_name])
 
         deps.append(dep_key)
 
@@ -121,14 +101,10 @@ def build_dbt_external_source_assets(code_location):
         op_tags={"dagster-dbt/select": "tag:stage_external_sources"},
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        # create source selection
-        source_selection = []
-        for asset_key in context.selected_asset_keys:
-            source_selection.append(
-                context.assets_def.group_names_by_key[asset_key]
-                + "."
-                + asset_key.path[-1]
-            )
+        source_selection = [
+            f"{context.assets_def.group_names_by_key[asset_key]}.{asset_key.path[-1]}"
+            for asset_key in context.selected_asset_keys
+        ]
 
         # run dbt stage_external_sources
         dbt_run_operation = dbt_cli.cli(
