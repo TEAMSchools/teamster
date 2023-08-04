@@ -67,13 +67,13 @@ def build_dbt_assets(code_location):
 
 def build_dbt_external_source_assets(code_location):
     dagster_dbt_translator = get_custom_dagster_dbt_translator(code_location)
-    manifest_file = pathlib.Path(f"src/dbt/{code_location}/target/manifest.json")
-
-    manifest = json.loads(s=manifest_file.read_text())
+    manifest = json.loads(
+        s=pathlib.Path(f"src/dbt/{code_location}/target/manifest.json").read_text()
+    )
 
     outs = {}
-    internal_asset_deps = {}
     deps = []
+    internal_asset_deps = {}
     for source in manifest["sources"].values():
         if "stage_external_sources" not in source["tags"]:
             continue
@@ -81,6 +81,19 @@ def build_dbt_external_source_assets(code_location):
         source_name = source["source_name"]
         table_name = source["name"]
         key_prefix = source["fqn"][1:-2]
+
+        outs[table_name] = AssetOut(
+            key=dagster_dbt_translator.get_asset_key(source),
+            group_name=source_name,
+            dagster_type=Nothing,
+            description=dagster_dbt_translator.get_description(source),
+            is_required=False,
+            metadata={
+                **dagster_dbt_translator.get_metadata(source),
+                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
+            },
+        )
 
         if not key_prefix:
             key_prefix = [source_name]
@@ -92,28 +105,11 @@ def build_dbt_external_source_assets(code_location):
         else:
             dep_name = identifier.split("__")[-1]
 
-        out_key = dagster_dbt_translator.get_asset_key(source)
-
-        asset_out = AssetOut(
-            key=out_key,
-            group_name=source_name,
-            dagster_type=Nothing,
-            description=dagster_dbt_translator.get_description(source),
-            is_required=False,
-            metadata={
-                **dagster_dbt_translator.get_metadata(source),
-                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
-                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
-            },
-        )
         dep_key = AssetKey([code_location, *key_prefix, dep_name])
-        deps_set = set()
 
         deps.append(dep_key)
-        deps_set.add(dep_key)
 
-        outs[table_name] = asset_out
-        internal_asset_deps[table_name] = deps_set
+        internal_asset_deps[table_name] = set([dep_key])
 
     @multi_asset(
         name="dbt_external_source_assets",
