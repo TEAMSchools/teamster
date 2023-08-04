@@ -20,6 +20,7 @@ select
     co.is_504 as c_504_status,
     co.gender,
     co.ethnicity,
+    co.is_self_contained,
 
     enr.cc_section_number as section_number,
     enr.teacher_lastfirst as teacher_name,
