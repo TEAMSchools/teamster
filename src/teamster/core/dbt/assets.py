@@ -132,14 +132,19 @@ def build_dbt_external_source_assets(code_location):
         db_bigquery: BigQueryResource,
         dbt_cli: DbtCliResource,
     ):
+        # unpack datasets from selected assets
+        datasets = set()
+        for asset_key in context.selected_asset_keys:
+            datasets.add(context.assets_def.metadata_by_key[asset_key]["dataset"])
+
+        # ensure dataset exists in BQ
         with db_bigquery.get_client() as bq:
             bq_client = bq
 
-        for output_name in context.selected_output_names:
-            metadata = context.get_output_metadata(output_name=output_name)
+        for dataset in datasets:
+            bq_client.create_dataset(dataset=dataset, exists_ok=True)
 
-            bq_client.create_dataset(dataset=metadata["dataset"], exists_ok=True)
-
+        # run dbt stage_external_sources
         dbt_run_operation = dbt_cli.cli(
             args=[
                 "run-operation",
