@@ -127,8 +127,19 @@ def build_dbt_external_source_assets(code_location):
         can_subset=True,
         op_tags={"dagster-dbt/select": "tag:stage_external_sources"},
     )
-    def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        context.get_output_metadata()
+    def _assets(
+        context: AssetExecutionContext,
+        db_bigquery: BigQueryResource,
+        dbt_cli: DbtCliResource,
+    ):
+        with db_bigquery.get_client() as bq:
+            bq_client = bq
+
+        for output_name in context.selected_output_names:
+            metadata = context.get_output_metadata(output_name=output_name)
+
+            bq_client.create_dataset(dataset=metadata["dataset"], exists_ok=True)
+
         dbt_run_operation = dbt_cli.cli(
             args=[
                 "run-operation",
