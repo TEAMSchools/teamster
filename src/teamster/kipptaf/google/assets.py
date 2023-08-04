@@ -13,7 +13,7 @@ from teamster.kipptaf.dbt.assets import DBT_MANIFEST
 google_sheets_assets = [
     build_gsheet_asset(
         code_location=CODE_LOCATION,
-        name=source["name"][4:],
+        name=source["name"].split("__")[-1],
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
