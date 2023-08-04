@@ -19,10 +19,10 @@ def test_schema():
 
     count = df.shape[0]
     records = df.to_dict(orient="records")
-    print(df.dtypes.to_dict())
+    # print(df.dtypes.to_dict())
 
     sample_record = records[random.randint(a=0, b=(count - 1))]
-    print(sample_record)
+    # print(sample_record)
 
     schema = get_avro_record_schema(name=ASSET_NAME, fields=ASSET_FIELDS[ASSET_NAME])
     # print(schema)
