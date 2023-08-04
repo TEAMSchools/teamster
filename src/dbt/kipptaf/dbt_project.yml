@@ -92,6 +92,8 @@ models:
       +schema: powerschool
     reporting:
       +schema: reporting
+      staging:
+        +materialized: table
     schoolmint:
       grow:
         +schema: schoolmint_grow
