@@ -256,20 +256,22 @@ select
 
     tpd.total_balance as lunch_balance,
 
-    upper(
-        case
-            when ar.region = 'Miami'
-            then ar.lunch_status
-            when
-                ar.academic_year = {{ var("current_academic_year") }} and ar.rn_year = 1
-            then if(tpd.is_directly_certified, 'F', ifd.eligibility_name)
-            else ar.lunch_status
-        end
-    ) as lunch_status,
     case
+        when ar.academic_year < {{ var("current_academic_year") }}
+        then ar.lunch_status
         when ar.region = 'Miami'
         then ar.lunch_status
-        when ar.academic_year = {{ var("current_academic_year") }} and ar.rn_year = 1
+        when ar.region = 'Newark' and ar.rn_year = 1
+        then coalesce(if(tpd.is_directly_certified, 'F', null), ifd.eligibility_name)
+        when ar.region = 'Camden' and ar.rn_year = 1
+        then coalesce(if(tpd.is_directly_certified, 'F', null), tpd.eligibility_name)
+    end as lunch_status,
+    case
+        when ar.academic_year < {{ var("current_academic_year") }}
+        then ar.lunch_status
+        when ar.region = 'Miami'
+        then ar.lunch_status
+        when ar.region = 'Newark' and ar.rn_year = 1
         then
             case
                 when tpd.is_directly_certified
@@ -278,7 +280,15 @@ select
                 then 'No Application'
                 else ifd.lunch_application_status
             end
-        else ar.lunch_status
+        when ar.region = 'Camden' and ar.rn_year = 1
+        then
+            case
+                when tpd.is_directly_certified
+                then 'Direct Certification'
+                when tpd.eligibility_determination_reason is null
+                then 'No Application'
+                else tpd.eligibility || ' - ' || tpd.eligibility_determination_reason
+            end
     end as lunch_application_status,
 from all_regions as ar
 left join
