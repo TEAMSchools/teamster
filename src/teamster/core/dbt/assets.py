@@ -8,7 +8,6 @@ from dagster import (
     AssetOut,
     Nothing,
     Output,
-    asset,
     multi_asset,
 )
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
