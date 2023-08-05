@@ -79,36 +79,42 @@ with
         left join
             {{ ref("stg_google_directory__users") }} as u
             on s.`primaryEmail` = u.primary_email
+    ),
+
+    final as (
+        select
+            `primaryEmail`,
+            `suspended`,
+            `password`,
+            `changePasswordAtNextLogin`,
+            `groupKey`,
+            `orgUnitPath`,
+            `hashFunction`,
+            struct(givenname, familyname) as `name`,
+            is_create,
+            if(
+                not is_create
+                and {{
+                    dbt_utils.generate_surrogate_key(
+                        ["givenName", "familyName", "suspended", "orgUnitPath"]
+                    )
+                }}
+                !={{
+                    dbt_utils.generate_surrogate_key(
+                        [
+                            "given_name_target",
+                            "family_name_target",
+                            "suspended_target",
+                            "org_unit_path_target",
+                        ]
+                    )
+                }},
+                true,
+                false
+            ) as is_update,
+        from with_google
     )
 
-select
-    `primaryEmail`,
-    `suspended`,
-    `password`,
-    `changePasswordAtNextLogin`,
-    `groupKey`,
-    `orgUnitPath`,
-    `hashFunction`,
-    struct(givenname, familyname) as `name`,
-    is_create,
-    if(
-        not is_create
-        and {{
-            dbt_utils.generate_surrogate_key(
-                ["givenName", "familyName", "suspended", "orgUnitPath"]
-            )
-        }}
-        !={{
-            dbt_utils.generate_surrogate_key(
-                [
-                    "given_name_target",
-                    "family_name_target",
-                    "suspended_target",
-                    "org_unit_path_target",
-                ]
-            )
-        }},
-        true,
-        false
-    ) as is_update,
-from with_google
+select *
+from final
+where is_create or is_update
