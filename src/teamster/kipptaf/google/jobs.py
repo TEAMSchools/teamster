@@ -5,11 +5,16 @@ from teamster.core.google.bigquery.ops import (
     bigquery_get_table_op,
 )
 
-from .assets import google_forms_assets
+from .assets import google_directory_nonpartitioned_assets, google_forms_assets
 from .ops import google_directory_user_create_op, google_directory_user_update_op
 
 google_forms_asset_job = define_asset_job(
     name="google_forms_asset_job", selection=[a.key for a in google_forms_assets]
+)
+
+google_directory_nonpartitioned_asset_job = define_asset_job(
+    name="google_directory_nonpartitioned_asset_job",
+    selection=[a.key for a in google_directory_nonpartitioned_assets],
 )
 
 
@@ -30,6 +35,7 @@ def google_directory_user_sync_job():
 
 
 __all__ = [
-    google_forms_asset_job,
+    google_directory_nonpartitioned_asset_job,
     google_directory_user_sync_job,
+    google_forms_asset_job,
 ]
