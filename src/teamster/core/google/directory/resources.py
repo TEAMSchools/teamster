@@ -91,3 +91,87 @@ class GoogleDirectoryResource(ConfigurableResource):
             response_data_key="items",
             **kwargs,
         )
+
+    @staticmethod
+    def _batch_list(list, size):
+        """via https://stackoverflow.com/a/312464"""
+        for i in range(0, len(list), size):
+            yield list[i : i + size]
+
+    def batch_update_users(self, users):
+        def callback(request_id, response, exception):
+            context = self.get_resource_context()
+
+            if exception is not None:
+                context.log.error(exception)
+            else:
+                context.log.info(
+                    msg=(
+                        f"UPDATED {response['primaryEmail']}: "
+                        f"{response['name'].get('givenName')} "
+                        f"{response['name'].get('familyName')} "
+                        f"OU={response['orgUnitPath']} "
+                        f"suspended={response['suspended']}"
+                    )
+                )
+
+        batch_request = self._service.new_batch_http_request(callback=callback)
+
+        for batch in self._batch_list(list=users, size=1000):
+            for user in batch:
+                batch_request.add(
+                    self._service.users().update(
+                        userKey=user["primaryEmail"], body=user
+                    )
+                )
+
+            batch_request.execute()
+
+    def batch_insert_users(self, users):
+        def callback(request_id, response, exception):
+            context = self.get_resource_context()
+
+            if exception is not None:
+                context.log.error(exception)
+            else:
+                context.log.info(
+                    msg=(
+                        f"CREATED {response['primaryEmail']}: "
+                        f"{response['name'].get('givenName')} "
+                        f"{response['name'].get('familyName')} "
+                        f"OU={response['orgUnitPath']} "
+                        f"changepassword={response['changePasswordAtNextLogin']}"
+                    )
+                )
+
+        batch_request = self._service.new_batch_http_request(callback=callback)
+
+        for batch in self._batch_list(list=users, size=1000):
+            for user in batch:
+                batch_request.add(self._service.users().insert(body=user))
+
+            batch_request.execute()
+
+    def batch_insert_members(self, members):
+        context = self.get_resource_context()
+
+        def callback(request_id, response, exception):
+            context = self.get_resource_context()
+
+            if exception is not None:
+                context.log.error(exception)
+            else:
+                context.log.info(f"ADDED {response['email']}")
+
+        batch_request = self._service.new_batch_http_request(callback=callback)
+
+        for batch in self._batch_list(list=members, size=1000):
+            for member in batch:
+                context.log.info(f"ADDING {member['email']} to {member['groupKey']}")
+                batch_request.add(
+                    self._service.members().insert(
+                        groupKey=member["groupKey"], body=member
+                    )
+                )
+
+            batch_request.execute()
