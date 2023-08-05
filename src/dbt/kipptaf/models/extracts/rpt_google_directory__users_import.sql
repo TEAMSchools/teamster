@@ -1,15 +1,13 @@
 with
     students as (
         select
-            first_name as given_name,
-            last_name as family_name,
-            student_web_password as `password`,
-            student_email_google as primary_email,
-            concat(
-                'group-students-', lower(region), '@teamstudents.org'
-            ) as group_email,
-            case when grade_level >= 3 then 'on' else 'off' end as changepassword,
-            case when enroll_status = 0 then false else true end as suspended,
+            first_name as `givenName`,
+            last_name as `familyName`,
+            to_hex(sha1(student_web_password)) as `password`,
+            student_email_google as `primaryEmail`,
+            concat('group-students-', lower(region), '@teamstudents.org') as `groupKey`,
+            if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
+            if(enroll_status = 0, false, true) as `suspended`,
             case
                 region
                 when 'Newark'
@@ -51,23 +49,25 @@ with
 
     with_google as (
         select
-            s.primary_email,
-            s.given_name,
-            s.family_name,
-            s.password,
-            s.changepassword,
-            s.suspended,
-            s.group_email,
+            s.`primaryEmail`,
+            s.`givenName`,
+            s.`familyName`,
+            s.`suspended`,
+            s.`password`,
+            s.`changePasswordAtNextLogin`,
+            s.`groupKey`,
             concat(
                 '/Students/',
                 case
-                    when s.suspended
+                    when s.`suspended`
                     then 'Disabled'
                     when s.ou_school_name = 'Out of District'
                     then 'Disabled'
                     else s.ou_region || '/' || s.ou_school_name
                 end
-            ) as org_unit_path,
+            ) as `orgUnitPath`,
+
+            'SHA-1' as `hashFunction`,
 
             u.name__given_name as given_name_target,
             u.name__family_name as family_name_target,
@@ -78,16 +78,24 @@ with
         from students as s
         left join
             {{ ref("stg_google_directory__users") }} as u
-            on s.student_email_google = u.primary_email
+            on s.`primaryEmail` = u.primary_email
     )
 
 select
-    *,
+    `primaryEmail`,
+    `suspended`,
+    `password`,
+    `changePasswordAtNextLogin`,
+    `groupKey`,
+    `orgUnitPath`,
+    `hashFunction`,
+    struct(givenname, familyname) as `name`,
+    is_create,
     if(
         not is_create
         and {{
             dbt_utils.generate_surrogate_key(
-                ["given_name", "family_name", "suspended", "org_unit_path"]
+                ["givenName", "familyName", "suspended", "orgUnitPath"]
             )
         }}
         !={{
