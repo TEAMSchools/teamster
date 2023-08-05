@@ -22,7 +22,8 @@ google_directory_nonpartitioned_asset_job = define_asset_job(
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
-                dataset_id="kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
+                dataset_id="kipptaf_extracts",
+                table_id="rpt_google_directory__users_import",
             )
         }
     )
