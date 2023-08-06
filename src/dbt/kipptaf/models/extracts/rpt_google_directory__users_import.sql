@@ -44,7 +44,7 @@ with
                 end
             ) as ou_school_name,
         from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_all = 1
+        where rn_all = 1 and student_email_google is not null
     ),
 
     with_google as (
@@ -84,8 +84,7 @@ with
     final as (
         select
             `primaryEmail`,
-            `givenName`,
-            `familyName`,
+            struct(`givenName` as `givenName`, `familyName` as `familyName`) as `name`,
             `suspended`,
             `password`,
             `changePasswordAtNextLogin`,
