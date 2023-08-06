@@ -84,13 +84,14 @@ with
     final as (
         select
             `primaryEmail`,
+            `givenName`,
+            `familyName`,
             `suspended`,
             `password`,
             `changePasswordAtNextLogin`,
             `groupKey`,
             `orgUnitPath`,
             `hashFunction`,
-            struct(givenname, familyname) as `name`,
             is_create,
             if(
                 not is_create
