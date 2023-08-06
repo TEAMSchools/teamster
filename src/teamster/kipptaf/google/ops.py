@@ -15,7 +15,7 @@ def google_directory_user_create_op(
     # add users to group
     members = [
         {
-            "groupKey": u["group_key"],
+            "groupKey": u["groupKey"],
             "email": u["primaryEmail"],
             "delivery_settings": "DISABLED",
         }
@@ -30,5 +30,6 @@ def google_directory_user_update_op(
     context: OpExecutionContext, google_directory: GoogleDirectoryResource, users
 ):
     update_users = [u for u in users if u["is_update"]]
+    context.log.info(f"Updating {len(update_users)} users")
 
     google_directory.batch_update_users(update_users)

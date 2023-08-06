@@ -1,6 +1,10 @@
+import time
+
 import google.auth
 from dagster import ConfigurableResource, InitResourceContext
+from dagster._utils.backoff import backoff
 from googleapiclient import discovery
+from googleapiclient.errors import HttpError
 from pydantic import PrivateAttr
 
 
@@ -92,40 +96,24 @@ class GoogleDirectoryResource(ConfigurableResource):
             **kwargs,
         )
 
+    def insert_user(self, body):
+        return self._service.users().insert(body=body).execute()
+
+    def update_user(self, user_key, body):
+        return self._service.users().update(userKey=user_key, body=body).execute()
+
     @staticmethod
     def _batch_list(list, size):
         """via https://stackoverflow.com/a/312464"""
         for i in range(0, len(list), size):
             yield list[i : i + size]
 
-    def batch_update_users(self, users):
-        def callback(request_id, response, exception):
-            context = self.get_resource_context()
-
-            if exception is not None:
-                context.log.error(exception)
-            else:
-                context.log.info(
-                    msg=(
-                        f"UPDATED {response['primaryEmail']}: "
-                        f"{response['name'].get('givenName')} "
-                        f"{response['name'].get('familyName')} "
-                        f"OU={response['orgUnitPath']} "
-                        f"suspended={response['suspended']}"
-                    )
-                )
-
-        batch_request = self._service.new_batch_http_request(callback=callback)
-
-        for batch in self._batch_list(list=users, size=1000):
-            for user in batch:
-                batch_request.add(
-                    self._service.users().update(
-                        userKey=user["primaryEmail"], body=user
-                    )
-                )
-
-            batch_request.execute()
+    @staticmethod
+    def backoff_delay_generator():
+        i = 1
+        while True:
+            yield i
+            i = i * 2
 
     def batch_insert_users(self, users):
         def callback(request_id, response, exception):
@@ -144,13 +132,58 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-        batch_request = self._service.new_batch_http_request(callback=callback)
+        # You cannot create more than 10 users per domain per second using the
+        # Directory API
+        # https://developers.google.com/admin-sdk/directory/v1/limits#api-limits-and-quotas
+        batches = self._batch_list(list=users, size=10)
 
-        for batch in self._batch_list(list=users, size=1000):
+        for i, batch in enumerate(batches):
+            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+
+            batch_request = self._service.new_batch_http_request(callback=callback)
+
             for user in batch:
                 batch_request.add(self._service.users().insert(body=user))
 
             batch_request.execute()
+
+    def batch_update_users(self, users):
+        def callback(request_id, response, exception):
+            context = self.get_resource_context()
+
+            if exception is not None:
+                context.log.error(exception)
+                if exception.status_code == 403:
+                    raise exception
+            else:
+                context.log.info(
+                    msg=(
+                        f"UPDATED {response['primaryEmail']}: "
+                        f"{response['name'].get('givenName')} "
+                        f"{response['name'].get('familyName')} "
+                        f"OU={response['orgUnitPath']} "
+                        f"suspended={response['suspended']}"
+                    )
+                )
+
+        # Queries per minute per user == 2400 (40/sec)
+        batches = self._batch_list(list=users, size=40)
+
+        for i, batch in enumerate(batches):
+            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+
+            batch_request = self._service.new_batch_http_request(callback=callback)
+
+            for user in batch:
+                batch_request.add(
+                    self._service.users().update(
+                        userKey=user["primaryEmail"], body=user
+                    )
+                )
+
+            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+
+            time.sleep(1)
 
     def batch_insert_members(self, members):
         context = self.get_resource_context()
@@ -160,12 +193,19 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             if exception is not None:
                 context.log.error(exception)
+                if exception.status_code == 403:
+                    raise exception
             else:
                 context.log.info(f"ADDED {response['email']}")
 
-        batch_request = self._service.new_batch_http_request(callback=callback)
+        # Queries per minute per user == 2400 (40/sec)
+        batches = self._batch_list(list=members, size=40)
 
-        for batch in self._batch_list(list=members, size=1000):
+        for i, batch in enumerate(batches):
+            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+
+            batch_request = self._service.new_batch_http_request(callback=callback)
+
             for member in batch:
                 context.log.info(f"ADDING {member['email']} to {member['groupKey']}")
                 batch_request.add(
