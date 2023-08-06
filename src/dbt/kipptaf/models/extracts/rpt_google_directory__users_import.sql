@@ -73,8 +73,7 @@ with
             u.name__family_name as family_name_target,
             u.suspended as suspended_target,
             u.org_unit_path as org_unit_path_target,
-
-            if(not s.suspended and u.primary_email is null, true, false) as is_create,
+            if(u.primary_email is not null, true, false) as `matched`,
         from students as s
         left join
             {{ ref("stg_google_directory__users") }} as u
@@ -84,16 +83,16 @@ with
     final as (
         select
             `primaryEmail`,
-            struct(`givenName` as `givenName`, `familyName` as `familyName`) as `name`,
             `suspended`,
             `password`,
             `changePasswordAtNextLogin`,
             `groupKey`,
             `orgUnitPath`,
             `hashFunction`,
-            is_create,
+            struct(`givenName` as `givenName`, `familyName` as `familyName`) as `name`,
+            if(not `matched` and not suspended, true, false) as is_create,
             if(
-                not is_create
+                `matched`
                 and {{
                     dbt_utils.generate_surrogate_key(
                         ["givenName", "familyName", "suspended", "orgUnitPath"]
