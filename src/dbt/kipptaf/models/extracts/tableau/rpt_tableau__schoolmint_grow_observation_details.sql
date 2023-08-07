@@ -84,7 +84,14 @@ with
             m.name as measurement_name,
             m.scale_min as measurement_scale_min,
             m.scale_max as measurement_scale_max,
-            if(o.rubric_name like '%ETR%', 'PM', 'WK') as reporting_term_type,
+            case
+            when o.rubric_name like '%reflection%'
+            then 'PM'
+            when o.rubric_name like '%walkthrough%'
+            then 'WT'
+            when o.rubric_name like '%O3%'
+            then 'O3'
+            end as reporting_term_type,
             if(
                 b.type = 'checkbox', m.name || ' - ' || b.label, m.name
             ) as measurement_label,
