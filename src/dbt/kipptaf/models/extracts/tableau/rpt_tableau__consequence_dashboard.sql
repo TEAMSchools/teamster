@@ -33,7 +33,7 @@ select
     co.ethnicity,
     co.region,
     co.fedethnicity,
-    
+
     dli.student_id as dl_student_id,
     dli.incident_id,
     dli.reporting_incident_id,
