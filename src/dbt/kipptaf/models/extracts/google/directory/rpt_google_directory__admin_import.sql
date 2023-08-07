@@ -68,6 +68,8 @@ with
 
     with_ids as (
         select
+            sr.google_email,
+            sr.org_unit_path,
             sr.`assignedTo`,
 
             r.role_id as `roleId`,
