@@ -32,7 +32,12 @@ with
                 )
             }}
     ),
+    reporting_terms as (
+        select type, code, name, start_date, end_date, academic_year
+        from {{ ref("stg_reporting__terms") }}
+        where type in ('PM', 'WK')
 
+    ),
     observations as (
         select
             o.observation_id,
@@ -70,13 +75,10 @@ with
             {# TODO #}
             null as observer_gender,
             null as observer_ethnicity,
-            rt.academic_year,
-            rt.code as reporting_term,
+            case
+                when rubric_name like '%ETR%' then 'PM' else 'WK'
+            end as reporting_term_type,
 
-            row_number() over (
-                partition by o.rubric_name, o.teacher_id, rt.code
-                order by o.observed_at desc
-            ) as rn_observation
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as ti on o.teacher_id = ti.user_id
@@ -88,15 +90,11 @@ with
         left join
             {{ ref("base_people__staff_roster") }} as osr
             on oi.internal_id = safe_cast(osr.employee_number as string)
-        inner join
-            {{ ref("stg_reporting__terms") }} as rt
-            on cast(o.observed_at as date) between rt.start_date and rt.end_date
-            and rt.type = 'ETR'
-            and rt.school_id = 0
         where o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
     )
 
 select
+    rt.*,
     os.*,
 
     oos.measurement as score_measurement_id,
@@ -140,8 +138,15 @@ select
         when os.overall_score > 3.5
         then 4
         else null
-    end as tier
-from observations as os
+    end as tier,
+    row_number() over (
+        partition by os.rubric_name, os.teacher_id, rt.code order by os.observed_at desc
+    ) as rn_observation
+from reporting_terms as rt
+left join
+    observations as os
+    on cast(o.observed_at as date) between rt.start_date and rt.end_date
+    and rt.type = os.reporting_term_type
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as oos
     on os.observation_id = oos.observation_id
