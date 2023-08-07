@@ -33,3 +33,14 @@ def google_directory_user_update_op(
     context.log.info(f"Updating {len(update_users)} users")
 
     google_directory.batch_update_users(update_users)
+
+
+@op
+def google_directory_role_assignment_create_op(
+    context: OpExecutionContext,
+    google_directory: GoogleDirectoryResource,
+    role_assignments,
+):
+    context.log.info(f"Adding {len(role_assignments)} role assignments")
+
+    google_directory.batch_insert_role_assignments(role_assignments)

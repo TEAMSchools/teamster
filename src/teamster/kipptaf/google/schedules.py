@@ -2,11 +2,28 @@ from dagster import RunRequest, ScheduleDefinition, schedule
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import FORM_IDS
-from .jobs import google_directory_nonpartitioned_asset_job, google_forms_asset_job
+from .jobs import (
+    google_directory_nonpartitioned_asset_job,
+    google_directory_role_assignments_sync_job,
+    google_directory_user_sync_job,
+    google_forms_asset_job,
+)
 
 google_directory_nonpartitioned_asset_schedule = ScheduleDefinition(
     job=google_directory_nonpartitioned_asset_job,
     cron_schedule="0 1 * * *",
+    execution_timezone=LOCAL_TIMEZONE.name,
+)
+
+google_directory_role_assignments_sync_schedule = ScheduleDefinition(
+    job=google_directory_role_assignments_sync_job,
+    cron_schedule="30 2 * * *",
+    execution_timezone=LOCAL_TIMEZONE.name,
+)
+
+google_directory_user_sync_schedule = ScheduleDefinition(
+    job=google_directory_user_sync_job,
+    cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
@@ -28,5 +45,7 @@ def google_forms_asset_job_schedule():
 
 __all__ = [
     google_directory_nonpartitioned_asset_schedule,
+    google_directory_role_assignments_sync_schedule,
+    google_directory_user_sync_schedule,
     google_forms_asset_job_schedule,
 ]
