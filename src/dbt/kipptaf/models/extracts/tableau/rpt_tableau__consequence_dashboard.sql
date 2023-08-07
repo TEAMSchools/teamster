@@ -72,7 +72,7 @@ from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__incidents") }} as dli
     on co.student_number = dli.student_school_id
-    and co.academic_year = dli.create_academic_year
+    and co.academic_year = dli.create_ts_academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
 left join
     {{ ref("stg_deanslist__incidents__penalties") }} as dlp
@@ -89,9 +89,9 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
 left join
     {{ ref("stg_reporting__terms") }} as d
-    on co.schoolid = d.schoolid
-    and dli.create_ts between d.start_date and d.end_date
-    and d.identifier = 'RT'
+    on co.schoolid = d.school_id
+    and dli.create_ts_date between d.start_date and d.end_date
+    and d.type = 'RT'
 where
     co.rn_year = 1
     and co.grade_level != 99
