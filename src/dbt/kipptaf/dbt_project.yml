@@ -56,8 +56,9 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
-      gsheets:
-        +materialized: view
+      google:
+        sheets:
+          +materialized: view
       powerschool:
         +materialized: view
       tableau:
