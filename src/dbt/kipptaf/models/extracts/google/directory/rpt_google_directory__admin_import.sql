@@ -53,7 +53,7 @@ with
                 then 'Courage'
                 when 30200804
                 then 'Royalty Academy'
-            end as ou_name,
+            end as org_unit_path,
 
             u.id as `assignedTo`,
         from {{ ref("base_people__staff_roster") }} as sr
@@ -66,7 +66,17 @@ with
             and sr.home_work_location_powerschool_school_id != 0
     )
 
-select sr.`assignedTo`, r.role_id as `roleId`, 'ORG_UNIT' as `scopeType`,
+select
+    sr.`assignedTo`,
+
+    r.role_id as `roleId`,
+
+    split(ous.org_unit_id, ":")[1] as `orgUnitId`,
+
+    'ORG_UNIT' as `scopeType`,
 from staff_roster as sr
 inner join
     {{ ref("stg_google_directory__roles") }} as r on r.role_name = 'Reset Student PW'
+inner join
+    {{ ref("stg_google_directory__orgunits") }} as ous
+    on sr.org_unit_path = ous.org_unit_path
