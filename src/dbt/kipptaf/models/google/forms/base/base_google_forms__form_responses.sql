@@ -1,6 +1,6 @@
 {% set ref_form = ref("int_google_forms__form") %}
 {% set ref_responses = ref("stg_google_forms__responses") %}
-{% set ref_text_answers = ref("stg_google_forms__responses_answers_text_answers") %}
+{% set ref_text_answers = ref("stg_google_forms__responses__answers__text_answers") %}
 
 select
     {{ dbt_utils.star(from=ref_form, relation_alias="f") }},
