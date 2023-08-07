@@ -1,6 +1,5 @@
 with
     attendance_dash as (
-
         select
             mem.studentid,
             mem.calendardate,
@@ -50,11 +49,6 @@ with
             and mem.schoolid = co.schoolid
             and mem.calendardate between co.entrydate and co.exitdate
             and {{ union_dataset_join_clause(left_alias="mem", right_alias="co") }}
-        inner join
-            {{ ref("stg_powerschool__calendar_day") }} as cal
-            on mem.schoolid = cal.schoolid
-            and mem.calendardate = cal.date_value
-            and {{ union_dataset_join_clause(left_alias="mem", right_alias="cal") }}
         left join
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on co.studentid = enr.cc_studentid
@@ -91,7 +85,6 @@ with
             and mem.calendardate between date(
                 ({{ var("current_academic_year") }} - 1), 7, 1
             ) and current_date('America/New_York')
-
     )
 
 select
