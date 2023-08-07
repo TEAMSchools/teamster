@@ -12,3 +12,21 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+      - name: src_google_directory__orgunits
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/google/directory/orgunits/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_google_directory__roles
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/google/directory/roles/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_google_directory__role_assignments
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/google/directory/role_assignments/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
