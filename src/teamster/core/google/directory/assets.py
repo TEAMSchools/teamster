@@ -7,6 +7,20 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 def build_google_directory_assets(code_location):
     @asset(
+        key=[code_location, "google", "directory", "orgunits"],
+        io_manager_key="io_manager_gcs_avro",
+    )
+    def orgunits(
+        context: AssetExecutionContext, google_directory: GoogleDirectoryResource
+    ):
+        data = google_directory.list_orgunits(org_unit_type="all")
+        schema = get_avro_record_schema(
+            name="orgunits", fields=ASSET_FIELDS["orgunits"]
+        )
+
+        yield Output(value=([data], schema), metadata={"record_count": len(data)})
+
+    @asset(
         key=[code_location, "google", "directory", "users"],
         io_manager_key="io_manager_gcs_avro",
     )
@@ -56,7 +70,7 @@ def build_google_directory_assets(code_location):
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
-    return [users, groups, roles, role_assignments]
+    return [orgunits, users, groups, roles, role_assignments]
 
 
 def build_google_directory_partitioned_assets(code_location, partitions_def):

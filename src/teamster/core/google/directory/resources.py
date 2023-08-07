@@ -17,6 +17,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         "https://www.googleapis.com/auth/admin.directory.user",
         "https://www.googleapis.com/auth/admin.directory.group",
         "https://www.googleapis.com/auth/admin.directory.rolemanagement",
+        "https://www.googleapis.com/auth/admin.directory.orgunit",
     ]
     max_results: int = 500
 
@@ -61,6 +62,31 @@ class GoogleDirectoryResource(ConfigurableResource):
                 break
 
         return data
+
+    def list_orgunits(
+        self, org_unit_path=None, org_unit_type=None, customer_id=None, **kwargs
+    ):
+        return (
+            self._service.orgunits()
+            .list(
+                customerId=(customer_id or self.customer_id),
+                orgUnitPath=org_unit_path,
+                type=org_unit_type,
+                **kwargs,
+            )
+            .execute()
+        )
+
+    def get_orgunit(self, org_unit_path, customer_id=None, **kwargs):
+        return (
+            self._service.orgunits()
+            .get(
+                customerId=(customer_id or self.customer_id),
+                orgUnitPath=org_unit_path,
+                **kwargs,
+            )
+            .execute()
+        )
 
     def list_users(self, **kwargs):
         return self._list(
@@ -211,6 +237,33 @@ class GoogleDirectoryResource(ConfigurableResource):
                 batch_request.add(
                     self._service.members().insert(
                         groupKey=member["groupKey"], body=member
+                    )
+                )
+
+            batch_request.execute()
+
+    def batch_insert_role_assignments(self, role_assignments, customer=None):
+        def callback(request_id, response, exception):
+            context = self.get_resource_context()
+
+            if exception is not None:
+                context.log.error(exception)
+            else:
+                context.log.info(response)
+
+        # Queries per minute per user == 2400 (40/sec)
+        batches = self._batch_list(list=role_assignments, size=40)
+
+        for i, batch in enumerate(batches):
+            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+
+            batch_request = self._service.new_batch_http_request(callback=callback)
+
+            for role_assignment in batch:
+                batch_request.add(
+                    self._service.roleAssignments().insert(
+                        customer=(customer or self.customer_id),
+                        body=role_assignment,
                     )
                 )
 
