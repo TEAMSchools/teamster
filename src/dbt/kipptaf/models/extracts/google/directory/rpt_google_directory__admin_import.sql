@@ -64,19 +64,29 @@ with
             sr.user_principal_name is not null
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and sr.home_work_location_powerschool_school_id != 0
+    ),
+
+    with_ids as (
+        select
+            sr.`assignedTo`,
+
+            r.role_id as `roleId`,
+
+            split(ous.org_unit_id, ":")[1] as `orgUnitId`,
+        from staff_roster as sr
+        inner join
+            {{ ref("stg_google_directory__roles") }} as r
+            on r.role_name = 'Reset Student PW'
+        inner join
+            {{ ref("stg_google_directory__orgunits") }} as ous
+            on sr.org_unit_path = ous.org_unit_path
     )
 
-select
-    sr.`assignedTo`,
-
-    r.role_id as `roleId`,
-
-    split(ous.org_unit_id, ":")[1] as `orgUnitId`,
-
-    'ORG_UNIT' as `scopeType`,
-from staff_roster as sr
-inner join
-    {{ ref("stg_google_directory__roles") }} as r on r.role_name = 'Reset Student PW'
-inner join
-    {{ ref("stg_google_directory__orgunits") }} as ous
-    on sr.org_unit_path = ous.org_unit_path
+select ids.*, 'ORG_UNIT' as `scopeType`,
+from with_ids as ids
+left join
+    {{ ref("stg_google_directory__role_assignments") }} as ra
+    on ids.assignedto = ra.assigned_to
+    and ids.roleid = ra.role_id
+    and ids.orgunitid = ra.org_unit_id
+where ra.role_assignment_id is null
