@@ -9,7 +9,7 @@ with
                         regexp_extract(s.respondent_name, r'\((\d{6})\)') as int64
                     ) as employee_number
                 from
-                    `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+                    {{ ref('src_surveys__staff_info_certification') }}
                     as s
             ) sub
         group by sub.employee_number
@@ -112,10 +112,10 @@ select
         '+'
     ) as staff_info_update_personal_link
 
-from `teamster-332318.kipptaf_people.base_people__staff_roster` as w
+from {{ ref('base_people__staff_roster') }} as w
 left join rn_submissions as rns on (w.employee_number = rns.employee_number)
 left join
-    `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification` as s
+    {{ ref('src_surveys__staff_info_certification') }} as s
     on (
         w.employee_number
         = cast(regexp_extract(s.respondent_name, r'\((\d{6})\)') as int64)
