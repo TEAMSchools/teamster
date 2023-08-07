@@ -44,7 +44,7 @@ def google_directory_user_sync_job():
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
                 dataset_id="kipptaf_extracts",
-                table_id="stg_google_directory__role_assignments",
+                table_id="rpt_google_directory__admin_import",
             )
         }
     )
