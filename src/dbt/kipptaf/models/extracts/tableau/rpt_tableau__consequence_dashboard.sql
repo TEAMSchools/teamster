@@ -1,4 +1,4 @@
-{{ config(enabled=False) }}
+{# {{ config(enabled=False) }}#}
 with
     suspension_att as (
         select
