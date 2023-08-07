@@ -1,38 +1,24 @@
-SELECT sub.TIMESTAMP AS date_submitted,
-       sub.respondent_email,
-       sub.respondent_name,
-       sub.employee_number,
-       sub.cert_state,
-       sub.cert_endoresement,
-       sub.cert_type,
-       sub.cert_issue_date,
-       sub.cert_expiration_date,
-       sub.cert_document,
-       ROW_NUMBER() OVER(PARTITION BY sub.employee_number ORDER BY sub.Timestamp ASC, sub.cert_submission_number ASC) AS cert_number
-
-       
-FROM (
-
-    SELECT Timestamp,
+with certifications_long AS (
+    SELECT last_submitted_time,
+          employee_number,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
-          "NJ" AS cert_state,
+          'NJ' AS cert_state,
           nj_cert_endorsement_1 AS cert_endoresement,
           nj_cert_type_1 AS cert_type,
           nj_cert_issue_date_1 AS cert_issue_date,
           NULL AS cert_expiration_date,
           nj_cert_document_link_1 AS cert_document,
           1 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE nj_cert_endorsement_1 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "NJ" AS cert_state,
           nj_cert_endorsement_2 AS cert_endoresement,
           nj_cert_type_2 AS cert_type,
@@ -40,15 +26,15 @@ FROM (
           NULL AS cert_expiration_date,
           nj_cert_document_link_2 AS cert_document,
           2 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE nj_cert_endorsement_2 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "NJ" AS cert_state,
           nj_cert_endorsement_3 AS cert_endoresement,
           nj_cert_type_3 AS cert_type,
@@ -56,15 +42,15 @@ FROM (
           NULL AS cert_expiration_date,
           nj_cert_document_link_3 AS cert_document,
           3 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE nj_cert_endorsement_3 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "NJ" AS cert_state,
           nj_cert_endorsement_4 AS cert_endoresement,
           nj_cert_type_4 AS cert_type,
@@ -72,15 +58,15 @@ FROM (
           NULL AS cert_expiration_date,
           nj_cert_document_link_4 AS cert_document,
           4 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE nj_cert_endorsement_4 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "NJ" AS cert_state,
           nj_cert_endorsement_5 AS cert_endoresement,
           nj_cert_type_5 AS cert_type,
@@ -88,85 +74,100 @@ FROM (
           NULL AS cert_expiration_date,
           nj_cert_document_link_5 AS cert_document,
           5 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE nj_cert_endorsement_5 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "FL" AS cert_state,
           fl_cert_endorsement_1 AS cert_endoresement,
           NULL AS cert_type,
           NULL AS cert_issue_date,
           fl_cert_expiration_1 AS cert_expiration_date,
-          fl_cert_document_link_1 AS cert_document,
+          nj_cert_document_link_1 AS cert_document,
           1 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE fl_cert_endorsement_1 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "FL" AS cert_state,
           fl_cert_endorsement_2 AS cert_endoresement,
           NULL AS cert_type,
           NULL AS cert_issue_date,
           fl_cert_expiration_2 AS cert_expiration_date,
-          fl_cert_document_link_2 AS cert_document,
+          nj_cert_document_link_2 AS cert_document,
           2 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE fl_cert_endorsement_2 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "FL" AS cert_state,
           fl_cert_endorsement_3 AS cert_endoresement,
           NULL AS cert_type,
           NULL AS cert_issue_date,
           fl_cert_expiration_3 AS cert_expiration_date,
-          fl_cert_document_link_3 AS cert_document,
+          nj_cert_document_link_3 AS cert_document,
           3 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE fl_cert_endorsement_3 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "FL" AS cert_state,
           fl_cert_endorsement_4 AS cert_endoresement,
           NULL AS cert_type,
           NULL AS cert_issue_date,
           fl_cert_expiration_4 AS cert_expiration_date,
-          fl_cert_document_link_4 AS cert_document,
+          nj_cert_document_link_4 AS cert_document,
           4 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
     WHERE fl_cert_endorsement_4 IS NOT NULL
 
     UNION DISTINCT
 
-    SELECT Timestamp,
+    SELECT last_submitted_time,
           respondent_email,
           respondent_name,
-          CAST(regexp_extract(respondent_name, r'\((\d{6})\)') AS int64) AS employee_number,
+          employee_number,
           "FL" AS cert_state,
           fl_cert_endorsement_5 AS cert_endoresement,
           NULL AS cert_type,
           NULL AS cert_issue_date,
           fl_cert_expiration_5 AS cert_expiration_date,
-          fl_cert_document_link_5 AS cert_document,
+          nj_cert_document_link_5 AS cert_document,
           5 AS cert_submission_number
-    FROM `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
-    WHERE fl_cert_endorsement_5 IS NOT NULL) sub
+    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    WHERE fl_cert_endorsement_5 IS NOT NULL
+    )
+ 
+SELECT last_submitted_time AS date_submitted,
+       respondent_email,
+       respondent_name,
+       employee_number,
+       cert_state,
+       cert_endoresement,
+       cert_type,
+       cert_issue_date,
+       cert_expiration_date,
+       concat('https://drive.google.com/file/d/',cert_document) as cert_document_link,
+       ROW_NUMBER() OVER(PARTITION BY employee_number ORDER BY last_submitted_time ASC, cert_submission_number ASC) AS cert_number
+from certifications_long
+       
