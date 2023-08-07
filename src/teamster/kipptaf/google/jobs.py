@@ -6,7 +6,11 @@ from teamster.core.google.bigquery.ops import (
 )
 
 from .assets import google_directory_nonpartitioned_assets, google_forms_assets
-from .ops import google_directory_user_create_op, google_directory_user_update_op
+from .ops import (
+    google_directory_role_assignment_create_op,
+    google_directory_user_create_op,
+    google_directory_user_update_op,
+)
 
 google_forms_asset_job = define_asset_job(
     name="google_forms_asset_job", selection=[a.key for a in google_forms_assets]
@@ -33,6 +37,22 @@ def google_directory_user_sync_job():
 
     google_directory_user_create_op(users=users)
     google_directory_user_update_op(users=users)
+
+
+@job(
+    config=RunConfig(
+        ops={
+            "bigquery_get_table_op": BigQueryGetTableOpConfig(
+                dataset_id="kipptaf_extracts",
+                table_id="stg_google_directory__role_assignments",
+            )
+        }
+    )
+)
+def google_directory_role_assignments_job():
+    role_assignments = bigquery_get_table_op()
+
+    google_directory_role_assignment_create_op(role_assignments=role_assignments)
 
 
 __all__ = [
