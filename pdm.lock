@@ -42,7 +42,7 @@ files = [
 
 [[package]]
 name = "alembic"
-version = "1.11.1"
+version = "1.11.2"
 requires_python = ">=3.7"
 summary = "A database migration tool for SQLAlchemy."
 dependencies = [
@@ -51,8 +51,8 @@ dependencies = [
     "typing-extensions>=4",
 ]
 files = [
-    {file = "alembic-1.11.1-py3-none-any.whl", hash = "sha256:dc871798a601fab38332e38d6ddb38d5e734f60034baeb8e2db5b642fccd8ab8"},
-    {file = "alembic-1.11.1.tar.gz", hash = "sha256:6a810a6b012c88b33458fceb869aef09ac75d6ace5291915ba7fae44de372c01"},
+    {file = "alembic-1.11.2-py3-none-any.whl", hash = "sha256:7981ab0c4fad4fe1be0cf183aae17689fe394ff874fd2464adb774396faf0796"},
+    {file = "alembic-1.11.2.tar.gz", hash = "sha256:678f662130dc540dac12de0ea73de9f89caea9dbea138f60ef6263149bf84657"},
 ]
 
 [[package]]
@@ -511,8 +511,8 @@ files = [
 
 [[package]]
 name = "dbt-bigquery"
-version = "1.5.4"
-requires_python = ">=3.7"
+version = "1.5.5"
+requires_python = ">=3.8"
 summary = "The Bigquery adapter plugin for dbt"
 dependencies = [
     "agate~=1.6.3",
@@ -522,8 +522,8 @@ dependencies = [
     "google-cloud-storage~=2.4",
 ]
 files = [
-    {file = "dbt-bigquery-1.5.4.tar.gz", hash = "sha256:16d4e4f96fd75c112c5b78893b9ac2ed79776cde4ad2aae97c1d38d6afe6bfdf"},
-    {file = "dbt_bigquery-1.5.4-py3-none-any.whl", hash = "sha256:26d5e4f983d795fde622f2460828bbfa3b9b305528f714143ab8e18049eaa1e6"},
+    {file = "dbt-bigquery-1.5.5.tar.gz", hash = "sha256:e134acac601cd6a0af1449c060226acdc89ec3c0c13d59534501a260f3c9c49c"},
+    {file = "dbt_bigquery-1.5.5-py3-none-any.whl", hash = "sha256:2ea27ebf979b226807b50e663ffbc1d23cea41ed5a094ba8eb6f581390073dda"},
 ]
 
 [[package]]
@@ -1984,7 +1984,7 @@ files = [
 
 [[package]]
 name = "referencing"
-version = "0.30.0"
+version = "0.30.2"
 requires_python = ">=3.8"
 summary = "JSON Referencing + Python"
 dependencies = [
@@ -1992,8 +1992,8 @@ dependencies = [
     "rpds-py>=0.7.0",
 ]
 files = [
-    {file = "referencing-0.30.0-py3-none-any.whl", hash = "sha256:c257b08a399b6c2f5a3510a50d28ab5dbc7bbde049bcaf954d43c446f83ab548"},
-    {file = "referencing-0.30.0.tar.gz", hash = "sha256:47237742e990457f7512c7d27486394a9aadaf876cbfaa4be65b27b4f4d47c6b"},
+    {file = "referencing-0.30.2-py3-none-any.whl", hash = "sha256:449b6669b6121a9e96a7f9e410b245d471e8d48964c67113ce9afe50c8dd7bdf"},
+    {file = "referencing-0.30.2.tar.gz", hash = "sha256:794ad8003c65938edcdbc027f1933215e0d0ccc0291e3ce20a4d87432b59efc0"},
 ]
 
 [[package]]
