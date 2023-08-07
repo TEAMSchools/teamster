@@ -49,7 +49,7 @@ def google_directory_user_sync_job():
         }
     )
 )
-def google_directory_role_assignments_job():
+def google_directory_role_assignments_sync_job():
     role_assignments = bigquery_get_table_op()
 
     google_directory_role_assignment_create_op(role_assignments=role_assignments)
@@ -57,7 +57,7 @@ def google_directory_role_assignments_job():
 
 __all__ = [
     google_directory_nonpartitioned_asset_job,
-    google_directory_role_assignments_job,
+    google_directory_role_assignments_sync_job,
     google_directory_user_sync_job,
     google_forms_asset_job,
 ]
