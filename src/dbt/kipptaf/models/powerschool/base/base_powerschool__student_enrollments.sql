@@ -113,6 +113,7 @@ select
     ar.dob,
     ar.gender,
     ar.ethnicity,
+    ar.fedethnicity,
     ar.track,
     ar.fteid,
     ar.is_self_contained,

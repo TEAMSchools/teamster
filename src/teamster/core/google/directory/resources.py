@@ -219,10 +219,8 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             if exception is not None:
                 context.log.error(exception)
-                if exception.status_code == 403:
+                if exception.status_code in [403, 409]:
                     raise exception
-            else:
-                context.log.info(f"ADDED {response['email']}")
 
         # Queries per minute per user == 2400 (40/sec)
         batches = self._batch_list(list=members, size=40)
@@ -248,8 +246,6 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             if exception is not None:
                 context.log.error(exception)
-            else:
-                context.log.info(response)
 
         # Queries per minute per user == 2400 (40/sec)
         batches = self._batch_list(list=role_assignments, size=40)
