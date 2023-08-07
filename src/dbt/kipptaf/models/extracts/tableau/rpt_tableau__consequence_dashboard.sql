@@ -21,19 +21,19 @@ select
     co.school_name,
     co.school_abbreviation,
     co.grade_level,
-    co.team,
-    co.advisor_name,
-    co.iep_status,
-    co.c_504_status,
+    co.advisory_name as team,
+    co.advisor_lastfirst as advisor_name,
+    co.spedlep as iep_status,
+    co.is_504 as c_504_status,
     co.lep_status,
-    co.lunchstatus,
+    co.lunch_status as lunchstatus,
     co.is_retained_year,
     co.is_retained_ever,
     co.gender,
     co.ethnicity,
     co.region,
     co.fedethnicity,
-
+    
     dli.student_id as dl_student_id,
     dli.incident_id,
     dli.reporting_incident_id,
@@ -42,32 +42,32 @@ select
     dli.reported_details,
     dli.admin_summary,
     dli.context,
-    dli.update_ts as dl_timestamp,
+    dli.update_ts_date as dl_timestamp,
     dli.infraction as incident_type,
     dli.is_referral,
     dli.category as referral_category,
     concat(dli.create_last, ', ', dli.create_first) as created_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
 
-    'Referral' as dl_category,
+    dlp.penalty_name as penaltyname,
+    dlp.start_date as startdate,
+    dlp.end_date as enddate,
+    dlp.num_days as numdays,
+    dlp.is_suspension as issuspension,
 
-    d.alt_name as term,
+    cf.behavior_category as `Behavior Category`,
+    cf.nj_state_reporting as `NJ State Reporting`,
+    cf.others_involved as `Others Involved`,
+    cf.parent_contacted as `Parent Contacted`,
+    cf.perceived_motivation as `Perceived Motivation`,
+    cf.restraint_used as `Restraint Used`,
+    cf.ssds_incident_id as `SSDS Incident ID`,
 
-    dlp.penaltyname,
-    dlp.startdate,
-    dlp.enddate,
-    dlp.numdays,
-    dlp.issuspension,
-
-    cf.`behavior category`,
-    cf.`nj state reporting`,
-    cf.`others involved`,
-    cf.`parent contacted ?`,
-    cf.`perceived motivation`,
-    cf.`restraint used`,
-    cf.`ssds incident id`,
+    d.name as term,
 
     att.days_suspended_att,
+
+    'Referral' as dl_category,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__incidents") }} as dli
@@ -79,19 +79,19 @@ left join
     on dli.incident_id = dlp.incident_id
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="dlp") }}
 left join
-    {{ ref("stg_deanslist__incidents__custom_fields") }} as cf
+    {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
     on dli.incident_id = cf.incident_id
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
-left join
-    suspension_att as att
-    on co.studentid = att.studentid
-    and co.academic_year = att.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
 left join
     {{ ref("stg_reporting__terms") }} as d
     on co.schoolid = d.school_id
     and dli.create_ts_date between d.start_date and d.end_date
     and d.type = 'RT'
+left join
+    suspension_att as att
+    on co.studentid = att.studentid
+    and co.academic_year = att.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
 where
     co.rn_year = 1
     and co.grade_level != 99
