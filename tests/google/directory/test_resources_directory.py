@@ -16,6 +16,18 @@ with build_resources(
     DIRECTORY: GoogleDirectoryResource = resources.directory
 
 
+def test_list_orgunits():
+    data = DIRECTORY.list_orgunits(org_unit_type="all")
+
+    with open(file="env/orgunits.json", mode="w") as f:
+        json.dump([data], f)
+
+
+def test_get_orgunit():
+    data = DIRECTORY.get_orgunit(org_unit_path="")
+    print(data)
+
+
 def test_list_roles():
     data = DIRECTORY.list_roles()
 
@@ -132,5 +144,18 @@ def test_batch_insert_members():
                 "email": "datarobot_test_2@apps.teamschools.org",
                 "delivery_settings": "DISABLED",
             },
+        ]
+    )
+
+
+def test_batch_insert_role_assignments():
+    DIRECTORY.batch_insert_role_assignments(
+        [
+            {
+                "assignedTo": "102120740905198094274",
+                "roleId": "6403551156764679",
+                "scopeType": "ORG_UNIT",
+                "orgUnitId": "01km0r9l4dd2g7e",  # Service Accounts
+            }
         ]
     )
