@@ -1,4 +1,38 @@
 with
+    scaffold as (
+        select
+            ur.user_id,
+            ur.role_name,
+            rt.`type`,
+            rt.code,
+            rt.`name`,
+            rt.`start_date`,
+            rt.end_date,
+            rt.academic_year,
+            u.internal_id,
+            sr.employee_number,
+            sr.preferred_name_lastfirst,
+            sr.business_unit_home_name,
+            sr.home_work_location_name,
+            sr.home_work_location_grade_band,
+            sr.home_work_location_powerschool_school_id,
+            sr.department_home_name,
+            sr.primary_grade_level_taught,
+            sr.job_title,
+            sr.report_to_preferred_name_lastfirst,
+            sr.worker_original_hire_date,
+            sr.assignment_status,
+
+        from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
+        left join
+            {{ ref("stg_reporting__terms") }} as rt on ur.role_name = rt.grade_band
+        left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
+        left join
+            {{ ref("base_people__staff_roster") }} as sr
+            on u.internal_id = safe_cast(sr.employee_number as string)
+        where role_name in ('Teacher', 'Coach') and sr.assignment_status = 'Active'
+
+    ),
     boxes as (
         select
             observation_id,
@@ -32,128 +66,86 @@ with
                 )
             }}
     ),
-    reporting_terms as (
-        select type, code, name, start_date, end_date, academic_year
-        from {{ ref("stg_reporting__terms") }}
-        where type in ('PM', 'WK')
 
-    ),
     observations as (
         select
             o.observation_id,
+            o.teacher_id,
             o.rubric_name,
             o.created,
             o.observed_at,
             o.observer_name,
             o.observer_email,
             o.score as overall_score,
-
             o.list_two_column_a as glows,
             o.list_two_column_b as grows,
+            os.measurement as score_measurement_id,
+            os.percentage as score_percentage,
+            os.value_text as score_value_text,
+            m.name as measurement_name,
+            m.scale_min as measurement_scale_min,
+            m.scale_max as measurement_scale_max,
+            if(o.rubric_name like '%ETR%', 'PM', 'WK') as reporting_term_type,
+            if(
+                b.type = 'checkbox', m.name || ' - ' || b.label, m.name
+            ) as measurement_label,
+            null as score_type,
 
-            tsr.employee_number,
-            tsr.preferred_name_lastfirst,
-            tsr.business_unit_home_name,
-            tsr.home_work_location_name,
-            tsr.home_work_location_grade_band,
-            tsr.home_work_location_powerschool_school_id,
-            tsr.department_home_name,
-            tsr.primary_grade_level_taught,
-            tsr.job_title,
-            tsr.report_to_preferred_name_lastfirst,
-            tsr.worker_original_hire_date,
-            tsr.assignment_status,
-            {# TODO #}
-            null as is_active,
-            null as observee_gender,
-            null as observee_ethnicity,
-            regexp_extract(tsr.user_principal_name, r'(\w+)@') as teacher_username,
-            regexp_extract(
-                tsr.report_to_user_principal_name, r'(\w+)@'
-            ) as observer_username,
+            coalesce(
+                if(
+                    sum(b.checkbox_value) over (
+                        partition by o.observation_id, os.measurement
+                    )
+                    > 0,
+                    b.checkbox_value,
+                    null
+                ),
+                os.value_score
+            ) as row_score_value,
 
-            {# TODO #}
-            null as observer_gender,
-            null as observer_ethnicity,
             case
-                when rubric_name like '%ETR%' then 'PM' else 'WK'
-            end as reporting_term_type,
-
+                when b.type != 'checkbox'
+                then null
+                when
+                    sum(b.checkbox_value) over (
+                        partition by o.observation_id, os.measurement
+                    )
+                    > 0
+                then 1
+                else 0
+            end as checkbox_observed,
+            case
+                when lower(o.rubric_name) not like '%etr%'
+                then null
+                when o.score < 1.75
+                then 1
+                when o.score >= 1.75 and o.score < 2.75
+                then 2
+                when o.score >= 2.75 and o.score < 3.5
+                then 3
+                when o.score > 3.5
+                then 4
+                else null
+            end as tier,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
-        inner join
-            {{ ref("stg_schoolmint_grow__users") }} as ti on o.teacher_id = ti.user_id
-        inner join
-            {{ ref("base_people__staff_roster") }} as tsr
-            on ti.internal_id = safe_cast(tsr.employee_number as string)
-        inner join
-            {{ ref("stg_schoolmint_grow__users") }} as oi on o.observer_id = oi.user_id
         left join
-            {{ ref("base_people__staff_roster") }} as osr
-            on oi.internal_id = safe_cast(osr.employee_number as string)
+            {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
+            on o.observation_id = os.observation_id
+        left join
+            {{ ref("stg_schoolmint_grow__measurements") }} as m
+            on os.measurement = m.measurement_id
+        left join
+            boxes as b
+            on os.observation_id = b.observation_id
+            and os.measurement = b.measurement
         where o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
     )
 
-select
-    rt.*,
-    os.*,
+select s.*, o.*,
 
-    oos.measurement as score_measurement_id,
-    oos.percentage as score_percentage,
-    oos.value_text as score_value_text,
-    m.name as measurement_name,
-    m.scale_min as measurement_scale_min,
-    m.scale_max as measurement_scale_max,
-
-    if(b.type = 'checkbox', m.name || ' - ' || b.label, m.name) as measurement_label,
-    null as score_type,
-
-    coalesce(
-        if(
-            sum(b.checkbox_value) over (partition by os.observation_id, oos.measurement)
-            > 0,
-            b.checkbox_value,
-            null
-        ),
-        oos.value_score
-    ) as row_score_value,
-
-    case
-        when b.type != 'checkbox'
-        then null
-        when
-            sum(b.checkbox_value) over (partition by os.observation_id, oos.measurement)
-            > 0
-        then 1
-        else 0
-    end as checkbox_observed,
-    case
-        when lower(os.rubric_name) not like '%coach etr%'
-        then null
-        when os.overall_score < 1.75
-        then 1
-        when os.overall_score >= 1.75 and os.overall_score < 2.75
-        then 2
-        when os.overall_score >= 2.75 and os.overall_score < 3.5
-        then 3
-        when os.overall_score > 3.5
-        then 4
-        else null
-    end as tier,
-    row_number() over (
-        partition by os.rubric_name, os.teacher_id, rt.code order by os.observed_at desc
-    ) as rn_observation
-from reporting_terms as rt
+from scaffold as s
 left join
-    observations as os
-    on cast(o.observed_at as date) between rt.start_date and rt.end_date
-    and rt.type = os.reporting_term_type
-left join
-    {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as oos
-    on os.observation_id = oos.observation_id
-left join
-    {{ ref("stg_schoolmint_grow__measurements") }} as m
-    on oos.measurement = m.measurement_id
-left join
-    boxes as b
-    on oos.observation_id = b.observation_id
-    and oos.measurement = b.measurement
+    observations as o
+    on cast(o.observed_at as date) between s.start_date and s.end_date
+    and s.type = o.reporting_term_type
+    and s.user_id = o.teacher_id
