@@ -55,3 +55,7 @@ def test_roles():
 
 def test_role_assignments():
     _test_schema("role_assignments")
+
+
+def test_orgunits():
+    _test_schema("orgunits")
