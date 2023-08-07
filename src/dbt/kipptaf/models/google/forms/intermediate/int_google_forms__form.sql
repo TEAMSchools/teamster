@@ -1,5 +1,5 @@
 {% set ref_form = ref("stg_google_forms__form") %}
-{% set ref_form_items = ref("stg_google_forms__form_items") %}
+{% set ref_form_items = ref("stg_google_forms__form__items") %}
 {% set src_form_items_ext = source(
     "google_forms", "src_google_forms__form_items_extension"
 ) %}

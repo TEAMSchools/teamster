@@ -5,5 +5,5 @@ select
 
     ta.value,
     if(ta.value is null, true, false) as is_null_value,
-from {{ ref("stg_google_forms__responses_answers") }} as ra
+from {{ ref("stg_google_forms__responses__answers") }} as ra
 cross join unnest(ra.text_answers.answers) as ta
