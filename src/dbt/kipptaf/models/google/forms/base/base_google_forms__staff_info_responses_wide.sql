@@ -15,7 +15,7 @@ with
     full_data as (
 
         select
-            regexp_extract(respondent_name, r'\((\d{6})\)') as employee_number,
+            cast(regexp_extract(respondent_name, r'\((\d{6})\)') as int64) as employee_number,
             last_submitted_time,
             respondent_email,
             respondent_name,
@@ -194,7 +194,7 @@ with
         union distinct
 
         select
-            regexp_extract(respondent_name, r'\((\d{6})\)') as employee_number,
+            cast(regexp_extract(respondent_name, r'\((\d{6})\)') as int64) as employee_number,
             cast(
                 timestamp as datetime format 'MM/DD/YYYY HH24:MI:SS'
             ) as last_submitted_time,
