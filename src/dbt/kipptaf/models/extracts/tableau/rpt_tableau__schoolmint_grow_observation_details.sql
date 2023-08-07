@@ -30,8 +30,7 @@ with
         left join
             {{ ref("base_people__staff_roster") }} as sr
             on u.internal_id = safe_cast(sr.employee_number as string)
-        where role_name in ('Teacher', 'Coach') and sr.assignment_status = 'Active'
-
+        where ur.role_name != 'Whetstone'
     ),
     boxes as (
         select
