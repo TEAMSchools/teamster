@@ -1,8 +1,14 @@
-from dagster import RunRequest, schedule
+from dagster import RunRequest, ScheduleDefinition, schedule
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import FORM_IDS
-from .jobs import google_forms_asset_job
+from .jobs import google_directory_nonpartitioned_asset_job, google_forms_asset_job
+
+google_directory_nonpartitioned_asset_schedule = ScheduleDefinition(
+    job=google_directory_nonpartitioned_asset_job,
+    cron_schedule="0 1 * * *",
+    execution_timezone=LOCAL_TIMEZONE.name,
+)
 
 
 @schedule(
@@ -21,5 +27,6 @@ def google_forms_asset_job_schedule():
 
 
 __all__ = [
+    google_directory_nonpartitioned_asset_schedule,
     google_forms_asset_job_schedule,
 ]

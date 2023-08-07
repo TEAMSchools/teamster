@@ -34,7 +34,9 @@ google_forms_assets = build_google_forms_assets(
 )
 
 # google admin
-google_directory_assets = build_google_directory_assets(code_location=CODE_LOCATION)
+google_directory_nonpartitioned_assets = build_google_directory_assets(
+    code_location=CODE_LOCATION
+)
 google_directory_partitioned_assets = build_google_directory_partitioned_assets(
     code_location=CODE_LOCATION,
     partitions_def=StaticPartitionsDefinition(
@@ -48,7 +50,7 @@ google_directory_partitioned_assets = build_google_directory_partitioned_assets(
 )
 
 google_directory_assets = [
-    *google_directory_assets,
+    *google_directory_nonpartitioned_assets,
     *google_directory_partitioned_assets,
 ]
 
