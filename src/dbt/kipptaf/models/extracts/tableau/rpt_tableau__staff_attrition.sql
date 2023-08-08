@@ -61,7 +61,17 @@ with
             r.worker_rehire_date,
             r.home_work_location_grade_band,
             r.home_work_location_reporting_school_id,
-            null as kipp_alumni_status,
+            r.race_ethnicity,
+            r.is_hispanic,
+            r.race_ethnicity_reporting,
+            r.gender_identity,
+            r.relay_status,
+            r.community_grew_up,
+            r.community_professional_exp,
+            r.alumni_status,
+            r.path_to_education,
+            r.primary_grade_level_taught,
+
             ifnull(
                 r.worker_rehire_date, r.worker_original_hire_date
             ) as most_recent_hire_date,
@@ -179,7 +189,16 @@ select
     business_unit_home_name as legal_entity_name,
     home_work_location_reporting_school_id as primary_site_reporting_schoolid,
     home_work_location_grade_band as primary_site_school_level,
-    kipp_alumni_status,
+    race_ethnicity,
+    is_hispanic,
+    race_ethnicity_reporting,
+    gender_identity,
+    relay_status,
+    community_grew_up,
+    community_professional_exp,
+    alumni_status,
+    path_to_education,
+    primary_grade_level_taught,
     academic_year_exitdate_next as next_academic_year_exitdate,
 
     case

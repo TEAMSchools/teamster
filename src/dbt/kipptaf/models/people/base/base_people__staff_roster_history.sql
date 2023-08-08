@@ -414,7 +414,15 @@ with
             siu.community_grew_up,
             siu.community_professional_exp,
             siu.alumni_status,
-            siu.path_to_education
+            siu.path_to_education,
+            siu.level_of_education,
+            siu.undergraduate_school,
+            siu.languages_spoken,
+            siu.additional_languages,
+            years_teaching_outside_njfl,
+            years_teaching_in_njfl,
+            years_exp_outside_kipp
+
         from with_manager as wm
         left join
             {{ ref("base_google_forms__staff_info_responses_wide") }} as siu
