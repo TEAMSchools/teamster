@@ -147,6 +147,13 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             if exception is not None:
                 context.log.error(exception)
+                if exception.status_code == 403:
+                    raise exception
+                elif (
+                    exception.status_code == 409
+                    and exception.reason != "Entity already exists."
+                ):
+                    raise exception
             else:
                 context.log.info(
                     msg=(
@@ -181,7 +188,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             if exception is not None:
                 context.log.error(exception)
-                if exception.status_code == 403:
+                if exception.status_code in [403, 409]:
                     raise exception
             else:
                 context.log.info(
@@ -221,7 +228,12 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             if exception is not None:
                 context.log.error(exception)
-                if exception.status_code in [403, 409]:
+                if exception.status_code == 403:
+                    raise exception
+                elif (
+                    exception.status_code == 409
+                    and exception.reason != "Member already exists."
+                ):
                     raise exception
 
         # Queries per minute per user == 2400 (40/sec)
@@ -250,6 +262,13 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             if exception is not None:
                 context.log.error(exception)
+                if exception.status_code == 403:
+                    raise exception
+                elif (
+                    exception.status_code == 409
+                    and exception.reason != "Member already exists."
+                ):
+                    raise exception
 
         # Queries per minute per user == 2400 (40/sec)
         batches = self._batch_list(list=role_assignments, size=40)
