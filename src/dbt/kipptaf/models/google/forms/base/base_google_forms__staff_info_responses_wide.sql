@@ -15,7 +15,9 @@ with
     full_data as (
 
         select
-            cast(regexp_extract(respondent_name, r'\((\d{6})\)') as int64) as employee_number,
+            cast(
+                regexp_extract(respondent_name, r'\((\d{6})\)') as int64
+            ) as employee_number,
             last_submitted_time,
             respondent_email,
             respondent_name,
@@ -55,7 +57,6 @@ with
             nj_cert_document_link_3,
             nj_cert_endorsement_5,
             nj_cert_type_2,
-            level_of_education,
             fl_cert_expiration_3,
             nj_cert_type_1,
             nj_cert_endorsement_2,
@@ -83,7 +84,9 @@ with
             cert_steps_taken,
             nj_cert_endorsement_4,
             cert_out_of_state_details,
-            gender_identity
+            gender_identity,
+            level_of_education,
+            cast(years_exp_outside_kipp as int64) as years_exp_outside_kipp
         from
             simple_view pivot (
                 max(value) for item_abbreviation in (
@@ -138,7 +141,8 @@ with
                     'nj_cert_endorsement_4',
                     'cert_out_of_state_details',
                     'gender_identity',
-                    'level_of_education'
+                    'level_of_education',
+                    'years_exp_outside_kipp'
                 )
             )
         group by
@@ -189,12 +193,15 @@ with
             nj_cert_endorsement_4,
             cert_out_of_state_details,
             gender_identity,
-            level_of_education
+            level_of_education,
+            years_exp_outside_kipp
 
         union distinct
 
         select
-            cast(regexp_extract(respondent_name, r'\((\d{6})\)') as int64) as employee_number,
+            cast(
+                regexp_extract(respondent_name, r'\((\d{6})\)') as int64
+            ) as employee_number,
             cast(
                 timestamp as datetime format 'MM/DD/YYYY HH24:MI:SS'
             ) as last_submitted_time,
@@ -224,7 +231,6 @@ with
             nj_cert_document_link_3,
             nj_cert_endorsement_5,
             nj_cert_type_2,
-            level_of_education,
             fl_cert_expiration_3,
             nj_cert_type_1,
             nj_cert_endorsement_2,
@@ -252,7 +258,9 @@ with
             cert_steps_taken,
             nj_cert_endorsement_4,
             cert_out_of_state_details,
-            gender_identity
+            gender_identity,
+            level_of_education,
+            years_exp_outside_kipp
 
         from `teamster-332318.kipptaf_surveys.src_surveys__staff_info_certification`
     )
