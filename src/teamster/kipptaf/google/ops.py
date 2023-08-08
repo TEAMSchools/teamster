@@ -9,6 +9,7 @@ def google_directory_user_create_op(
 ):
     # create users
     create_users = [u for u in users if u["is_create"]]
+    context.log.info(f"Creating {len(create_users)} users")
 
     google_directory.batch_insert_users(create_users)
 
@@ -21,6 +22,15 @@ def google_directory_user_create_op(
         }
         for u in create_users
     ]
+
+    return members
+
+
+@op
+def google_directory_member_create_op(
+    context: OpExecutionContext, google_directory: GoogleDirectoryResource, members
+):
+    context.log.info(f"Adding {len(members)} members to groups")
 
     google_directory.batch_insert_members(members)
 
