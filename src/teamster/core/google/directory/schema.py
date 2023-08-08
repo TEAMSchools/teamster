@@ -1,5 +1,38 @@
 from teamster.core.utils.functions import get_avro_record_schema
 
+ORGANIZATION_UNIT_FIELDS = [
+    {"name": "kind", "type": ["null", "string"], "default": None},
+    {"name": "name", "type": ["null", "string"], "default": None},
+    {"name": "description", "type": ["null", "string"], "default": None},
+    {"name": "etag", "type": ["null", "string"], "default": None},
+    {"name": "blockInheritance", "type": ["null", "boolean"], "default": None},
+    {"name": "orgUnitId", "type": ["null", "string"], "default": None},
+    {"name": "orgUnitPath", "type": ["null", "string"], "default": None},
+    {"name": "parentOrgUnitId", "type": ["null", "string"], "default": None},
+    {"name": "parentOrgUnitPath", "type": ["null", "string"], "default": None},
+]
+
+ORGUNIT_FIELDS = [
+    {"name": "kind", "type": ["null", "string"], "default": None},
+    {"name": "etag", "type": ["null", "string"], "default": None},
+    {
+        "name": "organizationUnits",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="organization_unit",
+                    fields=ORGANIZATION_UNIT_FIELDS,
+                    namespace="orgunit",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+]
+
 GENDER_FIELDS = [
     {"name": "addressMeAs", "type": ["null", "string"], "default": None},
     {"name": "customGender", "type": ["null", "string"], "default": None},
@@ -514,4 +547,5 @@ ASSET_FIELDS = {
     "members": MEMBER_FIELDS,
     "roles": ROLE_FIELDS,
     "role_assignments": ROLE_ASSIGNMENT_FIELDS,
+    "orgunits": ORGUNIT_FIELDS,
 }

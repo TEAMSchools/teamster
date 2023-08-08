@@ -56,8 +56,9 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
-      gsheets:
-        +materialized: view
+      google:
+        sheets:
+          +materialized: view
       powerschool:
         +materialized: view
       tableau:
@@ -92,6 +93,8 @@ models:
       +schema: powerschool
     reporting:
       +schema: reporting
+      staging:
+        +materialized: table
     schoolmint:
       grow:
         +schema: schoolmint_grow

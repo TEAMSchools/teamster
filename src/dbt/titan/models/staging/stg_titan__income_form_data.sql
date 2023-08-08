@@ -40,5 +40,5 @@ with
         from deduplicate
     )
 
-select *, eligibility_name || ' - Income Form' as lunch_application_status,
+select *, eligibility_result || ' - Income Form' as lunch_application_status,
 from with_eligibility_name
