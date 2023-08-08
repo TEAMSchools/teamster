@@ -7,8 +7,8 @@ with recursive
         union all
 
         select s1.root_standard_id, s2.parent_standard_id, s2.standard_id,
-        from standards_ladder as s1
-        left join
+        from standards as s1
+        inner join
             {{ ref("stg_illuminate__standards") }} as s2
             on s1.standard_id = s2.parent_standard_id
     )
