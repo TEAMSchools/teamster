@@ -171,7 +171,9 @@ class GoogleDirectoryResource(ConfigurableResource):
             for user in batch:
                 batch_request.add(self._service.users().insert(body=user))
 
-            batch_request.execute()
+            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+
+            time.sleep(1)
 
     def batch_update_users(self, users):
         def callback(request_id, response, exception):
@@ -238,7 +240,9 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-            batch_request.execute()
+            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+
+            time.sleep(1)
 
     def batch_insert_role_assignments(self, role_assignments, customer=None):
         def callback(request_id, response, exception):
@@ -263,4 +267,6 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-            batch_request.execute()
+            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+
+            time.sleep(1)
