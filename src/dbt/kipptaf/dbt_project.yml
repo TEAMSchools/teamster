@@ -77,6 +77,10 @@ models:
         +schema: google_directory
         staging:
           +materialized: table
+    illuminate:
+      +schema: illuminate
+      staging:
+        +materialized: table
     kippadb:
       +schema: kippadb
       staging:

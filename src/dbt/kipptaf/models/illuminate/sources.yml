@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: illuminate
-    schema: illuminate_dna_assessments
+    schema: illuminate_xmin_dna_assessments
     tables:
       - name: agg_student_responses
       - name: agg_student_responses_group
@@ -44,21 +44,23 @@ sources:
       - name: assessments
       - name: assessments_reporting_groups
       - name: field_standards
-      - name: fields
       - name: fields_reporting_groups
       - name: performance_band_sets
       - name: performance_bands
       - name: reporting_groups
       - name: students_assessments
       - name: tags
+      - name: assessment_fields
+        identifier: fields
 
   - name: illuminate
     schema: illuminate_dna_repositories
     tables:
       - name: expressions
-      - name: fields
       - name: repositories
       - name: repository_grade_levels
+      - name: repository_fields
+        identifier: fields
 
   - name: illuminate
     schema: illuminate_dna_repositories
