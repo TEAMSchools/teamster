@@ -375,12 +375,59 @@ with
         left join
             {{ ref("stg_ldap__user_person") }} as ldap
             on en.employee_number = ldap.employee_number
+    ),
+    with_info_survey as (
+        select
+            wm.*,
+            siu.race_ethnicity,
+            case
+                when regexp_contains(siu.race_ethnicity, 'Latinx/Hispanic/Chicana(o)')
+                then 1
+                when wm.ethnicity_long_name = 'Hispanic or Latino'
+                then 1
+                else 0
+            end as is_hispanic,
+            coalesce(
+                case
+                    when regexp_contains(siu.race_ethnicity, 'I decline to state')
+                    then 'Decline to State'
+                    when siu.race_ethnicity = 'Latinx/Hispanic/Chicana(o)'
+                    then 'Latinx/Hispanic/Chicana(o)'
+                    when siu.race_ethnicity = 'My racial/ethnic identity is not listed'
+                    then 'Race/Ethnicity Not Listed'
+                    when regexp_contains(siu.race_ethnicity, 'Bi/Multiracial')
+                    then 'Bi/Multiracial'
+                    when regexp_contains(siu.race_ethnicity, ',')
+                    then 'Bi/Multiracial'
+                    else siu.race_ethnicity
+                end,
+                case
+                    when wm.race_long_name = 'Black or African American'
+                    then 'Black/African American'
+                    when wm.race_long_name = 'Hispanic or Latino'
+                    then 'Latinx/Hispanic/Chicana(o)'
+                    else wm.race_long_name
+                end
+            ) as race_ethnicity_reporting,
+            coalesce(siu.gender_identity, wm.gender_long_name) as gender_identity,
+            siu.relay_status,
+            siu.community_grew_up,
+            siu.community_professional_exp,
+            siu.alumni_status,
+            siu.path_to_education
+        from with_manager as wm
+        left join
+            {{ ref("base_google_forms__staff_info_responses_wide") }} as siu
+            on siu.employee_number = wm.employee_number
+            and siu.rn_submission = 1
+
     )
 
-select wm.*, tgl.grade_level as primary_grade_level_taught,
-from with_manager as wm
+select wis.*, tgl.grade_level as primary_grade_level_taught
+
+from with_info_survey as wis
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-    on wm.powerschool_teacher_number = tgl.teachernumber
+    on wis.powerschool_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
