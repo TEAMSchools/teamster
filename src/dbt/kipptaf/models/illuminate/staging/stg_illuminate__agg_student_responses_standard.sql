@@ -5,7 +5,8 @@ with
         select *
         from {{ source_table }}
         where
-            student_assessment_id not in (
+            points_possible > 0
+            and student_assessment_id not in (
                 select student_assessment_id
                 from {{ source("illuminate", "students_assessments_archive") }}
             )
