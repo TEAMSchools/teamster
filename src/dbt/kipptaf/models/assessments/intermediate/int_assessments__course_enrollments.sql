@@ -1,3 +1,5 @@
+{{ config(materialized="table") }}
+
 with
     enrollments_union as (
         /* K-12 enrollments */
@@ -7,12 +9,12 @@ with
             ce.courses_credittype,
             ce.cc_academic_year + 1 as illuminate_academic_year,
 
+            co.student_number as powerschool_student_number,
+            co.schoolid as powerschool_school_id,
             co.grade_level + 1 as illuminate_grade_level_id,
 
             ns.illuminate_subject_area,
             ns.is_foundations,
-
-            ils.student_id as illuminate_student_id,
 
             max(ns.is_advanced_math) over (
                 partition by ce.cc_studentid, ce.cc_academic_year, ce.courses_credittype
@@ -28,9 +30,6 @@ with
             {{ source("assessments", "src_assessments__course_subject_crosswalk") }}
             as ns
             on ce.cc_course_number = ns.powerschool_course_number
-        inner join
-            {{ ref("stg_illuminate__students") }} as ils
-            on co.student_number = ils.local_student_id
         where not ce.is_dropped_course
 
         union all
@@ -43,25 +42,21 @@ with
             'RHET' as courses_credittype,
 
             co.academic_year + 1 as illuminate_academic_year,
+            co.student_number as powerschool_student_number,
+            co.schoolid as powerschool_school_id,
             co.grade_level + 1 as illuminate_grade_level_id,
 
             'Writing' as illuminate_subject_area,
             false as is_foundations,
-
-            ils.student_id as illuminate_student_id,
-
             false as is_advanced_math,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        inner join
-            {{ ref("stg_illuminate__students") }} as ils
-            on co.student_number = ils.local_student_id
         where co.code_location in ('kippnewark', 'kippcamden') and co.grade_level <= 4
     )
 
     {{
         dbt_utils.deduplicate(
             relation="enrollments_union",
-            partition_by="illuminate_student_id, illuminate_academic_year, illuminate_subject_area",
+            partition_by="powerschool_student_number, illuminate_academic_year, illuminate_subject_area",
             order_by="cc_dateenrolled desc, cc_dateleft desc",
         )
     }}

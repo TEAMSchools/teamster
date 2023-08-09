@@ -83,6 +83,8 @@ models:
       +schema: illuminate
       staging:
         +materialized: table
+      base:
+        +materialized: table
     kippadb:
       +schema: kippadb
       staging:
