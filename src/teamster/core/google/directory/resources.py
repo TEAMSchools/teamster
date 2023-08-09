@@ -286,6 +286,10 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+            backoff(
+                fn=batch_request.execute,
+                retry_on=(HttpError,),
+                delay_generator=self.backoff_delay_generator(),
+            )
 
             time.sleep(1)
