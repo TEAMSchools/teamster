@@ -49,6 +49,8 @@ models:
       +schema: alchemer
       staging:
         +materialized: table
+    assessments:
+      +schema: assessments
     deanslist:
       +schema: deanslist
     edplan:

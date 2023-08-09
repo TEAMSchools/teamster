@@ -26,6 +26,7 @@ sources:
     schema: illuminate_public
     tables:
       - name: grade_levels
+      - name: sessions
       - name: student_session_aff
       - name: students
       - name: users
