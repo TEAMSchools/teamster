@@ -5,12 +5,12 @@ with
             a.title,
             a.administered_at,
             a.performance_band_set_id,
-            a.academic_year_clean as academic_year,
+            a.academic_year,
+            a.academic_year_clean,
             a.scope,
             a.subject_area,
 
             ias.module_type,
-            if(ias.scope is not null, true, false) as is_internal_assessment,
 
             regexp_replace(
                 coalesce(
@@ -21,7 +21,7 @@ with
                 ''
             ) as module_number,
         from {{ ref("base_illuminate__assessments") }} as a
-        left join
+        inner join
             {{ source("assessments", "src_assessments__internal_assessment_scopes") }}
             as ias
             on a.scope = ias.scope
@@ -29,18 +29,17 @@ with
     ),
 
     assessments_union as (
-        /* K-8 subject areas */
+        /* K-8 */
         select
             a.assessment_id,
             a.title,
             a.administered_at,
             a.performance_band_set_id,
-            a.academic_year_clean as academic_year,
+            a.academic_year_clean,
             a.module_type,
             a.module_number,
             a.scope,
             a.subject_area,
-            a.is_normed_scope,
 
             agl.grade_level_id,
 
@@ -55,36 +54,35 @@ with
             {{ ref("base_illuminate__student_session_aff") }} as ssa
             on a.academic_year = ssa.academic_year
             and agl.grade_level_id = ssa.grade_level_id
-            and ssa.rn = 1
+            and ssa.rn_student_session_desc = 1
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on ssa.student_id = ce.student_id
-            and a.subject_area = ce.subject_area
-            and a.administered_at between ce.entry_date and ce.leave_date
+            on ssa.student_id = ce.illuminate_student_id
+            and a.subject_area = ce.illuminate_subject_area
+            and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
             and not ce.is_advanced_math_student
         where
-            a.is_internal_assessment
+            agl.grade_level_id <= 9
             and a.subject_area
             in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
 
         union all
 
-        /* HS subject areas */
+        /* HS */
         select
             a.assessment_id,
             a.title,
             a.administered_at,
             a.performance_band_set_id,
-            a.academic_year_clean as academic_year,
+            a.academic_year_clean,
             a.module_type,
             a.module_number,
             a.scope,
             a.subject_area,
-            a.is_normed_scope,
 
             agl.grade_level_id,
 
-            ce.student_id,
+            ce.illuminate_student_id as student_id,
 
             false as is_replacement,
         from asmts as a
@@ -93,28 +91,27 @@ with
             on a.assessment_id = agl.assessment_id
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on agl.grade_level_id = ce.grade_level_id
-            and a.subject_area = ce.subject_area
-            and a.administered_at between ce.entry_date and ce.leave_date
+            on agl.grade_level_id = ce.illuminate_grade_level_id
+            and a.subject_area = ce.illuminate_subject_area
+            and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
         where
-            a.is_internal_assessment
+            agl.grade_level_id >= 10
             and a.subject_area
             not in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
 
         union all
 
         /* replacement curriculum */
-        select distinct
+        select  -- distinct
             a.assessment_id,
             a.title,
             a.administered_at,
             a.performance_band_set_id,
-            a.academic_year_clean as academic_year,
+            a.academic_year_clean,
             a.module_type,
             a.module_number,
             a.scope,
             a.subject_area,
-            a.is_normed_scope,
 
             null as grade_level_id,
 
@@ -123,47 +120,21 @@ with
             true as is_replacement,
         from asmts as a
         inner join
-            {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
-            on a.assessment_id = agl.assessment_id
-        inner join
             {{ ref("stg_illuminate__students_assessments") }} as sa
             on a.assessment_id = sa.assessment_id
         inner join
             {{ ref("base_illuminate__student_session_aff") }} as ssa
-            on sa.student_id = ssa.student_id
-            and a.academic_year = ssa.academic_year
-            and agl.grade_level_id != ssa.grade_level_id
-            and ssa.rn = 1
+            on a.academic_year = ssa.academic_year
+            and sa.student_id = ssa.student_id
+            and ssa.rn_student_session_desc = 1
+            and ssa.grade_level_id <= 9
+        left join
+            {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
+            on a.assessment_id = agl.assessment_id
+            and ssa.grade_level_id = agl.grade_level_id
         where
-            a.is_internal_assessment
-            and a.subject_area
-            in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
-
-        union all
-
-        /* all other assessments */
-        select
-            a.assessment_id,
-            a.title,
-            a.administered_at,
-            a.performance_band_set_id,
-            a.academic_year_clean as academic_year,
-            a.module_type,
-            a.module_number,
-            a.scope,
-            a.subject_area,
-            a.is_normed_scope,
-
-            null as grade_level_id,
-
-            sa.student_id,
-
-            false as is_replacement,
-        from asmts as a
-        inner join
-            {{ ref("stg_illuminate__students_assessments") }} as sa
-            on a.assessment_id = sa.assessment_id
-        where not a.is_internal_assessment
+            a.subject_area in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
+            and agl.assessment_grade_level_id is null
     )
 
 select
@@ -171,12 +142,17 @@ select
     title,
     administered_at,
     performance_band_set_id,
-    academic_year,
+    academic_year_clean as academic_year,
     subject_area,
-    is_normed_scope,
     grade_level_id,
     student_id,
     is_replacement,
+    if(
+        scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
+        and grade_level_id in (1, 2),
+        'Checkpoint',
+        scope
+    ) as scope,
     if(
         scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
         and grade_level_id in (1, 2),
@@ -189,10 +165,4 @@ select
         replace(module_number, 'CRQ', 'CP'),
         module_number
     ) as module_number,
-    if(
-        scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
-        and grade_level_id in (1, 2),
-        'Checkpoint',
-        scope
-    ) as scope,
 from assessments_union
