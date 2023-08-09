@@ -78,18 +78,7 @@ with
         where
             sr.assignment_status not in ('Terminated', 'Deceased')
             and not sr.is_prestart
-            and (
-                sr.job_title in (
-                    'Assistant Superintendent',
-                    'Head of Schools',
-                    'Head of Schools in Residence',
-                    'Managing Director'
-                )
-                or (
-                    sr.department_home_name = 'Special Education'
-                    and sr.job_title like '%Director%'
-                )
-            )
+            and sr.home_work_location_powerschool_school_id = 0
 
         union all
 

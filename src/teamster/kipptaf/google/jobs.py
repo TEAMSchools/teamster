@@ -7,6 +7,7 @@ from teamster.core.google.bigquery.ops import (
 
 from .assets import google_directory_nonpartitioned_assets, google_forms_assets
 from .ops import (
+    google_directory_member_create_op,
     google_directory_role_assignment_create_op,
     google_directory_user_create_op,
     google_directory_user_update_op,
@@ -35,8 +36,10 @@ google_directory_nonpartitioned_asset_job = define_asset_job(
 def google_directory_user_sync_job():
     users = bigquery_get_table_op()
 
-    google_directory_user_create_op(users=users)
+    members = google_directory_user_create_op(users=users)
     google_directory_user_update_op(users=users)
+
+    google_directory_member_create_op(members=members)
 
 
 @job(
