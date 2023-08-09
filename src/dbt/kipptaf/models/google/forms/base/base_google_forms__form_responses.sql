@@ -19,7 +19,7 @@ select
             from=ref_text_answers,
             relation_alias="rata",
             except=["form_id", "item_id", "question_id", "response_id"],
-            prefix='text_'
+            prefix="text_",
         )
     }},
 
@@ -28,7 +28,7 @@ select
             from=ref_file_uploads,
             relation_alias="rafu",
             except=["form_id", "item_id", "question_id", "response_id"],
-            prefix='file_upload_'
+            prefix="file_upload_",
         )
     }},
 

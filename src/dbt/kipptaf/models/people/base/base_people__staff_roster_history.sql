@@ -425,7 +425,7 @@ with
 
         from with_manager as wm
         left join
-            {{ ref("base_google_forms__staff_info_responses_wide") }} as siu
+            {{ ref('int_surveys__staff_information_survey_pivot') }} as siu
             on siu.employee_number = wm.employee_number
             and siu.rn_submission = 1
 
