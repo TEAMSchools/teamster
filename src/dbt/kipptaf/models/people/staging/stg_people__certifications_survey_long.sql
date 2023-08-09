@@ -10,7 +10,7 @@ with certifications_long AS (
           NULL AS cert_expiration_date,
           nj_cert_document_link_1 AS cert_document,
           1 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE nj_cert_endorsement_1 IS NOT NULL
 
     UNION DISTINCT
@@ -26,7 +26,7 @@ with certifications_long AS (
           NULL AS cert_expiration_date,
           nj_cert_document_link_2 AS cert_document,
           2 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE nj_cert_endorsement_2 IS NOT NULL
 
     UNION DISTINCT
@@ -42,7 +42,7 @@ with certifications_long AS (
           NULL AS cert_expiration_date,
           nj_cert_document_link_3 AS cert_document,
           3 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE nj_cert_endorsement_3 IS NOT NULL
 
     UNION DISTINCT
@@ -58,7 +58,7 @@ with certifications_long AS (
           NULL AS cert_expiration_date,
           nj_cert_document_link_4 AS cert_document,
           4 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE nj_cert_endorsement_4 IS NOT NULL
 
     UNION DISTINCT
@@ -74,7 +74,7 @@ with certifications_long AS (
           NULL AS cert_expiration_date,
           nj_cert_document_link_5 AS cert_document,
           5 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE nj_cert_endorsement_5 IS NOT NULL
 
     UNION DISTINCT
@@ -90,7 +90,7 @@ with certifications_long AS (
           fl_cert_expiration_1 AS cert_expiration_date,
           nj_cert_document_link_1 AS cert_document,
           1 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE fl_cert_endorsement_1 IS NOT NULL
 
     UNION DISTINCT
@@ -106,7 +106,7 @@ with certifications_long AS (
           fl_cert_expiration_2 AS cert_expiration_date,
           nj_cert_document_link_2 AS cert_document,
           2 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE fl_cert_endorsement_2 IS NOT NULL
 
     UNION DISTINCT
@@ -122,7 +122,7 @@ with certifications_long AS (
           fl_cert_expiration_3 AS cert_expiration_date,
           nj_cert_document_link_3 AS cert_document,
           3 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE fl_cert_endorsement_3 IS NOT NULL
 
     UNION DISTINCT
@@ -138,7 +138,7 @@ with certifications_long AS (
           fl_cert_expiration_4 AS cert_expiration_date,
           nj_cert_document_link_4 AS cert_document,
           4 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE fl_cert_endorsement_4 IS NOT NULL
 
     UNION DISTINCT
@@ -154,7 +154,7 @@ with certifications_long AS (
           fl_cert_expiration_5 AS cert_expiration_date,
           nj_cert_document_link_5 AS cert_document,
           5 AS cert_submission_number
-    FROM {{ ref('base_google_forms__staff_info_responses_wide') }}
+    FROM {{ ref('int_surveys__staff_information_survey_pivot') }}
     WHERE fl_cert_endorsement_5 IS NOT NULL
     )
  

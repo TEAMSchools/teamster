@@ -97,7 +97,7 @@ select
 
 from {{ ref("base_people__staff_roster") }} as w
 left join
-    {{ ref("base_google_forms__staff_info_responses_wide") }} as s
+    {{ ref('int_surveys__staff_information_survey_pivot') }} as s
     on (
         w.employee_number = s.employee_number
         and s.rn_submission = 1
