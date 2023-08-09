@@ -5,7 +5,7 @@ select
         dbt_utils.star(
             from=src_assessments,
             relation_alias="a",
-            except=["_fivetran_deleted", "_fivetran_synced"],
+            except=["_fivetran_deleted", "_fivetran_synced", "deleted_at"],
         )
     }},
     a.academic_year - 1 as academic_year_clean,
@@ -37,4 +37,4 @@ left join
     {{ source("illuminate", "dna_subject_areas") }} as dsa
     on a.code_subject_area_id = dsa.code_id
     and not dsa._fivetran_deleted
-where not a._fivetran_deleted
+where not a._fivetran_deleted and a.deleted_at is null

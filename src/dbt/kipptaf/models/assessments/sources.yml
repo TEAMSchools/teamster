@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: assessments
+    schema: kipptaf_assessments
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_assessments__course_subject_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__course_subject_crosswalk
+            skip_leading_rows: 1
+      - name: src_assessments__internal_assessment_scopes
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__internal_assessment_scopes
+            skip_leading_rows: 1
