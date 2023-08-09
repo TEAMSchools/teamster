@@ -19,9 +19,9 @@ GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
     delegated_account="dagster@apps.teamschools.org",
 )
 
-BIG_QUERY_RESOURCE = BigQueryResource(project=GCS_PROJECT_NAME)
+BIGQUERY_RESOURCE = BigQueryResource(project=GCS_PROJECT_NAME)
 
-BIG_QUERY_GET_TABLE_OP_CONFIG = BigQueryGetTableOpConfig(
+BIGQUERY_GET_TABLE_OP_CONFIG = BigQueryGetTableOpConfig(
     dataset_id="kipptaf_extracts", table_id="rpt_google_directory__users_import"
 )
 
@@ -31,8 +31,8 @@ def test_google_directory_user_update_op():
 
     users = bigquery_get_table_op(
         context=context,
-        db_bigquery=BIG_QUERY_RESOURCE,
-        config=BIG_QUERY_GET_TABLE_OP_CONFIG,
+        db_bigquery=BIGQUERY_RESOURCE,
+        config=BIGQUERY_GET_TABLE_OP_CONFIG,
     )
 
     google_directory_user_update_op(
@@ -45,8 +45,8 @@ def test_google_directory_user_create_op():
 
     users = bigquery_get_table_op(
         context=context,
-        db_bigquery=BIG_QUERY_RESOURCE,
-        config=BIG_QUERY_GET_TABLE_OP_CONFIG,
+        db_bigquery=BIGQUERY_RESOURCE,
+        config=BIGQUERY_GET_TABLE_OP_CONFIG,
     )
 
     google_directory_user_create_op(
@@ -57,14 +57,13 @@ def test_google_directory_user_create_op():
 def test_google_directory_role_assignment_create_op():
     context = build_op_context()
 
-    role_assignments = [
-        {
-            "assignedTo": "102120740905198094274",
-            "roleId": "6403551156764679",
-            "scopeType": "ORG_UNIT",
-            "orgUnitId": "01km0r9l4dd2g7e",  # Service Accounts
-        }
-    ]
+    role_assignments = bigquery_get_table_op(
+        context=context,
+        db_bigquery=BIGQUERY_RESOURCE,
+        config=BigQueryGetTableOpConfig(
+            dataset_id="kipptaf_extracts", table_id="rpt_google_directory__admin_import"
+        ),
+    )
 
     google_directory_role_assignment_create_op(
         context=context,
