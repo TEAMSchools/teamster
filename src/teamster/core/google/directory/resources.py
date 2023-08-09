@@ -271,8 +271,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                 ):
                     raise exception
 
-        # Queries per minute per user == 2400 (40/sec)
-        batches = self._batch_list(list=role_assignments, size=40)
+        batches = self._batch_list(list=role_assignments, size=10)
 
         for i, batch in enumerate(batches):
             self.get_resource_context().log.info(f"Processing batch {i + 1}")
