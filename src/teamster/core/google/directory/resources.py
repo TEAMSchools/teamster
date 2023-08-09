@@ -149,10 +149,10 @@ class GoogleDirectoryResource(ConfigurableResource):
                 context.log.error(exception)
                 if exception.status_code == 403:
                     raise exception
-                elif (
-                    exception.status_code == 409
-                    and exception.reason != "Entity already exists."
-                ):
+                elif exception.status_code == 409 and exception.reason not in [
+                    "Entity already exists.",
+                    "Invalid Given/Family Name: GivenName",
+                ]:
                     raise exception
             else:
                 context.log.info(
@@ -266,7 +266,8 @@ class GoogleDirectoryResource(ConfigurableResource):
                     raise exception
                 elif (
                     exception.status_code == 409
-                    and exception.reason != "Member already exists."
+                    and exception.reason
+                    != "Role assignment already exists for the role"
                 ):
                     raise exception
 
