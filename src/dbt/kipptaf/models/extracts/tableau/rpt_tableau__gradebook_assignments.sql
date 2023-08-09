@@ -11,7 +11,7 @@ select
     co.lastfirst,
     co.academic_year,
     co.schoolid,
-    co.school_name
+    co.school_name,
     co.grade_level,
     co.spedlep as iep_status,
 
@@ -76,6 +76,7 @@ select
     co.lastfirst,
     co.academic_year,
     co.schoolid,
+    co.school_name,
     co.grade_level,
     co.spedlep as iep_status,
 
