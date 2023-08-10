@@ -38,7 +38,7 @@ with
             safe_cast(nj_timeinregularprogram as numeric) as nj_timeinregularprogram,
             nj_se_earlyintervention,
             if(
-                nj_se_parentalconsentobtained = 'Y', true, false
+                nj_se_parentalconsentobtained in ('N', 'R'), false, true
             ) as nj_se_parentalconsentobtained,
             parse_date('%m/%d/%Y', nj_se_eligibilityddate) as nj_se_eligibilityddate,
             parse_date(
