@@ -38,7 +38,6 @@ select
     s.isexempt,
     s.ismissing,
 
-    ada.ada
 from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
@@ -61,11 +60,6 @@ left join
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-left join
-   {{ ref("int_powerschool__ada") }} as ada
-    on co.yearid = ada.yearid
-    and co.studentid and ada.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where enr.cc_academic_year >= {{ var("current_academic_year") }} - 1
 
 union all
