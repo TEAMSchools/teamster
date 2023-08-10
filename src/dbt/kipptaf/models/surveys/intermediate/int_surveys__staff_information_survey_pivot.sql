@@ -4,14 +4,11 @@ with
             response_id,
             respondent_email,
             cast(last_submitted_time as timestamp) as last_submitted_time,
-            rn_form_respondent_submitted_desc,
-            rn_form_item_respondent_submitted_desc,
             item_abbreviation,
             coalesce(text_value, file_upload_file_id) as pivot_column_value,
         from {{ ref("base_google_forms__form_responses") }}
         where
             form_id = '1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA'
-            and rn_form_respondent_submitted_desc = 1
     ),
 
     response_pivot as (
