@@ -139,7 +139,7 @@ left join
     {{ ref("base_people__staff_roster") }} as mgr
     on sub.employee_number = mgr.report_to_employee_number
 left join
-    {{ source("people", "src_people__campus_crosswalk") }} as c
+    {{ ref("stg_people__campus_crosswalk") }} as c
     on mgr.home_work_location_name = c.location_name
 left join elementary_grade as e on mgr.powerschool_teacher_number = e.teachernumber
 where

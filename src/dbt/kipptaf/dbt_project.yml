@@ -77,6 +77,8 @@ models:
           +materialized: table
       directory:
         +schema: google_directory
+        base:
+          +materialized: table
         staging:
           +materialized: table
     illuminate:
@@ -112,6 +114,8 @@ models:
       +schema: smartrecruiters
     surveys:
       +schema: surveys
+      intermediate:
+        +materialized: table
     titan:
       +schema: titan
     utils:
