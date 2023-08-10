@@ -1,15 +1,3 @@
-{{ config(enabled=False) }}
-with
-    sd_dupe_remove as (
-        select
-            st.standard_code,
-            st.standard_domain,
-            row_number() over (
-                partition by st.standard_code order by st.standard_domain asc
-            ) as rn_standard
-        from assessments.standards_translation as st
-    )
-
 select
     co.student_number,
     co.lastfirst,
@@ -85,14 +73,6 @@ left join
     and hr.section_enroll_status = 0
     and hr.rn_course_yr = 1
 left join assessments.normed_subjects as ns on enr.course_number = ns.course_number
-left join
-    assessments.power_standards as ps
-    on asr.assessment_id = ps.assessment_id
-    and asr.standard_code = ps.standard_code
-    and co.reporting_schoolid = ps.schoolid
-    and co.academic_year = ps.academic_year
-left join
-    sd_dupe_remove as sd on asr.standard_code = sd.standard_code and sd.rn_standard = 1
 where
     co.academic_year >= utilities.global_academic_year() - 1
     and co.rn_year = 1
