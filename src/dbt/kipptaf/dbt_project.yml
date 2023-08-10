@@ -75,6 +75,8 @@ models:
           +materialized: table
       directory:
         +schema: google_directory
+        base:
+          +materialized: table
         staging:
           +materialized: table
     kippadb:
@@ -104,6 +106,8 @@ models:
       +schema: smartrecruiters
     surveys:
       +schema: surveys
+      intermediate:
+        +materialized: table
     titan:
       +schema: titan
     utils:
