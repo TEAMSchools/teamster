@@ -49,6 +49,8 @@ models:
       +schema: alchemer
       staging:
         +materialized: table
+    assessments:
+      +schema: assessments
     deanslist:
       +schema: deanslist
     edplan:
@@ -79,6 +81,12 @@ models:
           +materialized: table
         staging:
           +materialized: table
+    illuminate:
+      +schema: illuminate
+      staging:
+        +materialized: table
+      base:
+        +materialized: table
     kippadb:
       +schema: kippadb
       staging:
