@@ -125,16 +125,12 @@ select
         not nj_se_parentalconsentobtained,
         null,
         case
-            special_education
-            when null
+            when special_education in ('00', '99')
             then null
-            when '00'
-            then null
-            when '99'
-            then null
-            when '17'
+            when special_education = '17'
             then 'SPED SPEECH'
-            else 'SPED'
+            when special_education is not null
+            then 'SPED'
         end
     ) as spedlep,
     coalesce(
