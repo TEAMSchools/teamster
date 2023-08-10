@@ -1,0 +1,21 @@
+select
+    standard_id,
+    category_id,
+    custom_code,
+    description,
+    guid,
+    hidden,
+    label,
+    `level`,
+    lft,
+    linkable,
+    organizer,
+    parent_standard_id,
+    placeholder,
+    rgt,
+    seq,
+    state_num,
+    stem,
+    subject_id,
+from {{ source("illuminate", "standards") }}
+where not _fivetran_deleted
