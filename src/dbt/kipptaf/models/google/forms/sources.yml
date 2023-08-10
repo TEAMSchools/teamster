@@ -8,16 +8,16 @@ sources:
     tables:
       - name: src_google_forms__form
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/google_forms/form/*"
+          location: "{{ var('cloud_storage_uri_base') }}/google/forms/form/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google_forms/form/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google/forms/form/"
             format: AVRO
             enable_logical_types: true
       - name: src_google_forms__responses
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/google_forms/responses/*"
+          location: "{{ var('cloud_storage_uri_base') }}/google/forms/responses/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google_forms/responses/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google/forms/responses/"
             format: AVRO
             enable_logical_types: true
       - name: src_google_forms__form_items_extension

@@ -8,186 +8,186 @@ sources:
     tables:
       - name: src_schoolmint_grow__rubrics
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/rubrics/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/rubrics/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__schools
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/schools/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/schools/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__users
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/users/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/users/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__videos
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/videos/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/videos/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_assignmentpresets
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_assignmentpresets/*"
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_assignmentpresets/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_assignmentpresets/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_assignmentpresets/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_courses
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_courses/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_courses/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_courses/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_courses/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_grades
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_grades/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_grades/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_grades/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_grades/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_measurementgroups
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_measurementgroups/*"
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_measurementgroups/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_measurementgroups/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_measurementgroups/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_observationtypes
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_observationtypes/*"
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_observationtypes/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_observationtypes/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_observationtypes/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_tags
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_tags/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_tags/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_tags/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_tags/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_meetingtypes
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_meetingtypes/*"
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_meetingtypes/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_meetingtypes/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_meetingtypes/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__informals
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/informals/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/informals/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__measurements
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/measurements/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/measurements/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__meetings
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/meetings/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/meetings/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__roles
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/roles/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/roles/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__observations
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/observations/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/observations/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__assignments
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/assignments/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/assignments/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_eventtag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_eventtag1/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_eventtag1/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_eventtag1/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_eventtag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_goaltypes
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_goaltypes/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_goaltypes/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_goaltypes/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_goaltypes/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_rubrictag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_rubrictag1/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_rubrictag1/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_rubrictag1/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_rubrictag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_schooltag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_schooltag1/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_schooltag1/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_schooltag1/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_schooltag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_usertag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertag1/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertag1/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertag1/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertag1/"
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_usertypes
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertypes/*"
+          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertypes/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint_grow/generic_tags_usertypes/"
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertypes/"
             format: AVRO
             enable_logical_types: true
