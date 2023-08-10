@@ -24,6 +24,8 @@ with
                 /* network admins */
                 when sr.department_home_name = 'Executive'
                 then 'Regional Admin'
+                when sr.job_title = 'Head of Schools'
+                then 'Regional Admin'
                 when
                     sr.department_home_name in (
                         'Teaching and Learning',
@@ -35,7 +37,6 @@ with
                         'Chief Academic Officer',
                         'Chief Of Staff',
                         'Director',
-                        'Head of Schools',
                         'Director High School Literacy Curriculum',
                         'Director Literacy Achievement',
                         'Director Math Achievement',

@@ -38,7 +38,7 @@ with
             safe_cast(nj_timeinregularprogram as numeric) as nj_timeinregularprogram,
             nj_se_earlyintervention,
             if(
-                nj_se_parentalconsentobtained = 'Y', true, false
+                nj_se_parentalconsentobtained in ('N', 'R'), false, true
             ) as nj_se_parentalconsentobtained,
             parse_date('%m/%d/%Y', nj_se_eligibilityddate) as nj_se_eligibilityddate,
             parse_date(
@@ -125,16 +125,12 @@ select
         not nj_se_parentalconsentobtained,
         null,
         case
-            special_education
-            when null
+            when special_education in ('00', '99')
             then null
-            when '00'
-            then null
-            when '99'
-            then null
-            when '17'
+            when special_education = '17'
             then 'SPED SPEECH'
-            else 'SPED'
+            when special_education is not null
+            then 'SPED'
         end
     ) as spedlep,
     coalesce(

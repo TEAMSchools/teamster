@@ -11,6 +11,7 @@ select
     co.lastfirst,
     co.academic_year,
     co.schoolid,
+    co.school_name,
     co.grade_level,
     co.spedlep as iep_status,
 
@@ -36,6 +37,7 @@ select
     s.islate,
     s.isexempt,
     s.ismissing,
+
 from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
@@ -58,7 +60,7 @@ left join
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-where enr.cc_academic_year >= {{ var("current_academic_year") }} - 2
+where enr.cc_academic_year >= {{ var("current_academic_year") }} - 1
 
 union all
 
@@ -75,6 +77,7 @@ select
     co.lastfirst,
     co.academic_year,
     co.schoolid,
+    co.school_name,
     co.grade_level,
     co.spedlep as iep_status,
 
@@ -100,6 +103,7 @@ select
     s.islate,
     s.isexempt,
     s.ismissing,
+
 from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
@@ -123,4 +127,4 @@ left join
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-where enr.cc_academic_year >= {{ var("current_academic_year") }} - 2
+where enr.cc_academic_year >= {{ var("current_academic_year") }}
