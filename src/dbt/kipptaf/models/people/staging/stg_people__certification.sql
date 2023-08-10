@@ -1,3 +1,4 @@
+{# TODO: rewrite as multi-column unpivot #}
 with
     certifications_long as (
         select
