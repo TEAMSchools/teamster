@@ -121,7 +121,6 @@ with
             person_custom_covid_19_date_of_last_vaccine
             as custom_covid_19_date_of_last_vaccine,
             person_custom_covid_19_vaccine_type as custom_covid_19_vaccine_type,
-            person_custom_kipp_alumni_status as custom_kipp_alumni_status,
             person_custom_preferred_gender as custom_preferred_gender,
             person_custom_years_of_professional_experience_before_joining
             as custom_years_of_professional_experience_before_joining,
@@ -203,6 +202,7 @@ with
             work_assignment_assignment_status_reason,
             worker__fivetran_deleted,
             worker_custom_employee_number,
+            person_custom_kipp_alumni_status,
             person_legal_name_generation_affix_short_name,
             person_legal_name_qualification_affix_long_name,
             person_legal_address_name,
@@ -313,6 +313,54 @@ with
             ldap.physical_delivery_office_name,
             ldap.uac_account_disable,
 
+            sis.additional_languages,
+            sis.alumni_status,
+            sis.community_grew_up,
+            sis.community_professional_exp,
+            sis.languages_spoken,
+            sis.level_of_education,
+            sis.path_to_education,
+            sis.race_ethnicity,
+            sis.relay_status,
+            sis.undergraduate_school,
+            sis.years_exp_outside_kipp,
+            sis.years_teaching_in_njfl,
+            sis.years_teaching_outside_njfl,
+
+            coalesce(sis.gender_identity, wp.gender_long_name) as gender_identity,
+
+            case
+                when regexp_contains(sis.race_ethnicity, 'Latinx/Hispanic/Chicana(o)')
+                then true
+                when wp.ethnicity_long_name = 'Hispanic or Latino'
+                then true
+                else false
+            end as is_hispanic,
+
+            coalesce(
+                case
+                    when regexp_contains(sis.race_ethnicity, 'I decline to state')
+                    then 'Decline to State'
+                    when sis.race_ethnicity = 'Latinx/Hispanic/Chicana(o)'
+                    then 'Latinx/Hispanic/Chicana(o)'
+                    when sis.race_ethnicity = 'My racial/ethnic identity is not listed'
+                    then 'Race/Ethnicity Not Listed'
+                    when regexp_contains(sis.race_ethnicity, 'Bi/Multiracial')
+                    then 'Bi/Multiracial'
+                    when regexp_contains(sis.race_ethnicity, ',')
+                    then 'Bi/Multiracial'
+                    else sis.race_ethnicity
+                end,
+                case
+                    wp.race_long_name
+                    when 'Black or African American'
+                    then 'Black/African American'
+                    when 'Hispanic or Latino'
+                    then 'Latinx/Hispanic/Chicana(o)'
+                    else wp.race_long_name
+                end
+            ) as race_ethnicity_reporting,
+
             regexp_replace(
                 lower(ldap.user_principal_name),
                 r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
@@ -341,6 +389,9 @@ with
             {{ ref("stg_people__powerschool_crosswalk") }} as idps
             on en.employee_number = idps.employee_number
             and idps.is_active
+        left join
+            {{ ref("int_surveys__staff_information_survey_pivot") }} as sis
+            on en.employee_number = sis.employee_number
     ),
 
     with_manager as (
@@ -375,67 +426,12 @@ with
         left join
             {{ ref("stg_ldap__user_person") }} as ldap
             on en.employee_number = ldap.employee_number
-    ),
-    with_info_survey as (
-        select
-            wm.*,
-            siu.race_ethnicity,
-            case
-                when regexp_contains(siu.race_ethnicity, 'Latinx/Hispanic/Chicana(o)')
-                then 1
-                when wm.ethnicity_long_name = 'Hispanic or Latino'
-                then 1
-                else 0
-            end as is_hispanic,
-            coalesce(
-                case
-                    when regexp_contains(siu.race_ethnicity, 'I decline to state')
-                    then 'Decline to State'
-                    when siu.race_ethnicity = 'Latinx/Hispanic/Chicana(o)'
-                    then 'Latinx/Hispanic/Chicana(o)'
-                    when siu.race_ethnicity = 'My racial/ethnic identity is not listed'
-                    then 'Race/Ethnicity Not Listed'
-                    when regexp_contains(siu.race_ethnicity, 'Bi/Multiracial')
-                    then 'Bi/Multiracial'
-                    when regexp_contains(siu.race_ethnicity, ',')
-                    then 'Bi/Multiracial'
-                    else siu.race_ethnicity
-                end,
-                case
-                    when wm.race_long_name = 'Black or African American'
-                    then 'Black/African American'
-                    when wm.race_long_name = 'Hispanic or Latino'
-                    then 'Latinx/Hispanic/Chicana(o)'
-                    else wm.race_long_name
-                end
-            ) as race_ethnicity_reporting,
-            coalesce(siu.gender_identity, wm.gender_long_name) as gender_identity,
-            siu.relay_status,
-            siu.community_grew_up,
-            siu.community_professional_exp,
-            siu.alumni_status,
-            siu.path_to_education,
-            siu.level_of_education,
-            siu.undergraduate_school,
-            siu.languages_spoken,
-            siu.additional_languages,
-            years_teaching_outside_njfl,
-            years_teaching_in_njfl,
-            years_exp_outside_kipp
-
-        from with_manager as wm
-        left join
-            {{ ref('int_surveys__staff_information_survey_pivot') }} as siu
-            on siu.employee_number = wm.employee_number
-            and siu.rn_submission = 1
-
     )
 
-select wis.*, tgl.grade_level as primary_grade_level_taught
-
-from with_info_survey as wis
+select wm.*, tgl.grade_level as primary_grade_level_taught
+from with_manager as wm
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-    on wis.powerschool_teacher_number = tgl.teachernumber
+    on wm.powerschool_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
