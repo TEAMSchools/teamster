@@ -6,11 +6,11 @@ sources:
     tags:
       - stage_external_sources
     tables:
-      - name: src_surveys__staff_info_certification
+      - name: src_surveys__staff_info_archive
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/13bajVOf0otCUZCyLYk3KaTAr2yoOZ2IZGedGYIGwN8Q/edit?resourcekey#gid=840601827
-            sheet_range: src_surveys__staff_info_certification
-            skip_leading_rows: 2
+              - https://docs.google.com/spreadsheets/d/1XCOY8t6dlSaS8NKdZCKCwdMmp_0FRTrBih3a-wyROm4
+            sheet_range: src_surveys__staff_info_archive
+            skip_leading_rows: 1
