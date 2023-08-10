@@ -27,8 +27,7 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="co") }}
             and co.rn_year = 1
         inner join
-            {{ source("assessments", "src_assessments__course_subject_crosswalk") }}
-            as ns
+            {{ ref("stg_assessments__course_subject_crosswalk") }} as ns
             on ce.cc_course_number = ns.powerschool_course_number
         where not ce.is_dropped_course
 
