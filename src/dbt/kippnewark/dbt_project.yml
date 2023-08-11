@@ -28,6 +28,7 @@ vars:
   edplan_schema: kippnewark_edplan
   powerschool_schema: kippnewark_powerschool
   titan_schema: kippnewark_titan
+  iready_schema: kippnj_iready
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -40,6 +41,10 @@ models:
     +schema: deanslist
   edplan:
     +schema: edplan
+  iready:
+    +schema: iready
+    staging:
+      +materialized: table
   powerschool:
     +schema: powerschool
     +materialized: table

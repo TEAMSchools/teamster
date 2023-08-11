@@ -11,6 +11,8 @@ locations:
         env_secrets:
           - dagster-cloud-agent-token
           - dagster-cloud-user-token
+          - iready-sftp-password
+          - iready-sftp-username
           - kippnewark-edplan-sftp-password
           - kippnewark-edplan-sftp-username
           - kippnewark-ps-db-password

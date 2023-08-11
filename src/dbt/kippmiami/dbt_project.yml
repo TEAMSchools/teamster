@@ -21,11 +21,12 @@ clean-targets: # directories to be removed by `dbt clean`
   - dbt_packages
 
 vars:
-  cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
-  deanslist_schema: kippmiami_deanslist
-  powerschool_schema: kippmiami_powerschool
   current_academic_year: 2023
   current_fiscal_year: 2024
+  cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
+  deanslist_schema: kippmiami_deanslist
+  iready_schema: kippmiami_iready
+  powerschool_schema: kippmiami_powerschool
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -36,6 +37,10 @@ models:
       +materialized: table
   deanslist:
     +schema: deanslist
+  iready:
+    +schema: iready
+    staging:
+      +materialized: table
   powerschool:
     +schema: powerschool
     +materialized: table
