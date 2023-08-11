@@ -3,7 +3,7 @@ with
         select
             response_id,
             respondent_email,
-            cast(last_submitted_time as timestamp) as last_submitted_time,
+            safe_cast(last_submitted_time as timestamp) as last_submitted_time,
             item_abbreviation,
             coalesce(text_value, file_upload_file_id) as pivot_column_value,
         from {{ ref("base_google_forms__form_responses") }}
@@ -62,10 +62,12 @@ with
             `race_ethnicity`,
             `respondent_name`,
             `undergraduate_school`,
-            cast(`years_teaching_in_njfl` as int) as years_teaching_in_njfl,
-            cast(`years_exp_outside_kipp` as int) as years_exp_outside_kipp,
-            cast(`years_teaching_outside_njfl` as int) as years_teaching_outside_njfl,
-            cast(
+            safe_cast(`years_teaching_in_njfl` as numeric) as years_teaching_in_njfl,
+            safe_cast(`years_exp_outside_kipp` as numeric) as years_exp_outside_kipp,
+            safe_cast(
+                `years_teaching_outside_njfl` as numeric
+            ) as years_teaching_outside_njfl,
+            safe_cast(
                 regexp_extract(`respondent_name`, r'(\d{6})') as int
             ) as employee_number,
             replace(`alumni_status`, ',', '.') as alumni_status,
@@ -196,16 +198,16 @@ with
             rp.years_exp_outside_kipp,
             rp.years_teaching_in_njfl,
             rp.years_teaching_outside_njfl,
-            cast(rp.fl_cert_expiration_1 as date) as fl_cert_expiration_1,
-            cast(rp.fl_cert_expiration_2 as date) as fl_cert_expiration_2,
-            cast(rp.fl_cert_expiration_3 as date) as fl_cert_expiration_3,
-            cast(rp.fl_cert_expiration_4 as date) as fl_cert_expiration_4,
-            cast(rp.fl_cert_expiration_5 as date) as fl_cert_expiration_5,
-            cast(rp.nj_cert_issue_date_1 as date) as nj_cert_issue_date_1,
-            cast(rp.nj_cert_issue_date_2 as date) as nj_cert_issue_date_2,
-            cast(rp.nj_cert_issue_date_3 as date) as nj_cert_issue_date_3,
-            cast(rp.nj_cert_issue_date_4 as date) as nj_cert_issue_date_4,
-            cast(rp.nj_cert_issue_date_5 as date) as nj_cert_issue_date_5,
+            safe_cast(rp.fl_cert_expiration_1 as date) as fl_cert_expiration_1,
+            safe_cast(rp.fl_cert_expiration_2 as date) as fl_cert_expiration_2,
+            safe_cast(rp.fl_cert_expiration_3 as date) as fl_cert_expiration_3,
+            safe_cast(rp.fl_cert_expiration_4 as date) as fl_cert_expiration_4,
+            safe_cast(rp.fl_cert_expiration_5 as date) as fl_cert_expiration_5,
+            safe_cast(rp.nj_cert_issue_date_1 as date) as nj_cert_issue_date_1,
+            safe_cast(rp.nj_cert_issue_date_2 as date) as nj_cert_issue_date_2,
+            safe_cast(rp.nj_cert_issue_date_3 as date) as nj_cert_issue_date_3,
+            safe_cast(rp.nj_cert_issue_date_4 as date) as nj_cert_issue_date_4,
+            safe_cast(rp.nj_cert_issue_date_5 as date) as nj_cert_issue_date_5,
             if(rp.cert_required = 'Yes', true, false) as cert_required,
             if(rp.fl_additional_cert_1 = 'Yes', true, false) as fl_additional_cert_1,
             if(rp.nj_cert_additional_1 = 'Yes', true, false) as nj_cert_additional_1,
@@ -227,7 +229,9 @@ with
             respondent_email,
             `timestamp` as last_submitted_time,
 
-            cast(regexp_extract(respondent_name, r'(\d{6})') as int) as employee_number,
+            safe_cast(
+                regexp_extract(respondent_name, r'(\d{6})') as int
+            ) as employee_number,
             respondent_name,
 
             null as additional_languages,
