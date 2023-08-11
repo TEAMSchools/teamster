@@ -49,6 +49,8 @@ models:
       +schema: alchemer
       staging:
         +materialized: table
+    assessments:
+      +schema: assessments
     deanslist:
       +schema: deanslist
     edplan:
@@ -75,8 +77,16 @@ models:
           +materialized: table
       directory:
         +schema: google_directory
+        base:
+          +materialized: table
         staging:
           +materialized: table
+    illuminate:
+      +schema: illuminate
+      staging:
+        +materialized: table
+      base:
+        +materialized: table
     kippadb:
       +schema: kippadb
       staging:
@@ -104,6 +114,8 @@ models:
       +schema: smartrecruiters
     surveys:
       +schema: surveys
+      intermediate:
+        +materialized: table
     titan:
       +schema: titan
     utils:

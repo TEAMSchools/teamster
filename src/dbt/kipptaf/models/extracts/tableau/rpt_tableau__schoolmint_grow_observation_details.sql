@@ -85,9 +85,9 @@ with
             m.scale_min as measurement_scale_min,
             m.scale_max as measurement_scale_max,
             case
-            when o.rubric_name like '%reflection%'
+            when o.rubric_name like '%Coaching%'
             then 'PM'
-            when o.rubric_name like '%walkthrough%'
+            when o.rubric_name like '%Walkthrough%'
             then 'WT'
             when o.rubric_name like '%O3%'
             then 'O3'

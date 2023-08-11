@@ -32,7 +32,7 @@ select
     1 as `05 Session Type ID`
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
-    {{ source("people", "src_people__campus_crosswalk") }} as cc
+    {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.name
     and not cc.is_pathways
 where

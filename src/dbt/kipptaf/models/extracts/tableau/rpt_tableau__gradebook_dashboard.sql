@@ -159,6 +159,8 @@ select
     max(case when gr.is_curterm = 1 then gr.need_90 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
+
+    round(ada.ada, 3) as ada
 from student_roster as co
 left join
     final_grades as gr
@@ -177,6 +179,11 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and gr.course_number = st.course_number
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on co.yearid = ada.yearid
+    and co.studentid = ada.studentid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -241,6 +248,8 @@ select
     max(case when gr.is_curterm = 1 then gr.need_90 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
+
+    round(ada.ada, 3) as ada
 from student_roster as co
 left join
     final_grades as gr
@@ -261,6 +270,11 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and gr.course_number = st.course_number
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on co.yearid = ada.yearid
+    and co.studentid = ada.studentid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -326,6 +340,9 @@ select
     null as need_70,
     null as need_80,
     null as need_90,
+
+    round(ada.ada, 3) as ada
+
 from student_roster as co
 left join
     {{ ref("int_powerschool__category_grades") }} as cg
@@ -339,6 +356,11 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and cg.course_number = st.course_number
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on co.yearid = ada.yearid
+    and co.studentid = ada.studentid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -400,6 +422,9 @@ select
     null as need_70,
     null as need_80,
     null as need_90,
+
+    round(ada.ada, 3) as ada
+
 from student_roster as co
 left join
     {{ ref("int_powerschool__category_grades") }} as cy
@@ -415,6 +440,11 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and cy.course_number = st.course_number
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on co.yearid = ada.yearid
+    and co.studentid = ada.studentid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -472,6 +502,9 @@ select
     null as need_70,
     null as need_80,
     null as need_90,
+
+    round(ada.ada, 3) as ada
+
 from student_roster as co
 left join
     {{ ref("stg_powerschool__storedgrades") }} as sg
@@ -486,6 +519,11 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and sg.course_number = st.course_number
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on co.yearid = ada.yearid
+    and co.studentid = ada.studentid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where co.academic_year < {{ var("current_academic_year") }}
 
 union all
@@ -550,6 +588,9 @@ select
     null as need_70,
     null as need_80,
     null as need_90,
+
+    round(ada.ada, 3) as ada
+
 from {{ ref("stg_powerschool__storedgrades") }} as tr
 left join
     student_roster as co
@@ -575,4 +616,9 @@ left join
     and current_date('America/New_York') between sa.enter_date and sa.exit_date
     and sa.specprog_name = 'Student Athlete'
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sa") }}
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on co.yearid = ada.yearid
+    and co.studentid = ada.studentid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where tr.storecode = 'Y1' and tr.course_number is null
