@@ -14,6 +14,7 @@
     "*.sql": "jinja-sql"
   },
   "files.exclude": {
+    "**/.git": false,
     "**/.trunk/*out": true
   },
   "files.watcherExclude": {
@@ -21,12 +22,6 @@
   },
   "python.analysis.autoImportCompletions": false,
   "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
-  "python.linting.ignorePatterns": [
-    "**/site-packages/**/*.py",
-    ".vscode/*.py",
-    "**/__pypackages__/**/*.py"
-  ],
-  "python.linting.pylintEnabled": false,
   "python.terminal.activateEnvironment": false,
   "python.analysis.typeCheckingMode": "off",
   "python.testing.pytestArgs": ["tests"],

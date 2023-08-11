@@ -14,6 +14,7 @@ with
     all_regions as (
         select
             seu.*,
+            regexp_extract(seu._dbt_source_relation, r'(kipp\w+)_') as code_location,
             initcap(regexp_extract(seu._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             suf.fleid,
@@ -93,6 +94,7 @@ select
     ar.reporting_school_name,
     ar.school_level,
     ar.region,
+    ar.code_location,
     ar.advisory_name,
     ar.advisor_teachernumber,
     ar.advisor_lastfirst,
