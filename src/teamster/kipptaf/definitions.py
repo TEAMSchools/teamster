@@ -44,7 +44,6 @@ from teamster.kipptaf import (
     dbt,
     fivetran,
     google,
-    iready,
     ldap,
     renlearn,
     schoolmint,
@@ -63,7 +62,6 @@ defs = Definitions(
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[google], group_name="google"),
-        *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
         *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
@@ -106,7 +104,6 @@ defs = Definitions(
         *clever.sensors,
         *fivetran.sensors,
         *google.sensors,
-        *iready.sensors,
         *renlearn.sensors,
     ],
     resources={
@@ -228,11 +225,6 @@ defs = Definitions(
             remote_host="sftp.illuminateed.com",
             username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
             password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
-        ),
-        "ssh_iready": SSHConfigurableResource(
-            remote_host="prod-sftp-1.aws.cainc.com",
-            username=EnvVar("IREADY_SFTP_USERNAME"),
-            password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
         "ssh_kipptaf": SSHConfigurableResource(
             remote_host="sftp.kippnj.org",
