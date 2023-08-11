@@ -1,75 +1,38 @@
 select
-    academic_year,
-    baseline_diagnostic_y_n,
-    class_es,
-    class_teacher_s,
-    completion_date,
-    diagnostic_gain,
-    duration_min,
-    economically_disadvantaged,
-    english_language_learner,
-    enrolled,
-    first_name,
-    geometry_placement,
-    geometry_scale_score,
-    grouping,
-    hispanic_or_latino,
-    last_name,
-    lexile_measure,
-    lexile_range,
-    migrant,
-    most_recent_diagnostic_y_n,
-    overall_placement,
-    overall_relative_placement,
-    overall_scale_score,
-    percentile,
-    phonics_placement,
-    phonics_relative_placement,
-    phonics_scale_score,
-    quantile_measure,
-    quantile_range,
-    race,
-    report_group_s,
-    rush_flag,
-    school,
-    sex,
-    special_education,
-    start_date,
-    student_grade,
-    student_id,
-    user_name,
-    vocabulary_placement,
-    vocabulary_scale_score,
-    algebra_and_algebraic_thinking_placement,
-    algebra_and_algebraic_thinking_relative_placement,
-    algebra_and_algebraic_thinking_scale_score,
-    annual_stretch_growth_measure,
-    annual_typical_growth_measure,
-    geometry_relative_placement,
-    measurement_and_data_placement,
-    measurement_and_data_relative_placement,
-    measurement_and_data_scale_score,
-    mid_on_grade_level_scale_score,
-    number_and_operations_placement,
-    number_and_operations_relative_placement,
-    number_and_operations_scale_score,
-    percent_progress_to_annual_stretch_growth,
-    percent_progress_to_annual_typical_growth,
-    high_frequency_words_placement,
-    high_frequency_words_relative_placement,
-    high_frequency_words_scale_score,
-    phonological_awareness_placement,
-    phonological_awareness_relative_placement,
-    phonological_awareness_scale_score,
-    reading_comprehension_informational_text_placement,
-    reading_comprehension_informational_text_relative_placement,
-    reading_comprehension_informational_text_scale_score,
-    reading_comprehension_literature_placement,
-    reading_comprehension_literature_relative_placement,
-    reading_comprehension_literature_scale_score,
-    reading_comprehension_overall_placement,
-    reading_comprehension_overall_relative_placement,
-    reading_comprehension_overall_scale_score,
-    reading_difficulty_indicator_y_n,
-    vocabulary_relative_placement,
+    *,
+    safe_cast(left(academic_year, 4) as int) as academic_year,
+    overall_scale_score
+    + annual_typical_growth_measure as overall_scale_score_plus_typical_growth,
+    overall_scale_score
+    + annual_stretch_growth_measure as overall_scale_score_plus_stretch_growth,
+    if(
+        _dagster_partition_subject = 'ela',
+        'Reading',
+        initcap(_dagster_partition_subject)
+    ) as `subject`,
+    case
+        overall_relative_placement
+        when '3 or More Grade Levels Below'
+        then 1
+        when '2 Grade Levels Below'
+        then 2
+        when '1 Grade Level Below'
+        then 3
+        when 'Early On Grade Level'
+        then 4
+        when 'Mid or Above Grade Level'
+        then 5
+    end as overall_relative_placement_numeric,
+    case
+        when
+            overall_relative_placement
+            in ('Early On Grade Level', 'Mid or Above Grade Level')
+        then 'On or Above Grade Level'
+        when overall_relative_placement = '1 Grade Level Below'
+        then overall_relative_placement
+        when
+            overall_relative_placement
+            in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+        then 'Two or More Grade Levels Below'
+    end as placement_3_level,
 from {{ source("iready", "src_iready__diagnostic_results") }}
