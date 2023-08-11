@@ -79,8 +79,6 @@ models:
           +materialized: table
       directory:
         +schema: google_directory
-        base:
-          +materialized: table
         staging:
           +materialized: table
     illuminate:
