@@ -8,7 +8,7 @@ with
             ) as school_id
         from {{ ref("base_people__staff_roster") }} as sr
         left join
-            {{ source("people", "src_people__campus_crosswalk") }} as ccw
+            {{ ref("stg_people__campus_crosswalk") }} as ccw
             on sr.home_work_location_name = ccw.name
             and not ccw.is_pathways
         where
