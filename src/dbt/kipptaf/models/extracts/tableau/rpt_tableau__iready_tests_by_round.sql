@@ -1,57 +1,7 @@
 with
     iready as (
         select
-            dr.student_id,
-            dr.start_date,
-            dr.completion_date,
-            dr.baseline_diagnostic_y_n_,
-            dr.most_recent_diagnostic_y_n_,
-            dr.overall_scale_score,
-            dr.percentile,
-            dr.overall_relative_placement,
-            dr.rush_flag,
-            dr.overall_scale_score
-            dr.mid_on_grade_level_scale_score,
-            dr.percent_progress_to_annual_typical_growth_,
-            dr.percent_progress_to_annual_stretch_growth_,
-            dr.diagnostic_gain,
-            dr.annual_typical_growth_measure,
-            dr.annual_stretch_growth_measure,
-            left(dr.academic_year, 4) as academic_year,
-            + dr.annual_typical_growth_measure as scale_plus_typical,
-            dr.overall_scale_score
-            + dr.annual_typical_growth_measure as scale_plus_stretch,
-            case
-                when dr._file like '%ela%'
-                then 'Reading'
-                when dr._file like '%math%'
-                then 'Math'
-            end as subject,
-            case
-                dr.overall_relative_placement
-                when '3 or More Grade Levels Below'
-                then 1
-                when '2 Grade Levels Below'
-                then 2
-                when '1 Grade Level Below'
-                then 3
-                when 'Early On Grade Level'
-                then 4
-                when 'Mid or Above Grade Level'
-                then 5
-            end as orp_numerical,
-            case
-                when
-                    dr.overall_relative_placement
-                    in ('Early On Grade Level', 'Mid or Above Grade Level')
-                then 'On or Above Grade Level'
-                when dr.overall_relative_placement = '1 Grade Level Below'
-                then dr.overall_relative_placement
-                when
-                    dr.overall_relative_placement
-                    in ('2 Grade Levels Below', '3 or More Grade Levels Below')
-                then 'Two or More Grade Levels Below'
-            end as placement_3_level,
+            dr.*
 
             co.region,
             co.school_abbreviation,
