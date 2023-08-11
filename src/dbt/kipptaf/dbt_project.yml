@@ -87,6 +87,8 @@ models:
         +materialized: table
       base:
         +materialized: table
+    iready:
+      +schema: iready
     kippadb:
       +schema: kippadb
       staging:

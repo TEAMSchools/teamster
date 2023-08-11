@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: kippmiami_iready
+    tables:
+      - name: stg_iready__diagnostic_results
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - iready
+              - stg_iready__diagnostic_results
