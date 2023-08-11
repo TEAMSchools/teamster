@@ -1,6 +1,6 @@
 select
     *,
-    safe_cast(left(academic_year, 4) as int) as academic_year,
+    safe_cast(left(academic_year, 4) as int) as academic_year_int,
     overall_scale_score
     + annual_typical_growth_measure as overall_scale_score_plus_typical_growth,
     overall_scale_score
@@ -22,7 +22,7 @@ select
         then 4
         when 'Mid or Above Grade Level'
         then 5
-    end as overall_relative_placement_numeric,
+    end as overall_relative_placement_int,
     case
         when
             overall_relative_placement
