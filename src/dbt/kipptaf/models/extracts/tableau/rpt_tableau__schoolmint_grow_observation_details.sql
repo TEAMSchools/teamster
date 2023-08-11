@@ -85,12 +85,12 @@ with
             m.scale_min as measurement_scale_min,
             m.scale_max as measurement_scale_max,
             case
-            when o.rubric_name like '%Coaching%'
-            then 'PM'
-            when o.rubric_name like '%Walkthrough%'
-            then 'WT'
-            when o.rubric_name like '%O3%'
-            then 'O3'
+                when o.rubric_name like '%Coaching%'
+                then 'PM'
+                when o.rubric_name like '%Walkthrough%'
+                then 'WT'
+                when o.rubric_name like '%O3%'
+                then 'O3'
             end as reporting_term_type,
             if(
                 b.type = 'checkbox', m.name || ' - ' || b.label, m.name
@@ -133,6 +133,7 @@ with
                 then 4
                 else null
             end as tier,
+            b.text_box_value,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
