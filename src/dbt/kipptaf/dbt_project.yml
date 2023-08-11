@@ -51,6 +51,8 @@ models:
         +materialized: table
     assessments:
       +schema: assessments
+      staging:
+        +materialized: table
     deanslist:
       +schema: deanslist
     edplan:
