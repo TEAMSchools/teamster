@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: iready
+    schema: "{{ var('iready_schema', 'iready') }}"
+    database:
+      "{% if target.type != 'spark' %}{{ var('iready_database', target.database) }}{% endif %}"
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_iready__diagnostic_results
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_results/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_results/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_iready__diagnostic_and_instruction
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_and_instruction/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_and_instruction/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_iready__instructional_usage_data
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/iready/instructional_usage_data/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/iready/instructional_usage_data/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_iready__personalized_instruction_by_lesson
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base') }}/iready/personalized_instruction_by_lesson/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/iready/personalized_instruction_by_lesson/"
+            format: AVRO
+            enable_logical_types: true
