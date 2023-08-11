@@ -80,7 +80,6 @@ with
             o.list_two_column_b as grows,
             os.measurement as score_measurement_id,
             os.percentage as score_percentage,
-            os.value_text as score_value_text,
             m.name as measurement_name,
             m.scale_min as measurement_scale_min,
             m.scale_max as measurement_scale_max,
@@ -133,7 +132,9 @@ with
                 then 4
                 else null
             end as tier,
-            b.text_box_value,
+            regexp_replace(
+                regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
+            ) as text_box,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
