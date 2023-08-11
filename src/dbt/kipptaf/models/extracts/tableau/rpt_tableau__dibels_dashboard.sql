@@ -21,20 +21,15 @@ with
             se.lunch_status as economically_disadvantaged,
             if(spedlep = 'No IEP' or se.spedlep is null, false, true) as sped,
 
-            ce.cc_studentid as student_id_schedule,
-            ce.cc_academic_year,
             ce.cc_course_number as course_number,
             ce.cc_section_number as section_number,
-            ce.cc_schoolid as school_id,
             ce.cc_teacherid as teacher_id,
             ce.courses_course_name as course_name,
-            ce.teacher_lastfirst as teacher_number,
+            ce.teachernumber as teacher_number,
             ce.teacher_lastfirst as teacher_name,
             if(ce.cc_studentid is null, true, false) as enrolled_but_not_scheduled,
 
             x.expected_test,
-
-            'KIPP NJ/Miami' as district,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
             {{ ref("base_powerschool__course_enrollments") }} as ce
@@ -79,17 +74,14 @@ with
             s.sped,
             s.lep,
             s.economically_disadvantaged,
-            m.district,
-            m.region,
-            m.reporting_school_id,
-            m.student_number_schedule,
-            m.student_grade_level_schedule,
-            m.teacher_id,
-            m.teacher_name,
-            m.course_name,
-            m.course_number,
-            m.section_number,
-            m.expected_test,
+            s.region,
+            s.reporting_school_id,
+            s.teacher_id,
+            s.teacher_name,
+            s.course_name,
+            s.course_number,
+            s.section_number,
+            s.expected_test,
 
             -- Tagging students as enrolled in school but not scheduled for the course
             -- that would allow them to take the DIBELS test
@@ -129,6 +121,8 @@ with
             if(
                 d.mclass_student_number is not null, true, false
             ) as student_has_assessment_data,
+
+            'KIPP NJ/Miami' as district,
         from student_schedule_test as s
         left join
             union_relations as d
