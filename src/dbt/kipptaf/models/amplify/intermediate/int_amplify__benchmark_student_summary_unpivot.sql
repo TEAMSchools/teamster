@@ -4,8 +4,9 @@ select
     surrogate_key,
 
     {# unpivot cols #}
-    level,
+    measure,
     score,
+    level,
     national_norm_percentile,
     semester_growth,
     year_growth,

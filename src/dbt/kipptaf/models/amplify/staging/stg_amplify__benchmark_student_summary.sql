@@ -10,7 +10,6 @@ select
         dbt_utils.star(
             from=src_bss,
             except=[
-                "academic_year",
                 "client_date",
                 "composite_level",
                 "composite_national_norm_percentile",
