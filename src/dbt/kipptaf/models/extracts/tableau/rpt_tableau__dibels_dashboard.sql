@@ -47,7 +47,7 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    ref("stg_amplify__benchmark_student_summary_unpivot"),
+                    ref("int_amplify__benchmark_student_summary_unpivot"),
                     ref("stg_amplify__pm_student_summary"),
                 ]
             )
