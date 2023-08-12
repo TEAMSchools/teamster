@@ -1,3 +1,4 @@
 packages:
   - local: ../deanslist
+  - local: ../iready
   - local: ../powerschool

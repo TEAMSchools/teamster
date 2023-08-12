@@ -22,3 +22,19 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/amplify/pm_student_summary/"
             format: AVRO
             enable_logical_types: true
+      - name: src_amplify__mclass_dibels_goals_wide
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1hsYwXwi0iMMyurG6aklhaY_X0T-Mk3250ERDrF_bhjU
+            sheet_range: src_amplify__mclass_dibels_goals_wide
+            skip_leading_rows: 1
+      - name: src_amplify__mclass_dibels_goals_long
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1hsYwXwi0iMMyurG6aklhaY_X0T-Mk3250ERDrF_bhjU
+            sheet_range: src_amplify__mclass_dibels_goals_long
+            skip_leading_rows: 1

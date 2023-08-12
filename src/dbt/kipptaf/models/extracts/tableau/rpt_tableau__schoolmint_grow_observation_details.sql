@@ -80,17 +80,16 @@ with
             o.list_two_column_b as grows,
             os.measurement as score_measurement_id,
             os.percentage as score_percentage,
-            os.value_text as score_value_text,
             m.name as measurement_name,
             m.scale_min as measurement_scale_min,
             m.scale_max as measurement_scale_max,
             case
-            when o.rubric_name like '%Coaching%'
-            then 'PM'
-            when o.rubric_name like '%Walkthrough%'
-            then 'WT'
-            when o.rubric_name like '%O3%'
-            then 'O3'
+                when o.rubric_name like '%Coaching%'
+                then 'PM'
+                when o.rubric_name like '%Walkthrough%'
+                then 'WT'
+                when o.rubric_name like '%O3%'
+                then 'O3'
             end as reporting_term_type,
             if(
                 b.type = 'checkbox', m.name || ' - ' || b.label, m.name
@@ -133,6 +132,9 @@ with
                 then 4
                 else null
             end as tier,
+            regexp_replace(
+                regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
+            ) as text_box,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os

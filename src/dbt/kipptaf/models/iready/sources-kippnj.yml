@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: kippnj_iready
+    schema: kippnewark_iready
+    tables:
+      - name: stg_iready__diagnostic_results
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - iready
+              - stg_iready__diagnostic_results
