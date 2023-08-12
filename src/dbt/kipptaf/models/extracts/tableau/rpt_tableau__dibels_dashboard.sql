@@ -1,25 +1,90 @@
+{% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}
+
 with
+    union_relations as (
+        select
+            bss.surrogate_key,
+            bss.student_primary_id,
+            bss.academic_year,
+            bss.benchmark_period as period,
+            bss.client_date,
+            bss.sync_date,
+            bss.reporting_class_id,
+            bss.reporting_class_name,
+            bss.assessing_teacher_staff_id,
+            bss.assessing_teacher_name,
+            bss.official_teacher_staff_id,
+            bss.official_teacher_name,
+            bss.assessment_grade,
+
+            u.measure,
+            u.score,
+            u.level,
+            u.national_norm_percentile,
+            u.semester_growth,
+            u.year_growth,
+
+            null as score_change,
+            null as probe_number,
+            null as total_number_of_probes,
+
+            'benchmark' as assessment_type,
+        from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
+        inner join
+            {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
+            on bss.surrogate_key = u.surrogate_key
+
+        union all
+
+        select
+            surrogate_key,
+            student_primary_id,
+            academic_year,
+            pm_period as period,
+            client_date,
+            sync_date,
+            reporting_class_id,
+            reporting_class_name,
+            assessing_teacher_staff_id,
+            assessing_teacher_name,
+            official_teacher_staff_id,
+            official_teacher_name,
+            assessment_grade,
+            measure,
+            score,
+            null as level,
+            null as percentile,
+            null as semester_growth,
+            null as year_growth,
+            score_change,
+            probe_number,
+            total_number_of_probes,
+
+            'pm' as assessment_type,
+        from {{ ref("stg_amplify__pm_student_summary") }}
+    ),
+
     student_schedule_test as (
         select
-            se.studentid as student_id,
             se.student_number,
-            se.first_name as student_first_name,
-            se.last_name as student_last_name,
-            se.lastfirst as student_name,
+            se.first_name,
+            se.last_name,
+            se.lastfirst,
             se.academic_year,
             se.region,
             se.school_level,
-            se.schoolid as school_id,
+            se.schoolid,
             se.school_name,
             se.school_abbreviation,
+            se.grade_level,
             se.gender,
             se.ethnicity,
+            se.lunch_status,
             se.is_out_of_district,
             se.is_homeless,
             se.is_504,
-            se.lep_status,
-            se.lunch_status as economically_disadvantaged,
-            if(spedlep = 'No IEP' or se.spedlep is null, false, true) as sped,
+            se.lep_status as is_lep,
+            if(spedlep = 'No IEP' or se.spedlep is null, false, true) as is_sped,
 
             ce.cc_course_number as course_number,
             ce.cc_section_number as section_number,
@@ -29,7 +94,7 @@ with
             ce.teacher_lastfirst as teacher_name,
             if(ce.cc_studentid is null, true, false) as enrolled_but_not_scheduled,
 
-            x.expected_test,
+            period,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
             {{ ref("base_powerschool__course_enrollments") }} as ce
@@ -39,96 +104,70 @@ with
             and not ce.is_dropped_section
             and ce.courses_course_name
             in ('ELA GrK', 'ELA K', 'ELA Gr1', 'ELA Gr2', 'ELA Gr3', 'ELA Gr4')
-        cross join grangel.amplify_dibels_expected_tests as x
+        cross join unnest({{ periods }}) as period
         where se.rn_year = 1 and se.academic_year >= 2022 and se.grade_level <= 4
-    ),
-
-    union_relations as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    ref("int_amplify__benchmark_student_summary_unpivot"),
-                    ref("stg_amplify__pm_student_summary"),
-                ]
-            )
-        }}
     ),
 
     student_data as (
         select
+            s.student_number,
+            s.lastfirst,
+            s.last_name,
+            s.first_name,
             s.academic_year,
+            s.region,
             s.school_level,
-            s.school_id,
-            s.school,
+            s.schoolid,
+            s.school_name,
             s.school_abbreviation,
-            s.student_number_enrollment,
-            s.student_name,
-            s.student_last_name,
-            s.student_first_name,
             s.grade_level,
-            s.ood,
             s.gender,
             s.ethnicity,
-            s.homeless,
+            s.lunch_status,
+            s.is_out_of_district,
+            s.is_sped,
             s.is_504,
-            s.sped,
-            s.lep,
-            s.economically_disadvantaged,
-            s.region,
-            s.reporting_school_id,
+            s.is_lep,
+            s.is_homeless,
             s.teacher_id,
             s.teacher_name,
-            s.course_name,
             s.course_number,
+            s.course_name,
             s.section_number,
-            s.expected_test,
+            s.period,
 
             -- Tagging students as enrolled in school but not scheduled for the course
             -- that would allow them to take the DIBELS test
-            d.mclass_reporting_class_name,
-            d.mclass_reporting_class_id,
-            d.mclass_official_teacher_name,
-            d.mclass_official_teacher_staff_id,
-            d.mclass_assessing_teacher_name,
-            d.mclass_assessing_teacher_staff_id,
-            d.mclass_assessment,
-            d.mclass_assessment_edition,
-            d.mclass_assessment_grade,
-            d.mclass_period,
-            d.mclass_client_date,
-            d.mclass_sync_date,
-            d.mclass_probe_number,
-            d.mclass_total_number_of_probes,
-            d.mclass_measure,
-            d.mclass_score_change,
-            d.mclass_measure_level,
-            d.measure_percentile,
-            d.measure_semester_growth,
-            d.measure_year_growth,
-            d.mclass_measure_score,
-            -- Another tag for students who tested for benchmarks
+            d.assessment_type,
+            d.client_date,
+            d.sync_date,
+            d.reporting_class_id,
+            d.reporting_class_name,
+            d.assessment_grade,
+            d.assessing_teacher_staff_id,
+            d.assessing_teacher_name,
+            d.official_teacher_staff_id,
+            d.official_teacher_name,
+            d.measure,
+            d.score,
+            d.level,
+            d.national_norm_percentile,
+            d.semester_growth,
+            d.year_growth,
+            d.score_change,
+            d.probe_number,
+            d.total_number_of_probes,
             if(
-                d.mclass_period in ('BOY', 'MOY', 'EOY'), d.mclass_student_number, null
-            ) as mclass_student_number_bm,
-            -- Another tag for students who tested for progress monitoring
-            if(
-                d.mclass_period in ('BOY->MOY', 'MOY->EOY'),
-                d.mclass_student_number,
-                null
-            ) as mclass_student_number_pm,
-            -- Tagging students who are schedule for the correct class but have not
-            -- tested yet for the expected assessment term
-            if(
-                d.mclass_student_number is not null, true, false
+                d.student_primary_id is not null, true, false
             ) as student_has_assessment_data,
 
             'KIPP NJ/Miami' as district,
         from student_schedule_test as s
         left join
             union_relations as d
-            on m.academic_year = d.mclass_academic_year
-            and m.student_number_schedule = d.mclass_student_number
-            and m.expected_test = d.mclass_period
+            on s.student_number = d.student_primary_id
+            and s.academic_year = d.academic_year
+            and s.period = d.period
     ),
 
     with_counts as (
@@ -136,7 +175,7 @@ with
             *,
 
             -- Participation rates by School_Course_Section
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year, school_id, course_name, section_number, expected_test
             )
@@ -148,7 +187,7 @@ with
             as participation_school_course_section_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by School_Course
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by academic_year, school_id, course_name, expected_test
             ) as participation_school_course_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -156,7 +195,7 @@ with
             ) as participation_school_course_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by School_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by academic_year, school_id, grade_level, expected_test
             ) as participation_school_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -164,7 +203,7 @@ with
             ) as participation_school_grade_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by School
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by academic_year, school_id, expected_test
             ) as participation_school_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -172,7 +211,7 @@ with
             ) as participation_school_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by Region_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by academic_year, region, grade_level, expected_test
             ) as participation_region_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -180,7 +219,7 @@ with
             ) as participation_region_grade_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by Region
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by academic_year, region, expected_test
             ) as participation_region_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -188,7 +227,7 @@ with
             ) as participation_region_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by District_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by academic_year, district, expected_test
             ) as participation_district_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -196,7 +235,7 @@ with
             ) as participation_district_grade_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by District
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by academic_year, district, expected_test
             ) as participation_district_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -204,15 +243,15 @@ with
             ) as participation_district_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by School_Course_Section
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     school_id,
                     course_name,
                     section_number,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    measure,
+                    measure_score
             )
             as measure_score_met_school_course_section_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -222,118 +261,101 @@ with
                     course_name,
                     section_number,
                     expected_test,
-                    mclass_measure
+                    measure
             )
             as measure_score_met_school_course_section_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by School_Course
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     school_id,
                     course_name,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    measure,
+                    measure_score
             )
             as measure_score_met_school_course_course_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
                 partition by
-                    academic_year, school_id, course_name, expected_test, mclass_measure
+                    academic_year, school_id, course_name, expected_test, measure
             ) as measure_score_met_school_course_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by School_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     school_id,
                     grade_level,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    measure,
+                    measure_score
             ) as measure_score_met_school_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
                 partition by
-                    academic_year, school_id, grade_level, expected_test, mclass_measure
+                    academic_year, school_id, grade_level, expected_test, measure
             ) as measure_score_met_school_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by School
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    school_id,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    academic_year, school_id, expected_test, measure, measure_score
             ) as measure_score_met_school_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, school_id, expected_test, mclass_measure
+                partition by academic_year, school_id, expected_test, measure
             ) as measure_score_met_school_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by Region_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     region,
                     grade_level,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    measure,
+                    measure_score
             ) as measure_score_met_region_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by
-                    academic_year, region, grade_level, expected_test, mclass_measure
+                partition by academic_year, region, grade_level, expected_test, measure
             ) as measure_score_met_region_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by Region
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    region,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    academic_year, region, expected_test, measure, measure_score
             ) as measure_score_met_region_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, region, expected_test, mclass_measure
+                partition by academic_year, region, expected_test, measure
             ) as measure_score_met_region_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by District_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    district,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    academic_year, district, expected_test, measure, measure_score
             ) as measure_score_met_district_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, mclass_measure
+                partition by academic_year, district, expected_test, measure
             ) as measure_score_met_district_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by District
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    district,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_score
+                    academic_year, district, expected_test, measure, measure_score
             ) as measure_score_met_district_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, mclass_measure
+                partition by academic_year, district, expected_test, measure
             ) as measure_score_met_district_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by School_Course_Section
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     school_id,
                     course_name,
                     section_number,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    measure,
+                    measure_level
             )
             as measure_level_met_school_course_section_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
@@ -343,278 +365,189 @@ with
                     course_name,
                     section_number,
                     expected_test,
-                    mclass_measure
+                    measure
             )
             as measure_level_met_school_course_section_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by School_Course
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     school_id,
                     course_name,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    measure,
+                    measure_level
             )
             as measure_level_met_school_course_course_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
                 partition by
-                    academic_year, school_id, course_name, expected_test, mclass_measure
+                    academic_year, school_id, course_name, expected_test, measure
             ) as measure_level_met_school_course_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by School_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     school_id,
                     grade_level,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    measure,
+                    measure_level
             ) as measure_level_met_school_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
                 partition by
-                    academic_year, school_id, grade_level, expected_test, mclass_measure
+                    academic_year, school_id, grade_level, expected_test, measure
             ) as measure_level_met_school_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by School
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    school_id,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    academic_year, school_id, expected_test, measure, measure_level
             ) as measure_level_met_school_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, school_id, expected_test, mclass_measure
+                partition by academic_year, school_id, expected_test, measure
             ) as measure_level_met_school_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by Region_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
                     region,
                     grade_level,
                     expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    measure,
+                    measure_level
             ) as measure_level_met_region_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by
-                    academic_year, region, grade_level, expected_test, mclass_measure
+                partition by academic_year, region, grade_level, expected_test, measure
             ) as measure_level_met_region_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by Region
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    region,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    academic_year, region, expected_test, measure, measure_level
             ) as measure_level_met_region_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, region, expected_test, mclass_measure
+                partition by academic_year, region, expected_test, measure
             ) as measure_level_met_region_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by District_Grade
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    district,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    academic_year, district, expected_test, measure, measure_level
             ) as measure_level_met_district_grade_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, mclass_measure
+                partition by academic_year, district, expected_test, measure
             ) as measure_level_met_district_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by District
-            count(distinct mclass_student_number) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    district,
-                    expected_test,
-                    mclass_measure,
-                    mclass_measure_level
+                    academic_year, district, expected_test, measure, measure_level
             ) as measure_level_met_district_bm_pm_period_total_students_assessed,
             count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, mclass_measure
+                partition by academic_year, district, expected_test, measure
             ) as measure_level_met_district_bm_pm_period_total_students_enrolled,
         from student_data
     )
 
 select
     *,
-    round(
-        safe_divide(
-            participation_school_course_section_bm_pm_period_total_students_assessed,
-            participation_school_course_section_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_school_course_section_bm_pm_period_total_students_assessed,
+        participation_school_course_section_bm_pm_period_total_students_enrolled
     ) as participation_school_course_section_bm_pm_period_percent,
-    round(
-        safe_divide(
-            participation_school_course_bm_pm_period_total_students_assessed,
-            participation_school_course_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_school_course_bm_pm_period_total_students_assessed,
+        participation_school_course_bm_pm_period_total_students_enrolled
     ) as participation_school_course_bm_pm_period_percent,
-    round(
-        safe_divide(
-            participation_school_grade_bm_pm_period_total_students_assessed,
-            participation_school_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_school_grade_bm_pm_period_total_students_assessed,
+        participation_school_grade_bm_pm_period_total_students_enrolled
     ) as participation_school_grade_bm_pm_period_percent,
-    round(
-        safe_divide(
-            participation_school_bm_pm_period_total_students_assessed,
-            participation_school_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_school_bm_pm_period_total_students_assessed,
+        participation_school_bm_pm_period_total_students_enrolled
     ) as participation_school_bm_pm_period_percent,
-    round(
-        safe_divide(
-            participation_region_grade_bm_pm_period_total_students_assessed,
-            participation_region_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_region_grade_bm_pm_period_total_students_assessed,
+        participation_region_grade_bm_pm_period_total_students_enrolled
     ) as participation_region_grade_bm_pm_period_percent,
-    round(
-        safe_divide(
-            participation_region_bm_pm_period_total_students_assessed,
-            participation_region_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_region_bm_pm_period_total_students_assessed,
+        participation_region_bm_pm_period_total_students_enrolled
     ) as participation_region_bm_pm_period_percent,
-    round(
-        safe_divide(
-            participation_district_grade_bm_pm_period_total_students_assessed,
-            participation_district_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_district_grade_bm_pm_period_total_students_assessed,
+        participation_district_grade_bm_pm_period_total_students_enrolled
     ) as participation_district_grade_bm_pm_period_percent,
-    round(
-        safe_divide(
-            participation_district_bm_pm_period_total_students_assessed,
-            participation_district_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        participation_district_bm_pm_period_total_students_assessed,
+        participation_district_bm_pm_period_total_students_enrolled
     ) as participation_district_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_score_met_school_course_section_bm_pm_period_total_students_assessed,
-            measure_score_met_school_course_section_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_school_course_section_bm_pm_period_total_students_assessed,
+        measure_score_met_school_course_section_bm_pm_period_total_students_enrolled
     ) as measure_score_met_school_course_section_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_score_met_school_course_course_bm_pm_period_total_students_assessed,
-            measure_score_met_school_course_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_school_course_course_bm_pm_period_total_students_assessed,
+        measure_score_met_school_course_bm_pm_period_total_students_enrolled
     ) as measure_score_met_school_course_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_score_met_school_grade_bm_pm_period_total_students_assessed,
-            measure_score_met_school_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_school_grade_bm_pm_period_total_students_assessed,
+        measure_score_met_school_grade_bm_pm_period_total_students_enrolled
     ) as measure_score_met_school_grade_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_score_met_school_bm_pm_period_total_students_assessed,
-            measure_score_met_school_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_school_bm_pm_period_total_students_assessed,
+        measure_score_met_school_bm_pm_period_total_students_enrolled
     ) as measure_score_met_school_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_score_met_region_grade_bm_pm_period_total_students_assessed,
-            measure_score_met_region_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_region_grade_bm_pm_period_total_students_assessed,
+        measure_score_met_region_grade_bm_pm_period_total_students_enrolled
     ) as measure_score_met_region_grade_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_score_met_region_bm_pm_period_total_students_assessed,
-            measure_score_met_region_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_region_bm_pm_period_total_students_assessed,
+        measure_score_met_region_bm_pm_period_total_students_enrolled
     ) as measure_score_met_region_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_score_met_district_grade_bm_pm_period_total_students_assessed,
-            measure_score_met_district_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_district_grade_bm_pm_period_total_students_assessed,
+        measure_score_met_district_grade_bm_pm_period_total_students_enrolled
     ) as measure_score_met_district_grade_bm_pm_period_percent_met,
-    round(
-        safe_divide(
-            measure_score_met_district_bm_pm_period_total_students_assessed,
-            measure_score_met_district_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_score_met_district_bm_pm_period_total_students_assessed,
+        measure_score_met_district_bm_pm_period_total_students_enrolled
     ) as measure_score_met_district_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_level_met_school_course_section_bm_pm_period_total_students_assessed,
-            measure_level_met_school_course_section_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_level_met_school_course_section_bm_pm_period_total_students_assessed,
+        measure_level_met_school_course_section_bm_pm_period_total_students_enrolled
     ) as measure_level_met_school_course_section_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_level_met_school_course_course_bm_pm_period_total_students_assessed,
-            measure_level_met_school_course_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_level_met_school_course_course_bm_pm_period_total_students_assessed,
+        measure_level_met_school_course_bm_pm_period_total_students_enrolled
     ) as measure_level_met_school_course_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_level_met_school_grade_bm_pm_period_total_students_assessed,
-            measure_level_met_school_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_level_met_school_grade_bm_pm_period_total_students_assessed,
+        measure_level_met_school_grade_bm_pm_period_total_students_enrolled
     ) as measure_level_met_school_grade_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_level_met_school_bm_pm_period_total_students_assessed,
-            measure_level_met_school_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_level_met_school_bm_pm_period_total_students_assessed,
+        measure_level_met_school_bm_pm_period_total_students_enrolled
     ) as measure_level_met_school_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_level_met_region_grade_bm_pm_period_total_students_assessed,
-            measure_level_met_region_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_level_met_region_grade_bm_pm_period_total_students_assessed,
+        measure_level_met_region_grade_bm_pm_period_total_students_enrolled
     ) as measure_level_met_region_grade_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_level_met_region_bm_pm_period_total_students_assessed,
-            measure_level_met_region_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_level_met_region_bm_pm_period_total_students_assessed,
+        measure_level_met_region_bm_pm_period_total_students_enrolled
     ) as measure_level_met_region_bm_pm_period_percent,
-    round(
-        safe_divide(
-            measure_level_met_district_grade_bm_pm_period_total_students_assessed,
-            measure_level_met_district_grade_bm_pm_period_total_students_enrolled
-        ),
-        4
+    safe_divide(
+        measure_level_met_district_grade_bm_pm_period_total_students_assessed,
+        measure_level_met_district_grade_bm_pm_period_total_students_enrolled
     ) as measure_level_met_district_grade_bm_pm_period_percent_met,
-    round(
-        safe_divide(
-            measure_level_met_district_bm_pm_period_total_students_assessed,
-            measure_level_met_district_bm_pm_period_total_students_enrolled
-        ),
-        4
-    ) as measure_level_met_district_bm_pm_period_percent
+    safe_divide(
+        measure_level_met_district_bm_pm_period_total_students_assessed,
+        measure_level_met_district_bm_pm_period_total_students_enrolled
+    ) as measure_level_met_district_bm_pm_period_percent,
 from student_data
