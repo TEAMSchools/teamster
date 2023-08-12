@@ -12,6 +12,7 @@ on:
       - src/teamster/core/**
       - src/teamster/kippmiami/**
       - src/dbt/deanslist/**
+      - src/dbt/iready/**
       - src/dbt/powerschool/**
       - src/dbt/teamster_utils/**
       - src/dbt/kippmiami/**
