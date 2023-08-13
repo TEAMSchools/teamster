@@ -49,6 +49,10 @@ models:
       +schema: alchemer
       staging:
         +materialized: table
+    amplify:
+      +schema: amplify
+      staging:
+        +materialized: table
     assessments:
       +schema: assessments
       staging:
