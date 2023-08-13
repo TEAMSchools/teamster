@@ -177,90 +177,90 @@ with
             -- Participation rates by School_Course_Section
             count(distinct student_number) over (
                 partition by
-                    academic_year, school_id, course_name, section_number, expected_test
+                    academic_year, schoolid, course_name, section_number, period
             )
             as participation_school_course_section_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
+            count(distinct student_number) over (
                 partition by
-                    academic_year, course_name, section_number, school_id, expected_test
+                    academic_year, course_name, section_number, schoolid, period
             )
             as participation_school_course_section_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by School_Course
             count(distinct student_number) over (
-                partition by academic_year, school_id, course_name, expected_test
+                partition by academic_year, schoolid, course_name, period
             ) as participation_school_course_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, school_id, course_name, expected_test
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, course_name, period
             ) as participation_school_course_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by School_Grade
             count(distinct student_number) over (
-                partition by academic_year, school_id, grade_level, expected_test
+                partition by academic_year, schoolid, grade_level, period
             ) as participation_school_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, school_id, grade_level, expected_test
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, grade_level, period
             ) as participation_school_grade_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by School
             count(distinct student_number) over (
-                partition by academic_year, school_id, expected_test
+                partition by academic_year, schoolid, period
             ) as participation_school_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, school_id, expected_test
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, period
             ) as participation_school_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by Region_Grade
             count(distinct student_number) over (
-                partition by academic_year, region, grade_level, expected_test
+                partition by academic_year, region, grade_level, period
             ) as participation_region_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, region, grade_level, expected_test
+            count(distinct student_number) over (
+                partition by academic_year, region, grade_level, period
             ) as participation_region_grade_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by Region
             count(distinct student_number) over (
-                partition by academic_year, region, expected_test
+                partition by academic_year, region, period
             ) as participation_region_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, region, expected_test
+            count(distinct student_number) over (
+                partition by academic_year, region, period
             ) as participation_region_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by District_Grade
             count(distinct student_number) over (
-                partition by academic_year, district, expected_test
+                partition by academic_year, district, period
             ) as participation_district_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test
+            count(distinct student_number) over (
+                partition by academic_year, district, period
             ) as participation_district_grade_bm_pm_period_total_students_enrolled,
 
             -- Participation rates by District
             count(distinct student_number) over (
-                partition by academic_year, district, expected_test
+                partition by academic_year, district, period
             ) as participation_district_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test
+            count(distinct student_number) over (
+                partition by academic_year, district, period
             ) as participation_district_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by School_Course_Section
             count(distinct student_number) over (
                 partition by
                     academic_year,
-                    school_id,
+                    schoolid,
                     course_name,
                     section_number,
-                    expected_test,
+                    period,
                     measure,
-                    measure_score
+                    score
             )
             as measure_score_met_school_course_section_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
-                    school_id,
+                    schoolid,
                     course_name,
                     section_number,
-                    expected_test,
+                    period,
                     measure
             )
             as measure_score_met_school_course_section_bm_pm_period_total_students_enrolled,
@@ -268,103 +268,81 @@ with
             -- Measure score met rates by School_Course
             count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    school_id,
-                    course_name,
-                    expected_test,
-                    measure,
-                    measure_score
+                    academic_year, schoolid, course_name, period, measure, score
             )
             as measure_score_met_school_course_course_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by
-                    academic_year, school_id, course_name, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, course_name, period, measure
             ) as measure_score_met_school_course_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by School_Grade
             count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    school_id,
-                    grade_level,
-                    expected_test,
-                    measure,
-                    measure_score
+                    academic_year, schoolid, grade_level, period, measure, score
             ) as measure_score_met_school_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by
-                    academic_year, school_id, grade_level, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, grade_level, period, measure
             ) as measure_score_met_school_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by School
             count(distinct student_number) over (
-                partition by
-                    academic_year, school_id, expected_test, measure, measure_score
+                partition by academic_year, schoolid, period, measure, score
             ) as measure_score_met_school_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, school_id, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, period, measure
             ) as measure_score_met_school_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by Region_Grade
             count(distinct student_number) over (
-                partition by
-                    academic_year,
-                    region,
-                    grade_level,
-                    expected_test,
-                    measure,
-                    measure_score
+                partition by academic_year, region, grade_level, period, measure, score
             ) as measure_score_met_region_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, region, grade_level, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, region, grade_level, period, measure
             ) as measure_score_met_region_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by Region
             count(distinct student_number) over (
-                partition by
-                    academic_year, region, expected_test, measure, measure_score
+                partition by academic_year, region, period, measure, score
             ) as measure_score_met_region_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, region, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, region, period, measure
             ) as measure_score_met_region_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by District_Grade
             count(distinct student_number) over (
-                partition by
-                    academic_year, district, expected_test, measure, measure_score
+                partition by academic_year, district, period, measure, score
             ) as measure_score_met_district_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, district, period, measure
             ) as measure_score_met_district_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure score met rates by District
             count(distinct student_number) over (
-                partition by
-                    academic_year, district, expected_test, measure, measure_score
+                partition by academic_year, district, period, measure, score
             ) as measure_score_met_district_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, district, period, measure
             ) as measure_score_met_district_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by School_Course_Section
             count(distinct student_number) over (
                 partition by
                     academic_year,
-                    school_id,
+                    schoolid,
                     course_name,
                     section_number,
-                    expected_test,
+                    period,
                     measure,
-                    measure_level
+                    level
             )
             as measure_level_met_school_course_section_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
+            count(distinct student_number) over (
                 partition by
                     academic_year,
-                    school_id,
+                    schoolid,
                     course_name,
                     section_number,
-                    expected_test,
+                    period,
                     measure
             )
             as measure_level_met_school_course_section_bm_pm_period_total_students_enrolled,
@@ -372,82 +350,60 @@ with
             -- Measure level met rates by School_Course
             count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    school_id,
-                    course_name,
-                    expected_test,
-                    measure,
-                    measure_level
+                    academic_year, schoolid, course_name, period, measure, level
             )
             as measure_level_met_school_course_course_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by
-                    academic_year, school_id, course_name, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, course_name, period, measure
             ) as measure_level_met_school_course_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by School_Grade
             count(distinct student_number) over (
                 partition by
-                    academic_year,
-                    school_id,
-                    grade_level,
-                    expected_test,
-                    measure,
-                    measure_level
+                    academic_year, schoolid, grade_level, period, measure, level
             ) as measure_level_met_school_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by
-                    academic_year, school_id, grade_level, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, grade_level, period, measure
             ) as measure_level_met_school_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by School
             count(distinct student_number) over (
-                partition by
-                    academic_year, school_id, expected_test, measure, measure_level
+                partition by academic_year, schoolid, period, measure, level
             ) as measure_level_met_school_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, school_id, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, schoolid, period, measure
             ) as measure_level_met_school_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by Region_Grade
             count(distinct student_number) over (
-                partition by
-                    academic_year,
-                    region,
-                    grade_level,
-                    expected_test,
-                    measure,
-                    measure_level
+                partition by academic_year, region, grade_level, period, measure, level
             ) as measure_level_met_region_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, region, grade_level, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, region, grade_level, period, measure
             ) as measure_level_met_region_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by Region
             count(distinct student_number) over (
-                partition by
-                    academic_year, region, expected_test, measure, measure_level
+                partition by academic_year, region, period, measure, level
             ) as measure_level_met_region_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, region, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, region, period, measure
             ) as measure_level_met_region_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by District_Grade
             count(distinct student_number) over (
-                partition by
-                    academic_year, district, expected_test, measure, measure_level
+                partition by academic_year, district, period, measure, level
             ) as measure_level_met_district_grade_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, district, period, measure
             ) as measure_level_met_district_grade_bm_pm_period_total_students_enrolled,
 
             -- Measure level met rates by District
             count(distinct student_number) over (
-                partition by
-                    academic_year, district, expected_test, measure, measure_level
+                partition by academic_year, district, period, measure, level
             ) as measure_level_met_district_bm_pm_period_total_students_assessed,
-            count(distinct student_number_schedule) over (
-                partition by academic_year, district, expected_test, measure
+            count(distinct student_number) over (
+                partition by academic_year, district, period, measure
             ) as measure_level_met_district_bm_pm_period_total_students_enrolled,
         from student_data
     )
@@ -550,4 +506,4 @@ select
         measure_level_met_district_bm_pm_period_total_students_assessed,
         measure_level_met_district_bm_pm_period_total_students_enrolled
     ) as measure_level_met_district_bm_pm_period_percent,
-from student_data
+from with_counts
