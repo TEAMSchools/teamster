@@ -115,19 +115,12 @@ with
             as highest_education_level_long_name,
             person_tobacco_user_indicator as tobacco_user_indicator,
             person_disabled_indicator as disabled_indicator,
-            person_custom_attended_relay as custom_attended_relay,
             person_custom_covid_19_booster_1_date as custom_covid_19_booster_1_date,
             person_custom_covid_19_booster_1_type as custom_covid_19_booster_1_type,
             person_custom_covid_19_date_of_last_vaccine
             as custom_covid_19_date_of_last_vaccine,
             person_custom_covid_19_vaccine_type as custom_covid_19_vaccine_type,
-            person_custom_preferred_gender as custom_preferred_gender,
-            person_custom_years_of_professional_experience_before_joining
-            as custom_years_of_professional_experience_before_joining,
-            person_custom_years_teaching_in_any_state
-            as custom_years_teaching_in_any_state,
-            person_custom_years_teaching_in_nj_or_fl
-            as custom_years_teaching_in_nj_or_fl,
+            
 
             disability_long_name as disability,
 
@@ -203,6 +196,11 @@ with
             worker__fivetran_deleted,
             worker_custom_employee_number,
             person_custom_kipp_alumni_status,
+            person_custom_attended_relay,
+            person_custom_preferred_gender,
+            person_custom_years_of_professional_experience_before_joining,
+            person_custom_years_teaching_in_any_state,
+            person_custom_years_teaching_in_nj_or_fl,
             person_legal_name_generation_affix_short_name,
             person_legal_name_qualification_affix_long_name,
             person_legal_address_name,
