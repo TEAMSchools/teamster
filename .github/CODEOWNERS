@@ -2,10 +2,10 @@
 * @cbini
 
 # dagster code
-/src/teamster/ @TEAMSchools/data-engineers
+/src/teamster/ @TEAMSchools/Data Engineers
 
 # dbt code
-/src/dbt/ @TEAMSchools/analytics-engineers
+/src/dbt/ @TEAMSchools/Analytics Engineers
 
 # Each line is a file pattern followed by one or more owners.
 
