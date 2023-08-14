@@ -3,7 +3,6 @@ from dagster import config_from_files
 from teamster.core.datagun.assets import (
     build_bigquery_extract_sftp_asset,
     build_bigquery_query_sftp_asset,
-    generate_extract_assets,
 )
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
@@ -30,6 +29,13 @@ coupa_extract_assets = [
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
     )
     for a in config_from_files([f"{config_dir}/coupa.yaml"])["assets"]
+]
+
+deanslist_extract_assets = [
+    build_bigquery_extract_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]
 ]
 
 egencia_extract_assets = [
@@ -60,14 +66,6 @@ idauto_extract_assets = [
     )
     for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
 ]
-
-# OLD
-deanslist_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="deanslist",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
 
 __all__ = [
     *blissbook_extract_assets,

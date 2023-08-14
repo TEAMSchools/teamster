@@ -36,9 +36,9 @@ workspace:
   serverTTL:
     fullDeployments:
       enabled: true
-      ttlSeconds: 60
+      ttlSeconds: 300
     branchDeployments:
-      ttlSeconds: 60
+      ttlSeconds: 300
 
   # # Default compute resource requirements for the pods created by the agent. See:
   # # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
