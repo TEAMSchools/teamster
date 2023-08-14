@@ -42,5 +42,4 @@ inner join
 where
     sec.cc_academic_year = {{ var("current_academic_year") }}
     and not sec.is_dropped_section
-    and sec.sections_no_of_students > 0
     and sec.courses_credittype != 'LOG'
