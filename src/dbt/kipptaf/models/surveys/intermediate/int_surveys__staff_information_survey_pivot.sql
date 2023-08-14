@@ -294,7 +294,7 @@ with
     {{
         dbt_utils.deduplicate(
             relation="response_union",
-            partition_by="respondent_email",
+            partition_by="employee_number",
             order_by="last_submitted_time desc",
         )
     }}
