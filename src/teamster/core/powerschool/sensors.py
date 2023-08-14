@@ -98,15 +98,17 @@ def build_partition_sensor(
                             is_requested = True
 
                     if is_requested:
+                        now_ts = now.timestamp()
+
                         run_requests.append(
                             RunRequest(
-                                run_key=f"{asset_key_string}_{partition_key}",
+                                run_key=f"{asset_key_string}_{partition_key}_{now_ts}",
                                 asset_selection=[asset_key],
                                 partition_key=partition_key,
                             )
                         )
 
-                        cursor[cursor_key] = now.timestamp()
+                        cursor[cursor_key] = now_ts
 
         finally:
             context.log.info("Stopping SSH tunnel")
