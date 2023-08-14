@@ -255,7 +255,7 @@ select
     if(
         ar.region = 'Miami', ar.spedlep, sped.special_education_code
     ) as special_education_code,
-    if(ar.region = 'Miami', ar.spedlep, ifnull(sped.spedlep, 'No IEP')) as spedlep,
+    coalesce(if(ar.region = 'Miami', ar.spedlep, sped.spedlep), 'No IEP') as spedlep,
 
     tpd.total_balance as lunch_balance,
 
