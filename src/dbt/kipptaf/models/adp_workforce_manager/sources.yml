@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: adp_workforce_manager
+    schema: kipptaf_adp_workforce_manager
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_adp_workforce_manager__accrual_reporting_period_summary
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/adp/AccrualReportingPeriodSummary/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/adp/AccrualReportingPeriodSummary/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_adp_workforce_manager__time_details
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/adp/TimeDetails/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/adp/TimeDetails/"
+            format: AVRO
+            enable_logical_types: true
