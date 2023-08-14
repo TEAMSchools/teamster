@@ -86,7 +86,6 @@ with
             and {{ union_dataset_join_clause(left_alias="st", right_alias="t") }}
         where
             sec.terms_yearid = ({{ var("current_academic_year") }} - 1990)
-            and sec.sections_no_of_students > 0
 
         union all
 
