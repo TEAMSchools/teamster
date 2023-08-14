@@ -7,7 +7,7 @@ partition_sensor = build_partition_sensor(
     name=f"{CODE_LOCATION}_powerschool_partition_sensor",
     asset_defs=partition_assets,
     timezone=LOCAL_TIMEZONE,
-    minimum_interval_seconds=(60 * 60),
+    minimum_interval_seconds=(60 * 10),
 )
 
 __all__ = [
