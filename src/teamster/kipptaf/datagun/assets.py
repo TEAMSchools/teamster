@@ -31,12 +31,6 @@ coupa_extract_assets = [
     for a in config_from_files([f"{config_dir}/coupa.yaml"])["assets"]
 ]
 
-deanslist_extract_assets = [
-    build_bigquery_extract_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
-    for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]
-]
 
 egencia_extract_assets = [
     build_bigquery_extract_sftp_asset(
@@ -60,6 +54,13 @@ littlesis_extract_assets = [
 ]
 
 # BQ query
+deanslist_extract_assets = [
+    build_bigquery_query_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]
+]
+
 idauto_extract_assets = [
     build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a

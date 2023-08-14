@@ -1,39 +1,43 @@
 assets:
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_deanslist__college_admission_tests
-    extract_job_config:
-      destination_format: NEWLINE_DELIMITED_JSON
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__college_admission_tests
+          schema: kipptaf_extracts
     file_config:
       stem: deanslist_college_admission_tests
       suffix: json
     destination_config:
       name: deanslist
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_deanslist__student_misc
-    extract_job_config:
-      destination_format: NEWLINE_DELIMITED_JSON
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__student_misc
+          schema: kipptaf_extracts
     file_config:
       stem: deanslist_student_misc
       suffix: json
     destination_config:
       name: deanslist
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_deanslist__transcript_gpas
-    extract_job_config:
-      destination_format: NEWLINE_DELIMITED_JSON
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__transcript_gpas
+          schema: kipptaf_extracts
     file_config:
       stem: deanslist_transcript_gpas
       suffix: json
     destination_config:
       name: deanslist
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_deanslist__transcript_grades
-    extract_job_config:
-      destination_format: NEWLINE_DELIMITED_JSON
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__transcript_grades
+          schema: kipptaf_extracts
     file_config:
       stem: deanslist_transcript_grades
       suffix: json
