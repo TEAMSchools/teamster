@@ -1,197 +1,186 @@
-key_prefix:
-  - kipptaf
-  - datagun
-  - deanslist
 assets:
-  - asset_name: deanslist_college_admission_tests_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_college_admission_tests
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_deanslist__college_admission_tests
+    extract_job_config:
+      destination_format: NEWLINE_DELIMITED_JSON
     file_config:
       stem: deanslist_college_admission_tests
       suffix: json
     destination_config:
       name: deanslist
-  - asset_name: deanslist_designations_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_designations
-          schema: extracts
-    file_config:
-      stem: deanslist_designations
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_transcript_grades_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_transcript_grades
-          schema: extracts
-    file_config:
-      stem: deanslist_transcript_grades
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_finalgrades_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_finalgrades
-          schema: extracts
-    file_config:
-      stem: deanslist_finalgrades
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_instructional_tech_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_instructional_tech
-          schema: extracts
-    file_config:
-      stem: deanslist_instructional_tech
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_iready_diagnostics_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_iready_diagnostics
-          schema: extracts
-    file_config:
-      stem: deanslist_iready_diagnostics
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_iready_lessons_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_iready_lessons
-          schema: extracts
-    file_config:
-      stem: deanslist_iready_lessons
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_missing_assignments_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_missing_assignments
-          schema: extracts
-    file_config:
-      stem: deanslist_missing_assignments
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_mod_assessment_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_mod_assessment
-          schema: extracts
-    file_config:
-      stem: deanslist_mod_assessment
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_mod_standards_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_mod_standards
-          schema: extracts
-    file_config:
-      stem: deanslist_mod_standards
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_promo_status_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_promo_status
-          schema: extracts
-    file_config:
-      stem: deanslist_promo_status
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_reading_levels_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_reading_levels
-          schema: extracts
-    file_config:
-      stem: deanslist_reading_levels
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_sight_words_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_sight_words
-          schema: extracts
-    file_config:
-      stem: deanslist_sight_words
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_state_test_scores_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_state_test_scores
-          schema: extracts
-    file_config:
-      stem: deanslist_state_test_scores
-      suffix: json
-    destination_config:
-      name: deanslist
-  - asset_name: deanslist_student_misc_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_student_misc
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_deanslist__student_misc
+    extract_job_config:
+      destination_format: NEWLINE_DELIMITED_JSON
     file_config:
       stem: deanslist_student_misc
       suffix: json
     destination_config:
       name: deanslist
-  - asset_name: deanslist_transcript_gpas_json
-    query_config:
-      type: schema
-      value:
-        table:
-          name: deanslist_transcript_gpas
-          schema: extracts
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_deanslist__transcript_gpas
+    extract_job_config:
+      destination_format: NEWLINE_DELIMITED_JSON
     file_config:
       stem: deanslist_transcript_gpas
       suffix: json
     destination_config:
       name: deanslist
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_deanslist__transcript_grades
+    extract_job_config:
+      destination_format: NEWLINE_DELIMITED_JSON
+    file_config:
+      stem: deanslist_transcript_grades
+      suffix: json
+    destination_config:
+      name: deanslist
+
+  # - asset_name: deanslist_designations_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_designations
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_designations
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_finalgrades_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_finalgrades
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_finalgrades
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_instructional_tech_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_instructional_tech
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_instructional_tech
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_iready_diagnostics_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_iready_diagnostics
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_iready_diagnostics
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_iready_lessons_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_iready_lessons
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_iready_lessons
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_missing_assignments_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_missing_assignments
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_missing_assignments
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_mod_assessment_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_mod_assessment
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_mod_assessment
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_mod_standards_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_mod_standards
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_mod_standards
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_promo_status_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_promo_status
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_promo_status
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_reading_levels_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_reading_levels
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_reading_levels
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_sight_words_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_sight_words
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_sight_words
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
+  # - asset_name: deanslist_state_test_scores_json
+  #   query_config:
+  #     type: schema
+  #     value:
+  #       table:
+  #         name: deanslist_state_test_scores
+  #         schema: extracts
+  #   file_config:
+  #     stem: deanslist_state_test_scores
+  #     suffix: json
+  #   destination_config:
+  #     name: deanslist
