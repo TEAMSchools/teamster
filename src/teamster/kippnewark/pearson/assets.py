@@ -1,4 +1,4 @@
-from dagster import DynamicPartitionsDefinition, config_from_files
+from dagster import config_from_files
 
 from teamster.core.pearson.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
