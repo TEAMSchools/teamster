@@ -135,6 +135,7 @@ with
             regexp_replace(
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
+            ROW_NUMBER() OVER (PARTITION BY o.teacher_id, o.rubric_name ORDER BY o.observed_at DESC) AS row_num,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
@@ -147,10 +148,10 @@ with
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
         where o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
+        and o.is_published = true
     )
 
 select s.*, o.*,
-
 from scaffold as s
 left join
     observations as o
