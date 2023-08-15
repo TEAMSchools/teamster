@@ -146,8 +146,9 @@ with
             boxes as b
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
-        where o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
-        and o.is_published = true
+        where
+            o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
+            and o.is_published = true
     )
 
 select s.*, o.*,
