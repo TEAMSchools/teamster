@@ -8,8 +8,9 @@ CODE_LOCATION = "kipptaf"
 
 test_asset = build_gsheet_asset(
     code_location=CODE_LOCATION,
-    sheet_id="1EwHv7MajgHTq-HphLpwrS0KG_2Y_FXlPuPvj98YuFS8",
+    source_name="",
     name="standards_translation",
+    uri="https://docs.google.com/spreadsheets/d/1EwHv7MajgHTq-HphLpwrS0KG_2Y_FXlPuPvj98YuFS8",
     range_name="standards_translation",
 )
 

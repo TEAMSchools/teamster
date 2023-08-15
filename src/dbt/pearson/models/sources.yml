@@ -10,21 +10,16 @@ sources:
     tables:
       - name: src_pearson__njgpa
         external:
-          location: "{{ var('couchdrop_cloud_storage_uri_base') }}/pearson/njgpa/*"
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/njgpa/*"
           options:
             format: CSV
       - name: src_pearson__njsla
         external:
-          location: "{{ var('couchdrop_cloud_storage_uri_base') }}/pearson/njgpa/*"
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/njsla/*"
           options:
             format: CSV
       - name: src_pearson__parcc
         external:
-          location: "{{ var('couchdrop_cloud_storage_uri_base') }}/pearson/njgpa/*"
-          options:
-            format: CSV
-      - name: src_pearson__start_strong
-        external:
-          location: "{{ var('couchdrop_cloud_storage_uri_base') }}/pearson/njgpa/*"
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/parcc/*"
           options:
             format: CSV
