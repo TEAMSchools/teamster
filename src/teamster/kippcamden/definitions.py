@@ -29,6 +29,7 @@ from . import (
     dbt,
     deanslist,
     edplan,
+    pearson,
     powerschool,
     titan,
 )
@@ -38,10 +39,11 @@ resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
-        *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
         *load_assets_from_modules(modules=[edplan], group_name="edplan"),
+        *load_assets_from_modules(modules=[pearson], group_name="pearson"),
+        *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
         *load_assets_from_modules(modules=[titan], group_name="titan"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
@@ -92,6 +94,11 @@ defs = Definitions(
         "deanslist": DeansListResource(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
+        ),
+        "ssh_couchdrop": SSHConfigurableResource(
+            remote_host="kipptaf.couchdrop.io",
+            username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+            password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
         "ssh_cpn": SSHConfigurableResource(
             remote_host="sftp.careevolution.com",

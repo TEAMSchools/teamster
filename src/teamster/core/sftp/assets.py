@@ -45,6 +45,7 @@ def build_sftp_asset(
     remote_filepath,
     remote_file_regex,
     asset_fields,
+    ssh_resource_key=None,
     archive_filepath=None,
     partitions_def=None,
     auto_materialize_policy=None,
@@ -52,7 +53,7 @@ def build_sftp_asset(
     op_tags={},
     **kwargs,
 ):
-    ssh_resource_key = f"ssh_{source_system}"
+    ssh_resource_key = ssh_resource_key or f"ssh_{source_system}"
 
     asset_metadata = {
         "remote_filepath": remote_filepath,
