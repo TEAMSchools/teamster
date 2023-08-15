@@ -30,6 +30,7 @@ from . import (
     deanslist,
     edplan,
     iready,
+    pearson,
     powerschool,
     titan,
 )
@@ -43,6 +44,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
         *load_assets_from_modules(modules=[edplan], group_name="edplan"),
         *load_assets_from_modules(modules=[iready], group_name="iready"),
+        *load_assets_from_modules(modules=[pearson], group_name="pearson"),
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
         *load_assets_from_modules(modules=[titan], group_name="titan"),
         *load_assets_from_modules(
@@ -94,6 +96,11 @@ defs = Definitions(
         "deanslist": DeansListResource(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
+        ),
+        "ssh_couchdrop": SSHConfigurableResource(
+            remote_host="kipptaf.couchdrop.io",
+            username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+            password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
         "ssh_edplan": SSHConfigurableResource(
             remote_host="secureftp.easyiep.com",
