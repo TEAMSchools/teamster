@@ -10,13 +10,10 @@ sources:
     tables:
       - name: src_powerschool__assignmentscore
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/assignmentscore/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentscore/*"
           options:
             hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name
-              }}/powerschool/assignmentscore/"
+              "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentscore/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance
@@ -31,8 +28,7 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/pgfinalgrades/*"
           options:
             hive_partition_uri_prefix:
-              "gs://teamster-{{ project_name }}/dagster/{{ project_name
-              }}/powerschool/pgfinalgrades/"
+              "{{ var('cloud_storage_uri_base') }}/powerschool/pgfinalgrades/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__storedgrades
@@ -45,17 +41,13 @@ sources:
             enable_logical_types: true
       - name: src_powerschool__assignmentcategoryassoc
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/assignmentcategoryassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentcategoryassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentsection
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/assignmentsection/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentsection/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -79,9 +71,7 @@ sources:
             enable_logical_types: true
       - name: src_powerschool__districtteachercategory
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/districtteachercategory/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/districtteachercategory/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -93,73 +83,55 @@ sources:
             enable_logical_types: true
       - name: src_powerschool__gradecalcformulaweight
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradecalcformulaweight/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalcformulaweight/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcschoolassoc
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradecalcschoolassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalcschoolassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalculationtype
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradecalculationtype/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalculationtype/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeformulaset
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradeformulaset/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeformulaset/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradescaleitem
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradescaleitem/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradescaleitem/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolconfig
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradeschoolconfig/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeschoolconfig/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolformulaassoc
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradeschoolformulaassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeschoolformulaassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradesectionconfig
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/gradesectionconfig/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradesectionconfig/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__originalcontactmap
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/originalcontactmap/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/originalcontactmap/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -177,25 +149,19 @@ sources:
             enable_logical_types: true
       - name: src_powerschool__personaddressassoc
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/personaddressassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/personaddressassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personemailaddressassoc
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/personemailaddressassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/personemailaddressassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personphonenumberassoc
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/personphonenumberassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/personphonenumberassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -261,33 +227,25 @@ sources:
             enable_logical_types: true
       - name: src_powerschool__sectionteacher
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/sectionteacher/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/sectionteacher/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactassoc
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/studentcontactassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcontactassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactdetail
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/studentcontactdetail/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcontactdetail/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcorefields
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/studentcorefields/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcorefields/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -305,9 +263,7 @@ sources:
             enable_logical_types: true
       - name: src_powerschool__teachercategory
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/teachercategory/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/teachercategory/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -331,25 +287,19 @@ sources:
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu_alt
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/u_clg_et_stu_alt/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_clg_et_stu_alt/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_def_ext_students
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/u_def_ext_students/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_def_ext_students/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_studentsuserfields
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/u_studentsuserfields/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_studentsuserfields/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -362,17 +312,13 @@ sources:
       # not-partitionable
       - name: src_powerschool__attendance_code
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/attendance_code/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance_code/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance_conversion_items
         external:
-          location:
-            "gs://teamster-{{ project_name }}/dagster/{{ project_name
-            }}/powerschool/attendance_conversion_items/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance_conversion_items/*"
           options:
             format: AVRO
             enable_logical_types: true

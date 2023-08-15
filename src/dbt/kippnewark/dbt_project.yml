@@ -22,10 +22,12 @@ clean-targets: # directories to be removed by `dbt clean`
 
 vars:
   cloud_storage_uri_base: gs://teamster-kippnewark/dagster/kippnewark
+  couchdrop_cloud_storage_uri_base: gs://teamster-kippnewark/couchdrop
   current_academic_year: 2023
   current_fiscal_year: 2024
   deanslist_schema: kippnewark_deanslist
   edplan_schema: kippnewark_edplan
+  pearson_schema: kippnewark_pearson
   powerschool_schema: kippnewark_powerschool
   titan_schema: kippnewark_titan
   iready_schema: kippnj_iready
@@ -45,6 +47,8 @@ models:
     +schema: iready
     staging:
       +materialized: table
+  pearson:
+    +schema: pearson
   powerschool:
     +schema: powerschool
     +materialized: table

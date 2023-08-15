@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: kippnewark_pearson
+    tables:
+      - name: stg_pearson__njgpa
+        meta:
+          dagster:
+            group: pearson
+            asset_key:
+              - kippnewark
+              - pearson
+              - stg_pearson__njgpa
+      - name: stg_pearson__njsla
+        meta:
+          dagster:
+            group: pearson
+            asset_key:
+              - kippnewark
+              - pearson
+              - stg_pearson__njsla
+      - name: stg_pearson__parcc
+        meta:
+          dagster:
+            group: pearson
+            asset_key:
+              - kippnewark
+              - pearson
+              - stg_pearson__parcc
