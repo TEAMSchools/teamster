@@ -135,7 +135,6 @@ with
             regexp_replace(
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
-            ROW_NUMBER() OVER (PARTITION BY o.teacher_id, o.rubric_name ORDER BY o.observed_at DESC) AS row_num,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
