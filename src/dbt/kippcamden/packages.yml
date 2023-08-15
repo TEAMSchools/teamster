@@ -1,5 +1,6 @@
 packages:
   - local: ../deanslist
   - local: ../edplan
+  - local: ../pearson
   - local: ../powerschool
   - local: ../titan

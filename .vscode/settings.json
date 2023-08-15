@@ -11,7 +11,7 @@
   "files.associations": {
     "*.toml": "toml",
     "*.env": "shellscript",
-    "*.sql": "jinja-sql"
+    "*.sql": "sql"
   },
   "files.exclude": {
     "**/.git": false,
