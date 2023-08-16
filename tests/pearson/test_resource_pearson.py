@@ -37,20 +37,23 @@ def _test_resource(remote_filepath, remote_file_regex):
 
 def test_parcc():
     _test_resource(
-        remote_filepath="/teamster-kippnewark/couchdrop/pearson/parcc",
+        # remote_filepath="/teamster-kippnewark/couchdrop/pearson/parcc",
+        remote_filepath="/teamster-kippcamden/couchdrop/pearson/parcc",
         remote_file_regex=r".*\.csv",
     )
 
 
 def test_njsla():
     _test_resource(
-        remote_filepath="/teamster-kippnewark/couchdrop/pearson/njsla",
+        # remote_filepath="/teamster-kippnewark/couchdrop/pearson/njsla",
+        remote_filepath="/teamster-kippcamden/couchdrop/pearson/njsla",
         remote_file_regex=r".*\.csv",
     )
 
 
 def test_njgpa():
     _test_resource(
-        remote_filepath="/teamster-kippnewark/couchdrop/pearson/njgpa",
+        # remote_filepath="/teamster-kippnewark/couchdrop/pearson/njgpa",
+        remote_filepath="/teamster-kippcamden/couchdrop/pearson/njgpa",
         remote_file_regex=r".*\.csv",
     )
