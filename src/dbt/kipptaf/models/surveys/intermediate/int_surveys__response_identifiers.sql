@@ -88,16 +88,6 @@ with
             )
     ),
 
-    identifier_responses_deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="identifier_responses_pivot",
-                partition_by="survey_id, respondent_employee_number, subject_employee_number, campaign_fiscal_year, campaign_name",
-                order_by="response_date_submitted desc",
-            )
-        }}
-    ),
-
     response_clean as (
         select
             rp.survey_id,
@@ -121,7 +111,17 @@ with
             ifnull(
                 rp.respondent_employee_number, ab.respondent_employee_number
             ) as respondent_employee_number,
-        from identifier_responses_deduplicate as rp
+
+            row_number() over (
+                partition by
+                    rp.survey_id,
+                    rp.respondent_employee_number,
+                    rp.subject_employee_number,
+                    rp.campaign_fiscal_year,
+                    rp.campaign_name
+                order by rp.response_date_submitted desc
+            ) as rn_survey_response_campaign_desc,
+        from identifier_responses_pivot as rp
         left join
             {{ source("alchemer", "src_alchemer__response_id_override") }} as ab
             on rp.survey_id = ab.survey_id
@@ -142,6 +142,7 @@ select
     rc.subject_employee_number,
     rc.respondent_employee_number,
     rc.respondent_salesforce_id,
+    rc.rn_survey_response_campaign_desc,
 
     resp.preferred_name_lastfirst as respondent_preferred_name_lastfirst,
     resp.worker_id as respondent_adp_worker_id,
