@@ -38,8 +38,8 @@ with
 select
     student_number,
     academic_year,
-    round(weighted_points / credit_hours, 2) as gpa_y1_weighted,
-    round(unweighted_points / credit_hours, 2) as gpa_y1_unweighted,
+    round(weighted_points / credit_hours, 2) as `GPA_Y1_weighted`,
+    round(unweighted_points / credit_hours, 2) as `GPA_Y1_unweighted`,
 from points_rollup
 
 union all
@@ -49,8 +49,8 @@ select
 
     null as academic_year,
 
-    sg.cumulative_y1_gpa as gpa_y1_weighted,
-    sg.cumulative_y1_gpa_unweighted as gpa_y1_unweighted,
+    sg.cumulative_y1_gpa as `GPA_Y1_weighted`,
+    sg.cumulative_y1_gpa_unweighted as `GPA_Y1_unweighted`,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__gpa_cumulative") }} as sg

@@ -20,7 +20,7 @@ with
         select
             co.studentid,
             co.student_number,
-            co.state_studentnumber as sid,
+            co.state_studentnumber as `SID`,
             co.advisory_name as team,
             co.home_phone,
             co.contact_1_name as parent1_name,
@@ -60,7 +60,7 @@ with
             ktc.contact_owner_phone as ktc_counselor_phone,
             ktc.contact_owner_email as ktc_counselor_email,
 
-            gpa.gpa_y1,
+            gpa.`GPA_Y1`,
             gpa.gpa_term,
 
             if(co.schoolid = 999999, ug.schoolid, co.schoolid) as schoolid,
