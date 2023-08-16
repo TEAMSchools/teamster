@@ -29,9 +29,9 @@ with
 
     ps_users as (
         select
+            u.sif_stateprid,
             u.lastfirst,
             u._dbt_source_relation,
-            safe_cast(u.sif_stateprid as int) as sif_stateprid,
         from {{ ref("stg_powerschool__users") }} as u
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -100,25 +100,25 @@ select
     co.ethnicity,
     co.gender,
 
-    parcc.test_code,
-    parcc.subject,
-    parcc.test_scale_score,
-    parcc.test_performance_level,
-    parcc.test_reading_csem as test_standard_error,
-    parcc.staff_member_identifier,
+    parcc.testcode as test_code,
+    parcc.subject as subject,
+    parcc.testscalescore as test_scale_score,
+    parcc.testperformancelevel as test_performance_level,
+    parcc.testreadingcsem as test_standard_error,
+    parcc.staffmemberidentifier as staff_member_identifier,
     case
-        when parcc.student_with_disabilities in ('IEP', 'Y', 'B')
+        when parcc.studentwithdisabilities in ('IEP', 'Y', 'B')
         then 'SPED'
         else 'No IEP'
     end as iep_status,
     case
-        when parcc.subject = 'Science' and parcc.test_performance_level >= 3
+        when parcc.subject = 'Science' and parcc.testperformancelevel >= 3
         then 1.0
-        when parcc.subject = 'Science' and parcc.test_performance_level < 3
+        when parcc.subject = 'Science' and parcc.testperformancelevel < 3
         then 0.0
-        when parcc.test_performance_level >= 4
+        when parcc.testperformancelevel >= 4
         then 1.0
-        when parcc.test_performance_level < 4
+        when parcc.testperformancelevel < 4
         then 0.0
     end as is_proficient,
 
@@ -129,16 +129,16 @@ select
 
     pu.lastfirst as teacher_lastfirst,
 
-    ext.percent_proficient_state as pct_prof_nj,
-    ext.percent_proficient_newark as pct_prof_nps,
-    ext.percent_proficient_camden as pct_prof_cps,
+    ext.percent_proficient_state * 100 as pct_prof_nj,
+    ext.percent_proficient_newark * 100 as pct_prof_nps,
+    ext.percent_proficient_camden * 100 as pct_prof_cps,
     null as pct_prof_parcc,
 
     'PARCC' as test_type,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("stg_pearson__parcc") }} as parcc
-    on co.student_number = parcc.local_student_identifier
+    on co.student_number = parcc.localstudentidentifier
     and co.academic_year = parcc.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="parcc") }}
 left join
@@ -151,10 +151,10 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
 left join
     ps_users as pu
-    on parcc.staff_member_identifier = pu.sif_stateprid
+    on parcc.staffmemberidentifier = pu.sif_stateprid
     and {{ union_dataset_join_clause(left_alias="parcc", right_alias="pu") }}
 left join
     external_prof as ext
-    on parcc.test_code = ext.test_code
+    on parcc.testcode = ext.test_code
     and parcc.academic_year = ext.academic_year
 where co.rn_year = 1

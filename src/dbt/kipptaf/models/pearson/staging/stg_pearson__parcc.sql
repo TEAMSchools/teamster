@@ -10,5 +10,5 @@ with
         }}
     )
 
-select *, safe_cast(left(assessment_year, 4) as int) as academic_year,
+select *, safe_cast(left(assessmentyear, 4) as int) as academic_year,
 from union_relations
