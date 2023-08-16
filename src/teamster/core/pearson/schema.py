@@ -885,11 +885,6 @@ NJSLA_FIELDS = [
         "type": ["null", "string"],
         "default": None,
     },
-    {
-        "name": "AnswersRecordedinTest Booklet",
-        "type": ["null", "string"],
-        "default": None,
-    },
     {"name": "filler_85", "type": ["null", "string"], "default": None},
     {
         "name": "mathematics_scienceaccommodatedresponse",
