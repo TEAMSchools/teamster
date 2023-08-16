@@ -103,6 +103,8 @@ models:
       +schema: ldap
       staging:
         +materialized: table
+    pearson:
+      +schema: pearson
     people:
       +schema: people
       staging:
