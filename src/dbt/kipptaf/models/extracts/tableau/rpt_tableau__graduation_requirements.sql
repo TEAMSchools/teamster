@@ -1,69 +1,54 @@
 with
     parcc as (
         select
-            local_student_identifier,
-            test_scale_score as test_score,
-            concat('parcc_', lower(test_code)) as test_type
-        from parcc.summative_record_file_clean
-        where test_code in ('ELA09', 'ELA10', 'ELA11', 'ALG01', 'GEO01', 'ALG02')
+            localstudentidentifier as student_number,
+            testscalescore as test_score,
+            concat('parcc_', lower(testcode)) as test_type,
+        from {{ ref("stg_pearson__parcc") }}
+        where testcode in ('ELA09', 'ELA10', 'ELA11', 'ALG01', 'GEO01', 'ALG02')
     ),
-    sat as (
-        select hs_student_id, [value] as test_score, concat('sat_', field) as test_type
-        from
-            (
-                select
-                    hs_student_id,
-                    cast(
-                        evidence_based_reading_writing as int
-                    ) as evidence_based_reading_writing,
-                    cast(math as int) as math,
-                    cast(reading_test as int) as reading_test,
-                    cast(math_test as int) as math_test
-                from naviance.sat_scores
-            ) as sub unpivot (
-                [value] for field
-                in (evidence_based_reading_writing, math, reading_test, math_test)
-            ) as u
-    ),
+
+    {# TODO: add SAT from salesforce #}
     act as (
         select
             st.score as test_score,
-            left(st.score_type, len(st.score_type) - 2) as test_type,
-            ktc.student_number
-        from alumni.standardized_test_long as st
-        inner join alumni.ktc_roster as ktc on (st.contact_c = ktc.sf_contact_id)
-        where st.test_type = 'ACT' and st.score_type in ('act_reading_c', 'act_math_c')
+            st.score_type as test_type,
+
+            ktc.school_specific_id as student_number,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }} as st
+        inner join {{ ref("stg_kippadb__contact") }} as ktc on st.contact = ktc.id
+        where st.test_type = 'ACT' and st.score_type in ('act_reading', 'act_math')
     ),
+
     all_tests as (
-        select local_student_identifier, test_type, test_score
+        select student_number, test_type, test_score,
         from parcc
+
         union all
-        select hs_student_id, test_type, test_score
-        from sat
-        union all
-        select student_number, test_type, test_score
+
+        select student_number, test_type, test_score,
         from act
     )
+
 select
     co.student_number,
     co.lastfirst,
+    co.school_abbreviation,
     co.grade_level,
     co.cohort,
     co.enroll_status,
-    co.iep_status,
-    co.c_504_status,
+    co.spedlep as iep_status,
+    co.is_504 as c_504_status,
     co.is_retained_year,
     co.is_retained_ever,
-    co.school_abbreviation,
+
     a.test_type,
-    a.test_score
-from powerschool.cohort_identifiers_static as co
-left join all_tests as a on (co.student_number = a.local_student_identifier)
+    a.test_score,
+from {{ ref("base_powerschool__student_enrollments") }} as co
+left join all_tests as a on co.student_number = a.student_number
 where
-    co.academic_year = utilities.global_academic_year()
-    and co.rn_year = 1
-    and (
-        co.cohort between (utilities.global_academic_year() - 1) and (
-            utilities.global_academic_year() + 5
-        )
+    co.rn_year = 1
+    and co.academic_year = {{ var("current_academic_year") }}
+    and co.cohort between ({{ var("current_academic_year") }} - 1) and (
+        {{ var("current_academic_year") }} + 5
     )
