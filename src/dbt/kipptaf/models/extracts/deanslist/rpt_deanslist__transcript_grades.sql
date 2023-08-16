@@ -10,12 +10,12 @@ with
             sg.earnedcrhrs as credit_hours,
             sg.percent as y1_grade_percent,
             sg.grade as y1_grade_letter,
-            case
-                when sg.schoolname = 'KIPP Newark Collegiate Academy'
-                then 'Newark Collegiate Academy'
-                else sg.schoolname
-            end as schoolname,
             sg.storecode as term,
+            if(
+                sg.schoolname = 'KIPP Newark Collegiate Academy',
+                'Newark Collegiate Academy',
+                sg.schoolname
+            ) as schoolname,
 
             1 as is_stored,
         from {{ ref("stg_powerschool__storedgrades") }} as sg
@@ -40,13 +40,14 @@ with
             fg.y1_percent_grade_adjusted as y1_grade_percent,
             fg.y1_letter_grade as y1_grade_letter,
 
+            'Y1' as term,
+
             if(
                 sch.name = 'KIPP Newark Collegiate Academy',
                 'Newark Collegiate Academy',
                 sch.name
             ) as schoolname,
 
-            'Y1' as term,
             0 as is_stored,
         from {{ ref("stg_powerschool__students") }} as s
         inner join
