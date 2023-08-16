@@ -224,7 +224,11 @@ PARCC_FIELDS = [
         "type": ["null", "long", "float"],
         "default": None,
     },
-    {"name": "shipreportschoolcode", "type": ["null", "long"], "default": None},
+    {
+        "name": "shipreportschoolcode",
+        "type": ["null", "long", "float"],
+        "default": None,
+    },
     {"name": "smallgrouptesting", "type": ["null", "string"], "default": None},
     {"name": "spanishtransadaptation", "type": ["null", "string"], "default": None},
     {"name": "specialeducationplacement", "type": ["null", "double"], "default": None},
@@ -426,7 +430,7 @@ PARCC_FIELDS = [
     {"name": "fillerfield7", "type": ["null", "string"], "default": None},
     {"name": "giftedandtalented", "type": ["null", "string"], "default": None},
     {"name": "mathematicsresponse", "type": ["null", "double"], "default": None},
-    {"name": "mathematicsresponseel", "type": ["null", "string"], "default": None},
+    {"name": "mathematicsresponseel", "type": ["null", "double"], "default": None},
     {"name": "onlineformid", "type": ["null", "string"], "default": None},
     {"name": "parccstudentidentifier", "type": ["null", "string"], "default": None},
     {"name": "percentofitemsattempted", "type": ["null", "string"], "default": None},
@@ -472,7 +476,7 @@ PARCC_FIELDS = [
     {"name": "statefield6", "type": ["null", "double", "string"], "default": None},
     {"name": "statefield7", "type": ["null", "double"], "default": None},
     {"name": "statefield8", "type": ["null", "double"], "default": None},
-    {"name": "statefield9", "type": ["null", "double"], "default": None},
+    {"name": "statefield9", "type": ["null", "double", "string"], "default": None},
     {"name": "studentunit4testuuid", "type": ["null", "string"], "default": None},
     {
         "name": "titleiiilimitedenglishproficientparticipationstatus",
@@ -886,6 +890,11 @@ NJSLA_FIELDS = [
     {
         "name": "mathematics_scienceaccommodatedresponse",
         "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "first_high_school_math_assessment",
+        "type": ["null", "string"],
         "default": None,
     },
 ]

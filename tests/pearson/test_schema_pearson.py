@@ -50,6 +50,12 @@ def test_parcc():
         # local_filepath="env/parcc/PC_pcspr17_NJ-807325-965_PARCC_School_Summative_Record_File_Spring.csv",
         # local_filepath=("env/parcc/PC_pcspr16_NJ-807325-965_PARCC_School_Summative_Record_File_Spring.csv"),
         # local_filepath="env/parcc/pcspr23_NJ-807325_District_Summative_Record_File_Spring.csv",
+        # local_filepath="env/parcc/PC_pcspr16_NJ-071799_PARCC_District_Summative_Record_File_Spring.csv",
+        # local_filepath="env/parcc/PC_pcspr17_NJ-071799_PARCC_District_Summative_Record_File_Spring.csv",
+        # local_filepath="env/parcc/PC_pcspr18_NJ-071799-111_PARCC_School_Summative_Record_File_Spring.csv",
+        # local_filepath="env/parcc/pcspr19_NJ-071799_District_Summative_Record_File_Spring.csv",
+        # local_filepath="env/parcc/pcspr22_NJ-071799_District_Summative_Record_File_Spring.csv",
+        local_filepath="env/parcc/pcspr23_NJ-071799_District_Summative_Record_File_Spring.csv",
     )
 
 
@@ -58,6 +64,8 @@ def test_njsla():
         asset_name="njsla",
         # local_filepath="env/njsla/njs22_NJ-807325_District_Summative_Record_File_Spring.csv",
         # local_filepath="env/njsla/njs23_NJ-807325_District_Summative_Record_File_Spring.csv",
+        # local_filepath="env/njsla/njs22_NJ-071799_District_Summative_Record_File_Spring.csv",
+        # local_filepath="env/njsla/njs23_NJ-071799_District_Summative_Record_File_Spring.csv",
     )
 
 
@@ -65,5 +73,6 @@ def test_njgpa():
     _test_schema(
         asset_name="njgpa",
         # local_filepath="env/njgpa/pcspr22_NJ-807325_District_Summative_Record_File_GPA_Spring.csv",
-        local_filepath="env/njgpa/pcspr23_NJ-807325_District_Summative_Record_File_GPA_Spring.csv",
+        # local_filepath="env/njgpa/pcspr23_NJ-807325_District_Summative_Record_File_GPA_Spring.csv",
+        # local_filepath="env/njgpa/pcspr23_NJ-071799_District_Summative_Record_File_GPA_Spring.csv",
     )
