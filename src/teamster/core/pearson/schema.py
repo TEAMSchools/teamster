@@ -412,7 +412,6 @@ PARCC_FIELDS = [
     {"name": "filler1", "type": ["null", "string"], "default": None},
     {"name": "closedcaptioningforelal", "type": ["null", "string"], "default": None},
     {"name": "answersrecordedintestbook", "type": ["null", "string"], "default": None},
-    {"name": "birthdate", "type": ["null", "string"], "default": None},
     {"name": "brailleresponse", "type": ["null", "string"], "default": None},
     {"name": "fillerfield_16", "type": ["null", "string"], "default": None},
     {"name": "fillerfield_17", "type": ["null", "string"], "default": None},
@@ -511,11 +510,6 @@ PARCC_FIELDS = [
         "type": ["null", "string"],
         "default": None,
     },
-    {
-        "name": "AmericanIndianOrAlaskaNative ",
-        "type": ["null", "string"],
-        "default": None,
-    },
     {"name": "attemptcreatedate", "type": ["null", "string"], "default": None},
     {"name": "filler", "type": ["null", "string"], "default": None},
     {"name": "filler_1", "type": ["null", "string"], "default": None},
@@ -535,7 +529,6 @@ PARCC_FIELDS = [
         "type": ["null", "long"],
         "default": None,
     },
-    {"name": "StudentWithDisabilities ", "type": ["null", "string"], "default": None},
     {"name": "subclaim6category", "type": ["null", "string"], "default": None},
     {
         "name": "translationofthemathematicsassessment",
