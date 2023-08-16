@@ -1,3 +1,5 @@
+# trunk-ignore-all(ruff/E501)
+
 import random
 
 from fastavro import parse_schema, validation, writer
