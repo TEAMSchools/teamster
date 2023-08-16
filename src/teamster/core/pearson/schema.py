@@ -219,7 +219,11 @@ PARCC_FIELDS = [
     {"name": "retest", "type": ["null", "string"], "default": None},
     {"name": "rosterflag", "type": ["null", "string"], "default": None},
     {"name": "separatealternatelocation", "type": ["null", "string"], "default": None},
-    {"name": "shipreportdistrictcode", "type": ["null", "long"], "default": None},
+    {
+        "name": "shipreportdistrictcode",
+        "type": ["null", "long", "float"],
+        "default": None,
+    },
     {"name": "shipreportschoolcode", "type": ["null", "long"], "default": None},
     {"name": "smallgrouptesting", "type": ["null", "string"], "default": None},
     {"name": "spanishtransadaptation", "type": ["null", "string"], "default": None},
