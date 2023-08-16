@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: pearson
+    schema: "{{ var('pearson_schema', 'pearson') }}"
+    database:
+      "{% if target.type != 'spark' %}{{ var('pearson_database', target.database) }}{% endif %}"
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_pearson__njgpa
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/njgpa/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_pearson__njsla
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/njsla/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_pearson__parcc
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/parcc/*"
+          options:
+            format: AVRO
+            enable_logical_types: true

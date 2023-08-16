@@ -45,6 +45,7 @@ def build_sftp_asset(
     remote_filepath,
     remote_file_regex,
     asset_fields,
+    ssh_resource_key=None,
     archive_filepath=None,
     partitions_def=None,
     auto_materialize_policy=None,
@@ -52,7 +53,7 @@ def build_sftp_asset(
     op_tags={},
     **kwargs,
 ):
-    ssh_resource_key = f"ssh_{source_system}"
+    ssh_resource_key = ssh_resource_key or f"ssh_{source_system}"
 
     asset_metadata = {
         "remote_filepath": remote_filepath,
@@ -127,7 +128,7 @@ def build_sftp_asset(
 
         # load file into pandas and prep for output
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
-        df = df.replace({nan: None})
+        df.replace({nan: None}, inplace=True)
         if slugify_cols:
             df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 

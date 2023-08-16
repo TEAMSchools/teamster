@@ -1,0 +1,10 @@
+assets:
+  - asset_name: parcc
+    remote_filepath: /teamster-kippnewark/couchdrop/pearson/parcc
+    remote_file_regex: '.*\.csv'
+  - asset_name: njsla
+    remote_filepath: /teamster-kippnewark/couchdrop/pearson/njsla
+    remote_file_regex: '.*\.csv'
+  - asset_name: njgpa
+    remote_filepath: /teamster-kippnewark/couchdrop/pearson/njgpa
+    remote_file_regex: '.*\.csv'
