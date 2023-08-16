@@ -25,10 +25,18 @@ def test_event_notification():
 
 
 def test_get_worker():
-    aoid = "G3R8E9HV8QXWF7JD"
+    aoid = "G3MQ5XDMH0DC9TWJ"
 
     r = ADP_WFN._request(
         method="GET", url=f"{ADP_WFN._service_root}/hr/v2/workers/{aoid}"
     )
 
     print(r.json())
+
+
+def test_get_workers():
+    r = ADP_WFN._request(method="GET", url=f"{ADP_WFN._service_root}/hr/v2/workers")
+
+    workers = r.json()["workers"]
+
+    print([w for w in workers if w["associateOID"] == "G3MQ5XDMH0DC9TWJ"])

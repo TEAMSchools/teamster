@@ -1,6 +1,6 @@
 import re
-from datetime import datetime
 
+import pendulum
 from dagster import DataVersion, observable_source_asset
 
 
@@ -15,6 +15,6 @@ def build_gsheet_asset(code_location, source_name, name, uri, range_name):
         metadata={"sheet_id": re_match.group(1), "range_name": range_name},
     )
     def _asset():
-        return DataVersion(str(datetime.now().timestamp()))
+        return DataVersion(str(pendulum.now().timestamp()))
 
     return _asset
