@@ -1,0 +1,59 @@
+version: 2
+
+sources:
+  - name: njdoe
+    schema: kipptaf_njdoe
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_njdoe__parcc
+        external:
+          location: "{{ var('couchdrop_cloud_storage_uri_base') }}/njdoe/parcc/*"
+          options:
+            format: CSV
+            skip_leading_rows: 1
+        columns:
+          - name: row_num
+            data_type: string
+          - name: county_code
+            data_type: string
+          - name: county_name
+            data_type: string
+          - name: district_code
+            data_type: string
+          - name: district_name
+            data_type: string
+          - name: school_code
+            data_type: string
+          - name: school_name
+            data_type: string
+          - name: dfg
+            data_type: string
+          - name: subgroup
+            data_type: string
+          - name: subgroup_type
+            data_type: string
+          - name: reg_to_test
+            data_type: string
+          - name: not_tested
+            data_type: string
+          - name: valid_scores
+            data_type: string
+          - name: mean_score
+            data_type: string
+          - name: l1_percent
+            data_type: string
+          - name: l2_percent
+            data_type: string
+          - name: l3_percent
+            data_type: string
+          - name: l4_percent
+            data_type: string
+          - name: l5_percent
+            data_type: string
+          - name: academic_year
+            data_type: string
+          - name: test_season
+            data_type: string
+          - name: test_code
+            data_type: string
