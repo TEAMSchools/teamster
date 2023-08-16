@@ -15,7 +15,7 @@ with
                 when `subject` = 'Tuition Deposit Not Required'
                 then 'TD_NR'
                 when `subject` like 'Advising Session%'
-                then 'AS'
+                then 'AS' || regexp_extract(subject, r'Advising\s*Session\s*#?\s*(\d+)')
                 when `subject` like 'Grad Plan%'
                 then 'GP'
                 when regexp_contains(`subject`, r'SC\d')
@@ -28,6 +28,7 @@ with
                 then regexp_extract(`subject`, r'Q\d\s?(SM\d)')
                 when `subject` like '%HV'
                 then 'HV'
+                else subject
             end as contact_subject,
             case
                 when regexp_contains(`subject`, r'Q\d')
