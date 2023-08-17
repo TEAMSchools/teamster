@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: illuminate
+    schema: illuminate_dna_repositories
+    tables:
+      - name: expressions
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - expressions
+      - name: repositories
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repositories
+      - name: repository_grade_levels
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_grade_levels
+      - name: repository_fields
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_fields
+        identifier: fields

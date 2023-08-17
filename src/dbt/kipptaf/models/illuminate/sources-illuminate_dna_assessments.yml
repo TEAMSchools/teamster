@@ -1,0 +1,114 @@
+version: 2
+
+sources:
+  - name: illuminate
+    schema: illuminate_dna_assessments
+    tables:
+      - name: assessment_grade_levels
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - assessment_grade_levels
+      - name: assessment_standards
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - assessment_standards
+      - name: assessments
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - assessments
+      - name: assessments_reporting_groups
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - assessments_reporting_groups
+      - name: field_standards
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - field_standards
+      - name: fields_reporting_groups
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - fields_reporting_groups
+      - name: performance_band_sets
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - performance_band_sets
+      - name: performance_bands
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - performance_bands
+      - name: reporting_groups
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - reporting_groups
+      - name: students_assessments
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - students_assessments
+      - name: tags
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - standardna_assessments  - subjects
+      - name: assessment_fields
+        identifier: fields
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_assessments
+              - assessment_fields
