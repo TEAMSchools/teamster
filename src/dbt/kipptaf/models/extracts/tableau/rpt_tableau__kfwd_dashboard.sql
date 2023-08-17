@@ -50,24 +50,12 @@ with
     latest_note as (
         select
             contact,
+            academic_year,
             comments,
             next_steps,
-            `subject`,
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="date", start_month=7, year_source="start"
-                )
-            }} as academic_year,
             row_number() over (
-                partition by
-                    contact,
-                    {{
-                        teamster_utils.date_to_fiscal_year(
-                            date_field="date", start_month=7, year_source="start"
-                        )
-                    }}
-                order by `date` desc
-            ) as rn,
+                partition by contact, academic_year order by `date` desc
+            ) as rn_contact_year_desc,
         from {{ ref("stg_kippadb__contact_note") }}
         where regexp_contains(`subject`, r'^AS\d')
     ),
@@ -75,31 +63,22 @@ with
     tier as (
         select
             contact,
+            academic_year,
             `subject` as tier,
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="date", start_month=7, year_source="start"
-                )
-            }} as academic_year,
             row_number() over (
-                partition by
-                    contact,
-                    {{
-                        teamster_utils.date_to_fiscal_year(
-                            date_field="date", start_month=7, year_source="start"
-                        )
-                    }}
-                order by `date` desc
-            ) as rn,
+                partition by contact, academic_year order by `date` desc
+            ) as rn_contact_year_desc,
         from {{ ref("stg_kippadb__contact_note") }}
-        where `subject` like 'Tier [0-9]'
+        where regexp_contains(subject, r'Tier\s\d$')
     ),
 
     grad_plan as (
         select
             contact,
             `subject` as grad_plan_year,
-            row_number() over (partition by contact order by `date` desc) as rn,
+            row_number() over (
+                partition by contact order by `date` desc
+            ) as rn_contact_desc,
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` like 'Grad Plan FY%'
     ),
@@ -366,13 +345,13 @@ left join
     latest_note as ln
     on c.contact_id = ln.contact
     and ay.academic_year = ln.academic_year
-    and ln.rn = 1
+    and ln.rn_contact_year_desc = 1
 left join
     tier
     on c.contact_id = tier.contact
     and ay.academic_year = tier.academic_year
-    and tier.rn = 1
-left join grad_plan as gp on c.contact_id = gp.contact and gp.rn = 1
+    and tier.rn_contact_year_desc = 1
+left join grad_plan as gp on c.contact_id = gp.contact and gp.rn_contact_desc = 1
 left join finaid as fa on c.contact_id = fa.student and fa.rn_finaid = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
