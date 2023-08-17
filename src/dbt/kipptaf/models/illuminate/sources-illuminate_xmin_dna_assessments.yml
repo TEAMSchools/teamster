@@ -1,0 +1,51 @@
+version: 2
+
+sources:
+  - name: illuminate
+    schema: illuminate_xmin_dna_assessments
+    tables:
+      - name: agg_student_responses
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate_xmin
+              - dna_assessments
+              - agg_student_responses
+      - name: agg_student_responses_group
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate_xmin
+              - dna_assessments
+              - agg_student_responses_group
+      - name: agg_student_responses_standard
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate_xmin
+              - dna_assessments
+              - agg_student_responses_standard
+      - name: agg_students_assessments_scores
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate_xmin
+              - dna_assessments
+              - agg_students_assessments_scores
+      - name: students_assessments_archive
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate_xmin
+              - dna_assessments
+              - students_assessments_archive
