@@ -43,12 +43,12 @@ select
     cwt.sublevel_name as sa_proj_lvl_str,
     cwt.sublevel_number as sa_proj_lvl_str_num,
 
-    count(*) over (
+    row_number() over (
         partition by dr.student_id, dr.academic_year, dr.subject, rt.name
         order by dr.completion_date desc
     ) as rn_subj_round,
 
-    count(*) over (
+    row_number() over (
         partition by dr.student_id, dr.academic_year, dr.subject
         order by dr.completion_date desc
     ) as rn_subj_year,
