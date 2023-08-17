@@ -32,5 +32,11 @@ select
     subject__c as `subject`,
     systemmodstamp as system_modstamp,
     type__c as `type`,
+
+    {{
+        teamster_utils.date_to_fiscal_year(
+            date_field="date__c", start_month=7, year_source="start"
+        )
+    }} as academic_year,
 from {{ source("kippadb", "contact_note") }}
 where not isdeleted
