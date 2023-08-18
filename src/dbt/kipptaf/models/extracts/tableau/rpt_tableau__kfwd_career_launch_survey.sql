@@ -10,10 +10,10 @@ with
             e.major,
             e.status,
 
-            c.first_name,
-            c.last_name,
-            c.email,
-            c.secondary_email,
+            c.first_name as sf_first_name,
+            c.last_name as sf_last_name,
+            c.email as sf_email,
+            c.secondary_email as sf_secondary_email,
             c.kipp_ms_graduate,
             c.kipp_hs_graduate,
             c.kipp_hs_class,
@@ -64,8 +64,8 @@ with
             last_name,
             after_grad,
             alumni_dob,
-            alumni_email,
-            email,
+            alumni_email as survey_alumni_email,
+            email as survey_email,
             alumni_phone,
             job_sat,
             ladder,
@@ -215,4 +215,4 @@ from survey_weighted as sw
 full join
     alumni_data as ad
     on ad.rn_latest = 1
-    and (sw.respondent_user_principal_name = ad.email or sw.respondent_user_principal_name = ad.secondary_email)
+    and (sw.respondent_user_principal_name = ad.sf_email or sw.respondent_user_principal_name = ad.sf_secondary_email)
