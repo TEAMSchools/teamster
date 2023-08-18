@@ -206,6 +206,7 @@ from scaffold as s
 left join
     observations as o
     on cast(o.observed_at as date) between s.start_date and s.end_date
+    /* Matches on name for PM Rounds to distinguish Self and Coach, matches only on type and date for weekly forms*/
     and (
         (s.name = o.reporting_term_name and s.user_id = o.teacher_id)
         or (s.type = o.reporting_term_type and s.user_id = o.teacher_id)
