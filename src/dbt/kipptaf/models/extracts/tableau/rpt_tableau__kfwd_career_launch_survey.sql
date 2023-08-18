@@ -215,4 +215,7 @@ from survey_weighted as sw
 full join
     alumni_data as ad
     on ad.rn_latest = 1
-    and (sw.respondent_user_principal_name = ad.sf_email or sw.respondent_user_principal_name = ad.sf_secondary_email)
+    and (
+        sw.respondent_user_principal_name = ad.sf_email
+        or sw.respondent_user_principal_name = ad.sf_secondary_email
+    )
