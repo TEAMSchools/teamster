@@ -37,6 +37,7 @@ with
             ri.response_id,
             ri.response_date_submitted,
             ri.respondent_salesforce_id,
+            ri.respondent_user_principal_name,
 
             sr.survey_title,
             sr.question_short_name,
@@ -56,13 +57,13 @@ with
             response_id,
             response_date_submitted,
             respondent_salesforce_id,
+            respondent_user_principal_name,
 
             {# pivot cols #}
             first_name,
             last_name,
             after_grad,
             alumni_dob,
-            coalesce(alumni_email,email) as alumni_email,
             alumni_phone,
             job_sat,
             ladder,
@@ -212,5 +213,4 @@ from alumni_data as ad
 left join
     survey_weighted as sw
     on ad.rn_latest = 1
-    and (sw.alumni_email = ad.email or sw.alumni_email = ad.secondary_email)
-where sw.response_id is not null
+    and (sw.respondent_user_principal_name = ad.email or sw.respondent_user_principal_name = ad.secondary_email)
