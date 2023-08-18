@@ -30,3 +30,27 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__iready_crosswalk
             skip_leading_rows: 1
+      - name: src_assessments__academic_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__academic_goals
+            skip_leading_rows: 1
+      - name: src_assessments__act_scale_score_key
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__act_scale_score_key
+            skip_leading_rows: 1
+      - name: src_assessments__qbls_power_standards
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__qbls_power_standards
+            skip_leading_rows: 1
