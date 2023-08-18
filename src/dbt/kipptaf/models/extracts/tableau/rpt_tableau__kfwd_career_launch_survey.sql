@@ -64,6 +64,8 @@ with
             last_name,
             after_grad,
             alumni_dob,
+            alumni_email,
+            email,
             alumni_phone,
             job_sat,
             ladder,
@@ -209,8 +211,8 @@ select
         when extract(month from actual_end_date) between 7 and 12
         then concat('Fall ', extract(year from actual_end_date))
     end as season_label,
-from alumni_data as ad
-left join
-    survey_weighted as sw
+from survey_weighted as sw
+full join
+    alumni_data as ad
     on ad.rn_latest = 1
     and (sw.respondent_user_principal_name = ad.email or sw.respondent_user_principal_name = ad.secondary_email)
