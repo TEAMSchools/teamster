@@ -62,7 +62,7 @@ with
             last_name,
             after_grad,
             alumni_dob,
-            alumni_email,
+            coalesce(alumni_email,email) as alumni_email,
             alumni_phone,
             job_sat,
             ladder,
@@ -90,6 +90,7 @@ with
                     'last_name',
                     'alumni_dob',
                     'alumni_email',
+                    'email',
                     'alumni_phone',
                     'after_grad',
                     'cur_1',
@@ -164,71 +165,52 @@ with
                     'imp_10'
                 )
             )
+    ),
+
+    survey_weighted as (
+        select
+            s.*,
+
+            /* weighted satisfaction scores based on relative importance of each*/
+            s.cur_1 * p.imp_1 as level_pay_quality,
+            s.cur_2 * p.imp_2 as stable_pay_quality,
+            s.cur_3 * p.imp_3 as stable_hours_quality,
+            s.cur_4 * p.imp_4 as control_hours_location_quality,
+            s.cur_5 * p.imp_5 as job_security_quality,
+            s.cur_6 * p.imp_6 as benefits_quality,
+            s.cur_7 * p.imp_7 as advancement_quality,
+            s.cur_8 * p.imp_8 as enjoyment_quality,
+            s.cur_9 * p.imp_9 as purpose_quality,
+            s.cur_10 * p.imp_10 as power_quality,
+            (
+                (s.cur_1 * p.imp_1)
+                + (s.cur_2 * p.imp_2)
+                + (s.cur_3 * p.imp_3)
+                + (s.cur_4 * p.imp_4)
+                + (s.cur_5 * p.imp_5)
+                + (s.cur_6 * p.imp_6)
+                + (s.cur_7 * p.imp_7)
+                + (s.cur_8 * p.imp_8)
+                + (s.cur_9 * p.imp_9)
+                + (s.cur_10 * p.imp_10)
+            )
+            / 10.0 as overall_quality,
+        from survey_pivot as s
+        cross join weight_pivot as p
     )
 
 select
-    s.survey_title,
-    s.response_id as survey_response_id,
-    s.response_date_submitted as date_submitted,
-    s.respondent_salesforce_id,
-    s.first_name,
-    s.last_name,
-    s.alumni_phone,
-    s.alumni_email,
-    s.after_grad,
-    s.alumni_dob,
-    s.job_sat,
-    s.ladder,
-    s.covid,
-    s.linkedin,
-    s.linkedin_link,
-    s.debt_binary,
-    s.debt_amount,
-    s.annual_income,
-
-    /* weighted satisfaction scores based on relative importance of each*/
-    s.cur_1 * p.imp_1 as level_pay_quality,
-    s.cur_2 * p.imp_2 as stable_pay_quality,
-    s.cur_3 * p.imp_3 as stable_hours_quality,
-    s.cur_4 * p.imp_4 as control_hours_location_quality,
-    s.cur_5 * p.imp_5 as job_security_quality,
-    s.cur_6 * p.imp_6 as benefits_quality,
-    s.cur_7 * p.imp_7 as advancement_quality,
-    s.cur_8 * p.imp_8 as enjoyment_quality,
-    s.cur_9 * p.imp_9 as purpose_quality,
-    s.cur_10 * p.imp_10 as power_quality,
-    (
-        (s.cur_1 * p.imp_1)
-        + (s.cur_2 * p.imp_2)
-        + (s.cur_3 * p.imp_3)
-        + (s.cur_4 * p.imp_4)
-        + (s.cur_5 * p.imp_5)
-        + (s.cur_6 * p.imp_6)
-        + (s.cur_7 * p.imp_7)
-        + (s.cur_8 * p.imp_8)
-        + (s.cur_9 * p.imp_9)
-        + (s.cur_10 * p.imp_10)
-    )
-    / 10.0 as overall_quality,
-
-    a.name,
-    a.kipp_ms_graduate,
-    a.kipp_hs_graduate,
-    a.kipp_hs_class,
-    a.college_match_display_gpa,
-    a.kipp_region_name,
-    a.description,
-    a.gender,
-    a.ethnicity,
-    a.pursuing_degree_type,
-    a.type,
-    a.start_date,
-    a.actual_end_date,
-    a.major,
-    a.status,
-from survey_pivot as s
-cross join weight_pivot as p
+    ad.*,
+    sw.*,
+    case
+        when extract(month from actual_end_date) between 1 and 6
+        then concat('Spring ', extract(year from actual_end_date))
+        when extract(month from actual_end_date) between 7 and 12
+        then concat('Fall ', extract(year from actual_end_date))
+    end as season_label,
+from alumni_data as ad
 left join
-    alumni_data as a
-    on a.rn_latest = 1
-    and (s.alumni_email = a.email or s.alumni_email = a.secondary_email)
+    survey_weighted as sw
+    on ad.rn_latest = 1
+    and (sw.alumni_email = ad.email or sw.alumni_email = ad.secondary_email)
+where sw.response_id is not null
