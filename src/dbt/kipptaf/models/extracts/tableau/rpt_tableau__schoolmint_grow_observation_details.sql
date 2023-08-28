@@ -91,6 +91,56 @@ with
                 when o.rubric_name like '%O3%'
                 then 'O3'
             end as reporting_term_type,
+            case
+                when
+                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
+                        {{ var("current_academic_year") }}, 10, 31
+                    )
+                then 'BOY (Coach)'
+                when
+                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
+                        {{ var("current_academic_year") }}, 10, 31
+                    )
+                then 'BOY (Self)'
+                when
+                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_academic_year") }}, 11, 1) and date(
+                        {{ var("current_academic_year") }}, 2, 29
+                    )
+                then 'MOY (Coach)'
+                when
+                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_academic_year") }}, 11, 1) and date(
+                        {{ var("current_academic_year") }}, 2, 29
+                    )
+                then 'MOY (Self)'
+                when
+                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_academic_year") }}, 3, 1) and date(
+                        {{ var("current_academic_year") }}, 6, 30
+                    )
+                then 'EOY (Coach)'
+                when
+                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_academic_year") }}, 3, 1) and date(
+                        {{ var("current_academic_year") }}, 6, 30
+                    )
+                then 'EOY (Self)'
+            end as reporting_term_name,
             if(
                 b.type = 'checkbox', m.name || ' - ' || b.label, m.name
             ) as measurement_label,
@@ -156,5 +206,8 @@ from scaffold as s
 left join
     observations as o
     on cast(o.observed_at as date) between s.start_date and s.end_date
-    and s.type = o.reporting_term_type
-    and s.user_id = o.teacher_id
+    /* Matches on name for PM Rounds to distinguish Self and Coach, matches only on type and date for weekly forms*/
+    and (
+        (s.name = o.reporting_term_name and s.user_id = o.teacher_id)
+        or (s.type = o.reporting_term_type and s.user_id = o.teacher_id) 
+    )

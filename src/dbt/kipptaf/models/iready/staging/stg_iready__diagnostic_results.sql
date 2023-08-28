@@ -98,6 +98,8 @@ with
             vocabulary_relative_placement,
             vocabulary_scale_score,
 
+            _dbt_source_relation,
+
             parse_date('%m/%d/%Y', start_date) as start_date,
             parse_date('%m/%d/%Y', completion_date) as completion_date,
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,

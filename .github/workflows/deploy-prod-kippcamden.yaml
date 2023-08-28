@@ -13,6 +13,7 @@ on:
       - src/teamster/kippcamden/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
+      - src/dbt/pearson/**
       - src/dbt/powerschool/**
       - src/dbt/titan/**
       - src/dbt/teamster_utils/**

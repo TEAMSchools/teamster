@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: illuminate
+    schema: illuminate_groups
+    tables:
+      - name: group_student_aff
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - groups
+              - group_student_aff
+      - name: groups
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - groups
+              - groups
