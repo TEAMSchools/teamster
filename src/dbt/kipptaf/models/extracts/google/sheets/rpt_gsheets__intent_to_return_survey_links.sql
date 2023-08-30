@@ -35,6 +35,7 @@ select
         ')'
     ) as respondent_response_name,
     regexp_extract(w.communication_business_email, r'^(.*?)@') as worker_username,
+    w.google_email,
     concat(
         'https://docs.google.com/forms/d/e/',
         '1FAIpQLSerLfKQhyeRGIWNBRTyYHfefnuCmveUCKQ-nt3qaeJrq96w3A',
@@ -54,3 +55,4 @@ select
     ) as intent_to_return_personal_link
 from {{ ref("base_people__staff_roster") }} as w
 join itr_route as i on w.job_title = i.job_title
+where w.status_value != 'Terminated'
