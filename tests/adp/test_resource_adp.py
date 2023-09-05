@@ -1,3 +1,6 @@
+import json
+import pathlib
+
 from dagster import EnvVar, build_resources
 
 from teamster.core.adp.resources import AdpWorkforceNowResource
@@ -35,8 +38,12 @@ def test_get_worker():
 
 
 def test_get_workers():
-    r = ADP_WFN._request(method="GET", url=f"{ADP_WFN._service_root}/hr/v2/workers")
+    response = ADP_WFN._request(
+        method="GET", url=f"{ADP_WFN._service_root}/hr/v2/workers"
+    )
 
-    workers = r.json()["workers"]
+    filepath = pathlib.Path("env/adp/workers.json")
 
-    print([w for w in workers if w["associateOID"] == "G3MQ5XDMH0DC9TWJ"])
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    json.dump(obj=response.json()["workers"], fp=filepath.open(mode="w"))
