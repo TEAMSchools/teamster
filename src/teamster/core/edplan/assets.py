@@ -1,4 +1,4 @@
-from dagster import DailyPartitionsDefinition, config_from_files
+from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, config_from_files
 
 from teamster.core.edplan.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
@@ -18,6 +18,7 @@ def build_edplan_sftp_asset(config_dir, code_location, timezone):
                 fmt="%Y-%m-%d",
                 end_offset=1,
             ),
+            auto_materialize_policy=AutoMaterializePolicy.eager(),
             **a,
         )
 
