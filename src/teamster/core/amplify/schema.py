@@ -11,7 +11,7 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     {"name": "benchmark_period", "type": ["null", "string"], "default": None},
     {"name": "classed", "type": ["null", "string"], "default": None},
     {"name": "composite_level", "type": ["null", "string"], "default": None},
-    {"name": "composite_score", "type": ["null", "long"], "default": None},
+    {"name": "composite_score", "type": ["null", "long", "double"], "default": None},
     {"name": "composite_semester_growth", "type": ["null", "string"], "default": None},
     {"name": "composite_year_growth", "type": ["null", "string"], "default": None},
     {"name": "decoding_nwf_wrc_level", "type": ["null", "string"], "default": None},
@@ -35,7 +35,11 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     {"name": "municipality_name", "type": ["null", "string"], "default": None},
     {"name": "municipality_primary_id", "type": ["null", "string"], "default": None},
     {"name": "official_teacher_name", "type": ["null", "string"], "default": None},
-    {"name": "official_teacher_staff_id", "type": ["null", "long"], "default": None},
+    {
+        "name": "official_teacher_staff_id",
+        "type": ["null", "long", "string"],
+        "default": None,
+    },
     {"name": "primary_school_id", "type": ["null", "string"], "default": None},
     {"name": "race", "type": ["null", "string"], "default": None},
     {"name": "ran_level", "type": ["null", "string"], "default": None},
@@ -100,7 +104,7 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     },
     {
         "name": "letter_names_lnf_national_norm_percentile",
-        "type": ["null", "string"],
+        "type": ["null", "string", "double"],
         "default": None,
     },
     {
@@ -145,7 +149,7 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     },
     {
         "name": "phonemic_awareness_psf_national_norm_percentile",
-        "type": ["null", "string"],
+        "type": ["null", "string", "double"],
         "default": None,
     },
     {
@@ -175,7 +179,7 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     },
     {
         "name": "reading_accuracy_orf_accu_national_norm_percentile",
-        "type": ["null", "double"],
+        "type": ["null", "double", "string"],
         "default": None,
     },
     {
@@ -220,7 +224,7 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     },
     {
         "name": "reading_fluency_orf_national_norm_percentile",
-        "type": ["null", "double"],
+        "type": ["null", "double", "string"],
         "default": None,
     },
     {
@@ -279,9 +283,13 @@ PM_STUDENT_SUMMARY_FIELDS = [
     {"name": "alternate_assessment", "type": ["null", "string"], "default": None},
     {"name": "approved_accommodations", "type": ["null", "string"], "default": None},
     {"name": "assessing_teacher_name", "type": ["null", "string"], "default": None},
-    {"name": "assessing_teacher_staff_id", "type": ["null", "double"], "default": None},
+    {
+        "name": "assessing_teacher_staff_id",
+        "type": ["null", "double", "string"],
+        "default": None,
+    },
     {"name": "assessment_edition", "type": ["null", "string"], "default": None},
-    {"name": "assessment_grade", "type": ["null", "long"], "default": None},
+    {"name": "assessment_grade", "type": ["null", "long", "string"], "default": None},
     {"name": "assessment", "type": ["null", "string"], "default": None},
     {"name": "classed", "type": ["null", "string"], "default": None},
     {"name": "disability", "type": ["null", "string"], "default": None},
@@ -290,7 +298,7 @@ PM_STUDENT_SUMMARY_FIELDS = [
     {"name": "economically_disadvantaged", "type": ["null", "string"], "default": None},
     {"name": "ell_status", "type": ["null", "string"], "default": None},
     {"name": "english_proficiency", "type": ["null", "string"], "default": None},
-    {"name": "enrollment_grade", "type": ["null", "long"], "default": None},
+    {"name": "enrollment_grade", "type": ["null", "long", "string"], "default": None},
     {"name": "external_program", "type": ["null", "string"], "default": None},
     {"name": "gender", "type": ["null", "string"], "default": None},
     {"name": "home_language", "type": ["null", "string"], "default": None},
@@ -301,7 +309,11 @@ PM_STUDENT_SUMMARY_FIELDS = [
     {"name": "municipality_name", "type": ["null", "string"], "default": None},
     {"name": "municipality_primary_id", "type": ["null", "string"], "default": None},
     {"name": "official_teacher_name", "type": ["null", "string"], "default": None},
-    {"name": "official_teacher_staff_id", "type": ["null", "long"], "default": None},
+    {
+        "name": "official_teacher_staff_id",
+        "type": ["null", "long", "string"],
+        "default": None,
+    },
     {"name": "pm_period", "type": ["null", "string"], "default": None},
     {"name": "primary_school_id", "type": ["null", "string"], "default": None},
     {"name": "probe_number", "type": ["null", "long"], "default": None},
@@ -310,8 +322,8 @@ PM_STUDENT_SUMMARY_FIELDS = [
     {"name": "reporting_class_name", "type": ["null", "string"], "default": None},
     {"name": "school_name", "type": ["null", "string"], "default": None},
     {"name": "school_year", "type": ["null", "string"], "default": None},
-    {"name": "score_change", "type": ["null", "string"], "default": None},
-    {"name": "score", "type": ["null", "long"], "default": None},
+    {"name": "score_change", "type": ["null", "string", "double"], "default": None},
+    {"name": "score", "type": ["null", "long", "double"], "default": None},
     {"name": "secondary_school_id", "type": ["null", "string"], "default": None},
     {"name": "section_504", "type": ["null", "string"], "default": None},
     {"name": "special_education", "type": ["null", "string"], "default": None},
