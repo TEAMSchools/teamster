@@ -39,12 +39,12 @@ def _test(dyd_results, years):
 def test_benchmark_student_summary():
     _test(
         dyd_results="BM",
-        years="21",  # 2022-2023
+        years="22",  # 2023-2024
     )
 
 
 def test_pm_student_summary():
     _test(
         dyd_results="PM",
-        years="21",  # 2022-2023
+        years="22",  # 2023-2024
     )
