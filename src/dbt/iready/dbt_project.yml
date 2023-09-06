@@ -29,3 +29,6 @@ clean-targets: # directories to be removed by `dbt clean`
 models:
   iready:
     +materialized: table
+
+vars:
+  cloud_storage_uri_base: null
