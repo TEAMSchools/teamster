@@ -39,9 +39,12 @@ select
     coalesce(
         enrollment_grade.string_value, safe_cast(enrollment_grade.long_value as string)
     ) as enrollment_grade,
-    coalesce(score.double_value, safe_cast(score.long_value as numeric)) as score,
     coalesce(
-        score_change.double_value, safe_cast(score_change.string_value as numeric)
+        safe_cast(score.double_value as numeric), safe_cast(score.long_value as numeric)
+    ) as score,
+    coalesce(
+        safe_cast(score_change.double_value as numeric),
+        safe_cast(score_change.string_value as numeric)
     ) as score_change,
 
     safe_cast(left(school_year, 4) as int) as academic_year,

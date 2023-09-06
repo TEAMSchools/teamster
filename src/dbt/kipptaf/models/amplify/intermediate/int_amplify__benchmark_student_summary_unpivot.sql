@@ -1,5 +1,3 @@
--- This chunk both unpivots AND groups the measures of each standard assessed by
--- DIBELS's benchmark test
 select
     surrogate_key,
 

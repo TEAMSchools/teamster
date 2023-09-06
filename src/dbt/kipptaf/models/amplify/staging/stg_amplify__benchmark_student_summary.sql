@@ -72,7 +72,8 @@ select
         safe_cast(official_teacher_staff_id.long_value as string)
     ) as official_teacher_staff_id,
     coalesce(
-        composite_score.double_value, safe_cast(composite_score.long_value as numeric)
+        safe_cast(composite_score.double_value as numeric),
+        safe_cast(composite_score.long_value as numeric)
     ) as composite_score,
 
     safe_cast(decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
@@ -152,7 +153,9 @@ select
         composite_national_norm_percentile as numeric
     ) as composite_national_norm_percentile,
     coalesce(
-        reading_accuracy_orf_accu_national_norm_percentile.double_value,
+        safe_cast(
+            reading_accuracy_orf_accu_national_norm_percentile.double_value as numeric
+        ),
         safe_cast(
             reading_accuracy_orf_accu_national_norm_percentile.string_value as numeric
         )
@@ -161,7 +164,7 @@ select
         reading_comprehension_maze_national_norm_percentile as numeric
     ) as reading_comprehension_maze_national_norm_percentile,
     coalesce(
-        reading_fluency_orf_national_norm_percentile.double_value,
+        safe_cast(reading_fluency_orf_national_norm_percentile.double_value as numeric),
         safe_cast(reading_fluency_orf_national_norm_percentile.string_value as numeric)
     ) as reading_fluency_orf_national_norm_percentile,
 
@@ -169,7 +172,7 @@ select
         nullif(decoding_nwf_wrc_national_norm_percentile, 'Tested Out') as numeric
     ) as decoding_nwf_wrc_national_norm_percentile,
     coalesce(
-        letter_names_lnf_national_norm_percentile.double_value,
+        safe_cast(letter_names_lnf_national_norm_percentile.double_value as numeric),
         safe_cast(
             nullif(
                 letter_names_lnf_national_norm_percentile.string_value, 'Tested Out'
@@ -180,7 +183,9 @@ select
         nullif(letter_sounds_nwf_cls_national_norm_percentile, 'Tested Out') as numeric
     ) as letter_sounds_nwf_cls_national_norm_percentile,
     coalesce(
-        phonemic_awareness_psf_national_norm_percentile.double_value,
+        safe_cast(
+            phonemic_awareness_psf_national_norm_percentile.double_value as numeric
+        ),
         safe_cast(
             nullif(
                 phonemic_awareness_psf_national_norm_percentile.string_value,
