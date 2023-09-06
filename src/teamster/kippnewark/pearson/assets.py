@@ -6,7 +6,7 @@ sftp_assets = build_pearson_sftp_assets(
     config_dir=f"src/teamster/{CODE_LOCATION}/pearson/config",
     code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
-    max_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year - 1,
+    max_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
 __all__ = [
