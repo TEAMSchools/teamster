@@ -5,7 +5,7 @@
 /src/teamster/ @TEAMSchools/data-engineers
 
 # dbt code
-/src/dbt/ @TEAMSchools/analytics-engineers
+/src/dbt/kipptaf/models/extracts @TEAMSchools/analytics-engineers
 
 # Each line is a file pattern followed by one or more owners.
 
