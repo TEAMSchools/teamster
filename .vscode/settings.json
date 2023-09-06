@@ -1,37 +1,45 @@
 {
-  "dbt.versionCheck": "status bar",
+  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
   "dbt.prefixGenerateModel": "stg",
+  "dbt.queryLimit": 500,
+  "dbt.versionCheck": "status bar",
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
-  "editor.renderWhitespace": "all",
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
+  "editor.renderWhitespace": "all",
   "editor.wordWrap": "bounded",
   "editor.wordWrapColumn": 88,
+  "githubPullRequests.ignoredPullRequestBranches": ["main"],
+  "python.analysis.autoImportCompletions": false,
+  "python.analysis.typeCheckingMode": "off",
+  "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
+  "python.terminal.activateEnvironment": false,
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "trunk.numJobs": 1,
   "files.associations": {
     "*.toml": "toml",
     "*.env": "shellscript",
-    "*.sql": "sql"
+    "*.sql": "jinja-sql"
   },
   "files.exclude": {
     "**/.git": false,
-    "**/.trunk/*out": true
+    "**/.trunk/*actions/": true,
+    "**/.trunk/*logs/": true,
+    "**/.trunk/*notifications/": true,
+    "**/.trunk/*out/": true,
+    "**/.trunk/*plugins/": true
   },
   "files.watcherExclude": {
-    "**/.trunk/*out": true
+    "**/.trunk/*actions/": true,
+    "**/.trunk/*logs/": true,
+    "**/.trunk/*notifications/": true,
+    "**/.trunk/*out/": true,
+    "**/.trunk/*plugins/": true
   },
-  "python.analysis.autoImportCompletions": false,
-  "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
-  "python.terminal.activateEnvironment": false,
-  "python.analysis.typeCheckingMode": "off",
-  "python.testing.pytestArgs": ["tests"],
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true,
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  },
-  "githubPullRequests.ignoredPullRequestBranches": ["main"],
-  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
-  "dbt.queryLimit": 500,
-  "trunk.numJobs": 1
+  }
 }
