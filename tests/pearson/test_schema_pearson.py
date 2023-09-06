@@ -67,7 +67,7 @@ def test_njsla():
         # local_filepath="env/njsla/njs22_NJ-807325_District_Summative_Record_File_Spring.csv",
         # local_filepath="env/njsla/njs23_NJ-807325_District_Summative_Record_File_Spring.csv",
         # local_filepath="env/njsla/njs22_NJ-071799_District_Summative_Record_File_Spring.csv",
-        # local_filepath="env/njsla/njs23_NJ-071799_District_Summative_Record_File_Spring.csv",
+        local_filepath="env/njsla/njs23_NJ-071799_District_Summative_Record_File_Spring.csv",
     )
 
 
