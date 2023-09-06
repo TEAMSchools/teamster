@@ -8,12 +8,9 @@ from slugify import slugify
 from teamster.core.amplify.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-ASSET_NAME = "benchmark_student_summary"
-# ASSET_NAME = "pm_student_summary"
 
-
-def test_schema():
-    df = read_csv(filepath_or_buffer=f"env/{ASSET_NAME}.csv", low_memory=False)
+def _test(asset_name, file_name):
+    df = read_csv(filepath_or_buffer=file_name, low_memory=False)
     df = df.replace({nan: None})
     df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 
@@ -24,7 +21,7 @@ def test_schema():
     sample_record = records[random.randint(a=0, b=(count - 1))]
     # print(sample_record)
 
-    schema = get_avro_record_schema(name=ASSET_NAME, fields=ASSET_FIELDS[ASSET_NAME])
+    schema = get_avro_record_schema(name=asset_name, fields=ASSET_FIELDS[asset_name])
     # print(schema)
 
     parsed_schema = parse_schema(schema)
@@ -41,3 +38,11 @@ def test_schema():
             codec="snappy",
             strict_allow_default=True,
         )
+
+
+def test_schema_bm():
+    _test(asset_name="benchmark_student_summary", file_name="env/amplify/BM.csv")
+
+
+def test_schema_pm():
+    _test(asset_name="pm_student_summary", file_name="env/amplify/PM.csv")
