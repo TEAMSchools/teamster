@@ -2,6 +2,12 @@ assets:
   - name: user_person
     search_base: dc=teamschools,dc=kipp,dc=org
     search_filter: (&(objectClass=user)(objectCategory=person))
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 1.0Gi
   - name: group
     search_base: dc=teamschools,dc=kipp,dc=org
     search_filter: (objectClass=group)
