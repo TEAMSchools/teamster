@@ -17,5 +17,6 @@ Next-gen data orchestration, powered by Dagster
   [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)
 - GitHub Actions for CI/CD
 
-# Contributors
+## Contributors
+
 - @cbini
