@@ -1,4 +1,5 @@
-{# {{ config(enabled=false) }} #}
+{{ config(enabled=false) }}
+
 with
     group_updated as (
         select ticket_id, max(created_at) as max_created_at
