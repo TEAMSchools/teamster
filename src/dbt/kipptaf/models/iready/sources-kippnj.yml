@@ -12,3 +12,19 @@ sources:
               - kippnewark
               - iready
               - stg_iready__diagnostic_results
+      - name: stg_iready__instructional_usage_data
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - iready
+              - stg_iready__instructional_usage_data
+      - name: stg_iready__personalized_instruction_by_lesson
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - iready
+              - stg_iready__personalized_instruction_by_lesson
