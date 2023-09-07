@@ -36,7 +36,7 @@ Before you merge:
 
 ## Chores
 
-### Check `#dagster-alerts`. If there is a run failure notification:
+### Check `#dagster-alerts`. If there is a run failure notification
 
 1.  Click on the link to the failed run.
 2.  Determine whether the failure is a framework error or a programming error. Typically, it's a
