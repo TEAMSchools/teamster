@@ -37,7 +37,6 @@ select
     s.islate,
     s.isexempt,
     s.ismissing,
-
 from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
@@ -103,7 +102,6 @@ select
     s.islate,
     s.isexempt,
     s.ismissing,
-
 from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
