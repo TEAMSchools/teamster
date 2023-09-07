@@ -41,6 +41,6 @@ RUN pip install --no-cache-dir .
 COPY src/dbt ./src/dbt
 ENV DBT_PROFILES_DIR=/root/app/src/dbt/kipptaf
 WORKDIR /root/app/src/dbt/kipptaf
-RUN dbt clean && dbt deps && dbt list
+RUN dbt clean && dbt deps && dbt parse
 
 WORKDIR /root/app
