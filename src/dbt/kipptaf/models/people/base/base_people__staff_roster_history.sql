@@ -120,7 +120,6 @@ with
             person_custom_covid_19_date_of_last_vaccine
             as custom_covid_19_date_of_last_vaccine,
             person_custom_covid_19_vaccine_type as custom_covid_19_vaccine_type,
-            
 
             disability_long_name as disability,
 
@@ -325,7 +324,13 @@ with
             sis.years_teaching_in_njfl,
             sis.years_teaching_outside_njfl,
 
-            coalesce(sis.gender_identity, wp.gender_long_name) as gender_identity,
+            case
+                when coalesce(sis.gender_identity, wp.gender_long_name) = 'Female'
+                then 'Cis Woman'
+                when coalesce(sis.gender_identity, wp.gender_long_name) = 'Male'
+                then 'Cis Man'
+                else coalesce(sis.gender_identity, wp.gender_long_name)
+            end as gender_identity,
 
             case
                 when regexp_contains(sis.race_ethnicity, 'Latinx/Hispanic/Chicana(o)')
@@ -355,6 +360,8 @@ with
                     then 'Black/African American'
                     when 'Hispanic or Latino'
                     then 'Latinx/Hispanic/Chicana(o)'
+                    when 'Two or more races (Not Hispanic or Latino)'
+                    then 'Bi/Multiracial'
                     else wp.race_long_name
                 end
             ) as race_ethnicity_reporting,
