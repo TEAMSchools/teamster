@@ -9,7 +9,7 @@ select
             from=ref_pb, relation_alias="pb", except=["performance_band_set_id"]
         )
     }},
-    
+
     lead(minimum_value, 1, 9999) over (
         partition by pbs.performance_band_set_id order by pb.label_number
     )
