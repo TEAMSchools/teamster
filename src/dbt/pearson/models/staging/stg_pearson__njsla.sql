@@ -1,4 +1,4 @@
-{%- set src_parcc = source("pearson", "src_pearson__parcc") -%}
+{%- set src_parcc = source("pearson", "src_pearson__njsla") -%}
 
 select
     {{
