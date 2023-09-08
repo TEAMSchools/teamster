@@ -88,15 +88,15 @@ with
             r.student_number,
             r.mclass_period,
             r.mclass_measure,
-            null as description,  /* v.description,*/
+            v.description,
             r.mclass_measure_level,
             r.measure_semester_growth,
             r.measure_year_growth
         from roster_and_scores as r
-    /*inner join
-            `teamster-332318.grangel.dl_report_es_dibels_verbiage` as v --this is currently a table i added to grangel, but i have a request on asana to add a google sheet source to the data warehouse
+        inner join
+            {{ ref("stg_assessments__mclass_dibels_measures") }} as v
             on r.grade_level = v.grade_level
-            and r.mclass_measure = v.measure*/
+            and r.mclass_measure = v.name
     ),
 
     composite_levels as (
