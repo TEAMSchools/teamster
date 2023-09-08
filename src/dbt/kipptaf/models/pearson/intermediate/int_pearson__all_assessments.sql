@@ -5,6 +5,7 @@ with
                 relations=[
                     ref("stg_pearson__parcc"),
                     ref("stg_pearson__njsla"),
+                    ref("stg_pearson__njsla_science"),
                     ref("stg_pearson__njgpa"),
                 ],
                 exclude=["_dbt_source_relation"],
