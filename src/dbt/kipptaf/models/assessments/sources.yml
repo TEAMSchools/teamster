@@ -54,3 +54,18 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__qbls_power_standards
             skip_leading_rows: 1
+      - name: src_assessments__mclass_dibels_measures
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__mclass_dibels_measures
+            skip_leading_rows: 1
+        columns:
+          - name: grade_level
+            data_type: STRING
+          - name: name
+            data_type: STRING
+          - name: description
+            data_type: STRING

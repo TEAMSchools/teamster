@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir .
 COPY src/dbt ./src/dbt
 ENV DBT_PROFILES_DIR=/root/app/src/dbt/kippmiami
 WORKDIR /root/app/src/dbt/kippmiami
-RUN dbt clean && dbt deps && dbt list
+RUN dbt clean && dbt deps && dbt parse
 
 WORKDIR /root/app
 # RUN chmod +x ./src/teamster/core/docker-entrypoint.sh

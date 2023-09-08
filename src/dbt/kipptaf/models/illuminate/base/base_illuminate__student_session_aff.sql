@@ -18,7 +18,8 @@ select
     s.site_id,
 
     row_number() over (
-        partition by ssa.student_id, s.academic_year order by ssa.entry_date desc, ssa.leave_date desc
+        partition by ssa.student_id, s.academic_year
+        order by ssa.entry_date desc, ssa.leave_date desc
     ) as rn_student_session_desc,
 from {{ source("illuminate", "student_session_aff") }} as ssa
 inner join

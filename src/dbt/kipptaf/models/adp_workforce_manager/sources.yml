@@ -18,7 +18,6 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/adp/TimeDetails/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/adp/TimeDetails/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/adp/TimeDetails/"
             format: AVRO
             enable_logical_types: true

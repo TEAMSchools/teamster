@@ -28,10 +28,7 @@ with
     ),
 
     ps_users as (
-        select
-            u.sif_stateprid,
-            u.lastfirst,
-            u._dbt_source_relation,
+        select u.sif_stateprid, u.lastfirst, u._dbt_source_relation,
         from {{ ref("stg_powerschool__users") }} as u
         inner join
             {{ ref("stg_powerschool__schools") }} as sch

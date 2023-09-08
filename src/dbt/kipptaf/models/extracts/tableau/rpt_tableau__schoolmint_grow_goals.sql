@@ -44,15 +44,10 @@ with
             a.creator_id,
             a.creator_name,
 
-            ast.tag_id,
-
-            left(name, 5) as tag_name_short,
+            left(a.name, 5) as tag_name_short,
 
             'O3' as reporting_term_type,
         from {{ ref("stg_schoolmint_grow__assignments") }} as a
-        inner join
-            {{ ref("stg_schoolmint_grow__assignments__tags") }} as ast
-            on a.assignment_id = ast.assignment_id
     )
 
 select s.*, m.*
