@@ -15,45 +15,53 @@ def _test_resource(remote_filepath, remote_file_regex):
             )
         }
     ) as resources:
-        conn = resources.ssh.get_connection()
+        ssh: SSHConfigurableResource = resources.ssh
 
-        with conn.open_sftp() as sftp_client:
-            ls = sftp_client.listdir_attr(path=remote_filepath)
+    conn = ssh.get_connection()
 
-        conn.close()
+    with conn.open_sftp() as sftp_client:
+        ls = sftp_client.listdir_attr(path=remote_filepath)
 
-        file_matches = [
-            f
-            for f in ls
-            if re.match(pattern=remote_file_regex, string=f.filename) is not None
-        ]
+    conn.close()
 
-        for f in file_matches:
-            resources.ssh.sftp_get(
-                remote_filepath=f"{remote_filepath}/{f.filename}",
-                local_filepath=f"./env/{f.filename}",
-            )
+    file_matches = [
+        f
+        for f in ls
+        if re.match(pattern=remote_file_regex, string=f.filename) is not None
+    ]
+
+    for f in file_matches:
+        ssh.sftp_get(
+            remote_filepath=f"{remote_filepath}/{f.filename}",
+            local_filepath=f"./env/{f.filename}",
+        )
 
 
 def test_parcc():
+    code_location = "kippcamden"
+    # code_location = "kippnewark"
+
     _test_resource(
-        # remote_filepath="/teamster-kippnewark/couchdrop/pearson/parcc",
-        remote_filepath="/teamster-kippcamden/couchdrop/pearson/parcc",
+        remote_filepath=f"/teamster-{code_location}/couchdrop/pearson/parcc",
         remote_file_regex=r".*\.csv",
     )
 
 
 def test_njsla():
+    code_location = "kippcamden"
+    # code_location = "kippnewark"
+
     _test_resource(
-        # remote_filepath="/teamster-kippnewark/couchdrop/pearson/njsla",
-        remote_filepath="/teamster-kippcamden/couchdrop/pearson/njsla",
+        remote_filepath=f"/teamster-{code_location}/couchdrop/pearson/njsla",
         remote_file_regex=r".*\.csv",
     )
 
 
 def test_njgpa():
+    code_location = "kippcamden"
+    # code_location = "kippnewark"
+
     _test_resource(
-        # remote_filepath="/teamster-kippnewark/couchdrop/pearson/njgpa",
-        remote_filepath="/teamster-kippcamden/couchdrop/pearson/njgpa",
+        remote_filepath=f"/teamster-{code_location}/couchdrop/pearson/njgpa",
         remote_file_regex=r".*\.csv",
     )

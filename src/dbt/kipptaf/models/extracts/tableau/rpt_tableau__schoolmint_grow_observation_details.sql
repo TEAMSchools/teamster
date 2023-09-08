@@ -47,23 +47,6 @@ with
                     "stg_schoolmint_grow__observations__observation_scores__text_boxes"
                 )
             }}
-
-        union all
-
-        select
-            observation_id,
-            measurement,
-            label as label,
-            cast(`value` as string) as `value`,
-            null as text_box_value,
-            cast(`value` as int) as checkbox_value,
-            'checkbox' as `type`,
-        from
-            {{
-                ref(
-                    "stg_schoolmint_grow__observations__observation_scores__checkboxes"
-                )
-            }}
     ),
 
     observations as (
@@ -141,34 +124,7 @@ with
                     )
                 then 'EOY (Self)'
             end as reporting_term_name,
-            if(
-                b.type = 'checkbox', m.name || ' - ' || b.label, m.name
-            ) as measurement_label,
-            null as score_type,
-
-            coalesce(
-                if(
-                    sum(b.checkbox_value) over (
-                        partition by o.observation_id, os.measurement
-                    )
-                    > 0,
-                    b.checkbox_value,
-                    null
-                ),
-                os.value_score
-            ) as row_score_value,
-
-            case
-                when b.type != 'checkbox'
-                then null
-                when
-                    sum(b.checkbox_value) over (
-                        partition by o.observation_id, os.measurement
-                    )
-                    > 0
-                then 1
-                else 0
-            end as checkbox_observed,
+            os.value_score as row_score_value,
             case
                 when lower(o.rubric_name) not like '%etr%'
                 then null
