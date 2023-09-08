@@ -20,6 +20,12 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+      - name: src_pearson__njsla_science
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/njsla_science/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
       - name: src_pearson__parcc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/pearson/parcc/*"
