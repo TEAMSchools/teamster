@@ -1,4 +1,4 @@
-{%- set src_njsla = source("pearson", "src_pearson__njsla") -%}
+{%- set src_njsla = source("pearson", "src_pearson__njsla_science") -%}
 
 select
     {{
