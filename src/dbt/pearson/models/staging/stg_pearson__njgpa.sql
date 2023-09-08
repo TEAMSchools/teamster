@@ -63,6 +63,7 @@ select
             ],
         )
     }},
+
     safe_cast(
         coalesce(
             staffmemberidentifier.long_value, staffmemberidentifier.double_value
@@ -71,5 +72,7 @@ select
     safe_cast(
         coalesce(testadministrator.long_value, testadministrator.double_value) as int
     ) as testadministrator,
+
+    safe_cast(left(assessmentyear, 4) as int) as academic_year,
 from {{ src_njgpa }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'
