@@ -19,6 +19,14 @@ sources:
               - kippnewark
               - pearson
               - stg_pearson__njsla
+      - name: stg_pearson__njsla_science
+        meta:
+          dagster:
+            group: pearson
+            asset_key:
+              - kippnewark
+              - pearson
+              - stg_pearson__njsla_science
       - name: stg_pearson__parcc
         meta:
           dagster:
