@@ -10,7 +10,7 @@ with
             and student_grade in ('3', '4')
             and rn_subj_round = 1
             and overall_relative_placement_int <= 2
-            and academic_year = '2022-2023'
+            and left(academic_year,4) = cast({{ var("current_academic_year") }} as string)
             and subject = 'Reading'
     ),
 
@@ -18,7 +18,7 @@ with
         select *
         from {{ ref("base_powerschool__student_enrollments") }}  -- List only active students at or below 4th grade
         where
-            academic_year = 2022
+            academic_year = {{ var("current_academic_year") }}
             and enroll_status = 0
             and rn_year = 1
             and grade_level <= 4
@@ -28,7 +28,7 @@ with
         select *
         from {{ ref("base_powerschool__course_enrollments") }}  -- List students' active schedule for ELA courses only
         where
-            cc_academic_year = 2022
+            cc_academic_year = {{ var("current_academic_year") }}
             and not is_dropped_course
             and not is_dropped_section
             and rn_course_number_year = 1
@@ -38,7 +38,7 @@ with
 
     bm_summary as (
         select * from {{ ref("stg_amplify__benchmark_student_summary") }}  -- Brings the basic report for benchmark data for BOY, MOY and EOY
-    -- where school_year = '2023-2024'
+        where academic_year = {{ var("current_academic_year") }}
     ),
 
     unpivot_bm_summary as (
@@ -47,7 +47,7 @@ with
 
     pm_summary as (
         select * from {{ ref("stg_amplify__pm_student_summary") }}  -- Brings the probe data for the BOY-> MOY and MOY->EOY
-    -- where school_year = '2023-2024'
+        where academic_year = {{ var("current_academic_year") }}
     ),
 
     -- Logical CTEs
