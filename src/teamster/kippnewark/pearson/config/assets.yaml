@@ -1,13 +1,27 @@
 assets:
   - asset_name: parcc
     remote_filepath: /teamster-kippnewark/couchdrop/pearson/parcc
-    remote_file_regex: (?:PC_)?pcspr(?P<fiscal_year>\d+)_NJ-\d+(?:-\d+)?_\w+\.csv
-    partition_start_date: 2015-07-01
+    remote_file_regex: PC_pcspr(?P<fiscal_year>\d+)_NJ-\d+(?:-\d+)?_\w+\.csv
+    partition_keys:
+      - "16"
+      - "17"
+      - "18"
   - asset_name: njsla
     remote_filepath: /teamster-kippnewark/couchdrop/pearson/njsla
+    remote_file_regex: pcspr(?P<fiscal_year>\d+)_NJ-\d+(?:-\d+)?_\w+\.csv
+    partition_keys:
+      - "19"
+      - "22"
+      - "23"
+  - asset_name: njsla_science
+    remote_filepath: /teamster-kippnewark/couchdrop/pearson/njsla_science
     remote_file_regex: njs(?P<fiscal_year>\d+)_NJ-\d+_\w+\.csv
-    partition_start_date: 2021-07-01
+    partition_keys:
+      - "22"
+      - "23"
   - asset_name: njgpa
     remote_filepath: /teamster-kippnewark/couchdrop/pearson/njgpa
     remote_file_regex: pcspr(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv
-    partition_start_date: 2021-07-01
+    partition_keys:
+      - "22"
+      - "23"
