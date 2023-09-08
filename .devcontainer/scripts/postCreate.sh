@@ -51,5 +51,5 @@ find ./src/dbt -maxdepth 2 -name "dbt_project.yml" -print0 |
     directory=$(dirname "${file}")
     project_name=$(basename "${directory}")
 
-    pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" list
+    pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" parse
   done
