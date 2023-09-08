@@ -19,6 +19,8 @@ with
             school,
             student_grade,
             subject,
+            start_date,
+            completion_date,
             duration_min,
             class_es,
             class_teacher_s,
@@ -99,9 +101,6 @@ with
             vocabulary_scale_score,
 
             _dbt_source_relation,
-
-            parse_date('%m/%d/%Y', start_date) as start_date,
-            parse_date('%m/%d/%Y', completion_date) as completion_date,
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
         from union_relations
     )
