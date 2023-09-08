@@ -1314,6 +1314,7 @@ NJGPA_FIELDS = [
 
 ASSET_FIELDS = {
     "parcc": PARCC_FIELDS,
-    "njsla": NJSLA_FIELDS,
+    "njsla": PARCC_FIELDS,
+    "njsla_science": NJSLA_FIELDS,
     "njgpa": NJGPA_FIELDS,
 }

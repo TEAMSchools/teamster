@@ -31,6 +31,7 @@ select
                 "letter_sounds_nwf_cls_score",
                 "letter_sounds_nwf_cls_semester_growth",
                 "letter_sounds_nwf_cls_year_growth",
+                "official_teacher_staff_id",
                 "phonemic_awareness_psf_level",
                 "phonemic_awareness_psf_national_norm_percentile",
                 "phonemic_awareness_psf_score",
@@ -60,11 +61,21 @@ select
             ],
         )
     }},
+
     safe_cast(client_date as date) as client_date,
     safe_cast(sync_date as date) as sync_date,
+
     safe_cast(left(school_year, 4) as int) as academic_year,
 
-    safe_cast(composite_score as numeric) as composite_score,
+    coalesce(
+        official_teacher_staff_id.string_value,
+        safe_cast(official_teacher_staff_id.long_value as string)
+    ) as official_teacher_staff_id,
+    coalesce(
+        safe_cast(composite_score.double_value as numeric),
+        safe_cast(composite_score.long_value as numeric)
+    ) as composite_score,
+
     safe_cast(decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
     safe_cast(letter_names_lnf_score as numeric) as letter_names_lnf_score,
     safe_cast(letter_sounds_nwf_cls_score as numeric) as letter_sounds_nwf_cls_score,
@@ -141,27 +152,46 @@ select
     safe_cast(
         composite_national_norm_percentile as numeric
     ) as composite_national_norm_percentile,
-    safe_cast(
-        reading_accuracy_orf_accu_national_norm_percentile as numeric
+    coalesce(
+        safe_cast(
+            reading_accuracy_orf_accu_national_norm_percentile.double_value as numeric
+        ),
+        safe_cast(
+            reading_accuracy_orf_accu_national_norm_percentile.string_value as numeric
+        )
     ) as reading_accuracy_orf_accu_national_norm_percentile,
     safe_cast(
         reading_comprehension_maze_national_norm_percentile as numeric
     ) as reading_comprehension_maze_national_norm_percentile,
-    safe_cast(
-        reading_fluency_orf_national_norm_percentile as numeric
+    coalesce(
+        safe_cast(reading_fluency_orf_national_norm_percentile.double_value as numeric),
+        safe_cast(reading_fluency_orf_national_norm_percentile.string_value as numeric)
     ) as reading_fluency_orf_national_norm_percentile,
 
     safe_cast(
         nullif(decoding_nwf_wrc_national_norm_percentile, 'Tested Out') as numeric
     ) as decoding_nwf_wrc_national_norm_percentile,
-    safe_cast(
-        nullif(letter_names_lnf_national_norm_percentile, 'Tested Out') as numeric
+    coalesce(
+        safe_cast(letter_names_lnf_national_norm_percentile.double_value as numeric),
+        safe_cast(
+            nullif(
+                letter_names_lnf_national_norm_percentile.string_value, 'Tested Out'
+            ) as numeric
+        )
     ) as letter_names_lnf_national_norm_percentile,
     safe_cast(
         nullif(letter_sounds_nwf_cls_national_norm_percentile, 'Tested Out') as numeric
     ) as letter_sounds_nwf_cls_national_norm_percentile,
-    safe_cast(
-        nullif(phonemic_awareness_psf_national_norm_percentile, 'Tested Out') as numeric
+    coalesce(
+        safe_cast(
+            phonemic_awareness_psf_national_norm_percentile.double_value as numeric
+        ),
+        safe_cast(
+            nullif(
+                phonemic_awareness_psf_national_norm_percentile.string_value,
+                'Tested Out'
+            ) as numeric
+        )
     ) as phonemic_awareness_psf_national_norm_percentile,
     safe_cast(
         nullif(word_reading_wrf_national_norm_percentile, 'Tested Out') as numeric

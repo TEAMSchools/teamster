@@ -1,5 +1,10 @@
+{% set src_model = source("iready", "src_iready__diagnostic_results") %}
+
 select
-    *,
+    {{ dbt_utils.star(from=src_model, except=["completion_date", "start_date"]) }},
+
+    safe_cast(start_date as date) as start_date,
+    safe_cast(completion_date as date) as completion_date,
     safe_cast(left(academic_year, 4) as int) as academic_year_int,
     overall_scale_score
     + annual_typical_growth_measure as overall_scale_score_plus_typical_growth,
@@ -35,5 +40,5 @@ select
             in ('2 Grade Levels Below', '3 or More Grade Levels Below')
         then 'Two or More Grade Levels Below'
     end as placement_3_level,
-from {{ source("iready", "src_iready__diagnostic_results") }}
+from {{ src_model }}
 where _dagster_partition_fiscal_year = safe_cast(right(academic_year, 4) as int)
