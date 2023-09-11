@@ -14,12 +14,17 @@ with
             tb.date2 as termbin_end_date,
             left(tb.storecode, 1) as storecode_type,
             'RT' || right(tb.storecode, 1) as reporting_term,
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between tb.date1 and tb.date2,
-                true,
-                false
-            ) as is_current,
+            case
+                when
+                    tb.date2 < current_date('{{ var("local_timezone") }}')
+                    and right(tb.storecode, 1) = '4'
+                then true
+                when
+                    current_date('{{ var("local_timezone") }}')
+                    between tb.date1 and tb.date2
+                then true
+                else false
+            end as is_current,
 
             if(pgf.grade = '--', null, pgf.percent) as percent_grade,
             nullif(pgf.citizenship, '') as citizenship_grade,
@@ -48,7 +53,6 @@ with
 
 select
     *,
-
     round(
         avg(percent_grade) over (
             partition by studentid, yearid, course_number, storecode_type
