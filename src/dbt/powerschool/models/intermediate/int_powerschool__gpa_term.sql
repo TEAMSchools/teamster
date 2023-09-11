@@ -20,7 +20,7 @@ with
                 y1_percent_grade_adjusted is null, null, potential_credit_hours
             ) as potential_credit_hours_y1,
             if(
-                current_date('America/New_York')
+                current_date('{{ var("local_timezone") }}')
                 between termbin_start_date and termbin_end_date,
                 true,
                 false

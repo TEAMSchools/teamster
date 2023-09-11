@@ -28,7 +28,9 @@ select
     min(date_value) as min_calendardate,
     max(date_value) as max_calendardate,
     count(date_value) as days_total,
-    sum(if(date_value > current_date('America/New_York'), 1, 0)) as days_remaining
+    sum(
+        if(date_value > current_date('{{ var("local_timezone") }}'), 1, 0)
+    ) as days_remaining
 from cal_long
 where values_column = 1
 group by schoolid, yearid, track

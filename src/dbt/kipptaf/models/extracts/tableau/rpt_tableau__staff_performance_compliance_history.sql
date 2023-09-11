@@ -4,7 +4,7 @@ with
             extract(year from date_day) as academic_year,
             if(
                 extract(year from date_day) = {{ var("current_academic_year") }},
-                current_date('America/New_York'),
+                current_date('{{ var("local_timezone") }}'),
                 date((extract(year from date_day) + 1), 6, 30)
             ) as effective_date,
         from {{ ref("utils__date_spine") }}

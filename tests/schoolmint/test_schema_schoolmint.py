@@ -8,7 +8,9 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 def _test(endpoint_name):
-    with open(file=f"env/{endpoint_name.replace('/', '__')}.json", mode="r") as fp:
+    with open(
+        file=f"env/schoolmint/grow/{endpoint_name.replace('/', '__')}.json", mode="r"
+    ) as fp:
         records = json.load(fp=fp)
 
     count = len(records)
@@ -39,3 +41,7 @@ def _test(endpoint_name):
 
 def test_generic_tags_meetingtypes():
     _test("generic-tags/meetingtypes")
+
+
+def test_schools():
+    _test("schools")

@@ -808,9 +808,12 @@ SCHOOL_FIELDS = [
             "null",
             {
                 "type": "array",
-                "items": get_avro_record_schema(
-                    name="non_instructional_admin", fields=USER_REF_FIELDS
-                ),
+                "items": [
+                    get_avro_record_schema(
+                        name="non_instructional_admin", fields=USER_REF_FIELDS
+                    ),
+                    "string",
+                ],
                 "default": [],
             },
         ],
