@@ -41,8 +41,9 @@ select
 
     cwt.sublevel_name as sa_proj_lvl_typ,
     cwt.sublevel_number as sa_proj_lvl_typ_num,
-    cwt.sublevel_name as sa_proj_lvl_str,
-    cwt.sublevel_number as sa_proj_lvl_str_num,
+
+    cws.sublevel_name as sa_proj_lvl_str,
+    cws.sublevel_number as sa_proj_lvl_str_num,
 
     row_number() over (
         partition by dr.student_id, dr.academic_year, dr.subject, rt.name
@@ -75,14 +76,11 @@ left join
     and dr.student_grade = cwt.grade_level_string
     and dr.state_assessment_type = cwt.destination_system
     and cwt.source_system = 'i-Ready'
-    {#
 left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cws
-    on ir.overall_scale_score_plus_stretch_growth between cws.scale_low and
-    cws.scale_high
-    and ir.subject = cws.test_name
-    and ir.grade_level = cws.grade_level
-    and ir.destination_system = cws.destination_system
-    and cws.source_system = 'i-Ready' 
-#}
-    
+    on dr.overall_scale_score_plus_stretch_growth
+    between cws.scale_low and cws.scale_high
+    and dr.subject = cws.test_name
+    and dr.student_grade = cws.grade_level_string
+    and dr.state_assessment_type = cws.destination_system
+    and cws.source_system = 'i-Ready'
