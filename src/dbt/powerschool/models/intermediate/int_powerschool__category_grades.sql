@@ -5,6 +5,7 @@ with
             enr.cc_studentid as studentid,
             enr.cc_schoolid as schoolid,
             enr.cc_course_number as course_number,
+            enr.courses_credittype as credittype,
             enr.is_dropped_section,
 
             tb.yearid,
@@ -12,6 +13,13 @@ with
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
             left(tb.storecode, 1) as storecode_type,
+            'RT' || right(tb.storecode, 1) as reporting_term,
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between tb.date1 and tb.date2,
+                true,
+                false
+            ) as is_current,
 
             if(pgf.grade = '--', null, pgf.percent) as percent_grade,
             nullif(pgf.citizenship, '') as citizenship_grade,
@@ -39,18 +47,7 @@ with
     )
 
 select
-    studentid,
-    sectionid,
-    yearid,
-    schoolid,
-    course_number,
-    is_dropped_section,
-    storecode_type,
-    storecode,
-    termbin_start_date,
-    termbin_end_date,
-    percent_grade,
-    citizenship_grade,
+    *,
 
     round(
         avg(percent_grade) over (

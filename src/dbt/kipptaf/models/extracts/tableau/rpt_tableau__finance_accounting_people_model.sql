@@ -82,7 +82,9 @@ inner join
     {{ ref("base_people__staff_roster") }} as cw
     on eh.employee_number = cw.employee_number
     and date_add(
-        coalesce(cw.worker_termination_date, current_date('America/New_York')),
+        coalesce(
+            cw.worker_termination_date, current_date('{{ var("local_timezone") }}')
+        ),
         interval 1 year
     )
     > y.effective_date

@@ -26,11 +26,11 @@ select
     safe_cast(id as int) as id,
     safe_cast(
         created_on
-        as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+        as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
     ) as created_on,
     safe_cast(
         modified_on
-        as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+        as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
     ) as modified_on,
     {{
         dbt_utils.star(

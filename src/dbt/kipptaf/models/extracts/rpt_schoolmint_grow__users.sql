@@ -96,7 +96,9 @@ with
         from {{ ref("base_people__staff_roster") }} as sr
         where
             sr.user_principal_name is not null
-            and coalesce(sr.worker_termination_date, current_date('America/New_York'))
+            and coalesce(
+                sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
+            )
             >= date({{ var("current_academic_year") }} - 1, 7, 1)
             and sr.department_home_name != 'Data'
     ),
@@ -176,7 +178,7 @@ with
             p.inactive,
             case
                 when
-                    current_date('America/New_York')
+                    current_date('{{ var("local_timezone") }}')
                     = date({{ var("current_academic_year") }}, 8, 1)
                 then null
                 when p.role_name = 'Coach'
@@ -187,7 +189,7 @@ with
             end as group_type,
             case
                 when
-                    current_date('America/New_York')
+                    current_date('{{ var("local_timezone") }}')
                     = date({{ var("current_academic_year") }}, 8, 1)
                 then null
                 else 'Teachers'
@@ -218,7 +220,7 @@ with
             '[' || case
                 /* removing last year roles every August */
                 when
-                    current_date('America/New_York')
+                    current_date('{{ var("local_timezone") }}')
                     = date({{ var("current_academic_year") }}, 8, 1)
                 then '"' || p.role_name || '"'
                 /* no roles = add assigned role */
@@ -235,7 +237,7 @@ with
             '[' || case
                 /* removing last year roles every August */
                 when
-                    current_date('America/New_York')
+                    current_date('{{ var("local_timezone") }}')
                     = date({{ var("current_academic_year") }}, 8, 1)
                 then '"' || r.role_id || '"'
                 /* no roles = add assigned role */

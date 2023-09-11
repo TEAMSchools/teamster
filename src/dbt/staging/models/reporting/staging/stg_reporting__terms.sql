@@ -11,7 +11,9 @@ select
     school_id,
     grade_band,
     case
-        when current_date('America/New_York') between `start_date` and end_date
+        when
+            current_date('{{ var("local_timezone") }}')
+            between `start_date` and end_date
         then true
         when
             end_date
