@@ -1,6 +1,7 @@
 select
     dr.student_id,
     dr.academic_year,
+    dr.academic_year_int,
     dr.student_grade,
     dr.subject,
     dr.start_date,
