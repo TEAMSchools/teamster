@@ -1,28 +1,18 @@
-{{
-  config(
-    enabled=false
-    )
-}}
-
 with
     category_grades as (
         select
-            cat.studentid,
-            cat.yearid,
-            cat.schoolid,
-            cat.course_number,
-            cat.credittype,
-            cat.storecode_type,
-            cat.percent_grade,
-            cat.citizenship_grade,
-            'RT' || right(cat.storecode, 1) as reporting_term,
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between cat.termbin_start_date and cat.termbin_end_date,
-                true,
-                false
-            ) as is_current,
-        from {{ ref('int_powerschool__category_grades') }} as cat
+            studentid,
+            yearid,
+            schoolid,
+            credittype,
+            course_number,
+            reporting_term,
+            is_current,
+            storecode_type,
+            percent_grade,
+            citizenship_grade,
+            lower(storecode_type || '_' || reporting_term) as input_column,
+        from {{ ref('int_powerschool__category_grades') }}
     ),
 
     with_cur as (
@@ -32,12 +22,14 @@ with
             schoolid,
             credittype,
             course_number,
-            reporting_term,
             is_current,
             storecode_type,
             percent_grade,
-            citizenship_grade,
+            input_column,
+
+            'CUR' as reporting_term,
         from category_grades
+        where is_current
 
         union all
 
@@ -47,15 +39,12 @@ with
             schoolid,
             credittype,
             course_number,
-
-            'CUR' as reporting_term,
-
             is_current,
             storecode_type,
             percent_grade,
-            citizenship_grade,
+            input_column,
+            reporting_term,
         from category_grades
-        where is_current
     ),
 
     with_all as (
@@ -63,14 +52,16 @@ with
             studentid,
             yearid,
             schoolid,
-            credittype,
-            course_number,
             reporting_term,
             is_current,
-            storecode_type,
-            percent_grade,
-            citizenship_grade,
-        from category_grades
+            input_column,
+
+            round(avg(percent_grade), 0) as percent_grade,
+
+            'ALL' as credittype,
+            'ALL' as course_number,
+        from with_cur
+        group by studentid, yearid, schoolid, reporting_term, is_current, input_column
 
         union all
 
@@ -78,104 +69,106 @@ with
             studentid,
             yearid,
             schoolid,
-
-            'ALL' as credittype,
-            'ALL' as course_number,
-
             reporting_term,
             is_current,
-            storecode_type,
-            round(avg(percent_grade), 0) as percent_grade,
-
-            null as citizenship_grade,
-        from category_grades
-        group by studentid, yearid, schoolid, reporting_term, is_current, storecode_type
+            input_column,
+            percent_grade,
+            credittype,
+            course_number,
+        from with_cur
     ),
 
     grades_pivot as (
         select
             studentid,
             yearid,
-            schoolid
+            schoolid,
             credittype,
             course_number,
             reporting_term,
             is_current,
-            value,
-            concat(storecode_type, '_', rt) as pivot_field,
+            {% for category in ["f", "s", "w", "e"] %}
+                {% for term in ["cur", "rt1", "rt2", "rt3", "rt4"] %}
+                    {{ category }}_{{ term }},
+                {% endfor %}
+            {% endfor %}
         from
             with_all pivot (
-                max(percent_grade)
-                for pivot_field in (
-                    f_cur,
-                    f_rt1,
-                    f_rt2,
-                    f_rt3,
-                    f_rt4,
-                    s_cur,
-                    s_rt1,
-                    s_rt2,
-                    s_rt3,
-                    s_rt4,
-                    w_cur,
-                    w_rt1,
-                    w_rt2,
-                    w_rt3,
-                    w_rt4,
-                    e_cur,
-                    e_rt1,
-                    e_rt2,
-                    e_rt3,
-                    e_rt4,
-                    ctz_cur,
-                    ctz_rt1,
-                    ctz_rt2,
-                    ctz_rt3,
-                    ctz_rt4
+                max(percent_grade) for input_column in (
+                    {%- for category in ["f", "s", "w", "e"] -%}
+                        {%- for term in ["cur", "rt1", "rt2", "rt3", "rt4"] -%}
+                            '{{ category }}_{{ term }}'
+                            {%- if not loop.last %},{% endif -%}
+                        {% endfor %}
+                        {%- if not loop.last %},{% endif -%}
+                    {% endfor %}
                 )
             )
+    ),
+
+    ctz_pivot as (
+        select
+            studentid,
+            yearid,
+            course_number,
+            reporting_term,
+            {%- for term in ["rt1", "rt2", "rt3", "rt4"] -%}
+                ctz_{{ term }},
+            {% endfor %}
+        from
+            category_grades pivot (
+                max(citizenship_grade) for input_column in (
+                    {% for term in ["rt1", "rt2", "rt3", "rt4"] -%}
+                        'q_{{ term }}' as `ctz_{{ term }}`
+                        {%- if not loop.last %},{% endif %}
+                    {% endfor %}
+                )
+            )
+        where storecode_type = 'Q'
     )
 
 select
-    studentid,
-    yearid,
-    schoolid,
-    credittype,
-    course_number,
-    reporting_term,
-    is_current,
-
-    ctz_cur,
-    ctz_rt1,
-    ctz_rt2,
-    ctz_rt3,
-    ctz_rt4,
+    gp.studentid,
+    gp.yearid,
+    gp.schoolid,
+    gp.credittype,
+    gp.course_number,
+    gp.reporting_term,
+    gp.is_current,
 
     {% for cat in ["f", "s", "w", "e"] %}
-        {{ cat }}_cur,
-        max({{ cat }}_rt1) over (
-            partition by studentid, yearid, course_number order by reporting_term asc
-        ) as {{ cat }}_rt1,
-        max({{ cat }}_rt2) over (
-            partition by studentid, yearid, course_number order by reporting_term asc
-        ) as {{ cat }}_rt2,
-        max({{ cat }}_rt3) over (
-            partition by studentid, yearid, course_number order by reporting_term asc
-        ) as {{ cat }}_rt3,
-        max({{ cat }}_rt4) over (
-            partition by studentid, yearid, course_number order by reporting_term asc
-        ) as {{ cat }}_rt4,
+        {% for term in ["rt1", "rt2", "rt3", "rt4"] %}
+            max(gp.{{ cat }}_{{ term }}) over (
+                partition by gp.studentid, gp.yearid, gp.course_number
+                order by gp.reporting_term asc
+            ) as {{ cat }}_{{ term }},
+        {% endfor %}
+        gp.{{ cat }}_cur,
+
         round(
-            avg({{ cat }}_cur) over (
-                partition by studentid, yearid, course_number
-                order by reporting_term asc
+            avg(gp.{{ cat }}_cur) over (
+                partition by gp.studentid, gp.yearid, gp.course_number
+                order by gp.reporting_term asc
             ),
             0
         ) as {{ cat }}_y1,
     {% endfor %}
 
     row_number() over (
-        partition by studentid, yearid, reporting_term, credittype
-        order by course_number asc
+        partition by gp.studentid, gp.yearid, gp.reporting_term, gp.credittype
+        order by gp.course_number asc
     ) as rn_credittype,
-from grades_repivot
+
+    {% for term in ["rt1", "rt2", "rt3", "rt4"] %}
+        max(ctz.ctz_{{ term }}) over (
+            partition by gp.studentid, gp.yearid, gp.course_number
+            order by gp.reporting_term asc
+        ) as ctz_{{ term }},
+    {% endfor %}
+from grades_pivot as gp
+left join
+    ctz_pivot as ctz
+    on gp.studentid = ctz.studentid
+    and gp.yearid = ctz.yearid
+    and gp.course_number = ctz.course_number
+    and gp.reporting_term = ctz.reporting_term
