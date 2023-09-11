@@ -21,6 +21,7 @@ clean-targets: # directories to be removed by `dbt clean`
   - dbt_packages
 
 vars:
+  local_timezone: America/New_York
   current_academic_year: 2023
   current_fiscal_year: 2024
   cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami

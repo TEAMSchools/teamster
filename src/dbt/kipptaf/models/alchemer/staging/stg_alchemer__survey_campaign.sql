@@ -32,19 +32,19 @@ with
             safe_cast(`ssl` as boolean) as `ssl`,
             safe_cast(
                 date_created
-                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
             ) as date_created,
             safe_cast(
                 date_modified
-                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
             ) as date_modified,
             safe_cast(
                 link_open_date
-                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
             ) as link_open_date,
             safe_cast(
                 link_close_date
-                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+                as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
             ) as link_close_date,
             {{
                 dbt_utils.star(

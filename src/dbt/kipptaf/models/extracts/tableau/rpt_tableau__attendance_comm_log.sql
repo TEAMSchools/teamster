@@ -36,7 +36,8 @@ with
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where
             membershipvalue = 1
-            and calendardate <= cast(current_date('America/New_York') as date)
+            and calendardate
+            <= cast(current_date('{{ var("local_timezone") }}') as date)
         group by studentid, yearid, _dbt_source_relation
     )
 
