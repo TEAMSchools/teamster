@@ -28,14 +28,12 @@ select
     safe_cast(link_id as int) as link_id,
     safe_cast(contact_id as int) as contact_id,
     safe_cast(
-        left(
-            date_started, length(date_started) - 4
-        ) as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+        left(date_started, length(date_started) - 4)
+        as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
     ) as date_started,
     safe_cast(
-        left(
-            date_submitted, length(date_submitted) - 4
-        ) as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone 'America/New_York'
+        left(date_submitted, length(date_submitted) - 4)
+        as timestamp format 'YYYY-MM-DD HH24:MI:SS' at time zone '{{ var("local_timezone") }}'
     ) as date_submitted,
 
     {{

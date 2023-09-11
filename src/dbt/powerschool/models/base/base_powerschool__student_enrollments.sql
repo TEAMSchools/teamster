@@ -503,7 +503,9 @@ select
         case
             when enr.exitdate >= cr.max_calendardate
             then true
-            when current_date('America/New_York') between enr.entrydate and enr.exitdate
+            when
+                current_date('{{ var("local_timezone") }}')
+                between enr.entrydate and enr.exitdate
             then true
             else false
         end
