@@ -1,4 +1,5 @@
 import json
+import pathlib
 
 from dagster import EnvVar, build_resources
 
@@ -25,9 +26,17 @@ def _test(endpoint_name):
 
         data.extend(response["data"])
 
-    with open(file=f"env/{endpoint_name.replace('/', '__')}.json", mode="w") as fp:
-        json.dump(obj=data, fp=fp)
+    filepath = pathlib.Path(
+        f"env/schoolmint/grow/{endpoint_name.replace('/', '__')}.json"
+    )
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    json.dump(obj=data, fp=filepath.open(mode="w"))
 
 
 def test_generic_tags_meetingtypes():
     _test("generic-tags/meetingtypes")
+
+
+def test_schools():
+    _test("schools")
