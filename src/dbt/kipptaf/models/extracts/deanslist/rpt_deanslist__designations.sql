@@ -41,7 +41,7 @@ inner join
         'Student Athlete',
         'Tutoring'
     )
-    and sp.exit_date >= current_date('America/New_York')
+    and sp.exit_date >= current_date('{{ var("local_timezone") }}')
 where co.rn_year = 1 and co.academic_year = {{ var("current_academic_year") }}
 
 union all

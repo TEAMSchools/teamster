@@ -269,14 +269,17 @@ with
     with_prestart as (
         select *, false as is_prestart
         from worker_person
-        where assignment_status_effective_date <= current_date('America/New_York')
+        where
+            assignment_status_effective_date
+            <= current_date('{{ var("local_timezone") }}')
 
         union all
 
         select *, true as is_prestart,
         from worker_person
         where
-            assignment_status_effective_date > current_date('America/New_York')
+            assignment_status_effective_date
+            > current_date('{{ var("local_timezone") }}')
             and assignment_status = 'Active'
             and (
                 assignment_status_prev is null or assignment_status_prev = 'Terminated'

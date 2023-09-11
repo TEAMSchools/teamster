@@ -14,8 +14,8 @@ with
             if
             (
                 cast(work_assignment__fivetran_end as datetime)
-                >= current_datetime('America/New_York'),
-                current_datetime('America/New_York'),
+                >= current_datetime('{{ var("local_timezone") }}'),
+                current_datetime('{{ var("local_timezone") }}'),
                 cast(work_assignment__fivetran_end as datetime)
             ) as work_assignment_end_date,
             if(

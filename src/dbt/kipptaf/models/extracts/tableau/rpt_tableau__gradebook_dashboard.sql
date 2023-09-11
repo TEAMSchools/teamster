@@ -27,13 +27,15 @@ with
         left join
             {{ ref("int_powerschool__spenrollments") }} as sp
             on co.studentid = sp.studentid
-            and current_date('America/New_York') between sp.enter_date and sp.exit_date
+            and current_date('{{ var("local_timezone") }}')
+            between sp.enter_date and sp.exit_date
             and sp.specprog_name = 'Counseling Services'
             and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
         left join
             {{ ref("int_powerschool__spenrollments") }} as sa
             on co.studentid = sa.studentid
-            and current_date('America/New_York') between sa.enter_date and sa.exit_date
+            and current_date('{{ var("local_timezone") }}')
+            between sa.enter_date and sa.exit_date
             and sa.specprog_name = 'Student Athlete'
             and {{ union_dataset_join_clause(left_alias="co", right_alias="sa") }}
         where co.rn_year = 1 and co.grade_level != 99
@@ -85,7 +87,7 @@ with
             fg.need_90,
             fg._dbt_source_relation,
             if(
-                current_date('America/New_York')
+                current_date('{{ var("local_timezone") }}')
                 between fg.termbin_start_date and fg.termbin_end_date,
                 1,
                 0
@@ -98,7 +100,7 @@ with
             {{ ref("stg_powerschool__courses") }} as cou
             on fg.course_number = cou.course_number
             and {{ union_dataset_join_clause(left_alias="fg", right_alias="cou") }}
-        where fg.termbin_start_date <= current_date('America/New_York')
+        where fg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
     )
 
 /* current year - term grades */
@@ -316,7 +318,7 @@ select
     null as y1_gpa_points,
 
     if(
-        current_date('America/New_York')
+        current_date('{{ var("local_timezone") }}')
         between cg.termbin_start_date and cg.termbin_end_date,
         1,
         0
@@ -432,7 +434,7 @@ left join
     and co.yearid = cy.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="cy") }}
     and cy.storecode_type != 'Q'
-    and current_date('America/New_York')
+    and current_date('{{ var("local_timezone") }}')
     between cy.termbin_start_date and cy.termbin_end_date
 left join
     section_teacher as st
@@ -607,13 +609,15 @@ left join
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid
-    and current_date('America/New_York') between sp.enter_date and sp.exit_date
+    and current_date('{{ var("local_timezone") }}')
+    between sp.enter_date and sp.exit_date
     and sp.specprog_name = 'Counseling Services'
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
 left join
     {{ ref("int_powerschool__spenrollments") }} as sa
     on co.studentid = sa.studentid
-    and current_date('America/New_York') between sa.enter_date and sa.exit_date
+    and current_date('{{ var("local_timezone") }}')
+    between sa.enter_date and sa.exit_date
     and sa.specprog_name = 'Student Athlete'
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sa") }}
 left join
