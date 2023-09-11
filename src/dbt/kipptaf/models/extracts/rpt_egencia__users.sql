@@ -36,5 +36,7 @@ left join
     on sr.employee_number = tm.employee_number
 where
     (sr.worker_type not in ('Intern', 'Part Time') or sr.worker_type is null)
-    and coalesce(sr.worker_termination_date, current_date('America/New_York'))
+    and coalesce(
+        sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
+    )
     >= date({{ var("current_fiscal_year") }} - 1, 7, 1)

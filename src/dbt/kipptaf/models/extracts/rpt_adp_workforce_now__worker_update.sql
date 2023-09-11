@@ -18,7 +18,7 @@ select
     sr.custom_wfmgr_trigger,
     case
         when wfm.worker_id is not null
-        then concat('DR', current_date('America/New_York'))
+        then concat('DR', current_date('{{ var("local_timezone") }}'))
     end as wfmgr_trigger,
 from {{ ref("base_people__staff_roster") }} as sr
 left join wfm_updates as wfm on sr.worker_id = wfm.worker_id

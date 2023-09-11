@@ -1,3 +1,9 @@
+{{
+  config(
+    enabled=false
+    )
+}}
+
 with
     category_grades as (
         select
@@ -98,7 +104,7 @@ with
             value,
             concat(storecode_type, '_', rt) as pivot_field,
         from
-            grades_unpivot pivot (
+            with_all pivot (
                 max(percent_grade)
                 for pivot_field in (
                     f_cur,

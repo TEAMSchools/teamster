@@ -40,7 +40,7 @@ with
             'CUR' as reporting_term,
         from {{ ref('base_powerschool__final_grades') }}
         where
-            current_date('America/New_York')
+            current_date('{{ var("local_timezone") }}')
             between termbin_start_date and termbin_end_date
     ),
 

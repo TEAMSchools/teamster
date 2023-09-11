@@ -26,7 +26,7 @@ with
             position_id is not null
             and assignment_status != 'Terminated'
             and coalesce(worker_rehire_date, worker_original_hire_date)
-            <= current_date('America/New_York')
+            <= current_date('{{ var("local_timezone") }}')
     ),
 
     surrogate_key_lag as (
