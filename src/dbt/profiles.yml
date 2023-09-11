@@ -63,3 +63,14 @@ integration_tests:
       schema: integration_tests
       threads: 1
       keyfile: /etc/secret-volume/dbt_user_creds_json
+
+powerschool:
+  target: powerschool
+  outputs:
+    powerschool:
+      type: bigquery
+      method: service-account
+      project: teamster-332318
+      schema: _powerschool
+      threads: 1
+      keyfile: /etc/secret-volume/dbt_user_creds_json

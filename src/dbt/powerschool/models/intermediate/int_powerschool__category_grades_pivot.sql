@@ -3,30 +3,20 @@ with
         select
             cat.studentid,
             cat.yearid,
+            cat.schoolid,
             cat.course_number,
+            cat.credittype,
             cat.storecode_type,
-            cat.reporting_term,
-            cat.category_pct,
-            cat.citizenship,
+            cat.percent_grade,
+            cat.citizenship_grade,
+            'RT' || right(cat.storecode, 1) as reporting_term,
             if(
-                current_date('America/New_York')
+                current_date('{{ var("local_timezone") }}')
                 between cat.termbin_start_date and cat.termbin_end_date,
                 true,
                 false
             ) as is_current,
-
-            si.credittype,
-
-            max(cat.schoolid) over (
-                partition by
-                    cat.studentid, cat.yearid, cat.course_number, cat.reporting_term
-                order by cat.termbin_start_date desc
-            ) as schoolid,
         from {{ ref('int_powerschool__category_grades') }} as cat
-        inner join
-            {{ ref('base_powerschool__sections') }} as si
-            on cat.sectionid = si.sectionid
-        where cat.yearid = ({{ var('current_academic_year') }} - 1990)
     ),
 
     with_cur as (
@@ -34,15 +24,13 @@ with
             studentid,
             yearid,
             schoolid,
+            credittype,
             course_number,
             reporting_term,
-            storecode_type,
-            category_pct,
-            citizenship,
             is_current,
-            credittype,
-
-            reporting_term as rt,
+            storecode_type,
+            percent_grade,
+            citizenship_grade,
         from category_grades
 
         union all
@@ -51,53 +39,53 @@ with
             studentid,
             yearid,
             schoolid,
-            course_number,
-            reporting_term,
-            storecode_type,
-            category_pct,
-            citizenship,
-            is_current,
             credittype,
+            course_number,
 
-            'CUR' as rt,
+            'CUR' as reporting_term,
+
+            is_current,
+            storecode_type,
+            percent_grade,
+            citizenship_grade,
         from category_grades
         where is_current
     ),
 
-    {#
+    with_all as (
         select
             studentid,
-            schoolid,
             yearid,
+            schoolid,
+            credittype,
+            course_number,
+            reporting_term,
+            is_current,
+            storecode_type,
+            percent_grade,
+            citizenship_grade,
+        from category_grades
 
+        union all
+
+        select
+            studentid,
+            yearid,
+            schoolid,
+
+            'ALL' as credittype,
             'ALL' as course_number,
 
             reporting_term,
-            reporting_term as rt,
+            is_current,
             storecode_type,
-            round(avg(category_pct), 0) as category_pct,
+            round(avg(percent_grade), 0) as percent_grade,
 
-            null as citizenship,
+            null as citizenship_grade,
+        from category_grades
+        group by studentid, yearid, schoolid, reporting_term, is_current, storecode_type
+    ),
 
-            if(
-                current_date('America/New_York')
-                between cat.termbin_start_date and cat.termbin_end_date,
-                true,
-                false
-            ) as is_curterm,
-
-            'ALL' as credittype
-        from {{ ref('int_powerschool__category_grades') }}
-        where yearid = ({{ var('current_academic_year') }} - 1990)
-        group by
-            studentid,
-            schoolid,
-            yearid,
-            reporting_term,
-            storecode_type,
-            termbin_start_date,
-            termbin_end_date 
-    #}
     grades_pivot as (
         select
             studentid,
@@ -111,7 +99,7 @@ with
             concat(storecode_type, '_', rt) as pivot_field,
         from
             grades_unpivot pivot (
-                max(category_pct)
+                max(percent_grade)
                 for pivot_field in (
                     f_cur,
                     f_rt1,
