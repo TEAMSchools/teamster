@@ -664,6 +664,22 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
+              - kippmiami
               - powerschool
               - int_powerschool__category_grades
+      - name: int_powerschool__category_grades_pivot
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - int_powerschool__category_grades_pivot
+      - name: int_powerschool__final_grades_pivot
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - int_powerschool__final_grades_pivot
