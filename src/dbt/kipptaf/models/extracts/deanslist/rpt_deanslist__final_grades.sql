@@ -39,8 +39,7 @@ with
     )
 
 select
-    co.student_number,
-    
+    enr.students_student_number as student_number,
     enr.cc_academic_year as academic_year,
     enr.cc_course_number as course_number,
     enr.cc_sectionid as sectionid,
