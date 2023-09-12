@@ -1,3 +1,4 @@
+{{ config(enabled=false) }}
 with
     enr as (
         select
