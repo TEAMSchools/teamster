@@ -1,12 +1,9 @@
 with
-    sub as (
+    max_completion_date as (
         select
-            student_id,
-            academic_year,
-            subject,
-
-            max(completion_date) as max_completion_date,
+            student_id, academic_year, subject, max(completion_date) as completion_date,
         from {{ ref("base_iready__diagnostic_results") }}
+        where academic_year_int = {{ var("current_academic_year") }}
         group by academic_year, subject, student_id
     )
 
@@ -24,7 +21,10 @@ select
 
     'Test Rounds' as domain,
 from {{ ref("base_iready__diagnostic_results") }}
-where rn_subj_round = 1 and test_round != 'Outside Round'
+where
+    rn_subj_round = 1
+    and test_round != 'Outside Round'
+    and academic_year_int = {{ var("current_academic_year") }}
 
 union all
 
@@ -43,9 +43,9 @@ select
     'YTD Growth' as domain,
 from {{ ref("base_iready__diagnostic_results") }} as ir
 inner join
-    sub
-    on ir.student_id = sub.student_id
-    and ir.academic_year = sub.academic_year
-    and ir.subject = sub.subject
-    and ir.completion_date = sub.max_completion_date
+    max_completion_date as mcd
+    on ir.student_id = mcd.student_id
+    and ir.academic_year = mcd.academic_year
+    and ir.subject = mcd.subject
+    and ir.completion_date = mcd.completion_date
 where academic_year_int = {{ var("current_academic_year") }}

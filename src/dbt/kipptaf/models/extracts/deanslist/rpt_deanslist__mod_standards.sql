@@ -11,9 +11,10 @@ with
             upper(left(response_type, 1)) as response_type,
         from {{ ref("int_assessments__response_rollup") }}
         where
-            subject_area in ('Text Study', 'Mathematics', 'Writing')
-            and is_internal_assessment
+            is_internal_assessment
             and response_type = 'group'
+            and academic_year = {{ var("current_academic_year") }}
+            and subject_area in ('Text Study', 'Mathematics', 'Writing')
     ),
 
     std_avg as (

@@ -14,7 +14,7 @@ with
         where
             scope = 'Unit Assessment'
             and subject_area not in ('Text Study', 'Mathematics')
-            and academic_year = {{ var("current_fiscal_year") }}
+            and academic_year = {{ var("current_academic_year") }}
         group by
             powerschool_student_number, academic_year, subject_area, term_administered
     )
