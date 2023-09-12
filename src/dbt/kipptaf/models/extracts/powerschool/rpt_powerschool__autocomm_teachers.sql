@@ -119,4 +119,5 @@ select
     if(`status` = 1, 1, 0) as ptaccess,
     format_date('%m/%d/%Y', birth_date) as dob,
     home_work_location_dagster_code_location,
+    if(`status` = 1, 1, 0) as staffstatus,
 from user_status
