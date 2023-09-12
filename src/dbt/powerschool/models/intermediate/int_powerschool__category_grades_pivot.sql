@@ -112,13 +112,13 @@ with
             yearid,
             course_number,
             reporting_term,
-            {%- for term in ["rt1", "rt2", "rt3", "rt4"] -%}
+            {%- for term in ["cur", "rt1", "rt2", "rt3", "rt4"] -%}
                 ctz_{{ term }},
             {% endfor %}
         from
             category_grades pivot (
                 max(citizenship_grade) for input_column in (
-                    {% for term in ["rt1", "rt2", "rt3", "rt4"] -%}
+                    {% for term in ["cur", "rt1", "rt2", "rt3", "rt4"] -%}
                         'q_{{ term }}' as `ctz_{{ term }}`
                         {%- if not loop.last %},{% endif %}
                     {% endfor %}
@@ -165,6 +165,7 @@ select
             order by gp.reporting_term asc
         ) as ctz_{{ term }},
     {% endfor %}
+    ctz.ctz_cur,
 from grades_pivot as gp
 left join
     ctz_pivot as ctz
