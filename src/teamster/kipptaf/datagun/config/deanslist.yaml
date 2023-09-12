@@ -25,28 +25,6 @@ assets:
       type: schema
       value:
         table:
-          name: rpt_deanslist__final_grades
-          schema: kipptaf_extracts
-    file_config:
-      stem: deanslist_finalgrades
-      suffix: json
-    destination_config:
-      name: deanslist
-  - query_config:
-      type: schema
-      value:
-        table:
-          name: rpt_deanslist__iready_diagnostics
-          schema: kipptaf_extracts
-    file_config:
-      stem: deanslist_iready_diagnostics
-      suffix: json
-    destination_config:
-      name: deanslist
-  - query_config:
-      type: schema
-      value:
-        table:
           name: rpt_deanslist__iready_lessons
           schema: kipptaf_extracts
     file_config:
@@ -73,17 +51,6 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_mod_assessment
-      suffix: json
-    destination_config:
-      name: deanslist
-  - query_config:
-      type: schema
-      value:
-        table:
-          name: rpt_deanslist__mod_standards
-          schema: kipptaf_extracts
-    file_config:
-      stem: deanslist_mod_standards
       suffix: json
     destination_config:
       name: deanslist
@@ -131,6 +98,58 @@ assets:
       suffix: json
     destination_config:
       name: deanslist
+  # increased resources
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__final_grades
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_finalgrades
+      suffix: json
+    destination_config:
+      name: deanslist
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 1.0Gi
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__iready_diagnostics
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_iready_diagnostics
+      suffix: json
+    destination_config:
+      name: deanslist
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 1.0Gi
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__mod_standards
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_mod_standards
+      suffix: json
+    destination_config:
+      name: deanslist
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 1.0Gi
   - query_config:
       type: schema
       value:
