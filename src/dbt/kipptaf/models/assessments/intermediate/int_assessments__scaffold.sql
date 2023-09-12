@@ -170,7 +170,7 @@ select
     a.assessment_id,
     a.title,
     a.subject_area,
-    a.academic_year_clean,
+    a.academic_year_clean as academic_year,
     a.administered_at,
     a.performance_band_set_id,
 
@@ -219,7 +219,7 @@ select
     a.assessment_id,
     a.title,
     a.subject_area,
-    a.academic_year_clean,
+    a.academic_year_clean as academic_year,
     a.administered_at,
     a.performance_band_set_id,
 
