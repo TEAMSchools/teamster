@@ -69,6 +69,17 @@ assets:
       type: schema
       value:
         table:
+          name: rpt_deanslist__sight_words
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_sight_words
+      suffix: json
+    destination_config:
+      name: deanslist
+  - query_config:
+      type: schema
+      value:
+        table:
           name: rpt_deanslist__state_test_scores
           schema: kipptaf_extracts
     file_config:
@@ -175,17 +186,6 @@ assets:
   #         schema: kipptaf_extracts
   #   file_config:
   #     stem: deanslist_promo_status
-  #     suffix: json
-  #   destination_config:
-  #     name: deanslist
-  # - query_config:
-  #     type: schema
-  #     value:
-  #       table:
-  #         name: rpt_deanslist__sight_words
-  #         schema: kipptaf_extracts
-  #   file_config:
-  #     stem: deanslist_sight_words
   #     suffix: json
   #   destination_config:
   #     name: deanslist
