@@ -88,9 +88,11 @@ with
     )
 
 select
-    srh.employee_number,
-    srh.years_teaching_prior_to_kipp,
-    srh.years_experience_prior_to_kipp,
+    sr.employee_number,
+    coalesce(sr.years_exp_outside_kipp, 0) as years_experience_prior_to_kipp,
+    coalesce(sr.years_teaching_in_njfl, 0)
+    + coalesce(sr.years_teaching_outside_njfl, 0) as years_teaching_prior_to_kipp,
+    sr.assignment_status as current_position_status,
 
     yc.years_active_at_kipp,
     yc.years_inactive_at_kipp,
@@ -98,11 +100,11 @@ select
     yc.years_active_at_kipp + yc.years_inactive_at_kipp as years_at_kipp_total,
 
     yc.years_teaching_at_kipp
-    + srh.years_teaching_prior_to_kipp as years_teaching_total,
+    + coalesce(sr.years_teaching_in_njfl, 0)
+    + coalesce(sr.years_teaching_outside_njfl, 0) as years_teaching_total,
 
     yc.years_active_at_kipp
     + years_inactive_at_kipp
-    + srh.years_experience_prior_to_kipp as years_experience_total,
-from staff_roster_history as srh
-left join year_counts as yc on srh.employee_number = yc.employee_number
-where srh.work_assignment__fivetran_active and srh.primary_indicator
+    + coalesce(sr.years_exp_outside_kipp, 0) as years_experience_total,
+from {{ ref("base_people__staff_roster") }} as sr
+left join year_counts as yc on sr.employee_number = yc.employee_number
