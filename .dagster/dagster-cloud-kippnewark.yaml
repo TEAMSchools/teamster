@@ -24,6 +24,8 @@ locations:
           - kippnewark-ps-ssh-username
           - kippnewark-titan-sftp-password
           - kippnewark-titan-sftp-username
+          - kippnj-renlearn-sftp-password
+          - kippnj-renlearn-sftp-username
           - mssql-password
           - mssql-username
           - pythonanywhere-sftp-password

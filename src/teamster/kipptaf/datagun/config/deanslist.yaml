@@ -115,7 +115,7 @@ assets:
         container_config:
           resources:
             requests:
-              memory: 1.0Gi
+              memory: 1.5Gi
   - query_config:
       type: schema
       value:
