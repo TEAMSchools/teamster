@@ -45,7 +45,6 @@ from teamster.kipptaf import (
     fivetran,
     google,
     ldap,
-    renlearn,
     schoolmint,
     smartrecruiters,
 )
@@ -63,7 +62,6 @@ defs = Definitions(
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[google], group_name="google"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
-        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
         *load_assets_from_modules(
             modules=[smartrecruiters], group_name="smartrecruiters"
@@ -104,7 +102,6 @@ defs = Definitions(
         *clever.sensors,
         *fivetran.sensors,
         *google.sensors,
-        *renlearn.sensors,
     ],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
@@ -263,11 +260,6 @@ defs = Definitions(
             remote_host="imports.education.scholastic.com",
             username=EnvVar("READ180_SFTP_USERNAME"),
             password=EnvVar("READ180_SFTP_PASSWORD"),
-        ),
-        "ssh_renlearn": SSHConfigurableResource(
-            remote_host="sftp.renaissance.com",
-            username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
-            password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
         ),
     },
 )
