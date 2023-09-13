@@ -9,6 +9,8 @@ locations:
     container_context:
       k8s:
         env_secrets:
+          - couchdrop-sftp-password
+          - couchdrop-sftp-username
           - dagster-cloud-agent-token
           - dagster-cloud-user-token
           - iready-sftp-password

@@ -28,6 +28,7 @@ from . import (
     datagun,
     dbt,
     deanslist,
+    fldoe,
     iready,
     powerschool,
     renlearn,
@@ -41,6 +42,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
+        *load_assets_from_modules(modules=[fldoe], group_name="fldoe"),
         *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(
@@ -92,6 +94,11 @@ defs = Definitions(
         "deanslist": DeansListResource(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
+        ),
+        "ssh_couchdrop": SSHConfigurableResource(
+            remote_host="kipptaf.couchdrop.io",
+            username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+            password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
         "ssh_iready": SSHConfigurableResource(
             remote_host="prod-sftp-1.aws.cainc.com",

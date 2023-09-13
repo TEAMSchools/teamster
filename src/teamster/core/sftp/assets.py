@@ -17,7 +17,7 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_replace
 
 
-def compose_remote_file_regex(regexp, context: OpExecutionContext):
+def compose_regex(regexp, context: OpExecutionContext):
     try:
         partitions_def = context.asset_partitions_def_for_output()
     except DagsterInvariantViolationError:
@@ -77,7 +77,11 @@ def build_sftp_asset(
     def _asset(context: OpExecutionContext):
         ssh: SSHConfigurableResource = getattr(context.resources, ssh_resource_key)
 
-        remote_file_regex_composed = compose_remote_file_regex(
+        remote_filepath_regex_composed = compose_regex(
+            regexp=remote_filepath, context=context
+        )
+
+        remote_file_regex_composed = compose_regex(
             regexp=remote_file_regex, context=context
         )
 
@@ -85,7 +89,7 @@ def build_sftp_asset(
         conn = ssh.get_connection()
 
         with conn.open_sftp() as sftp_client:
-            ls = sftp_client.listdir_attr(path=remote_filepath)
+            ls = sftp_client.listdir_attr(path=remote_filepath_regex_composed)
 
         conn.close()
 
@@ -109,7 +113,7 @@ def build_sftp_asset(
 
         # download file from sftp
         local_filepath = ssh.sftp_get(
-            remote_filepath=f"{remote_filepath}/{remote_filename}",
+            remote_filepath=f"{remote_filepath_regex_composed}/{remote_filename}",
             local_filepath=f"./data/{remote_filename}",
         )
 
