@@ -32,6 +32,7 @@ from . import (
     iready,
     pearson,
     powerschool,
+    renlearn,
     titan,
 )
 
@@ -46,14 +47,21 @@ defs = Definitions(
         *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[pearson], group_name="pearson"),
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
+        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[titan], group_name="titan"),
         *load_assets_from_modules(
             modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
-    schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
-    sensors=[*powerschool.sensors, *edplan.sensors, *iready.sensors, *titan.sensors],
+    schedules=[*datagun.schedules, *deanslist.schedules, *powerschool.schedules],
+    sensors=[
+        *edplan.sensors,
+        *iready.sensors,
+        *powerschool.sensors,
+        *renlearn.sensors,
+        *titan.sensors,
+    ],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
             gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kippnewark"
@@ -118,6 +126,11 @@ defs = Definitions(
             username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
             password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST"),
+        ),
+        "ssh_renlearn": SSHConfigurableResource(
+            remote_host="sftp.renaissance.com",
+            username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
+            password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
         ),
         "ssh_titan": SSHConfigurableResource(
             remote_host="sftp.titank12.com",
