@@ -71,6 +71,9 @@ with
             r.alumni_status,
             r.path_to_education,
             r.primary_grade_level_taught,
+            y.years_at_kipp_total,
+            y.years_teaching_total,
+            y.years_experience_total,
 
             ifnull(
                 r.worker_rehire_date, r.worker_original_hire_date
@@ -83,6 +86,9 @@ with
             ) as most_recent_termination_date,
             ifnull(t.termination_reason, r.assignment_status_reason) as status_reason,
         from {{ ref("base_people__staff_roster") }} as r
+        left join 
+            {{ ref("int_people__years_experience")}} as y
+            on r.employee_number = y.employee_number
         left join
             final_termination as t
             on r.position_id = t.position_id
@@ -199,6 +205,9 @@ select
     alumni_status,
     path_to_education,
     primary_grade_level_taught,
+    years_at_kipp_total,
+    years_experience_total,
+    years_teaching_total,
     academic_year_exitdate_next as next_academic_year_exitdate,
 
     case
@@ -213,9 +222,4 @@ select
 
     if(attrition_exitdate <= attrition_date, 1.0, 0.0) as is_attrition,
 
-    if(
-        most_recent_hire_date > attrition_exitdate,
-        round(date_diff(attrition_exitdate, worker_original_hire_date, day) / 365, 0),
-        round(date_diff(attrition_exitdate, most_recent_hire_date, day) / 365, 0)
-    ) as years_at_kipp,
 from with_dates
