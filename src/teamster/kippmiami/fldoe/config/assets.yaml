@@ -1,0 +1,12 @@
+assets:
+  - asset_name: fast
+    remote_filepath: /teamster-kippmiami/couchdrop/fldoe/fast/(?P<school_year>\d+)/(?P<term>PM\d)
+    remote_file_regex: .*\.csv
+    partition_keys:
+      school_year:
+        - "2023"
+        - "2022"
+      term:
+        - PM1
+        - PM2
+        - PM3
