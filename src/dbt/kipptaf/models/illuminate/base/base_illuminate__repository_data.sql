@@ -6,6 +6,11 @@
     exclude="stg_illuminate__repository_%s",
 ) -%}
 
+{%- for model in relations -%}
+    {%- set depends_on = '-- depends_on: {{ ref("' ~  model.name ~ '") }}' -%}
+    {{ depends_on }}
+{% endfor %}
+
 with union_relations as ({{ dbt_utils.union_relations(relations=relations) }})
 
 select
@@ -14,7 +19,7 @@ select
     r.title,
     r.scope,
     r.subject_area,
-    r.administered_at,
+    r.date_administered,
 
     s.local_student_id,
 
