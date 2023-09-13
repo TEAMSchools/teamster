@@ -43,8 +43,6 @@ locations:
           - fivetran-api-secret
           - illuminate-sftp-password
           - illuminate-sftp-username
-          - kippnj-renlearn-sftp-password
-          - kippnj-renlearn-sftp-username
           - ktaf-sftp-password
           - ktaf-sftp-username
           - ldap-password
