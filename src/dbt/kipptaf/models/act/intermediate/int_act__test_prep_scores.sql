@@ -7,7 +7,7 @@ with
             ais.administered_at,
             ais.subject_area,
 
-            agl.grade_level_id - 1 as grade_level,
+            agl.grade_level,
 
             rt.code as term_code,
             rt.name as administration_round,
