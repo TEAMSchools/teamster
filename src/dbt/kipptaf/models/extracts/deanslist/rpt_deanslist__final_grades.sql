@@ -34,7 +34,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="enr",
-                partition_by="cc_studentid, cc_academic_year, term_name",
+                partition_by="cc_studentid, cc_academic_year, cc_course_number, term_name",
                 order_by="cc_dateenrolled desc",
             )
         }}
