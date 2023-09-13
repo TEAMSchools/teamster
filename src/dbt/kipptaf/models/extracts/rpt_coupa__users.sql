@@ -60,7 +60,9 @@ with
         left join business_groups as bg on cu.id = bg.user_id
         where
             not sr.is_prestart
-            and coalesce(sr.worker_termination_date, current_date('America/New_York'))
+            and coalesce(
+                sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
+            )
             >= date({{ var("current_fiscal_year") }} - 2, 7, 1)
             and not regexp_contains(worker_type, r'Part Time|Intern')
             and (

@@ -1,14 +1,10 @@
-{%- set src_parcc = source("pearson", "src_pearson__parcc") -%}
+{%- set src_parcc = source("pearson", "src_pearson__njsla") -%}
 
 select
     {{
         dbt_utils.star(
             from=src_parcc,
             except=[
-                "staffmemberidentifier",
-                "testadministrator",
-                "statefield6",
-                "filler",
                 "filler_1",
                 "filler_10",
                 "filler_11",
@@ -20,6 +16,7 @@ select
                 "filler_7",
                 "filler_8",
                 "filler_9",
+                "filler",
                 "filler1",
                 "filler10",
                 "filler11",
@@ -58,7 +55,6 @@ select
                 "filler6",
                 "filler7",
                 "filler8",
-                "fillerfield",
                 "fillerfield_1",
                 "fillerfield_10",
                 "fillerfield_11",
@@ -89,14 +85,22 @@ select
                 "fillerfield_7",
                 "fillerfield_8",
                 "fillerfield_9",
+                "fillerfield",
                 "fillerfield1",
                 "fillerfield2",
                 "fillerfield4",
                 "fillerfield5",
                 "fillerfield7",
+                "shipreportdistrictcode",
+                "shipreportschoolcode",
+                "staffmemberidentifier",
+                "statefield6",
+                "statefield9",
+                "testadministrator",
             ],
         )
     }},
+
     coalesce(
         staffmemberidentifier.string_value,
         safe_cast(staffmemberidentifier.double_value as string)
@@ -108,5 +112,18 @@ select
     coalesce(
         statefield6.string_value, safe_cast(statefield6.double_value as string)
     ) as statefield6,
+    coalesce(
+        statefield9.string_value, safe_cast(statefield9.double_value as string)
+    ) as statefield9,
+    coalesce(
+        shipreportschoolcode.long_value,
+        safe_cast(shipreportschoolcode.float_value as int)
+    ) as shipreportschoolcode,
+    coalesce(
+        shipreportdistrictcode.long_value,
+        safe_cast(shipreportdistrictcode.float_value as int)
+    ) as shipreportdistrictcode,
+
+    safe_cast(left(assessmentyear, 4) as int) as academic_year,
 from {{ src_parcc }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

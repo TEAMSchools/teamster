@@ -24,8 +24,11 @@ with
         where
             {# import terminated staff up to a week after termination date #}
             date_diff(
-                current_date('America/New_York'),
-                ifnull(sr.worker_termination_date, current_date('America/New_York')),
+                current_date('{{ var("local_timezone") }}'),
+                ifnull(
+                    sr.worker_termination_date,
+                    current_date('{{ var("local_timezone") }}')
+                ),
                 day
             )
             <= 14
@@ -56,8 +59,11 @@ with
         where
             {# import terminated staff up to a week after termination date #}
             date_diff(
-                current_date('America/New_York'),
-                ifnull(sr.worker_termination_date, current_date('America/New_York')),
+                current_date('{{ var("local_timezone") }}'),
+                ifnull(
+                    sr.worker_termination_date,
+                    current_date('{{ var("local_timezone") }}')
+                ),
                 day
             )
             <= 14
@@ -78,9 +84,10 @@ with
             case
                 when
                     date_diff(
-                        current_date('America/New_York'),
+                        current_date('{{ var("local_timezone") }}'),
                         ifnull(
-                            worker_termination_date, current_date('America/New_York')
+                            worker_termination_date,
+                            current_date('{{ var("local_timezone") }}')
                         ),
                         day
                     )
@@ -88,7 +95,9 @@ with
                 then 1
                 when assignment_status not in ('Terminated', 'Deceased')
                 then 1
-                when worker_termination_date >= current_date('America/New_York')
+                when
+                    worker_termination_date
+                    >= current_date('{{ var("local_timezone") }}')
                 then 1
                 else 2
             end as `status`,
@@ -110,4 +119,5 @@ select
     if(`status` = 1, 1, 0) as ptaccess,
     format_date('%m/%d/%Y', birth_date) as dob,
     home_work_location_dagster_code_location,
+    if(`status` = 1, 1, 0) as staffstatus,
 from user_status

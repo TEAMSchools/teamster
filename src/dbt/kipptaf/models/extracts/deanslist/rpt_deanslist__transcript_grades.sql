@@ -55,7 +55,7 @@ with
             on s.id = fg.studentid
             and {{ union_dataset_join_clause(left_alias="s", right_alias="fg") }}
             and fg.exclude_from_gpa = 0
-            and current_date('America/New_York')
+            and current_date('{{ var("local_timezone") }}')
             between fg.termbin_start_date and fg.termbin_end_date
         inner join
             {{ ref("stg_powerschool__courses") }} as c

@@ -6,6 +6,7 @@ select
             ["student_primary_id", "school_year", "benchmark_period"]
         )
     }} as surrogate_key,
+
     {{
         dbt_utils.star(
             from=src_bss,

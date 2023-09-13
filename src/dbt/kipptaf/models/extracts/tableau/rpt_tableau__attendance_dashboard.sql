@@ -84,7 +84,7 @@ with
             and mem.membershipvalue > 0
             and mem.calendardate between date(
                 ({{ var("current_academic_year") }} - 1), 7, 1
-            ) and current_date('America/New_York')
+            ) and current_date('{{ var("local_timezone") }}')
     )
 
 select

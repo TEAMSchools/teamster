@@ -17,6 +17,6 @@ select
 from {{ ref("base_people__staff_roster") }}
 where
     coalesce(worker_rehire_date, worker_original_hire_date)
-    <= date_add(current_date('America/New_York'), interval 10 day)
+    <= date_add(current_date('{{ var("local_timezone") }}'), interval 10 day)
     and business_unit_assigned_name is not null
     and home_work_location_name is not null
