@@ -86,8 +86,8 @@ with
             ) as most_recent_termination_date,
             ifnull(t.termination_reason, r.assignment_status_reason) as status_reason,
         from {{ ref("base_people__staff_roster") }} as r
-        left join 
-            {{ ref("int_people__years_experience")}} as y
+        left join
+            {{ ref("int_people__years_experience") }} as y
             on r.employee_number = y.employee_number
         left join
             final_termination as t
