@@ -17,9 +17,11 @@ from dagster_gcp import BigQueryResource
 
 def render_fivetran_audit_query(dataset, done):
     return f"""
-        select distinct table
-        from {dataset}.fivetran_audit
-        where done >= '{done}'
+        select distinct table_name
+        from `fivetran_log_stg_fivetran_log.stg_fivetran_log__incremental_mar`
+        where schema_name = '{dataset}'
+        and incremental_rows != 0
+        and updated_at >= '{done}'
     """
 
 
@@ -83,8 +85,10 @@ def build_fivetran_sync_status_sensor(
                     )
 
                     for row in query_job.result():
+                        context.log.debug(row)
+
                         asset_key = AssetKey(
-                            [code_location, *schema.split("."), row.table]
+                            [code_location, *schema.split("."), row.table_name]
                         )
 
                         if asset_key in sensor_asset_selection._keys:
