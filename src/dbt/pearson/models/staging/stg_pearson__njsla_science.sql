@@ -1,4 +1,4 @@
-{%- set src_njsla = source("pearson", "src_pearson__njsla") -%}
+{%- set src_njsla = source("pearson", "src_pearson__njsla_science") -%}
 
 select
     {{
@@ -94,5 +94,7 @@ select
             ],
         )
     }},
+
+    safe_cast(left(assessmentyear, 4) as int) as academic_year,
 from {{ src_njsla }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

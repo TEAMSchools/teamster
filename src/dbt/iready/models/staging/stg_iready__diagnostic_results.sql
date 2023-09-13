@@ -3,8 +3,8 @@
 select
     {{ dbt_utils.star(from=src_model, except=["completion_date", "start_date"]) }},
 
-    safe_cast(start_date as date) as start_date,
-    safe_cast(completion_date as date) as completion_date,
+    parse_date('%m/%d/%Y', start_date) as start_date,
+    parse_date('%m/%d/%Y', completion_date) as completion_date,
     safe_cast(left(academic_year, 4) as int) as academic_year_int,
     overall_scale_score
     + annual_typical_growth_measure as overall_scale_score_plus_typical_growth,
