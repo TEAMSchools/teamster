@@ -2,6 +2,7 @@ with
     enr_termbins as (
         select
             enr.cc_studentid,
+            enr.cc_sectionid,
             enr.cc_abs_sectionid,
             enr.cc_yearid,
             enr.cc_academic_year,
@@ -62,6 +63,7 @@ with
             te.cc_academic_year,
             te.cc_dateenrolled,
             te.cc_dateleft,
+            te.cc_sectionid,
             te.cc_abs_sectionid,
             te.cc_course_number,
             te.cc_abs_termid,
@@ -143,9 +145,9 @@ with
                     te.cc_studentid, te.cc_course_number, te.cc_yearid, te.storecode
                 order by
                     sg.percent desc,
-                    te.is_dropped_section desc,
+                    te.is_dropped_section asc,
                     te.cc_dateleft desc,
-                    te.cc_abs_sectionid desc
+                    te.cc_sectionid desc
             ) as rn_enr_fg,
         from enr_termbins as te
         left join
