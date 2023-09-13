@@ -205,9 +205,12 @@ select
     alumni_status,
     path_to_education,
     primary_grade_level_taught,
-    years_at_kipp_total,
-    years_experience_total,
-    years_teaching_total,
+    years_at_kipp_total
+    - date_diff(coalesce(termination_date, current_date()), academic_year_exitdate, day)
+    / 365.25 as years_at_kipp_total,
+    years_experience_total
+    - date_diff(coalesce(termination_date, current_date()), academic_year_exitdate, day)
+    / 365.25 as years_experience_total,
     academic_year_exitdate_next as next_academic_year_exitdate,
 
     case

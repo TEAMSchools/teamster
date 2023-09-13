@@ -2,7 +2,7 @@ with
     staff_roster_history as (
         select
             employee_number,
-            job_title,
+            coalesce(job_title, 'Missing Historic Job') as job_title,
             work_assignment__fivetran_active,
             primary_indicator,
             coalesce(years_exp_outside_kipp, 0) as years_experience_prior_to_kipp,
