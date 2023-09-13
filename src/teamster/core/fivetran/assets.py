@@ -70,8 +70,9 @@ def build_fivetran_assets(
     def _assets(context: OpExecutionContext) -> Any:
         materialized_asset_keys = set()
         for materialization in generate_materializations(context.selected_asset_keys):
-            # scan through all tables actually created, if it was expected then emit an
-            # Output. otherwise, emit a runtime AssetMaterialization
+            # scan through all tables actually created,
+            # if it was expected then emit an Output.
+            # otherwise, emit a runtime AssetMaterialization
             if materialization.asset_key in tracked_asset_keys.values():
                 yield Output(
                     value=None,
@@ -79,7 +80,7 @@ def build_fivetran_assets(
                     metadata=materialization.metadata,
                 )
                 materialized_asset_keys.add(materialization.asset_key)
-            else:
-                yield materialization
+            # else:
+            #     yield materialization
 
     return [_assets]
