@@ -149,7 +149,7 @@ with
             description,
             performance_level,
 
-            'Not enough data' as growth_level,
+            'Not applicable' as growth_level,
             'Q1' as quarter,
         from composite_and_non_composite
         where mclass_period = 'BOY'
