@@ -19,10 +19,12 @@ __all__ = [
         ssh_resource_key="ssh_couchdrop",
         partitions_def=MultiPartitionsDefinition(
             {
-                "school_year": StaticPartitionsDefinition(
-                    a["partition_keys"]["school_year"]
+                "school_year_term": StaticPartitionsDefinition(
+                    a["partition_keys"]["school_year_term"]
                 ),
-                "term": StaticPartitionsDefinition(a["partition_keys"]["term"]),
+                "grade_level_subject": StaticPartitionsDefinition(
+                    a["partition_keys"]["grade_level_subject"]
+                ),
             }
         ),
         **a,
