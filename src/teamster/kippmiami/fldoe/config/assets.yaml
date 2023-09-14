@@ -1,12 +1,22 @@
 assets:
   - asset_name: fast
-    remote_filepath: /teamster-kippmiami/couchdrop/fldoe/fast/(?P<school_year>\d+)/(?P<term>PM\d)
-    remote_file_regex: .*\.csv
+    remote_filepath: /teamster-kippmiami/couchdrop/fldoe/fast/(?P<school_year_term>)
+    remote_file_regex: .*(?P<grade_level_subject>).*\.csv
     partition_keys:
-      school_year:
-        - "2023"
-        - "2022"
-      term:
-        - PM1
-        - PM2
-        - PM3
+      school_year_term:
+        - 2022/PM1
+        - 2022/PM2
+        - 2022/PM3
+      grade_level_subject:
+        - 3\w*ELAReading
+        - 3\w*Mathematics
+        - 4\w*ELAReading
+        - 4\w*Mathematics
+        - 5\w*ELAReading
+        - 5\w*Mathematics
+        - 6\w*ELAReading
+        - 6\w*Mathematics
+        - 7\w*ELAReading
+        - 7\w*Mathematics
+        - 8\w*ELAReading
+        - 8\w*Mathematics
