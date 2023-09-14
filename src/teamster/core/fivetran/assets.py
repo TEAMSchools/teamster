@@ -58,6 +58,7 @@ def build_fivetran_assets(
                 dagster_type=Nothing,
                 io_manager_key=io_manager_key,
                 metadata=_metadata_by_table_name.get(table),
+                is_required=False,
             )
             for table, key in tracked_asset_keys.items()
         },
@@ -68,7 +69,6 @@ def build_fivetran_assets(
         can_subset=True,
     )
     def _assets(context: OpExecutionContext) -> Any:
-        # materialized_asset_keys = set()
         for materialization in generate_materializations(context.selected_asset_keys):
             # scan through all tables actually created,
             # if it was expected then emit an Output.
@@ -79,7 +79,6 @@ def build_fivetran_assets(
                     output_name="_".join(materialization.asset_key.path),
                     metadata=materialization.metadata,
                 )
-                # materialized_asset_keys.add(materialization.asset_key)
             # else:
             #     yield materialization
 
