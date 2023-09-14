@@ -41,10 +41,10 @@ workspace:
   resources:
     limits:
       cpu: 500m
-      memory: 0.5Gi
+      memory: 1.0Gi
     requests:
       cpu: 500m
-      memory: 0.5Gi
+      memory: 1.0Gi
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
