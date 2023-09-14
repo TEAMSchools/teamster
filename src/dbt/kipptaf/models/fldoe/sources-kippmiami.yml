@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: kippmiami_fldoe
+    tables:
+      - name: stg_fldoe__fast
+        meta:
+          dagster:
+            group: fldoe
+            asset_key:
+              - kippmiami
+              - fldoe
+              - stg_fldoe__fast
+      - name: int_fldoe__fast_standard_performance_unpivot
+        meta:
+          dagster:
+            group: fldoe
+            asset_key:
+              - kippmiami
+              - fldoe
+              - int_fldoe__fast_standard_performance_unpivot
