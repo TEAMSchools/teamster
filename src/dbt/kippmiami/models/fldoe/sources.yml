@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: fldoe
+    schema: kippmiami_fldoe
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_fldoe__fast
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
+            format: AVRO
+            enable_logical_types: true
