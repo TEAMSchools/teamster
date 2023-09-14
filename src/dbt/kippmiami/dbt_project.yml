@@ -36,6 +36,9 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+    fldoe:
+      +schema: fldoe
+      +materialized: table
   deanslist:
     +schema: deanslist
   iready:

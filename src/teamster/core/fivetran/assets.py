@@ -16,9 +16,9 @@ from dagster._core.definitions.metadata import MetadataUserInput
 
 
 def generate_materializations(
-    tracked_asset_keys: list[AssetKey],
+    asset_keys: list[AssetKey],
 ) -> Iterator[AssetMaterialization]:
-    for asset_key in tracked_asset_keys:
+    for asset_key in asset_keys:
         yield AssetMaterialization(
             asset_key=asset_key, description="Table generated via Fivetran sync"
         )
@@ -79,7 +79,7 @@ def build_fivetran_assets(
                     output_name="_".join(materialization.asset_key.path),
                     metadata=materialization.metadata,
                 )
-            # else:
-            #     yield materialization
+            else:
+                yield materialization
 
     return [_assets]
