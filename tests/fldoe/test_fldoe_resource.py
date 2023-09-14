@@ -39,23 +39,18 @@ def _test_resource(remote_filepath, remote_file_regex):
 
 
 def test_fast():
-    remote_filepath = r"/teamster-kippmiami/couchdrop/fldoe/fast/(?P<school_year_term>)"
-    remote_file_regex = r"(?P<grade_level_subject>)\.csv"
+    partition_keys = {
+        "school_year_term": "2022/PM2",
+        "grade_level_subject": "3\w*ELAReading",
+    }
 
     remote_filepath_regex_composed = regex_pattern_replace(
-        pattern=remote_filepath,
-        replacements={
-            "school_year_term": "2022/PM1",
-            "grade_level_subject": "3\w*ELAReading",
-        },
+        pattern=r"/teamster-kippmiami/couchdrop/fldoe/fast/(?P<school_year_term>)",
+        replacements=partition_keys,
     )
 
     remote_file_regex_composed = regex_pattern_replace(
-        pattern=remote_file_regex,
-        replacements={
-            "school_year_term": "2022/PM1",
-            "grade_level_subject": "3\w*ELAReading",
-        },
+        pattern=r".*(?P<grade_level_subject>).*\.csv", replacements=partition_keys
     )
 
     print(remote_filepath_regex_composed)
