@@ -126,7 +126,7 @@ select
         1,
         0
     ) as gr3_retention_flag,
-from kippmiami.powerschool.cohort_identifiers_static as co
+from {{ ref('base_powerschool__student_enrollments') }} as co
 cross join subjects as subj
 left join
     kippmiami.powerschool.course_enrollments_current_static as ce
