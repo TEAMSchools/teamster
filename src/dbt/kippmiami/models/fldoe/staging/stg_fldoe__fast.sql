@@ -3,10 +3,16 @@ with
         select
             student_id,
             local_id,
+            _dagster_partition_school_year_term as academic_year,
             parse_date('%m/%d/%Y', date_taken) as date_taken,
             parse_date('%m/%d/%Y', test_completion_date) as test_completion_date,
-            regexp_extract(test_reason, r'\d+-\d+') as school_year,
             regexp_extract(test_reason, r'\w+\d') as administration_window,
+            safe_cast(
+                regexp_extract(_dagster_partition_grade_level_subject, r'^(\d)') as int
+            ) as assessment_grade,
+            regexp_extract(
+                _dagster_partition_grade_level_subject, r'(\w+)$'
+            ) as assessment_subject,
 
             coalesce(
                 fast_grade_3_ela_reading_achievement_level,
@@ -118,28 +124,33 @@ with
             as number_sense_and_multiplicative_reasoning,
             `2_number_sense_and_operations_with_fractions_and_decimals_performance`
             as number_sense_and_operations_with_fractions_and_decimals,
-            `2_algebraic_reasoning_performance` as algebraic_reasoning,
-            `3_algebraic_reasoning_performance` as algebraic_reasoning,
             `2_proportional_reasoning_and_relationships_performance`
             as proportional_reasoning_and_relationships,
             `3_fractional_reasoning_performance` as fractional_reasoning,
             `3_geometric_reasoning_data_analysis_and_probability_performance`
             as geometric_reasoning_data_analysis_and_probability,
-            `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
-            as geometric_reasoning_measurement_and_data_analysis_and_probability,
-            `3_geometric_reasoning_performance` as geometric_reasoning,
-            `4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
-            as geometric_reasoning_measurement_and_data_analysis_and_probability,
-            `4_geometric_reasoning_performance` as geometric_reasoning,
             `3_linear_relationships_data_analysis_and_functions_performance`
             as linear_relationships_data_analysis_and_functions,
             `4_data_analysis_and_probability_performance`
             as data_analysis_and_probability,
+            coalesce(
+                `2_algebraic_reasoning_performance`, `3_algebraic_reasoning_performance`
+            ) as algebraic_reasoning,
+            coalesce(
+                `3_geometric_reasoning_performance`, `4_geometric_reasoning_performance`
+            ) as geometric_reasoning,
+            coalesce(
+                `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`,
+                `4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
+            ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
         from {{ source('fldoe', 'src_fldoe__fast') }}
     )
 
 select
     * except (percentile_rank),
-    safe_cast(left(school_year, 4) as int) as academic_year,
     safe_cast(regexp_extract(percentile_rank, r'\d+') as numeric) as percentile_rank,
+    lag(scale_score, 1) over (
+        partition by student_id, academic_year, assessment_subject
+        order by administration_window asc
+    ) as scale_score_prev,
 from fast_data
