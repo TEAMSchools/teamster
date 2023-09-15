@@ -109,6 +109,39 @@ assets:
       suffix: json
     destination_config:
       name: deanslist
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__iready_diagnostics
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_iready_diagnostics
+      suffix: json
+    destination_config:
+      name: deanslist
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__transcript_grades
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_transcript_grades
+      suffix: json
+    destination_config:
+      name: deanslist
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__mod_standards_domains
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_mod_standards_domains
+      suffix: json
+    destination_config:
+      name: deanslist
   # increased resources
   - query_config:
       type: schema
@@ -131,23 +164,6 @@ assets:
       type: schema
       value:
         table:
-          name: rpt_deanslist__iready_diagnostics
-          schema: kipptaf_extracts
-    file_config:
-      stem: deanslist_iready_diagnostics
-      suffix: json
-    destination_config:
-      name: deanslist
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              memory: 1.0Gi
-  - query_config:
-      type: schema
-      value:
-        table:
           name: rpt_deanslist__mod_standards
           schema: kipptaf_extracts
     file_config:
@@ -161,23 +177,6 @@ assets:
           resources:
             requests:
               memory: 2.0Gi
-  - query_config:
-      type: schema
-      value:
-        table:
-          name: rpt_deanslist__transcript_grades
-          schema: kipptaf_extracts
-    file_config:
-      stem: deanslist_transcript_grades
-      suffix: json
-    destination_config:
-      name: deanslist
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              memory: 1.0Gi
   # - query_config:
   #     type: schema
   #     value:
