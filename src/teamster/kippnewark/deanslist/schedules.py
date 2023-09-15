@@ -1,5 +1,4 @@
-from dagster import ScheduleEvaluationContext, schedule
-from dagster._core.definitions.partitioned_schedule import _get_schedule_evaluation_fn
+from dagster import build_schedule_from_partitioned_job, schedule
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import school_ids
@@ -7,7 +6,7 @@ from .jobs import multi_partition_asset_job, static_partition_asset_job
 
 
 @schedule(
-    cron_schedule="0 0 * * *",
+    cron_schedule="5 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=static_partition_asset_job,
 )
@@ -21,21 +20,11 @@ def deanslist_static_partition_asset_job_schedule():
         )
 
 
-@schedule(
-    cron_schedule="0 0,14 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
-    job=multi_partition_asset_job,
+multi_partition_asset_job_schedule = build_schedule_from_partitioned_job(
+    job=multi_partition_asset_job, hour_of_day=0, minute_of_hour=0
 )
-def deanslist_multi_partition_asset_job_schedule(context: ScheduleEvaluationContext):
-    schedule_evaluation_fn = _get_schedule_evaluation_fn(
-        partitions_def=multi_partition_asset_job.partitions_def,
-        job=multi_partition_asset_job,
-    )
-
-    return schedule_evaluation_fn(context)
-
 
 __all__ = [
     deanslist_static_partition_asset_job_schedule,
-    deanslist_multi_partition_asset_job_schedule,
+    multi_partition_asset_job_schedule,
 ]
