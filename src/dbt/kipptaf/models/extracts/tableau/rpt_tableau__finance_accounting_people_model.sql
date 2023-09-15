@@ -54,7 +54,9 @@ select
     ly.job_title as last_year_job_title,
 
     ye.years_at_kipp_total as years_at_kipp_total_current,
-    ye.years_teaching_total as years_teaching_total_current,
+    ye.years_teaching_at_kipp
+    + coalesce(cw.years_teaching_in_njfl, 0)
+    + coalesce(cw.years_teaching_outside_njfl, 0) as years_teaching_total_current,
 
     ae.additional_earnings_total as additional_earnings_summed,
 
