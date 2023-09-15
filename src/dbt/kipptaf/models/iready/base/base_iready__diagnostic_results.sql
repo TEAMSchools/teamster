@@ -1,3 +1,70 @@
+with
+    diagnostic_results as (
+        select
+            student_id,
+            academic_year,
+            academic_year_int,
+            state_assessment_type,
+            school,
+            student_grade,
+            subject,
+            start_date,
+            completion_date,
+            baseline_diagnostic_y_n,
+            most_recent_diagnostic_y_n,
+            overall_scale_score,
+            overall_scale_score_plus_typical_growth,
+            overall_scale_score_plus_stretch_growth,
+            percentile,
+            overall_relative_placement,
+            overall_relative_placement_int,
+            placement_3_level,
+            rush_flag,
+            mid_on_grade_level_scale_score,
+            percent_progress_to_annual_typical_growth,
+            percent_progress_to_annual_stretch_growth,
+            diagnostic_gain,
+            annual_typical_growth_measure,
+            annual_stretch_growth_measure,
+
+            max(if(most_recent_diagnostic_y_n = 'Y', overall_scale_score, null)) over (
+                partition by student_id, academic_year, subject
+                order by completion_date asc
+            ) as most_recent_overall_scale_score,
+            max(
+                if(most_recent_diagnostic_y_n = 'Y', overall_relative_placement, null)
+            ) over (
+                partition by student_id, academic_year, subject
+                order by completion_date asc
+            ) as most_recent_overall_relative_placement,
+            max(if(most_recent_diagnostic_y_n = 'Y', overall_placement, null)) over (
+                partition by student_id, academic_year, subject
+                order by completion_date asc
+            ) as most_recent_overall_placement,
+            max(if(most_recent_diagnostic_y_n = 'Y', diagnostic_gain, null)) over (
+                partition by student_id, academic_year, subject
+                order by completion_date asc
+            ) as most_recent_diagnostic_gain,
+            max(if(most_recent_diagnostic_y_n = 'Y', lexile_measure, null)) over (
+                partition by student_id, academic_year, subject
+                order by completion_date asc
+            ) as most_recent_lexile_measure,
+            max(if(most_recent_diagnostic_y_n = 'Y', lexile_range, null)) over (
+                partition by student_id, academic_year, subject
+                order by completion_date asc
+            ) as most_recent_lexile_range,
+            max(if(most_recent_diagnostic_y_n = 'Y', rush_flag, null)) over (
+                partition by student_id, academic_year, subject
+                order by completion_date asc
+            ) as most_recent_rush_flag,
+
+            row_number() over (
+                partition by student_id, academic_year, subject
+                order by completion_date desc
+            ) as rn_subj_year,
+        from {{ ref("stg_iready__diagnostic_results") }}
+    )
+
 select
     dr.student_id,
     dr.academic_year,
@@ -20,6 +87,20 @@ select
     dr.diagnostic_gain,
     dr.annual_typical_growth_measure,
     dr.annual_stretch_growth_measure,
+    dr.most_recent_overall_scale_score,
+    dr.most_recent_overall_relative_placement,
+    dr.most_recent_overall_placement,
+    dr.most_recent_diagnostic_gain,
+    dr.most_recent_lexile_measure,
+    dr.most_recent_lexile_range,
+    dr.most_recent_rush_flag,
+    dr.rn_subj_year,
+    round(
+        dr.most_recent_diagnostic_gain / dr.annual_typical_growth_measure, 2
+    ) as progress_to_typical,
+    round(
+        dr.most_recent_diagnostic_gain / dr.annual_stretch_growth_measure, 2
+    ) as progress_to_stretch,
 
     lc.region,
     lc.abbreviation as school_abbreviation,
@@ -36,25 +117,31 @@ select
         then 'Spring ' || right(dr.academic_year, 4)
     end as test_round_date,
 
-    cwo.sublevel_name as sa_proj_lvl,
-    cwo.sublevel_number as sa_proj_lvl_num,
+    cwo.sublevel_name as projected_sublevel,
+    cwo.sublevel_number as projected_sublevel_number,
 
-    cwt.sublevel_name as sa_proj_lvl_typ,
-    cwt.sublevel_number as sa_proj_lvl_typ_num,
+    cwr.sublevel_name as projected_sublevel_recent,
+    cwr.sublevel_number as projected_sublevel_number_recent,
 
-    cws.sublevel_name as sa_proj_lvl_str,
-    cws.sublevel_number as sa_proj_lvl_str_num,
+    cwt.sublevel_name as projected_sublevel_typical,
+    cwt.sublevel_number as projected_sublevel_number_typical,
+
+    cws.sublevel_name as projected_sublevel_stretch,
+    cws.sublevel_number as projected_sublevel_number_stretch,
+
+    cwp.scale_low as proficent_scale_score,
+
+    if(
+        cwp.scale_low - dr.most_recent_overall_scale_score <= 0,
+        0,
+        cwp.scale_low - dr.most_recent_overall_scale_score
+    ) as scale_points_to_proficiency,
 
     row_number() over (
         partition by dr.student_id, dr.academic_year, dr.subject, rt.name
         order by dr.completion_date desc
     ) as rn_subj_round,
-
-    row_number() over (
-        partition by dr.student_id, dr.academic_year, dr.subject
-        order by dr.completion_date desc
-    ) as rn_subj_year,
-from {{ ref("stg_iready__diagnostic_results") }} as dr
+from diagnostic_results as dr
 left join {{ ref("stg_people__location_crosswalk") }} as lc on dr.school = lc.name
 left join
     {{ ref("stg_reporting__terms") }} as rt
@@ -68,6 +155,13 @@ left join
     and dr.student_grade = cwo.grade_level_string
     and dr.state_assessment_type = cwo.destination_system
     and cwo.source_system = 'i-Ready'
+left join
+    {{ ref("stg_assessments__iready_crosswalk") }} as cwr
+    on dr.most_recent_overall_scale_score between cwr.scale_low and cwr.scale_high
+    and dr.subject = cwr.test_name
+    and dr.student_grade = cwr.grade_level_string
+    and dr.state_assessment_type = cwr.destination_system
+    and cwr.source_system = 'i-Ready'
 left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cwt
     on dr.overall_scale_score_plus_typical_growth
@@ -84,3 +178,10 @@ left join
     and dr.student_grade = cws.grade_level_string
     and dr.state_assessment_type = cws.destination_system
     and cws.source_system = 'i-Ready'
+left join
+    {{ ref("stg_assessments__iready_crosswalk") }} as cwp
+    on dr.subject = cwp.test_name
+    and dr.student_grade = cwp.grade_level_string
+    and dr.state_assessment_type = cwp.destination_system
+    and cwp.source_system = 'i-Ready'
+    and cwp.sublevel_name = 'Level 3'

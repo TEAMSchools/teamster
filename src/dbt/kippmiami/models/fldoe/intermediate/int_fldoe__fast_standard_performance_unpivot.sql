@@ -4,7 +4,8 @@ select
     administration_window,
     assessment_grade,
     assessment_subject,
-    `standard`,
+
+    standard,
     performance,
     case
         performance
@@ -16,8 +17,8 @@ select
         then 3
     end as performance_int,
 from
-    {{ ref('stg_fldoe__fast') }} unpivot (
-        performance for `standard` in (
+    {{ ref("stg_fldoe__fast") }} unpivot (
+        performance for standard in (
             reading_prose_and_poetry,
             reading_informational_text,
             reading_across_genres_vocabulary,
