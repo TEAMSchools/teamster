@@ -22,7 +22,7 @@ def deanslist_static_partition_asset_job_schedule():
 
 
 @schedule(
-    cron_schedule=["0 0,14 * * *"],
+    cron_schedule="0 0,14 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=multi_partition_asset_job,
 )
