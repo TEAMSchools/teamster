@@ -32,7 +32,7 @@ def deanslist_multi_partition_asset_job_schedule(context: ScheduleEvaluationCont
         job=multi_partition_asset_job,
     )
 
-    schedule_evaluation_fn(context)
+    return schedule_evaluation_fn(context)
 
 
 __all__ = [
