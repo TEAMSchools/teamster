@@ -149,6 +149,7 @@ with
 select
     * except (percentile_rank),
     safe_cast(regexp_extract(percentile_rank, r'\d+') as numeric) as percentile_rank,
+    safe_cast(regexp_extract(achievement_level, r'\d+') as int) as achievement_level_int,
     lag(scale_score, 1) over (
         partition by student_id, academic_year, assessment_subject
         order by administration_window asc

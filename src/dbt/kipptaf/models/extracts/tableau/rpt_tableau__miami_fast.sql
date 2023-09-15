@@ -1,22 +1,16 @@
 with
     subjects as (
         select
-            s.`value` as iready_subject,
-            if(s.`value` = 'Reading', 'ELA', s.`value`) as fsa_subject,
-            case
-                s.`value` when 'Reading' then 'ENG' when 'Math' then 'MATH'
-            end as credittype,
-        from string_split('Reading,Math', ',') as s
-    ),
+            'Reading' as iready_subject,
+            'ELAReading' as fast_subject,
+            'ENG' as ps_credittype,
 
-    current_week as (
-        select tw.`date`
-        from utilities.reporting_days as td
-        inner join
-            utilities.reporting_days as tw
-            on td.year_part = tw.year_part
-            and ((td.week_part = tw.week_part) or (td.week_part - 1 = tw.week_part))
-        where td.`date` = current_date('{{ var("local_timezone") }}')
+        union all
+
+        select
+            'Math' as iready_subject,
+            'Mathematics' as fast_subject,
+            'MATH' as ps_credittype,
     ),
 
     iready_lessons as (
@@ -24,20 +18,34 @@ with
             student_id,
             subject,
             count(distinct lesson_id) as total_lessons,
-            sum(if(passed_or_not_passed = 'Passed', 1.0, 0.0)) as lessons_passed,
-        from iready.personalized_instruction_by_lesson
-        where completion_date in (select `date` from current_week)
+            sum(passed_or_not_passed_numeric) as lessons_passed,
+        from {{ ref("stg_iready__personalized_instruction_by_lesson") }}
+        where
+            completion_date in (
+                select date_value
+                from
+                    unnest(
+                        generate_date_array(
+                            date_sub(
+                                date_trunc(current_date('America/New_York'), week),
+                                interval 1 week
+                            ),
+                            last_day(current_date('America/New_York'), week)
+                        )
+                    ) as date_value
+            )
         group by student_id, subject
     ),
 
     qaf_pct_correct as (
-        select local_student_id, qaf1, qaf2, qaf3, qaf4,
+        -- TODO: should this be filtered by subject?
+        select powerschool_student_number, qaf1, qaf2, qaf3, qaf4,
         from
-            ... pivot (
+            {{ ref("int_assessments__response_rollup") }} pivot (
                 max(percent_correct) for module_number
                 in ('QAF1', 'QAF2', 'QAF3', 'QAF4')
             )
-        where module_type = 'QAF'
+        where module_type = 'QAF' and academic_year = {{ var("current_academic_year") }}
     )
 
 select
@@ -48,133 +56,115 @@ select
     co.grade_level,
     co.schoolid,
     co.school_name,
-    co.team,
+    co.advisory_name as team,
     co.school_abbreviation,
     co.year_in_network,
     co.gender,
     co.ethnicity,
-    co.iep_status,
+    co.spedlep as iep_status,
     co.lep_status,
-    co.lunchstatus,
+    co.lunch_status as lunchstatus,
     co.is_retained_year,
 
-    subj.fsa_subject,
+    subj.fast_subject as fsa_subject,
     subj.iready_subject,
 
-    ce.course_number,
-    ce.course_name,
-    ce.section_number,
-    ce.teacher_name,
+    ce.cc_course_number as course_number,
+    ce.courses_course_name as course_name,
+    ce.sections_section_number as section_number,
+    ce.teacher_lastfirst as teacher_name,
 
     ir.total_lessons,
     ir.lessons_passed,
-    round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed
+    round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
     ia.qaf1,
     ia.qaf2,
     ia.qaf3,
     ia.qaf4,
 
-    dr1.overall_scale_score as diagnostic_scale,
-    dr1.overall_relative_placement as diagnostic_overall_relative_placement,
-    dr1.annual_typical_growth_measure,
-    dr1.annual_stretch_growth_measure,
+    dr.overall_scale_score as diagnostic_scale,
+    dr.overall_relative_placement as diagnostic_overall_relative_placement,
+    dr.annual_typical_growth_measure,
+    dr.annual_stretch_growth_measure,
+    dr.most_recent_overall_scale_score as recent_scale,
+    dr.most_recent_overall_relative_placement as recent_overall_relative_placement,
+    dr.most_recent_overall_placement as recent_overall_placement,
+    dr.most_recent_diagnostic_gain as diagnostic_gain,
+    dr.most_recent_lexile_measure as lexile_recent,
+    dr.most_recent_lexile_range as lexile_range_recent,
+    dr.most_recent_rush_flag as rush_flag,
+    dr.projected_sublevel_recent as projected_sublevel,
+    dr.projected_sublevel_number_recent as projected_sublevel_number,
+    dr.proficent_scale_score as scale_for_proficiency,
+    dr.progress_to_typical,
+    dr.progress_to_stretch,
+    dr.scale_points_to_proficiency,
 
-    dr2.overall_scale_score as recent_scale,
-    dr2.overall_relative_placement as recent_overall_relative_placement,
-    dr2.overall_placement as recent_overall_placement,
-    dr2.diagnostic_gain,
-    dr2.lexile_measure as lexile_recent,
-    dr2.lexile_range as lexile_range_recent,
-    dr2.rush_flag,
-
-    cw1.sublevel_name as projected_sublevel,
-    cw1.sublevel_number as projected_sublevel_number,
-
-    cw2.scale_low as scale_for_proficiency,
-
-    ft.pm_round,
+    ft.administration_window as pm_round,
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
-    ft.standard_domain,
-    ft.mastery_indicator,
-    ft.mastery_number,
-    ft.rn_test as rn_test_fast,
 
-    cw3.sublevel_name as fast_sublevel_name,
-    cw3.sublevel_number as fast_sublevel_number,
+    fs.standard as standard_domain,
+    fs.performance as mastery_indicator,
+    fs.performance as mastery_number,
 
-    round(
-        dr2.diagnostic_gain / dr1.annual_typical_growth_measure, 2
-    ) as progress_to_typical,
-    round(
-        dr2.diagnostic_gain / dr1.annual_stretch_growth_measure, 2
-    ) as progress_to_stretch,
-
-    case
-        when cw2.scale_low - dr2.overall_scale_score <= 0
-        then 0
-        else cw2.scale_low - dr2.overall_scale_score
-    end as scale_points_to_proficiency,
+    cwf.sublevel_name as fast_sublevel_name,
+    cwf.sublevel_number as fast_sublevel_number,
 
     if(
         not co.is_retained_year
         and co.grade_level = 3
-        and subj.fsa_subject = 'ELA'
-        and ft.achievement_level < 2,
+        and subj.fast_subject = 'ELA'
+        and ft.achievement_level_int < 2,
         1,
         0
     ) as gr3_retention_flag,
-from {{ ref('base_powerschool__student_enrollments') }} as co
+
+    row_number() over (
+        partition by
+            co.fleid, co.academic_year, subj.fast_subject, ft.administration_window
+        order by fs.standard asc
+    ) as rn_test_fast,
+from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 left join
-    kippmiami.powerschool.course_enrollments_current_static as ce
-    on co.student_number = ce.student_number
-    and subj.credittype = ce.credittype
-    and ce.rn_subject = 1
+    {{ ref("base_powerschool__course_enrollments") }} as ce
+    on co.student_number = ce.students_student_number
+    and subj.ps_credittype = ce.courses_credittype
+    and ce.rn_credittype_year = 1
     and not ce.is_dropped_section
 left join
     iready_lessons as ir
     on co.student_number = ir.student_id
     and subj.iready_subject = ir.subject
-left join qaf_pct_correct as ia on co.student_number = ia.local_student_id
+left join qaf_pct_correct as ia on co.student_number = ia.powerschool_student_number
 left join
-    gabby.iready.diagnostic_results as dr1
-    on co.student_number = dr1.student_id
-    and co.academic_year = dr1.academic_year
-    and subj.iready_subject = dr1._file
-    and dr1.baseline_diagnostic_y_n_ = 'Y'
+    {{ ref("base_iready__diagnostic_results") }} as dr
+    on co.student_number = dr.student_id
+    and co.academic_year = dr.academic_year_int
+    and subj.iready_subject = dr.subject
+    and dr.baseline_diagnostic_y_n = 'Y'
 left join
-    gabby.iready.diagnostic_results as dr2
-    on dr1.student_id = dr2.student_id
-    and dr1._file = dr2._file
-    and dr2.most_recent_diagnostic_y_n_ = 'Y'
+    {{ ref("stg_fldoe__fast") }} as ft
+    on co.fleid = ft.student_id
+    and co.academic_year = ft.academic_year
+    and subj.fast_subject = ft.assessment_subject
 left join
-    assessments.fsa_iready_crosswalk as cw1
-    on co.grade_level = cw1.grade_level
-    and dr1._file = cw1.test_name
-    and dr2.overall_scale_score between cw1.scale_low and cw1.scale_high
-    and cw1.source_system = 'i-Ready'
-    and cw1.destination_system = 'FL'
+    {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
+    on co.fleid = fs.student_id
+    and co.academic_year = fs.academic_year
+    and subj.fast_subject = fs.assessment_subject
+    and ft.administration_window = fs.administration_window
 left join
-    assessments.fsa_iready_crosswalk as cw2
-    on co.grade_level = cw2.grade_level
-    and dr1._file = cw2.test_name
-    and cw2.source_system = 'i-Ready'
-    and cw2.destination_system = 'FL'
-    and cw2.sublevel_name = 'Level 3'
-left join
-    kippmiami.fast.student_data_long as ft
-    on co.fleid = ft.fleid
-    and subj.iready_subject = ft.fast_subject
-left join
-    assessments.fsa_iready_crosswalk as cw3
-    on ft.fast_test = cw3.test_name
-    and ft.scale_score between cw3.scale_low and cw3.scale_high
-    and cw3.source_system = 'FSA'
+    {{ ref("stg_assessments__iready_crosswalk") }} as cwf
+    on ft.assessment_subject = cwf.test_name
+    and ft.scale_score between cwf.scale_low and cwf.scale_high
+    and cwf.source_system = 'FSA'
 where
-    co.academic_year = {{ var("current_academic_year") }}
-    and co.rn_year = 1
+    co.region = 'Miami'
     and co.enroll_status = 0
+    and co.rn_year = 1
+    and co.academic_year = {{ var("current_academic_year") }}
     and co.grade_level >= 3
