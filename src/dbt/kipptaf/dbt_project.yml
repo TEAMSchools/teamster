@@ -41,6 +41,8 @@ vars:
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   kipptaf:
+    act:
+      +schema: act
     adp_workforce_manager:
       +schema: adp_workforce_manager
     adp_workforce_now:
@@ -80,6 +82,8 @@ models:
       +schema: finance
       staging:
         +materialized: table
+    fldoe:
+      +schema: fldoe
     google:
       forms:
         +schema: google_forms
