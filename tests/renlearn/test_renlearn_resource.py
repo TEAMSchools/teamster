@@ -12,13 +12,13 @@ MEMBER_FILES = [
     "FL_FAST_SM_K-2.csv",
     "FL_FAST_SR_K-2.csv",
     "SEL_Dashboard_Standards_v2.csv",
-    "SEL_SkillArea_v1.csv",
-    "SEL.csv",
     "SM_Dashboard_Standards_v2.csv",
-    "SM_SkillArea_v1.csv",
-    "SM.csv",
     "SR_Dashboard_Standards_v2.csv",
+    "SEL_SkillArea_v1.csv",
+    "SM_SkillArea_v1.csv",
     "SR_SkillArea_v1.csv",
+    "SEL.csv",
+    "SM.csv",
     "SR.csv",
 ]
 
