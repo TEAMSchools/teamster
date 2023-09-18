@@ -2,7 +2,7 @@ assets:
   - asset_name: accelerated_reader
     remote_filepath: .
     remote_file_regex: KIPP Miami\.zip
-    archive_filepath: (?P<subject>)\.csv
+    archive_filepath: (?P<subject>).csv
     partition_keys:
       start_date: 2023-07-01
       subject:
@@ -10,7 +10,7 @@ assets:
   - asset_name: star
     remote_filepath: .
     remote_file_regex: KIPP Miami\.zip
-    archive_filepath: (?P<subject>)\.csv
+    archive_filepath: (?P<subject>).csv
     partition_keys:
       start_date: 2023-07-01
       subject:
@@ -20,7 +20,7 @@ assets:
   - asset_name: star_skill_area
     remote_filepath: .
     remote_file_regex: KIPP Miami\.zip
-    archive_filepath: (?P<subject>)_SkillArea_v1\.csv
+    archive_filepath: (?P<subject>)_SkillArea_v1.csv
     partition_keys:
       start_date: 2023-07-01
       subject:
@@ -30,7 +30,7 @@ assets:
   - asset_name: star_dashboard_standards
     remote_filepath: .
     remote_file_regex: KIPP Miami\.zip
-    archive_filepath: (?P<subject>)_Dashboard_Standards_v2\.csv
+    archive_filepath: (?P<subject>)_Dashboard_Standards_v2.csv
     partition_keys:
       start_date: 2023-07-01
       subject:
@@ -40,7 +40,7 @@ assets:
   - asset_name: fast_star
     remote_filepath: .
     remote_file_regex: KIPP Miami\.zip
-    archive_filepath: FL_FAST_(?P<subject>)_K-2\.csv
+    archive_filepath: FL_FAST_(?P<subject>)_K-2.csv
     partition_keys:
       start_date: 2023-07-01
       subject:

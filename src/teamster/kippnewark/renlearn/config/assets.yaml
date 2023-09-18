@@ -1,7 +1,7 @@
 assets:
   - asset_name: accelerated_reader
     remote_filepath: .
-    remote_file_regex: KIPP TEAM & Family\.zip
+    remote_file_regex: KIPP TEAM & Family.zip
     archive_filepath: (?P<subject>)\.csv
     partition_keys:
       start_date: 2023-07-01
@@ -9,7 +9,7 @@ assets:
         - AR
   - asset_name: star
     remote_filepath: .
-    remote_file_regex: KIPP TEAM & Family\.zip
+    remote_file_regex: KIPP TEAM & Family.zip
     archive_filepath: (?P<subject>)\.csv
     partition_keys:
       start_date: 2023-07-01
