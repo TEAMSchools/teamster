@@ -445,9 +445,6 @@ FAST_STAR_CORE_FIELDS = [
     {"name": "LastName_T", "type": ["null", "string"], "default": None},
     {"name": "LastName", "type": ["null", "string"], "default": None},
     {"name": "LaunchDate", "type": ["null", "string"], "default": None},
-    {"name": "Lexile", "type": ["null", "string"], "default": None},
-    {"name": "LexileRange", "type": ["null", "string"], "default": None},
-    {"name": "LitClassification", "type": ["null", "string"], "default": None},
     {"name": "MI_T", "type": ["null", "string"], "default": None},
     {"name": "MI", "type": ["null", "string"], "default": None},
     {"name": "MultiRace", "type": ["null", "string"], "default": None},
@@ -527,7 +524,6 @@ FAST_STAR_FIELDS = [
     {"name": "Quantile", "type": ["null", "string"], "default": None},
     # Reading
     {"name": "Attempts_G3", "type": ["null", "string"], "default": None},
-    {"name": "EstORF", "type": ["null", "double"], "default": None},
     {"name": "IRL", "type": ["null", "string"], "default": None},
     {"name": "Lexile", "type": ["null", "string"], "default": None},
     {"name": "PassingScore_G3", "type": ["null", "string"], "default": None},

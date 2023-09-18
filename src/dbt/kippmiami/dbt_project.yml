@@ -61,6 +61,8 @@ models:
         +enabled: false
       stg_powerschool__studentrace:
         +enabled: false
+  renlearn:
+    +schema: renlearn
 
 sources:
   powerschool:
