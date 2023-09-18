@@ -5,6 +5,7 @@ import pendulum
 from dagster import (
     AssetsDefinition,
     AssetSelection,
+    MultiPartitionKey,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -46,7 +47,7 @@ def build_sftp_sensor(
 
         run_requests = []
         for asset_identifier, asset_dict in ls.items():
-            asset = asset_dict["asset"]
+            asset: AssetsDefinition = asset_dict["asset"]
             files = asset_dict["files"]
 
             last_run = cursor.get(asset_identifier, 0)
@@ -60,13 +61,25 @@ def build_sftp_sensor(
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     if f.st_mtime > last_run and f.st_size > 0:
-                        run_requests.append(
-                            RunRequest(
-                                run_key=f"{asset_identifier}_{f.st_mtime}",
-                                asset_selection=[asset.key],
-                                partition_key=fiscal_year.start.to_date_string(),
+                        for (
+                            subject
+                        ) in (
+                            asset.partitions_def.secondary_dimension.partitions_def.get_partition_keys()
+                        ):
+                            run_requests.append(
+                                RunRequest(
+                                    run_key=f"{asset_identifier}_{f.st_mtime}",
+                                    asset_selection=[asset.key],
+                                    partition_key=MultiPartitionKey(
+                                        {
+                                            "start_date": (
+                                                fiscal_year.start.to_date_string()
+                                            ),
+                                            "subject": subject,
+                                        }
+                                    ),
+                                )
                             )
-                        )
 
                 cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
 
