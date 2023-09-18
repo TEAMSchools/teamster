@@ -18,6 +18,9 @@ from teamster.core.utils.functions import get_avro_record_schema, regex_pattern_
 
 
 def compose_regex(regexp, context: OpExecutionContext):
+    if regexp is None:
+        return regexp
+
     try:
         partitions_def = context.asset_partitions_def_for_output()
     except DagsterInvariantViolationError:
