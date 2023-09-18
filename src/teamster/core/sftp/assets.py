@@ -85,6 +85,10 @@ def build_sftp_asset(
             regexp=remote_file_regex, context=context
         )
 
+        archive_filepath_regex_composed = compose_regex(
+            regexp=archive_filepath, context=context
+        )
+
         # list files remote filepath
         conn = ssh.get_connection()
 
@@ -120,9 +124,9 @@ def build_sftp_asset(
         # unzip file, if necessary
         if archive_filepath is not None:
             with zipfile.ZipFile(file=local_filepath) as zf:
-                zf.extract(member=archive_filepath, path="./data")
+                zf.extract(member=archive_filepath_regex_composed, path="./data")
 
-            local_filepath = f"./data/{archive_filepath}"
+            local_filepath = f"./data/{archive_filepath_regex_composed}"
 
         # exit if file is empty
         if os.path.getsize(local_filepath) == 0:
