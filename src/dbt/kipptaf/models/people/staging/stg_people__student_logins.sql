@@ -1,4 +1,5 @@
--- depends_on: {{ ref('stg_powerschool__students') }}
+-- depends_on: {{ ref("stg_powerschool__students") }}
+-- depends_on: {{ source("people", "src_people__student_logins_archive") }}
 {{-
     config(
         materialized="incremental",
@@ -126,7 +127,7 @@
                 if(
                     length(concat(c.last_name_clean, c.dob_year)) < 8,
                     left(concat(c.last_name_clean, c.dob_year, c.student_number), 8),
-                    concat(c.last_name_clean, c.dob_year)
+                    concat(left(c.last_name_clean, 18), c.dob_year)  -- PS has a 20 char limit
                 ) as default_password,
             from components as c
             left join
