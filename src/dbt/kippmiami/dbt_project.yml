@@ -28,6 +28,7 @@ vars:
   deanslist_schema: kippmiami_deanslist
   iready_schema: kippmiami_iready
   powerschool_schema: kippmiami_powerschool
+  renlearn_schema: kippmiami_renlearn
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
