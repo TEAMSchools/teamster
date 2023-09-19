@@ -32,6 +32,7 @@ vars:
   powerschool_schema: kippnewark_powerschool
   titan_schema: kippnewark_titan
   iready_schema: kippnj_iready
+  renlearn_schema: kippnj_renlearn
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -53,5 +54,24 @@ models:
   powerschool:
     +schema: powerschool
     +materialized: table
+  renlearn:
+    +schema: renlearn
+    staging:
+      stg_renlearn__fast_star:
+        +enabled: false
+      stg_renlearn__star_dashboard_standards:
+        +enabled: false
+      stg_renlearn__star_skill_area:
+        +enabled: false
   titan:
     +schema: titan
+
+sources:
+  renlearn:
+    renlearn:
+      src_renlearn__star_skill_area:
+        +enabled: false
+      src_renlearn__star_dashboard_standards:
+        +enabled: false
+      src_renlearn__fast_star:
+        +enabled: false

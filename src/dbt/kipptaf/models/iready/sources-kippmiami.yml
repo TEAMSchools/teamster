@@ -6,7 +6,7 @@ sources:
       - name: stg_iready__diagnostic_results
         meta:
           dagster:
-            group: powerschool
+            group: iready
             asset_key:
               - kippmiami
               - iready
@@ -14,7 +14,7 @@ sources:
       - name: stg_iready__instructional_usage_data
         meta:
           dagster:
-            group: powerschool
+            group: iready
             asset_key:
               - kippmiami
               - iready
@@ -22,7 +22,7 @@ sources:
       - name: stg_iready__personalized_instruction_by_lesson
         meta:
           dagster:
-            group: powerschool
+            group: iready
             asset_key:
               - kippmiami
               - iready
