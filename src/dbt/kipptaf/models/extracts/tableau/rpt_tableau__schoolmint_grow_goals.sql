@@ -44,7 +44,7 @@ with
             a.creator_id,
             a.creator_name,
 
-            left(a.name, 5) as tag_name_short,
+            regexp_extract(a.name, r'(\d[A-Z]\.\d\d)') as tag_name_short,
 
             'O3' as reporting_term_type,
         from {{ ref("stg_schoolmint_grow__assignments") }} as a
@@ -57,4 +57,3 @@ left join
     on cast(m.assignment_date as date) between s.start_date and s.end_date
     and s.type = m.reporting_term_type
     and s.user_id = m.teacher_id
-where tag_name_short is null or regexp_contains(tag_name_short, r'^\d[A-Z]\.\d\d$')
