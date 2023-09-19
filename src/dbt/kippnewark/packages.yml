@@ -4,4 +4,5 @@ packages:
   - local: ../iready
   - local: ../pearson
   - local: ../powerschool
+  - local: ../renlearn
   - local: ../titan
