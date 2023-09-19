@@ -135,7 +135,7 @@ with
             e.student_number,
             e.enroll_status,
             e.advisory_name
-        from student_enrollmentas e
+        from student_enrollment e
     ),
 
     schedules as (
@@ -144,7 +144,7 @@ with
             cast(c.cc_academic_year as string) as schedule_academic_year,
             'KIPP NJ/Miami' as schedule_district,
             e.region as schedule_region,
-            c.cc_schoolid as schedule_school_id,
+            c.cc_schoolid as schedule_schoolid,
             case
                 when c.courses_course_name in ('ELA GrK', 'ELA K')
                 then 'K'
@@ -157,8 +157,8 @@ with
                 when c.courses_course_name = 'ELA Gr4'
                 then '4'
             end as schedule_student_grade_level,
-            e.student_number as student_number_schedule,  -- Needed to connect to MCLASS scores
-            c.cc_teacherid as teacher_id,
+            e.student_number as schedule_student_number,  -- Needed to connect to MCLASS scores
+            c.cc_teacherid as teacherid,
             c.teacher_lastfirst as teacher_number,
             c.teacher_lastfirst as teacher_name,
             c.courses_course_name as course_name,
@@ -170,7 +170,7 @@ with
         from student_schedule as c
         left join
             student_number as e
-            on c.cc_academic_year = e.academic_year
+            on cast(c.cc_academic_year as string) = e.academic_year
             and c.cc_studentid = e.studentid
             and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
         cross join unnest({{ periods }}) as period
@@ -504,31 +504,27 @@ with
     composite_only  -- Extract final composite by student per window
     as (
         select distinct
-            mclass_academic_year,
-            mclass_student_number,
-            mclass_period,
-            mclass_measure_level
+            academic_year, student_number, expected_test, mclass_measure_level
         from students_schedules_and_assessments_scores
         where mclass_measure = 'Composite'
     ),
 
     overall_composite_by_window  -- Pivot final composite by student per window
     as (
-        select distinct mclass_academic_year, mclass_student_number, p.boy, p.moy, p.eoy
+        select distinct academic_year, student_number, p.boy, p.moy, p.eoy
         from
             composite_only pivot (
-                max(mclass_measure_level) for mclass_period in ('BOY', 'MOY', 'EOY')
+                max(mclass_measure_level) for expected_test in ('BOY', 'MOY', 'EOY')
             ) as p
     ),
 
     probe_eligible_tag as (
         select distinct
-            s.mclass_academic_year,
-            s.mclass_student_number,
+            s.academic_year,
+            s.student_number,
             c.boy,
             c.moy,
             c.eoy,
-            s.mclass_period,
             case
                 when boy in ('Below Benchmark', 'Well Below Benchmark')
                 then 'Yes'
@@ -549,7 +545,6 @@ with
             on s.academic_year = c.academic_year
             and s.student_number = c.student_number
     ),
-
     base_roster as (
         select
             s.academic_year,
