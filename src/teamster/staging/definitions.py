@@ -31,7 +31,7 @@ from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
-from teamster.staging import (
+from teamster.staging import (  # renlearn,
     CODE_LOCATION,
     GCS_PROJECT_NAME,
     achieve3k,
@@ -48,7 +48,6 @@ from teamster.staging import (
     iready,
     ldap,
     powerschool,
-    renlearn,
     schoolmint,
     smartrecruiters,
     titan,
@@ -70,7 +69,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[iready], group_name="iready"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
-        *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
+        # *load_assets_from_modules(modules=[renlearn], group_name="renlearn"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
         *load_assets_from_modules(modules=[titan], group_name="titan"),
         *load_assets_from_modules(
