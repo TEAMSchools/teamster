@@ -128,12 +128,14 @@ left join
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as cat
     on enr.cc_studentid = cat.studentid
+    and enr.cc_yearid = cat.yearid
     and enr.cc_course_number = cat.course_number
     and enr.term_code = cat.reporting_term
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="cat") }}
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as kctz
     on fg.studentid = kctz.studentid
+    and fg.yearid = kctz.yearid
     and fg.storecode = kctz.reporting_term
     and {{ union_dataset_join_clause(left_alias="fg", right_alias="kctz") }}
     and kctz.course_number = 'HR'
@@ -152,4 +154,3 @@ left join
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="sgy1") }}
     and enr.term_name = 'Q4'
     and sgy1.storecode = 'Y1'
-where enr.cc_academic_year = {{ var("current_academic_year") }}
