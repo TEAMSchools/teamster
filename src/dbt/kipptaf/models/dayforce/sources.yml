@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: dayforce
+    schema: kipptaf_dayforce
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_dayforce__employees
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/dayforce/employees/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_dayforce__employee_manager
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/dayforce/employee_manager/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_dayforce__employee_status
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/dayforce/employee_status/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_dayforce__employee_work_assignment
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/dayforce/employee_work_assignment/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
