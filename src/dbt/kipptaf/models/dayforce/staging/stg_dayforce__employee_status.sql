@@ -23,16 +23,22 @@ with
                 '2020-12-31'
             ) as effective_end,
         from {{ source("dayforce", "src_dayforce__employee_status") }}
-    ),
-
-    start_order as (
-        select
-            *,
-            row_number() over (
-                partition by number, effective_start order by effective_end asc
-            ) as rn_employee_start,
-        from parsed_dates
-        where effective_start <= '2020-12-31'
     )
 
-
+select
+    number as employee_number,
+    status,
+    status_reason_description,
+    base_salary,
+    effective_end,
+    coalesce(
+        date_add(
+            lag(effective_end, 1) over (
+                partition by number, effective_start order by effective_end asc
+            ),
+            interval 1 day
+        ),
+        effective_start
+    ) as effective_start,
+from parsed_dates
+where effective_end > effective_start and effective_start <= '2020-12-31'
