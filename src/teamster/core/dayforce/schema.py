@@ -53,20 +53,139 @@ EMPLOYEE_FIELDS = [
     {"name": "primary_site_clean", "type": ["null", "string"], "default": None},
     {"name": "legal_entity_name_clean", "type": ["null", "string"], "default": None},
     {"name": "adp_associate_id_clean", "type": ["null", "string"], "default": None},
-    {"name": "birth_date", "type": ["null", "string"], "default": None},
-    {"name": "original_hire_date", "type": ["null", "string"], "default": None},
+    {
+        "name": "birth_date",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "original_hire_date",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
     {
         "name": "position_effective_from_date",
         "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
         "default": None,
     },
-    {"name": "position_effective_to_date", "type": ["null", "string"], "default": None},
-    {"name": "rehire_date", "type": ["null", "string"], "default": None},
-    {"name": "termination_date", "type": ["null", "string"], "default": None},
-    {"name": "fivetran_synced", "type": ["null", "string"], "default": None},
-    {"name": "modified", "type": ["null", "string"], "default": None},
+    {
+        "name": "position_effective_to_date",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "rehire_date",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "termination_date",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "fivetran_synced",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "modified",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+]
+
+EMPLOYEE_MANAGER_FIELDS = [
+    {"name": "employee_reference_code", "type": ["null", "long"], "default": None},
+    {"name": "employee_display_name", "type": ["null", "string"], "default": None},
+    {"name": "manager_employee_number", "type": ["null", "long"], "default": None},
+    {"name": "manager_display_name", "type": ["null", "string"], "default": None},
+    {"name": "manager_derived_method", "type": ["null", "string"], "default": None},
+    {"name": "description", "type": ["null", "string"], "default": None},
+    {"name": "app_user_login_id", "type": ["null", "long"], "default": None},
+    {
+        "name": "application_user_employee_display_name",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "manager_effective_end",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "manager_effective_start",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "manager_last_modified_timestamp",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+]
+
+EMPLOYEE_STATUS_FIELDS = [
+    {"name": "number", "type": ["null", "long"], "default": None},
+    {"name": "first_name", "type": ["null", "string"], "default": None},
+    {"name": "last_name", "type": ["null", "string"], "default": None},
+    {"name": "base_salary", "type": ["null", "double"], "default": None},
+    {"name": "status", "type": ["null", "string"], "default": None},
+    {"name": "status_reason_description", "type": ["null", "string"], "default": None},
+    {
+        "name": "effective_start",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "effective_end",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+]
+
+EMPLOYEE_WORK_ASSIGNMENT = [
+    {"name": "employee_reference_code", "type": ["null", "long"], "default": None},
+    {"name": "employee_display_name", "type": ["null", "string"], "default": None},
+    {"name": "primary_work_assignment", "type": ["null", "boolean"], "default": None},
+    {"name": "job_name", "type": ["null", "string"], "default": None},
+    {"name": "department_name", "type": ["null", "string"], "default": None},
+    {"name": "flsa_status_name", "type": ["null", "string"], "default": None},
+    {"name": "job_family_name", "type": ["null", "string"], "default": None},
+    {"name": "pay_class_name", "type": ["null", "string"], "default": None},
+    {"name": "pay_type_name", "type": ["null", "string"], "default": None},
+    {"name": "physical_location_name", "type": ["null", "string"], "default": None},
+    {"name": "legal_entity_name", "type": ["null", "string"], "default": None},
+    {
+        "name": "work_assignment_effective_start",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
+    {
+        "name": "work_assignment_effective_end",
+        "type": ["null", "string"],
+        "logicalType": "timestamp-micros",
+        "default": None,
+    },
 ]
 
 ASSET_FIELDS = {
     "employees": EMPLOYEE_FIELDS,
+    "employee_manager": EMPLOYEE_MANAGER_FIELDS,
+    "employee_status": EMPLOYEE_STATUS_FIELDS,
+    "employee_work_assignment": EMPLOYEE_WORK_ASSIGNMENT,
 }

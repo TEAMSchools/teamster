@@ -11,11 +11,10 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 def _test_schema(local_filepath, asset_name):
     df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+
     df.replace({nan: None}, inplace=True)
     df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
-    print(df)
-
-    print(df.dtypes.to_dict())
+    # print(df.dtypes.to_dict())
 
     count = df.shape[0]
     records = df.to_dict(orient="records")
@@ -44,3 +43,23 @@ def _test_schema(local_filepath, asset_name):
 
 def test_employees():
     _test_schema(asset_name="employees", local_filepath="env/dayforce/employees.csv")
+
+
+def test_employee_manager():
+    _test_schema(
+        asset_name="employee_manager",
+        local_filepath="env/dayforce/employee_manager.csv",
+    )
+
+
+def test_employee_status():
+    _test_schema(
+        asset_name="employee_status", local_filepath="env/dayforce/employee_status.csv"
+    )
+
+
+def test_employee_work_assignment():
+    _test_schema(
+        asset_name="employee_work_assignment",
+        local_filepath="env/dayforce/employee_work_assignment.csv",
+    )
