@@ -32,6 +32,8 @@ locations:
           - clever-reports-sftp-username
           - clever-sftp-password
           - clever-sftp-username
+          - couchdrop-sftp-password
+          - couchdrop-sftp-username
           - coupa-sftp-password
           - coupa-sftp-username
           - dagster-cloud-agent-token

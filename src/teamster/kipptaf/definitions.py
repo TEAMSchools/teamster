@@ -41,6 +41,7 @@ from teamster.kipptaf import (
     amplify,
     clever,
     datagun,
+    dayforce,
     dbt,
     fivetran,
     google,
@@ -60,6 +61,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[amplify], group_name="amplify"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
+        *load_assets_from_modules(modules=[dayforce], group_name="dayforce"),
         *load_assets_from_modules(modules=[google], group_name="google"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
@@ -202,6 +204,11 @@ defs = Definitions(
             remote_host="reports-sftp.clever.com",
             username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
             password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
+        ),
+        "ssh_couchdrop": SSHConfigurableResource(
+            remote_host="kipptaf.couchdrop.io",
+            username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+            password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
         "ssh_coupa": SSHConfigurableResource(
             remote_host="fileshare.coupahost.com",
