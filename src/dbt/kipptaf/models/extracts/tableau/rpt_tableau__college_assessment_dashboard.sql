@@ -23,9 +23,24 @@ with
     ),
 
     illum_assessments_list as (  -- List of Illum assessments
-        select *
-        from {{ ref("base_illuminate__assessments") }}
-        where scope in ('ACT Prep', 'SAT')
+        select
+            t.academic_year,
+            t.academic_year_clean,
+            t.scope,
+            t.assessment_id,
+            t.title,
+            t.administered_at,
+            t.subject_area,
+            g.grade_level
+        from {{ ref("base_illuminate__assessments") }} as t
+        inner join
+            {{ ref("stg_illuminate__assessment_grade_levels") }} as g
+            on t.assessment_id = g.assessment_id
+        where
+            t.scope in ('ACT', 'SAT')
+            and concat(t.scope, g.grade_level) in ('ACT11', 'SAT9', 'SAT10')
+            and t.academic_year_clean = {{ var("current_academic_year") }}
+            and t.title like '%BOY%'
     ),
 
     illum_students as (select * from {{ ref("stg_illuminate__students") }}),  -- Crosswalk for Illum student IDs and student_number
@@ -167,6 +182,7 @@ with
             safe_cast(rt.code as string) as scope_round,
             safe_cast(rt.name as string) as test_type,
             ais.assessment_id,
+            safe_cast(ais.grade_level as string) as assessment_grade_level,
             safe_cast(ais.title as string) as assessment_title,
             ais.scope,  -- To differentiate between ACT/SAT preps
             safe_cast(ais.subject_area as string) as subject_area,
@@ -215,32 +231,33 @@ with
             l.scope_round,
             l.assessment_id,
             l.assessment_title,
+            l.assessment_grade_level,
             l.scope,
-            case
-                when l.subject_area = 'Mathematics' then 'Math' else l.subject_area
-            end as subject_area,
-            count(distinct l.subject_area) over (
-                partition by
-                    l.student_number,
-                    l.academic_year,
-                    l.grade_level,
-                    l.administration_round
-            ) as total_subjects_tested_per_scope_round,
+            l.subject_area,
             l.overall_performance_band_for_group,
             l.reporting_group_id,
             l.reporting_group_label,
             l.points_earned_for_group_subject,
             l.points_possible_for_group_subject,
-            l.overall_number_correct_for_scope_round_per_subject,
-            l.overall_number_possible_for_scope_round_per_subject,
-            cast(ssk.scale_score as int64) as scale_score_for_scope_round_per_subject,  -- Uses the approx raw score to bring a scale score from the G-Sheet
-            case
+            l.overall_number_correct_for_scope_round_per_subject
+            as earned_raw_score_for_scope_round_per_subject,
+            l.overall_number_possible_for_scope_round_per_subject
+            as possible_raw_score_for_scope_round_per_subject,
+            ssk.scale_score
+            /*case
+                when
+                    l.assessment_grade_level in ('9', '10')
+                    and l.subject_area in ('Reading', 'Writing')
+                then (10 * ssk.scale_score)
+                else ssk.scale_score
+            end as earned_scale_score_for_scope_round_per_subject,*/  -- Uses the approx raw score to bring a scale score from the G-Sheet
+        /*case
                 when
                     count(distinct l.subject_area) over (  -- If the total number of subject areas tested matches the total count needed per scope
                         partition by
                             l.student_number,
                             l.academic_year,
-                            l.grade_level,
+                            l.assessment_grade_level,
                             l.administration_round
                     )
                     = 4
@@ -254,30 +271,26 @@ with
                             l.scope_round,
                             l.subject_area
                     )
-            end as overall_composite_score  -- Otherwise NULL it
+            end as overall_composite_score  -- Otherwise NULL it*/
         from practice_tests as l
         left join
             scale_score_key as ssk
             on l.academic_year = ssk.academic_year
             and l.scope = ssk.test_type
-            and l.grade_level = ssk.grade_level
+            and l.assessment_grade_level = safe_cast(ssk.grade_level as string)
             and l.scope_round = ssk.administration_round
-            and (  -- Simplify later when updates/fixes get loaded
-                case
-                    when l.subject_area = 'Mathematics'
-                    then 'Math'
-                    when l.subject_area is null
-                    then 'Writing'
-                    else l.subject_area
-                end
-            )
-            = ssk.subject
+            and l.subject_area = ssk.subject
             and (
                 l.overall_number_correct_for_scope_round_per_subject
                 between ssk.raw_score_low and ssk.raw_score_high
             )
-    ),
+    )
 
+select *
+from
+    practice_tests_with_scale_score_and_composite
+
+    /*
     final_official as (
         select
             e.academic_year,
@@ -363,4 +376,5 @@ select *
 from final_official
 union all
 select *
-from final_practice_tests
+from final_practice_tests*/
+    
