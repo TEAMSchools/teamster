@@ -19,6 +19,7 @@ with
             abs(enr.sections_excludefromgpa - 1) as include_grades_display,
 
             rt.name as term_name,
+            rt.code as term_code,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         inner join
             {{ ref("stg_reporting__terms") }} as rt
@@ -128,7 +129,7 @@ left join
     {{ ref("int_powerschool__category_grades_pivot") }} as cat
     on enr.cc_studentid = cat.studentid
     and enr.cc_course_number = cat.course_number
-    and enr.term_name = cat.reporting_term
+    and enr.term_code = cat.reporting_term
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="cat") }}
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as kctz
