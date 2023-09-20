@@ -1,20 +1,17 @@
 from dagster import config_from_files
 
-from teamster.core.datagun.assets import (
-    build_bigquery_extract_asset,
-    generate_extract_assets,
-)
+from teamster.core.datagun.assets import build_bigquery_extract_asset
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
 
-cpn_extract_assets = generate_extract_assets(
-    code_location=CODE_LOCATION,
-    name="cpn",
-    extract_type="sftp",
-    timezone=LOCAL_TIMEZONE,
-)
+# cpn_extract_assets = generate_extract_assets(
+#     code_location=CODE_LOCATION,
+#     name="cpn",
+#     extract_type="sftp",
+#     timezone=LOCAL_TIMEZONE,
+# )
 
 powerschool_extract_assets = [
     build_bigquery_extract_asset(
@@ -24,6 +21,6 @@ powerschool_extract_assets = [
 ]
 
 __all__ = [
-    *cpn_extract_assets,
+    # *cpn_extract_assets,
     *powerschool_extract_assets,
 ]
