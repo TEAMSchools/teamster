@@ -186,6 +186,9 @@ with
             safe_cast(ais.title as string) as assessment_title,
             ais.scope,  -- To differentiate between ACT/SAT preps
             safe_cast(ais.subject_area as string) as subject_area,
+            count(distinct ais.subject_area) over (
+                partition by ais.academic_year_clean, rt.code, co.student_number
+            ) as total_subjects_tested_per_scope_round,  -- Determine if we have enough scores to calculate the composite
             asr.performance_band_level as overall_performance_band_for_group,
             asr.reporting_group_id,
             rg.label as reporting_group_label,
@@ -218,7 +221,7 @@ with
             on asr.reporting_group_id = rg.reporting_group_id
     ),
 
-    practice_tests_with_scale_score_and_composite  -- Convert the number of correct questions (raw) to the scale score for ACT/SAT Prep
+    practice_tests_with_scale_score  -- Convert the number of correct questions (raw) to the scale score for ACT/SAT Prep
     as (
         select
             l.academic_year,
@@ -234,6 +237,7 @@ with
             l.assessment_grade_level,
             l.scope,
             l.subject_area,
+            l.total_subjects_tested_per_scope_round,
             l.overall_performance_band_for_group,
             l.reporting_group_id,
             l.reporting_group_label,
@@ -243,35 +247,14 @@ with
             as earned_raw_score_for_scope_round_per_subject,
             l.overall_number_possible_for_scope_round_per_subject
             as possible_raw_score_for_scope_round_per_subject,
-            ssk.scale_score
-            /*case
+            case
                 when
                     l.assessment_grade_level in ('9', '10')
+                    and l.scope = 'SAT'
                     and l.subject_area in ('Reading', 'Writing')
-                then (10 * ssk.scale_score)
+                then (10 * ssk.scale_score)  -- Convert the scale scores to be ready to add for SAT Composite score
                 else ssk.scale_score
-            end as earned_scale_score_for_scope_round_per_subject,*/  -- Uses the approx raw score to bring a scale score from the G-Sheet
-        /*case
-                when
-                    count(distinct l.subject_area) over (  -- If the total number of subject areas tested matches the total count needed per scope
-                        partition by
-                            l.student_number,
-                            l.academic_year,
-                            l.assessment_grade_level,
-                            l.administration_round
-                    )
-                    = 4
-                then
-                    sum(distinct ssk.scale_score) over (  -- Then add all of the distinct scale scores for all subjects to create the composite score
-                        partition by
-                            l.student_number,
-                            l.academic_year,
-                            l.grade_level,
-                            l.administration_round,
-                            l.scope_round,
-                            l.subject_area
-                    )
-            end as overall_composite_score  -- Otherwise NULL it*/
+            end as earned_scale_score_for_scope_round_per_subject,  -- Uses the approx raw score to bring a scale score from the G-Sheet
         from practice_tests as l
         left join
             scale_score_key as ssk
@@ -284,13 +267,36 @@ with
                 l.overall_number_correct_for_scope_round_per_subject
                 between ssk.raw_score_low and ssk.raw_score_high
             )
-    )
+    ),
 
-select *
-from
-    practice_tests_with_scale_score_and_composite
+    practice_tests_with_composite as (
+        select
+            *,
+            case
+                when scope = 'ACT' and total_subjects_tested_per_scope_round = 4
+                then
+                    avg(distinct earned_scale_score_for_scope_round_per_subject) over (  -- Then add all of the distinct scale scores for all subjects to create the composite score
+                        partition by
+                            academic_year,
+                            student_number,
+                            assessment_grade_level,
+                            administration_round,
+                            scope_round
+                    )
+                when scope = 'SAT' and total_subjects_tested_per_scope_round = 3
+                then
+                    sum(distinct earned_scale_score_for_scope_round_per_subject) over (  -- Then add all of the distinct scale scores for all subjects to create the composite score
+                        partition by
+                            academic_year,
+                            student_number,
+                            assessment_grade_level,
+                            administration_round,
+                            scope_round
+                    )
+            end as overall_composite_score  -- Otherwise NULL it*/
+        from practice_tests_with_scale_score
+    ),
 
-    /*
     final_official as (
         select
             e.academic_year,
@@ -309,16 +315,18 @@ from
             null as assessment_id,
             '' as assessment_title,
             o.administration_round,
-            o.test_type as scope,
+            o.scope,
+            e.grade_level as assessment_grade_level,
             o.test_date,
             o.subject_area,
+            null as total_subjects_tested_per_scope_round,
             '' as overall_performance_band_for_group,
             'NA' as reporting_group_label,
             null as points_earned_for_group_subject,
             null as points_possible_for_group_subject,
-            null as overall_number_correct_for_scope_round_per_subject,
-            null as overall_number_possible_for_scope_round_per_subject,
-            o.scale_score as scale_score_for_scope_round_per_subject,
+            null as earned_raw_score_for_scope_round_per_subject,
+            null as possible_raw_score_for_scope_round_per_subject,
+            o.scale_score as earned_scale_score_for_scope_round_per_subject,
             o.rn_highest,
             avg(case when subject_area = 'Composite' then o.scale_score end) over (
                 partition by
@@ -351,22 +359,24 @@ from
             p.assessment_title,
             p.administration_round,
             p.scope,
+            cast(p.assessment_grade_level as int64) as assessment_grade_level,
             p.test_date,
             p.subject_area,
+            p.total_subjects_tested_per_scope_round,
             cast(
                 p.overall_performance_band_for_group as string
             ) as overall_performance_band_for_group,
             p.reporting_group_label,
             p.points_earned_for_group_subject,
             p.points_possible_for_group_subject,
-            p.overall_number_correct_for_scope_round_per_subject,
-            p.overall_number_possible_for_scope_round_per_subject,
-            p.scale_score_for_scope_round_per_subject,
+            p.earned_raw_score_for_scope_round_per_subject,
+            p.possible_raw_score_for_scope_round_per_subject,
+            p.earned_scale_score_for_scope_round_per_subject,
             null as rn_highest,
             p.overall_composite_score
         from student_enrollments as e
         inner join
-            practice_tests_with_scale_score_and_composite as p
+            practice_tests_with_composite as p
             on e.student_number = p.student_number
             and e.academic_year = p.academic_year
         left join ms_grad as m on e.student_number = m.student_number
@@ -376,5 +386,4 @@ select *
 from final_official
 union all
 select *
-from final_practice_tests*/
-    
+from final_practice_tests
