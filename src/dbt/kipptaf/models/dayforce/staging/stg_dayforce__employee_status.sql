@@ -30,7 +30,7 @@ select
     status,
     status_reason_description,
     base_salary,
-    effective_end,
+    effective_end as status_effective_end,
     coalesce(
         date_add(
             lag(effective_end, 1) over (
@@ -39,6 +39,6 @@ select
             interval 1 day
         ),
         effective_start
-    ) as effective_start,
+    ) as status_effective_start,
 from parsed_dates
 where effective_end > effective_start and effective_start <= '2020-12-31'
