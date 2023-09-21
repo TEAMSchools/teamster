@@ -184,7 +184,7 @@ defs = Definitions(
             username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
-        "ssh_adp": SSHConfigurableResource(
+        "ssh_adp_workforce_now": SSHConfigurableResource(
             remote_host="sftp.kippnj.org",
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
