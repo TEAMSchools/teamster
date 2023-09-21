@@ -22,7 +22,6 @@ from teamster.core.utils.functions import get_avro_record_schema
 def build_wfm_asset(
     asset_name,
     code_location,
-    source_system,
     date_partitions_def: DynamicPartitionsDefinition,
     symbolic_ids,
     hyperfind,
@@ -31,7 +30,7 @@ def build_wfm_asset(
     **kwargs,
 ) -> AssetsDefinition:
     @asset(
-        key=[code_location, source_system, asset_name],
+        key=[code_location, "adp_workforce_manager", asset_name],
         metadata={"hyperfind": hyperfind},
         partitions_def=MultiPartitionsDefinition(
             {
