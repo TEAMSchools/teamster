@@ -19,13 +19,12 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 
 def build_sftp_sensor(
     code_location,
-    source_system,
     asset_defs: list[AssetsDefinition],
     timezone,
     minimum_interval_seconds=None,
 ):
     @sensor(
-        name=f"{code_location}_{source_system}_sftp_sensor",
+        name=f"{code_location}_adp_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
