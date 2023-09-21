@@ -7,6 +7,7 @@ assets:
         - 2022/PM1
         - 2022/PM2
         - 2022/PM3
+        - 2023/PM1
       grade_level_subject:
         - 3\w*ELAReading
         - 3\w*Mathematics
