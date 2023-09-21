@@ -31,11 +31,10 @@ from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
-from teamster.staging import (  # renlearn,
+from teamster.staging import (  # renlearn,; adp,
     CODE_LOCATION,
     GCS_PROJECT_NAME,
     achieve3k,
-    adp,
     airbyte,
     alchemer,
     amplify,
@@ -59,7 +58,7 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=[
         *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
-        *load_assets_from_modules(modules=[adp], group_name="adp"),
+        # *load_assets_from_modules(modules=[adp], group_name="adp"),
         *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
         *load_assets_from_modules(modules=[amplify], group_name="amplify"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
