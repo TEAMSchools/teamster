@@ -26,12 +26,12 @@ def build_wfm_asset(
     date_partitions_def: DynamicPartitionsDefinition,
     symbolic_ids,
     hyperfind,
+    auto_materialize_policy,
     op_tags={},
     **kwargs,
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name,
-        key_prefix=[code_location, source_system],
+        key=[code_location, source_system, asset_name],
         metadata={"hyperfind": hyperfind},
         partitions_def=MultiPartitionsDefinition(
             {
@@ -41,6 +41,7 @@ def build_wfm_asset(
         ),
         io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
+        auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def

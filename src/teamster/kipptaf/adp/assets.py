@@ -1,4 +1,5 @@
 from dagster import (
+    AutoMaterializePolicy,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     config_from_files,
@@ -10,14 +11,12 @@ from teamster.core.sftp.assets import build_sftp_asset
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
-SOURCE_SYSTEM = "adp"
-
 config_dir = f"src/teamster/{CODE_LOCATION}/adp/config"
 
 sftp_assets = [
     build_sftp_asset(
         code_location=CODE_LOCATION,
-        source_system=SOURCE_SYSTEM,
+        source_system="adp_workforce_now",
         asset_fields=ASSET_FIELDS,
         **a,
     )
@@ -27,13 +26,14 @@ sftp_assets = [
 wfm_assets_daily = [
     build_wfm_asset(
         code_location=CODE_LOCATION,
-        source_system=SOURCE_SYSTEM,
+        source_system="adp_workforce_manager",
         date_partitions_def=DailyPartitionsDefinition(
             start_date=a["partition_start_date"],
             timezone=LOCAL_TIMEZONE.name,
             fmt="%Y-%m-%d",
             end_offset=1,
         ),
+        auto_materialize_policy=AutoMaterializePolicy.eager(),
         **a,
     )
     for a in config_from_files([f"{config_dir}/wfm-assets-daily.yaml"])["assets"]
@@ -42,10 +42,11 @@ wfm_assets_daily = [
 wfm_assets_dynamic = [
     build_wfm_asset(
         code_location=CODE_LOCATION,
-        source_system=SOURCE_SYSTEM,
+        source_system="adp_workforce_manager",
         date_partitions_def=DynamicPartitionsDefinition(
-            name=f"{CODE_LOCATION}__{SOURCE_SYSTEM}__{a['asset_name']}_date"
+            name=f"{CODE_LOCATION}__adp_workforce_manager__{a['asset_name']}_date"
         ),
+        auto_materialize_policy=AutoMaterializePolicy.eager(),
         **a,
     )
     for a in config_from_files([f"{config_dir}/wfm-assets-dynamic.yaml"])["assets"]
