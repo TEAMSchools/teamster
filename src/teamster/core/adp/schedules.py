@@ -13,14 +13,13 @@ from teamster.core.adp.resources import AdpWorkforceManagerResource
 def build_dynamic_partition_schedule(
     cron_schedule,
     code_location,
-    source_system,
     execution_timezone,
     job,
     asset_defs: list[AssetsDefinition],
 ):
     @schedule(
         cron_schedule=cron_schedule,
-        name=f"{code_location}_{source_system}_wfm_dynamic_partition_schedule",
+        name=f"{code_location}_adp_wfm_dynamic_partition_schedule",
         execution_timezone=execution_timezone.name,
         job=job,
     )

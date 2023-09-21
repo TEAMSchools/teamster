@@ -26,7 +26,6 @@ sftp_assets = [
 wfm_assets_daily = [
     build_wfm_asset(
         code_location=CODE_LOCATION,
-        source_system="adp_workforce_manager",
         date_partitions_def=DailyPartitionsDefinition(
             start_date=a["partition_start_date"],
             timezone=LOCAL_TIMEZONE.name,
@@ -42,7 +41,6 @@ wfm_assets_daily = [
 wfm_assets_dynamic = [
     build_wfm_asset(
         code_location=CODE_LOCATION,
-        source_system="adp_workforce_manager",
         date_partitions_def=DynamicPartitionsDefinition(
             name=f"{CODE_LOCATION}__adp_workforce_manager__{a['asset_name']}_date"
         ),
