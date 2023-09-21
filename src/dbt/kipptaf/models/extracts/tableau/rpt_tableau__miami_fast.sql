@@ -4,6 +4,7 @@ with
             'Reading' as iready_subject,
             'ELAReading' as fast_subject,
             'ENG' as ps_credittype,
+            'Text Study' as illuminate_subject,
 
         union all
 
@@ -11,6 +12,7 @@ with
             'Math' as iready_subject,
             'Mathematics' as fast_subject,
             'MATH' as ps_credittype,
+            'Mathematics' as illuminate_subject
     ),
 
     iready_lessons as (
@@ -39,7 +41,7 @@ with
 
     qaf_pct_correct as (
         -- TODO: should this be filtered by subject?
-        select powerschool_student_number, qaf1, qaf2, qaf3, qaf4,
+        select powerschool_student_number, subject_area, qaf1, qaf2, qaf3, qaf4,
         from
             {{ ref("int_assessments__response_rollup") }} pivot (
                 max(percent_correct) for module_number
@@ -49,6 +51,7 @@ with
     )
 
 select
+    co.academic_year,
     co.student_number,
     co.state_studentnumber as mdcps_id,
     co.fleid,
@@ -139,7 +142,10 @@ left join
     iready_lessons as ir
     on co.student_number = ir.student_id
     and subj.iready_subject = ir.subject
-left join qaf_pct_correct as ia on co.student_number = ia.powerschool_student_number
+left join
+    qaf_pct_correct as ia
+    on co.student_number = ia.powerschool_student_number
+    and subj.illuminate_subject = ia.subject_area
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
@@ -164,7 +170,7 @@ left join
     and cwf.source_system = 'FSA'
 where
     co.region = 'Miami'
-    and co.enroll_status = 0
+    and co.is_enrolled_y1
     and co.rn_year = 1
-    and co.academic_year = {{ var("current_academic_year") }}
+    and co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.grade_level >= 3
