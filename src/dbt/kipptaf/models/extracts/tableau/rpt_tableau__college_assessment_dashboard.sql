@@ -62,7 +62,30 @@ with
     student_enrollments as (
         select *
         from {{ ref("base_powerschool__student_enrollments") }}  -- PowerSchool enrollment table for GL and school info
-        where rn_year = 1  and school_level = 'HS' and academic_year >= 2015
+        where rn_year = 1 and school_level = 'HS' and academic_year >= 2015
+    ),
+
+    student_schedules as (
+        select
+            _dbt_source_relation,
+            cc_academic_year,
+            cc_studentid,
+            students_student_number,
+            cc_teacherid,
+            teachernumber,
+            teacher_lastfirst,
+            sections_id,
+            cc_section_number,
+            cc_course_number,
+            courses_course_name,
+            cc_expression,
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            cc_academic_year >= 2015
+            and rn_credittype_year = 1
+            and rn_course_number_year = 1
+            and not is_dropped_course
+            and not is_dropped_section
     ),
 
     -- LOGICAL CTEs
