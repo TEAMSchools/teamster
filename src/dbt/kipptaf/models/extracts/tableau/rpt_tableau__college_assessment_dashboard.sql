@@ -62,7 +62,7 @@ with
     student_enrollments as (
         select *
         from {{ ref("base_powerschool__student_enrollments") }}  -- PowerSchool enrollment table for GL and school info
-        where rn_year = 1
+        where rn_year = 1  and school_level = 'HS' and academic_year >= 2015
     ),
 
     -- LOGICAL CTEs
