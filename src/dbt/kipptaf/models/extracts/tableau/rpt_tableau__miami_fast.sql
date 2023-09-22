@@ -167,8 +167,9 @@ left join
 left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cwf
     on ft.assessment_subject = cwf.test_name
+    and ft.assessment_grade = cwf.grade_level
     and ft.scale_score between cwf.scale_low and cwf.scale_high
-    and cwf.source_system = 'FSA'
+    and cwf.source_system = 'FAST'
 left join
     {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
     on co.fleid = fs.student_id
