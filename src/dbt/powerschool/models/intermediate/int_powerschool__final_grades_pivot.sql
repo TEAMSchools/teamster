@@ -17,7 +17,7 @@ with
             term_percent_grade_adjusted,
             term_letter_grade_adjusted,
             storecode as reporting_term,
-        from {{ ref('base_powerschool__final_grades') }}
+        from {{ ref("base_powerschool__final_grades") }}
 
         union all
 
@@ -38,7 +38,7 @@ with
             term_percent_grade_adjusted,
             term_letter_grade_adjusted,
             'CUR' as reporting_term,
-        from {{ ref('base_powerschool__final_grades') }}
+        from {{ ref("base_powerschool__final_grades") }}
         where
             current_date('{{ var("local_timezone") }}')
             between termbin_start_date and termbin_end_date

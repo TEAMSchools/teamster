@@ -1,4 +1,6 @@
-{% set src_model = source("iready", "src_iready__personalized_instruction_by_lesson") %}
+{% set src_model = source(
+    "iready", "src_iready__personalized_instruction_by_lesson"
+) %}
 
 select
     {{ dbt_utils.star(from=src_model, except=["completion_date"]) }},
