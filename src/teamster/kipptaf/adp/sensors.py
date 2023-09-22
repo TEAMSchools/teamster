@@ -5,7 +5,6 @@ from .assets import sftp_assets
 
 sftp_sensor = build_sftp_sensor(
     code_location=CODE_LOCATION,
-    source_system="adp",
     asset_defs=sftp_assets,
     timezone=LOCAL_TIMEZONE,
     minimum_interval_seconds=(60 * 10),
