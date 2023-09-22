@@ -40,7 +40,6 @@ with
     ),
 
     qaf_pct_correct as (
-        -- TODO: should this be filtered by subject?
         select powerschool_student_number, subject_area, qaf1, qaf2, qaf3, qaf4,
         from
             {{ ref("int_assessments__response_rollup") }} pivot (
