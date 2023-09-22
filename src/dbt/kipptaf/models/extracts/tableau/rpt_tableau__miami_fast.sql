@@ -72,6 +72,8 @@ select
     subj.fast_subject as fsa_subject,
     subj.iready_subject,
 
+    administration_window,
+
     ce.cc_course_number as course_number,
     ce.courses_course_name as course_name,
     ce.sections_section_number as section_number,
@@ -109,12 +111,12 @@ select
     ft.scale_score,
     ft.scale_score_prev,
 
+    cwf.sublevel_name as fast_sublevel_name,
+    cwf.sublevel_number as fast_sublevel_number,
+
     fs.standard as standard_domain,
     fs.performance as mastery_indicator,
     fs.performance as mastery_number,
-
-    cwf.sublevel_name as fast_sublevel_name,
-    cwf.sublevel_number as fast_sublevel_number,
 
     if(
         not co.is_retained_year
@@ -132,9 +134,11 @@ select
     ) as rn_test_fast,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
+cross join unnest(["PM1", "PM2", "PM3"]) as administration_window
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number
+    and co.academic_year = ce.cc_academic_year
     and subj.ps_credittype = ce.courses_credittype
     and ce.rn_credittype_year = 1
     and not ce.is_dropped_section
@@ -157,17 +161,18 @@ left join
     on co.fleid = ft.student_id
     and co.academic_year = ft.academic_year
     and subj.fast_subject = ft.assessment_subject
-left join
-    {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
-    on co.fleid = fs.student_id
-    and co.academic_year = fs.academic_year
-    and subj.fast_subject = fs.assessment_subject
-    and ft.administration_window = fs.administration_window
+    and administration_window = ft.administration_window
 left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cwf
     on ft.assessment_subject = cwf.test_name
     and ft.scale_score between cwf.scale_low and cwf.scale_high
     and cwf.source_system = 'FSA'
+left join
+    {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
+    on co.fleid = fs.student_id
+    and co.academic_year = fs.academic_year
+    and subj.fast_subject = fs.assessment_subject
+    and administration_window = fs.administration_window
 where
     co.region = 'Miami'
     and co.is_enrolled_y1
