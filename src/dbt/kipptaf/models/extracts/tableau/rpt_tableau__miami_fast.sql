@@ -105,10 +105,10 @@ select
     dr.progress_to_stretch,
     dr.scale_points_to_proficiency,
 
-    ft.administration_window as pm_round,
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
+    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
 
     cwf.sublevel_name as fast_sublevel_name,
     cwf.sublevel_number as fast_sublevel_number,
@@ -120,15 +120,18 @@ select
     if(
         not co.is_retained_year
         and co.grade_level = 3
-        and subj.fast_subject = 'ELA'
-        and ft.achievement_level_int < 2,
+        and subj.fast_subject = 'ELAReading'
+        and not ft.is_proficient,
         1,
         0
     ) as gr3_retention_flag,
 
     row_number() over (
         partition by
-            co.fleid, co.academic_year, subj.fast_subject, ft.administration_window
+            co.student_number,
+            co.academic_year,
+            subj.fast_subject,
+            administration_window
         order by fs.standard asc
     ) as rn_test_fast,
 from {{ ref("base_powerschool__student_enrollments") }} as co
