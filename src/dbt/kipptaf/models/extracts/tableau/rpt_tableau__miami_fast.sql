@@ -4,6 +4,7 @@ with
             'Reading' as iready_subject,
             'ELAReading' as fast_subject,
             'ENG' as ps_credittype,
+            'Text Study' as illuminate_subject,
 
         union all
 
@@ -11,6 +12,7 @@ with
             'Math' as iready_subject,
             'Mathematics' as fast_subject,
             'MATH' as ps_credittype,
+            'Mathematics' as illuminate_subject
     ),
 
     iready_lessons as (
@@ -38,8 +40,7 @@ with
     ),
 
     qaf_pct_correct as (
-        -- TODO: should this be filtered by subject?
-        select powerschool_student_number, qaf1, qaf2, qaf3, qaf4,
+        select powerschool_student_number, subject_area, qaf1, qaf2, qaf3, qaf4,
         from
             {{ ref("int_assessments__response_rollup") }} pivot (
                 max(percent_correct) for module_number
@@ -49,6 +50,7 @@ with
     )
 
 select
+    co.academic_year,
     co.student_number,
     co.state_studentnumber as mdcps_id,
     co.fleid,
@@ -68,6 +70,8 @@ select
 
     subj.fast_subject as fsa_subject,
     subj.iready_subject,
+
+    administration_window,
 
     ce.cc_course_number as course_number,
     ce.courses_course_name as course_name,
@@ -106,12 +110,12 @@ select
     ft.scale_score,
     ft.scale_score_prev,
 
+    cwf.sublevel_name as fast_sublevel_name,
+    cwf.sublevel_number as fast_sublevel_number,
+
     fs.standard as standard_domain,
     fs.performance as mastery_indicator,
     fs.performance as mastery_number,
-
-    cwf.sublevel_name as fast_sublevel_name,
-    cwf.sublevel_number as fast_sublevel_number,
 
     if(
         not co.is_retained_year
@@ -129,9 +133,11 @@ select
     ) as rn_test_fast,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
+cross join unnest(["PM1", "PM2", "PM3"]) as administration_window
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number
+    and co.academic_year = ce.cc_academic_year
     and subj.ps_credittype = ce.courses_credittype
     and ce.rn_credittype_year = 1
     and not ce.is_dropped_section
@@ -139,7 +145,10 @@ left join
     iready_lessons as ir
     on co.student_number = ir.student_id
     and subj.iready_subject = ir.subject
-left join qaf_pct_correct as ia on co.student_number = ia.powerschool_student_number
+left join
+    qaf_pct_correct as ia
+    on co.student_number = ia.powerschool_student_number
+    and subj.illuminate_subject = ia.subject_area
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
@@ -151,20 +160,21 @@ left join
     on co.fleid = ft.student_id
     and co.academic_year = ft.academic_year
     and subj.fast_subject = ft.assessment_subject
-left join
-    {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
-    on co.fleid = fs.student_id
-    and co.academic_year = fs.academic_year
-    and subj.fast_subject = fs.assessment_subject
-    and ft.administration_window = fs.administration_window
+    and administration_window = ft.administration_window
 left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cwf
     on ft.assessment_subject = cwf.test_name
     and ft.scale_score between cwf.scale_low and cwf.scale_high
     and cwf.source_system = 'FSA'
+left join
+    {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
+    on co.fleid = fs.student_id
+    and co.academic_year = fs.academic_year
+    and subj.fast_subject = fs.assessment_subject
+    and administration_window = fs.administration_window
 where
     co.region = 'Miami'
-    and co.enroll_status = 0
+    and co.is_enrolled_y1
     and co.rn_year = 1
-    and co.academic_year = {{ var("current_academic_year") }}
+    and co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.grade_level >= 3
