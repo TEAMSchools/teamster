@@ -332,6 +332,7 @@ with
             e.enroll_status,
             e.advisor_lastfirst,
             e.cohort,
+            s.ktc_cohort,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
             m.ms_attended,
             o.test_type,
@@ -361,6 +362,8 @@ with
             on e.student_number = o.student_number
             and (o.test_date between e.entrydate and e.exitdate)
         left join ms_grad as m on e.student_number = m.student_number
+        left join adb_roster as s
+        on e.student_number = s.student_number
     ),
 
     final_practice_tests as (
@@ -375,6 +378,7 @@ with
             e.enroll_status,
             e.advisor_lastfirst,
             e.cohort,
+            s.ktc_cohort,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
             m.ms_attended,
             concat('Practice', ' ', p.scope) as test_type,
@@ -403,6 +407,8 @@ with
             on e.student_number = p.student_number
             and e.academic_year = p.academic_year
         left join ms_grad as m on e.student_number = m.student_number
+        left join adb_roster as s
+        on e.student_number = s.student_number
     )
 
 select *
@@ -410,3 +416,4 @@ from final_official
 union all
 select *
 from final_practice_tests
+    
