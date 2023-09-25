@@ -22,11 +22,11 @@ dependencies = [
   "pyodbc>=4.0.35",
   "python-snappy>=0.6.1",
   "beautifulsoup4>=4.12.2",
-  "dbt-bigquery!=1.6.5",
   "ldap3>=2.9.1",
   "pycryptodome>=3.18.0",
   "pandas>=2.0.3",
   "tenacity>=8.2.2",
+  "dbt-bigquery>=1.6.5",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }
