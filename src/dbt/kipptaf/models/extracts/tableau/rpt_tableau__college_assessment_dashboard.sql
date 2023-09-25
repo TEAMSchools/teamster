@@ -447,7 +447,7 @@ with
                 partition by e.student_number, p.scope, p.subject_area
                 order by p.earned_scale_score_for_scope_round_per_subject desc
             ) as rn_highest,
-            p.composite_scale_score_for_scope_round
+            p.composite_scale_score_for_scope_round as overall_composite_score
         from student_enrollments as e
         inner join
             practice_tests_append as p
