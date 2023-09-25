@@ -6,7 +6,6 @@ from dagster import (
 
 from teamster.core.iready.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_iready_sftp_asset(config_dir, code_location, timezone):
@@ -20,13 +19,12 @@ def build_iready_sftp_asset(config_dir, code_location, timezone):
             partitions_def=MultiPartitionsDefinition(
                 {
                     "subject": StaticPartitionsDefinition(["ela", "math"]),
-                    "date": FiscalYearPartitionsDefinition(
-                        start_date=a["partition_start_date"],
-                        timezone=timezone.name,
-                        start_month=7,
+                    "academic_year": StaticPartitionsDefinition(
+                        a["partition_keys"]["academic_year"]
                     ),
                 }
             ),
+            slugify_replacements=[["%", "percent"]],
             **a,
         )
 
