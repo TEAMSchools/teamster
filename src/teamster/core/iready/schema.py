@@ -317,7 +317,7 @@ DIAGNOSTIC_RESULTS_FIELDS = [
     {"name": "sex", "type": ["null", "string"], "default": None},
     {"name": "special_education", "type": ["null", "string"], "default": None},
     {"name": "start_date", "type": ["null", "string"], "default": None},
-    {"name": "student_grade", "type": ["null", "string"], "default": None},
+    {"name": "student_grade", "type": ["null", "string", "long"], "default": None},
     {"name": "student_id", "type": ["null", "long"], "default": None},
     {"name": "user_name", "type": ["null", "string"], "default": None},
     {"name": "vocabulary_placement", "type": ["null", "string"], "default": None},

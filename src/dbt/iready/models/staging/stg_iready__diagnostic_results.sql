@@ -1,8 +1,25 @@
 {% set src_model = source("iready", "src_iready__diagnostic_results") %}
 
 select
-    {{ dbt_utils.star(from=src_model, except=["completion_date", "start_date"]) }},
+    {{
+        dbt_utils.star(
+            from=src_model,
+            except=[
+                "student_grade",
+                "completion_date",
+                "start_date",
+                "most_recent_diagnostic_y_n",
+                "most_recent_diagnostic_ytd_y_n",
+            ],
+        )
+    }},
 
+    coalesce(
+        most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
+    ) as most_recent_diagnostic_ytd_y_n,
+    coalesce(
+        student_grade.string_value, safe_cast(student_grade.long_value as string)
+    ) as student_grade,
     parse_date('%m/%d/%Y', start_date) as start_date,
     parse_date('%m/%d/%Y', completion_date) as completion_date,
     safe_cast(left(academic_year, 4) as int) as academic_year_int,
@@ -41,4 +58,3 @@ select
         then 'Two or More Grade Levels Below'
     end as placement_3_level,
 from {{ src_model }}
-where _dagster_partition_fiscal_year = safe_cast(right(academic_year, 4) as int)

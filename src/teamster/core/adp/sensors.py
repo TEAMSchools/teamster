@@ -28,11 +28,13 @@ def build_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
-    def _sensor(context: SensorEvaluationContext, ssh_adp: SSHConfigurableResource):
+    def _sensor(
+        context: SensorEvaluationContext, ssh_adp_workforce_now: SSHConfigurableResource
+    ):
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
-            ls = get_sftp_ls(ssh=ssh_adp, asset_defs=asset_defs)
+            ls = get_sftp_ls(ssh=ssh_adp_workforce_now, asset_defs=asset_defs)
         except SSHException as e:
             context.log.error(e)
             return SensorResult(skip_reason=SkipReason(str(e)))
