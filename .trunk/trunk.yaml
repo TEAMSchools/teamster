@@ -39,8 +39,8 @@ lint:
   enabled:
     - sqlfmt@0.19.2
     - isort@5.12.0
-    - ruff@0.0.290
-    - actionlint@1.6.25
+    - ruff@0.0.291
+    - actionlint@1.6.26
     - black@23.9.1
     - git-diff-check
     - gitleaks@8.18.0
