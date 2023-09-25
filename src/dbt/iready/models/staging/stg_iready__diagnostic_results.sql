@@ -4,10 +4,19 @@ select
     {{
         dbt_utils.star(
             from=src_model,
-            except=["student_grade", "completion_date", "start_date"],
+            except=[
+                "student_grade",
+                "completion_date",
+                "start_date",
+                "most_recent_diagnostic_y_n",
+                "most_recent_diagnostic_ytd_y_n",
+            ],
         )
     }},
 
+    coalesce(
+        most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
+    ) as most_recent_diagnostic_ytd_y_n,
     coalesce(
         student_grade.string_value, safe_cast(student_grade.long_value as string)
     ) as student_grade,
