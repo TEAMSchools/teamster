@@ -16,7 +16,6 @@ from paramiko.ssh_exception import SSHException
 
 from teamster.core.sftp.sensors import get_sftp_ls
 from teamster.core.ssh.resources import SSHConfigurableResource
-from teamster.core.utils.classes import FiscalYear
 
 
 def build_sftp_sensor(
@@ -66,12 +65,7 @@ def build_sftp_sensor(
                                 "partition_key": MultiPartitionKey(
                                     {
                                         **match.groupdict(),
-                                        "date": FiscalYear(
-                                            datetime=pendulum.from_timestamp(
-                                                timestamp=f.st_mtime
-                                            ),
-                                            start_month=7,
-                                        ).start.to_date_string(),
+                                        "academic_year": "Current_Year",
                                     }
                                 ),
                             }
