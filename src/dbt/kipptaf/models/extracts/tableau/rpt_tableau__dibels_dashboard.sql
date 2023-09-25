@@ -10,7 +10,8 @@ with
             and student_grade in ('3', '4')
             and rn_subj_round = 1
             and overall_relative_placement_int <= 2
-            and left(academic_year,4) = cast({{ var("current_academic_year") }} as string)
+            and left(academic_year, 4)
+            = cast({{ var("current_academic_year") }} as string)
             and subject = 'Reading'
     ),
 
@@ -37,7 +38,8 @@ with
     ),
 
     bm_summary as (
-        select * from {{ ref("stg_amplify__benchmark_student_summary") }}  -- Brings the basic report for benchmark data for BOY, MOY and EOY
+        select *
+        from {{ ref("stg_amplify__benchmark_student_summary") }}  -- Brings the basic report for benchmark data for BOY, MOY and EOY
         where academic_year = {{ var("current_academic_year") }}
     ),
 
@@ -46,7 +48,8 @@ with
     ),
 
     pm_summary as (
-        select * from {{ ref("stg_amplify__pm_student_summary") }}  -- Brings the probe data for the BOY-> MOY and MOY->EOY
+        select *
+        from {{ ref("stg_amplify__pm_student_summary") }}  -- Brings the probe data for the BOY-> MOY and MOY->EOY
         where academic_year = {{ var("current_academic_year") }}
     ),
 
