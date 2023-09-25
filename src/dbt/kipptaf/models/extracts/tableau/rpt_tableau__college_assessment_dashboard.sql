@@ -320,6 +320,44 @@ with
         from practice_tests_with_scale_score
     ),
 
+    practice_tests_composite_only as (
+
+        select distinct
+            academic_year,
+            schoolid,
+            illuminate_student_id,
+            student_number,
+            grade_level,
+            administration_round,
+            test_date,
+            scope_round,
+            null as assessment_id,
+            'NA' as assessment_title,
+            assessment_grade_level,
+            scope,
+            'Composite' as subject_area,
+            null as total_subjects_tested_per_scope_round,
+            null as overall_performance_band_for_group,
+            null as reporting_group_id,
+            'NA' as reporting_group_label,
+            null as points_earned_for_group_subject,
+            null as points_possible_for_group_subject,
+            null as earned_raw_score_for_scope_round_per_subject,
+            null as possible_raw_score_for_scope_round_per_subject,
+            null as earned_scale_score_for_scope_round_per_subject,
+            overall_composite_score
+        from practice_tests_with_composite
+        order by academic_year, student_number, scope_round
+    ),
+
+    practice_tests_append as (
+        select *
+        from practice_tests_with_composite
+        union all
+        select *
+        from practice_tests_composite_only
+    ),
+
     final_official as (
         select
             e.academic_year,
@@ -340,6 +378,7 @@ with
             '' as assessment_title,
             o.administration_round,
             o.scope,
+            'NA' as scope_round,
             e.grade_level as assessment_grade_level,
             o.test_date,
             o.subject_area,
@@ -362,8 +401,7 @@ with
             on e.student_number = o.student_number
             and (o.test_date between e.entrydate and e.exitdate)
         left join ms_grad as m on e.student_number = m.student_number
-        left join adb_roster as s
-        on e.student_number = s.student_number
+        left join adb_roster as s on e.student_number = s.student_number
     ),
 
     final_practice_tests as (
@@ -381,11 +419,12 @@ with
             s.ktc_cohort,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
             m.ms_attended,
-            concat('Practice', ' ', p.scope) as test_type,
+            'Practice' as test_type,
             p.assessment_id,
             p.assessment_title,
             p.administration_round,
             p.scope,
+            p.scope_round,
             cast(p.assessment_grade_level as int64) as assessment_grade_level,
             p.test_date,
             p.subject_area,
@@ -399,16 +438,18 @@ with
             p.earned_raw_score_for_scope_round_per_subject,
             p.possible_raw_score_for_scope_round_per_subject,
             p.earned_scale_score_for_scope_round_per_subject,
-            null as rn_highest,
+            row_number() over (
+                partition by e.student_number, p.scope, p.subject_area
+                order by p.earned_scale_score_for_scope_round_per_subject desc
+            ) as rn_highest,
             p.overall_composite_score
         from student_enrollments as e
         inner join
-            practice_tests_with_composite as p
+            practice_tests_append as p
             on e.student_number = p.student_number
             and e.academic_year = p.academic_year
         left join ms_grad as m on e.student_number = m.student_number
-        left join adb_roster as s
-        on e.student_number = s.student_number
+        left join adb_roster as s on e.student_number = s.student_number
     )
 
 select *
@@ -416,4 +457,3 @@ from final_official
 union all
 select *
 from final_practice_tests
-    
