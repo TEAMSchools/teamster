@@ -27,6 +27,7 @@ def build_iready_sftp_asset(config_dir, code_location, timezone):
                     ),
                 }
             ),
+            slugify_replacements=[["%", "percent"]],
             **a,
         )
 
