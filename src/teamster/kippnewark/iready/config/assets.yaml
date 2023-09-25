@@ -1,6 +1,6 @@
 assets:
   - asset_name: diagnostic_results
-    remote_filepath: /exports/nj-kipp_nj/(?P<academic_year>)
+    remote_filepath: /exports/nj-kipp_nj/Current_Year
     remote_file_regex: diagnostic_results_(?P<subject>)\.csv
     partition_keys:
       academic_year:
@@ -9,21 +9,21 @@ assets:
         - "2021"
         - "2020"
   - asset_name: personalized_instruction_by_lesson
-    remote_filepath: /exports/nj-kipp_nj/(?P<academic_year>)
+    remote_filepath: /exports/nj-kipp_nj/Current_Year
     remote_file_regex: personalized_instruction_by_lesson_(?P<subject>)\.csv
     partition_keys:
       academic_year:
         - Current_Year
         - "2022"
   - asset_name: instructional_usage_data
-    remote_filepath: /exports/nj-kipp_nj/(?P<academic_year>)
+    remote_filepath: /exports/nj-kipp_nj/Current_Year
     remote_file_regex: instructional_usage_data_(?P<subject>)\.csv
     partition_keys:
       academic_year:
         - Current_Year
         - "2022"
   - asset_name: diagnostic_and_instruction
-    remote_filepath: /exports/nj-kipp_nj/(?P<academic_year>)
+    remote_filepath: /exports/nj-kipp_nj/Current_Year
     remote_file_regex: diagnostic_and_instruction_(?P<subject>)_ytd_window\.csv
     partition_keys:
       academic_year:
