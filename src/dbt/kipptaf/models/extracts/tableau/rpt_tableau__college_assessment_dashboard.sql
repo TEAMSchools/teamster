@@ -88,7 +88,6 @@ with
             and not is_dropped_section
     ),
 
-    -- LOGICAL CTEs
     ms_grad as (  -- Brings the name of the middle school the student graduated it from (to identify the latest MS in the district the student attended)
         select sub.student_number, sub.ms_attended
         from
@@ -255,6 +254,7 @@ with
             l.administration_round,
             l.test_date,
             l.scope_round,
+            'Practice' as test_type,
             l.assessment_id,
             l.assessment_title,
             l.assessment_grade_level,
@@ -295,33 +295,35 @@ with
     practice_tests_with_composite as (
         select
             *,
-            case
-                when scope = 'ACT' and total_subjects_tested_per_scope_round = 4
-                then
-                    avg(distinct earned_scale_score_for_scope_round_per_subject) over (  -- Then add all of the distinct scale scores for all subjects to create the composite score
-                        partition by
-                            academic_year,
-                            student_number,
-                            assessment_grade_level,
-                            administration_round,
-                            scope_round
-                    )
-                when scope = 'SAT' and total_subjects_tested_per_scope_round = 3
-                then
-                    sum(distinct earned_scale_score_for_scope_round_per_subject) over (  -- Then add all of the distinct scale scores for all subjects to create the composite score
-                        partition by
-                            academic_year,
-                            student_number,
-                            assessment_grade_level,
-                            administration_round,
-                            scope_round
-                    )
-            end as overall_composite_score  -- Otherwise NULL it*/
+            round(
+                case
+                    when scope = 'ACT' and total_subjects_tested_per_scope_round = 4
+                    then
+                        avg(earned_scale_score_for_scope_round_per_subject) over (
+                            partition by
+                                academic_year,
+                                student_number,
+                                assessment_grade_level,
+                                administration_round,
+                                scope_round
+                        )
+                    when scope = 'SAT' and total_subjects_tested_per_scope_round = 3
+                    then
+                        sum(earned_scale_score_for_scope_round_per_subject) over (
+                            partition by
+                                academic_year,
+                                student_number,
+                                assessment_grade_level,
+                                administration_round,
+                                scope_round
+                        )
+                end,
+                0
+            ) as composite_scale_score_for_scope_round
         from practice_tests_with_scale_score
     ),
 
     practice_tests_composite_only as (
-
         select distinct
             academic_year,
             schoolid,
@@ -331,8 +333,9 @@ with
             administration_round,
             test_date,
             scope_round,
-            assessment_id,
-            assessment_title,
+            'Practice' as test_type,
+            null as assessment_id,
+            'NA' as assessment_title,
             assessment_grade_level,
             scope,
             'Composite' as subject_area,
@@ -344,15 +347,10 @@ with
             null as points_possible_for_group_subject,
             null as earned_raw_score_for_scope_round_per_subject,
             null as possible_raw_score_for_scope_round_per_subject,
-            null as earned_scale_score_for_scope_round_per_subject,
-            avg(overall_composite_score) over (
-                partition by
-                    academic_year,
-                    student_number,
-                    assessment_grade_level,
-                    administration_round,
-                    scope_round
-            ) as overall_composite_score
+            composite_scale_score_for_scope_round
+            as earned_scale_score_for_scope_round_per_subject,
+            composite_scale_score_for_scope_round
+            as composite_scale_score_for_scope_round
         from practice_tests_with_composite
         order by academic_year, student_number, scope_round
     ),
@@ -426,7 +424,7 @@ with
             s.ktc_cohort,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
             m.ms_attended,
-            'Practice' as test_type,
+            test_type,
             p.assessment_id,
             p.assessment_title,
             p.administration_round,
@@ -449,7 +447,7 @@ with
                 partition by e.student_number, p.scope, p.subject_area
                 order by p.earned_scale_score_for_scope_round_per_subject desc
             ) as rn_highest,
-            p.overall_composite_score
+            p.composite_scale_score_for_scope_round
         from student_enrollments as e
         inner join
             practice_tests_append as p
