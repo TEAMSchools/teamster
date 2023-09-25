@@ -41,4 +41,3 @@ select
         then 'Two or More Grade Levels Below'
     end as placement_3_level,
 from {{ src_model }}
-where _dagster_partition_fiscal_year = safe_cast(right(academic_year, 4) as int)
