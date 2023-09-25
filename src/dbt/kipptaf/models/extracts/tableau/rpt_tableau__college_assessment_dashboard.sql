@@ -331,8 +331,8 @@ with
             administration_round,
             test_date,
             scope_round,
-            null as assessment_id,
-            'NA' as assessment_title,
+            assessment_id,
+            assessment_title,
             assessment_grade_level,
             scope,
             'Composite' as subject_area,
@@ -345,7 +345,14 @@ with
             null as earned_raw_score_for_scope_round_per_subject,
             null as possible_raw_score_for_scope_round_per_subject,
             null as earned_scale_score_for_scope_round_per_subject,
-            overall_composite_score
+            avg(overall_composite_score) over (
+                partition by
+                    academic_year,
+                    student_number,
+                    assessment_grade_level,
+                    administration_round,
+                    scope_round
+            ) as overall_composite_score
         from practice_tests_with_composite
         order by academic_year, student_number, scope_round
     ),
