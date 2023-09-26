@@ -34,8 +34,8 @@ with
 
 select
     ed.employee_number,
-    ed.effective_start_date,
-    ed.effective_end_date,
+    safe_cast(ed.effective_start_date as timestamp) as effective_start_date,
+    safe_cast(ed.effective_end_date as timestamp) as effective_end_date,
     if(ed.effective_end_date = '2020-12-31', true, false) as is_active,
 
     e.legal_first_name,
@@ -53,6 +53,17 @@ select
     e.birth_date,
     e.gender,
     e.ethnicity,
+    e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
+    case
+        ethnicity
+        when 'Black or African American'
+        then 'Black/African American'
+        when 'Hispanic or Latino'
+        then 'Latinx/Hispanic/Chicana(o)'
+        when 'Two or more races (Not Hispanic or Latino)'
+        then 'Bi/Multiracial'
+        else ethnicity
+    end as race_ethnicity_reporting,
 
     wa.work_assignment_effective_start_date,
     wa.work_assignment_effective_end_date,
@@ -74,6 +85,12 @@ select
     m.manager_effective_start_date,
     m.manager_effective_end_date,
     m.manager_employee_number,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["ed.employee_number", "wa.work_assignment_effective_start_date"]
+        )
+    }} as surrogate_key,
 from end_dates as ed
 inner join
     {{ ref("stg_dayforce__employees") }} as e on ed.employee_number = e.employee_number
@@ -93,3 +110,5 @@ left join
     on ed.employee_number = m.employee_number
     and ed.effective_start_date
     between m.manager_effective_start_date and m.manager_effective_end_date
+{# bad records #}
+where ed.employee_number not in (102553, 100764)
