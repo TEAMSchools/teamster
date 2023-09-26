@@ -1345,6 +1345,7 @@ ASSIGNMENT_FIELDS = [
         "name": "parent",
         "type": [
             "null",
+            "string",
             get_avro_record_schema(
                 name="parent", fields=REF_FIELDS, namespace="assignment"
             ),
