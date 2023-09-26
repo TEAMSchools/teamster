@@ -37,7 +37,7 @@ lint:
       paths:
         - .helm/**/values.yaml
   enabled:
-    - sqlfmt@0.19.2
+    - sqlfmt@0.20.0
     - isort@5.12.0
     - ruff@0.0.291
     - actionlint@1.6.26

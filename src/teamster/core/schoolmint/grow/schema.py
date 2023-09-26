@@ -1334,12 +1334,21 @@ ASSIGNMENT_FIELDS = [
     {"name": "excludeFromBank", "type": ["null", "boolean"], "default": None},
     {"name": "goalType", "type": ["null", "string"], "default": None},
     {"name": "locked", "type": ["null", "boolean"], "default": None},
-    {"name": "parent", "type": ["null", "string"], "default": None},
     {"name": "private", "type": ["null", "boolean"], "default": None},
     {"name": "type", "type": ["null", "string"], "default": None},
     {
         "name": "observation",
         "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "parent",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="parent", fields=REF_FIELDS, namespace="assignment"
+            ),
+        ],
         "default": None,
     },
     {

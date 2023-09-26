@@ -18,13 +18,10 @@ with build_resources(
     SCHOOL_MINT_GROW: SchoolMintGrowResource = resources.schoolmint_grow
 
 
-def _test(endpoint_name):
-    data = []
+def _test(endpoint_name, **kwargs):
+    response = SCHOOL_MINT_GROW.get(endpoint=endpoint_name, **kwargs)
 
-    for params in [True, None]:
-        response = SCHOOL_MINT_GROW.get(endpoint=endpoint_name, archived=params)
-
-        data.extend(response["data"])
+    data = response["data"]
 
     filepath = pathlib.Path(
         f"env/schoolmint/grow/{endpoint_name.replace('/', '__')}.json"
@@ -40,3 +37,7 @@ def test_generic_tags_meetingtypes():
 
 def test_schools():
     _test("schools")
+
+
+def test_assignments():
+    _test(endpoint_name="assignments", lastModified=1695600000.0)
