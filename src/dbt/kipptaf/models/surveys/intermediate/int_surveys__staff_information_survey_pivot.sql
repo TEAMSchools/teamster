@@ -289,12 +289,31 @@ with
             race_ethnicity,
             relay_status,
         from {{ source("surveys", "src_surveys__staff_info_archive") }}
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="response_union",
+                partition_by="employee_number",
+                order_by="last_submitted_time desc",
+            )
+        }}
     )
 
-    {{
-        dbt_utils.deduplicate(
-            relation="response_union",
-            partition_by="employee_number",
-            order_by="last_submitted_time desc",
-        )
-    }}
+select
+    *,
+    case
+        when regexp_contains(race_ethnicity, 'I decline to state')
+        then 'Decline to State'
+        when race_ethnicity = 'Latinx/Hispanic/Chicana(o)'
+        then 'Latinx/Hispanic/Chicana(o)'
+        when race_ethnicity = 'My racial/ethnic identity is not listed'
+        then 'Race/Ethnicity Not Listed'
+        when regexp_contains(race_ethnicity, 'Bi/Multiracial')
+        then 'Bi/Multiracial'
+        when regexp_contains(race_ethnicity, ',')
+        then 'Bi/Multiracial'
+        else race_ethnicity
+    end as race_ethnicity_reporting,
+from deduplicate

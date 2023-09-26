@@ -1,7 +1,7 @@
 with
     worker_person as (
         select
-            work_assignment__fivetran_start,
+            timestamp('2021-01-01') as work_assignment__fivetran_start,
             work_assignment__fivetran_end,
             work_assignment__fivetran_active,
             work_assignment_id,
@@ -172,8 +172,21 @@ with
             communication_person_landline,
             communication_business_mobile,
             communication_business_landline,
+
+            case
+                person_race_long_name
+                when 'Black or African American'
+                then 'Black/African American'
+                when 'Hispanic or Latino'
+                then 'Latinx/Hispanic/Chicana(o)'
+                when 'Two or more races (Not Hispanic or Latino)'
+                then 'Bi/Multiracial'
+                else person_race_long_name
+            end as race_ethnicity_reporting,
         from {{ ref("base_adp_workforce_now__worker_person") }}
-        where not worker__fivetran_deleted
+        where
+            not worker__fivetran_deleted
+            and work_assignment__fivetran_end >= '2021-01-01'
     ),
 
     with_prestart as (
@@ -196,155 +209,63 @@ with
             )
     ),
 
-    crosswalk as (
+    with_dayforce as (
         select
             wp.*,
             wp.preferred_name_family_name
             || ', '
             || wp.preferred_name_given_name as preferred_name_lastfirst,
 
-            lc.reporting_school_id as home_work_location_reporting_school_id,
-            lc.powerschool_school_id as home_work_location_powerschool_school_id,
-            lc.deanslist_school_id as home_work_location_deanslist_school_id,
-            lc.clean_name as home_work_location_reporting_name,
-            lc.abbreviation as home_work_location_abbreviation,
-            lc.grade_band as home_work_location_grade_band,
-            lc.region as home_work_location_region,
-            lc.is_campus as home_work_location_is_campus,
-            lc.is_pathways as home_work_location_is_pathways,
-            lc.dagster_code_location as home_work_location_dagster_code_location,
-
             en.employee_number,
 
-            ldap.mail,
-            ldap.distinguished_name,
-            ldap.user_principal_name,
-            ldap.sam_account_name,
-            ldap.physical_delivery_office_name,
-            ldap.uac_account_disable,
-
-            sis.additional_languages,
-            sis.alumni_status,
-            sis.community_grew_up,
-            sis.community_professional_exp,
-            sis.languages_spoken,
-            sis.level_of_education,
-            sis.path_to_education,
-            sis.race_ethnicity,
-            sis.relay_status,
-            sis.undergraduate_school,
-            sis.years_exp_outside_kipp,
-            sis.years_teaching_in_njfl,
-            sis.years_teaching_outside_njfl,
-
-            case
-                when coalesce(sis.gender_identity, wp.gender_long_name) = 'Female'
-                then 'Cis Woman'
-                when coalesce(sis.gender_identity, wp.gender_long_name) = 'Male'
-                then 'Cis Man'
-                else coalesce(sis.gender_identity, wp.gender_long_name)
-            end as gender_identity,
-
-            case
-                when regexp_contains(sis.race_ethnicity, 'Latinx/Hispanic/Chicana(o)')
-                then true
-                when wp.ethnicity_long_name = 'Hispanic or Latino'
-                then true
-                else false
-            end as is_hispanic,
-
-            coalesce(
-                case
-                    when regexp_contains(sis.race_ethnicity, 'I decline to state')
-                    then 'Decline to State'
-                    when sis.race_ethnicity = 'Latinx/Hispanic/Chicana(o)'
-                    then 'Latinx/Hispanic/Chicana(o)'
-                    when sis.race_ethnicity = 'My racial/ethnic identity is not listed'
-                    then 'Race/Ethnicity Not Listed'
-                    when regexp_contains(sis.race_ethnicity, 'Bi/Multiracial')
-                    then 'Bi/Multiracial'
-                    when regexp_contains(sis.race_ethnicity, ',')
-                    then 'Bi/Multiracial'
-                    else sis.race_ethnicity
-                end,
-                case
-                    wp.race_long_name
-                    when 'Black or African American'
-                    then 'Black/African American'
-                    when 'Hispanic or Latino'
-                    then 'Latinx/Hispanic/Chicana(o)'
-                    when 'Two or more races (Not Hispanic or Latino)'
-                    then 'Bi/Multiracial'
-                    else wp.race_long_name
-                end
-            ) as race_ethnicity_reporting,
-
-            regexp_replace(
-                lower(ldap.user_principal_name),
-                r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
-                if(
-                    wp.business_unit_home_name = 'KIPP Miami',
-                    r'\1kippmiami\2',
-                    r'\1apps.teamschools\2'
-                )
-            ) as google_email,
-
-            ifnull(
-                idps.powerschool_teacher_number, safe_cast(en.employee_number as string)
-            ) as powerschool_teacher_number,
+            null as report_to_employee_number,
         from with_prestart as wp
-        left join
-            {{ ref("stg_people__location_crosswalk") }} as lc
-            on wp.home_work_location_name = lc.name
         inner join
             {{ ref("stg_people__employee_numbers") }} as en
             on wp.worker_id = en.adp_associate_id
             and en.is_active
-        left join
-            {{ ref("stg_ldap__user_person") }} as ldap
-            on en.employee_number = ldap.employee_number
-        left join
-            {{ ref("stg_people__powerschool_crosswalk") }} as idps
-            on en.employee_number = idps.employee_number
-            and idps.is_active
-        left join
-            {{ ref("int_surveys__staff_information_survey_pivot") }} as sis
-            on en.employee_number = sis.employee_number
 
         union all
 
         select
-            safe_cast(
-                eh.effective_start_date as timestamp
-            ) as work_assignment__fivetran_start,
-            safe_cast(
-                eh.effective_end_date as timestamp
-            ) as work_assignment__fivetran_end,
-            eh.is_active as work_assignment__fivetran_active,
-            null as work_assignment_id,
+            effective_start_date as work_assignment__fivetran_start,
+            effective_end_date as work_assignment__fivetran_end,
+            is_active as work_assignment__fivetran_active,
+            surrogate_key as work_assignment_id,
             null as worker_id,
-            eh.work_assignment_effective_start_date
-            as work_assignment_actual_start_date,
+
+            work_assignment_effective_start_date as work_assignment_actual_start_date,
+
             null as work_assignment_hire_date,
             null as work_assignment_termination_date,
-            eh.status as assignment_status,
+
+            status as assignment_status,
+
             null as assignment_status_prev,
-            eh.status_reason_description as assignment_status_reason,
-            eh.status_effective_start_date as assignment_status_effective_date,
+
+            status_reason_description as assignment_status_reason,
+            status_effective_start_date as assignment_status_effective_date,
+
             null as management_position_indicator,
             null as payroll_processing_status_short_name,
             null as payroll_group_code,
             null as payroll_file_number,
             null as payroll_schedule_group_id,
             null as position_id,
-            null as primary_indicator,
+            true as primary_indicator,
             null as pay_cycle_short_name,
-            eh.physical_location_name as home_work_location_name,
-            eh.job_name as job_title,
+
+            physical_location_name as home_work_location_name,
+            job_name as job_title,
+
             'Fair Labor Standards Act' as wage_law_coverage_name_long_name,
-            eh.flsa_status_name as wage_law_coverage_short_name,
+
+            flsa_status_name as wage_law_coverage_short_name,
+
             null as work_assignment_seniority_date,
-            eh.pay_class_name as worker_type,
+
+            pay_class_name as worker_type,
+
             null as standard_pay_period_hour_hours_quantity,
             null as standard_hour_hours_quantity,
             null as standard_hour_unit_short_name,
@@ -355,9 +276,11 @@ with
             null as custom_payroll_data_control,
             null as associate_oid,
             null as status_value,
-            eh.original_hire_date as worker_original_hire_date,
-            eh.rehire_date as worker_rehire_date,
-            eh.termination_date as worker_termination_date,
+
+            original_hire_date as worker_original_hire_date,
+            rehire_date as worker_rehire_date,
+            termination_date as worker_termination_date,
+
             null as custom_nj_pension_number,
             null as custom_employee_number,
             null as custom_wfmgr_accrual_profile,
@@ -370,28 +293,44 @@ with
             null as custom_wfmgr_trigger,
             null as custom_miami_aces_number,
             null as preferred_salutation_legal_name,
-            eh.legal_first_name as legal_name_given_name,
+
+            legal_first_name as legal_name_given_name,
+
             null as legal_name_middle_name,
-            eh.legal_last_name as legal_name_family_name,
+
+            legal_last_name as legal_name_family_name,
+
             null as legal_name_formatted_name,
             null as legal_name_nick_name,
             null as legal_name_generation_affix,
             null as legal_name_qualification_affix,
-            eh.preferred_first_name as preferred_name_given_name,
+
+            preferred_first_name as preferred_name_given_name,
+
             null as preferred_name_middle_name,
-            eh.preferred_last_name as preferred_name_family_name,
+
+            preferred_last_name as preferred_name_family_name,
+
             null as birth_name_family_name,
-            eh.address as legal_address_line_one,
+
+            address as legal_address_line_one,
+
             null as legal_address_line_two,
             null as legal_address_line_three,
-            eh.city as legal_address_city_name,
+
+            city as legal_address_city_name,
+
             null as legal_address_country_code,
-            eh.state as legal_address_country_subdivision_level_1,
+
+            state as legal_address_country_subdivision_level_1,
+
             null as legal_address_country_subdivision_level_2,
-            eh.postal_code as legal_address_postal_code,
-            eh.birth_date as birth_date,
-            eh.gender as gender_long_name,
-            eh.ethnicity as ethnicity_long_name,
+
+            postal_code as legal_address_postal_code,
+            birth_date as birth_date,
+            gender as gender_long_name,
+            ethnicity as ethnicity_long_name,
+
             null as race_long_name,
             null as marital_status_short_name,
             null as marital_status_effective_date,
@@ -405,25 +344,37 @@ with
             null as custom_covid_19_date_of_last_vaccine,
             null as custom_covid_19_vaccine_type,
             null as disability,
-            eh.legal_entity_name as business_unit_assigned_name,
+
+            legal_entity_name as business_unit_assigned_name,
+
             null as business_unit_assigned_code,
-            eh.legal_entity_name as business_unit_home_name,
+
+            legal_entity_name as business_unit_home_name,
+
             null as business_unit_home_code,
             null as cost_number_assigned_name,
             null as cost_number_assigned_code,
             null as cost_number_home_name,
             null as cost_number_home_code,
-            eh.department_name as department_assigned_name,
+
+            department_name as department_assigned_name,
+
             null as department_assigned_code,
-            eh.department_name as department_home_name,
+
+            department_name as department_home_name,
+
             null as department_home_code,
             null as base_remuneration_effective_date,
-            eh.base_salary as base_remuneration_annual_rate_amount_amount_value,
+
+            base_salary as base_remuneration_annual_rate_amount_amount_value,
+
             null as additional_remuneration_effective_date,
             null as additional_remuneration_rate_amount_value,
             null as additional_remuneration_name,
             null as communication_person_email,
-            null as communication_person_mobile,
+
+            mobile_number as communication_person_mobile,
+
             null as communication_business_email,
             null as worker_group_name,
             null as worker_group_value,
@@ -431,12 +382,22 @@ with
             null as report_to_position_id,
             null as report_to_worker_id,
             null as communication_person_landline,
-            eh.mobile_number as communication_business_mobile,
+            null as communication_business_mobile,
             null as communication_business_landline,
+
+            race_ethnicity_reporting,
+
             false as is_prestart,
-            eh.preferred_last_name
-            || ', '
-            || eh.preferred_first_name as preferred_name_lastfirst,
+
+            preferred_name_lastfirst,
+            employee_number,
+            manager_employee_number as report_to_employee_number,
+        from {{ ref("base_dayforce__employee_history") }}
+    ),
+
+    crosswalk as (
+        select
+            wd.* except (race_ethnicity_reporting),
 
             lc.reporting_school_id as home_work_location_reporting_school_id,
             lc.powerschool_school_id as home_work_location_powerschool_school_id,
@@ -449,14 +410,13 @@ with
             lc.is_pathways as home_work_location_is_pathways,
             lc.dagster_code_location as home_work_location_dagster_code_location,
 
-            eh.employee_number,
-
             ldap.mail,
             ldap.distinguished_name,
             ldap.user_principal_name,
             ldap.sam_account_name,
             ldap.physical_delivery_office_name,
             ldap.uac_account_disable,
+            ldap.google_email,
 
             sis.additional_languages,
             sis.alumni_status,
@@ -473,79 +433,51 @@ with
             sis.years_teaching_outside_njfl,
 
             case
-                when coalesce(sis.gender_identity, eh.gender) = 'Female'
+                when coalesce(sis.gender_identity, wd.gender_long_name) = 'Female'
                 then 'Cis Woman'
-                when coalesce(sis.gender_identity, eh.gender) = 'Male'
+                when coalesce(sis.gender_identity, wd.gender_long_name) = 'Male'
                 then 'Cis Man'
-                else coalesce(sis.gender_identity, eh.gender)
+                else coalesce(sis.gender_identity, wd.gender_long_name)
             end as gender_identity,
 
             case
                 when regexp_contains(sis.race_ethnicity, 'Latinx/Hispanic/Chicana(o)')
                 then true
-                when eh.ethnicity = 'Hispanic or Latino'
+                when wd.ethnicity_long_name = 'Hispanic or Latino'
                 then true
                 else false
             end as is_hispanic,
 
             coalesce(
-                case
-                    when regexp_contains(sis.race_ethnicity, 'I decline to state')
-                    then 'Decline to State'
-                    when sis.race_ethnicity = 'Latinx/Hispanic/Chicana(o)'
-                    then 'Latinx/Hispanic/Chicana(o)'
-                    when sis.race_ethnicity = 'My racial/ethnic identity is not listed'
-                    then 'Race/Ethnicity Not Listed'
-                    when regexp_contains(sis.race_ethnicity, 'Bi/Multiracial')
-                    then 'Bi/Multiracial'
-                    when regexp_contains(sis.race_ethnicity, ',')
-                    then 'Bi/Multiracial'
-                    else sis.race_ethnicity
-                end,
-                case
-                    eh.ethnicity
-                    when 'Black or African American'
-                    then 'Black/African American'
-                    when 'Hispanic or Latino'
-                    then 'Latinx/Hispanic/Chicana(o)'
-                    when 'Two or more races (Not Hispanic or Latino)'
-                    then 'Bi/Multiracial'
-                    else eh.ethnicity
-                end
+                sis.race_ethnicity_reporting, wd.race_ethnicity_reporting
             ) as race_ethnicity_reporting,
 
-            regexp_replace(
-                lower(ldap.user_principal_name),
-                r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
-                if(
-                    eh.legal_entity_name = 'KIPP Miami',
-                    r'\1kippmiami\2',
-                    r'\1apps.teamschools\2'
-                )
-            ) as google_email,
-
             ifnull(
-                idps.powerschool_teacher_number, safe_cast(eh.employee_number as string)
+                idps.powerschool_teacher_number, safe_cast(wd.employee_number as string)
             ) as powerschool_teacher_number,
-        from {{ ref("base_dayforce__employee_history") }} as eh
+        from with_dayforce as wd
         left join
             {{ ref("stg_people__location_crosswalk") }} as lc
-            on eh.physical_location_name = lc.name
+            on wd.home_work_location_name = lc.name
         left join
             {{ ref("stg_ldap__user_person") }} as ldap
-            on eh.employee_number = ldap.employee_number
+            on wd.employee_number = ldap.employee_number
         left join
             {{ ref("stg_people__powerschool_crosswalk") }} as idps
-            on eh.employee_number = idps.employee_number
+            on wd.employee_number = idps.employee_number
             and idps.is_active
         left join
             {{ ref("int_surveys__staff_information_survey_pivot") }} as sis
-            on eh.employee_number = sis.employee_number
+            on wd.employee_number = sis.employee_number
     ),
 
     with_manager as (
         select
-            cw.*,
+            cw.* except (report_to_employee_number),
+
+            coalesce(
+                cw.report_to_employee_number, en.employee_number
+            ) as report_to_employee_number,
 
             coalesce(
                 ph.preferred_name_given_name, ph.legal_name_given_name
@@ -559,19 +491,17 @@ with
                 ph.preferred_name_given_name, ph.legal_name_given_name
             ) as report_to_preferred_name_lastfirst,
 
-            en.employee_number as report_to_employee_number,
-
             ldap.user_principal_name as report_to_user_principal_name,
             ldap.mail as report_to_mail,
             ldap.sam_account_name as report_to_sam_account_name,
         from crosswalk as cw
         left join
-            {{ ref("stg_adp_workforce_now__person_history") }} as ph
-            on cw.report_to_worker_id = ph.worker_id
-        left join
             {{ ref("stg_people__employee_numbers") }} as en
             on cw.report_to_worker_id = en.adp_associate_id
             and en.is_active
+        left join
+            {{ ref("stg_adp_workforce_now__person_history") }} as ph
+            on cw.report_to_worker_id = ph.worker_id
         left join
             {{ ref("stg_ldap__user_person") }} as ldap
             on en.employee_number = ldap.employee_number

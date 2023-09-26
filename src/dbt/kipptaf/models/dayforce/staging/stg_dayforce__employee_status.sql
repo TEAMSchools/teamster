@@ -4,7 +4,7 @@ with
             number,
             status,
             status_reason_description,
-            base_salary,
+            safe_cast(base_salary as numeric) as base_salary,
             extract(
                 date
                 from
