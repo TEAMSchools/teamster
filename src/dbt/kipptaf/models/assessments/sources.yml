@@ -82,3 +82,11 @@ sources:
             data_type: STRING
           - name: standard_domain
             data_type: STRING
+      - name: src_assessments__state_test_comparison
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__state_test_comparison
+            skip_leading_rows: 1
