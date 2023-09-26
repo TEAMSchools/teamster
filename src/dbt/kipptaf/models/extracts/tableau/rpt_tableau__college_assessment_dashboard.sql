@@ -62,7 +62,7 @@ with
     student_enrollments as (
         select *
         from {{ ref("base_powerschool__student_enrollments") }}  -- PowerSchool enrollment table for GL and school info
-        where rn_year = 1 and school_level = 'HS' and academic_year >= 2023 /* please dont ding me for this. idk what years they want. i'm asking on wednesday */
+        where rn_year = 1 and school_level = 'HS' and academic_year >= 2023  /* please dont ding me for this. idk what years they want. i'm asking on wednesday */
     ),
 
     student_schedules as (
@@ -81,7 +81,7 @@ with
             cc_expression,
         from {{ ref("base_powerschool__course_enrollments") }}
         where
-            cc_academic_year >= 2023 /* please dont ding me for this. idk what years they want. i'm asking on wednesday */
+            cc_academic_year >= 2023  /* please dont ding me for this. idk what years they want. i'm asking on wednesday */
             and rn_credittype_year = 1
             and rn_course_number_year = 1
             and not is_dropped_course
@@ -401,7 +401,7 @@ with
                     o.student_number, o.test_type, o.administration_round, o.test_date
             ) as overall_composite_score
         from student_enrollments as e
-        inner join
+        left join
             act_sat_official as o
             on e.student_number = o.student_number
             and (o.test_date between e.entrydate and e.exitdate)
@@ -449,7 +449,7 @@ with
             ) as rn_highest,
             p.composite_scale_score_for_scope_round as overall_composite_score
         from student_enrollments as e
-        inner join
+        left join
             practice_tests_append as p
             on e.student_number = p.student_number
             and e.academic_year = p.academic_year
