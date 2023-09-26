@@ -89,6 +89,7 @@ with
             lower(sr.sam_account_name) as sam_account_name,
             lower(sr.user_principal_name) as user_principal_name,
             lower(sr.mail) as mail,
+
             true as active,
             'No' as purchasing_user,
             'Expense User' as roles,
@@ -119,39 +120,14 @@ with
             au.purchasing_user,
             au.content_groups,
             au.business_unit_home_code,
+            au.home_work_location_name,
+            au.department_home_name,
+            au.job_title,
             au.worker_type,
             au.custom_wfmgr_pay_rule,
             au.sam_account_name,
             au.user_principal_name,
             au.mail,
-
-            a.location_code,
-            a.street_1,
-            a.city,
-            a.state,
-            a.postal_code,
-            a.name as address_name,
-            case when a.street_2 != '' then a.street_2 end as street_2,
-            case when a.attention != '' then a.attention end as attention,
-
-            /*
-              > override
-              >> lookup table (content group/department/job)
-              >>> lookup table (content group/department)
-            */
-            coalesce(
-                x.coupa_school_name,
-                if(
-                    sn.coupa_school_name = '<Use PhysicalDeliveryOfficeName>',
-                    au.physical_delivery_office_name,
-                    sn.coupa_school_name
-                ),
-                if(
-                    sn2.coupa_school_name = '<Use PhysicalDeliveryOfficeName>',
-                    au.physical_delivery_office_name,
-                    sn2.coupa_school_name
-                )
-            ) as coupa_school_name,
             case
                 /* no interns */
                 when au.worker_type like 'Intern%'
@@ -171,6 +147,34 @@ with
                 then 'active'
                 else 'inactive'
             end as coupa_status,
+
+            a.location_code,
+            a.street_1,
+            a.city,
+            a.state,
+            a.postal_code,
+            a.name as address_name,
+            nullif(a.street_2, '') as street_2,
+            nullif(a.attention, '') as attention,
+
+            {#
+            > override
+            >> lookup table (content group/department/job)
+            >>> lookup table (content group/department)
+            #}
+            coalesce(
+                x.coupa_school_name,
+                if(
+                    sn.coupa_school_name = '<Use PhysicalDeliveryOfficeName>',
+                    au.physical_delivery_office_name,
+                    sn.coupa_school_name
+                ),
+                if(
+                    sn2.coupa_school_name = '<Use PhysicalDeliveryOfficeName>',
+                    au.physical_delivery_office_name,
+                    sn2.coupa_school_name
+                )
+            ) as coupa_school_name,
         from all_users as au
         left join
             {{ source("coupa", "src_coupa__school_name_lookup") }} as sn
@@ -249,7 +253,7 @@ select
             ),
             ''
         ),
-        ifnull(regexp_extract(sam_account_name, r'\d+$'), '')
+        ifnull(regexp_extract(sub.sam_account_name, r'\d+$'), '')
     ) as `Mention Name`,
 
     if(
@@ -257,7 +261,66 @@ select
         null,
         coalesce(sna.coupa_school_name, sub.coupa_school_name)
     ) as `School Name`,
+
+    sub.employee_number as `Sage Intacct ID`,
+
+    ifl.sage_intacct_fund as `Sage Intacct Fund`,
+
+    coalesce(ipl.sage_intacct_program, 1000) as `Sage Intacct Program`,
+
+    coalesce(
+        idl1.sage_intacct_department, idl2.sage_intacct_department
+    ) as `Sage Intacct Department`,
+
+    coalesce(
+        if(
+            ill1.sage_intacct_location = '<ADP Home Work Location Name>',
+            ipl.sage_intacct_location,
+            safe_cast(ill1.sage_intacct_location as int)
+        ),
+        if(
+            ill2.sage_intacct_location = '<ADP Home Work Location Name>',
+            ipl.sage_intacct_location,
+            safe_cast(ill2.sage_intacct_location as int)
+        ),
+        if(
+            ill3.sage_intacct_location = '<ADP Home Work Location Name>',
+            ipl.sage_intacct_location,
+            safe_cast(ill3.sage_intacct_location as int)
+        )
+    ) as `Sage Intacct Location`,
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna
     on sub.coupa_school_name = sna.ldap_physical_delivery_office_name
+left join
+    {{ source("coupa", "src_coupa__intacct_fund_lookup") }} as ifl
+    on sub.business_unit_home_code = ifl.adp_business_unit_home_code
+left join
+    {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl
+    on sub.home_work_location_name = ipl.adp_home_work_location_name
+left join
+    {{ source("coupa", "src_coupa__intacct_department_lookup") }} as idl1
+    on sub.business_unit_home_code = idl1.adp_business_unit_home_code
+    and sub.department_home_name = idl1.adp_department_home_name
+    and sub.job_title = idl1.adp_job_title
+left join
+    {{ source("coupa", "src_coupa__intacct_department_lookup") }} as idl2
+    on sub.business_unit_home_code = idl2.adp_business_unit_home_code
+    and sub.department_home_name = idl2.adp_department_home_name
+    and idl2.adp_job_title = 'Default'
+left join
+    {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill1
+    on sub.business_unit_home_code = ill1.adp_business_unit_home_code
+    and sub.department_home_name = ill1.adp_department_home_name
+    and sub.job_title = ill1.adp_job_title
+left join
+    {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill2
+    on sub.business_unit_home_code = ill2.adp_business_unit_home_code
+    and sub.department_home_name = ill2.adp_department_home_name
+    and ill2.adp_job_title = 'Default'
+left join
+    {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill3
+    on sub.business_unit_home_code = ill3.adp_business_unit_home_code
+    and ill3.adp_department_home_name = 'Default'
+    and ill3.adp_job_title = 'Default'
