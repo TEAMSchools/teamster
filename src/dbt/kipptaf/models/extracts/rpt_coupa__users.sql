@@ -266,7 +266,9 @@ select
 
     ifl.sage_intacct_fund as `Sage Intacct Fund`,
 
-    coalesce(ipl.sage_intacct_program, 1000) as `Sage Intacct Program`,
+    coalesce(
+        ipl1.sage_intacct_program, ipl2.sage_intacct_program
+    ) as `Sage Intacct Program`,
 
     coalesce(
         idl1.sage_intacct_department, idl2.sage_intacct_department
@@ -275,20 +277,27 @@ select
     coalesce(
         if(
             ill1.sage_intacct_location = '<ADP Home Work Location Name>',
-            ipl.sage_intacct_location,
+            ipl1.sage_intacct_location,
             safe_cast(ill1.sage_intacct_location as int)
         ),
         if(
             ill2.sage_intacct_location = '<ADP Home Work Location Name>',
-            ipl.sage_intacct_location,
+            ipl1.sage_intacct_location,
             safe_cast(ill2.sage_intacct_location as int)
         ),
         if(
             ill3.sage_intacct_location = '<ADP Home Work Location Name>',
-            ipl.sage_intacct_location,
+            ipl1.sage_intacct_location,
             safe_cast(ill3.sage_intacct_location as int)
         )
     ) as `Sage Intacct Location`,
+
+    'CoupaPay' as `Employee Payment Channel`,
+
+    sub.business_unit_home_code,
+    sub.home_work_location_name,
+    sub.department_home_name,
+    sub.job_title,
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna
@@ -297,8 +306,13 @@ left join
     {{ source("coupa", "src_coupa__intacct_fund_lookup") }} as ifl
     on sub.business_unit_home_code = ifl.adp_business_unit_home_code
 left join
-    {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl
-    on sub.home_work_location_name = ipl.adp_home_work_location_name
+    {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl1
+    on sub.business_unit_home_code = ipl1.adp_business_unit_home_code
+    and sub.home_work_location_name = ipl1.adp_home_work_location_name
+left join
+    {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl2
+    on sub.business_unit_home_code = ipl2.adp_business_unit_home_code
+    and ipl2.adp_home_work_location_name = 'Default'
 left join
     {{ source("coupa", "src_coupa__intacct_department_lookup") }} as idl1
     on sub.business_unit_home_code = idl1.adp_business_unit_home_code
