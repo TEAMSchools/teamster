@@ -83,6 +83,8 @@ with
                 'Newark, Camden, and/or Miami',
                 'the cities we serve'
             ) as community_professional_exp,
+            updates_open_ended,
+            praxis_document_link
         from
             form_responses pivot (
                 max(pivot_column_value) for item_abbreviation in (
@@ -138,7 +140,9 @@ with
                     'undergraduate_school',
                     'years_exp_outside_kipp',
                     'years_teaching_in_njfl',
-                    'years_teaching_outside_njfl'
+                    'years_teaching_outside_njfl',
+                    'updates_open_ended',
+                    'praxis_document_link'
                 )
             )
     ),
@@ -211,6 +215,8 @@ with
             if(rp.cert_required = 'Yes', true, false) as cert_required,
             if(rp.fl_additional_cert_1 = 'Yes', true, false) as fl_additional_cert_1,
             if(rp.nj_cert_additional_1 = 'Yes', true, false) as nj_cert_additional_1,
+            rp.updates_open_ended,
+            rp.praxis_document_link,
 
             mo.alumni_status,
             mo.community_grew_up,
@@ -279,6 +285,8 @@ with
             null as cert_required,
             null as fl_additional_cert_1,
             null as nj_cert_additional_1,
+            null as updates_open_ended,
+            null as praxis_document_link,
 
             {# multiselect_options #}
             alumni_status,
