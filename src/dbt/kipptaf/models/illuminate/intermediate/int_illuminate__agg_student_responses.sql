@@ -20,6 +20,8 @@ select
     sa.updated_at,
     sa.version_id,
 
+    s.local_student_id,
+
     ur.mastered,
     ur.percent_correct,
     ur.number_of_questions,
@@ -41,4 +43,5 @@ select
     ur.sort_order,
 #}
 from {{ ref("stg_illuminate__students_assessments") }} as sa
+inner join {{ ref("stg_illuminate__students") }} as s on sa.student_id = s.student_id
 inner join union_relations as ur on sa.student_assessment_id = ur.student_assessment_id
