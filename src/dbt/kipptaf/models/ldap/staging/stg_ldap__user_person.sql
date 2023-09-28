@@ -10,7 +10,12 @@ select
         lower(userprincipalname),
         r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
         if(
-            'OU=Miami' in (select * from unnest(split(distinguishedname, ','))),
+            (
+                select dn
+                from unnest(split(distinguishedname, ',')) as dn
+                where dn in ('OU=KIPP Miami', 'OU=Room11', 'OU=Miami')
+            )
+            is not null,
             r'\1kippmiami\2',
             r'\1apps.teamschools\2'
         )
