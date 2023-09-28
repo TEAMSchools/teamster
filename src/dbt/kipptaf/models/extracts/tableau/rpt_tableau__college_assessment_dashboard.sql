@@ -16,6 +16,7 @@ with
             e.exitdate,
             e.advisor_lastfirst,
 <<<<<<< HEAD
+<<<<<<< HEAD
             if(e.spedlep in ('No IEP', null), 0, 1) as sped,
             e.is_504 as c_504_status,
 
@@ -28,6 +29,11 @@ with
             e.spedlep,
             e.is_504,
 
+=======
+            e.spedlep,
+            e.is_504,
+
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
             c.id as kippadb_contact_id,
             c.kipp_hs_class,
 
@@ -38,6 +44,9 @@ with
         left join
             {{ ref("stg_kippadb__contact") }} as c
             on e.student_number = c.school_specific_id
+<<<<<<< HEAD
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -46,10 +55,13 @@ with
             and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
             and not s.is_dropped_section
 <<<<<<< HEAD
+<<<<<<< HEAD
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
 =======
+=======
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
             and s.rn_course_number_year = 1
             and s.courses_course_name in (
                 'College and Career IV',
@@ -57,11 +69,15 @@ with
                 'College and Career III',
                 'College and Career II'
             )
+<<<<<<< HEAD
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.rn_year = 1
             and e.school_level = 'HS'
+<<<<<<< HEAD
 <<<<<<< HEAD
             and e.schoolid <> 999999
     ),
@@ -121,6 +137,8 @@ with
             )
 =======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
     )
 
 select
@@ -136,6 +154,7 @@ select
     e.grade_level,
     e.advisor_lastfirst,
 <<<<<<< HEAD
+<<<<<<< HEAD
     e.ccr_course,
     e.ccr_teacher,
     e.ccr_period,
@@ -146,6 +165,8 @@ select
 
     o.test_type,
 =======
+=======
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
     e.courses_course_name as ccr_course,
     e.teacher_lastfirst as ccr_teacher,
     e.sections_external_expression as ccr_period,
@@ -190,6 +211,7 @@ select
     o.rn_highest,
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     avg(case when o.subject_area = 'Composite' then o.scale_score end) over (
         partition by o.contact, o.test_type, o.administration_round, o.test_date
     ) as overall_composite_score,
@@ -204,6 +226,13 @@ left join
     ) as overall_composite_score,
 from roster as e
 left join
+=======
+    avg(if(o.score_type in ('act_composite', 'sat_total_score'), o.score, null)) over (
+        partition by e.student_number, o.test_type, o.date
+    ) as overall_composite_score,
+from roster as e
+left join
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
     {{ ref("int_kippadb__standardized_test_unpivot") }} as o
     on e.kippadb_contact_id = o.contact
     and o.date between e.entrydate and e.exitdate
@@ -219,6 +248,9 @@ left join
         'sat_math',
         'sat_ebrw'
     )
+<<<<<<< HEAD
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 
 union all
@@ -236,6 +268,7 @@ select
     e.grade_level,
     e.advisor_lastfirst,
 <<<<<<< HEAD
+<<<<<<< HEAD
     e.ccr_course,
     e.ccr_teacher,
     e.ccr_period,
@@ -247,6 +280,8 @@ select
    'Practice' as test_type,
 
 =======
+=======
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
     e.courses_course_name as ccr_course,
     e.teacher_lastfirst as ccr_teacher,
     e.sections_external_expression as ccr_period,
@@ -282,7 +317,11 @@ from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
 <<<<<<< HEAD
+<<<<<<< HEAD
     on e.student_number = p.student_id
+=======
+    on e.student_number = p.pwe
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 =======
     on e.student_number = p.pwe
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790

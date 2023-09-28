@@ -7,6 +7,7 @@ with
             a.subject_area,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             a.academic_year_clean as academic_year,
             concat(
                 format_date('%b', a.administered_at),
@@ -50,6 +51,18 @@ with
 
             ssk.administration_round,
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
+            a.academic_year,
+            a.administered_at,
+            a.powerschool_student_number,
+            a.response_type,
+            a.response_type_description,
+            a.points,
+            a.points_possible,
+            a.performance_band_label,
+
+            ssk.administration_round,
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
             case
                 when
                     a.scope = 'SAT'
@@ -68,6 +81,9 @@ with
                     a.powerschool_student_number,
                     ssk.administration_round
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 =======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
@@ -106,6 +122,9 @@ select
     administration_round,
     performance_band_label,
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 =======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
@@ -140,6 +159,9 @@ select
     administration_round,
     null as performance_band_label,
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 =======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
@@ -151,7 +173,11 @@ from responses
 where scope = 'ACT' and response_type = 'overall' and total_subjects_tested = 4
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 group by scope, academic_year, student_id, administration_round
+=======
+group by scope, academic_year, powerschool_student_number, administration_round
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 =======
 group by scope, academic_year, powerschool_student_number, administration_round
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
@@ -183,6 +209,9 @@ select
     administration_round,
     null as performance_band_label,
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
+=======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 =======
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
@@ -194,7 +223,11 @@ from responses
 where scope = 'SAT' and response_type = 'overall' and total_subjects_tested = 3
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 group by scope, academic_year, student_id, administration_round
+=======
+group by scope, academic_year, powerschool_student_number, administration_round
+>>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
 =======
 group by scope, academic_year, powerschool_student_number, administration_round
 >>>>>>> 4d3818f42a7007b4c0cf8a5642f16c71f8192790
