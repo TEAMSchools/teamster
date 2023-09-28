@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: instagram_business
+    tables:
+      - name: media_history
+      - name: media_insights
+      - name: user_history
+      - name: user_insights
