@@ -8,16 +8,16 @@ sources:
     tables:
       - name: src_adp_workforce_manager__accrual_reporting_period_summary
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/adp/AccrualReportingPeriodSummary/*"
+          location: "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/AccrualReportingPeriodSummary/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/adp/AccrualReportingPeriodSummary/"
+              "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/AccrualReportingPeriodSummary/"
             format: AVRO
             enable_logical_types: true
       - name: src_adp_workforce_manager__time_details
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/adp/TimeDetails/*"
+          location: "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/TimeDetails/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/adp/TimeDetails/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/TimeDetails/"
             format: AVRO
             enable_logical_types: true
