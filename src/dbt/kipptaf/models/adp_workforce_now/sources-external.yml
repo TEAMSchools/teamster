@@ -8,19 +8,19 @@ sources:
     tables:
       - name: src_adp_workforce_now__additional_earnings_report
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/adp/additional_earnings_report/*"
+          location: "{{ var('cloud_storage_uri_base') }}/adp_workforce_now/additional_earnings_report/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_adp_workforce_now__comprehensive_benefits_report
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/adp/comprehensive_benefits_report/*"
+          location: "{{ var('cloud_storage_uri_base') }}/adp_workforce_now/comprehensive_benefits_report/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_adp_workforce_now__pension_and_benefits_enrollments
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/adp/pension_and_benefits_enrollments/*"
+          location: "{{ var('cloud_storage_uri_base') }}/adp_workforce_now/pension_and_benefits_enrollments/*"
           options:
             format: AVRO
             enable_logical_types: true
