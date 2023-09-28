@@ -317,7 +317,7 @@ DIAGNOSTIC_RESULTS_FIELDS = [
     {"name": "sex", "type": ["null", "string"], "default": None},
     {"name": "special_education", "type": ["null", "string"], "default": None},
     {"name": "start_date", "type": ["null", "string"], "default": None},
-    {"name": "student_grade", "type": ["null", "string"], "default": None},
+    {"name": "student_grade", "type": ["null", "string", "long"], "default": None},
     {"name": "student_id", "type": ["null", "long"], "default": None},
     {"name": "user_name", "type": ["null", "string"], "default": None},
     {"name": "vocabulary_placement", "type": ["null", "string"], "default": None},
@@ -482,6 +482,66 @@ DIAGNOSTIC_RESULTS_FIELDS = [
         "type": ["null", "string"],
         "default": None,
     },
+    {
+        "name": "comprehension_informational_text_placement",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_informational_text_relative_placement",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_informational_text_scale_score",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_literature_placement",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_literature_relative_placement",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_literature_scale_score",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_overall_placement",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_overall_relative_placement",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "comprehension_overall_scale_score",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "most_recent_diagnostic_ytd_y_n",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "percent_progress_to_annual_typical_growth_percent",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "percent_progress_to_annual_stretch_growth_percent",
+        "type": ["null", "double"],
+        "default": None,
+    },
 ]
 
 INSTRUCTIONAL_USAGE_FIELDS = [
@@ -590,6 +650,338 @@ INSTRUCTIONAL_USAGE_FIELDS = [
     {
         "name": "september_weekly_average_time_on_task_min",
         "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "enrolled", "type": ["null", "string"], "default": None},
+    {
+        "name": "first_lesson_completion_date",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "most_recent_lesson_completion_date",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "april_total_time_on_task_min", "type": ["null", "long"], "default": None},
+    {
+        "name": "august_total_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "december_total_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "february_total_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "january_total_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "july_total_time_on_task_min", "type": ["null", "long"], "default": None},
+    {"name": "june_total_time_on_task_min", "type": ["null", "long"], "default": None},
+    {"name": "march_total_time_on_task_min", "type": ["null", "long"], "default": None},
+    {"name": "may_total_time_on_task_min", "type": ["null", "long"], "default": None},
+    {
+        "name": "november_total_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "october_total_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "september_total_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_close_reading_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_high_frequency_words_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_overall_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonics_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonological_awareness_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_vocabulary_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_close_reading_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_high_frequency_words_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_overall_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonics_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonological_awareness_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_vocabulary_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_close_reading_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_high_frequency_words_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_overall_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonics_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonological_awareness_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_vocabulary_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_algebra_and_algebraic_thinking_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_geometry_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_measurement_and_data_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_number_and_operations_lessons_completed",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_geometry_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_measurement_and_data_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_algebra_and_algebraic_thinking_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_number_and_operations_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_algebra_and_algebraic_thinking_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_geometry_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_measurement_and_data_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_number_and_operations_time_on_task_min",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "april_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "august_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "december_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "february_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "january_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "july_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "june_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "last_week_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "march_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "may_percent_lessons_passed", "type": ["null", "double"], "default": None},
+    {
+        "name": "november_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "october_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "september_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_close_reading_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_comprehension_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_high_frequency_words_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_overall_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonics_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_phonological_awareness_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_vocabulary_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_measurement_and_data_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_algebra_and_algebraic_thinking_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_number_and_operations_percent_lessons_passed",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "year_to_date_geometry_percent_lessons_passed",
+        "type": ["null", "double"],
         "default": None,
     },
 ]

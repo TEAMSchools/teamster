@@ -148,7 +148,6 @@ models:
       +schema: utils
       +materialized: table
     zendesk:
-      +enabled: false
       +schema: zendesk
       staging:
         +materialized: table

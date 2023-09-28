@@ -1,4 +1,5 @@
 import json
+import pathlib
 import random
 
 from fastavro import parse_schema, validation, writer
@@ -8,15 +9,14 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 def _test(endpoint_name):
-    with open(
-        file=f"env/schoolmint/grow/{endpoint_name.replace('/', '__')}.json", mode="r"
-    ) as fp:
-        records = json.load(fp=fp)
+    fp = pathlib.Path(f"env/schoolmint/grow/{endpoint_name.replace('/', '__')}.json")
+
+    records = json.load(fp=fp.open(mode="r"))
 
     count = len(records)
 
     sample_record = records[random.randint(a=0, b=(count - 1))]
-    print(sample_record)
+    # print(sample_record)
 
     schema = get_avro_record_schema(
         name=endpoint_name, fields=ASSET_FIELDS[endpoint_name]
@@ -45,3 +45,7 @@ def test_generic_tags_meetingtypes():
 
 def test_schools():
     _test("schools")
+
+
+def test_assignments():
+    _test("assignments")
