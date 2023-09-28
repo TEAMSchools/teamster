@@ -20,8 +20,8 @@ def render_fivetran_audit_query(dataset, done):
         select distinct table_name
         from `fivetran_log_stg_fivetran_log.stg_fivetran_log__incremental_mar`
         where schema_name = '{dataset}'
-        and incremental_rows != 0
         and updated_at >= '{done}'
+        and (incremental_rows != 0 or free_Type = 'FREE_RESYNC')
     """
 
 
@@ -77,12 +77,13 @@ def build_fivetran_sync_status_sensor(
             ):
                 for schema in connector_schemas:
                     # get fivetran_audit table
-                    query_job = bq.query(
-                        query=render_fivetran_audit_query(
-                            dataset=schema.replace(".", "_"),
-                            done=last_update.to_iso8601_string(),
-                        )
+                    query = render_fivetran_audit_query(
+                        dataset=schema.replace(".", "_"),
+                        done=last_update.to_iso8601_string(),
                     )
+                    # context.log.info(query)
+
+                    query_job = bq.query(query=query)
 
                     for row in query_job.result():
                         context.log.debug(row)
