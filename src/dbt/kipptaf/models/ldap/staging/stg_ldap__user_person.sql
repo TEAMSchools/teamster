@@ -10,12 +10,7 @@ select
         lower(userprincipalname),
         r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
         if(
-            (
-                select dn
-                from unnest(split(distinguishedname, ',')) as dn
-                where dn in ('OU=KIPP Miami', 'OU=Room11', 'OU=Miami')
-            )
-            is not null,
+            regexp_contains(user_principal_name, r'@kippmiami.org')
             r'\1kippmiami\2',
             r'\1apps.teamschools\2'
         )
