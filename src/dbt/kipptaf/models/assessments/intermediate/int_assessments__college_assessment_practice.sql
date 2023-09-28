@@ -2,20 +2,25 @@ with
     responses as (
         select
             a.assessment_id,
-            a.title,
+            a.title as assessment_title,
             a.scope,
             a.subject_area,
             a.academic_year_clean as academic_year,
-            a.administered_at,
+            concat(
+                format_date('%b', a.administered_at),
+                ' ',
+                format_date('%g', a.administered_at)
+            ) as administration_round,
+            a.administered_at as test_date
 
-            asr.local_student_id,
+            asr.student_id,
             asr.response_type,
             asr.response_type_description,
             asr.points,
             asr.points_possible,
             asr.performance_band_level,
 
-            ssk.administration_round,
+            ssk.administration_round as scope_round,
             -- Uses the approx raw score to bring a scale score
             -- Convert the scale scores to be ready to add 
             -- for sat composite score from the gsheet
@@ -30,8 +35,7 @@ with
 
             -- Determine if we have enough scores to calculate the composite
             count(distinct a.subject_area) over (
-                partition by
-                    a.academic_year, asr.local_student_id, ssk.administration_round
+                partition by a.academic_year, asr.student_id, ssk.administration_round
             ) as total_subjects_tested,
         from {{ ref("base_illuminate__assessments") }} as a
         inner join
@@ -47,15 +51,17 @@ with
 
 select
     assessment_id,
-    title,
+    assessment_title,
     scope,
+    scope_round,
+    administration_round,
+    test_date,
     subject_area,
     academic_year,
-    administered_at,
-    local_student_id,
+    student_id,
     response_type,
     response_type_description,
-    administration_round,
+
     performance_band_level,
     points,
     points_possible,
@@ -67,15 +73,17 @@ union all
 
 select
     null as assessment_id,
-    null as title,
+    null as assessment_title,
     scope,
+    scope_round,
+    administration_round,
+    test_date,
     'Composite' as subject_area,
     academic_year,
-    null as administered_at,
-    local_student_id,
+    student_id,
+
     null as response_type,
     null as response_type_description,
-    administration_round,
     null as performance_band_level,
 
     sum(points) as points,
@@ -83,21 +91,22 @@ select
     safe_cast(round(avg(scale_score), 0) as int) as scale_score,
 from responses
 where scope = 'ACT' and response_type = 'overall' and total_subjects_tested = 4
-group by scope, academic_year, local_student_id, administration_round
+group by scope, academic_year, student_id, administration_round
 
 union all
 
 select
     null as assessment_id,
-    null as title,
+    null as assessment_title,
     scope,
+    scope_round,
+    administration_round,
+    test_date,
     'Composite' as subject_area,
     academic_year,
-    null as administered_at,
-    local_student_id,
+    student_id,
     null as response_type,
     null as response_type_description,
-    administration_round,
     null as performance_band_level,
 
     sum(points) as points,
@@ -105,4 +114,4 @@ select
     sum(scale_score) as scale_score,
 from responses
 where scope = 'SAT' and response_type = 'overall' and total_subjects_tested = 3
-group by scope, academic_year, local_student_id, administration_round
+group by scope, academic_year, student_id, administration_round

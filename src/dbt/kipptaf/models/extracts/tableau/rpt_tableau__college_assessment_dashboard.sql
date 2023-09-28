@@ -2,9 +2,11 @@ with
     roster as (
         select
             e.student_number,
+            adb.contact_id,
             e.lastfirst,
             e.enroll_status,
             e.cohort,
+            adb.ktc_cohort,
             e.academic_year,
             e.region,
             e.schoolid,
@@ -13,13 +15,14 @@ with
             e.entrydate,
             e.exitdate,
             e.advisor_lastfirst,
-            e.spedlep,
+            if(e.spedlep in ('No IEP', null), 0, 1) as sped,
             e.is_504 as c_504_status,
 
             s.courses_course_name as ccr_course,
             s.teacher_lastfirst as ccr_teacher,
             s.sections_external_expression as ccr_period,
-        from student_enrollments as e
+
+        from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
@@ -28,21 +31,25 @@ with
             and s.courses_course_name like 'College and Career%'
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
+        left join
+            {{ ref("int_kippadb__roster") }} as adb
+            on e.student_number = adb.student_number
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.rn_year = 1
             and e.school_level = 'HS'
+            and e.schoolid <> 999999
     ),
 
     act_sat_official as (  -- All types of ACT scores from ADB
         select
             contact,  -- ID from ADB for the student
-            test_type,
-            date,
-            score,
+            'Official' as test_type,
+            test_type as scope,
             concat(
                 format_date('%b', date), ' ', format_date('%g', date)
             ) as administration_round,
+            date as test_date,
             case
                 -- Need to verify all of these are accurately tagged to match NJ's
                 -- grad requirements
@@ -53,8 +60,20 @@ with
                 then 'Reading Test'
                 when 'sat_math_test_score'
                 then 'Math Test'
-                else test_subject
+                when 'sat_ebrw'
+                then 'EWBR'
+                when 'act_composite'
+                then 'Composite'
+                when 'act_reading'
+                then 'Reading'
+                when 'act_math'
+                then 'Math'
+                when 'act_english'
+                then 'English'
+                when 'act_science'
+                then 'Science'
             end as subject_area,
+            score as scale_score,
 
             -- Sorts the table in desc order to calculate the highest score per
             -- score_type per student
@@ -92,11 +111,11 @@ select
     e.ccr_teacher,
     e.ccr_period,
     e.c_504_status,
-    if(e.spedlep in ('No IEP', null), 0, 1) as sped,
+    e.sped,
 
-    s.ktc_cohort,
+    e.ktc_cohort,
 
-    'Official' test_type,
+    o.test_type,
     null as assessment_id,
     null as assessment_title,
 
@@ -122,13 +141,12 @@ select
     o.rn_highest,
 
     avg(case when o.subject_area = 'Composite' then o.scale_score end) over (
-        partition by o.student_number, o.test_type, o.administration_round, o.test_date
+        partition by o.contact, o.test_type, o.administration_round, o.test_date
     ) as overall_composite_score,
 from roster as e
-left join {{ ref("int_kippadb__roster") }} as s on e.student_number = s.student_number
 left join
     act_sat_official as o
-    on s.student_number = o.student_number
+    on e.contact_id = o.contact
     and o.test_date between e.entrydate and e.exitdate
 
 union all
@@ -148,11 +166,12 @@ select
     e.ccr_teacher,
     e.ccr_period,
     e.c_504_status,
-    if(e.spedlep in ('No IEP', null), 0, 1) as sped,
+    e.sped,
 
-    s.ktc_cohort,
+    e.ktc_cohort,
 
-    p.test_type,
+   'Practice' as test_type,
+
     p.assessment_id,
     p.assessment_title,
     p.administration_round,
@@ -174,11 +193,10 @@ select
         partition by e.student_number, p.scope, p.subject_area
         order by p.earned_scale_score_for_scope_round_per_subject desc
     ) as rn_highest,
+
     null as overall_composite_score
 from roster as e
 left join
-    {{ ref('int_assessments__college_assessment_practice') }} as p
-    on e.student_number = p.local_student_id
+    {{ ref("int_assessments__college_assessment_practice") }} as p
+    on e.student_number = p.student_id
     and e.academic_year = p.academic_year
--- left join ms_grad as m on e.student_number = m.student_number
-left join {{ ref("int_kippadb__roster") }} as s on e.student_number = s.student_number
