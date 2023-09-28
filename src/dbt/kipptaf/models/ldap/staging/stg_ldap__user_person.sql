@@ -10,7 +10,7 @@ select
         lower(userprincipalname),
         r'^([\w-\.]+@)[\w-]+(\.+[\w-]{2,4})$',
         if(
-            regexp_contains(user_principal_name, r'@kippmiami.org')
+            regexp_contains(user_principal_name, r'@kippmiami.org'),
             r'\1kippmiami\2',
             r'\1apps.teamschools\2'
         )
