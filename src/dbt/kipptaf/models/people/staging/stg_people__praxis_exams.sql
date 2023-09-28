@@ -26,6 +26,6 @@ select
         'https://drive.google.com/file/d/', praxis_document_link
     ) as cert_document_link,
     row_number() over (
-        partition by employee_number order by last_submitted_time asc
-    ) as praxis_doc_number
+        partition by employee_number order by last_submitted_time desc
+    ) as rn_praxis_doc
 from praxis_submissions
