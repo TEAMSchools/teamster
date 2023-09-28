@@ -1,3 +1,4 @@
+{{ config(enabled=false) }}
 with
     wfm_time_details_kipp as (
         select
@@ -185,7 +186,7 @@ with
                 sub.transaction_out_exceptions,
                 mp.transaction_out_exceptions + ' (Corrected)'
             ) as transaction_out_exceptions,
-        from wfm_time_details
+        from wfm_time_details as sub
         left join
             missed_punches as mp
             on sub.employee_name = mp.employee_name
