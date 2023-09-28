@@ -9,11 +9,6 @@ select
     accrual_planned_takings_hours,
     accrual_pending_grants_hours,
     accrual_ending_vested_balance_hours,
--- _dagster_partition_fiscal_year,
--- _dagster_partition_date,
--- _dagster_partition_hour,
--- _dagster_partition_minute,
--- _dagster_partition_symbolic_id,
 from
     {{
         source(
