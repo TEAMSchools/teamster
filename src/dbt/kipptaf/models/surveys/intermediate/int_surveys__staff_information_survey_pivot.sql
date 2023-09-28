@@ -8,8 +8,6 @@ with
             coalesce(text_value, file_upload_file_id) as pivot_column_value,
         from {{ ref("base_google_forms__form_responses") }}
         where form_id = '1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA'
-          AND item_abbreviation = 'praxis_document_link'
-  AND file_upload_file_id IS NOT NULL
     ),
 
     response_pivot as (
