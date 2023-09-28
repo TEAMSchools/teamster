@@ -6,4 +6,4 @@ schemas:
       - media_insights
       - user_history
       - user_insights
-      - user_lifetime_insights
+      # - user_lifetime_insights
