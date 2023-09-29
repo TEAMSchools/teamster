@@ -545,7 +545,7 @@ with
             on s.academic_year = c.academic_year
             and s.student_number = c.student_number
     ),
-    
+
     base_roster as (
         select
             s.academic_year,
