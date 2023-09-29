@@ -26,7 +26,7 @@ dependencies = [
   "pycryptodome>=3.18.0",
   "pandas>=2.0.3",
   "tenacity>=8.2.2",
-  "dbt-bigquery>=1.6.5",
+  "dbt-bigquery>=1.6.6",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }
