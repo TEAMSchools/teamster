@@ -205,6 +205,8 @@ select
     r.teacher_lastfirst,
     r.sections_external_expression,
 
+    tt as test_type,
+
     g.grad_eligible_type,
     g.discipline,
     g.subject,
@@ -223,4 +225,8 @@ select
         0
     ) as eligible_for_discipline,
 from roster as r
-left join grad_options_append_final as g on r.student_number = g.student_number
+cross join unnest(["State Assessment", "ACT/SAT", "Alternative"]) as tt
+left join
+    grad_options_append_final as g
+    on r.student_number = g.student_number
+    and tt = g.test_type
