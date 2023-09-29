@@ -9,6 +9,13 @@ select
     accrual_planned_takings_hours,
     accrual_pending_grants_hours,
     accrual_ending_vested_balance_hours,
+    _dagster_partition_date as lastest_update,
+    regexp_extract(employee_name_id, r'\((\w+)\)') as worker_id,
+
+    row_number() over (
+        partition by employee_name_id, accrual_code
+        order by _dagster_partition_date desc
+    ) as rn_employee_code,
 from
     {{
         source(
