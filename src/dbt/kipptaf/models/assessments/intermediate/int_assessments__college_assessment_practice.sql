@@ -1,9 +1,8 @@
 with
     responses as (
         select
-            a.academic_year_clean as academic_year,
+            a.academic_year,
             a.powerschool_student_number,
-            a.student_id,
             a.assessment_id,
             a.title as assessment_title,
             a.scope,
