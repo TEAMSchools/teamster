@@ -41,6 +41,7 @@ from teamster.kipptaf import (
     amplify,
     clever,
     datagun,
+    dayforce,
     dbt,
     fivetran,
     google,
@@ -60,6 +61,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[amplify], group_name="amplify"),
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
+        *load_assets_from_modules(modules=[dayforce], group_name="dayforce"),
         *load_assets_from_modules(modules=[google], group_name="google"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
@@ -111,7 +113,7 @@ defs = Definitions(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
-        "dbt_cli": DbtCliResource(project_dir=f"/root/app/src/dbt/{CODE_LOCATION}"),
+        "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
@@ -182,7 +184,7 @@ defs = Definitions(
             username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
-        "ssh_adp": SSHConfigurableResource(
+        "ssh_adp_workforce_now": SSHConfigurableResource(
             remote_host="sftp.kippnj.org",
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
@@ -202,6 +204,11 @@ defs = Definitions(
             remote_host="reports-sftp.clever.com",
             username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
             password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
+        ),
+        "ssh_couchdrop": SSHConfigurableResource(
+            remote_host="kipptaf.couchdrop.io",
+            username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+            password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
         "ssh_coupa": SSHConfigurableResource(
             remote_host="fileshare.coupahost.com",

@@ -53,6 +53,7 @@ def build_sftp_asset(
     partitions_def=None,
     auto_materialize_policy=None,
     slugify_cols=True,
+    slugify_replacements=(),
     op_tags={},
     **kwargs,
 ):
@@ -141,7 +142,12 @@ def build_sftp_asset(
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
         df.replace({nan: None}, inplace=True)
         if slugify_cols:
-            df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
+            df.rename(
+                columns=lambda x: slugify(
+                    text=x, separator="_", replacements=slugify_replacements
+                ),
+                inplace=True,
+            )
 
         df_records = df.to_dict(orient="records")
 

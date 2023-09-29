@@ -19,6 +19,7 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 def get_sftp_ls(ssh: SSHConfigurableResource, asset_defs: list[AssetsDefinition]):
     ls = {}
     conn = ssh.get_connection()
+
     with conn.open_sftp() as sftp_client:
         for asset in asset_defs:
             ls[asset.key.to_python_identifier()] = {

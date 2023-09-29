@@ -23,7 +23,6 @@ daily_partition_asset_job_schedule = build_schedule_from_partitioned_job(
 dynamic_partition_asset_job_schedule = build_dynamic_partition_schedule(
     cron_schedule="50 23 * * *",
     code_location=CODE_LOCATION,
-    source_system="adp",
     execution_timezone=LOCAL_TIMEZONE,
     job=dynamic_partition_asset_job,
     asset_defs=wfm_assets_dynamic,

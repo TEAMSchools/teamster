@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: facebook_pages
+    tables:
+      - name: daily_page_metrics_total
+      - name: lifetime_post_metrics_total
+      - name: post_history
