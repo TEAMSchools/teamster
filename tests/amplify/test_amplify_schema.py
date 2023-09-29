@@ -11,12 +11,13 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 def _test(asset_name, file_name):
     df = read_csv(filepath_or_buffer=file_name, low_memory=False)
-    df = df.replace({nan: None})
+
+    df.replace({nan: None}, inplace=True)
     df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
+    # print(df.dtypes.to_dict())
 
     count = df.shape[0]
     records = df.to_dict(orient="records")
-    # print(df.dtypes.to_dict())
 
     sample_record = records[random.randint(a=0, b=(count - 1))]
     # print(sample_record)

@@ -52,7 +52,10 @@ with
 select
     *,
     case
-        extract(month from transcript_date) when 1 then 'Fall' when 5 then 'Spring'
+        when extract(month from transcript_date) in (1, 12)
+        then 'Fall'
+        when extract(month from transcript_date) = 5
+        then 'Spring'
     end as semester,
     {{
         teamster_utils.date_to_fiscal_year(

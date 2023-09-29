@@ -19,21 +19,22 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 
 def build_sftp_sensor(
     code_location,
-    source_system,
     asset_defs: list[AssetsDefinition],
     timezone,
     minimum_interval_seconds=None,
 ):
     @sensor(
-        name=f"{code_location}_{source_system}_sftp_sensor",
+        name=f"{code_location}_adp_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
-    def _sensor(context: SensorEvaluationContext, ssh_adp: SSHConfigurableResource):
+    def _sensor(
+        context: SensorEvaluationContext, ssh_adp_workforce_now: SSHConfigurableResource
+    ):
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
-            ls = get_sftp_ls(ssh=ssh_adp, asset_defs=asset_defs)
+            ls = get_sftp_ls(ssh=ssh_adp_workforce_now, asset_defs=asset_defs)
         except SSHException as e:
             context.log.error(e)
             return SensorResult(skip_reason=SkipReason(str(e)))

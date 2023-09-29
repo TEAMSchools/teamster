@@ -63,6 +63,10 @@ models:
       +schema: assessments
       staging:
         +materialized: table
+    dayforce:
+      +schema: dayforce
+      staging:
+        +materialized: table
     deanslist:
       +schema: deanslist
     edplan:
@@ -78,6 +82,9 @@ models:
       tableau:
         +schema: tableau
         +materialized: view
+    facebook:
+      pages:
+        +schema: facebook_pages
     finance:
       +schema: finance
       staging:
@@ -99,6 +106,9 @@ models:
         +materialized: table
       base:
         +materialized: table
+    instagram:
+      business:
+        +schema: instagram_business
     iready:
       +schema: iready
     kippadb:
@@ -121,6 +131,8 @@ models:
         +materialized: table
     powerschool:
       +schema: powerschool
+    renlearn:
+      +schema: renlearn
     reporting:
       +schema: reporting
       staging:
@@ -142,7 +154,6 @@ models:
       +schema: utils
       +materialized: table
     zendesk:
-      +enabled: false
       +schema: zendesk
       staging:
         +materialized: table
