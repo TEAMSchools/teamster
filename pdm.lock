@@ -6,7 +6,7 @@ groups = ["default", "dev"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:b813454bb0d719048b5a7ac177c6dddc782f46fdb83f5691a58bee61f437986b"
+content_hash = "sha256:e4d694ae600610d0dd7e0c2378299a24cf2d43fe04fc1b93d2ff32754e1338c5"
 
 [[package]]
 name = "agate"
