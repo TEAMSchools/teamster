@@ -1,3 +1,36 @@
+select
+    a.academic_year,
+    a.illuminate_student_id,
+    a.powerschool_student_number,
+    a.scope, --ACT or SAT
+    a.assessment_id,
+    a.title as assessment_title,
+    a.administered_at,
+    a.subject_area,
+    a.date_taken,
+    a.response_type, --Group or overall
+    a.response_type_description, --Group name
+    a.points, -- Points earned... looks to be # of questions correct on Illuminate
+    
+    round(case when response_type = 'group' then sum(a.points) over (partition by a.assessment_id,a.powerschool_student_number,a.response_type) 
+         when response_type = 'overall' then sum(a.points) over (partition by a.assessment_id,a.powerschool_student_number,a.response_type) 
+         end,0) as earned_points_by_subject,
+
+    round(a.percent_correct,0) as percent_correct, -- % correct field on Illuminate
+
+
+from {{ ref("int_assessments__response_rollup") }} as a
+where a.scope in ('ACT','SAT')
+    and a.academic_year = {{ var("current_academic_year") }} 
+    and a.response_type in ('group','overall')
+
+order by a.subject_area,a.response_type
+
+
+
+
+
+
 with
     responses as (
         select
