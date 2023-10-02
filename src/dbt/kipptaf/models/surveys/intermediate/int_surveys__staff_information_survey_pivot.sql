@@ -324,4 +324,7 @@ select
         then 'Bi/Multiracial'
         else race_ethnicity
     end as race_ethnicity_reporting,
+    row_number() over (
+        partition by employee_number order by last_submitted_time desc
+    ) as rn_submission
 from deduplicate
