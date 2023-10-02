@@ -82,6 +82,9 @@ models:
       tableau:
         +schema: tableau
         +materialized: view
+    facebook:
+      pages:
+        +schema: facebook_pages
     finance:
       +schema: finance
       staging:
@@ -103,6 +106,9 @@ models:
         +materialized: table
       base:
         +materialized: table
+    instagram:
+      business:
+        +schema: instagram_business
     iready:
       +schema: iready
     kippadb:
