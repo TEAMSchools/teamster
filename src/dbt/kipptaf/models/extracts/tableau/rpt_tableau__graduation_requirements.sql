@@ -40,8 +40,8 @@ with
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
         left join
-            {{ ref('int_kippadb__roster') }} as adb
-            on e.student_number = adb.school_specific_id
+            {{ ref("int_kippadb__roster") }} as adb
+            on e.student_number = adb.student_number
         where
             e.rn_year = 1
             and e.academic_year = {{ var("current_academic_year") }}
@@ -165,14 +165,10 @@ with
             r.student_number,
 
             'Alternative' as test_type,
-            case a.subject
-                when 'ela' then 'ELA'
-                when 'math' then 'Math'
+            case
+                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
             end as discipline,
-            case a.subject
-                when 'ela' then 'ELA'
-                when 'math' then 'Math'
-            end as subject,
+            case a.subject when 'ela' then 'ELA' when 'math' then 'Math' end as subject,
             a.values_column as value,
             a.met_requirement as met_pathway_requirement,
             case
