@@ -23,7 +23,8 @@ with
             e.is_retained_ever,
             e.student_email_google,
 
-            adb.id as kippadb_contact_id,
+            adb.contact_id as kippadb_contact_id,
+            adb.ktc_cohort,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -39,7 +40,7 @@ with
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
         left join
-            {{ ref("stg_kippadb__contact") }} as adb
+            {{ ref('int_kippadb__roster') }} as adb
             on e.student_number = adb.school_specific_id
         where
             e.rn_year = 1
@@ -164,7 +165,10 @@ with
             r.student_number,
 
             'Alternative' as test_type,
-            a.subject as discipline,
+            case a.subject
+                when 'ela' then 'ELA'
+                when 'math' then 'Math'
+            end as discipline,
             case a.subject
                 when 'ela' then 'ELA'
                 when 'math' then 'Math'
@@ -215,18 +219,7 @@ select
     g.discipline,
     g.subject,
     g.value,
-    if(g.met_pathway_requirement, 1, 0) as met_pathway_requirement,
+    g.met_pathway_requirement,
 
-    if(
-        max(g.met_pathway_requirement) over (
-            partition by r.student_number, g.discipline
-        )
-        and max(if(g.grad_eligible_type = 'State Assessment', value, null)) over (
-            partition by r.student_number, g.discipline
-        )
-        is not null,
-        1,
-        0
-    ) as eligible_for_discipline,
 from roster as r
 left join grad_options_append_final as g on r.student_number = g.student_number
