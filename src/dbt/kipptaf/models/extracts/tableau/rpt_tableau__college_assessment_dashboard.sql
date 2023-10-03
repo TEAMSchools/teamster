@@ -191,7 +191,10 @@ select
     p.raw_score,
     p.scale_score,
 
-    null as rn_highest
+    row_number() over (
+        partition by p.powerschool_student_number, p.scope, p.subject_area
+        order by p.scale_score desc
+    ) as rn_highest
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
