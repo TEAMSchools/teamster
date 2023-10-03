@@ -17,7 +17,7 @@ with
             a.response_type,  -- Group or overall
             a.response_type_description,  -- Group name
             a.points,  -- Points earned... looks to be # of questions correct on Illuminate
-            round(a.percent_correct/100, 2) as percent_correct,  -- % correct field on Illuminate
+            round(a.percent_correct / 100, 2) as percent_correct,  -- % correct field on Illuminate
 
             count(distinct a.subject_area) over (
                 partition by
@@ -53,34 +53,57 @@ with
             a.scope in ('ACT', 'SAT')
             and a.academic_year = {{ var("current_academic_year") }}
             and a.response_type in ('group', 'overall')
+    ),
+
+    practice_scale_score_by_subject as (
+        select
+            r.academic_year,
+            r.powerschool_student_number,
+            r.assessment_id,
+
+            r.points as raw_score,
+            ssk.scale_score
+
+        from responses as r
+        inner join
+            {{ ref("stg_assessments__act_scale_score_key") }} as ssk
+            on r.assessment_id = ssk.assessment_id
+            and r.points between ssk.raw_score_low and ssk.raw_score_high
+        where r.response_type = 'overall'
     )
 
 select
-    academic_year,
-    powerschool_student_number,
+    r.academic_year,
+    r.powerschool_student_number,
 
-    scope,
-    scope_round,
+    r.scope,
+    r.scope_round,
 
-    assessment_id,
-    assessment_title,
-    administration_round,
+    r.assessment_id,
+    r.assessment_title,
+    r.administration_round,
 
-    subject_area,
-    test_date,
+    r.subject_area,
+    r.test_date,
 
-    response_type,
-    response_type_description,
+    r.response_type,
+    r.response_type_description,
 
-    points,
-    percent_correct,
+    r.points,
+    r.percent_correct,
 
-    total_subjects_tested,
+    r.total_subjects_tested,
 
-    scale_score
+    s.raw_score,
+    s.scale_score
 
-from responses
-where response_type = 'group'
+from responses as r
+left join
+    practice_scale_score_by_subject as s
+    on r.academic_year = s.academic_year
+    and r.powerschool_student_number = s.powerschool_student_number
+    and r.assessment_id = s.assessment_id
+where r.response_type = 'group'
 
 union all
 
@@ -101,10 +124,19 @@ select
     'NA' as response_type,
     'NA' as response_type_description,
 
-    points,
-    percent_correct,
+    sum(points) over (
+        partition by
+            academic_year, powerschool_student_number, scope_round, administration_round
+    ) as points,
+
+    null as percent_correct,
 
     total_subjects_tested,
+
+    sum(points) over (
+        partition by
+            academic_year, powerschool_student_number, scope_round, administration_round
+    ) as raw_score,
 
     round(
         avg(scale_score) over (
@@ -139,10 +171,19 @@ select
     'NA' as response_type,
     'NA' as response_type_description,
 
-    points,
-    percent_correct,
+    sum(points) over (
+        partition by
+            academic_year, powerschool_student_number, scope_round, administration_round
+    ) as points,
+
+    null as percent_correct,
 
     total_subjects_tested,
+
+    sum(points) over (
+        partition by
+            academic_year, powerschool_student_number, scope_round, administration_round
+    ) as raw_score,
 
     round(
         sum(scale_score) over (

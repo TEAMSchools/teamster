@@ -138,16 +138,14 @@ select
     null as percent_correct,
     null as total_subjects_tested,
 
+    null as raw_score,
     scale_score,
 
     rn_highest
 
 from roster as e
-left join
-    act_sat_official as o
-    on e.contact_id = o.contact
-    --and o.test_date between e.entrydate and e.exitdate
-
+left join act_sat_official as o on e.contact_id = o.contact
+-- and o.test_date between e.entrydate and e.exitdate
 union all
 
 select
@@ -190,6 +188,7 @@ select
     p.percent_correct,
     p.total_subjects_tested,
 
+    p.raw_score,
     p.scale_score,
 
     null as rn_highest
