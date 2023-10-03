@@ -62,7 +62,14 @@ with
             r.assessment_id,
 
             r.points as raw_score,
-            ssk.scale_score
+            case
+                when
+                    r.scope = 'SAT'
+                    and r.subject_area in ('Reading', 'Writing')
+                    and ssk.grade_level in (9, 10)
+                then (ssk.scale_score * 10)
+                else ssk.scale_score
+            end as scale_score
 
         from responses as r
         inner join
