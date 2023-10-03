@@ -1,71 +1,23 @@
-select
-    a.academic_year,
-    a.illuminate_student_id,
-    a.powerschool_student_number,
-    a.scope, --ACT or SAT
-    a.assessment_id,
-    a.title as assessment_title,
-    a.administered_at,
-    a.subject_area,
-    a.date_taken,
-    a.response_type, --Group or overall
-    a.response_type_description, --Group name
-    a.points, -- Points earned... looks to be # of questions correct on Illuminate
-    
-    round(case when response_type = 'group' then sum(a.points) over (partition by a.assessment_id,a.powerschool_student_number,a.response_type) 
-         when response_type = 'overall' then sum(a.points) over (partition by a.assessment_id,a.powerschool_student_number,a.response_type) 
-         end,0) as earned_points_by_subject,
-
-    round(a.percent_correct,0) as percent_correct, -- % correct field on Illuminate
-
-
-from {{ ref("int_assessments__response_rollup") }} as a
-where a.scope in ('ACT','SAT')
-    and a.academic_year = {{ var("current_academic_year") }} 
-    and a.response_type in ('group','overall')
-
-order by a.subject_area,a.response_type
-
-
-
-
-
-
 with
     responses as (
         select
             a.academic_year,
+            a.illuminate_student_id,
             a.powerschool_student_number,
+            a.scope,  -- ACT or SAT
             a.assessment_id,
             a.title as assessment_title,
-            a.scope,
-            a.subject_area,
-
             concat(
                 format_date('%b', a.administered_at),
                 ' ',
                 format_date('%g', a.administered_at)
             ) as administration_round,
-            a.administered_at as test_date,
-
-            a.response_type,
-            a.response_type_description,
-            a.points,
-            a.points_possible,
-            a.performance_band_level,
-
-            ssk.administration_round as scope_round,
-            -- Uses the approx raw score to bring a scale score
-            -- Convert the scale scores to be ready to add 
-            -- for sat composite score from the gsheet
-            case
-                when
-                    a.scope = 'SAT'
-                    and a.subject_area in ('Reading', 'Writing')
-                    and ssk.grade_level in (9, 10)
-                then (ssk.scale_score * 10)
-                else ssk.scale_score
-            end as scale_score,
+            a.subject_area,
+            a.date_taken as test_date,
+            a.response_type,  -- Group or overall
+            a.response_type_description,  -- Group name
+            a.points,  -- Points earned... looks to be # of questions correct on Illuminate
+            round(a.percent_correct/100, 2) as percent_correct,  -- % correct field on Illuminate
 
             count(distinct a.subject_area) over (
                 partition by
@@ -74,6 +26,24 @@ with
                     ssk.administration_round
 
             ) as total_subjects_tested,
+
+            ssk.administration_round as scope_round,
+            -- Uses the approx raw score to bring a scale score
+            -- Convert the scale scores to be ready to add 
+            -- for sat composite score from the gsheet
+            if(
+                response_type = 'overall',
+                case
+                    when
+                        a.scope = 'SAT'
+                        and a.subject_area in ('Reading', 'Writing')
+                        and ssk.grade_level in (9, 10)
+                    then (ssk.scale_score * 10)
+                    else ssk.scale_score
+                end,
+                null
+            ) as scale_score,
+
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
@@ -81,98 +51,109 @@ with
             and a.points between ssk.raw_score_low and ssk.raw_score_high
         where
             a.scope in ('ACT', 'SAT')
-            and a.academic_year = {{ var("current_academic_year") }}  -- first year
-            and a.response_type in ('overall', 'group')
+            and a.academic_year = {{ var("current_academic_year") }}
+            and a.response_type in ('group', 'overall')
     )
 
 select
-    assessment_id,
-    assessment_title,
+    academic_year,
+    powerschool_student_number,
+
     scope,
     scope_round,
+
+    assessment_id,
+    assessment_title,
     administration_round,
-    test_date,
+
     subject_area,
-    academic_year,
+    test_date,
 
-    student_id,
     response_type,
     response_type_description,
 
-    performance_band_level,
-
-    administered_at,
-    powerschool_student_number,
-    response_type,
-    response_type_description,
-    administration_round,
-    performance_band_label,
     points,
-    points_possible,
-    scale_score,
+    percent_correct,
+
+    total_subjects_tested,
+
+    scale_score
+
 from responses
 where response_type = 'group'
 
 union all
 
 select
-    null as assessment_id,
-    null as assessment_title,
+    academic_year,
+    powerschool_student_number,
+
     scope,
     scope_round,
+
+    null as assessment_id,
+    'NA' as assessment_title,
     administration_round,
-    test_date,
+
     'Composite' as subject_area,
-    academic_year,
+    test_date,
 
-    student_id,
+    'NA' as response_type,
+    'NA' as response_type_description,
 
-    null as response_type,
-    null as response_type_description,
-    null as performance_band_level,
+    points,
+    percent_correct,
 
-    null as administered_at,
-    powerschool_student_number,
-    null as response_type,
-    null as response_type_description,
-    administration_round,
-    null as performance_band_label,
+    total_subjects_tested,
 
-    sum(points) as points,
-    sum(points_possible) as points_possible,
-    safe_cast(round(avg(scale_score), 0) as int) as scale_score,
+    round(
+        avg(scale_score) over (
+            partition by
+                academic_year,
+                powerschool_student_number,
+                scope_round,
+                administration_round
+        ),
+        0
+    ) as scale_score,
+
 from responses
 where scope = 'ACT' and response_type = 'overall' and total_subjects_tested = 4
-group by scope, academic_year, powerschool_student_number, administration_round
 
 union all
 
 select
-    null as assessment_id,
-    null as assessment_title,
+    academic_year,
+    powerschool_student_number,
+
     scope,
     scope_round,
+
+    null as assessment_id,
+    'NA' as assessment_title,
     administration_round,
-    test_date,
+
     'Composite' as subject_area,
-    academic_year,
+    test_date,
 
-    student_id,
-    null as response_type,
-    null as response_type_description,
-    null as performance_band_level,
+    'NA' as response_type,
+    'NA' as response_type_description,
 
-    null as administered_at,
-    powerschool_student_number,
-    null as response_type,
-    null as response_type_description,
-    administration_round,
-    null as performance_band_label,
+    points,
+    percent_correct,
 
-    sum(points) as points,
-    sum(points_possible) as points_possible,
-    sum(scale_score) as scale_score,
+    total_subjects_tested,
+
+    round(
+        sum(scale_score) over (
+            partition by
+                academic_year,
+                powerschool_student_number,
+                scope_round,
+                administration_round
+        ),
+        0
+    ) as scale_score,
+
 from responses
 where scope = 'SAT' and response_type = 'overall' and total_subjects_tested = 3
-group by scope, academic_year, student_id, administration_round
-group by scope, academic_year, powerschool_student_number, administration_round
