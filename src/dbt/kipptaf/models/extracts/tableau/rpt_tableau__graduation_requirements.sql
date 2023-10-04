@@ -23,13 +23,13 @@ with
             e.is_retained_ever,
             e.student_email_google,
 
-            adb.contact_id as kippadb_contact_id,
-            adb.ktc_cohort,
+            adb.id as kippadb_contact_id,
 
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
 
+            ifnull(adb.kipp_hs_class, e.cohort) as ktc_cohort,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -40,8 +40,8 @@ with
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
         left join
-            {{ ref("int_kippadb__roster") }} as adb
-            on e.student_number = adb.student_number
+            {{ ref("stg_kippadb__contact") }} as adb
+            on e.student_number = adb.school_specific_id
         where
             e.rn_year = 1
             and e.academic_year = {{ var("current_academic_year") }}
