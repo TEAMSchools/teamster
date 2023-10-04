@@ -27,13 +27,13 @@ with
             *,
             case
                 eligibility_result
-                when 'NJEIE'
-                then 'F'
                 when '1'
                 then 'F'
                 when '2'
                 then 'R'
                 when '3'
+                then 'P'
+                when 'NJEIE'
                 then 'P'
                 else eligibility_result
             end as eligibility_name,
