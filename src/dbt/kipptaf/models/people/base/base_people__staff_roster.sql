@@ -2,30 +2,28 @@
 
 with
     staff_roster_active as (
-        select
-            {{
-                dbt_utils.star(
-                    from=ref_staff_history,
-                    except=[
-                        "work_assignment__fivetran_start",
-                        "work_assignment__fivetran_end",
-                        "work_assignment__fivetran_active",
-                    ],
-                )
-            }},
-        from {{ ref_staff_history }}
-        where work_assignment__fivetran_active
+        select * from {{ ref_staff_history }} where work_assignment__fivetran_active
     ),
 
     deduplicate as (
         {{
             dbt_utils.deduplicate(
                 relation="staff_roster_active",
-                partition_by="associate_oid",
-                order_by="is_prestart desc, primary_indicator desc, assignment_status_effective_date desc",
+                partition_by="employee_number",
+                order_by="is_prestart desc, primary_indicator desc, work_assignment__fivetran_end desc",
             )
         }}
     )
 
-select *
+select
+    {{
+        dbt_utils.star(
+            from=ref_staff_history,
+            except=[
+                "work_assignment__fivetran_start",
+                "work_assignment__fivetran_end",
+                "work_assignment__fivetran_active",
+            ],
+        )
+    }}
 from deduplicate

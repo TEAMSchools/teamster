@@ -3,10 +3,9 @@ with
         select
             enr.cc_studentid,
             enr.cc_sectionid,
-            enr.cc_abs_sectionid,
             enr.cc_yearid,
+            enr.cc_termid,
             enr.cc_academic_year,
-            enr.cc_abs_termid,
             enr.cc_dateenrolled,
             enr.cc_dateleft,
             enr.cc_schoolid,
@@ -35,7 +34,7 @@ with
             tb.date2 as termbin_end_date,
 
             if(
-                min(tb.storecode) over (partition by enr.cc_abs_sectionid) like 'Q%',
+                min(tb.storecode) over (partition by enr.cc_sectionid) like 'Q%',
                 25.000,
                 case
                     when tb.storecode like 'Q%'
@@ -48,11 +47,11 @@ with
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
             on enr.cc_schoolid = tb.schoolid
-            and enr.cc_abs_termid = tb.termid
+            and enr.cc_termid = tb.termid
             and left(tb.storecode, 1) in ('Q', 'E')
         where
             enr.cc_academic_year = {{ var("current_academic_year") }}
-            and not enr.is_dropped_course
+            and not enr.is_dropped_section
     ),
 
     enr_grades as (
@@ -64,9 +63,8 @@ with
             te.cc_dateenrolled,
             te.cc_dateleft,
             te.cc_sectionid,
-            te.cc_abs_sectionid,
             te.cc_course_number,
-            te.cc_abs_termid,
+            te.cc_termid,
             te.courses_excludefromgpa,
             te.courses_gradescaleid,
             te.courses_credit_hours,
@@ -154,8 +152,8 @@ with
             {{ ref("stg_powerschool__storedgrades") }} as sg
             on te.cc_studentid = sg.studentid
             and te.cc_course_number = sg.course_number
-            and te.cc_abs_termid = sg.termid
-            and te.cc_abs_sectionid = sg.sectionid
+            and te.cc_termid = sg.termid
+            and te.cc_sectionid = sg.sectionid
             and te.storecode = sg.storecode
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as sgs
@@ -164,7 +162,7 @@ with
         left join
             {{ ref("stg_powerschool__pgfinalgrades") }} as fg
             on te.cc_studentid = fg.studentid
-            and te.cc_abs_sectionid = fg.sectionid
+            and te.cc_sectionid = fg.sectionid
             and te.storecode = fg.finalgradename
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as fgs
@@ -180,9 +178,9 @@ with
             cc_academic_year,
             cc_dateenrolled,
             cc_dateleft,
-            cc_abs_sectionid,
+            cc_sectionid,
             cc_course_number,
-            cc_abs_termid,
+            cc_termid,
             courses_excludefromgpa,
             courses_gradescaleid,
             courses_credit_hours,
@@ -236,9 +234,9 @@ with
             cc_academic_year,
             cc_dateenrolled,
             cc_dateleft,
-            cc_abs_sectionid,
+            cc_sectionid,
             cc_course_number,
-            cc_abs_termid,
+            cc_termid,
             courses_excludefromgpa,
             courses_gradescaleid,
             courses_credit_hours,
@@ -294,9 +292,9 @@ with
             cc_academic_year,
             cc_dateenrolled,
             cc_dateleft,
-            cc_abs_sectionid,
+            cc_sectionid,
             cc_course_number,
-            cc_abs_termid,
+            cc_termid,
             courses_excludefromgpa,
             courses_gradescaleid,
             courses_credit_hours,
@@ -389,11 +387,11 @@ with
 
 select
     y1.cc_studentid as studentid,
-    y1.cc_abs_sectionid as sectionid,
+    y1.cc_sectionid as sectionid,
     y1.cc_course_number as course_number,
     y1.cc_yearid as yearid,
     y1.cc_academic_year as academic_year,
-    y1.cc_abs_termid as termid,
+    y1.cc_termid as termid,
     y1.cc_dateenrolled as dateenrolled,
     y1.cc_dateleft as dateleft,
     y1.cc_schoolid as schoolid,

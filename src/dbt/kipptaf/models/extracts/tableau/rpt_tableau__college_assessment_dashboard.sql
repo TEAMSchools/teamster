@@ -23,9 +23,24 @@ with
     ),
 
     illum_assessments_list as (  -- List of Illum assessments
-        select *
-        from {{ ref("base_illuminate__assessments") }}
-        where scope in ('ACT Prep', 'SAT')
+        select
+            t.academic_year,
+            t.academic_year_clean,
+            t.scope,
+            t.assessment_id,
+            t.title,
+            t.administered_at,
+            t.subject_area,
+            g.grade_level
+        from {{ ref("base_illuminate__assessments") }} as t
+        inner join
+            {{ ref("stg_illuminate__assessment_grade_levels") }} as g
+            on t.assessment_id = g.assessment_id
+        where
+            t.scope in ('ACT', 'SAT')
+            and concat(t.scope, g.grade_level) in ('ACT11', 'SAT9', 'SAT10')
+            and t.academic_year_clean = {{ var("current_academic_year") }}
+            and t.title like '%BOY%'
     ),
 
     illum_students as (select * from {{ ref("stg_illuminate__students") }}),  -- Crosswalk for Illum student IDs and student_number
@@ -47,10 +62,32 @@ with
     student_enrollments as (
         select *
         from {{ ref("base_powerschool__student_enrollments") }}  -- PowerSchool enrollment table for GL and school info
-        where rn_year = 1
+        where rn_year = 1 and school_level = 'HS' and academic_year >= 2023  /* please dont ding me for this. idk what years they want. i'm asking on wednesday */
     ),
 
-    -- LOGICAL CTEs
+    student_schedules as (
+        select
+            _dbt_source_relation,
+            cc_academic_year,
+            cc_studentid,
+            students_student_number,
+            cc_teacherid,
+            teachernumber,
+            teacher_lastfirst,
+            sections_id,
+            cc_section_number,
+            cc_course_number,
+            courses_course_name,
+            cc_expression,
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            cc_academic_year >= 2023  /* please dont ding me for this. idk what years they want. i'm asking on wednesday */
+            and rn_credittype_year = 1
+            and rn_course_number_year = 1
+            and not is_dropped_course
+            and not is_dropped_section
+    ),
+
     ms_grad as (  -- Brings the name of the middle school the student graduated it from (to identify the latest MS in the district the student attended)
         select sub.student_number, sub.ms_attended
         from
@@ -167,9 +204,13 @@ with
             safe_cast(rt.code as string) as scope_round,
             safe_cast(rt.name as string) as test_type,
             ais.assessment_id,
+            safe_cast(ais.grade_level as string) as assessment_grade_level,
             safe_cast(ais.title as string) as assessment_title,
             ais.scope,  -- To differentiate between ACT/SAT preps
             safe_cast(ais.subject_area as string) as subject_area,
+            count(distinct ais.subject_area) over (
+                partition by ais.academic_year_clean, rt.code, co.student_number
+            ) as total_subjects_tested_per_scope_round,  -- Determine if we have enough scores to calculate the composite
             asr.performance_band_level as overall_performance_band_for_group,
             asr.reporting_group_id,
             rg.label as reporting_group_label,
@@ -202,7 +243,7 @@ with
             on asr.reporting_group_id = rg.reporting_group_id
     ),
 
-    practice_tests_with_scale_score_and_composite  -- Convert the number of correct questions (raw) to the scale score for ACT/SAT Prep
+    practice_tests_with_scale_score  -- Convert the number of correct questions (raw) to the scale score for ACT/SAT Prep
     as (
         select
             l.academic_year,
@@ -213,69 +254,113 @@ with
             l.administration_round,
             l.test_date,
             l.scope_round,
+            'Practice' as test_type,
             l.assessment_id,
             l.assessment_title,
+            l.assessment_grade_level,
             l.scope,
-            case
-                when l.subject_area = 'Mathematics' then 'Math' else l.subject_area
-            end as subject_area,
-            count(distinct l.subject_area) over (
-                partition by
-                    l.student_number,
-                    l.academic_year,
-                    l.grade_level,
-                    l.administration_round
-            ) as total_subjects_tested_per_scope_round,
+            l.subject_area,
+            l.total_subjects_tested_per_scope_round,
             l.overall_performance_band_for_group,
             l.reporting_group_id,
             l.reporting_group_label,
             l.points_earned_for_group_subject,
             l.points_possible_for_group_subject,
-            l.overall_number_correct_for_scope_round_per_subject,
-            l.overall_number_possible_for_scope_round_per_subject,
-            cast(ssk.scale_score as int64) as scale_score_for_scope_round_per_subject,  -- Uses the approx raw score to bring a scale score from the G-Sheet
+            l.overall_number_correct_for_scope_round_per_subject
+            as earned_raw_score_for_scope_round_per_subject,
+            l.overall_number_possible_for_scope_round_per_subject
+            as possible_raw_score_for_scope_round_per_subject,
             case
                 when
-                    count(distinct l.subject_area) over (  -- If the total number of subject areas tested matches the total count needed per scope
-                        partition by
-                            l.student_number,
-                            l.academic_year,
-                            l.grade_level,
-                            l.administration_round
-                    )
-                    = 4
-                then
-                    sum(distinct ssk.scale_score) over (  -- Then add all of the distinct scale scores for all subjects to create the composite score
-                        partition by
-                            l.student_number,
-                            l.academic_year,
-                            l.grade_level,
-                            l.administration_round,
-                            l.scope_round,
-                            l.subject_area
-                    )
-            end as overall_composite_score  -- Otherwise NULL it
+                    l.assessment_grade_level in ('9', '10')
+                    and l.scope = 'SAT'
+                    and l.subject_area in ('Reading', 'Writing')
+                then (10 * ssk.scale_score)  -- Convert the scale scores to be ready to add for SAT Composite score
+                else ssk.scale_score
+            end as earned_scale_score_for_scope_round_per_subject,  -- Uses the approx raw score to bring a scale score from the G-Sheet
         from practice_tests as l
         left join
             scale_score_key as ssk
             on l.academic_year = ssk.academic_year
             and l.scope = ssk.test_type
-            and l.grade_level = ssk.grade_level
+            and l.assessment_grade_level = safe_cast(ssk.grade_level as string)
             and l.scope_round = ssk.administration_round
-            and (  -- Simplify later when updates/fixes get loaded
-                case
-                    when l.subject_area = 'Mathematics'
-                    then 'Math'
-                    when l.subject_area is null
-                    then 'Writing'
-                    else l.subject_area
-                end
-            )
-            = ssk.subject
+            and l.subject_area = ssk.subject
             and (
                 l.overall_number_correct_for_scope_round_per_subject
                 between ssk.raw_score_low and ssk.raw_score_high
             )
+    ),
+
+    practice_tests_with_composite as (
+        select
+            *,
+            round(
+                case
+                    when scope = 'ACT' and total_subjects_tested_per_scope_round = 4
+                    then
+                        avg(earned_scale_score_for_scope_round_per_subject) over (
+                            partition by
+                                academic_year,
+                                student_number,
+                                assessment_grade_level,
+                                administration_round,
+                                scope_round
+                        )
+                    when scope = 'SAT' and total_subjects_tested_per_scope_round = 3
+                    then
+                        sum(earned_scale_score_for_scope_round_per_subject) over (
+                            partition by
+                                academic_year,
+                                student_number,
+                                assessment_grade_level,
+                                administration_round,
+                                scope_round
+                        )
+                end,
+                0
+            ) as composite_scale_score_for_scope_round
+        from practice_tests_with_scale_score
+    ),
+
+    practice_tests_composite_only as (
+        select distinct
+            academic_year,
+            schoolid,
+            illuminate_student_id,
+            student_number,
+            grade_level,
+            administration_round,
+            test_date,
+            scope_round,
+            'Practice' as test_type,
+            null as assessment_id,
+            'NA' as assessment_title,
+            assessment_grade_level,
+            scope,
+            'Composite' as subject_area,
+            null as total_subjects_tested_per_scope_round,
+            null as overall_performance_band_for_group,
+            null as reporting_group_id,
+            'NA' as reporting_group_label,
+            null as points_earned_for_group_subject,
+            null as points_possible_for_group_subject,
+            null as earned_raw_score_for_scope_round_per_subject,
+            null as possible_raw_score_for_scope_round_per_subject,
+            composite_scale_score_for_scope_round
+            as earned_scale_score_for_scope_round_per_subject,
+            composite_scale_score_for_scope_round
+            as composite_scale_score_for_scope_round
+        from practice_tests_with_composite
+        order by academic_year, student_number, scope_round
+    ),
+
+    practice_tests_append as (
+        select *
+        from practice_tests_with_composite
+        union all
+        select *
+        from practice_tests_composite_only
     ),
 
     final_official as (
@@ -290,33 +375,38 @@ with
             e.enroll_status,
             e.advisor_lastfirst,
             e.cohort,
+            s.ktc_cohort,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
             m.ms_attended,
             o.test_type,
             null as assessment_id,
             '' as assessment_title,
             o.administration_round,
-            o.test_type as scope,
+            o.scope,
+            'NA' as scope_round,
+            e.grade_level as assessment_grade_level,
             o.test_date,
             o.subject_area,
+            null as total_subjects_tested_per_scope_round,
             '' as overall_performance_band_for_group,
             'NA' as reporting_group_label,
             null as points_earned_for_group_subject,
             null as points_possible_for_group_subject,
-            null as overall_number_correct_for_scope_round_per_subject,
-            null as overall_number_possible_for_scope_round_per_subject,
-            o.scale_score as scale_score_for_scope_round_per_subject,
+            null as earned_raw_score_for_scope_round_per_subject,
+            null as possible_raw_score_for_scope_round_per_subject,
+            o.scale_score as earned_scale_score_for_scope_round_per_subject,
             o.rn_highest,
             avg(case when subject_area = 'Composite' then o.scale_score end) over (
                 partition by
                     o.student_number, o.test_type, o.administration_round, o.test_date
             ) as overall_composite_score
         from student_enrollments as e
-        inner join
+        left join
             act_sat_official as o
             on e.student_number = o.student_number
             and (o.test_date between e.entrydate and e.exitdate)
         left join ms_grad as m on e.student_number = m.student_number
+        left join adb_roster as s on e.student_number = s.student_number
     ),
 
     final_practice_tests as (
@@ -331,32 +421,40 @@ with
             e.enroll_status,
             e.advisor_lastfirst,
             e.cohort,
+            s.ktc_cohort,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
             m.ms_attended,
-            concat('Practice', ' ', p.scope) as test_type,
+            test_type,
             p.assessment_id,
             p.assessment_title,
             p.administration_round,
             p.scope,
+            p.scope_round,
+            cast(p.assessment_grade_level as int64) as assessment_grade_level,
             p.test_date,
             p.subject_area,
+            p.total_subjects_tested_per_scope_round,
             cast(
                 p.overall_performance_band_for_group as string
             ) as overall_performance_band_for_group,
             p.reporting_group_label,
             p.points_earned_for_group_subject,
             p.points_possible_for_group_subject,
-            p.overall_number_correct_for_scope_round_per_subject,
-            p.overall_number_possible_for_scope_round_per_subject,
-            p.scale_score_for_scope_round_per_subject,
-            null as rn_highest,
-            p.overall_composite_score
+            p.earned_raw_score_for_scope_round_per_subject,
+            p.possible_raw_score_for_scope_round_per_subject,
+            p.earned_scale_score_for_scope_round_per_subject,
+            row_number() over (
+                partition by e.student_number, p.scope, p.subject_area
+                order by p.earned_scale_score_for_scope_round_per_subject desc
+            ) as rn_highest,
+            p.composite_scale_score_for_scope_round as overall_composite_score
         from student_enrollments as e
-        inner join
-            practice_tests_with_scale_score_and_composite as p
+        left join
+            practice_tests_append as p
             on e.student_number = p.student_number
             and e.academic_year = p.academic_year
         left join ms_grad as m on e.student_number = m.student_number
+        left join adb_roster as s on e.student_number = s.student_number
     )
 
 select *

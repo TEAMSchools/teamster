@@ -143,15 +143,31 @@ with
                 `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`,
                 `4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
             ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
-        from {{ source('fldoe', 'src_fldoe__fast') }}
+        from {{ source("fldoe", "src_fldoe__fast") }}
+    ),
+
+    with_calcs as (
+        select
+            * except (percentile_rank),
+            safe_cast(
+                regexp_extract(percentile_rank, r'\d+') as numeric
+            ) as percentile_rank,
+            safe_cast(
+                regexp_extract(achievement_level, r'\d+') as int
+            ) as achievement_level_int,
+            lag(scale_score, 1) over (
+                partition by student_id, academic_year, assessment_subject
+                order by administration_window asc
+            ) as scale_score_prev,
+        from fast_data
     )
 
 select
-    * except (percentile_rank),
-    safe_cast(regexp_extract(percentile_rank, r'\d+') as numeric) as percentile_rank,
-    safe_cast(regexp_extract(achievement_level, r'\d+') as int) as achievement_level_int,
-    lag(scale_score, 1) over (
-        partition by student_id, academic_year, assessment_subject
-        order by administration_window asc
-    ) as scale_score_prev,
-from fast_data
+    *,
+    case
+        when achievement_level_int >= 3
+        then true
+        when achievement_level_int < 3
+        then false
+    end as is_proficient,
+from with_calcs

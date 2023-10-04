@@ -63,7 +63,7 @@ defs = Definitions(
             config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
-        "dbt_cli": DbtCliResource(project_dir=f"/root/app/src/dbt/{CODE_LOCATION}"),
+        "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(

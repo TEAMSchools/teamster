@@ -11,7 +11,7 @@ with
             start_date,
             completion_date,
             baseline_diagnostic_y_n,
-            most_recent_diagnostic_y_n,
+            most_recent_diagnostic_ytd_y_n,
             overall_scale_score,
             overall_scale_score_plus_typical_growth,
             overall_scale_score_plus_stretch_growth,
@@ -27,33 +27,41 @@ with
             annual_typical_growth_measure,
             annual_stretch_growth_measure,
 
-            max(if(most_recent_diagnostic_y_n = 'Y', overall_scale_score, null)) over (
+            max(
+                if(most_recent_diagnostic_ytd_y_n = 'Y', overall_scale_score, null)
+            ) over (
                 partition by student_id, academic_year, subject
                 order by completion_date asc
             ) as most_recent_overall_scale_score,
             max(
-                if(most_recent_diagnostic_y_n = 'Y', overall_relative_placement, null)
+                if(
+                    most_recent_diagnostic_ytd_y_n = 'Y',
+                    overall_relative_placement,
+                    null
+                )
             ) over (
                 partition by student_id, academic_year, subject
                 order by completion_date asc
             ) as most_recent_overall_relative_placement,
-            max(if(most_recent_diagnostic_y_n = 'Y', overall_placement, null)) over (
+            max(
+                if(most_recent_diagnostic_ytd_y_n = 'Y', overall_placement, null)
+            ) over (
                 partition by student_id, academic_year, subject
                 order by completion_date asc
             ) as most_recent_overall_placement,
-            max(if(most_recent_diagnostic_y_n = 'Y', diagnostic_gain, null)) over (
+            max(if(most_recent_diagnostic_ytd_y_n = 'Y', diagnostic_gain, null)) over (
                 partition by student_id, academic_year, subject
                 order by completion_date asc
             ) as most_recent_diagnostic_gain,
-            max(if(most_recent_diagnostic_y_n = 'Y', lexile_measure, null)) over (
+            max(if(most_recent_diagnostic_ytd_y_n = 'Y', lexile_measure, null)) over (
                 partition by student_id, academic_year, subject
                 order by completion_date asc
             ) as most_recent_lexile_measure,
-            max(if(most_recent_diagnostic_y_n = 'Y', lexile_range, null)) over (
+            max(if(most_recent_diagnostic_ytd_y_n = 'Y', lexile_range, null)) over (
                 partition by student_id, academic_year, subject
                 order by completion_date asc
             ) as most_recent_lexile_range,
-            max(if(most_recent_diagnostic_y_n = 'Y', rush_flag, null)) over (
+            max(if(most_recent_diagnostic_ytd_y_n = 'Y', rush_flag, null)) over (
                 partition by student_id, academic_year, subject
                 order by completion_date asc
             ) as most_recent_rush_flag,
@@ -74,7 +82,7 @@ select
     dr.start_date,
     dr.completion_date,
     dr.baseline_diagnostic_y_n,
-    dr.most_recent_diagnostic_y_n,
+    dr.most_recent_diagnostic_ytd_y_n,
     dr.overall_scale_score,
     dr.percentile,
     dr.overall_relative_placement,

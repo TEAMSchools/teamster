@@ -113,7 +113,7 @@ defs = Definitions(
             config_from_files([f"{resource_config_dir}/io_avro.yaml"])
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
-        "dbt_cli": DbtCliResource(project_dir=f"/root/app/src/dbt/{CODE_LOCATION}"),
+        "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_mssql": MSSQLResource(
             engine=SqlAlchemyEngineResource(
@@ -184,7 +184,7 @@ defs = Definitions(
             username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
-        "ssh_adp": SSHConfigurableResource(
+        "ssh_adp_workforce_now": SSHConfigurableResource(
             remote_host="sftp.kippnj.org",
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
