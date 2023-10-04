@@ -16,7 +16,7 @@ with
             enr.teacher_lastfirst,
             ifnull(enr.cc_currentabsences, 0) as currentabsences,
             ifnull(enr.cc_currenttardies, 0) as currenttardies,
-            abs(enr.sections_excludefromgpa - 1) as include_grades_display,
+            abs(enr.courses_sched_do_not_print - 1) as include_grades_display,
 
             rt.name as term_name,
             rt.code as term_code,
