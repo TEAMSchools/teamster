@@ -27,7 +27,11 @@ select
             ),
             ' '
         )
-    ) as test_subject
+    ) as test_subject,
+
+    row_number() over (
+        partition by contact, score_type order by score desc
+    ) as rn_highest,
 from
     {{ ref("stg_kippadb__standardized_test") }} unpivot (
         score for score_type in (

@@ -12,7 +12,7 @@ with
             percent_grade,
             citizenship_grade,
             lower(storecode_type || '_' || reporting_term) as input_column,
-        from {{ ref('int_powerschool__category_grades') }}
+        from {{ ref("int_powerschool__category_grades") }}
     ),
 
     with_cur as (
@@ -25,11 +25,9 @@ with
             is_current,
             storecode_type,
             percent_grade,
-            input_column,
-
-            'CUR' as reporting_term,
+            reporting_term,
+            lower(storecode_type || '_cur') as input_column,
         from category_grades
-        where is_current
 
         union all
 
@@ -42,8 +40,8 @@ with
             is_current,
             storecode_type,
             percent_grade,
-            input_column,
             reporting_term,
+            input_column,
         from category_grades
     ),
 

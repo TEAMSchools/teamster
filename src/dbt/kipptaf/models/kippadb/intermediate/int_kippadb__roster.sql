@@ -21,9 +21,14 @@ with
             se.state as powerschool_state,
             se.zip as powerschool_zip,
             se.is_504 as powerschool_is_504,
-            (
-                se.street || ' ' || se.city || ', ' || se.state || ' ' || se.zip
-            ) as powerschool_mailing_address,
+            se.street
+            || ' '
+            || se.city
+            || ', '
+            || se.state
+            || ' '
+            || se.zip as powerschool_mailing_address,
+
             (
                 ({{ var("current_academic_year") }} - se.academic_year) + se.grade_level
             ) as current_grade_level_projection,
@@ -38,15 +43,13 @@ with
                     ],
                 )
             }},
-            (
-                c.contact_mailing_street
-                || ' '
-                || c.contact_mailing_city
-                || ', '
-                || c.contact_mailing_state
-                || ' '
-                || c.contact_mailing_postal_code
-            ) as contact_mailing_address,
+            c.contact_mailing_street
+            || ' '
+            || c.contact_mailing_city
+            || ', '
+            || c.contact_mailing_state
+            || ' '
+            || c.contact_mailing_postal_code as contact_mailing_address,
             ifnull(
                 c.contact_current_kipp_student, 'Missing from Salesforce'
             ) as contact_current_kipp_student,
@@ -55,7 +58,7 @@ with
                 - extract(year from c.contact_actual_hs_graduation_date)
             ) as years_out_of_hs,
 
-            ifnull(safe_cast(c.contact_kipp_hs_class as int), se.cohort) as ktc_cohort,
+            ifnull(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
             ifnull(c.contact_first_name, se.first_name) as first_name,
             ifnull(c.contact_last_name, se.last_name) as last_name,
             ifnull(
