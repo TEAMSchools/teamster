@@ -12,7 +12,9 @@ with
                 ' ',
                 format_date('%g', a.administered_at)
             ) as administration_round,
-            a.subject_area,
+            case
+                when a.subject_area = 'Mathematics' then 'Math' else a.subject_area
+            end as subject_area,
             a.date_taken as test_date,
             a.response_type,  -- Group or overall
             a.response_type_description,  -- Group name
