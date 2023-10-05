@@ -2,32 +2,34 @@ with
     roster as (
         select
             e._dbt_source_relation,
-            e.students_dcid,
-            e.student_number,
-            e.lastfirst,
-            e.first_name,
-            e.last_name,
-            e.enroll_status,
-            e.cohort,
             e.academic_year,
             e.region,
             e.schoolid,
             e.school_name,
             e.school_abbreviation,
+            e.students_dcid,
+            e.student_number,
+            safe_cast(e.state_studentnumber as int) as state_studentnumber,
+            e.lastfirst,
+            e.first_name,
+            e.last_name,
             e.grade_level,
+            e.enroll_status,
+            e.cohort,
             e.advisor_lastfirst,
             e.spedlep,
             e.is_504,
             e.is_retained_year,
             e.is_retained_ever,
             e.student_email_google,
-            safe_cast(e.state_studentnumber as int) as state_studentnumber,
 
             adb.id as kippadb_contact_id,
 
-            s.courses_course_name,  -- as ccr_course,
-            s.teacher_lastfirst,  -- as ccr_teacher,
-            s.sections_external_expression,  -- as ccr_period,
+            s.courses_course_name,
+            s.teacher_lastfirst,
+            s.sections_external_expression,
+
+            ifnull(adb.kipp_hs_class, e.cohort) as ktc_cohort,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -54,11 +56,12 @@ with
             localstudentidentifier,
             statestudentidentifier,
             subject,
-            testcode,
-            testscalescore,
             case
                 when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
             end as discipline,
+            testcode,
+            testscalescore,
+
         from {{ ref("stg_pearson__njgpa") }}
         where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
     ),
@@ -84,7 +87,6 @@ with
         select
             contact,
             test_type,
-            score,
             case
                 when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
                 then 'ELA'
@@ -101,6 +103,7 @@ with
                 when score_type = 'sat_ebrw'
                 then 'EBRW'
             end as subject,
+            score,
             case
                 when score_type in ('act_reading', 'act_math') and score >= 17
                 then true
@@ -162,8 +165,10 @@ with
             r.student_number,
 
             'Alternative' as test_type,
-            a.subject as discipline,
-            a.subject,
+            case
+                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
+            end as discipline,
+            case a.subject when 'ela' then 'ELA' when 'math' then 'Math' end as subject,
             a.values_column as value,
             a.met_requirement as met_pathway_requirement,
             case
@@ -181,6 +186,11 @@ with
     )
 
 select
+    r.academic_year,
+    r.region,
+    r.schoolid,
+    r.school_name,
+    r.school_abbreviation,
     r.student_number,
     r.state_studentnumber,
     r.kippadb_contact_id,
@@ -189,39 +199,23 @@ select
     r.last_name,
     r.enroll_status,
     r.cohort,
-    r.academic_year,
-    r.region,
-    r.schoolid,
-    r.school_name,
-    r.school_abbreviation,
     r.grade_level,
-    r.advisor_lastfirst,
     r.spedlep,
     r.is_504,
     r.is_retained_year,
     r.is_retained_ever,
     r.student_email_google,
-    r.courses_course_name,
-    r.teacher_lastfirst,
-    r.sections_external_expression,
+    r.advisor_lastfirst,
+    r.courses_course_name as ccr_course,
+    r.teacher_lastfirst as ccr_teacher,
+    r.sections_external_expression as ccr_period,
 
     g.test_type,
     g.grad_eligible_type,
     g.discipline,
     g.subject,
     g.value,
-    if(g.met_pathway_requirement, 1, 0) as met_pathway_requirement,
+    g.met_pathway_requirement,
 
-    if(
-        max(g.met_pathway_requirement) over (
-            partition by r.student_number, g.discipline
-        )
-        and max(if(g.grad_eligible_type = 'State Assessment', value, null)) over (
-            partition by r.student_number, g.discipline
-        )
-        is not null,
-        1,
-        0
-    ) as eligible_for_discipline,
 from roster as r
 left join grad_options_append_final as g on r.student_number = g.student_number
