@@ -16,8 +16,8 @@ select
     test_round_date,
     percentile,
     overall_scale_score,
-    percent_progress_to_annual_typical_growth as pct_progress_typical,
-    percent_progress_to_annual_stretch_growth as pct_progress_stretch,
+    percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
+    percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
     'Test Rounds' as domain,
 from {{ ref("base_iready__diagnostic_results") }}
@@ -37,8 +37,8 @@ select
     ir.test_round_date,
     ir.percentile,
     ir.overall_scale_score,
-    ir.percent_progress_to_annual_typical_growth as pct_progress_typical,
-    ir.percent_progress_to_annual_stretch_growth as pct_progress_stretch,
+    ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
+    ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
     'YTD Growth' as domain,
 from {{ ref("base_iready__diagnostic_results") }} as ir
