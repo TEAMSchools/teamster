@@ -192,7 +192,7 @@ select
     p.scale_score,
 
     row_number() over (
-        partition by p.powerschool_student_number, p.scope, p.subject_area
+        partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
     ) as rn_highest
 from roster as e
