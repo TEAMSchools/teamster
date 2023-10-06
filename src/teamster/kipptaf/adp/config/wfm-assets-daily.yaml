@@ -1,5 +1,6 @@
 assets:
-  - asset_name: AccrualReportingPeriodSummary
+  - asset_name: accrual_reporting_period_summary
+    report_name: AccrualReportingPeriodSummary
     symbolic_ids:
       - Today
     hyperfind: All Home
