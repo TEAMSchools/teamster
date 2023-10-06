@@ -18,11 +18,8 @@ with
                 w.work_assignment_termination_date,
                 date(9999, 12, 31)
             ) as assignment_status_effective_date_end,
-            if(
-                assignment_status = 'Active', 'days_active', 'days_inactive'
-            ) as input_column
+            w.assignment_status
         from {{ ref("base_people__staff_roster_history") }} as w
-        where assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
     ),
 
     staff_roster_history as (
@@ -43,8 +40,11 @@ with
                 current_datetime('{{ var("local_timezone") }}'),
                 cast(assignment_status_effective_date_end as datetime)
             ) as work_assignment_end_date,
-            input_column,
+            if(
+                assignment_status = 'Active', 'days_active', 'days_inactive'
+            ) as input_column,
         from history_clean as w
+        where w.assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
     ),
 
     with_date_diff as (
