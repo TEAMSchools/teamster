@@ -203,52 +203,70 @@ with
     )
 
 select
-    employee_number as df_employee_number,
-    preferred_name_given_name as preferred_first_name,
-    preferred_name_family_name as preferred_last_name,
-    ethnicity_long_name as primary_ethnicity,
-    gender_long_name as gender_reporting,
-    academic_year,
-    academic_year_entrydate,
-    academic_year_exitdate,
-    worker_original_hire_date as original_hire_date,
-    worker_rehire_date as rehire_date,
-    termination_date,
-    status_reason,
-    job_title as primary_job,
-    department_home_name as primary_on_site_department,
-    home_work_location_name as primary_site,
-    business_unit_home_name as legal_entity_name,
-    home_work_location_reporting_school_id as primary_site_reporting_schoolid,
-    home_work_location_grade_band as primary_site_school_level,
-    race_ethnicity,
-    is_hispanic,
-    race_ethnicity_reporting,
-    gender_identity,
-    relay_status,
-    community_grew_up,
-    community_professional_exp,
-    alumni_status,
-    path_to_education,
-    primary_grade_level_taught,
-    years_at_kipp_total
-    - date_diff(coalesce(termination_date, current_date()), academic_year_exitdate, day)
+    wd.employee_number as df_employee_number,
+    wd.preferred_name_given_name as preferred_first_name,
+    wd.preferred_name_family_name as preferred_last_name,
+    wd.ethnicity_long_name as primary_ethnicity,
+    wd.gender_long_name as gender_reporting,
+    wd.academic_year,
+    wd.academic_year_entrydate,
+    wd.academic_year_exitdate,
+    wd.worker_original_hire_date as original_hire_date,
+    wd.worker_rehire_date as rehire_date,
+    wd.termination_date,
+    wd.status_reason,
+    coalesce(wd.job_title, sr.job_title) as primary_job,
+    coalesce(
+        wd.department_home_name, sr.department_home_name
+    ) as primary_on_site_department,
+    coalesce(wd.home_work_location_name, sr.home_work_location_name) as primary_site,
+    coalesce(
+        wd.business_unit_home_name, sr.business_unit_home_name
+    ) as legal_entity_name,
+    coalesce(
+        wd.home_work_location_reporting_school_id,
+        sr.home_work_location_reporting_school_id
+    ) as primary_site_reporting_schoolid,
+    coalesce(
+        wd.home_work_location_grade_band, sr.home_work_location_grade_band
+    ) as primary_site_school_level,
+    wd.race_ethnicity,
+    wd.is_hispanic,
+    wd.race_ethnicity_reporting,
+    wd.gender_identity,
+    wd.relay_status,
+    wd.community_grew_up,
+    wd.community_professional_exp,
+    wd.alumni_status,
+    wd.path_to_education,
+    wd.primary_grade_level_taught,
+    wd.years_at_kipp_total - date_diff(
+        coalesce(sr.worker_termination_date, current_date()),
+        wd.academic_year_exitdate,
+        day
+    )
     / 365.25 as years_at_kipp_total,
-    years_experience_total
-    - date_diff(coalesce(termination_date, current_date()), academic_year_exitdate, day)
+    years_experience_total - date_diff(
+        coalesce(sr.worker_termination_date, current_date()),
+        wd.academic_year_exitdate,
+        day
+    )
     / 365.25 as years_experience_total,
-    academic_year_exitdate_next as next_academic_year_exitdate,
+    wd.academic_year_exitdate_next as next_academic_year_exitdate,
 
     case
-        when date_diff(academic_year_exitdate, academic_year_entrydate, day) <= 0
+        when date_diff(wd.academic_year_exitdate, wd.academic_year_entrydate, day) <= 0
         then 0
         when
-            academic_year_exitdate >= denominator_start_date
-            and academic_year_entrydate <= effective_date
+            wd.academic_year_exitdate >= wd.denominator_start_date
+            and wd.academic_year_entrydate <= wd.effective_date
         then 1
         else 0
     end as is_denominator,
 
-    if(attrition_exitdate <= attrition_date, 1.0, 0.0) as is_attrition,
+    if(wd.attrition_exitdate <= wd.attrition_date, 1.0, 0.0) as is_attrition,
 
-from with_dates
+from with_dates as wd
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on wd.employee_number = sr.employee_number
