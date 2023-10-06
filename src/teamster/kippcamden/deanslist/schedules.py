@@ -22,7 +22,7 @@ def deanslist_static_partition_asset_job_schedule():
     execution_timezone=LOCAL_TIMEZONE.name,
     job=multi_partition_asset_job,
 )
-def multi_partition_asset_job_schedule():
+def deanslist_multi_partition_asset_job_schedule():
     multi_partitions_def: MultiPartitionsDefinition = (
         multi_partition_asset_job.partitions_def
     )
@@ -46,5 +46,5 @@ def multi_partition_asset_job_schedule():
 
 __all__ = [
     deanslist_static_partition_asset_job_schedule,
-    multi_partition_asset_job_schedule,
+    deanslist_multi_partition_asset_job_schedule,
 ]
