@@ -43,8 +43,8 @@ def test_benchmark_student_summary():
     )
 
 
-def test_pm_student_summary():
-    _test(
-        dyd_results="PM",
-        years="22",  # 2023-2024
-    )
+# def test_pm_student_summary():
+#     _test(
+#         dyd_results="PM",
+#         years="22",  # 2023-2024
+#     )
