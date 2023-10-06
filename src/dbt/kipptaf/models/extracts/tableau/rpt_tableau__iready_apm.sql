@@ -23,6 +23,7 @@ with
                 when 'KIPP Cooper Norcross Academy'
                 then 'Camden'
             end as region,
+            -- TODO: why???
             coalesce(
                 lead(start_date, 1) over (
                     partition by academic_year, region order by code asc
@@ -66,19 +67,18 @@ select
     as percent_progress_to_annual_typical_growth,
     dr.percent_progress_to_annual_stretch_growth_percent
     as percent_progress_to_annual_stretch_growth,
-    -- TODO: these don't exist
-    null as last_week_start_date,
-    null as last_week_end_date,
 
+    iu.last_week_start_date,
+    iu.last_week_end_date,
     iu.last_week_time_on_task_min,
 
     if(sp.specprog_name is not null, true, false) as is_tutoring,
 from {{ ref("base_powerschool__student_enrollments") }} as co
-cross join unnest(['Reading', 'Math']) as subj
+cross join unnest(["Reading", "Math"]) as subj
 inner join
     date_range as w
     on co.academic_year = w.academic_year
-    and w.date <= current_date('America/New_York') + 1
+    and w.date <= current_date({{ var("local_timezone") }})
 left join
     expanded_terms as rt
     on rt.academic_year = co.academic_year
@@ -100,9 +100,9 @@ left join
 left join
     {{ ref("stg_iready__instructional_usage_data") }} as iu
     on co.student_number = iu.student_id
-    and co.academic_year = cast(left(iu.academic_year, 4) as int64)
+    and co.academic_year = iu.academic_year_int
     and subj = iu.subject
-    and w.date = parse_date("%m/%d/%Y", iu.last_week_start_date)
+    and w.date = iu.last_week_start_date
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
     on co.student_number = hr.students_student_number
@@ -117,7 +117,7 @@ left join
     on co.studentid = sp.studentid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
     and co.academic_year = sp.academic_year
-    and current_date('America/New_York') between sp.enter_date and sp.exit_date
+    and current_date({{ var("local_timezone") }}) between sp.enter_date and sp.exit_date
     and sp.specprog_name = 'Tutoring'
 where
     co.academic_year = {{ var("current_academic_year") }}
