@@ -1,28 +1,50 @@
 with
-    staff_roster_history as (
+    history_clean as (
         select
-            employee_number,
-            coalesce(job_title, 'Missing Historic Job') as job_title,
-            work_assignment__fivetran_active,
-            primary_indicator,
+            w.employee_number,
+            coalesce(w.job_title, 'Missing Historic Job') as job_title,
+            w.work_assignment__fivetran_active,
+            w.primary_indicator,
             coalesce(years_exp_outside_kipp, 0) as years_experience_prior_to_kipp,
             coalesce(years_teaching_in_njfl, 0)
             + coalesce(years_teaching_outside_njfl, 0) as years_teaching_prior_to_kipp,
+            w.assignment_status_effective_date
+            as assignment_status_effective_date_start,
+            coalesce(
+                lead(w.assignment_status_effective_date, 1) over (
+                    partition by w.employee_number
+                    order by assignment_status_effective_date asc
+                ),
+                w.work_assignment_termination_date,
+                date(9999, 12, 31)
+            ) as assignment_status_effective_date_end,
+            if(
+                assignment_status = 'Active', 'days_active', 'days_inactive'
+            ) as input_column
+        from {{ ref("base_people__staff_roster_history") }} as w
+        where assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
+    ),
+
+    staff_roster_history as (
+        select
+            w.employee_number,
+            w.job_title,
+            w.work_assignment__fivetran_active,
+            w.primary_indicator,
+            w.years_experience_prior_to_kipp,
+            w.years_teaching_prior_to_kipp,
             cast(
-                work_assignment__fivetran_start as datetime
+                w.assignment_status_effective_date_start as datetime
             ) as work_assignment_start_date,
             if
             (
-                cast(work_assignment__fivetran_end as datetime)
+                cast(assignment_status_effective_date_end as datetime)
                 >= current_datetime('{{ var("local_timezone") }}'),
                 current_datetime('{{ var("local_timezone") }}'),
-                cast(work_assignment__fivetran_end as datetime)
+                cast(assignment_status_effective_date_end as datetime)
             ) as work_assignment_end_date,
-            if(
-                assignment_status = 'Active', 'days_active', 'days_inactive'
-            ) as input_column,
-        from {{ ref("base_people__staff_roster_history") }}
-        where assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
+            input_column,
+        from history_clean as w
     ),
 
     with_date_diff as (

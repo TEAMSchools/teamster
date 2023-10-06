@@ -149,6 +149,28 @@ with
         from roster_year_scaffold
     ),
 
+    worker_history_clean as (
+        select
+            w.employee_number,
+            w.job_title,
+            w.business_unit_home_name,
+            w.department_home_name,
+            w.home_work_location_name,
+            w.primary_indicator,
+
+            w.assignment_status_effective_date
+            as assignment_status_effective_date_start,
+            coalesce(
+                lead(w.assignment_status_effective_date, 1) over (
+                    partition by w.employee_number
+                    order by assignment_status_effective_date asc
+                ),
+                w.work_assignment_termination_date,
+                date(9999, 12, 31)
+            ) as assignment_status_effective_date_end
+        from {{ ref("base_people__staff_roster_history") }} as w
+    ),
+
     scaffold as (
         select
             rys.*,
@@ -163,11 +185,11 @@ with
             ) as academic_year_exitdate_next,
         from with_academic_year_exitdate as rys
         left join
-            {{ ref("base_people__staff_roster_history") }} as w
-            on rys.worker_id = w.worker_id
+            worker_history_clean as w
+            on rys.employee_number = w.employee_number
             and rys.effective_date
-            between cast(w.work_assignment__fivetran_start as date) and cast(
-                w.work_assignment__fivetran_end as date
+            between cast(w.assignment_status_effective_date_start as date) and cast(
+                w.assignment_status_effective_date_end as date
             )
             and w.primary_indicator
         where rys.academic_year_exitdate > rys.academic_year_entrydate
