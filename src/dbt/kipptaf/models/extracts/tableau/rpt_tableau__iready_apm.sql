@@ -95,9 +95,9 @@ left join
     and rt.name = dr.test_round
     and dr.rn_subj_round = 1
 left join
-    {{ ref("stg_iready__instructional_usage_data") }} as iu
+    {{ ref("snapshot_iready__instructional_usage_data") }} as iu
     on co.student_number = iu.student_id
-    and co.academic_year = iu.academic_year_int
+    and co.academic_year = cast(left(iu.academic_year, 4) as int)
     and subj = iu.subject
     and w.date_day = iu.last_week_start_date
 left join
