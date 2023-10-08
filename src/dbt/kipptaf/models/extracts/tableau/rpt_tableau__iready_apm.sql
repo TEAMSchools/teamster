@@ -57,6 +57,10 @@ select
     hr.sections_section_number as team,
 
     il.lesson_id,
+    il.lesson_name,
+    il.lesson_objective,
+    il.lesson_level,
+    il.lesson_grade,
     il.passed_or_not_passed,
     il.total_time_on_lesson_min,
     il.completion_date,
