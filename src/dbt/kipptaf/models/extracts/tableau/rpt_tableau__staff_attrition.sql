@@ -151,34 +151,36 @@ with
 
     worker_history_clean as (
         select
-            w.employee_number,
-            w.job_title,
-            w.business_unit_home_name,
-            w.department_home_name,
-            w.home_work_location_name,
-            w.primary_indicator,
-
-            w.assignment_status_effective_date
-            as assignment_status_effective_date_start,
-            coalesce(
-                lead(w.assignment_status_effective_date, 1) over (
-                    partition by w.employee_number
-                    order by assignment_status_effective_date asc
-                ),
-                w.work_assignment_termination_date,
-                date(9999, 12, 31)
-            ) as assignment_status_effective_date_end
-        from {{ ref("base_people__staff_roster_history") }} as w
+            employee_number,
+            business_unit_home_name,
+            department_home_name,
+            home_work_location_name,
+            job_title,
+            safe_cast(
+                assignment_status_effective_date as date
+            ) as assignment_status_effective_date_start,
+            safe_cast(
+                coalesce(
+                    lead(assignment_status_effective_date, 1) over (
+                        partition by employee_number
+                        order by assignment_status_effective_date asc
+                    ),
+                    work_assignment_termination_date,
+                    date(9999, 12, 31)
+                ) as date
+            ) as assignment_status_effective_date_end,
+        from {{ ref("base_people__staff_roster_history") }}
+        where primary_indicator
     ),
 
     scaffold as (
         select
             rys.*,
 
-            w.job_title,
             w.business_unit_home_name,
-            w.department_home_name,
             w.home_work_location_name,
+            w.department_home_name,
+            w.job_title,
 
             lead(rys.academic_year_exitdate, 1) over (
                 partition by rys.position_id order by rys.academic_year
@@ -188,10 +190,8 @@ with
             worker_history_clean as w
             on rys.employee_number = w.employee_number
             and rys.effective_date
-            between cast(w.assignment_status_effective_date_start as date) and cast(
-                w.assignment_status_effective_date_end as date
-            )
-            and w.primary_indicator
+            between w.assignment_status_effective_date_start
+            and w.assignment_status_effective_date_end
         where rys.academic_year_exitdate > rys.academic_year_entrydate
     ),
 
@@ -215,21 +215,6 @@ select
     wd.worker_rehire_date as rehire_date,
     wd.termination_date,
     wd.status_reason,
-    coalesce(wd.job_title, sr.job_title) as primary_job,
-    coalesce(
-        wd.department_home_name, sr.department_home_name
-    ) as primary_on_site_department,
-    coalesce(wd.home_work_location_name, sr.home_work_location_name) as primary_site,
-    coalesce(
-        wd.business_unit_home_name, sr.business_unit_home_name
-    ) as legal_entity_name,
-    coalesce(
-        wd.home_work_location_reporting_school_id,
-        sr.home_work_location_reporting_school_id
-    ) as primary_site_reporting_schoolid,
-    coalesce(
-        wd.home_work_location_grade_band, sr.home_work_location_grade_band
-    ) as primary_site_school_level,
     wd.race_ethnicity,
     wd.is_hispanic,
     wd.race_ethnicity_reporting,
@@ -240,20 +225,7 @@ select
     wd.alumni_status,
     wd.path_to_education,
     wd.primary_grade_level_taught,
-    wd.years_at_kipp_total - date_diff(
-        coalesce(sr.worker_termination_date, current_date()),
-        wd.academic_year_exitdate,
-        day
-    )
-    / 365.25 as years_at_kipp_total,
-    years_experience_total - date_diff(
-        coalesce(sr.worker_termination_date, current_date()),
-        wd.academic_year_exitdate,
-        day
-    )
-    / 365.25 as years_experience_total,
     wd.academic_year_exitdate_next as next_academic_year_exitdate,
-
     case
         when date_diff(wd.academic_year_exitdate, wd.academic_year_entrydate, day) <= 0
         then 0
@@ -263,9 +235,37 @@ select
         then 1
         else 0
     end as is_denominator,
-
     if(wd.attrition_exitdate <= wd.attrition_date, 1.0, 0.0) as is_attrition,
 
+    coalesce(
+        wd.business_unit_home_name, sr.business_unit_home_name
+    ) as legal_entity_name,
+    coalesce(
+        wd.home_work_location_grade_band, sr.home_work_location_grade_band
+    ) as primary_site_school_level,
+    coalesce(wd.home_work_location_name, sr.home_work_location_name) as primary_site,
+    coalesce(
+        wd.home_work_location_reporting_school_id,
+        sr.home_work_location_reporting_school_id
+    ) as primary_site_reporting_schoolid,
+    coalesce(
+        wd.department_home_name, sr.department_home_name
+    ) as primary_on_site_department,
+    coalesce(wd.job_title, sr.job_title) as primary_job,
+
+    wd.years_at_kipp_total - date_diff(
+        coalesce(sr.worker_termination_date, current_date()),
+        wd.academic_year_exitdate,
+        day
+    )
+    / 365.25 as years_at_kipp_total,
+
+    years_experience_total - date_diff(
+        coalesce(sr.worker_termination_date, current_date()),
+        wd.academic_year_exitdate,
+        day
+    )
+    / 365.25 as years_experience_total,
 from with_dates as wd
 left join
     {{ ref("base_people__staff_roster") }} as sr
