@@ -105,7 +105,7 @@ with
     )
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -124,7 +124,7 @@ from student_enrollments
 union all
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -143,7 +143,7 @@ from student_enrollments
 union all
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -162,7 +162,7 @@ from student_enrollments
 union all
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -181,7 +181,7 @@ from student_enrollments
 union all
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -200,7 +200,7 @@ from student_enrollments
 union all
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -219,7 +219,7 @@ from student_enrollments
 union all
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -238,7 +238,7 @@ from student_enrollments
 union all
 
 select
-    _dbt_source_relation,
+    _dbt_source_relation as `db_name`,
     schoolid,
     school_name,
     school_abbreviation,
@@ -258,7 +258,7 @@ where underenrollment_flag
 union all
 
 select
-    se._dbt_source_relation,
+    se._dbt_source_relation as `db_name`,
     se.schoolid,
     se.school_name,
     se.school_abbreviation,
