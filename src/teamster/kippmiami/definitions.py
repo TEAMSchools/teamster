@@ -15,11 +15,7 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
-from teamster.core.sqlalchemy.resources import (
-    MSSQLResource,
-    OracleResource,
-    SqlAlchemyEngineResource,
-)
+from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 from . import (
@@ -65,18 +61,6 @@ defs = Definitions(
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
-        "db_mssql": MSSQLResource(
-            engine=SqlAlchemyEngineResource(
-                dialect="mssql",
-                driver="pyodbc",
-                host="winsql05.kippnj.org",
-                port=1433,
-                database="gabby",
-                username=EnvVar("MSSQL_USERNAME"),
-                password=EnvVar("MSSQL_PASSWORD"),
-            ),
-            driver="ODBC Driver 18 for SQL Server",
-        ),
         "db_powerschool": OracleResource(
             engine=SqlAlchemyEngineResource(
                 dialect="oracle",
