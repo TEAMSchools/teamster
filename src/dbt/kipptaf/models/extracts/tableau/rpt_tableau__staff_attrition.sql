@@ -149,27 +149,49 @@ with
         from roster_year_scaffold
     ),
 
+    worker_history_clean as (
+        select
+            employee_number,
+            business_unit_home_name,
+            department_home_name,
+            home_work_location_name,
+            job_title,
+            safe_cast(
+                assignment_status_effective_date as date
+            ) as assignment_status_effective_date_start,
+            safe_cast(
+                coalesce(
+                    lead(assignment_status_effective_date, 1) over (
+                        partition by employee_number
+                        order by assignment_status_effective_date asc
+                    ),
+                    work_assignment_termination_date,
+                    date(9999, 12, 31)
+                ) as date
+            ) as assignment_status_effective_date_end,
+        from {{ ref("base_people__staff_roster_history") }}
+        where primary_indicator
+    ),
+
     scaffold as (
         select
             rys.*,
 
-            w.job_title,
             w.business_unit_home_name,
-            w.department_home_name,
             w.home_work_location_name,
+            w.department_home_name,
+            w.job_title,
 
             lead(rys.academic_year_exitdate, 1) over (
                 partition by rys.position_id order by rys.academic_year
             ) as academic_year_exitdate_next,
         from with_academic_year_exitdate as rys
         left join
-            {{ ref("base_people__staff_roster_history") }} as w
-            on rys.worker_id = w.worker_id
+            worker_history_clean as w
+            on rys.employee_number = w.employee_number
             and rys.effective_date
-            between cast(w.work_assignment__fivetran_start as date) and cast(
-                w.work_assignment__fivetran_end as date
-            )
-            and w.primary_indicator
+            between w.assignment_status_effective_date_start
+            and w.assignment_status_effective_date_end
         where rys.academic_year_exitdate > rys.academic_year_entrydate
     ),
 
@@ -181,52 +203,70 @@ with
     )
 
 select
-    employee_number as df_employee_number,
-    preferred_name_given_name as preferred_first_name,
-    preferred_name_family_name as preferred_last_name,
-    ethnicity_long_name as primary_ethnicity,
-    gender_long_name as gender_reporting,
-    academic_year,
-    academic_year_entrydate,
-    academic_year_exitdate,
-    worker_original_hire_date as original_hire_date,
-    worker_rehire_date as rehire_date,
-    termination_date,
-    status_reason,
-    job_title as primary_job,
-    department_home_name as primary_on_site_department,
-    home_work_location_name as primary_site,
-    business_unit_home_name as legal_entity_name,
-    home_work_location_reporting_school_id as primary_site_reporting_schoolid,
-    home_work_location_grade_band as primary_site_school_level,
-    race_ethnicity,
-    is_hispanic,
-    race_ethnicity_reporting,
-    gender_identity,
-    relay_status,
-    community_grew_up,
-    community_professional_exp,
-    alumni_status,
-    path_to_education,
-    primary_grade_level_taught,
-    years_at_kipp_total
-    - date_diff(coalesce(termination_date, current_date()), academic_year_exitdate, day)
-    / 365.25 as years_at_kipp_total,
-    years_experience_total
-    - date_diff(coalesce(termination_date, current_date()), academic_year_exitdate, day)
-    / 365.25 as years_experience_total,
-    academic_year_exitdate_next as next_academic_year_exitdate,
-
+    wd.employee_number as df_employee_number,
+    wd.preferred_name_given_name as preferred_first_name,
+    wd.preferred_name_family_name as preferred_last_name,
+    wd.ethnicity_long_name as primary_ethnicity,
+    wd.gender_long_name as gender_reporting,
+    wd.academic_year,
+    wd.academic_year_entrydate,
+    wd.academic_year_exitdate,
+    wd.worker_original_hire_date as original_hire_date,
+    wd.worker_rehire_date as rehire_date,
+    wd.termination_date,
+    wd.status_reason,
+    wd.race_ethnicity,
+    wd.is_hispanic,
+    wd.race_ethnicity_reporting,
+    wd.gender_identity,
+    wd.relay_status,
+    wd.community_grew_up,
+    wd.community_professional_exp,
+    wd.alumni_status,
+    wd.path_to_education,
+    wd.primary_grade_level_taught,
+    wd.academic_year_exitdate_next as next_academic_year_exitdate,
     case
-        when date_diff(academic_year_exitdate, academic_year_entrydate, day) <= 0
+        when date_diff(wd.academic_year_exitdate, wd.academic_year_entrydate, day) <= 0
         then 0
         when
-            academic_year_exitdate >= denominator_start_date
-            and academic_year_entrydate <= effective_date
+            wd.academic_year_exitdate >= wd.denominator_start_date
+            and wd.academic_year_entrydate <= wd.effective_date
         then 1
         else 0
     end as is_denominator,
+    if(wd.attrition_exitdate <= wd.attrition_date, 1.0, 0.0) as is_attrition,
 
-    if(attrition_exitdate <= attrition_date, 1.0, 0.0) as is_attrition,
+    coalesce(
+        wd.business_unit_home_name, sr.business_unit_home_name
+    ) as legal_entity_name,
+    coalesce(
+        wd.home_work_location_grade_band, sr.home_work_location_grade_band
+    ) as primary_site_school_level,
+    coalesce(wd.home_work_location_name, sr.home_work_location_name) as primary_site,
+    coalesce(
+        wd.home_work_location_reporting_school_id,
+        sr.home_work_location_reporting_school_id
+    ) as primary_site_reporting_schoolid,
+    coalesce(
+        wd.department_home_name, sr.department_home_name
+    ) as primary_on_site_department,
+    coalesce(wd.job_title, sr.job_title) as primary_job,
 
-from with_dates
+    wd.years_at_kipp_total - date_diff(
+        coalesce(sr.worker_termination_date, current_date()),
+        wd.academic_year_exitdate,
+        day
+    )
+    / 365.25 as years_at_kipp_total,
+
+    years_experience_total - date_diff(
+        coalesce(sr.worker_termination_date, current_date()),
+        wd.academic_year_exitdate,
+        day
+    )
+    / 365.25 as years_experience_total,
+from with_dates as wd
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on wd.employee_number = sr.employee_number
