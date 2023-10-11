@@ -35,10 +35,7 @@ with
             and rt.type = 'RT'
         where
             mem.membershipvalue = 1
-            and mem.calendardate
-            between date({{ var("current_academic_year") }}, 7, 1) and current_date(
-                'America/New_York'
-            )
+            and mem.calendardate <= current_date('{{ var("local_timezone") }}')
         group by mem._dbt_source_relation, mem.yearid, mem.studentid, rt.name
     ),
 
@@ -199,7 +196,7 @@ with
             iready as ir
             on co.student_number = ir.student_id
             and co.academic_year = ir.academic_year_int
-        where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1
+        where co.rn_year = 1
     )
 
 select
