@@ -310,6 +310,7 @@ with
             and co.rn_year = 1
             and co.enroll_status = 0
     )
+    
 select
     student_number,
     lastfirst,
