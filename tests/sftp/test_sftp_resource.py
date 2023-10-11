@@ -30,16 +30,13 @@ def _test(ssh_configurable_resource, remote_file_regex_composed, remote_dir=".")
             files = listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
 
     # find matching file for partition
+    if remote_dir == ".":
+        match_pattern = remote_file_regex_composed
+    else:
+        match_pattern = f"{remote_dir}/{remote_file_regex_composed}"
+
     file_matches = [
-        f
-        for f in files
-        if re.match(
-            pattern=(
-                remote_dir if remote_dir != "." else "" + remote_file_regex_composed
-            ),
-            string=f,
-        )
-        is not None
+        f for f in files if re.match(pattern=match_pattern, string=f) is not None
     ]
 
     file_match = file_matches[0] if file_matches else None
@@ -67,4 +64,16 @@ def test_renlearn_miami():
             password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
         ),
         remote_file_regex_composed=r"KIPP Miami\.zip",
+    )
+
+
+def test_fldoe():
+    _test(
+        ssh_configurable_resource=SSHConfigurableResource(
+            remote_host="kipptaf.couchdrop.io",
+            username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+            password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
+        ),
+        remote_dir="/teamster-kippmiami/couchdrop/fldoe/fast",
+        remote_file_regex_composed=r"2022/PM1/.*3\w*ELAReading.*\.csv",
     )

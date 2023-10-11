@@ -1,13 +1,13 @@
 assets:
   - asset_name: employees
-    remote_filepath: /teamster-kipptaf/couchdrop/dayforce
+    remote_dir: /teamster-kipptaf/couchdrop/dayforce
     remote_file_regex: employees.csv
   - asset_name: employee_manager
-    remote_filepath: /teamster-kipptaf/couchdrop/dayforce
+    remote_dir: /teamster-kipptaf/couchdrop/dayforce
     remote_file_regex: employee_manager.csv
   - asset_name: employee_status
-    remote_filepath: /teamster-kipptaf/couchdrop/dayforce
+    remote_dir: /teamster-kipptaf/couchdrop/dayforce
     remote_file_regex: employee_status.csv
   - asset_name: employee_work_assignment
-    remote_filepath: /teamster-kipptaf/couchdrop/dayforce
+    remote_dir: /teamster-kipptaf/couchdrop/dayforce
     remote_file_regex: employee_work_assignment.csv
