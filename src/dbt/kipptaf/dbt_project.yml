@@ -45,6 +45,7 @@ models:
       +schema: act
     adp_workforce_manager:
       +schema: adp_workforce_manager
+      +materialized: table
     adp_workforce_now:
       +schema: adp_workforce_now
       staging:
