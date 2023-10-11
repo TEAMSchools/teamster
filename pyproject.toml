@@ -19,14 +19,13 @@ dependencies = [
   "fastavro>=1.7.1",
   "gspread>=5.7.2",
   "oracledb>=1.2.2",
-  "pyodbc>=4.0.35",
   "python-snappy>=0.6.1",
   "beautifulsoup4>=4.12.2",
   "ldap3>=2.9.1",
-  "pycryptodome>=3.18.0",
   "pandas>=2.0.3",
   "tenacity>=8.2.2",
   "dbt-bigquery>=1.6.6",
+  "pycryptodome>=3.19.0",
 ]
 requires-python = ">=3.10,<3.11"
 license = { text = "GPL-3.0-or-later" }
