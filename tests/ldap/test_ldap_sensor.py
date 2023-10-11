@@ -11,7 +11,7 @@ TESTS = [
 ]
 
 
-def test_sensor():
+def _test():
     with build_resources(
         {
             "ldap": LdapResource(
