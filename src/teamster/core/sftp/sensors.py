@@ -18,17 +18,16 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 
 def get_sftp_ls(ssh: SSHConfigurableResource, asset_defs: list[AssetsDefinition]):
     ls = {}
-    conn = ssh.get_connection()
 
-    with conn.open_sftp() as sftp_client:
-        for asset in asset_defs:
-            ls[asset.key.to_python_identifier()] = {
-                "asset": asset,
-                "files": sftp_client.listdir_attr(
-                    path=asset.metadata_by_key[asset.key]["remote_filepath"]
-                ),
-            }
-    conn.close()
+    with ssh.get_connection() as conn:
+        with conn.open_sftp() as sftp_client:
+            for asset in asset_defs:
+                ls[asset.key.to_python_identifier()] = {
+                    "asset": asset,
+                    "files": sftp_client.listdir_attr(
+                        path=asset.metadata_by_key[asset.key]["remote_dir"]
+                    ),
+                }
 
     return ls
 
