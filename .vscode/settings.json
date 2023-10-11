@@ -41,5 +41,6 @@
   },
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  },
+  "dbt.enableNewLineagePanel": true
 }
