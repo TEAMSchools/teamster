@@ -2,6 +2,8 @@ import json
 import re
 
 import pendulum
+from paramiko.ssh_exception import SSHException
+
 from dagster import (
     AddDynamicPartitionsRequest,
     AssetsDefinition,
@@ -12,8 +14,6 @@ from dagster import (
     SkipReason,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
-
 from teamster.core.sftp.sensors import get_sftp_ls
 from teamster.core.ssh.resources import SSHConfigurableResource
 
@@ -34,6 +34,7 @@ def build_sftp_sensor(
         context: SensorEvaluationContext, ssh_achieve3k: SSHConfigurableResource
     ):
         cursor: dict = json.loads(context.cursor or "{}")
+        now = pendulum.now(tz=timezone)
 
         try:
             ls = get_sftp_ls(ssh=ssh_achieve3k, asset_defs=asset_defs)
@@ -81,7 +82,7 @@ def build_sftp_sensor(
                     )
                 )
 
-                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(
             run_requests=run_requests,
