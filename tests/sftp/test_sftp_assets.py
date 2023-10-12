@@ -1,8 +1,8 @@
 import random
 
+from dagster import EnvVar, config_from_files, materialize
 from dagster_gcp import GCSResource
 
-from dagster import EnvVar, config_from_files, materialize
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.staging import CODE_LOCATION, GCS_PROJECT_NAME
