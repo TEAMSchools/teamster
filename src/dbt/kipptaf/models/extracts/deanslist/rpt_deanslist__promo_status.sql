@@ -22,6 +22,16 @@ select
     p.iready_reading_recent,
     p.iready_math_recent,
     p.projected_credits_y1_term,
+    case
+        when co.grade_level = 9
+        then 25
+        when co.grade_level = 10
+        then 50
+        when co.grade_level = 11
+        then 85
+        when co.grade_level = 12
+        then 120
+    end as promo_credits_needed
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as rt
