@@ -10,14 +10,18 @@ select
     gpa.gpa_term as gpa_term,
     gpa.gpa_y1 as gpa_y1,
 
-    null as promo_status_overall,
-    null as promo_status_attendance,
+    p.overall_status as promo_status_overall,
+    p.attendance_status as promo_status_attendance,
     null as promo_status_lit,
-    null as promo_status_grades,
+    p.academic_status as promo_status_grades,
     null as promo_status_qa_math,
-    null as grades_y1_credits_projected,
+    p.projected_credits_cum as grades_y1_credits_projected,
     null as grades_y1_credits_enrolled,
-    null as grades_y1_failing_projected,
+    p.n_failing as grades_y1_failing_projected,
+    p.ada_term_running,
+    p.iready_reading_recent,
+    p.iready_math_recent,
+    p.projected_credits_y1_term,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as rt
@@ -35,4 +39,9 @@ left join
     and co.yearid = gpa.yearid
     and rt.name = gpa.term_name
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+left join
+    {{ ref("int_reporting__promotional_status") }} as p
+    on co.student_number = p.student_number
+    and co.academic_year = p.academic_year
+    and rt.name = p.term_name
 where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1
