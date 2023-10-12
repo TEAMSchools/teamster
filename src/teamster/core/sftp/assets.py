@@ -4,11 +4,6 @@ import re
 import zipfile
 from stat import S_ISDIR, S_ISREG
 
-from numpy import nan
-from pandas import read_csv
-from paramiko import SFTPClient
-from slugify import slugify
-
 from dagster import (
     AssetExecutionContext,
     DagsterInvariantViolationError,
@@ -16,6 +11,11 @@ from dagster import (
     Output,
     asset,
 )
+from numpy import nan
+from pandas import read_csv
+from paramiko import SFTPClient
+from slugify import slugify
+
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.functions import regex_pattern_replace
 

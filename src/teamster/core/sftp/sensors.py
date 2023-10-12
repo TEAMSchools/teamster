@@ -1,4 +1,5 @@
 from dagster import AssetsDefinition
+
 from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHConfigurableResource
 
