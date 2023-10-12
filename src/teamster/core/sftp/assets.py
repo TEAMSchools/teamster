@@ -4,6 +4,11 @@ import re
 import zipfile
 from stat import S_ISDIR, S_ISREG
 
+from numpy import nan
+from pandas import read_csv
+from paramiko import SFTPClient
+from slugify import slugify
+
 from dagster import (
     AssetExecutionContext,
     DagsterInvariantViolationError,
@@ -11,11 +16,6 @@ from dagster import (
     Output,
     asset,
 )
-from numpy import nan
-from pandas import read_csv
-from paramiko import SFTPClient
-from slugify import slugify
-
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.functions import regex_pattern_replace
 
@@ -27,7 +27,7 @@ def listdir_attr_r(sftp_client: SFTPClient, remote_dir: str, files: list = []):
         if S_ISDIR(file.st_mode):
             listdir_attr_r(sftp_client=sftp_client, remote_dir=filepath, files=files)
         elif S_ISREG(file.st_mode):
-            files.append(filepath)
+            files.append(file)
 
     return files
 
@@ -38,13 +38,11 @@ def match_sftp_files(ssh: SSHConfigurableResource, remote_dir, remote_file_regex
         with conn.open_sftp() as sftp_client:
             files = listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
 
-    # find matching file for partition
-    if remote_dir == ".":
-        match_pattern = remote_file_regex
-    else:
-        match_pattern = f"{remote_dir}/{remote_file_regex}"
-
-    return [f for f in files if re.match(pattern=match_pattern, string=f) is not None]
+    return [
+        str(pathlib.Path(remote_dir) / f.filename)
+        for f in files
+        if re.match(pattern=remote_file_regex, string=f.filename) is not None
+    ]
 
 
 def compose_regex(regexp, context: AssetExecutionContext):
@@ -88,6 +86,7 @@ def build_sftp_asset(
     @asset(
         key=asset_key,
         metadata={"remote_dir": remote_dir, "remote_file_regex": remote_file_regex},
+        required_resource_keys={ssh_resource_key},
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
@@ -106,7 +105,8 @@ def build_sftp_asset(
         # exit if no matches
         if not file_matches:
             context.log.warning(f"Found no files matching: {remote_file_regex}")
-            return Output(value=([{}], avro_schema), metadata={"records": 0})
+            yield Output(value=([{}], avro_schema), metadata={"records": 0})
+            return
 
         # download file from sftp
         if len(file_matches) > 1:
@@ -115,12 +115,15 @@ def build_sftp_asset(
         else:
             file_match = file_matches[0]
 
-        local_filepath = ssh.sftp_get(remote_filepath=file_match)
+        local_filepath = ssh.sftp_get(
+            remote_filepath=file_match, local_filepath=f"./data/{file_match}"
+        )
 
         # exit if file is empty
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(f"File is empty: {local_filepath}")
-            return Output(value=([{}], avro_schema), metadata={"records": 0})
+            yield Output(value=([{}], avro_schema), metadata={"records": 0})
+            return
 
         # unzip file, if necessary
         if archive_filepath is not None:
@@ -131,7 +134,13 @@ def build_sftp_asset(
             with zipfile.ZipFile(file=local_filepath) as zf:
                 zf.extract(member=archive_filepath_composed, path="./data")
 
-            local_filepath = f".data/{archive_filepath_composed}"
+            local_filepath = f"./data/{archive_filepath_composed}"
+
+            # exit if extracted file is empty
+            if os.path.getsize(local_filepath) == 0:
+                context.log.warning(f"File is empty: {local_filepath}")
+                yield Output(value=([{}], avro_schema), metadata={"records": 0})
+                return
 
         # load file into pandas and prep for output
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
