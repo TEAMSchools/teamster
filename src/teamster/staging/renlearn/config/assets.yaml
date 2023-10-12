@@ -1,19 +1,50 @@
 assets:
   - asset_name: accelerated_reader
     remote_dir: .
-    # trunk-ignore(yamllint/quoted-strings)
-    remote_file_regex: 'KIPP TEAM & Family\.zip'
-    archive_filepath: AR.csv
-    partition_start_date: 2022-07-01
-  - asset_name: star_reading
+    remote_file_regex: KIPP Miami\.zip
+    archive_filepath: (?P<subject>).csv
+    partition_keys:
+      start_date: 2023-07-01
+      subject:
+        - AR
+  - asset_name: star
     remote_dir: .
-    # trunk-ignore(yamllint/quoted-strings)
-    remote_file_regex: 'KIPP TEAM & Family\.zip'
-    archive_filepath: SR.csv
-    partition_start_date: 2022-07-01
-  - asset_name: star_math
+    remote_file_regex: KIPP Miami\.zip
+    archive_filepath: (?P<subject>).csv
+    partition_keys:
+      start_date: 2023-07-01
+      subject:
+        - SM
+        - SR
+        - SEL
+  - asset_name: star_skill_area
     remote_dir: .
-    # trunk-ignore(yamllint/quoted-strings)
-    remote_file_regex: 'KIPP TEAM & Family\.zip'
-    archive_filepath: SM.csv
-    partition_start_date: 2022-07-01
+    remote_file_regex: KIPP Miami\.zip
+    archive_filepath: (?P<subject>)_SkillArea_v1.csv
+    partition_keys:
+      start_date: 2023-07-01
+      subject:
+        - SM
+        - SR
+        - SEL
+  - asset_name: star_dashboard_standards
+    remote_dir: .
+    remote_file_regex: KIPP Miami\.zip
+    archive_filepath: (?P<subject>)_Dashboard_Standards_v2.csv
+    partition_keys:
+      start_date: 2023-07-01
+      subject:
+        - SM
+        - SR
+        - SEL
+  - asset_name: fast_star
+    remote_dir: .
+    remote_file_regex: KIPP Miami\.zip
+    archive_filepath: FL_FAST_(?P<subject>)_K-2.csv
+    partition_keys:
+      start_date: 2023-07-01
+      subject:
+        - SM
+        - SR
+        - SEL
+        - SEL_Domains

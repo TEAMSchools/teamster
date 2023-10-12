@@ -18,17 +18,17 @@ __all__ = [
         avro_schema=get_avro_record_schema(
             name=a["asset_name"], fields=ASSET_FIELDS[a["asset_name"]]
         ),
+        slugify_cols=False,
         partitions_def=MultiPartitionsDefinition(
             {
+                "subject": StaticPartitionsDefinition(a["partition_keys"]["subject"]),
                 "start_date": FiscalYearPartitionsDefinition(
                     start_date=a["partition_keys"]["start_date"],
                     timezone=LOCAL_TIMEZONE.name,
                     start_month=7,
                 ),
-                "subject": StaticPartitionsDefinition(a["partition_keys"]["subject"]),
             }
         ),
-        slugify_cols=False,
         **a,
     )
     for a in config_from_files(

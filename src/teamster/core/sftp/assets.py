@@ -10,7 +10,6 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     asset,
-    multi_asset,
 )
 from numpy import nan
 from pandas import read_csv
@@ -33,7 +32,7 @@ def listdir_attr_r(sftp_client: SFTPClient, remote_dir: str, files: list = []):
     return files
 
 
-def foo(ssh: SSHConfigurableResource, remote_dir, remote_file_regex):
+def match_sftp_files(ssh: SSHConfigurableResource, remote_dir, remote_file_regex):
     # list files remote filepath
     with ssh.get_connection() as conn:
         with conn.open_sftp() as sftp_client:
@@ -78,6 +77,7 @@ def build_sftp_asset(
     remote_file_regex,
     ssh_resource_key,
     avro_schema,
+    archive_filepath=None,
     partitions_def=None,
     auto_materialize_policy=None,
     slugify_cols=True,
@@ -97,36 +97,41 @@ def build_sftp_asset(
         ssh: SSHConfigurableResource = getattr(context.resources, ssh_resource_key)
 
         # find matching file for partition
-        remote_file_regex_composed = compose_regex(
-            regexp=remote_file_regex, context=context
-        )
-
-        file_matches = foo(
-            ssh=ssh, remote_dir=remote_dir, remote_file_regex=remote_file_regex_composed
+        file_matches = match_sftp_files(
+            ssh=ssh,
+            remote_dir=remote_dir,
+            remote_file_regex=compose_regex(regexp=remote_file_regex, context=context),
         )
 
         # exit if no matches
         if not file_matches:
-            context.log.warning(
-                f"Found no files matching: {remote_file_regex_composed}"
-            )
+            context.log.warning(f"Found no files matching: {remote_file_regex}")
             return Output(value=([{}], avro_schema), metadata={"records": 0})
 
+        # download file from sftp
         if len(file_matches) > 1:
-            context.log.warning(
-                f"Found multiple files matching: {remote_file_regex_composed}"
-            )
+            context.log.warning(f"Found multiple files matching: {remote_file_regex}")
             file_match = file_matches[0]
         else:
             file_match = file_matches[0]
 
-        # download file from sftp
         local_filepath = ssh.sftp_get(remote_filepath=file_match)
 
         # exit if file is empty
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(f"File is empty: {local_filepath}")
             return Output(value=([{}], avro_schema), metadata={"records": 0})
+
+        # unzip file, if necessary
+        if archive_filepath is not None:
+            archive_filepath_composed = compose_regex(
+                regexp=archive_filepath, context=context
+            )
+
+            with zipfile.ZipFile(file=local_filepath) as zf:
+                zf.extract(member=archive_filepath_composed, path="./data")
+
+            local_filepath = f".data/{archive_filepath_composed}"
 
         # load file into pandas and prep for output
         df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
@@ -144,103 +149,5 @@ def build_sftp_asset(
             value=(df.to_dict(orient="records"), avro_schema),
             metadata={"records": df.shape[0]},
         )
-
-    return _asset
-
-
-def build_sftp_multi_asset(
-    asset_key,
-    remote_dir,
-    remote_file_regex,
-    archive_filepath,
-    ssh_resource_key,
-    avro_schema,
-    partitions_def=None,
-    auto_materialize_policy=None,
-    slugify_cols=True,
-    slugify_replacements=(),
-    op_tags={},
-    **kwargs,
-):
-    @multi_asset(
-        key=asset_key,
-        metadata={
-            "remote_dir": remote_dir,
-            "remote_file_regex": remote_file_regex,
-            "archive_filepath": archive_filepath,
-        },
-        required_resource_keys={ssh_resource_key},
-        io_manager_key="io_manager_gcs_avro",
-        partitions_def=partitions_def,
-        op_tags=op_tags,
-        auto_materialize_policy=auto_materialize_policy,
-    )
-    def _asset(context: AssetExecutionContext):
-        ssh: SSHConfigurableResource = getattr(context.resources, ssh_resource_key)
-
-        # find matching file for partition
-        remote_file_regex_composed = compose_regex(
-            regexp=remote_file_regex, context=context
-        )
-
-        file_matches = foo(
-            ssh=ssh, remote_dir=remote_dir, remote_file_regex=remote_file_regex_composed
-        )
-
-        # exit if no matches
-        if not file_matches:
-            context.log.warning(
-                f"Found no files matching: {remote_file_regex_composed}"
-            )
-            return Output(value=([{}], avro_schema), metadata={"records": 0})
-
-        if len(file_matches) > 1:
-            context.log.warning(
-                f"Found multiple files matching: {remote_file_regex_composed}"
-            )
-            file_match = file_matches[0]
-        else:
-            file_match = file_matches[0]
-
-        # download file from sftp
-        local_filepath = ssh.sftp_get(remote_filepath=file_match)
-
-        # exit if file is empty
-        if os.path.getsize(local_filepath) == 0:
-            context.log.warning(f"File is empty: {local_filepath}")
-            return Output(value=([{}], avro_schema), metadata={"records": 0})
-
-        # unzip file
-        with zipfile.ZipFile(file=local_filepath) as zf:
-            zf.extractall(path="./data")
-
-        for file in archive_filepath:
-            archive_filepath_regex_composed = compose_regex(
-                regexp=file, context=context
-            )
-
-            local_filepath = f"./data/{archive_filepath_regex_composed}"
-
-            # exit if file is empty
-            if os.path.getsize(local_filepath) == 0:
-                context.log.warning(f"File is empty: {local_filepath}")
-                return Output(value=([{}], avro_schema), metadata={"records": 0})
-
-            # load file into pandas and prep for output
-            df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
-
-            df.replace({nan: None}, inplace=True)
-            if slugify_cols:
-                df.rename(
-                    columns=lambda x: slugify(
-                        text=x, separator="_", replacements=slugify_replacements
-                    ),
-                    inplace=True,
-                )
-
-            yield Output(
-                value=(df.to_dict(orient="records"), avro_schema),
-                metadata={"records": df.shape[0]},
-            )
 
     return _asset
