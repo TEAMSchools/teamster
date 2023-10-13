@@ -44,7 +44,7 @@ clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, 
 docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
 docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
 docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
-test = { shell = "pytest -s", help = "Run tests with the default Python" }
+test = { shell = "pytest --capture=tee-sys", help = "Run tests with the default Python" }
 secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret for branch" }
 install-dagster = { shell = "bash .pdm/scripts/install-dagster.sh", help = "Install Dagster Cloud via Helm" }
 install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "Install 1Password Connect via Helm" }

@@ -1,7 +1,7 @@
 assets:
   - asset_name: daily_participation
     remote_dir: daily-participation
-    remote_file_regex: '(?P<date>\d{4}-\d{2}-\d{2})-daily-participation-(?P<type>\w+)\.csv'
+    remote_file_regex: (?P<date>\d{4}-\d{2}-\d{2})-daily-participation-(?P<type>\w+)\.csv
   - asset_name: resource_usage
     remote_dir: resource-usage
-    remote_file_regex: '(?P<date>\d{4}-\d{2}-\d{2})-resource-usage-(?P<type>\w+)\.csv'
+    remote_file_regex: (?P<date>\d{4}-\d{2}-\d{2})-resource-usage-(?P<type>\w+)\.csv

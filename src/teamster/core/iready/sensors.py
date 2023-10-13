@@ -2,6 +2,8 @@ import json
 import re
 
 import pendulum
+from paramiko.ssh_exception import SSHException
+
 from dagster import (
     AssetsDefinition,
     AssetSelection,
@@ -12,8 +14,6 @@ from dagster import (
     SkipReason,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
-
 from teamster.core.sftp.sensors import get_sftp_ls
 from teamster.core.ssh.resources import SSHConfigurableResource
 
@@ -53,13 +53,10 @@ def build_sftp_sensor(
             asset_metadata = asset.metadata_by_key[asset.key]
 
             remote_file_regex = asset_metadata["remote_file_regex"]
-            remote_dir = asset_metadata["remote_dir"]
 
             updates = []
             for f in files:
-                match = re.match(
-                    pattern=remote_file_regex, string=f"{remote_dir}/{f.filename}"
-                )
+                match = re.match(pattern=remote_file_regex, string=f.filename)
 
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")

@@ -1,5 +1,4 @@
 from dagster import EnvVar, SensorResult, build_sensor_context
-
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
@@ -7,8 +6,6 @@ def _test_sensor(sftp_sensor, **kwargs):
     context = build_sensor_context()
 
     result: SensorResult = sftp_sensor(context=context, **kwargs)
-
-    context.log.info(result)
 
     assert len(result.run_requests) > 0
 
@@ -62,27 +59,19 @@ def test_sensor_titan():
 
 
 def test_sensor_iready():
+    ssh_iready = SSHConfigurableResource(
+        remote_host="prod-sftp-1.aws.cainc.com",
+        username=EnvVar("IREADY_SFTP_USERNAME"),
+        password=EnvVar("IREADY_SFTP_PASSWORD"),
+    )
+
     from teamster.kippmiami.iready.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor,
-        ssh_iready=SSHConfigurableResource(
-            remote_host="prod-sftp-1.aws.cainc.com",
-            username=EnvVar("IREADY_SFTP_USERNAME"),
-            password=EnvVar("IREADY_SFTP_PASSWORD"),
-        ),
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=ssh_iready)
 
     from teamster.kippnewark.iready.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor,
-        ssh_iready=SSHConfigurableResource(
-            remote_host="prod-sftp-1.aws.cainc.com",
-            username=EnvVar("IREADY_SFTP_USERNAME"),
-            password=EnvVar("IREADY_SFTP_PASSWORD"),
-        ),
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=ssh_iready)
 
 
 def test_sensor_renlearn():
@@ -128,9 +117,9 @@ def test_sensor_clever_reports():
     _test_sensor(
         sftp_sensor=sftp_sensor,
         ssh_clever_reports=SSHConfigurableResource(
-            remote_host="sftp.clever.com",
-            username=EnvVar("CLEVER_SFTP_USERNAME"),
-            password=EnvVar("CLEVER_SFTP_PASSWORD"),
+            remote_host="reports-sftp.clever.com",
+            username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
+            password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
         ),
     )
 
