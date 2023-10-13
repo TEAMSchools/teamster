@@ -1,13 +1,13 @@
 import random
 import re
 
+from dagster import build_resources, config_from_files
 from dagster_ssh import ssh_resource
 from fastavro import parse_schema, validation, writer
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from dagster import build_resources, config_from_files
 from teamster.core.achieve3k.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 

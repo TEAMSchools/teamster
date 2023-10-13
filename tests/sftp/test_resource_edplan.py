@@ -1,12 +1,12 @@
 import random
 import re
 
+from dagster import EnvVar, build_resources
 from fastavro import parse_schema, validation, writer
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from dagster import EnvVar, build_resources
 from teamster.core.edplan.schema import ASSET_FIELDS
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.functions import get_avro_record_schema

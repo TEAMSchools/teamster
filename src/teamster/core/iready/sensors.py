@@ -2,8 +2,6 @@ import json
 import re
 
 import pendulum
-from paramiko.ssh_exception import SSHException
-
 from dagster import (
     AssetsDefinition,
     AssetSelection,
@@ -14,6 +12,8 @@ from dagster import (
     SkipReason,
     sensor,
 )
+from paramiko.ssh_exception import SSHException
+
 from teamster.core.sftp.sensors import get_sftp_ls
 from teamster.core.ssh.resources import SSHConfigurableResource
 
