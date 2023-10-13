@@ -35,6 +35,7 @@ def build_sftp_sensor(
         context: SensorEvaluationContext, ssh_clever_reports: SSHConfigurableResource
     ):
         cursor: dict = json.loads(context.cursor or "{}")
+        now = pendulum.now(tz=timezone)
 
         try:
             ls = get_sftp_ls(ssh=ssh_clever_reports, asset_defs=asset_defs)
@@ -83,7 +84,7 @@ def build_sftp_sensor(
                     )
                 )
 
-                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(
             run_requests=run_requests,

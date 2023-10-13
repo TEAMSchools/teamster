@@ -1,7 +1,7 @@
 assets:
   - asset_name: diagnostic_results
-    remote_filepath: /exports/fl-kipp_miami/Current_Year
-    remote_file_regex: diagnostic_results_(?P<subject>\w+)\.csv
+    remote_dir: /exports/fl-kipp_miami
+    remote_file_regex: (?:(?P<academic_year>\w+)\/)?diagnostic_results_(?P<subject>\w+)\.csv
     partition_keys:
       academic_year:
         - Current_Year
@@ -9,22 +9,22 @@ assets:
         - "2021"
         - "2020"
   - asset_name: personalized_instruction_by_lesson
-    remote_filepath: /exports/fl-kipp_miami/Current_Year
-    remote_file_regex: personalized_instruction_by_lesson_(?P<subject>\w+)\.csv
+    remote_dir: /exports/fl-kipp_miami
+    remote_file_regex: (?:(?P<academic_year>\w+)\/)?personalized_instruction_by_lesson_(?P<subject>\w+)\.csv
     partition_keys:
       academic_year:
         - Current_Year
         - "2022"
   - asset_name: instructional_usage_data
-    remote_filepath: /exports/fl-kipp_miami/Current_Year
-    remote_file_regex: instructional_usage_data_(?P<subject>\w+)\.csv
+    remote_dir: /exports/fl-kipp_miami
+    remote_file_regex: (?:(?P<academic_year>\w+)\/)?instructional_usage_data_(?P<subject>\w+)\.csv
     partition_keys:
       academic_year:
         - Current_Year
         - "2022"
   - asset_name: diagnostic_and_instruction
-    remote_filepath: /exports/fl-kipp_miami/Current_Year
-    remote_file_regex: diagnostic_and_instruction_(?P<subject>\w+)_ytd_window\.csv
+    remote_dir: /exports/fl-kipp_miami
+    remote_file_regex: (?:(?P<academic_year>\w+)\/)?diagnostic_and_instruction_(?P<subject>\w+)_ytd_window\.csv
     partition_keys:
       academic_year:
         - Current_Year
