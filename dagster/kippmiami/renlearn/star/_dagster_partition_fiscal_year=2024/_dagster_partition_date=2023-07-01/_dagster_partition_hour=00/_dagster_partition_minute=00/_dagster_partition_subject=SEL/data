@@ -1,0 +1,1139 @@
+Objavro.codecsnappyavro.schema˜§{"type": "record", "name": "star_record", "fields": [{"default": null, "name": "Asian", "type": ["null", "string"]}, {"default": null, "name": "BlackOrAfricanAmerican", "type": ["null", "string"]}, {"default": null, "name": "ClassCode", "type": ["null", "string"]}, {"default": null, "name": "ClassRenaissanceID", "type": ["null", "string"]}, {"default": null, "name": "ClassSourcedID", "type": ["null", "string"]}, {"default": null, "name": "CourseCode", "type": ["null", "string"]}, {"default": null, "name": "CourseName", "type": ["null", "string"]}, {"default": null, "name": "CourseRenaissanceID", "type": ["null", "string"]}, {"default": null, "name": "CourseSourcedID", "type": ["null", "string"]}, {"default": null, "name": "CurrentGrade", "type": ["null", "long", "string"]}, {"default": null, "name": "DistrictIdentifier", "type": ["null", "double"]}, {"default": null, "name": "DistrictName", "type": ["null", "string"]}, {"default": null, "name": "DistrictRenaissanceID", "type": ["null", "string"]}, {"default": null, "name": "DistrictSourcedID", "type": ["null", "string"]}, {"default": null, "name": "DistrictStateID", "type": ["null", "double", "long"]}, {"default": null, "name": "EnrollmentStatus", "type": ["null", "string"]}, {"default": null, "name": "Gender", "type": ["null", "string"]}, {"default": null, "name": "GroupID", "type": ["null", "string"]}, {"default": null, "name": "GroupOrClassName", "type": ["null", "string"]}, {"default": null, "name": "HispanicOrLatino", "type": ["null", "string"]}, {"default": null, "name": "MultiRace", "type": ["null", "string"]}, {"default": null, "name": "RenaissanceClientID", "type": ["null", "long"]}, {"default": null, "name": "SchoolIdentifier", "type": ["null", "long"]}, {"default": null, "name": "SchoolName", "type": ["null", "string"]}, {"default": null, "name": "SchoolRenaissanceID", "type": ["null", "string"]}, {"default": null, "name": "SchoolSourcedID", "type": ["null", "string"]}, {"default": null, "name": "SchoolStateID", "type": ["null", "double", "long"]}, {"default": null, "name": "SchoolYear", "type": ["null", "string"]}, {"default": null, "name": "StudentEmail", "type": ["null", "double"]}, {"default": null, "name": "StudentFirstName", "type": ["null", "string"]}, {"default": null, "name": "StudentIdentifier", "type": ["null", "long", "double"]}, {"default": null, "name": "StudentLastName", "type": ["null", "string"]}, {"default": null, "name": "StudentMiddleName", "type": ["null", "string"]}, {"default": null, "name": "StudentRenaissanceID", "type": ["null", "string"]}, {"default": null, "name": "StudentSourcedID", "type": ["null", "long", "double"]}, {"default": null, "name": "StudentStateID", "type": ["null", "double", "string"]}, {"default": null, "name": "StudentUserID", "type": ["null", "long", "float"]}, {"default": null, "name": "TeacherEmail", "type": ["null", "string"]}, {"default": null, "name": "TeacherFirstName", "type": ["null", "string"]}, {"default": null, "name": "TeacherIdentifier", "type": ["null", "string"]}, {"default": null, "name": "TeacherLastName", "type": ["null", "string"]}, {"default": null, "name": "TeacherMiddleName", "type": ["null", "double"]}, {"default": null, "name": "TeacherRenaissanceID", "type": ["null", "string"]}, {"default": null, "name": "TeacherSourcedID", "type": ["null", "string"]}, {"default": null, "name": "TeacherStateID", "type": ["null", "double", "long"]}, {"default": null, "name": "TeacherUserID", "type": ["null", "string"]}, {"default": null, "name": "White", "type": ["null", "string"]}, {"default": null, "name": "AmericanIndianOrAlaskaNative", "type": ["null", "string"]}, {"default": null, "name": "NativeHawaiianOrOtherPacificIslander", "type": ["null", "string"]}, {"logicalType": "timestamp-millis", "default": null, "name": "SchoolYearStartDate", "type": ["null", "string"]}, {"logicalType": "timestamp-millis", "default": null, "name": "SchoolYearEndDate", "type": ["null", "string"]}, {"logicalType": "timestamp-millis", "default": null, "name": "BirthDate", "type": ["null", "string"]}, {"default": null, "name": "ACTBenchmarkCategory", "type": ["null", "double"]}, {"default": null, "name": "AssessmentID", "type": ["null", "string"]}, {"default": null, "name": "AssessmentNumber", "type": ["null", "long"]}, {"default": null, "name": "AssessmentStatus", "type": ["null", "string"]}, {"default": null, "name": "AssessmentType", "type": ["null", "string"]}, {"default": null, "name": "CurrentSGP", "type": ["null", "double"]}, {"default": null, "name": "DeactivationReason", "type": ["null", "double"]}, {"default": null, "name": "ExtraTime", "type": ["null", "string"]}, {"default": null, "name": "Grade", "type": ["null", "long", "string"]}, {"default": null, "name": "GradeEquivalent", "type": ["null", "double", "string"]}, {"default": null, "name": "GradePlacement", "type": ["null", "double"]}, {"default": null, "name": "NormalCurveEquivalent", "type": ["null", "double"]}, {"default": null, "name": "OpenGrowthScore", "type": ["null", "double"]}, {"default": null, "name": "PercentileRank", "type": ["null", "long"]}, {"default": null, "name": "RaschScore", "type": ["null", "double"]}, {"default": null, "name": "SATBenchmarkCategory", "type": ["null", "double"]}, {"default": null, "name": "ScaledScore", "type": ["null", "long"]}, {"default": null, "name": "SchoolBenchmarkCategoryLevel", "type": ["null", "long"]}, {"default": null, "name": "SchoolBenchmarkProficient", "type": ["null", "string"]}, {"default": null, "name": "ScreeningPeriodWindowName", "type": ["null", "string"]}, {"default": null, "name": "StandardErrorOfMeasurement", "type": ["null", "double"]}, {"default": null, "name": "StateBenchmarkCategoryName", "type": ["null", "string"]}, {"default": null, "name": "StateBenchmarkProficient", "type": ["null", "string"]}, {"default": null, "name": "StudentDisplayID", "type": ["null", "long", "double"]}, {"default": null, "name": "TakenAt", "type": ["null", "string"]}, {"default": null, "name": "TakenAtByIPAddress", "type": ["null", "double"]}, {"default": null, "name": "TeacherDisplayID", "type": ["null", "string"]}, {"default": null, "name": "TotalCorrect", "type": ["null", "double"]}, {"default": null, "name": "TotalPossible", "type": ["null", "double"]}, {"default": null, "name": "TotalTimeInSeconds", "type": ["null", "long"]}, {"default": null, "name": "UnifiedScore", "type": ["null", "long"]}, {"logicalType": "timestamp-millis", "default": null, "name": "LaunchDate", "type": ["null", "string"]}, {"logicalType": "timestamp-millis", "default": null, "name": "CompletedDate", "type": ["null", "string"]}, {"logicalType": "timestamp-millis", "default": null, "name": "CompletedDateLocal", "type": ["null", "string"]}, {"default": null, "name": "PartnershipForAssessmentOfReadinessForCollegeAndCareers", "type": ["null", "double"]}, {"logicalType": "timestamp-millis", "default": null, "name": "ScreeningWindowStartDate", "type": ["null", "string"]}, {"logicalType": "timestamp-millis", "default": null, "name": "ScreeningWindowEndDate", "type": ["null", "string"]}, {"default": null, "name": "StateBenchmarkCategoryLevel", "type": ["null", "double"]}, {"default": null, "name": "StateBenchmarkMinScaledScore", "type": ["null", "double"]}, {"default": null, "name": "StateBenchmarkMaxScaledScore", "type": ["null", "double"]}, {"default": null, "name": "SmarterBalancedAssessmentConsortium", "type": ["null", "double"]}, {"default": null, "name": "StudentGrowthPercentileFallFall", "type": ["null", "double"]}, {"default": null, "name": "StudentGrowthPercentileFallSpring", "type": ["null", "double"]}, {"default": null, "name": "StudentGrowthPercentileFallWinter", "type": ["null", "double"]}, {"default": null, "name": "StudentGrowthPercentileSpringFall", "type": ["null", "double"]}, {"default": null, "name": "StudentGrowthPercentileSpringSpring", "type": ["null", "double"]}, {"default": null, "name": "StudentGrowthPercentileWinterSpring", "type": ["null", "double"]}, {"default": null, "name": "RenaissanceBenchmarkCategoryName", "type": ["null", "string"]}, {"default": null, "name": "RenaissanceBenchmarkCategoryLevel", "type": ["null", "double"]}, {"default": null, "name": "RenaissanceBenchmarkCategoryNumberOfLevels", "type": ["null", "long", "float"]}, {"default": null, "name": "RenaissanceBenchmarkCategoryMinPercentileRank", "type": ["null", "double"]}, {"default": null, "name": "RenaissanceBenchmarkCategoryMaxPercentileRank", "type": ["null", "double"]}, {"default": null, "name": "StateBenchmarkAssessmentName", "type": ["null", "string"]}, {"default": null, "name": "StateBenchmarkNumberOfCategoryLevels", "type": ["null", "double"]}, {"default": null, "name": "DistrictBenchmarkCategoryName", "type": ["null", "string"]}, {"default": null, "name": "DistrictBenchmarkProficient", "type": ["null", "string"]}, {"default": null, "name": "DistrictBenchmarkCategoryLevel", "type": ["null", "long"]}, {"default": null, "name": "DistrictBenchmarkNumberOfCategoryLevels", "type": ["null", "long"]}, {"default": null, "name": "DistrictBenchmarkMinPercentileRank", "type": ["null", "long"]}, {"default": null, "name": "DistrictBenchmarkMaxPercentileRank", "type": ["null", "long"]}, {"default": null, "name": "SchoolBenchmarkCategoryName", "type": ["null", "string"]}, {"default": null, "name": "SchoolBenchmarkNumberOfCategoryLevels", "type": ["null", "long"]}, {"default": null, "name": "SchoolBenchmarkMinPercentileRank", "type": ["null", "long"]}, {"default": null, "name": "SchoolBenchmarkMaxPercentileRank", "type": ["null", "long"]}, {"default": null, "name": "Audio", "type": ["null", "double"]}, {"default": null, "name": "Quantile", "type": ["null", "string"]}, {"default": null, "name": "InstructionalReadingLevel", "type": ["null", "string"]}, {"default": null, "name": "Lexile", "type": ["null", "string"]}, {"default": null, "name": "Grade3_AssessmentAttempts", "type": ["null", "long"]}, {"default": null, "name": "Grade3_PassingStatus", "type": ["null", "double"]}, {"default": null, "name": "Grade3_PassingScore", "type": ["null", "double"]}, {"default": null, "name": "EstimatedOralReadingFluency", "type": ["null", "double"]}, {"default": null, "name": "LowerZoneOfProximalDevelopment", "type": ["null", "double"]}, {"default": null, "name": "UpperZoneOfProximalDevelopment", "type": ["null", "double"]}, {"default": null, "name": "LowerLexileZoneOfProximalDevelopment", "type": ["null", "double"]}, {"default": null, "name": "UpperLexileZoneOfProximalDevelopment", "type": ["null", "double"]}, {"default": null, "name": "LiteracyClassification", "type": ["null", "string"]}, {"default": null, "name": "LexileRange", "type": ["null", "string"]}]} Ş%ı9¶fívÃZÆ'íîR°ğTNoYes0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚vchSISSchoolYearID=2024&v(ID=30200804HCourseID=ENG01028G1lassID=‰4PeriodID=23-24bRDÈEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’v§ Y¿18v S×’¿ ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledMNgs_’•0$Barrett - 0h-Ï!âğLà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.vchSISB	º8¢@20!ªğ>024 
+Judahèò$Jackson H7f7d2b07-8970-4597-a6ee-d6e88e5107924<FL000010558436,cb	ä@kippm!qX.orgChanteT400794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9!ƒhvA!? .ß 07-01 00:.0004-06-30B 18-05-292 ğ> H3097da7c-2858-4afe-86cd-bfaf4004ff28ActiveEnterprise  ’Kš™É¿	?fPæA@ 2Ház®Gé¿ Ê4@FallßÌ'õAŞ?  %WsEñ  õ!  5@	;@´Ò
+èL3-09-12 13:15:39.924> 33:10.496 09  38-152 9>M	•$On Watch¡ @ 9µ€C@ .) %Ä2N?(   BR700L^\*Early Emergent Reader G¥4°0CCUH8e293302-2a6a-469f-876d-cf8d03f83ff7úVqş0¡0CCUMSISş,ş,ş,î,¥, F¥,’‘ Starling¡-ccu%×A"ş)Î)ğ>RickaylaÔó$Jean-Mary H9b4df605-39b4-4018-af90-2b562acc9da86¹.661601.vsæ:/ Valenciaiñ0561uˆd55288e-4047-4f8c-a71f-e948a3ea5a05:a.àj±2L!Hâ2 7>™ˆ665f772-446b-4b04-9fa1-ef83eb2e9d49~2¡ffæ?¹2 3TsO@ ’\Âõ(\×? â	mê¥4úÃ²¯GÚ¡4!§64÷!	  0¡4ì1±4 27:52.035>  47:11.0582 09ö4H$At/Above Benchmark´ğ?µ> D¿ÀX¡>N3 …ıPÆR" 	­U38½U(Late>T@BR400L - BR330LE=g0B¡d˜ef12ce77-354d-4a08-bbc0-a521d93b21b6ú. YÕ	şd¡d Bşdşdşdşd¹d
+’‘ De Jesus¡dbcşdödèDanieløó$Nicolas H0d8655ec-84f4-48cd-966d-aa1bb14683534¹`545114.kdejá 2>` K¡Î4nniT1023101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:W`úø@±\â`4-222w	+ˆ67f7f29-6c49-4715-ac1c-d7275115963b~`¯  ğ*’
+ÍÌ5@ ­~ö¿ ÔÂ©^õ|gŒ¯¥^!£½^-A	X 2Ÿ¡^ø€N’
+05.766E$13:29:58.2:w09ö^&U(
+,Interventionµ &
+ğ? "¡_R4 !ÖV! ­^87½^‚³
+\2ColumbiaHffe9ae2a-1d8)Tff-b95a-3d101347f4c9„şèè30G3¥
+èŠ†½
+Eé˜2Haa8304e1-a213-42d9-bd64-6d98932e67c7şéé{2şéŠé’–(William¡Y2c1ÒA8şÂ
+ÎÂ
+4Raphael¾ñ$Á
+áÍaptisteëˆ61a2fd4-7e33-4e93-9210-b8c7bd80aa9a<±g07831243 *dmizell:eDavonÃ
+1024061˜ H11022c04-3f2b-47b2-bdb2-37cb3db22e52©Q:\` ù­c!IÖc‚-26>cÀ23abb93b-1d32-4df0-9254-09ab9465428eActiveEO põ¦”„2¹
+,3ã?Ãõ(\Â@­kD$@ +‡ÙÎÇ? ´	2k}åP_²ÙÉ
+!¯6kı!  .½kÀş*É
+20¡R 30:31.7571" 947:03.510É
+	æk 5b?	½şsjs34¥si0@qŠÙ
+296Ù
+UICvˆ650afc-cc88-4359-a698-a3a7a2076ba0şÙ
+jÙ
+UIC¢€­±€şişişiJi= 5‘KellyÖ
+uic•'şxÒxàJournee–ô$
+Jones H2dab5b5a-fcd7-4356-b45c-3efc180e62182µn8869935(scurry:mSharond¡o40¡ 
+C(˜ H60686a02-8b2d-4230-8ac2-243bde225309/78a/8k"/785A¡p1ºa 7’ 06F™ˆ69acc5d-ea0d-4d8a-8d7e-062e6e095e79ŞÏ
+@.@ 
+…ëQ¸ı¿ ”6Ï
+cµSOLè¥d!›½d->!  1½dÆÈ	1-44-585> 59:19.67Baæd\
+R›
+  ş\n\985²‚şşşşşş>©E e¯şş28KehlaniŠô$M¡Htimº
+˜23396fac-e9db-407e-8b45-8564b5d3317fŠôµL10622589Jş!ş!æ!©RB³52c1-7”T4775-ba2e-7f2fcf63ea73¢R )l Ì³2@ –ù¿ ´6R)c|ƒ0!!¥½R2!.R¦ä½R821 17:39:48.741¹R	53:59.37*: 3şRşRÒR 2šRá~şÓşÓşÓşÓşÓşÓşÓşÓşÓ&ÓH
+Alina”ù$Reynoldš
+˜4224b0c2-a439-468e-bd1c-e656a1442312”ù.N6158şÏşÏşÏ 2B 
+t2a54d405-011f-463c-9086-2ae037¥T c~N  ?:N&G@ V 
+ Õ¡N6TÎN|WÃƒ! !¥½O¡
+56ì	. ğ: 5¡
+ 2ì 6½O00 16:08:47.90.h0 12öON› 
+şÎnÎ 5.pRÎ)j¸
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfüş¿b¿†şçşçşçşççÀ’’  BradshawêfamşÁöÁ@
+Loganæô$JordaM%˜259b9244-fe89-4edb-8f74-9396bd038776æô½P444999G.lbá:íLegacy´8001
+$ˆecd7cae-de9c-4c82-873a-1bd8d94038f2:a’ €"O%LhŞî10€$~%:0%˜ H8c08d0bc-6f3b-4567-8ae8-cc1da522cb17–N ¹* Á €E@ J­cÜ¿ ˜2O%¾‹{4¥M% 2O%õF2Mì€½MO%4:01ƒ
+ 1½M	19:57.2> 0öMşO%RO%60*{
+~,ş{
+ş{
+ş{
+ş{
+ş{
+ş{
+F{
+©* 8ß&şN%şN%2N%HGregoryôò$Marti¡+˜e14f4753-1e8d-410c-98be-5824441ce319ôòµ+08939090GşJ%şJ%æJ%7-11J|*\eb1eebba-6f2b-4d12-ae04-dcc6ddb1~-‰Õ à*êI%$3³>@ $®G}*ï¿  ¥óz
+ˆØ!Û%¢2-&z
+.Éš¶Bê 43:20.802ÑG4 4–+37.69*z
+¡FÁ+ö- Jã &ã $Ô 8¤6- Áù×0:  yˆ* 5½9‚Õş:ş:ş:ş:ş:ş:F:ş:ş:Ê: A'Lonii‚¡:Luster²/$e188ace-68§P2a1-9de2-c8d859ce5c8a3O10428417ş:ş:ê: 8è/ 2>g
+9e17d4dd.#\9-4457-b4a8-3620b5fa5515~: šµ/™é¿R
+Ì?©:H3;@ 
+×£p=
+ó¿ ø2:q8pJ%r%¢Z:.‚*Èœ½:‚6:18¹ 2.i*	44:43.55*U 2ş:ş:z:81œ†: m4şö4şö4şö4şö4şö4şö4şö4şö4şö4.ö4Mic
+%èÂó$LazareTheodoreH4ee459d7-d97a-4da1-810f-d9f99c5eccbd<¹M508596şÿ4şÿ4îÿ4Fdb0644+d167-4c28-851a-286aeec4c2a8~I[* ô>°$@S@ ´J%ñ? ˆ6Í/ö=/Ş…á…
+%©2KA6…C 7Ì	;@öÊ6l
+$3:57:40.64: $4:13:35.87:  0öKşÿÖÿ 1.  2"5Transiï*al&5Ò/285Ò/1352Ò/şù$şù$şù$şù$şù$şù$>ù$èşù$şù$¾ù$(Messiahö$òiffæˆ29f2b60-3635-46ef-bcde-6fa5ea83d05b4¹_406797(akÙ%>Ayanh*400948
+ÿ%h%ˆ091a8b6-f89d-4596-b088-5ade1f926b0e7RĞxZ:Ş09-07>¤
+fea6b51f-f04a-4379-b1f4-00726ea2b934Re*&Z:Ì]*"§¥mHM@ ‚D‹lçû©Á? ¨:(5ìö‹ø6oÜ¡[!6[÷!	  4½[ŞÎ*w8:05:186û$	76*à 4ş[ş[Î[ 4W*Z.\şÛŞ%ı9¶fívÃZÆ'íæMË}ğNNoYes0BCH5bc5611c-55a1-45e5-ace3-6d7ec1af3330øvchSISSchoolYearID=2024&. $ID=3020080LCourseID=ENG01028G1&	2(ClassID=0BCPeriodX 3-2420243M?ğHEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’vchSISSchoolYearID=2018v	Ò’º ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’,Whyly - 0bc%Ñ!ÕğFà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.) B	³8¢@20!£ğ>024 JanieceÜô$
+Davis H53fa1943-5b9b-41ff-9b1e-355d37cc56f22<FL000010541369(twİ@kippm!hT.org
+TishaT400043
+%˜ H26c4e1cd-074e-4498-b502-1e5fe303f5d57!w¬jA!: .Ú 07-01 00:.0004-06-30B 18-03> !èaa4b731-19d5-4746-8491-c9c86449e1a4ActiveEnterprise  ’Kš™É¿	?fPæA@ 2ö(\Âõè¿ Ê4@Fall6B¼H`Ü?  %RsEı  õ!  4@	;@âÒ
+èL3-09-12 14:06:06.856> 20:47.66)2 0  38-15B4	3:M	•$On Watch¡ @ 9µ€C@ .) %Ä2N?(   BR700L^\*Early Emergent Reader G¥È0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚vNi 2±BQSISŠ#‰1ş(ş(ş(î(¥( M¥(’•$Barrett¡* h-ÏE)Noş/Ò/ğ<Jaquan†ú$Armstrong Hd7560d12-54a0-44c7-afe0-d953627c661a6½262088,cb	ç:4Chantei÷794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9a3hv±7K!Bâ72-022˜ Hb08aa405-3a27-4ab9-82e2-9d3f84a22962–7 Ù½7Á$ €@@ *ÍÌì¿ ²Æ©7Ì
+
+¡[Ú¡7!¡67õF 1‚¡7ĞÂB7 26:19.8611±P39¡77156  0ö70Intervention® ¹; $¹ 8¡;6- !Ì0: ±C 3®C¸
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfü.yşc
+2c
+†ş=ş=ş=ş=±=e
+’’  Bradshaw¡>famuE%A)şj
+Îj
+D
+AijahÔô$Wigginj
+˜299f19bf-5b5a-4068-aa49-3415cdb668ffÔô½8418581H.lbâ>9Legacy© 8001¡:ˆecd7cae-de9c-4c82-873a-1bd8d94038f2:3 €µ:L!AÖ: 7¢	06>:aaa0179g
+37¡ÓHd-9774-57371f381884Æ:p
+f&¡:0(®Gázî¿ ª6:©‹Áv­Æq
+!¡6:õ!6q
+Ò¼::$3:57:41.95:!$4:13:18.65:S 0ş:ş:~:45ª}
+°0BCUHef12ce77-354d-4a08-bbc0-a521d93b21b6úVâşy
+y
+BCş8ş8ş8ş8:8’‘ De Jesus¡8bcş7ö7TBrielleŞó$CrawfordÇˆbd321ee-0cca-46fe-b185-aa22546eeebb5r
+09953144.kdejã 2::LKaylanniT1023101ˆ Hece2c102-a053-4fa6-8944-72c2d1bd:5`úø@±8Ş<12-19><Àc20caa1c-8436-47fa-a62e-9bcf53215780ActiveEi	 p6­ 3ã¿)—(Ì?¶=@  	™ñ¿ Š6<ÈCı©FÚv
+!¤½<-A!6v
+¨
+1@9-20 16:08:52.199>  27:08.4886  2ş<ş<~< 8®<ş×ş×ş×ş×ş×ş×>×¯ş×ş×¶×èHezekiahîò$
+Allen Ha09067dc-cbab-4dcc-9880-4a36d8e761142±410297283şØşØÒØ1-16
+«ˆc2fa527-38a5-49a0-9fcd-dcf8775f0b9b~g
+‰Ó  ­ É­+YD@ Bá¿ €2Ø¥¡KÛ¡+!˜½+	X 2è;@²ò½+Ø(3:52:25.153¹$4:09:53.99Bg
+ö+şØRØ 6.•(Latej×0CZ
+,8e293302-2a6áşL9f-876d-cf8d03f83ff7şZ
+nZ
+ CşZ
+şZ
+şZ
+şZ
+&Z
+© ’‘ StarlingZ
+ cşZ
+úZ
+
+Dê	$¬÷$
+Joneà	˜1eb58b97-2449-44d7-b497-0e6ca4cb2ef9¬÷µ!09361085F.vsß>U
+ValenciaW0561
+˜ H9d55288e-4047-4f8c-a71f-e948a3ea5a05:# à&56M
+Q
+ÖU
+8-08-26çî
+pff53499-72d7-4544-9d01-69506c75–* ğ*U
+f
+3*@ ­*ı¿ ’½ÂËŒŒåÁsbÙ¡*!¡:*56%  .½*º%Ä	1U
+$5:30:28.83*‘n
+ì5.80* 2ö*&U˜JÒ &Òğ?É "ÒR4 %V! ÁŒBR99®j
+0UIBˆa650afc-cc88-4359-a698-a3a7a2076ba0şLnLUICşŞşŞşŞşŞ6Ş’‘KelCuicE&A*şÚÎÚHRay'Niyaªù$GiftÖˆ4ae6f83-04be-4b85-8a4f-b8b6ce6002f71&l
+660¦E(scurr>DSharond±H78
+C(˜ H60686a02-8b2d-4230-8ac2-243bde225309­E78eu8k!=ÖE 7š28>šLd4300c86-64e0-4767-9£,c2cdbd108776¢EP ?@5@ =
+×£p=ö¿ Ö6E®ƒ>S+o
+!U:E-  3½Eˆ‚:o
+$5:18:20.44:o
+¥^08.54213) 1¡w	şEşEÎE86¶Eş‘
+ş‘
+ş‘
+ş‘
+ş‘
+ş‘
+>‘
+# 8"ş‘
+ş‘
+2‘
+ğ>JaylinaÂõ$Devieux H158561fd-bd34-4ba5-983e-75fe2fe3b847Âõ½J524354Hş•
+ş•
+æ•
+7-10-14>P7ee17d05-f290-4899-b919-bba160ef283bzêD  •
+µP? q¥QÀ ¼Å —$kZtè¦•
+!£:P"•
+"§;@ªÔ6 3e$32.267>  41:09.5052 09şPşPÂPBR122¶Qş–
+ş–
+ş–
+ş–
+ş–
+ş–
+>–
+âş–
+ş–
+º–
+HZackari–õ$
+TylerÕ(H0e15c8c-81c7-4b29-a,b5d80db969d92–
+09381985ş–
+ş–
+Ò–
+8-01JÛ1f431f50-bcec-4793-b96a-fa7dec6122adzF©= é*¦$š$L9@ k®ó¿ ò2¦$}ßÄu§–
+!›:FR–
+Ò–B–
+09Û67:F 513.5642F11öF6y$É:ş¦$2¦$ 8ş0ş0ş0ş0ş0ş0ú0
+ş0ş0º0P
+Cianaöô$Frederick˜2169a99c-c218-4e43-82c2-4c3055c59d3döôµ3 1
+281K(ak§:AyannÇ948
+Í/ˆ091a8b6-f89d-4596-b088-5ade1f926b0eÇ7a|ĞxÇÃÖÇ8-04-2Bw
+,cd6f6f80-986úHdf-bf48-1357cf85464¦w
+"a¥1Ì$@ / À ğ6w
+€İâO9w
+!61õ!6ü? : 3Ú556ó4:19w
+ 2> 0ö1RØ	µş^w
+ 0ºÈş³$ş³$ş³$ş³$ş³$ş³$>³$w
+ eD&ş³$ş³$2³$HAhmere’ó$Grindo{
+(1d961834-adï5P3cc-ae0d-94d463a2bcd44{
+1033116ş±$ş±$ê±$\ 1>Çe79a0c25-cac1-480f-8a48-3f256eb5921fz
+‰C ğ*
+Çázï)
+À ’6P2lÑœQ±í)!£½P2±$ *şúÑQåÑ)¡771:
+ 3/28.96609şPşPÒP 3²€4ş]ş]ş]ş]ş]ş]F]©Pş—
+ş—
+º—
+$Ky'Rieîñ§am§Tadf65924-d738-4247-8ffÍ.$07b205ad7a2¹K661216ş“
+ş“
+Ö“
+ 1>†8 ff1e60b-81a2-4db3-bd19-d170e27d7d27Ac~¡9 Ù*Ÿ.0/ f0/¨2Ä¹ ƒuh}¥C!™½C40*“
+.¡9Â20/21 18¡41.30*°$	47:43.07*Ä 4öCşÄ‚Ä0/ù©T4Ş%ı9¶fívÃZÆ'íÀL“ğPNoYes0UICH5a650afc-cc88-4359-a698-a3a7a2076ba0úvchSISSchoolYearID=2024&v(ID=30200804HCourseID=ENG01028G1lassID=…4PeriodID=23-24^ 3N@ÀEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’V» 18v SÓ’» ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledMNgs_’‘0Kelly - 0uic%Ô!Øxà¹ÈÏæ(Kipp Royalty Academy!íe5b1f9-54b6-4535-b893-d371e82f8288.vVÔ	´8¢@20!¤À024 Ky'Rieîñ$
+James Hadf65924-d738-4247-8ffc!" 7b205ad7a2<FL000010661216(akİ@kippm!hX.orgAyannaT400948
+%˜ H2091a8b6-f89d-4596-b088-5ade1f926b0e7!xĞxA!: .Ú 07-01 00:.0004-06-30B 18-01-152 ğ> H47921011-d666-49f9-b889-2da23af8bdc2ActiveEnterprise  ’Kš™0É?)\Âõ(Ì?3PóG@ \¤p=
+×£Ğ¿ ÄmØ8FallÜÉ"¥—¢Û?  %TsEç  ö!  2@	;@Ì˜éL3-09-21 18:20:50.568B 7:52.3116 4:   8> 9>N	•L$At/Above Benchmark«ğ? D¿ÀX@ V3 …ëPÆRU 	(   BR555LX(Late Emergent Reader !š	WşBşBşBşBşBşBşBşBşBşBşBşBşB†Bèfee92043-c7e0-4853-8340-762380018200ActiveEnterprise e¨¹B ¹BBD@ F¥V \ß¿ eÜ©A5Ê¾‘³Ü~A 3‚¡A°ú
+™Ü©A 06:46.027> 18:54.16½2 4öA On Watch­, @µ7 9µ€C¡7)å2N­ 61– Jşşşşşşşşş­ğ<Leandres”ô$Cabrera H6589508f-c4d8-4fc8-999c-865c2c41eb754&e
+556237(scurr>e
+Sharondg
+078
+C(oˆ0686a02-8b2d-4230-8ac2-243bde225309_	7A8kg
+Šaâh
+5-09>h
+fb313cb8-c6b1-4d22-9797-cb6e0c447efaz&°  ğ¿&q
+H? ¸…ëQ¸À ÚÂ©&MTƒùV¾Ù¡&!6g
+ö	F (q¡&„‚	1<9-12 15:02:08.97*g
+	17:07.17½& 1ö&&Uİ	 IÁ:ventionµ ¹1ğ? "¡1R4 !Ö† V! ¡GBR1130&h
+*Earlyji
+È0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚v*Ã Yş¯.¯‰ÔSISş³ş³ş³î³³ F³’•$Barrettµ h-ÏA5ş¹Î¹èLuluÎó$Hernandez H8a1e4ced-445f-4d79-9d7f-e8cb8d5e135b6½V33956,cb	å>½Chante©794-&ˆ2080b9f-2d65-4091-8593-019b568aaa4e9Phv±XK!@âW4-16Ø¡ñp7f8d419-078c-4f17-b754-898d3d¶a1òW(Ház®GÀ Ô6W2·§b¥W!¡6Wõ!  2WĞú1©W 3K
+07.224>  35:51.3622 09şWşWÖW 4*Ÿ
+şWşWşWşWşWşWşWşWşWÖWğ<
+Jewel€ò$Jackson Hd851bada-0f6c-46ce-86c0-e91df9fff065€òµV07270647HşVşVâV 2JV03601a2d-e0dd-4111-91fe-12283d642b98zVÍÌ ì>ÓLSQ@ ¤V-²ã? 
+6fRJ€wÜá¯
+!¡^X 7*¯
+Ü¹&420 12:42:32.46.Õ59:18.506 08öXşÖ31*®
+R@BR400L - BR260Lõ“¨0BCUHef12ce77-354d-4a08-bbc0-a521d93b21b6şgngBCUş´
+ş´
+ş´
+ş´
+6´
+’‘ De Jesusµ
+bcu5Öş±
+Î±
+Ğ
+Alaia¢ø$Sanchez Placido Hb783a4d2-564b-4971-b060Ò 5fea21e69<&¸
+62290.kdejè 2:¹
+LKaylanniT1023101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:µ	`úø@¸
+"â½
+1-16>L102b9927-0ade-4d35-9Ü,065f540b5a3e–½
+ø?&¥yL¬T@ ¼Ûù~j¼tõ? Â6g-´PUI"Ş¡g!®½g-D!
+  5½g®ğ½gä(3:30:48.0391Ø
+50:22.9:09şgşgÎg10*¾
+ 0}Transi•alBR205©k55.j C¡j 8e293302-2a6a-469f-876d-cf8d03f83ff7úvcÁşş"2" Cşjşjşjşj¹jÑ’‘ Starling¡j cşjîj¥j4idynÌó$
+Silvn˜4907a6ee-af5d-4923-be30-5d4983da4fd7Ìó6`714F.vsß>`Valenciq561
+˜ H9d55288e-4047-4f8c-a71f-e948a3ea5a05:Vàjµ\¡iê`07>`,afa73509-af8|"D8-847d-5747871f5e4‚šÉ33ã>`LM@ ‚øSã¥›ÄÀ? ¦	6`[{
+“®œ!¤½`40ø!
+  4½`æÎ*İ¡`4:01156ƒ9:02.22515©y0:ş`ş`Î`44~Ç
+5I6ş¾ş¾ş¾ş¾ş¾ş¾F¾lş%ş%¾%8Amayahèö$
+Dix,cdf9c0f1-76b×L23-89d2-f804fb6d17842.¬
+3147 şºÆº¡=ÖE7-12tP%:0S%8 H1753bf12-d4aLb0-a3fc-ae757e51ea17~¥
+ f æ½E¥WHsO@ ’°rh‘í|×? â:EI¼và¥
+!:E78­E 6½Eôì:E$3:48:31.10*	%12¡E03:20.6FEşEşEÎE38~E233å‹şÉşÉşÉşÉşÉşÉfÉ«
+ 6^şÉşÉ>ÉJa(4i¬õ$Gilliamˆ868ca50-1b37-4de7-b028-71b957354f4a4±f08153465ştştæt 8Jtˆ5dd8be97-72d3-4e94-b52a-dba49f3ffcd‚­
+S
+  :ÌC@ >œ* \â¿ ø.G%ª(øsÓÊ!Ÿ6f&Ê 0½f¾î*G%©M14:37.18: 4:31: 226Ñ›«
+öf&%-& êG%¶Š
+şBşBşBşBşBşB>B©- eÓ .ØşBîBB<iden€ı$KennedÙ$(7bab3e1b-f7eL75-be2a-732b7f61b1574±(10429503ş:ò:ö”
+8-05-23>”
+0bd52129b-3245ç%e-ba7 $e0604bc346~”
+‰*ğ¿8%Î?9L1@ ²
+ú¿ ®2M%ùBArÚ’
+!£½,27.´/ØŞ*M%2655143¹3:1608. 67ö,R%)şM%^M%BR9.M‚õ0Bö4 bc5611c-55a1-45e5-ace3-6d7ec1af3330øvchşö4Vö4BCşşşş©L’Whyõ4 bşô4öô48
+ChrisÚ÷$InfÛ$ Garci)(1cdacf3e-6a)P00b-bcd7-0f0ea6ef79ea;¹O868273(twä:&
+Tish#43
+%	û4L6c4e1cd-074e-4498-b5w(e5fe303f5d5 43eŠ ¬& 43µB¡JŞÚ+4BFh4aa725d3-e9e2-494a-aaa6-143  a484šF>Ú óæ4ªşÔxé&1è? À:æöEDğì¥H!£½H-	6ü4ˆ F8:33.47F8:53.146 öHşæÖæ270&”* (Em2ü4Ú37æ 2.Úş/ş/ş/ş/ş/ş/F/­Yß;şN:şN:&N:(MessiahöÌriffi@%De29f2b60-3635-46ef¡U4e-6fa5ea83d05b4¹U406797şQ:şQ:ÊQ: 7¡VFu0cceee588-e29c¿;Hf-830f-edc8b8aa1497–Q:.5c:YF@ PRê/Ø¿ ¨°.µ Q:ÓVèÚİ
+!œ6U;è	 5*ÉÈˆ*/Ş4$8:22:59.89*/	3291*É 4şUşUÎU58*ÔRU  S#…iŞ%ı9¶fívÃZÆ'íŒLÍ~ğPNoYes
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfüvchSISSchoolYearID=2024&. $ID=3020080LCourseID=ENG01028G1&	2ClassID=†PeriodZ3-242024OAğHEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’vchSISSchoolYearID=2018v	Ô’¼ ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’’@ Bradshaw - 0famu%Ú!ŞğFà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.)§B	¸8¢@20!¨ğ<024 Nyla–ö$Javois Hcf4cd9e1-b4d5-4138-a343-04c50c95b3223<FL000010059772.lbà@kippm!n<.orgLegacyT4Ai01	˜ H4ecd7cae-de9c-4c82-873a-1bd8d94038f2:!€vA!? .ß 07-01 00:.0004-06-30B 18-05-242 ğ> H9ec49e5f-f87b-464d-a257-bd3b8a39b097ActiveEnterprise  ’Kš™4¹?)\Âõ(Ì?ÍÌE@ LÙ¿  4@Fall™Ge6šà?  %Yse  õ!  6@	;@Ú„èL3-09-20 14:20:56.653>  36:37.9016  0  8-152 9>M	•$On Watch¡ @ 9µ€C@ .) %Ä2N?(   BR595L^X(Late Emergent Reader F¥+°0CCUH8e293302-2a6a-469f-876d-cf8d03f83ff7úVn 2±BQSI*CCş)ş)ş)ş)µ) M¥)’‘ Starling¡)ccş(ö(ğ@SalomonÎú$Germeille H537a72e5-d0c1-4d47-9c1d-c97a329d39beÎúµ.09829452J.vså:. Valenciaiï0561—ˆd55288e-4047-4f8c-a71f-e948a3ea5a05:a,àj±0LehNoâ01-0B0|4d9c64d3-1856-4df2-a798-c6eff958´v0¯  ğ¿>0L@ Ãõ(\ÂÀ æÂ©0Và\Ù¡0!¥60õ	X ,{¡0Ì
+’	1©0(5:37:04.248>  48:22.5966  1ö0&U‰Ç,Interventionµ ¹;ğ? "¡;R4 !ÚV! ¡QBR10.R*EarlyVSW°0BCH5bc5611c-55a1-45e5-ace3-6d7ec1af3330ø.Šş{
+2{
+BC­}şy
+şy
+şy
+şy
+y
+’Whyly¡Mbc%Ì!Ğşt
+Ît
+l
+Maria®ú$ Buitagro Sanchez
+ˆ45771f5-7694-4c58-ac9b-ad832ea1d9a7=&
+660824(twæ:N
+Tish±K43
+%˜ H26c4e1cd-074e-4498-b502-1e5fe303f5d5­H43ex ¬¹H43f!HÖI4-pBI4aaa88135-e5f2-¥D-8b0f-75061c1585e9~y
+‰ñğ¿d
+É?3D*@ 
+×£p=
+ÿ¿ †2IW ñx¥I!¤:I-  0½Iú¸½I12y
+13:47.41*`
+	 29:34.91713 9 0şIşIÖI20&›
+nIœ
+şJşJşJşJşJşJşJşJşJ¡JèAlayahìò$Johnson H02302509-ffc8-44a5-b1cc-08b68d3063b94¹B337097şB¾B¡9ÖA8-FŸ\ H10f94de4-2773-4ef5-81.(ec03f115f52~Aº é½AºPL:@ …ëQ¸…ó¿ ôÆŠ
+‘ûÄ*YcÜŠ
+!š^A 4½Ağ˜
+1©3:5º77BA03º19962  0öA Jƒ
+ &ƒ
+ $¹ 8ƒ
+6- !ÌÁO0:  u
+BR8²+0UIv
+a650afc-cc88-4359-a698-a3a7a2076ba0úşÇfÇUIşw
+şw
+şw
+şw
+"w
+Ç’‘Kelw
+uişx
+öx
+DKaišù$RoundtreÀ˜37549eba-33bf-4166-9141-a6511c81b6f4šùµ-09886630J(akŞ:o
+Ayannp
+948
+%p
+091a8b6-f89d-4596-b088-5ade1f926b0e"7À	Ğx¸a^â. 9>Qˆff754cf-8285-4857-b0b1-cd9c2fe7b58d~.¯¸¸¡Î?©.Ì$@  À ş6¸ÏgĞè²o
+!6.õ	X.¸È°*o
+$26 13:02:5Ï 41 920:38.23*µ26 09ö.R„	µş¸r¸35ªo
+ş6ş6ş6ş6ş6ş6N6©Fş6ş6Ê6D
+Zaire€ü$Nerett¡J,81a0aed8-7b2gH6-9444-ade6247422934&w
+492750ş8ş8î8 7…O*j He6acc450-f8b4-4a5e-ab45-5222bd558f†P~
+ É* fHæA@ 2Ház®Gé¿ Ê28'éô8!¡6P800›.8ôÒ*~
+8 6:39:17.0SR!$6:57:19.48*¿2¡öPş8R870®ş9ş9ş9ş9ş9ş9F9bş9ş9Æ9LKourtnei®õ$
+Davis6a5a6ìHa718-4567-bbce-60a3%6c6b2±,07512352ş6ş6ö6 7B2˜H2089f1d0-061e-4ee1-9823-665ecd44082f6"~
+ƒ	@ğ? ¤p=
+×£À Ú6~
+ŠwêĞı~
+!¡6.V6æ„B~
+17:10.706e
+,13:25:29.6722—
+~
+ö.ş~
+Ú~
+12®~
+şPşPşPşPşPşPşPşPşPşPşPşPşPºP41eb13íl93a-4a0a-b287-0c757a49d086š†µPüÎ	Î ô6Pûõ&Ä5‚P .C;@¢:PL
+56.95BÎ10:53.49BPşPşPÒP06šPÿĞ0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚vchFJ)şÜ$Ü$‰şşşş6’•$Bar; - 0h-Ï!İş—Î—DKamilahºø$Penaš	 7be43de-2P5d9-82be-b17be888f9cf1"¨
+9951592,cb	ã> Chanteé794-şˆ2080b9f-2d65-4091-8593-019b568aaa4e9ã	 h"
+*K\!C¹Æ* 2JÓ9d667b0eQ\1-40bf-b055-0af51f787d4e~UÓñ?	 É#TlR@ ®-²ï§ê? Ô
+	Ì * @0ØÉ$ŞS!Ÿ6§
+ø!
+  5½Wì¬1S41:23.1.§
+”(3:56:09.32522 09öWH$At/Above Benchmark´ğ?"* D¿ÀXYN3 %ßPÆR" 	h24½V 2Ü$Transi]%al3*@BR345L - BR195LE>lşº
+şº
+şº
+şº
+şº
+şº
+Fº
+6ş
+ş
+Æ
+şC*şC*şC*şC*¢C*ˆ1ed80c8-b8f7-4c6c-a0b3-96330901a2c3~h©.C*(®GázÀ ¶6½
+ |JßÁ½
+nC*" ;@ô@Ê¹420ú$23ô01BC*32:43.44:; 1öfşÚ2g‚ú$ 
+;4şÁ4şÁ4şÁ4şÁ4şÁ4şÁ46Á4©Uş‹ş‹Ê‹ MalikhÖ%enkin`˜68ad4b5d-e523-4b50-ba53-38d3337f6aa8Öò*¸
+589857HşÄ4şÄ4êÄ41-082©3˜ Hbaef3037-4196-47c2-8c78-5fd2d1082d82~Qü ìB
+%9@ ­]ô¿ ğ6
+%Øê?·& Ú·
+!¡6·
+&Œ 2ø	¡Qš”*Œ
+¡8*^	43Ü306¹ƒ12·
+öQ6İ$ÉEş
+%:
+%*¢
+n;Ğ0BĞ40ef12ce77-354dß 8=40-a521d93b21b6ş	%n	% BşĞ4şĞ4şĞ4şĞ4&Ğ4—’‘ De Jesusñ bşĞ4úĞ4TKaycee¼ò$Frasquero	$ˆd6b6d00-3679-41af-9f56-63b816598eba6ñ10390780.kdejã 2:òLKaylanniT1023101.ˆce2c102-a053-4fa6-8944-72c2d1bd4136:a†`úø@ªa!âõ 6>å8H Hdd8c828a-08f0-43©<<08f-7a78aab13b1d~<t/3Ó*õ	H@ ^J ÎÈ—3ËôÃq "qG*!§½=-C!	  2G*æœ*:©$08:44.75*u
+	22:24.04B=ö=NÁ	´şônô 5.ô (R":Ôc`0Ş%ı9¶fívÃZÆ'í°K­~ğNNoYes0BCH5bc5611c-55a1-45e5-ace3-6d7ec1af3330øvchSISSchoolYearID=2024&. $ID=3020080LCourseID=ENG01028G1&	2(ClassID=0BCPeriodX 3-2420243M?ğHEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’vchSISSchoolYearID=2018v	Ò’º ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledMNgs_’,Whyly - 0bc%Ñ!ÕğFà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.) B	³8¢@20!£ğP024 
+DevinØù$Ward H03e2fcbf-422c-4ecd-a404-f578e1963e7cØù$FL000010660603E(twÚ@kippm!eT.org
+TishaT400043
+ÿ˜ H26c4e1cd-074e-4498-b502-1e5fe303f5d57!t¬jA!7 .× 07-01 00:.0004-06-30B 18-04-232 ğ> H63372b0c-2135-4e41-baa3-66db1519e66eActiveEnterprise  ’K¯  ğ¿š™É?3L*@ áz®Gáş¿ ˆ4@FallJ…g_\Ù?  %—sEú  õ!  0@	;@˜º	èL3-09-12 13:54:33.1596 (4:12:52.8916  0  8-152 9>M	•P&Urgent Intervention¬@ğ?	"@ Z4 !ÚVU ,   BR1015L€(*Early Eme	ŒReader SWş<ş<ş<ş<ş<ş<ş<ş<ş<¡<lFabiÃ¡nîõ$Flores Del SolÜˆ139b813-4dcd-4ffe-ac27-34d7479c1ee1; .H725şH¾HPaâI8-26.˜ H194bce73-2d0b-4894-b149-253d1e950dffÆIÍÌ@.@ 
+¤p=
+×£ü¿ ˜6IÑg;»qDÚ¡I!¢IÈÌ:I(4:19:48.5271©b$4:32:09.16BIşIşIÂIBR97šHE5şIşIşIşIşIşIşIşIşI¥ILJayceonòô$Hollowa
+˜6a5ab68a-f936-4fca-959e-5fb38bff522bòô½C327145Iş‹
+ş‹
+Î‹
+ 6>p	˜ H84b0af39-c35e-4200-a60b-9a9d3f2dc669~B‚
+$¹?)\Âõ(Ì|	@E@ Hq¡A pİ¿ ”Å‹
+5Í‘)æõÜ¡B!›^B 4*‹
+Îş
+¹)20 ¡B0:05.89½B	24:37.43½B 0öB On Watchl
+  &€
+ 9µ€C€
+)á2Nj
+BR60½!(Lateşh
+şh
+şh
+şh
+şh
+şh
+¦h
+ Fş¤ş¤Î¤ğ>Mariaºô$Arciniegas He4fe7a09-039c-4082-b2e2-346f38d91a78ºô½502812Kşº-e\No‘Æ« 1J«À4c138000-caa5-4f1b-8a68-3550b85053abActiveE— pN«ø?­)É?b
+T¬T@ ¼B`åĞ"Ûõ? Æ	Ì©"yye.6ù¥"! "Œò1K
+3:29¡"33½"Æ 45:11.13222 09ö"H$At/Above Benchmark­,ğ?"¬ D­,ÀX¡,N3 %ßPÆR" 	­C100&¬ 0¥CTransi,al¯<BR200L - BR50LE@j°0CCUH8e293302-2a6a-469f-876d-cf8d03f83ff7úVB 2ä S`’BSI&üCCUşışışışıı’‘ Starling ccu%×şÒHCairoşñ$Bankston·ˆdbdc05c-a9ac-4a07-8b36-95a5fe4777625&½590218.vsâ:Valenci561˜ H9d55288e-4047-4f8c-a71f-e948a3ea5a0556e¦ à&56%D!HâÅ 6‚	=:0@˜ H45f88d3a-9cb4-4aa1-b730-c7adf45ad167~ƒ
+—6 fDæ2@ Ãõ(\Âù¿ ´6Åİ<"ÇSí!¤:a-6ää:Å3:¯0.96Ba 32:25.41513¥“09öaşÊÅ 2*¤
+n¥OşÅşÅşÅşÅşÅşÅ>Åş¦
+ş¦
+Ò¦
+@Lyric€õ$Dennis¥I0e1d73f97-a8fa‰Ù@92c7-dbf3bf529db35±I07164947ş¤
+¾¤
+¡8Ö@7-11-26€¡Ù48d7b99¡Ï\5-45a2-89e5-241ee09f73c5~@¡-ffæ*ÃMLsO@ ’²ï§ÆK×? à	6£
+H½ÀÂ§£
+!:B43­š.ÅØì1 9Ñ,17:06:49.246> Å 1. 21‚öBNp
+ÍNş£
+j£
+38*£
+ (£
+:NBR4Ÿ
+336 
+UIœˆa650afc-cc88-4359-a698-a3a7a2076ba0ş 
+n 
+UICş 
+ş 
+ş 
+ş 
+ 
+­S‘KeluişöèNevaehúô$Flowers Hfdd8c33f-f762-4700-9f84-a46f413e31ff4±T10024274(scurr>¢Sharondš
+78
+C(ˆ0686a02-8b2d-4230-8ac2-243bde225309—
+78eš8k"¥78µS¡[ÖW 8× 3BW0bddcb22c-e3c2ª @9391-4fdd7d2e1152~WI*¥©i@4@ …ëQ¸…÷¿ È6—
+ĞËğá˜½\!:U-  29¥¬öB—
+ 58:39.1351~
+$14:20:40.1.n 0öUş—
+Ö—
+89½U‚—
+ Á÷"şFşFşFşFşFşFşFşFşFşFJFakÁ%:àAyann­D948
+ÅK ˆ091a8b6-f89d-4596-b088-5ade1f926b0e©D7•Ğx±D¡<şD6DHe1b622b-451b-4327-a¡D86ed2ff8e5581Š>ğ¿:^ ğ? é$À Â6é$¤*ñcÛFDõ!  &½D¶Ş1 9ª^7:53.1781 18:13¹60:²
+ 4şDşDÂDé$ 2.€şEşEşEşEşEşEşEşEşEşEşEşEşEşE¥E˜23b255e4-bf7c-46c3-afe9-7a2a3757f4f2îE¥EÀ Ø6Ez™çÒ:‚E *½EÎ€*‰
+­,5:43.113>E36:38.19*¢
+2 4şEşEÒE13®!0Bp0ef12ce77-354dH8-bbc0-a521d93b21b6şĞnĞ Bşpşpşpşp&pĞ’‘ De Jesusp bşpşp<LailaÈö$HolmeÑ˜d9ecbbad-f33a-4a9a-b160-fcd7d7857ffbÈö*Ñ442435G.kdejß 2:
+DKaylanniT102310š)> ˆce2c102-a053-4fa6-8944-72c2d1bd4136:Œ	`úø@
+â“
+3-22Bnˆe59edf0-97bd-4861-bf34-114efe3abdd7~×ñ$ Ù>×&@@ (z/$zî¿ ªÂ |/ 3W\rŞñ$%¢&|/-A!  5½N†¾
+1¾$3:30:23.226¶
+3*65*¬
+12nöN Ju/ &õ$ $¹ 8É6- !Èå0:  º74¶Âş¨ş¨ş¨ş¨ş¨ş¨>¨©8 89!ş¨ş¨2¨HTrinityşò$
+Lamar›ˆ6c9b497-415a-41dc-b876-3f3735ec0e862&
+437281ş§ş§ê§ 7æ36Î44 H17a1efd2-f9Q78752-b44a-c96a80%‚
+%U3ã½9¥K=@  ìëñ¿ †69™Ç…²Æce!¡½9ó5"§ 3‘€;@Ò¦F98:08.28:µ4 3:52:41.7F§ş9ş9~9²û¸
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfü.ô7şŞ92Ş9†şCşCşCşC6C’’  Bradshaws
+famşä$öä$ A*™$Èú$Cherr•,afd66a86-29f:)<33-a0e6-a70d774eHÈú.>07038.lbä:w
+LegacyÎ8001J$$ecd7cae-de³*Pc82-873a-1bd8d94038f2:n	€vñ9L¥Öu
+7-12-06>u
+(9e7f9a83-a2å 1å<03a-7b1ff734a447~u
+¯  2Lã$ Hò9ã$ ¶g	Æu
+H]í‹hÚu
+! &u
+ 4Œ= 0X.L¾è.Ã0 16:37D* 0.\
+	49:20.47.0 12ö<şLÖL92†Š
+Ğ+s—Ş%ı9¶fívÃZÆ'íÖPş}ğPNoYes
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfüvchSISSchoolYearID=2024&. $ID=3020080LCourseID=ENG01028G1&	2ClassID=†PeriodZ3-242024OAğHEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’vchSISSchoolYearID=2018v	Ô’¼ ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’’@ Bradshaw - 0famu%Ú!ŞğFà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.)§B	¸8¢@20!¨ğT024 
+SkylaÊô$Williams Hb464ef54-b028-4aea-8035-2972dc6d14a0Êô$FL000010343688I.lbã@kippm!q<.orgLegacyT4Al01˜ H4ecd7cae-de9c-4c82-873a-1bd8d94038f2:!„€vA!B .â 07-01 00:.0004-06-30B 17-10-282 ğ> H86b086ae-8b9b-4c6d-b6b8-09aa863aa55dActiveEnterprise  ’K3Ó?š™É?ÁT  I@ dR¸…ëQÈ¿ Ôiæ<FallkÁÂók_Û?  %£se  ö!  3@	;@À¢éL3-09-12 13:23:40.503> 41:16.65)209  38-152 9>N	•L$At/Above Benchmark«ğ? D¿ÀX@ V3 …ùPÆRU 	(   BR535LX(Late Emergent Reader !š°1FAUH840c1c6f-74c3-44c1-864b-6e191f3f3e5búV’ 2±6BuASIS>N9G2­N…ŠM9G2±M˜1H00e33c99-28ae-4667-ace0-474089946b90şMµM9G21şMrM M¥M’‘@"Bissainthe - 1faşNöNàJoel°ù$Aguilar Hc532a81d-5087-48b3-8605-1204b67227164F¥L09906042(.jmerisier:LHJessicaT1023359˜ H01d09849-c441-4e40-8bc0-15a127d1a3e5<a)ğûø@eröP 6¡i 26‚!ˆ0743300-6603-46c5-9734-a57d02427fccvP 1¹P¥Xt3ó?ÍÌÌÌÌL:@ áz®GáÊ¿ ÎÆ©Oë—E”™dÜ¡O!¥½O-D!  4¡O¢
+BO 14:05.585¹­h5:02.9592 09:öO0Intervention®@µI $¹ 8¡I6- !Ì0: ±:40¡:[@!~Bş‘
+ş‘
+ş‘
+ş‘
+ş‘
+ş‘
+N‘
+©Dş‘
+ş‘
+Ê‘
+TMarcosšú$Rodriguez‡	ˆe4235dc-611c-445d-bfb7-2446f7fc8af36±G10501562ş“
+Ú“
+îD­D8-04-262x	˜ H7f6ee74b-9cac-46d5-b163-fca0ca073b0cvD Kmã$ğ¿)\Âõ(Ì­DÌ.@ 
+”
+ü¿ œ6>©DøøçVÁÙ¡D!¤½DÕ3  1‘‹;@†Î	¹820 14:29:48.411> 50:07.63*`
+2 0öD&U	
+JK ¹K ğ£ "¡KR4 % ² V! ­Y97¥Y*EarlyV”
+E50UICñ650afc-cc88-4359-a698-a3a7a2076ba0ú.òşã2ãUIC¦•
+8Gşâşâşâ†â 5‘KellyßuicE&A*şŞÎŞDAlayna¦ø$Taylo‘
+ˆdf180bb1-0e4e-4171-bcc8-c86eedccce53±J09103001G(scurry:
+Sharond
+ 400078
+C(˜ H60686a02-8b2d-4230-8ac2-243bde225309Ñ7a!8kÙ!=ÖÙ¥E 1BÙxb89f63e0-719d-471a-892e-c237536È~E€
+Ó¿&Ù‰
+HŒA@ 0=
+×£p=ê¿ Â2‰
+ºr×s‰
+%œ2Øõ!6ØÈÎ
+1Ø56¿1076 4:11¡^61:ñ 0öE6\
+	®ş‰
+2‰
+70*Ãş0ş0ş0ş0ş0ş0ş0ş0ş00,MiaŞø$Plu
+˜9c7ff689-c53a-45cb-875f-dbf3e66f9a6dŞøµ+10423779E(akÁ	:+Ayann­)948
+Å/4 H2091a8b6-f8P596-b088-5ade1f926b0e©)7atĞx±)±%â) 6Jn
+ˆ8b740e6b-0107-4b2b-847c-638e250b76d‚)"ù"n
+	F@ R¥(
+×¿ ¬5		t:wnéd!™6*ö!  2*o
+BŒ*³=
+ 3:01:20.3.³¥*51.68:ˆ
+¥*	ö*şÚ 8*o
+j)jé	şn
+şn
+şn
+şn
+şn
+şn
+şn
+şn
+în
+n
+LJaniyah†ø$FranciM4d28c8578-aead-üD-8d40-d9882e25955d4p
+10473860şEşEÖE 5JEÀ1eb754ea-6a00-4ff8-abb9-01d1521885acActiveEê p6G‰ì  ¹En
+ÌC@ >÷â¿ öÅ©D‘iÕ&6³³!›^D ,½Dğì*n
+¡+(2:57:59.565Ñ_ 93:13¡+266D09öD On Watch1&¨ 9µ€C¨)á2N!ABR64*b
+~#È0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚vN¼Â*Jx‰ş™ş™ş™ş™6™’•$Barrett› h-ÏE(NoşŸÒŸ@
+Selahêû$Walkef6c4dè@4dd4-4a6e-9f11-09
+a5276f3¹.383408,cb	ã>u
+Chant>
+794-yˆ2080b9f-2d65-4091-8593-019b568aaa4ew
+9ƒ h"y!>âw
+5-3B)6f14ac18-d9b7-4545-a8f9-14e1336c9094z2 fæ?¹2² N@ Š¤p£Ğ? Æ	6z³êaŠˆx
+% 2¢÷!	6¢¦Ş.x
+01 12:42:26.12.Î 1“ 00:53.26215 9, 9ö4şx
+Öx
+41–x
+A1h0BCUHef12ce77-354d-4a08-bª,a521d93b21b6şz"zJPBCªzşåşåşåvå6’‘ De Jesus¡Mbcşxöxd
+Jimmyü÷$Castro PadillaWˆab95902-921b-4d2c-a3fd-a7b015cbbeb8;±Q08982922.kdejç 2:R Kaylanni3101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:L`ú"10˜a%ÖV7-11-16è$8 Hd91a806b-2a2¡Vf9-831¡V 04f7557de‚V°  ;Ä"Ï$Lğ? Ãõ(\ÂÀ ºÂˆ
+ 2oş÷ˆ
+!«½T10X"Æ;@ÜĞ1ö 16:01.884> 31:32.19*¡
+12ˆ
+öTR)ş;^;BR12.Ï$şşşşşşşşş$
+KeaniÂ÷$6*Pac2e457-f0bb-463a-8f6$0434160bff5±N10400284ş=ş=Ş= 8š	*H*‚(07df52d-e93!@e6-991c-3da3395a3¢ ¹**Ï  N­\Ù¿ ¢2Ïçpè³~á‚!½G³ 8’ 7¡GÊ†*›
+­$4:= 2FG$5:18:09.586Æ$11öG&¦©<şÏÏ59¦z
+ş²$ş²$ş²$ş²$ş²$ş²$N²$şC/şC/âC/LVictoriaæó$
+Nieto°$ˆ742cbc6-7c60-4964-92dd-788393d25b972¹)516383ş°$ş°$ò°$6-0Bkcdc79598-3146-47dc-8c7e-20426d6ec90azË‰, ğ>k°$W°$ 6°$ƒhSóİu
+! 6.80u
+.°$ÂĞ*°$¡.3:06u
+72*ä	20:27.126kô)ö.şu
+Êu
+Bº°$0BAbc5' 55a1-45e5‰.<3-6d7ec1af3330øşD/D/RÊşşşş6’Why®$ bş­$ö­$DStarlarğù$
+HornÈ.˜91cba4ca-506c-48b4-b54f-daf58dbf9673ğùµG09330755F(twİ:»
+Tish043
+%*$6c4e1cd-07%P498-b502-1e5fe303f5d5
+7¬j¬Ö´8-03-13>ï)De26e8a21-937f-43cc·6$7-a15b76ccA~ª$«.m
+ÁH €E@ J…ëQ¸…Û¿ œ6m
+§ê7×ŠŞm
+!˜6?õF 5*m
+¶‚Bm
+01:41.9.¡? 4Í64:Í 0ö?şm
+Rm
+60–m
+_şn
+şn
+şn
+şn
+şn
+şn
+şn
+şn
+şn
+2n
+
+Lx”ò¡$ickmD48206923-c382-428fw08-6aa02eb520d2k
+09364549Fş®9ş®9Ş®98-05>’8w 20ba94-81=5b„w (0ef9b853042–+ Ù*˜¥=ÙJ@ r­9¸¿ ü:¬$ÏA½-§‰4! 6,&k
+.®9º¸B,13½)37:k
+$4:38:49.07:™ 0ö,ş4Ú4 8‚‰túVHŞ%ı9¶fívÃZÆ'í¨P±ğPNoYes0CCUH8e293302-2a6a-469f-876d-cf8d03f83ff7úvchSISSchoolYearID=2024&v(ID=30200804HCourseID=ENG01028G1lassID=…4PeriodID=23-24^N@ÀEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’V» 18v SÓ’» ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’‘<Starling - 0ccu%×!ÛğLà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.vchSISB	·8¢@20!§ğV024 Nethcha¬ø$Philidor Hc08a2a5b-ede3-4e5c-8a61-f95b61ec0080¬ø$FL000010622851I.vsä@kippm!r`.orgValenciaT4000561˜ H9d55288e-4047-4f8c-a71f-e948a3ea5a05:!‡àjA!F .æ 07-01 00:.0004-06-30B 182192 ğ> H7c67f670-26cb-493e-b1e3-ff64a7a8da4cActiveEnterprise  ’K¯  ğ¿š™É?ÍÌL5@ ¸…ëQ¸ö¿ Ò4@FallšÇ\ÑÚ?  %¤sEõ  õ!  1@	;@ôş	èL3-09-12 13:53:32.4126 (4:06:14.4936  0  8-152 9>M	•P&Urgent Intervention¬@ğ?	"@ Z4 !ÚVU (   BR875L(*Early Eme	‹Reader R­QUICaa650afc-cc88-4359-a698-a3a7a2076ba0ú.b YşQ.QUICrSISşQşQşQîQ¥Q M¥Q 5‘Kelly¡Nuic%ÔA*şNÎNZAÜ òõ$Obas9ˆ032f2e1-5d20-4481-8c34-d2879cbb4f181 .G964(scurry>DSharond±D78
+C(˜ H60686a02-8b2d-4230-8ac2-243bde225309:78eq8kµA78%9!=âA2-0BAè05c75550-e8e5-4c7b-a925-f93f27e277a9ActiveEnterprise e§¡A fö?¹ATFT@ º®Gázô? °mØ¥C!é"¿+à¡C!œ:C-	  6½C†ä1±C 46:36.5586 4:0¡_.53:\ 0öCH$At/Above Benchmark%½  ¡7±B D¿ÀX¡BN3 …ëPÆR" 	­C130¹C,0Late Transi¡Âal­F<BR230L - BR80LE<j0B¡Tbc5611c-55a1-45e5-ace3-6d7ec1af3330øVê	ş¥
+¥
+ BşSşSşSşSµS¤
+’Why©S bşRöRğ<Audreyüñ$Oldman H0ddc577b-98d3-43af-bf7e-60a513a838efüñ½V024881G(twİ:V
+Tish±S43
+%˜ H26c4e1cd-074e-4498-b502-1e5fe303f5d5­S43o ¬&”
+43e¡OâS3-182y	Á[ˆcc02c4d-a5c1-4829-8dba-1723cd0c0637~”
+ 3 Ó½SÁ   I@ dR•
+È¿ Ö[	eÕ©RÙ#í®F¥á¡R%š6•
+-  7“•
+ª¢1±R 27:59.326> 41:08.81*b
+12 09şRşRÎR53*•
+ (¥RR”
+A,0Bäef12ce77-354d-4a08-bbc0-a521d93b21b6ş“
+j“
+BCşäşäşäşä:ä’‘ De Jesus–
+ bşäúäğDSilasofhia‚ê$Orozco-Royero Haf076a6c-0f2f-4953-9edc-5cc501370b7d:¥
+09692113.kdejë 2:RLKaylanniT1023101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:—`úø@…a)ÖY 7J˜ Hbcb8d724-a781-46f4-922b-53fc206d34a8~Y°Ní@.@ 
+ö(\Âõü¿ –6íø¬$8èÙ¡X!ª½X-B	X.íì	ÊBí 36:10.9951±q 46:41.4042 ¡XöXşíÖí98*ª
+şíşíşíşíşíşíşíşíşííLMessiahö$Griffi
+˜e29f2b60-3635-46ef-bcde-6fa5ea83d05böµN10406797H(akÍ:KAyann
+948
+ó
+ˆ091a8b6-f89d-4596-b088-5ade1f926b0e
+7>Ğxñ¡=âE9-07>
+(ab922773-28!X0a8-b468-0ebfef148e4ev2)é?)¡/(Ì?°
+“P@ œşfŞ? ü	6ñš†b0XŞ¡G!½G40÷!	  5*Ÿ
+šü*Ÿ
+421 18:37:47.67*Ÿ
+	
+2.44*Ÿ
+ 4öGN¾	´ğ?şñfñ34~Ÿ
+BR40í295şîşîşîşîşîşîjîA~şîşî&î<Montelàú$
+Dixo¡P˜837be460-090e-494d-b5e1-373ad21120c0àúµP09758656FşíşíÂí 7 2B@58ccfca5-1e92-4632-ae25-e97c54ea2914z@A ¿¹OL1@ ©[3û¿ ¦6”
+)=˜)Jñ”
+!˜6M&ì.”
+ò	Ø*”
+20 14:(9.399Ñi 924:42.7¼´	 0öMş”
+Ú”
+ 5®”
+Ğ0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚vchşÖVÖ‰ş‰ş‰ş‰ş‰‰6’•$Barrettõ h-Ï]	şÎ@ZielleŒô$
+Volc2
+T5b90cc29-d3de-4d8c-bfda$23d4fa335c2í10348952,cb	ã>¡
+Chantej
+794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9¥hv£
+K1B!ÆÕ3-06º H|d780-c3d0-462d-9287-c3785ee5ed60~è£
+ ñ*ARL3R@ ¬Ház®Gé? È
+6£
+2·ˆñİ£
+!Ÿ6V÷!	6£
+–¦B” 00:34.8711ê15ê946 09öVş£
+Ö£
+26½V 2×N•BR36¨
+ 1.–¸
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfüşìbì†şdşdşdşd6d’’  Bradshaw¡efamş?%ú?%4FortuneÀñ$
+R&˜ Hdad44b63-efba-47a4-9c53-f555e9ad50342¹c439985.lbâ>dLegacy©+8001¡eˆecd7cae-de9c-4c82-873a-1bd8d94038f2:\ €µeL¡]âe8-:l%@ H81a890af-277d-@a38f-0da9fd4cb46f~e¯  à*¹
+ùæ=@ "Mğ¿ ’Æ¥°8˜!Ÿ6cõ	X.®®
+1‡
+$6:38:04.51½JÒ
+ 6S%23.52762  2öc J3% &3% $¿8@  :- !ÌÇ0:  â 7º%%ş’ş’ş’ş’ş’ş’>’ä e#ş’ş’2’@
+MarloØò$Butler*˜4e8dd74a-f416-4660-aa01-f5d8d3d3d60eØò½6540462Gş†Ş†ahî8 3>@7e50dcf7-e306-41f5-8d9a-95919b7b932azñ
+ ¹*
+…ò€E@ Jp*$…Û¿ œÆ©8VÇ¡>Ô/%%¢&İ2…./% ‚*>r*11:17.9>% 3Ø22.05½Q12›
+24ö8 On Watch	ğ  ¹4 9­4€C¡4)%Ä2N­,60*z
+j¼˜şÏşÏşÏşÏşÏşÏşÏşÏşÏRÏè
+Aminaêô$Mitchell H0818cac7-784c-4a4f-a53b-b1c2ba0090565*n
+15431şÑşÑæÑBÈ 23696a1«%P5b0-bd57-c642ad0b86b6~l
+©4bt(V-²ß? ‚:Ñ±ÿéÙéóãÑ!¢½640*Ñ 8%Ôş½6U
+ 2t21.1.[3:13'476tÑö6şÑÖÑ34~WÌ*t.ÌşgşgşgşgşgşgşgşgşgRg$KeyaniÒù.
+032deb71b-86f753-952i$7d9db79d763½f28782şfşfæf 1|;5:0>5kfea689`b2-4d79-b645-14ce67d57683~f% ã*Ú¥xHYM@ „w¾Ÿ/İÄ? ®:ÚÂ{Ë¢¶Û¡f% &œ
+2f 3½fŞÒFf5:35.93.Ú0 »1:19.006Ô08:şfşfÎf 4Šy*¹
+şVşVşVşVşVşVşVşVşVRVZoey°ú¡TarrÚ0c8640614-8587äƒ;,92-309168929P:°úµT09382752şTşTæT5-Fî00fa40e59-e2b9&Hb-b300-c13315c0ea55~TÜb`:=
+×£p=`: Öaèîwx‰Ì'¥R%ŠRäş
+ïp54:12.90*Ÿ
+ø14.97:65 0 	öRşßÖß86*,% *‰>Ì/\ú* Ş%ı9¶fívÃZÆ'íÜM¦ğPNoYes
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfüvchSISSchoolYearID=2024&. $ID=3020080LCourseID=ENG01028G1&	2ClassID=†PeriodZ3-242024OAğHEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’vchSISSchoolYearID=2018v	Ô’¼ ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledMNgs_’’@ Bradshaw - 0famu%Ú!ŞğFà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.)§B	¸8¢@20!¨ğT024 Kaydenı$Johnson Hcb718b21-98af-4260-a731-f34e50468eaaı$FL000010424679H.lbã@kippm!q<.orgLegacyT4Al01˜ H4ecd7cae-de9c-4c82-873a-1bd8d94038f2:!„€vA!B .â 07-01 00:.0004-06-30B 17-09-152 | H0b2dee2e-ad72-4f79-9f85-9c1c9öhe19ActiveEnterprise  ’K¯  à¿š™É?3P³>@ ${®Gázğ¿ ˜4@Fall5‰v¬ˆYÛ?  %¡se
+  õ!  3@	;@–²
+è 3Ï42 14:08:41.551>  33:25.0726  0   8> 9>M	•I!vention¥@ $¹8@ >- !Ì0:G (   BR765LjX*Early Emergent Reader%…O°0CCUH8e293302-2a6a-469f-876d-cf8d03f83ff7úV} 2±!B`,SI9CCş8ş8ş8ş8:8’‘ Starling¡8ccş7ö7ğ@Eliazar¸ò$Arellano Jr. H2e4d9f09-59be-4c12-b885-ec5a5aeac2349F­=590643.vsè:= Valenciaiş0561˜ H9d55288e-4047-4f8c-a71f-e948a3ea5a05:a/àj±?L[atÖ@ 8¡Y13>@63a3d3f7-a708-43f6-a816-09fddb81500e’@(ğ¿)\Âõ(Ì?ÂT  ğ? Ãõ(\ÂÀ ¸Â©@6•^ |Ù¡@!©6@ö!  &‘‡;@¨Î1@9-20 15:54:10.3436 $6:23:33.53½Y2 2ö@&U‰ÊJG ¹G ğ1 "¡GR4 !ÖV! ¡UBR123šVE6°0BCH5bc5611c-55a1-45e5-ace3-6d7ec1af3330ø.ş
+2
+BC­‚ş
+ş
+ş
+ş
+
+’Whyly¡RbcE$A(şˆ
+Îˆ
+HJayceonšò$
+JamesÕˆ8d4c5ec-28df-477f-bdc2-fa39ec477bfc2¹J043420(twİ:G
+Tish±D43
+%¡¶ˆ6c4e1cd-074e-4498-b502-1e5fe303f5d5­A43…9 ¬¹A43%:!>â@1-26²
+˜ H6ccb6380-e652-4611-ba8c-291e40639cd6~€
+w
+ Ù*€
+…ú €@@ *ÍÌì¿ ²6€
+ÍÀ:“Ü¡@!˜:@-  4½@úÂ:€
+(3:38:27.80919-™
+$3:53:21.20½@12 09ö@ş€
+†€
+30–€
+¥*\0HarvardH640ec5e3-2cb3áT8-bd20-1266cb514c50‚ş/b/‰ş4ş4ş4ş464’•$Barrett¡6 h-Ïaõş;Ò;HRaymondĞõ$Edward¡=,a55cd111-502x	Lef-a5d9-6daa735e51634¹=308880,cb	æ:?Chante©	794-Âˆ2080b9f-2d65-4091-8593-019b568aaa4e9 h"ÂK!AâB4-18>‚
+e48c5L049!L16-99a6-6f52aac8bddd~B¯  2‚
+ÁH33*@ =
+×£p=ş¿ Œ´Æ‚
++ÖO 
+Ú¡B!Ÿ6Bõ	X 0½Bì¾	1 9Á(12:43:08.51½)821 13:02:10.84422 09öBRN
+	µş‚
+n‚
+00š‚
+%kSşØşØşØşØşØşØ2Ø FşØşØÆØ8
+KylieÜû$Nel˜b88f5b85-78c1-4ede-9a10-deb49744bf8fÜû½I436549GşĞŞĞaÖM7-11-24>M,b588847c-cff9L81-84c0-03783624c3c7ÆMƒ
+.@ 
+äü¿ œ6M3C,†c¥M%¢2&Ï 1½MĞĞ.M 0Ï 2
+96*ö6:22:59F  2şMşMÂMBR97®¤
+0UIÏ(a650afc-cc8>L59-a698-a3a7a2076ba0ş%n%UIşĞşĞşĞşĞ"Ğ©M’‘KelĞuişÑöÑMarc’ô.M˜12c5559c-0457-4d31-ab7a-a83d29cf94d9’ôµM09597036G(akà>”
+AyannÔ948
+%Ôˆ091a8b6-f89d-4596-b088-5ade1f926b0e’
+7ÖĞx±AŞEìFÔ(8fe82ab-254ÊT20-9db0-2e88ff1834b1vTÔ ?­0Ì?©EDLJ@ n¸…ëQ¸®¿ ôÛ U%…&×î¹Õ%›2Fö!6Õª²1“
+8:–
+z
+ 6>  21:34.4476  4öFH$At/Above Benchmark´ğ?"[ DÍÀXN3 %PÆR" 	BR50½F(LateViWş¤ş¤ş¤ş¤ş¤ş¤N¤©Gş¤ş¤Ê¤L
+ZhuriÀû$Duplessiá˜120ac4de-c9d9-478b-a63d-245bcaa166ffÀûµK10416246Jş¥ş¥Ş¥8-” 6>–
+28e436d5-1fda-4731-b256-9087c76dd788–e½Q¥cT¹Q@ ¨²ï§ÆKç? º
+iè©R†eË*„÷ßå!¥6R800 5“gÔ½  0§15:39.43*'	35g12.k0 §şRşRÎR27*äRR@BR375L - BR225LåŠ¥bşôşôşôşôşôşôşôşôşô&ô{line†©
+Dariu¡^˜3c96d9f1-f591-4a93-afa4-66f8435c491f†ô½^622700Gşöşöæö˜ -J``1288bf5-38b0-47be-8bcf-ea&73266d¢ö¥W"%~CQ±« œfÅ%¢2°
+&ö.C¼2C12*10l 1½E	25:47.6.\…ö^şCşC~CşPşPşPşPşPşPşPşPşPBP¡
+caˆùlliot˜7bb4c0dc-00a4-4540-a6a9-1131ea78bff1ˆù½Q388966HşQşQæQ7-12¬…*:0ˆ*˜ H11f9cc68-738c-4de6-98d1-5df2a9fef2b7~Q‚ó?¹Q»@S@ ´W*? €6±
+¨Ò“-$!¥^S.Ø‚Æ*±
+©:18:20.39**	 3í.49*Ê
+©SöSNĞüşr19*±
+ 2m*Transiß*alq*¶
+29¶
+146¶
+ B‚*˜ef12ce77-354d-4a08-bbc0-a521d93b21b6úşıbı Bş‚*ş‚*ş‚*ş‚*>‚*’‘ De Jesusú bş‚*ú‚*@
+Eddieœõ$Brown}*,5b7b7827-c07Ç$Hde-8df3-cdc90089f416ö08833722J.kdejâ 2:cLKaylanniT1023101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:a©`úø@`êh 26Õ/¼/ˆe23b973-5bfb-4905-862d-a3a23688ebd9~f f æ½f¥xLsO@ ’ÙÎ÷SãÕ? Ü	6f³xœHQ¾/!§½f-C!	6¾/Ê
+ê*i­M 9©f*~*	50:37.9:>%şfşfÎf38½fb400335*şyşyşyşyşyşyşyşyşy2yèJayniyah€ø$
+Delva Ha02bf7a0-08c4-4d6d-97ac-0971778385922±cä62730şxşxâxÇ
+09>Ç
+517c5403-3392-48b8-b2cd-57f5b00b1393zx^* q\%í¿ ®.5qlf·RÅ
+!Ÿ½_^6©_.Å
+ÆÀB*19:24.266¬
+¶*1:43.656x09:ö_ş*Š*½Jn5ş;ş;ş;ş;ş;ş;N;şX:şX:âX:Amir´R°Eugene Hbfecc35a-2414-400b-90c7-82a1aeb61ebb3¹8436225ş8ş8â88-04-07>8fe11a8a8-6673-4d55-a1ec-68f1a36e87aaz8‡
+3ã>°HYM@ „¶óıÔxéÆ? ²:™
+ì®¹±Ó¢™
+%¢2R&° 3*°¢Ô*™
+~$4:16:51.77*R	31:01.32 °ö:şÿÖÿ 4.ì/ (R ¸Ç{ÄŞ%ı9¶fívÃZÆ'í†Lá}ğNNoYes0BCH5bc5611c-55a1-45e5-ace3-6d7ec1af3330øvchSISSchoolYearID=2024&. $ID=3020080LCourseID=ENG01028G1&	2(ClassID=0BCPeriodX 3-2420243M?ğHEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’vchSISSchoolYearID=2018v	Ò’º ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’,Whyly - 0bc%Ñ!ÕğFà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.) B	³8¢@20!£ğ>024 Elioraöò$Michel H70c10f29-78d1-420d-acf4-6b4110e47a663<FL000010428146(twİ@kippm!hT.org
+TishaT400043
+%˜ H26c4e1cd-074e-4498-b502-1e5fe303f5d57!w¬jA!: .Ú 07-01 00:.0004-06-30B 17-09-022 ğ> H64ee4a49-0f5d-492b-97e0-af83183c85daActiveEnterprise  ’K¯8  ğ¿¸…ëQ¸Î?3L8@ ¤p=
+×£ô¿ è4@FallÈWtrhÜ?  %RsEı  õ!  4@	;@Ì
+è 3Ï826 12:56:21.3636 (3:17:15.7382 09  8-152 9>M	•4Intervention¥@ $¹8@ >- !Ì0:G (   BR840Lj\*Early Emergent Reader 	K¡*0UI¡+a650afc-cc88-4359-a698-a3a7a2076ba0úVq 2±BY SI+UIC-ş,ş,ş,ş,±,‘Kel©,uiş-ö-ğ@Ta' Meyahöó$Simmons H89aea252-f19c-46d2-9d6d-1279271946dföó½1622826H(scurr>1Sharond±478
+C(›ˆ0686a02-8b2d-4230-8ac2-243bde225309-78et8kµ478eahÖ4 8¡M:f˜ H14b44629-c724-4d15-a500-f2595d3b606f~4 fæ¿š™ É±4;@ ­Iò¿ ü64A4Ã2XÛ¥4ó$>4-  3‘{;@½4812 14:11:08.8311 923:01.3.42 0ş4ş4~405–4A¨0CCUH8e293302-2a6a-469f-876d-cf8d03f83ff7ş3n3CCUş3ş3ş3ş3±3 M_
+’‘ Starlingb
+ccu%Ò!Ö àşc
+Êc
+xLiamÂù$
+Ortiz Hd61194bf-ee8'Lf5-8ce2-9333bd9be1532*`
+37362.vsŞ:c
+Valenci±2561	˜ H9d55288e-4047-4f8c-a71f-e948a3ea5a05­556¥5 à&i
+56t!EÖ67-12-162O	˜ Hb2a25c1a-d5b7-4013-b7be-e994b103b0e7~6W
+3Ó?¹6ÍÌI@ j­6¾¿ æ	Ë k
+8ågV¡^k
+!£:k
+-	6k
+ğª1©$3:49:19.02*
+¡$4:03:03.51*k
+ 0ö7H$At/Above Benchmark%½  ğ?"q
+ D­öÀXq
+N3 (
+PÆR" 	€
+51½L(Lateş
+ş
+ş
+ş
+ş
+ş
+ş
+ş
+ş
+ş
+ş
+ş
+ş
+ş
+
+À595566e3-cbb9-4868-8b5a-a274ea67f329ActiveE¦ p6³©I ã*
+ˆ
+=@  q²pñ¿ Œ2³1›Cpi¯¥Hn
+.³¨	ªB
+26:43.89BH 36:40.3956z 0öH ş³~³78š³á`Ğ0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚vchF'ş¶¶‰ş‡
+ş‡
+ş‡
+ş‡
+‡
+æ’•$Barrett†
+ h-Ï!İşŠ
+ÎŠ
+$
+Mavisèû$,
+lejo½˜df1bca72-82ce-45a4-92f0-99757818d3d4èû*
+868549I,cb	å:
+ChanteQ
+794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9ãhv¿K¬!EÖŠ
+8-Ù6&˜ Hcada30d3-3083-4592-9eac-fcd6d8bcb0e5~Š
+°ô)\Âõ(Ì?? ©M ™À ºÂ‰
+p:‹ô|ÙÀ!¡6‰
+ö	X &Ê	ÀÀÒ19-20ô 44:41.7026 (3:10:49.8042 09öA&U~JH &û ğ1 "Š
+R4 !Ö¨ V! $   BR123šWE6şXşXşXşXşXşXşXşXşXRXàAlyssa¨ò$
+Payne H070a7159-fd09-42de-a820-fc05d748b3492ä09362754şVÒVawÖU7-11-23>ß(9528736a-fd¡Udc‘
+ f0-20f42c|37~U–
+.ß¥ÀH@ b­UÉ¿ ¡2ß—¶äL5Ş¡V!^V 5½V¨ Bß397991ø55:28.456 09öVN¬û¡JPşßFß 3²ß B+˜ef12ce77-354d-4a08-bbc0-a521d93b21b6ú.Ÿş‰:‰ş+ş+ş+ş+:+’‘ De Jesus¥
+ bş+ş+DJace²ô$Crawford.ˆ2a82f48-32df-46b9-a993-198d522c76695±J10556247.kdejà 2:¡
+LKaylanniT1023101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:a’`úø@±JŞN‰eÆ:0É< Haf66c7b5-3dbaä@9f8f-635d2d700c1aÆN- Œ-hìQ®Á¿ àj	8	¤
+±¦Íàİİ¡N!¥½N-B!  2Nğ¨BN27:06.43:Ì$3:40:50.286 09şNşNÒN 2*£
+~-ş¢
+ş¢
+ş¢
+ş¢
+ş¢
+ş¢
+f¢
+şúşúÒú\Westanley ö$Beaubrun¨
+ˆe47c620-5b25-44fb-a284-58cb99268a885±^09477942ş¨
+ş¨
+Ú¨
+½ 1Bñ$ˆd7fe738d-a345-4570-9108-fbb3c6aeb73‚¨
+,™É¿&ı©ZA@ 0é¿ È6><àïğ†€>! ½Y40*ı.>†Ğ
+Ñ[<9-21 16:08:07.39.ñ$24:10.17*§
+ 2öYş>†>½É¯l$1(şñ$şñ$şñ$şñ$şñ$şñ$şñ$şñ$öñ$AvaæºSmith~	Hc8cb7cb-33a4-4eb2-8æ#,b6085d560d242±.10867955 şé$şé$Îé$Ô07B†
+€d0d90a7-906f-480e-b5bd-1993b54166†Ô-
+ à*jú$j "©8Ìğ¿ ”6,5&Fyÿ…
+!›6,&é$.Ó†®½,€ 489.986¹E	52:53.78*) 0ş,ş,~, 7*¾ *ş*ş*ş*ş*ş*ş*ş*ş*ş*š*ZaraªH/Lucie\
+(6b83793-428Ù#L65-b7f4-363ebe1060e83¹.52778(akù*:·Ayannã$948
++I/,091a8b6-f89d¼D6-b088-5ade1f926b07}ĞxVªŞ²12†:²Lea368475-49c9-4c80-8ø%,504ef6716208~²X
+Ù?&X
+	J@ pß$®¿ ö:²ÎØì- %›2J/ö!6²®B´*²V3:15@
+84*Æ$$4:25:58.16½F 0ö-ş Ö 49½B (zß$şˆ4şˆ4şˆ4şˆ4şˆ4şˆ4şˆ4şˆ4şˆ4ˆ4DKassidyâò$Marcm
+ddd214b	)\a-4cc7-b53f-dde910b76dad1±?09887617ş‡4ş‡4Æ‡4–09>>˜1c46e19c-3900-417d-a6b2-ec01b0e97d89ŠÔ$.>P>^Ô$Í¿ Ê:>(UŸş”!˜6>043­> 0*>Üœ½>9
+$3:28:29.61*—	 44:12.097ÑrWğş>ş>Î>54–>ánş=ş=ş=ş=ş=ş=>=åşÅ9şÅ9ºÅ9<AnubisÆı$BidoT.ˆ4c21dbf-f67f-43af-b10e-36d868b129061¹<410966ş<¾<³aÖ{
+8-01-08>=3cb5862d-9794-4986-aeb5-716b4b0d287cz=i
+ ¹>§P&C@ :{®Gázä¿ êÂ,åî—CÛÚ,!˜^< 2½<øä:§3:59w4 0F43.25513¥<10ö< On Watch­æ  &Å$ 9µ€CÅ$)!À2N¯$BR66‚™_ŠŞ%ı9¶fívÃZÆ'íèI¾~ğPNoYes0BCUHef12ce77-354d-4a08-bbc0-a521d93b21b6úvchSISSchoolYearID=2024&v(ID=30200804HCourseID=ENG01028G1lassID=…4PeriodID=23-24^N@ÀEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’V» 18v SÓ’» ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’‘<De Jesus - 0bcu%×!ÛğLà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.vchSISB	·8¢@20!§ğR024 AliyahÔò$
+Vance He4a5e375-795f-43b8-aa98-62637a286a0bÔò$FL000010424391F.kdejß2@kippm!n`.orgKaylanniT1023101uˆce2c102-a053-4fa6-8944-72c2d1bd4136:!ƒ`úø@!B .â 07-01 00:.0004-06-30B 18-03-092 ğ> H8d6cb6fc-b321-4688-8070-8f0d93cf45fcActiveEnterprise  ’K3Ó¿š™É?A@ .ë¿ ¼4@Fall%neÕzŞ?  %¡sEñ  õ!  5@	;@ÎÊ
+èÌ4-12 13:09:58.0A) 22:21.33922 09  8-152 9>M	•4Intervention¥@ $¹8@ >- !Ì0:G (   BR715Lj\*Early Emergent Reader KOş7ş7ş7ş7ş7ş7F7 Mş7ş7Ú7ğDBreylinÒó$ Rapalo Gutierrez Hc111ad1d-a6b9-4404-8899-d589b75a7d7f= µC623047şCâC\a)*ÆD2-16v˜ H24fc459f-5bf0-4dac-8fab-c1572b5cf2d1~Daã  ğ½DXÍÌÌÌÌL1@ ìQ¸…ëù¿ ²6Â©D™®nO[Ù¡D!­^D ,‘‹;@Èâ	1±+ 56:14.9176 $4:12:51.47½¡v 0öD&U‰ÎJK ¹Kğ?-! "¡KR4 %V! ­Y930–YE50UIC¡650afc-cc88-4359-a698-a3a7a2076ba0ú.¢ Yş‘
+.‘
+UIC²	SIş‘
+ş‘
+ş‘
+ş‘
+‘
+ 5‘Kelly
+uicE&A*ş
+Î
+Ta
+Òò$¡d¸adley Hd2461ebf-2f2a-433e-b166-dfbb744c00a5Òò½N551407H(akà:
+DAyannaT400948
+%¬ˆ091a8b6-f89d-4596-b088-5ade1f926b0e7–ĞxA!=ÖE7-10-232n	  H459cae1d-038d-4923-a128-6fedf8ae0b2bv‰
+€
+0¹¿)\Âõ(Ì?fP&C@ :q=
+×£på¿ äÆ ‰
+ò9F Ú¥Eò$.E->!  1½E”â*‰
+021 18:26:50.1.,	 40:52.64513 9 4öE On Watchª  ¹: 9µ€C¡:)%Ä2N­$66*}
+(LateV|
+­#ş´ş´ş´ş´ş´ş´ş´ş´ş´´T
+Bellaôô$Idom-Sharp¹˜f977c93a-5861-4869-8d9f-d86580f7cc04ôô½(025176Lş¹ş¹ò¹1-24>0Àdde7cd63-efea-46b7-b9ad-5df86b992bb4ActiveE¬ p6¹µ0		É?u
+ Ì¡0>…ëv
+ã¿ ò606CËmŞíß¡0!§^u
+ 6{u
+ø
+ê½0C
+¹07.3>u
+(3:20:47.693¹012¹ş0ş0N0 5*T
+ş0ş0ş0ş0ş0ş0Æ0ş­ş­Ş­èElijahœó$Griffin H9c8f840a-672d-4f31-9c95-c837d50dd6364&£382659ş-ş-ê-7-12-18>-4695052f-396c-401c-88b3-7d2e50939a4az-å3Ó?>-I@ j Q¸¾¿ æi	^
+4Û¤˜ã_Ü¡.!¤^. 4½.èª2ü­.0.058> 24:48.196¼çö.H$At/Above Benchmarkh
+ğ?"í D¿ÀXh
+N3 %PÆR" 	
+ 5.üşOşOşOşOşOşOÆOş3ş3â3ØChandy¾÷$Tima He7e6f419-2d18-4bc8-a004-ade2862a9d751¹L413915şLşLòL09-07>L(6c058efd-56@P2ee-a98e-d7119a162cb6~î–ffæ½L¥^sO@ ’­MÖ? Ş	‰:©MÎMQ~á¡M!¢^M 7{
+ììBM36:20.756413:53	7892fcşMşMÎM38~œ
+@BR400L - BR330L"¥´0Bşbc5611c-55a1-45e5-ace3-6d7ec1af3330øVÔşşışışışııª
+’Whyı bşüöüXLeonidas”ö$Guillaum×˜30658b0a-34b3-41e5-996a-62c98d475a74”ö½^535372J(twâ:ÿ
+Tishş043
+%\ H26c4e1cd-074e-4498-b5Ô(e5fe303f5d5ì7÷¬jş6NoÖş‡ 6>U3b9dd86b-ea13-4b40-bde9-c04b5b048c6ez¡
+¯6C¥UD3*@ áz®Gáş¿ ˆ6CşI\>a˜C!œ½S40õ	X 0½SÌº:C(4:04:54.5811\4:21:32.\"-3	 0öSR	µşC^CBR10.¡
+n¥EşDşDşDşDşDşDşDşDşDşDşDşDşD’DT7260c1f3-2b82-4099-9ffY$af9ec742fd~›
+‰9 à*D¥F³>@ $Yğ¿ š6Í$ü‹!qdÚ™
+nD 2½Fâ´*+03+346¹-	 2œ
+.32:  4öFşÍ$†Í$ 6*„
+‚0şu
+şu
+şu
+şu
+şu
+şu
+>u
+Ğşu
+şu
+¶u
+dMatthania Emily°ö$ Deciõ* Charle)˜9edf15ef-4764-43fd-89c6-cf7b0a7fc334°ö*ƒ
+622395Qşƒ
+şƒ
+Îƒ
+ 1J$,dc2b1da5-bf1‡ á<1e7-a4539ea343e3–=BÆ$Ì5@ €=ö¿ Ö6ƒ
+¶ïˆäWÛ¡=!£^ƒ
+ 3½=‚‚½=Q28:49NQ40:34.74BQö=şƒ
+Êƒ
+BR86*¢‚R0CW/,8e293302-2a68L9f-876d-cf8d03f83ff7şW/nW/CCşW/şW/şW/şW/"W/É’‘ StarlingÉ$ cşW/şW/8Jaylen‚ı$
+Ragq£#d6a1-c83|	L56-a3b6-363dd40464e42% 0A†X(F.vsà:ÊValenciÍ561æˆd55288e-4047-4f8c-a71f-e948a3ea5a05Ğ56Û	 à&Ğ56ÈîĞĞ5-1BW/b765e656-c7d3-4ff0-be72-35163e597517zĞx
+3ã?u
+ ÌW/HóM@ ˆ!°rh‘íÌ? ¾:%:«ùÿ¶ˆŒ
+!]:O-	  2Ò°Ú*%s
+ 5:42:06.8.6 6r/11.3>Ğ$ 2öON?˜şrnr 4.Ñ†rş*ş*ş*ş*ş*ş*ş*ş*ş**àAvaæù$
+Smith Hac8cb7cb-33a4-4eb2-8d15-b6085d560d24æùµH10867955F(scurr> C%ond±E78
+C( H606ò4p2-8b2d-4230-8ac2-243bde225309­B78e…8k"78µ>¡FßºU/7-11Jg!|8497-c449-45dd-86bc-4ceca12ca32d–* é>g“P@ œ%*\ß? €
+6gCJ©ô(à‘
+!:B-	  2â$œş½B‘
+$4:57:00.42:>/5:15:22.!\-5 1şBşBÎB34*ã (N3*2g29.gş"ş"ş"ş"ş"ş"ş"ş"ş""MarcC*$’ô$Nelso%˜12c5559c-0457-4d31-ab7a-a83d29cf94d9’ôµX09597036G (şXşXÒXUB­4acf0706a-964f-4fbb-a49d-14d76850d51bzš
+/* Ù½XÙJ@ r{iz¤¿ ú:%ÕU>Jc
+è% s"ò9kµW.%¶BW<9.08*©p 25:40.6656W 0şWşWÎW49~W  ëdCŞ%ı9¶fívÃZÆ'íN°ğPNoYes0UICH5a650afc-cc88-4359-a698-a3a7a2076ba0úvchSISSchoolYearID=2024&v(ID=30200804HCourseID=ENG01028G1lassID=…4PeriodID=23-24^ 3N@ÀEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’V» 18v SÓ’» ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’‘0Kelly - 0uic%Ô!Øxà¹ÈÏæ(Kipp Royalty Academy!íe5b1f9-54b6-4535-b893-d371e82f8288.vVÔ	´8¢@20!¤ğ@024 Marcella’ô$Nelson H12c5559c-0457-4d31-ab7a-a83d29cf94d93FL095970364(scurry@kippm!kd.orgSharondaT400078
+C(˜ H60686a02-8b2d-4230-8ac2-243bde2253097!}8kA!? .ß 07-01 00:.0004-06-30B 17-09-162 ğ> Hb6921932-04f5-4b4c-9f76-5237f22e6e2dActiveEnterprise  ’K¯  ğ?š™É?3PR@ ¬Ë¡E¶óıè? Æ
+mŞ8Fallèg¡Ì¿á?  %WsEí  ÷!	  7@	;@Ş¤ê 3Ñ42 14:29:53.152>  38:08.1096  0  8-15B6	e:O	•L$At/Above Benchmark«ğ? D¿ÀX@ V3 …ñPÆRU 	(   BR265L°2Early Transitional ReaderBR365L - BR215LABlÈ0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚v}u Yşa.a‰†SIşeşeşeîe©e M¥e’•$Barrett¡g h-Ï!âşkÎkàKaiäõ$
+Smith H5d69f9b3-197c-415c-9772-d49164dffb92äõ½e372227F,cb	à:gChante‰%794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9a@hv±gK!;Ög 8¡€222JÁ 2a7765f-ecf9-40a7-b4a4-1015e05b070cvg©^ ¹½gÍÌLE@ L=
+×£p=Ú¿  Æ©e~A1$é“Ş¡e!6eõ!  5¦¡e„19-¡e(3:43:24.581> 57:25.026e09öe On Watchª @±[ 9µ€C¡[)%Ä2N­D59½D4(Late Emergent­?  F¥/¨0BCUHef12ce77-354d-4a08-bbc0-a521d93b21b6şŒ
+nŒ
+BCUş'ş'ş'ş'6'’‘ De Jesus¡(bcu%×A!ş$Î$Hector¦ù$Castillo H3d809c4a-9b99‡	Hd-9897-436b911d215f5
+10590296.kdejâ 2:+LKaylanniT1023101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:'`úø@!EÖ.7-02>Ç
+˜ H2850a5ac-a857-4e8d-be7f-61a8f577d68b~.¯  ğ¿­7É?­.L@ ®GázÀ âÆ©.¾j³ùØ¡.!¤½.-A	X ,y¡.ìŒ	1±. 56:10.5556 $4:08:48.62:  0ö.&U‰ÅInterven
+µ ¹9ğ? "¡9R4 !ÚV! ¡OBR1110&”
+ *”
+nQşİşİşİşİşİşİşİşİşİşİjİak½:KAyannÛ948
+ã­ˆ091a8b6-f89d-4596-b088-5ade1f926b0et
+7?Ğxt
+ahâFNÛhc45f8595-78e6-40fb-854a-51dÁ@0baf4t
+0É?)\Âõ(Ì?fG@ X\Ò¿ ¾,	Úš—³³MÜ¡Gx2Úö!  3½GÂ”*u
+20 13:1.0041@9-21 18:10:11.8086  4öGşÚÖÚ56½Fş–
+ş–
+ş–
+ş–
+ş–
+ş–
+Æ–
+" e'ş–
+ş–
+2–
+Scarlettòò$Dorgil Hfdedf9ed-1521Œ
+H5-9b82-7f9bdb633d473&–
+389298ş–
+ş–
+ê–
+8- 6>ÄÀaa1da80c-1716-4799-ba94-0351ccf6d094ActiveE‚	 p6+3ã>ÄLM@ ‚L7‰A`åÀ? ¦	6+>†ï±ßÛ¡Q%¤¹Q2˜
+.QÎÎ½QÆ15:12.45BÆ31:51.106D09şQşQÎQ44²Qş–
+ş–
+ş–
+ş–
+ş–
+ş–
+>–
+şsşsºsHLanardoøù$Basderbb00031?`c7-481e-bc69-69785974dca03¹M86789(şrşrÖr7-3Br3de60adb-6b1a-46d2-a1c6-e34f08312236zG  Fİ$@ Ü®ÿ¿ ‚2İ$¹a”v‹Ù¡E%œ¹E°W .*–
+ş²:İ(4:12:16.123&}
+¡^(4:36:47.0976  0öER©	µşİnİ03½F‚İş]ş]ş]ş]ş]ş]f] 
+ş]ş]Ò]$Xandria–¢
+Battle88989ed5d-cc90-4dÃ862a-c31688fe4793±U09241351GşbşbÖb7-12Jb 3<$6bc-ad10-4s"@87e4-f628562b4cbf¢4"îb.@ 
+¤pdü¿ ˜6WìQŞˆÍ¥W%2W&b 1½WêÌ½Wí2:39ƒ
+41.Ô 0 12:55:4M½p20 08şWşWÂWBR97*ƒ‚Vş%ş%ş%ş%ş%ş%F%ş
+ş
+Ò
+DJaidenÎ÷$
+Delvap81a7b2a-5541-4a43-b7a3-e8100bRdc2±F10418153ş›
+ş›
+Ú›
+11-06ğ#˜ H7988d262-5b06-41d0-9f47-58cc5d13f0d1~D©2ô?&x1LæS@ ¸-²ï§ò? 6âÔA×PKBä
+!6FM&è	 8½F¸ØB%15:56.59*3
+29û79)&"?% 0öFş3Ö315½Fv%25%105*%şŞşŞşŞşŞşŞşŞFŞ¨
+şHşHÆHXAaliyah¤ö$St. Louisg)T74d7bee-ec81-4eb5-aeda¡b 76f7d438d6¹b524803şJşJöJ}%>J@0b0742d1-8cef-408y 8e3-d723332221f7–h ì½h¥ HÀP@ ú~j¼t“à? ˆ:u*ÆqtØİ¡h!§½h2J.%ô‚:h$3:33:35.93*•
+¡h 3:46:18.4:û09şhşhÎh33½hR›p*400Lp* 8­cÛÀ
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfüvc*ú.şl*2l*†şB%şB%şB%şB%B%©d’’< Bradshaw - 0famşC%úC%\Valery¸ô$Lopez TorrezÒ$˜481c514-7980-45ec-a94d-ff23d9552eb9¸ô$¹g622831.lbè>üLegacy×/8001s*ˆecd7cae-de9c-4c82-873a-1bd8d94038f2:¤ €"s*L5a%Ö  °:0` Hc69302e7-2d2e-48de-975p%$c6cbd3ca38~f°6F%? ÎÀ Ô6F%V«I[¢3!§½d 4€3 0F **Ì
+°ú1F%08:06R®0:55.13922 ®ödşiÚi14½e‚0B"5,bc5611c-55a1AôP5-ace3-6d7ec1af3330øVg4ş"5"5BCşSşSşSşS6S’Why!5 bş 5ö 5$De'Arraş5°Potter H0ea17bed-2570-446e-acd5-356d31c9ed153 5ã62985(twŞ:F
+TishA%043
+%A%ˆ6c4e1cd-074e-4498-b502-1e5fe303f5d5©B7€¬jA%¡9âA7-04>§
+<f9befc41-3cb9-4f5<8a3-ccd05508f20dÆA2@ qRpù¿ ¶6S¥$[gÚ¥
+%™2Sõ!  2½Aúæ*SŒ
+4:*%7.10:n*ª22.40Nª	şAşAÂAS 2š©A00CÖ/,8e293302-2a6L9f-876d-cf8d03f83ff7şÖ/nÖ/ CşÖ/şÖ/şÖ/şÖ/&Ö/”
+’‘ Starling”
+ cşÖ/úÖ/<
+Paris¨õ$Johnc:,7c5be62c-86eô9Ld9-a15d-a709c70709634¹D558816.vsá:G ÿ
+nci±J561˜ H9d55288e-4047-4f8c-a71f-e948a3ea5a05­M56…F à¹M56eaâM1-18>Mdc73ca60-47d6-4c3b-ac9c-1934deeca149Ú÷5@ ázÖ/ö¿ Î6M¢NÇP<%!£:M-6*¨ü:M 3:44:42.2>»/ 3:58:54.2:s5şMşMÎM 8Š §¯ìkŞ%ı9¶fívÃZÆ'íğH¼~ğPNoYes0BCUHef12ce77-354d-4a08-bbc0-a521d93b21b6úvchSISSchoolYearID=2024&v(ID=30200804HCourseID=ENG01028G1lassID=…4PeriodID=23-24^N@ÀEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’V» 18v SÓ’» ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledMNgs_’‘<De Jesus - 0bcu%×!ÛğLà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.vchSISB	·8¢@20!§ğ@024 SamuelÎö$Kirkland Ha9e0c3de-6721-422c-9bc6-c357481ab2905FL09330801.kdejâ2@kippm!q`.orgKaylanniT1023101˜ Hece2c102-a053-4fa6-8944-72c2d1bd4136:!†`úø@!E .å 07-01 00:.0004-06-30B 18-05-082 ğ> H3eb6fe47-ab2a-45f5-a70e-e177bdbfe203ActiveEnterprise  ’Kš™É?	 fG@ X3Ó¿ ¸mæ8Fall9ˆA’QŞ?  %\sEõ  ö!  5@	;@ò’éL3-09-12 13:09:33.026> 30:46.42)2/  38-152 9>N	•L$At/Above Benchmark«ğ? D¿ÀX@ V3 …ùPÆRU 	(   BR565LX(Late Emergent Reader !š	WÈ0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚v½< YşT.T‰ySIşXşXşXşX±X’•$Barrett¡W h-Ï‘ş[Î[èJayceonøñ$Nelson H24421059-8bcd-4c5c-8d4e-fca0a1f8289b3±Z10422360,cb	å:YDChanteT400794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9a0hvA1DâV1-192:˜ Hd870308c-d9d6-46b6-be36-088fa562b908~V¥73Ó½V(ÍÌÌÌÌŒI@ hÃ¿ Ş:V*+ïF"­Ü¡V%Ÿ¹V-A!  4—¡VÀ¨BV 34:53.0311±o 47:08.7142 09şVşVÒV20’VA,¸
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfü.·şR2R†şOşOşOşO±O U§
+’’  Bradshaw¡Pfamş¨
+ö¨
+Mak<
+p¬ü$Clarke H7b262d1e-d62f-uD-b160-9db6ae8e81eb3¹M556496.lbã>NLegacy©8001¡Oˆecd7cae-de9c-4c82-873a-1bd8d94038f2:G €µOLaâO 7>‰	™37ebaf2-c264-47e7-9eaa-0cf17bf03637v¥
+¯0  à¿)\Âõ(Ì?¥
+Pæ=@ "¤p=
+×£ğ¿ –Æ¤
+õ“28Û¡N% 2Nõ	X 3½N”	°
+189-20 16:52:27.4¦‹
+(7:02:13.27262  3öN0Intervention®@"
+ $¹ 8
+6- !Ì0: 
+77½9*Earlyj
+ş;ş;ş;ş;ş;ş;N; Fş;ş;Ş;0Miaâó$ChoÂ05c18be81-b5157á‘875-0fa7e0a769e41½54996ş5ş5â5 7
+22>„
+82¡Ït13-76a2-4f86-8b65-b53220a2dadd~„
+r
+Ì@&Ú…ïË«,ÙÎ÷Sã@ È6Û_bgò8gğ¡7! ^7 :‘~;@†¹Û 22:43.838> 38Û84B…
+ö7şÛÊÛ
+BR2*Ú ProbableÕ4BR125L - 25L©2şRşRşRşRşRşRşRşRşR2R\K'Aliyahó$Lacarrier’
+˜f481f585-c122-46e7-835e-0dc30d3dbf61ó2]8546Kş’
+ş’
+ê’
+ 4J7Àd0b6dd4f-2a29-4763-8345-d385ac308500ActiveE…	 p67áã¿¹]	@<@ ®Gázò¿ „6’
+Á~¤eîàà!¤^[.àÚ¤*’
+©[41:49.57B656«
+17*12àö[6e
+ÅQş’
+:’
+ 9½G‚’
+ş"ş"ş"ş"ş"ş"ş"ş"ş"R"D
+JadenÚø$Medder˜cff0257f-4778-4548-adcd-fd4102bf1929ÚøµB09996024Hş!ş!Ö!
+03>
+,45c67378-3eeÁL42-9dd6-¡X98142dd2~
+Fw	F@ RŞfÖ¿ ®:!Û<¡¥A! 6Ab‰“.AØŒB!20:04.246(,13:32:32.6492µ
+wöAşœ
+Êœ
+w 8*èjw6ş”
+ş”
+ş”
+ş”
+ş”
+ş”
+N”
+ş!ş!ş!ş!ş!ş!ş!n!eccc24¡JX93e-40b0-8de6-3e319e541ò!Â
+¥O ! q pñ¿ Œ6
+²’›ñÓ¥Nn!2NªB
+07¡N43225,13:23:48.4672 09öNş
+†
+.9‚
+°0BCH5bc5611c-55a1-45e5-ace3-6d7ec1af3330øşZbZBCşXşXşXşXXÿ$’Whyly ü$åáş Î 4Tye'Æô$Bai›˜52027584-2b30-4043-a4cd-262818697c59Æô"z
+105Æ$ 8E(twÙ:K
+Tisha043
+ş ˆ6c4e1cd-074e-4498-b502-1e5fe303f5d57m	¬j–I!6âG4-24>u
+(d7326b29-f0¡+Pee8-97e3-d846dd3ea973~&¯  ğ*µ	7@ µö¿ Ø2G¾4Í…‰¥&!—6t
+õ	F.&®„B&56¡ 8:$14:17:28.1>
+ 0ş&ş&z&86*_
+‚&ş'*ş'*ş'*ş'*ş'*ş'*ş'*ş'*ş'*&'*
+Ja0ìû$WashingtÎ$(44b3d727-80Pe24-8f32-157fc6290cb87L0963918ş(*ş(*ê(*7-11-0BÒ$ˆ3c988a91-b389-4474-b3af-5af2f79f93f‚<ß.Ò$‰öÒ$0d
+×£p=
+Ç¿ Ö:±ZÎC~¡áM!§½=Á¤10G 7*Mî¢B±32:45.9764(13:49:40.686Ò$ö=ş±Ú± 3* (z(*ş²ş²ş²ş²ş²ş²N²{
+şÓ$şÓ$ÊÓ$Kaiÿ âú$Walk“,H90f9cda6-f740-4517-91a0-b55e8575f9373µQ7927388ş@ş@î@5-2B 302dd710-c71e-4149-9ff1-53be465df45a’± Ó*Ò$±Ù@@ ,ç$ì¿ ¶6±HJ³˜aUÒ$% ŠÒ$ÒÆ*‹
+¹$ 5¥N7.52*˜	50ÿ73½N 1öNş±†±.‡Š‹
+UI²ˆa650afc-cc88-4359-a698-a3a7a2076ba0ş²4n²4UIş³ş³ş³ş³>³‘Kel³uiş´ö´HLanardoøù$Basde¹˜bb00031c-17c7-481e-bc69-69785974dca0øùµ51086789(akß:¹Ayannº948
+%ºˆ091a8b6-f89d-4596-b088-5ade1f926b0eº7½	Ğxº¶Öº 7Ø4 36Ø4˜ H93b460eb-2fb7-4dec-b143-ee2f84bfb449š*?"*
+DL@ |ã¥›Ä °²? ˜	6Ë$dÍmìà~
+%›20ö!  6*~
+¶	Æ*~
+ş 3¨519.6931* 3:10:23.1:009ö0ş~
+Ö~
+ 4.Ğ~~
+ ¿8şDşDşDşDşDşDµD*şDşDºDJuli…Ü(Àõ$Sabori)4\bc2911d2-a520-405a-8c76-àd46ec49f4{
+1043—HşFşFÆF8-02-2Bì9797bf6df-6ce7-4e39-a5ee-6b02c6586cabzu
+‰íğ¿¹F$*5@ 6  Å ë9¤}mÿ>Ú¡E!S^E 1½Eú4‚:u
+ 4*18.49*•4¡^$5:18:47.75*? 1öE&Ua9JN/ &N/ğ?-! "N/R4 áâ V! \/ 8.ë9ZŠ
+Ä	TŞ%ı9¶fívÃZÆ'íÔH~ğNNoYes0BCH5bc5611c-55a1-45e5-ace3-6d7ec1af3330øvchSISSchoolYearID=2024&. $ID=3020080LCourseID=ENG01028G1&	2(ClassID=0BCPeriodX 3-2420243M?ğHEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’vchSISSchoolYearID=2018v	Ò’º ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’,Whyly - 0bc%Ñ!ÕğFà¹ÈÏæ(Kipp Royalty AcademyH5ae5b1f9-54b6-4535-b893-d371e82f8288.) B	³8¢@20!£ğR024 IvorieÂı$
+Grier Hb5beed71-2399-445b-ad5c-5df236c6022bÂı$FL000010170936F(twÜ@kippm!gT.org
+TishaT400043
+%˜ H26c4e1cd-074e-4498-b502-1e5fe303f5d57!v¬jA!9 .Ù 07-01 00:.0004-06-30B 17-11-262 ğ> H932d2199-6bf1-475a-8322-f1de8c82021dActiveEnterprise  ’Kš™é¿	<É?ÍÌÌÌÌL:@ 3ó¿ ø4@FallP¡ÌÍŸkÜ?  %˜sEü  õ!  4@	;@¶š
+èL3-09-12 13:49:56.5066 (4:04:15.8056  0  8-152 9>M	•4Intervention¥@ $¹8@ >- !Ì0:G (   BR815LjP*Early Emergent ReadAÈK¡)È0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚vNt 2±B\#SI.‰1ş3ş3ş3ş3­3’•$Barrett¡5 h-Ï!âş:Ò:4Kaylieîö$
+ElErH535ab734-b2e1-40c0-880c-ee09f793b6ea2 ­:08973028,cb	ã:<Chanteiÿ794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9a/hv±?K!>â?2-36q˜ H04aa2ed0-c411-46d2-86f5-35e9cef71e38~? f(æ¿)\Âõ(Ì?­3;@ ò¿ €2?˜vÊº<êÚ¡?!6?õ!  2‘†;@† ½?421 16:16:50.43½&	 31:49.20813 9 2ş?ş?~?00ª?°0CCUH8e293302-2a6a-469f-876d-cf8d03f83ff7úV¯	ş;¡;CCUş7ş7ş7ş767’‘ Starling¡8ccuuîş4Ò4HSariah¾õ$WeddbonÅ,5be14b5-9c72ÅH6-b14a-d2734e9b373f4±610524300.vsâ:7Valenciv
+561à	ˆd55288e-4047-4f8c-a71f-e948a3ea5a05©::3 à&y
+565H¡>Ö: 8«
+182^	˜ Hcfd3fba8-9c37-4445-8331-be2457f2d6d7~:Z
+3Ó>y
+HŒA@ 0ìQ¸…ëé¿ Ä2:wú?ÿà¡:!£6:õ!  6½:ŞÎ½:y
+(4:07:45.3841’
+(4:20:16.5326  0ş:ş:z:70®y
+¸
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfü.ºş¤2¤†ş<ş<ş<ş<±< M¦’’  Bradshaw¡<famş=ö=ğ<
+MaliqÂò$Chisolm H801ca3ca-335f-4e93-ae88-c0c42da440f9Âò½<025915H.lbâ:<Legacy© 8001¡¯ˆecd7cae-de9c-4c82-873a-1bd8d94038f2:3 €"t
+L¡2Ö: 7³17>:À2daae1ae-ff85-4a6d-a17d-93672d7cf86eActiveE¦ p6³¡Ìì?&t
+TìP@  Å °rh‘á? 
+ˆµ}˜Ö¥¥<!£6<÷!	6<ú†1<9-20 14:18:06.27½#	42:35.57.
+0 10ö<H$At/Above Benchmark´ğ?"» D­ûÀX»N3 rPÆR" 	Ê32½Q(Late :É@BR400L - BR275LE=gşš
+şš
+şš
+şš
+şš
+şš
+şš
+şš
+şš
+&š
+Lavœ
+(²û$Basdeš
+˜75e55bff-a995-4ebc-9d76-19926a88a304²û½^868467Gşš
+şš
+æš
+5-12-22>`6cc9b8b9-e4d4-4f9e-a4cb-e519874e6db0z`Ù?	J@ l¹¿ ê6_•ğØ]¥_%£656«.›
+Ô®¹_›
+(3:21:53.879> 34:19.906 09ş_ş_Î_51*êR_  ¹OşQşQşQşQşQşQşQşQşQQğ<Morgan¶÷$Edwards Hdaf248c2-7ae2-4831-a6e0-39eb2c27b646¶÷µI09382830H (şSşSÊS0-2BÚ95ce35a2-f8b4-4b05-b9cf-8c7f7af4af38’@ ¹½@ìPóD@ F®GázŞ¿ eÚ
+äıŞv?!š:?43­? 1ß	¨üBÚ20:43.446& 14:33:52.ËÓó 0ö? On Watchª  &O 9µ€C”
+)d2N}
+ 6®şFşFşFşFşFşFşFşFşFVF<BiankaÆõ$VincÁ<Lapaix H62f6bb4`b9-4abf-a338-a0bce4cccc08;&622937şOşOÚO8-ı 3>{
+f81371cù`56-40aa-99f1-0b7a60deab22~{
+^…ë ô6¶v° µF!¦6;79Y!2œ˜:;$3:51:58.02*B12¡; 06:03.773>;ö; ş‚ 2*e
+şşşşşşşşşÚLGeminiúñ$Mcintosh‡Pe6489a8-1fe4-4574-a4fì%$4a715990e252B514şBşBÚB¡$-29>B8c06fffe3-8fb5-4Ğ@8101-12e2b0e59b6c–BB½ÌI@ j2 ¼J½$9YaDóÚ?  %X^C 0É	~
+Î¬N½15.2F½ 49:37.9772C09öCNéĞşnş½ş½ş½ş½ş½ş½ş½ş½ş½Â½@
+Lyricì÷$Thoma»˜2b694717-f8df-4e43-bc10-70a5eb7620f3ì÷µC09331407Gş»ş»Ê»09-0B*d45c0a9fa-a6ba-478a-aef1-21fd525e7~>Î$fæ*»…CL€N@ Œ‘í|?5^Ò? Î	6ü9LO³Áæß¡?%›6ü"½.üÀâB?38:16.64*B‚
+$3:53:44.916)*09ş?ş?Î?5%bîRü2[350ş[ş[ş[ş[ş[ş[ş[ş[ş[R[8
+HoneyÄò$BaiW€abf21def-8529-4104-afd5-bade7763fx0ÄòµS10519129şWşWêW8-03-14>š
+551cf0cc-69ab-4034-a3a1-10fdce243d9d’†š
+ è:Wb÷uÛ¡[!¡:["W 3*š
+ÈJš
+18:18.15: 3:32:46.3:öWş[ş[Î[şš
+şš
+şš
+şš
+şš
+şš
+şš
+şš
+şš
+Âš
+(Razareya®¡HHall+)$a1e6dec-adñ#P80e-bc66-60943f3384c51&Ş296341ş›
+ş›
+Æ›
+8-04-1Bj/da0c43d58-a492-4066-823e-a8o02475f3š›
+*0*V03<@ =
+×£p=j/ „60*9Ù)rk!—:>"™
+ 4½>ø¢F3:16.44*ô$™
+$4:09:12.256™
+©4ö>ş†şj/şj/şj/şj/şj/şj/új/ M.*şj/şj/Æj/8Erikèñ$
+Younñ.˜b2fe33ad-1d61-42d2-a9d2-e2595c412555èñµ-09951577FşÌ$şÌ$æÌ$©6BŒ087d4e275-cebe	89c
+$1b2de11ab6~6Y  ğ½6,*L1@ Œú¿ °Ñ8Œ_d=8!¡:6"t
+.öâ	2Ü[
+ 9²$Bß9Ï06.726QÏ	ö6&Ui9JX &—ğ?-! "—R4 % “ V! ¿BR93†f­wL¹Ş%ı9¶fívÃZÆ'íø=ˆ^ğPNoYes0UICH5a650afc-cc88-4359-a698-a3a7a2076ba0úvchSISSchoolYearID=2024&v(ID=30200804HCourseID=ENG01028G1lassID=…4PeriodID=23-24^ 3N@ÀEla GrkHa41191b5-1062-4adc-a148-2ddc49c71f19’V» 18v SÓ’» ØK KIPP MiamiH57d9ba78-bea0-4c09-9377-7910f50cda0ciDClientID=7807984 L*@EnrolledFNgs_’‘0Kelly - 0uic%Ô!Øxà¹ÈÏæ(Kipp Royalty Academy!íe5b1f9-54b6-4535-b893-d371e82f8288.vVÔ	´8¢@20!¤ğ<024 Tiaêò$Cochran H65d4447b-4ddc-44ba-8f0d-f0dc322877134FL093615714(scurry@kippm!gd.orgSharondaT400078
+C(oˆ0686a02-8b2d-4230-8ac2-243bde2253097!y8kA!; .Û 07-01 00:.0004-06-30B 17-10-182 ™è5454057-2453-4b71-9c81-f8dfcaaa7602ActiveEnterprise  ’K¯  à?š™É?	TÀL@ €ü©ñÒMbÀ? ¦	mÚ8Falle°15İİ?  %WsEé  ÷!	  5@	;@ÎÌêL3-09-12 14:14:43.385>  29:14.5126  0  8-152 9>O	•L$At/Above Benchmark«ğ? D¿ÀX@ V3 …íPÆRU 	(   BR445LX(Late Emergent Reader !›	W0B¡Cbc5611c-55a1-45e5-ace3-6d7ec1af3330øVˆşC¡CBCcSIşBşBşBşBµBWhy©B bşAöAèNatalieşõ$Mcneil H271cfb6f-b5b4-435e-a440-da658c41a8963±D10414022(twŞ:D
+Tish±A43
+%lˆ6c4e1cd-074e-4498-b502-1e5fe303f5d5843ey¬jµA43eşAp 92$˜ Ha2e2fae5-c236-4e64-9ad1-2f601e854f42–Ağ¿:A ğ? fÀ ¤Æ©?”D™pµÚ¡?%™6?-  "€¡?â¤™Ú¡?(3:28:40.458>  43:21.7632 09ö?&U‰µ,Intervention%¼  @µ@ ğÍP "¡@R4 !ÚV! ¡?BR1300¹@*EarlyşAşAşAşAşAşAªA Mƒ
+şAşA²A<
+JayceÄô$
+WileÒ˜19384f29-3be2-45cf-be25-f0d8874be21dÄô½>590522Fş>ş>Â>8-01-06b	˜ Hdf52ebaf-735b-499f-82ab-d7be2dc73e9e–>  ¹>¥1P¦D@ D\Âõ(\ß¿ Œ‰*}
+C¡“ú¬Ş¡>!˜^>.}
+¼ú
+2$13:46:57.0>>$4:01:19.31:W 0ö> On Watch­3  ¹3 9­ó€C¡3)¡(2N!ABR61ª\
+È0HarvardH640ec5e3-2cb3-43f8-bd20-1266cb514c50‚v*¸ Yş¤.¤‰şf
+şf
+şf
+şf
+f
+©%’•$Barrettª h-ÏE(Noş®Ò®ğ<
+Sakhi„ø$Dawkins H9a8c135a-10cd-4a29-acff-1fc1c958b0d0„ø½.868012H,cb	ä:n
+Chante8
+794-˜ H42080b9f-2d65-4091-8593-019b568aaa4e9‹hvq
+K!?Ö²8-02-16Ë< H10cf6076-3e95
+H4-80fe-c533e09ae157–3ğ¿)¥Ì?©3æ2@ ­Hù¿ ´2q
+l›;q
+!Ÿ63õ!  1~q
+Èä	19-21¡3 11:20.4816 $6:12:41.03½32 2ö3R=
+	µşq
+^q
+BR92½T‚p
+X0CCUH8e293302-2a6a-46á<76d-cf8d03f83ff7şõnõCCUşMşMşMşM6M’‘ Starling¡Nccu•şøÎøPJaxsonüõ$Warrick AZ3b3149-4110-41ea-9614-e23750300fbaüõ½K622487H.vsâ:LValenci½561¡Àˆd55288e-4047-4f8c-a71f-e948a3ea5a05©O:a“ à&À565H¡SâO6-FÀˆ4141cf19-1328-4de1-a59f-7adfc15531b‚Oø ¹½OHÙB@ 8q=
+×£på¿ â2‚
+&õ˜o¸‹¥O!£6Oõ!  2½O¾à*‚
+20 15:4Ğ.42*§ 6i
+6.61713 9 2öO&Y
+	ªş‚
+‚
+ 7* (zŞş‚
+ş‚
+ş‚
+ş‚
+ş‚
+ş‚
+ş‚
+ş‚
+ş‚
+R‚
+LJakobeôû$William„
+˜4eba226e-8d27-4ba9-881c-04f6ac7e8b66ôû½9 4Ú 2Iş„
+ş„
+â„
+N5@6a1ebc61-b38b-4af897-2726edfd66c5~„
+¥#25·&C@ :f5ŒÛ®P›áÛ·ôû$:5&„
+ 3½5Æâ:5 2·48.0446 3P11.30*M20õ00ş5ş5N5 6*c
+~5şb
+şb
+şb
+şb
+şb
+şb
+Fb
+ FÔşb
+şb
+Æb
+dLine Shainaø$Danastoró	 fa55d30-9é	T4eea-a4c8-e601421dde0f5&h
+13şh
+şh
+öh
+ 5>L!d7q pd-b644-4f7c-b4bc-4d053b01ab2c~3f	.(ÍÌ@@ ×£p=
+×À ä6(›lZå÷Ø¡3!¤^h
+ ,½3î*·12·35:01.22*	51:56.466g09ö3ş·Ê·(10*Š
+Š¸ş­$ş­$ş­$ş­$ş­$ş­$>­$ M¥Vş­$ş­$º­$<Tyrell¨ô$Keyy
+˜b87d1768-a1f8-4cf6-8695-ca3f0a15c461¨ô½J043_Eş­$ş­$Î­$ 8û03>l,103da11a-cdf¿Lf5-b0ef-d445dc95485c~Dw
+ É*lw
+DæA@ 2Ház®Gé¿ È6¬_VÍï7I.!U:D78­œ..¸Ò*w
+ 1«$ 38:58.976&w
+	56:31.49*
+ 0öDş¬R¬ 7²"À
+0FAMUH71969878-edf4-412f-8eec-c0237966c4bfüvc1$ı(ş,2,†şÜşÜşÜşÜ6Ü’’  BradshawÜfamşİöİ
+MaÜ$Øô$Thoma¡)˜9e57138f-7092-4f3c-90b1-debce7340361Øôµ)09410748G.lbá:ÛLegacyŸ8001
+(ˆecd7cae-de9c-4c82-873a-1bd8d94038f2:Â	 €"(LÑâÙ2-04B-ˆ477d9f7-2d19-4b60-8d43-30d45c97a644~-_
+ ì*ÙPL9@ R¸…ëQô¿ êÆ[·>ly^Üq
+% 2™$õ!  4*q
+Î’½-À 5™$1.43:Ù 5€$12.78:Ù 1ö- J’$ &_ $¹ 8_6- !Ì60:  g83†[
+ÆIïŞ%ı9¶fívÃZÆ'í

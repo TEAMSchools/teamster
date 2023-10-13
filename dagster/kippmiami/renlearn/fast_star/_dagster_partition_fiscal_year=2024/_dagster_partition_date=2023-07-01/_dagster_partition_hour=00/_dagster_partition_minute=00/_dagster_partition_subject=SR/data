@@ -1,0 +1,970 @@
+Objavro.codecsnappyavro.schemaêÁ{"type": "record", "name": "fast_star_record", "fields": [{"default": null, "name": "Assess_Num", "type": ["null", "long"]}, {"default": null, "name": "Assess_Status", "type": ["null", "string"]}, {"default": null, "name": "CBTFlag", "type": ["null", "string"]}, {"default": null, "name": "CID", "type": ["null", "string"]}, {"default": null, "name": "ClassCode", "type": ["null", "string"]}, {"default": null, "name": "ClientID", "type": ["null", "long"]}, {"default": null, "name": "Cname", "type": ["null", "string"]}, {"default": null, "name": "CompletedDate", "type": ["null", "string"]}, {"default": null, "name": "CompletedDateLocal", "type": ["null", "string"]}, {"default": null, "name": "CurrentSGP", "type": ["null", "double"]}, {"default": null, "name": "DBM_Level", "type": ["null", "long"]}, {"default": null, "name": "DBMC_NOL", "type": ["null", "long"]}, {"default": null, "name": "DBMC_PR_Max", "type": ["null", "long"]}, {"default": null, "name": "DBMC_PR_Min", "type": ["null", "long"]}, {"default": null, "name": "DBMC", "type": ["null", "string"]}, {"default": null, "name": "DBMP", "type": ["null", "string"]}, {"default": null, "name": "DIS", "type": ["null", "long"]}, {"default": null, "name": "DisName", "type": ["null", "string"]}, {"default": null, "name": "DOB", "type": ["null", "long"]}, {"default": null, "name": "Email_S", "type": ["null", "string"]}, {"default": null, "name": "Email_T", "type": ["null", "string"]}, {"default": null, "name": "Enrolled", "type": ["null", "string"]}, {"default": null, "name": "EstORF", "type": ["null", "double"]}, {"default": null, "name": "EthHisp", "type": ["null", "string"]}, {"default": null, "name": "Exempted_Absence", "type": ["null", "string"]}, {"default": null, "name": "Exempted_FailedPrac", "type": ["null", "string"]}, {"default": null, "name": "Exempted_NonEngSpeaker", "type": ["null", "string"]}, {"default": null, "name": "Exempted_WrongTest", "type": ["null", "string"]}, {"default": null, "name": "ExtraTime", "type": ["null", "string"]}, {"default": null, "name": "FirstName_T", "type": ["null", "string"]}, {"default": null, "name": "FirstName", "type": ["null", "string"]}, {"default": null, "name": "FLEID", "type": ["null", "string"]}, {"default": null, "name": "Gender", "type": ["null", "string"]}, {"default": null, "name": "GID_RID", "type": ["null", "string"]}, {"default": null, "name": "Gname", "type": ["null", "string"]}, {"default": null, "name": "Grade_E", "type": ["null", "double"]}, {"default": null, "name": "Grade_P", "type": ["null", "double"]}, {"default": null, "name": "Grade_T", "type": ["null", "string"]}, {"default": null, "name": "GUID", "type": ["null", "string"]}, {"default": null, "name": "LastName_T", "type": ["null", "string"]}, {"default": null, "name": "LastName", "type": ["null", "string"]}, {"default": null, "name": "LaunchDate", "type": ["null", "string"]}, {"default": null, "name": "MI_T", "type": ["null", "string"]}, {"default": null, "name": "MI", "type": ["null", "string"]}, {"default": null, "name": "MultiRace", "type": ["null", "string"]}, {"default": null, "name": "NCE", "type": ["null", "double"]}, {"default": null, "name": "PaperAccommodations", "type": ["null", "string"]}, {"default": null, "name": "PNP_Answer_Eliminator", "type": ["null", "string"]}, {"default": null, "name": "PNP_Audio_Options", "type": ["null", "string"]}, {"default": null, "name": "PNP_Calculator", "type": ["null", "string"]}, {"default": null, "name": "PNP_Color_Scheme", "type": ["null", "string"]}, {"default": null, "name": "PNP_Contrast_Overlay", "type": ["null", "string"]}, {"default": null, "name": "PNP_Enlarge_Text", "type": ["null", "string"]}, {"default": null, "name": "PNP_Highlighter", "type": ["null", "string"]}, {"default": null, "name": "PNP_Line_Reader", "type": ["null", "string"]}, {"default": null, "name": "PNP_Other_Assistive_Technology", "type": ["null", "string"]}, {"default": null, "name": "PNP_Screen_Reader", "type": ["null", "string"]}, {"default": null, "name": "PNP_Unlimited_Time", "type": ["null", "string"]}, {"default": null, "name": "PR", "type": ["null", "long"]}, {"default": null, "name": "RaceA", "type": ["null", "string"]}, {"default": null, "name": "RaceB", "type": ["null", "string"]}, {"default": null, "name": "RaceI", "type": ["null", "string"]}, {"default": null, "name": "RaceP", "type": ["null", "string"]}, {"default": null, "name": "RaceW", "type": ["null", "string"]}, {"default": null, "name": "RBM_Level", "type": ["null", "long"]}, {"default": null, "name": "RBMC_NOL", "type": ["null", "long"]}, {"default": null, "name": "RBMC_PR_Max", "type": ["null", "long"]}, {"default": null, "name": "RBMC_PR_Min", "type": ["null", "long"]}, {"default": null, "name": "RBMC", "type": ["null", "string"]}, {"default": null, "name": "Reported", "type": ["null", "string"]}, {"default": null, "name": "SBM_Level", "type": ["null", "long"]}, {"default": null, "name": "SBM", "type": ["null", "string"]}, {"default": null, "name": "SBMC_NOL", "type": ["null", "long"]}, {"default": null, "name": "SBMC_SS_Max", "type": ["null", "long"]}, {"default": null, "name": "SBMC_SS_Min", "type": ["null", "long"]}, {"default": null, "name": "SBMC", "type": ["null", "string"]}, {"default": null, "name": "SBMP", "type": ["null", "string"]}, {"default": null, "name": "SCH", "type": ["null", "long"]}, {"default": null, "name": "SchBM_Level", "type": ["null", "long"]}, {"default": null, "name": "SchBMC_NOL", "type": ["null", "long"]}, {"default": null, "name": "SchBMC_PR_Max", "type": ["null", "long"]}, {"default": null, "name": "SchBMC_PR_Min", "type": ["null", "long"]}, {"default": null, "name": "SchBMC", "type": ["null", "string"]}, {"default": null, "name": "SchBMP", "type": ["null", "string"]}, {"default": null, "name": "SchName", "type": ["null", "string"]}, {"default": null, "name": "SchoolYear_ED", "type": ["null", "string"]}, {"default": null, "name": "SchoolYear_SD", "type": ["null", "string"]}, {"default": null, "name": "SchoolYear", "type": ["null", "string"]}, {"default": null, "name": "SEM", "type": ["null", "double"]}, {"default": null, "name": "SGP_FF", "type": ["null", "double"]}, {"default": null, "name": "SGP_FS", "type": ["null", "double"]}, {"default": null, "name": "SGP_FW", "type": ["null", "double"]}, {"default": null, "name": "SGP_SF", "type": ["null", "double"]}, {"default": null, "name": "SGP_SS", "type": ["null", "double"]}, {"default": null, "name": "SGP_WS", "type": ["null", "double"]}, {"default": null, "name": "Sgrade", "type": ["null", "string"]}, {"default": null, "name": "SID_SID", "type": ["null", "long"]}, {"default": null, "name": "SW_ED", "type": ["null", "string"]}, {"default": null, "name": "SW_Name", "type": ["null", "string"]}, {"default": null, "name": "SW_SD", "type": ["null", "string"]}, {"default": null, "name": "TestingIP", "type": ["null", "string"]}, {"default": null, "name": "TestingSite", "type": ["null", "string"]}, {"default": null, "name": "TestName", "type": ["null", "string"]}, {"default": null, "name": "TID_RID", "type": ["null", "string"]}, {"default": null, "name": "TID", "type": ["null", "long"]}, {"default": null, "name": "TotalCorrect", "type": ["null", "double"]}, {"default": null, "name": "TotalPossible", "type": ["null", "double"]}, {"default": null, "name": "TotalTime", "type": ["null", "long"]}, {"default": null, "name": "UnifiedScore", "type": ["null", "long"]}, {"default": null, "name": "Quantile", "type": ["null", "string"]}, {"default": null, "name": "Attempts_G3", "type": ["null", "string"]}, {"default": null, "name": "IRL", "type": ["null", "string"]}, {"default": null, "name": "Lexile", "type": ["null", "string"]}, {"default": null, "name": "PassingScore_G3", "type": ["null", "string"]}, {"default": null, "name": "PassingStatus_G3", "type": ["null", "string"]}, {"default": null, "name": "ZPD_Lexile_Lower", "type": ["null", "double"]}, {"default": null, "name": "ZPD_Lexile_Upper", "type": ["null", "double"]}, {"default": null, "name": "ZPD_Lower", "type": ["null", "double"]}, {"default": null, "name": "ZPD_Upper", "type": ["null", "double"]}, {"default": null, "name": "LexileRange", "type": ["null", "string"]}, {"default": null, "name": "LitClassification", "type": ["null", "string"]}, {"default": null, "name": "SubDomain_AP", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_AP_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_AP_SkillSet_B", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_AP_SkillSet_C", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_CW", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_CW_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_CW_SkillSet_B", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_CW_SkillSet_C", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_CW_SkillSet_D", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_EN", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_EN_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_EN_SkillSet_B", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_EN_SkillSet_C", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_EN_SkillSet_D", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_EN_SkillSet_E", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_B", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_C", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_D", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_E", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_F", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_G", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PA_SkillSet_H", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PC", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PC_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_B", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_C", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_D", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_E", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_F", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_G", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_H", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_I", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_J", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_K", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_PH_SkillSet_L", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_SA", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_SA_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_SA_SkillSet_B", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_SA_SkillSet_C", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_SA_SkillSet_D", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_SC", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_SC_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_VO", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_VO_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_VO_SkillSet_B", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_VO_SkillSet_C", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_VS", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_VS_SkillSet_A", "type": ["null", "long"]}, {"default": null, "name": "SubDomain_VS_SkillSet_B", "type": ["null", "long"]}]} ]ÈáTÌ0½æc¡Ú5orù&ŒSÎ~ğÄActiveOnlineENG01029G21FSUà¹Ela Gr1.2023-09-20 13:39:03.435.2023-09-20 09:39:03.435      @&Urgent InterventionNoMIAMI-DADE¢ßø ,bdelbrun@kippmiami.orgEnrolled^NF> DBrendaKariFL0ğB9842205MNgs_0c3fb856-1787-4479-9be1-4ff07403aafaDelbrun - 1fsuÚØ  …ëQ¸…ó?1H2b3a0d20-e75c-4b05-8fe2-c86ec918cc9bD	Ö Roberts2@!Y 2:23.917 Ùá  ğ? ß	r  !Y Nj€hYes
+FSA
+¤ Level 1f¸$v@ !v.KIPP MI!Ã\LIBERTY CITY2024-06-30 3-07-01E4 YÌSHkÚ?ê @   1 ê$=$10-06PM1 08-07 schoolStar ReadingT102269ú½S @	TA@Î	  PPBR400L!m!†ğ?Ê †d Azd 25:57.1102$09˜P€N@N2On Watch%™.Y<€ğÙ
+ .jmerisierzZ0@A=!à> <JessicaKayden}]37240q]À840c1c6f-74c3-44c1-864b-6e191f3f3e5b"Bissainthe a`auš™é?6`˜afc8a58b-ba4c-4395-9ce6-07eb01443445BN
+Lynch2=,13:03:04.350ia 3óD@e\Bï >ÿ  F!.aF}ŠVF5 hîK>‘oCa³ÖqK Ja@Q!í1àéêK335ş¾	S 3}KºôyK365iK5ÈÍÌ üşKæK 02:52.973209)* F–KÂşòªK 1ŠKNashkayK 758295FÅ¨şK6K7ad7a2d1-f62e-4321-a253-229044d27bbb.KSineu:­(2:56:18.001A_ N)C@E®L HşLşLZL°°l÷¢¥ÖmL€DaAQ"í1°ìşLRL–ø.L 5şL¢L 30G32NY6— 2y312¡A 43:40.8262 09%* ğ?†;:¢(®û &ccolez!…Vø	,ColePeytoÙ›7058197Ñ›À601ebbbb-5367-4b7a-8861-929abbc73f3dCole - 2nyuÔ  Ö¨@2H6d53ef28-3d34-4d6a-a9a3-a11622a4c745’
+Adam}C)N 21:42.028	Ñ1:ÅŠÅÁ^ îğ	’şğ	¾ğ	g¿°,³ØmY_	õ  !T Æâ¥$400015ê0S &İ¥Îşğ	Şğ	mYUSF.TFY6:38.12*ğ	12eY  Z66F<¾áÏ 0rdominiqu~K Fb@RosandraAudreyÕŸ7046170ÕŸ˜82eb0eb-2c01-4a18-babf-0694cb7c1485 Do‘  - 2usffş?6T02cebd35Cd3-429f-b0a2-2dfa0b918685MAlicia2$13:15:01.62J€C® <¾ROşé	Fé	‡â~J³×O	a4‚øŞa404ˆu4 7}4Ğ¸a–14Í‰%³!´933@‰³Â z 1U6/.ƒ6 14:07a/7179ù 0•4€M@0Iz|0‰ñ *ddavis2zƒ $b84DevonteAmiru59734604Ñ„˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bD‹ - 1ufm' Ù?×£p=
+×y˜6ae85746-a6a4-44b8-92af-e6736f836fa6
+DHBoyd61$3:54:51.58Ç	%âæ=®* ">*VqŠV9 Áüî÷_1Ë¤)×Ñv*Ï	M@Ià ”âÏ	aB14œuB *}Bş´*Ï	"fÙ?)mfömÌÂ zF$1Tuskegee2{.LÏ46:28.16.L 0Í{	  jš60¢ĞŒ *ndupre~| "bD$NikkiaMmahyF8578Â˜8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2D-JeantyaN t15Š2Í˜fcc768bc-45ac-40c9-8666-0a52fb3debf0D.V 0Jones Eddie}c%a38:31.95ç	u ²c  şcşczcÓôŒêf˜Ù•1Œò•36ÈuS (}S¸®şSêS1KS6"BN02:36.75Nnié 7¦š8âˆ ,awhatleyz›jW4AshleyAnthon&Ò	995295"60bb-e07c0-b7c¼0f73d65f143W	aQks¹ Ù:¹˜fdf50a3a-ad94-476d-be56-9c77bcbd7cc1W	K<Gomez Gonzalez6I 2:55:37.7Ñ¬ š*ÎI YZÙş¬â¬DAç|dlÕ¬ 4Á¡Q/É¬ ´î555¶ÂÇ.YÆşYòY š¬ 56:45.929209  ¾x‚Õë¢³!„VzÑ³LeoÑ¯1059024"õ	ş¯I
+>|,e90130ce-6a2Á¯Pde-b28a-1c8ea0eb9d57:¯Cabrer*8É« 48:06.104	é	qş‚ş‚ş‚j‚ïg`õØ‚	rõ$» 3Âr
+2¹ $İ¹şrÚr‚FI6¹B‚22:13.20İÒ‚I;@¾c€Ã÷Ödcezair~
+f|Dashe³Tamiy&38156498” 0Á¤ˆ86b-9b63-49f2-b126-63df6e2f5e3bCe’fiuÕ ã:’˜a7834768-6c08-4c0c-81fe-abdd90b7a008C	Û
+HickBéH14:24.837 JariyahÁ€ ÍÌ®m 8.€ªáR¢r@ ş{™{ª$qÕÏ $ÁÄQEb2œâŞo102Ôê¼ÑÏ ,}o¨ÜN(
+¸5ã ùmùÂ f{mo‚ñ30ü964ÙÊioÂÊŞ•Æ	®ü 5b€&ü
+Gion*B!233747ÆÚûIø ì:ie304ed92-7ae5-4db8-a433-475a9c7f094e*û
+MyleFk3:53.345A` Nk .®c 
+şcşc²c¸á	Ö¦&{2¢úŞSÁÂ2 1}Sâ’*é4!5Í;fşşSFS˜$z{ 5É3.048ySÖ 1méÂÂâµñÁÂš‚I{¡=> ‚Laur.=!952379Ñ¿ 6ÎÜ:š$(3007c954-b0T2b8-b39b-e336b6c0327d"Pinder6A(5:28:07.052	Ú	jş
+ş
+ş
+j
+Â«³a`"© Á­	õ  1Úâ©10:‡2'
+ ş'
+Ş'
+mej™$´41:29.65*‚É¸)* Âe¢ôôªY!IŒ>b"¤$El*902678î¢$¢$	ß  M‰456023c8-218f-4786-8f12-5866dd941771:W!st.‚)`36:27.15ÍÀ	mşkşkşkjk	±DTæÅÀí mcºñŞÈ10:±$.ŞşcŞc
+ N~e!31:39.46BŠ€
+dÆP$At/Above Benchmark¿6™€¥ ’^!€Kb
+^!Kenned&
+824093İ½¾_!ÉV!	_!3bf61ed9-f039-49bc-ab26-496cfa360715“DugginB
+04 3mM	_ F®
+ R>
+ ‚y Q+ŞsR+ 2…š¸$ŠA îíış™†¤&Ñ2¦òŞG
+2S! 6*
+ôè1.614B+
+ @	 ş"F"eF 2Spelman2Û:Ô 429.176e10¥aEô‚Ù:R,‡š ,sgodfr~•ÀWbU<ShantayeRolda&·$933087"ma3f33At60ad-493e-b0ca-d7fb16db99a3$G	Ô s-#™
+@m ¾$˜c8e47c17-ffcb-4817-aff9-7bff45dd67d0G	O0Centeno Iii&
+É³09:14.52V+“P®fœeg"˜ NŠ& qg²ajmg 3‰ışh‚hÑ«|ÀÃÚJ  €K@™2¾âÚax67†ëË$.—!8˜#ø  3.14š!‰Û@-í şxîx 3018.2FÂ28–Î$€êö¦d D@AF
+> ydDa'N€24086676{âf‰úü?-‹mfebb42834-13a9-4e04-8536-9062988e736aufKingB_4:10.492hŒB®_ 6!.5:206ò’J(F5 !gî­ÁµQÙ2áõêöî­25 9İ­ĞªÁ­P1Ì$%H!°© ş2F2S18÷353Bü'Z  Ç
+‚¯6¥Âà‹şS6S
+Dylİ¤85385a>‘! 4Öö1	à>T,85632040-ed9(P42-9145-3d69d875d258.T
+MateoBA7:05.86şÕşÕşÕÕB6éî&
+1¶ïŞWrKÊ
+şKzK ~«8fG5› 4aB30.23B
+18I{ &¦!ºTf!"§şTVTÙ?6¨,25564b18-deeaTL94-9bcc-fa0ccf5b2b49‚T4:áå7.561í N	lÎ‹!*«8 b¨)v£8f8 îœèµ‘3¨"á	 AÖ	Q+ôşU2U.Š!ÜşŠ!ŞŠ!Z2Tennb,Q5*6.925¹k3(N*Â½4 Öş ,amartin~+f»0ArneshaAna"å	9574011å	6fd013d2İ',e-4826-adfd-<(bb60d819M‹Jtennu-ÿ ğ?Ãõ(\Ââ	˜76ccdcec-3474-4f2e-bfa8-5e2f69dbe5d0MLPuH s2813:4d.953A[ê¶"B Yv*Šï	‚jî^4Üz;I?öáö2²î1(664°ô/.¶ğ”*¶29ş	w‚2	×Ò ªd ü]ÈáTÌ0½æc¡Ú5orù&„XˆğcActiveOnlineENG01029G21HowardUà¹Ela Gr1.2023-09-20 12:57:54.502.2023-09-20 08:57:54  ğLL@N2On WatchNoMIAMI-DADE¢ñû *mnunes2@kippmiami.orgEnrolledT2@NEI. DMaiaJordanFL0ğ9755036MNgs_1d57a6a3-4d42-4386-a6a4-15531e140100 Nunes - 1howarduÍÌÌÌÌÌì?…ëQ¸…ó?1H8b828761-06e0-4c44-bafb-0c101138f1b0
+M Jackson24!M$3:12.504  Ù ÍiF@ Û	r  N8YFthYes
+FSA
+¤ Level 1[¸$J5 !\.KIPP )¬\LIBERTY CITY2024-06-30 3-07-01E ÜéÑÿ#–Ö?)¹@Q@  	 L1¤ê$=$10-06PM1 08-07 schoolStar ReadingT400389Šğ0S1@	TA@´‚  PPBR335LA)\!Å fş?Ê fF 30G32NY6B 29õ812 13:28:44.5982 09t &Urgent Intervention%œ6E,ôå	 &ccolezCIj!ß> 4ColeMakaylayD 236331FeDÀ601ebbbb-5367-4b7a-8861-929abbc73f3dCole - 2nyu-›  š™¨@2H3fb50dfa-805b-447f-8753-a41548f625c0“
+Eddie2.!G4:03.189	Ò)Ëğ?e7Bá >ñ  e6}<rv6G’JGr@ ~îRÿ‚Dğ±}ÙM¸!DîóêB015ê0-8 $}B²Î	yB400iB)buÈ ğŠÂ  îˆÍˆ(3:01:35.964YÁˆ 9  Z×6;à˜¿¢€ 0~€Melanyy<042480q<Ú€i8 é:€Ğe7c82375-f070-4932-8f4f-82e9fc261b91
+NunesBencosme2-Á0:28.576iE¥¦D® DeEÅ{ YJu6:şš@šài×ÖM¥ÁqÎıê/ 32q 0}/¶
+òy/36Íq5¶åÖÌüŠÂ f/Åq(2Columbia.¸	Fv0:59.Ç"Ñ	12Åv	›,@†È:CDèã 4dmillerbrownz… 4RHE(0D'Juana
+Eth*Ë	7233169Ë	°ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(WilliamÎ	2c1')ì?-¢Í˜4bf0c0bb-3135-4596-93b8-17f7b651b8c0Mã-Bä4Jean BaptistB 11:49.51Ü	 3 *®[ mRaXear`%>"ç	ş Æ ¹Áò	 3@Õ* ,2Şâò	$101769’¶M¥.Ì†.ò	 2m5è…Öşò	bò	2Tennbô	20­59a~793y~É®i~,3@0zõ	8àú× ,amartin2zs ARs•4ArneshaAmirÙ¼33140uq˜6fd013d2-40ce-4826-adfd-c3fbbb60d819MŒ  - 2tennumc ù?Ãõ(\Âml˜a1d022e1-ef16-4b3e-8ad2-faa2e73a28f0ML Altenor2:,13:41:52.122É»%?€@®` *eZ* 
+VzŠYV9 !]îò	z¿ÌmwqR@RaGçi]2ôâR 400664°ô
+ 3İÓ€ŒÍÓ
+BR5
+ÉÒù?mZ@	Â fÒ‰1FS6O:…$3:35:55.42BO	– &–…4€ğÙ
+ ,bdelbru~¾*@A9!Ş> Brendˆayde*ˆ837260Ñ½ 0a5856-1787üT9-9be1-4ff07403aafaD	 - 1fsuÍA ã:
+(b17c9a6d-8eAT7e-9022-c20bb8106a7dK
+Lynch>J 09:14.975}J@B®J 4!.Jş†ş††lpH´çÇqB€GyB &1ŞéŞ
+ 102269ú½Ñ” ,.BØ*
+"D!ÅqLI§Â fC
+~”09 15:56:39.05.^9 11Æˆ¿Í	¦“Io>DÕ“
+Ja.H7545382qHÖ”1mìÎ ëÍ”976ca6fb-5afa-473b-a86c-c13018bb61fcÕ”Everett}J%S 46:20.023	Û	jş”ş”ş”j”ĞDÙØMÆÁ’ †îe6’ &}PÖ	ş”Ú”’Pä	6:10.63.P0 09aP	a·@ÆP$At/Above ›hmarki6[ş¢Ì¦Q@^b™uQGenisys&ç	411448£ÖSb@6ç	8c97c1db-6a81-4df6-b6e2-e332446e3badqSGay}O%R32:32.76.æS®™¸>š ‚‚ +¦², 4)Ÿ¸$ŠB îõ	íâ†Dâ‘.SÜöŞ£Bå	 8}S<”Ê  3.867å	‰´@-Ô şå	Få	eR(7:26.056Ë(­€P@Š”6Xàó’–1ÀXbU1Pheyto&í	6054840uRÂ1%@%Í¡48202152-ea46-4d5b-b3f7-65186443b5ef	“
+DukesyNxD06:48.558 Aubreia&ìP®U  ÊU qU²ŞqU 3şUšU|L8çv×€Vı	Q<á«2ìâêe6L 6}eª„me247›©0@-ë şeZe~
+¥e 49:31.916Y0É·%+ ÂÀà‹ş
+2
+Kamer}l7007887ş
+
+2¥379e2128-f56f-440e-9354-522e41d71463Ñ¾Joimelu}u-^0:15.871Ag N-Jş
+ş
+ş
+j
+5Ÿ,a‘ Ùmjêø mj¬ğêj6"
+.¶Øş"
+Ş"
+µ Azµ29:36.06İĞiiiiğ?rê"6Ï<‚íï .jmerisierzIŒG> 8JessicaBaile*Ê727441qiÀ840c1c6f-74c3-44c1-864b-6e191f3f3e5b"Bissainthe Åauá  2K!aa76fcDpf30-4509-92f7-70c1466422f7BNz-MarB3
+D11:22.499 ClaudeÁå1XBú >
+w	r“6$Rãr@ ~î6
+É+·ÒÅBİ‰íö¦ñŞo 102335ş¾á İÙŠşozo r­$1joï45:23.53*!ñI 0¦s‚œ‡ªh (b;
+yh CÀ i"6561588şhihà?a³$bbe2cd18-6dd6-4ac4-a9be-cf65d191015c.hGaite*{)[f6.65.Õş{R{a"ÓRVşzVzM´df`0
+ @Á»Q-iW ¢âzBW *}WîÄN8	} àñW øaéÎ f8ÅÆ1UF2G*Ì)û29:16.406 •˜@Ršz,Øä	 *ddavis~Ä 1fP0DevonteSa'N2¿$951)¿$˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bDyuf!/—qK$3cabe9c-24/\baa-823a-9fe62fdff00b
+DH Frankli*ÿ')M18:07.64Ã‹şÿ'şÿ'şÿ'ÿ':og¥¥„ØM°€Ca6QiA ˜âA400014œ"½$.Aº
+şÿ'òÿ'†!27½04317*u 7aG%/€@ÂuàßÚaRmizellz
+
+ :bRDavo‡!KenzoÕ 946418"ê‡!uO2v˜f3bf3a14-8bc0-4b2f-9c1c-fb4a1f249c20WØ!
+Š!"Ó"u 245.15‡eXÌ5®ã õ	*r¾	6ş	ş{!Æ{!"pğç  &m+á•—òïê
+406ŒÀ
+ 4İ¯šÄ*{!19à5Üç şàFàÅ¯1K~*01*94*
+uei @ÆEÀ‡íßwhatleyvkÀQfkAshl
+Dyl*ò$967524&Ü 0r+bb-e075c0-b7cs0f73d65f143W	ŒÁ¼ksp@:p,f4cfaaf-75ab€c-9á412515b80e898KGriff.¾if 55:41.738Ac NÔFT®f ºÊI"œ¶Iş—bÀ4"
+ EÁÍQ@!1Üëêj555¶Âqj.“!ìš®2.124miI ® 
+şiZi$1Tuskegee^
+A$3:33:58.47BL). GÊn¥ãÁØndupre~æ. 6fm0Nikkia
+KarimÕØ831245"*28e9af0c%ld5-487c-bfdc-5ed477b2288b2D‹ - tes t1&‰ø ñ:­!˜135b0f10-bbf5-4e8f-8dc6-2bcd4397d224D.V =
+coiBZ10 /47 /ÅåJ® l>å ‚ ÇöH2 2©ş‚5¶/"U
+ KarQOi}¶ìŞ}U
+36È"U
+.+¶°%BR24,5æ%}Ì ş~F~, 2Spelman2}*GN32A70}}ñ%.@V–›0Àé… ,sgodfr~ßeÒV›54ShantayeQ'Uvi&€5552294ñ0a3f3376d-60adÖ.Te-b0ca-d7fb16db99a3$G	“h( s-  	:5`39177d6e-ac23-4a1e-aa6b-1š/ c2ec347OGill&M
+)W03:51.47Bernarda8%ó ²+/ @8 *U
+~&%RJ
+F5 &î={»±¯SÚ­ À& @2¶ò67†ëh( :*?
+¶Âh(1.19/  	( şVZVŠ« 30·75YB
+–i2•Õi2–˜ EE,!Ù> ˜ :c(8117|"ë8ê™Tş?6™(8b686b7d-93<Tf0c-bd15-9ee20d44f106&™St Cy*:!Mš6.54
+¥A Ù²k( 8şEşEZE#p¼§i×™a5 â¸!10:t .qA@ò°a51ë.5³y ş3F3p–
+ 4\ 3!æİŠ!ÿ 0iä .ª{Ïù šÿ	 "f?ÿ	Lilith" 
+î. 1xæ8ş 
+ 
+ Ù: 
+6dfac822-f1cd-4dab-9cf4-bba8812b385c: 
+Valdez2}(13:50:08.42ş	Eæ=®ş	 "eI*áVK6Ü ¤N><V9 ¹î–_
+	‹*"k .ã	Q6î	 ÈâÕBî	.Cà
+²N„…­!Ô%mfömëÂ 
+be]ÈáTÌ0½æc¡Ú5orù&ÜVä~ğĞActiveOnlineENG01029G21KSUà¹Ela Gr1.2023-09-21 14:11:12.660.2023-09-21 10:11:12.660     €L@0InterventionNoMIAMI-DADE¢÷í ,awhatley@kippmiami.orgUnenrolled      &@NNo: DAshleyKaliFL0Ø9836982FNgs_605367bb-e077-44c0-b7cb-6ef73d65f143Wh - 1ksu	ÕØ à?…ëQ¸…ó?1H8fb59012-10b5-4b10-b0c4-04f4fc97ac33KWest68D4:05:37.579  Nf&@@ No	r  (8Y NNxhYes
+FSA
+¤ Level 1_¸$Z9 $No.KIPP )´\LIBERTY CITY2024-06-30 3-07-01E P. ß?ïÖ?-D<@  	€L1Üé$=$10-06PM1 08-07 schoolStar ReadingT102555¶Â	S *@	TA@¾  PPBR400LA@! à‘ø?Ê òN40 15:29:14.298]0 11	˜Pğ?&Urgent InrUÀóÃ
+fUE6SI}!ê> qSRakeemyU$725835MúU  6UĞ6ffc17ca-1436-4da5-8130-eb333c46e1e7WhatleyDorsey6A(5:25:21.436	Ú1FeRBé >ù  aK.WrŠ^r@ ~îe6Qgì@ØQÔğ?qe	1æëşeue &}eÒÎ	be2† Ò fe(30G32Tenn6µ 26$3:37:15.53.Î0 09	œLD@N2On Watch%›6± ªàa\martin2@6±>\D@AJ!á> DArneshaNicholasu_7256242u_˜fd013d2-40ce-4826-adfd-c3fbbb60d819Ma, - 2tennuÍÌØü?Ãõ(\Â@2H703ca8e4-e463-4cb9-aad6-7e8acd85cf8bMÜ VilorioBSL2:03.383 Alejandroè%I@B®Á 48.jF„6_’J½F5 !oîTJÏy(×7×qT HÁ®ß D2ÄãŞT$400664°ô0S 3}Tğ¦¹P5É´5Ë ff@	‰Â fO
+1Howard6Q68,12:58:22.423208	šx1@ÆP$At/Above Benchmark)Ø6]0àÊŞ	 *mnunes~\ >b\$MaiaNiauT9759344
+˜1d57a6a3-4d42-4386-a6a4-15531e140100 N‡
+ h%
+
+ ø:
+
+˜300b4798-ea0a-4ac8-9cce-1125205b5be5
+NM
+Brown2;!T2:04.820!ù N)@€N®HŒ>I†| 
+ö
+
+ 2e<¸$ŠA îaú¬ƒ¹!ğ
+@VaVQ8!1èâ
+ 400389Šğqa 5}aòğÙµ10mf	} øqò şfFfÅµ2FI6bİ³812 13:22:16.138Y'12Á³­@T@†Y6a É¾dcezairez¾ 5Rb¥DasheFMiracleul8228479ql(05f1486b-9bÁt\9f2-b126-63df6e2f5e3bC	’ÁÁfiÑ¿ì?š™Í¿˜fba4a561-0c62-4ad2-bcf0-f5d766adc1d9C	KFields2F13Ç00.572AgN3 *®m >lrß	%0"}RÀr@ şË”ÆMï…"
+ 3a_Q@!2ˆïŞË$102197ê¼	S2„Æ
+Œ}j31mjÉĞì?ÍĞ şş„F„ej~
+ 7A28:07.80.Î 7el%, ÂlàåÛ¦*
+!Š N%ì!ğ. "*
+
+Nylahug9454323qgÖ'
+	İ  ìÛ ëmhd9fddedc-0208-4b89-9d7d-94f27fd189a9'
+BÓ%Y<14:35.877 Skyya3	m ğşŠŠşkÆk`Ôƒ‹CÛÑD  a`	õ 2öáŞkB6
+  İÕØşŠŞŠ;
+1FS6Õ:7
+$3:32:10.386 ˆ  j„6Æ8€¬Æ
+ ,bdelbrunzÆ "RÆab8BrendaSummeryZ18550"-
+ 0j856-1785X79-9be1-4ff07403aafaD	/
+fsuÍ¸ Ù:+
+0b1f32bf7-d45fx
+Pf-9285-9c802d42266fK
+AnnelÙÀ (3:10:56.234‰3 šá =®À  a.uş6ş6:6 `µ„¦a×ÍÁ°ûŞ7 102269ú½Ñ¢ (}7ğ®N&%T!½r öŠÂ zr(1Tuskegee^y 0Á¥ 51:02.297209	› &Â¥ ¢€*ndupre~
+Iqa:> 8NikkiaJordynyJ429278Ñ¤8e9af0c6»	h5-487c-bfdc-5ed477b2288b2DŒ-Jeant… t1&	æ  :5˜856b16d4-ae2a-45dd-8d4b-d5f52aaf6b5bD.V Fenelu*
+)k45Ë308	ì	qş²¢²Ršş
+r
+¬í¶ÑªPÚÑ² Á§	õ &1ŞğŞ{ 400036Èê‡.²¼ş²Ş²
+Š‡ 12:27.289yv‡)* (ÂvàŒÌ ‡ *bÁ*†Josi*
+70478ÁÄ¤Ò…	ß à:…,4d91344e-d5cAP2b-a0e7-e03fc88ff742"…Chari2jæ000:19.317 JÁ‘	nşl¢lş
+Æ
+DÎíæ"T ;aa	õ (2øèŞlr‰°ÆNç	}şŠFAf
+ 9Áâ28Ô51.â 9ÁâáL®M< ôå	 .jmerisierz'
+ 6bf4Jessica
+Aceoİİ757338¨(840c1c6f-74a4c1-864\P191f3f3e5b"Bissainthë1faU ğ?×£p=
+×_(373f8d76-cdÁÕXc49-a156-a9d051bc4fd7N Kennedy™®-[4:46.643.Ò I®/
+ da./
+†["ïRÒ†@ îZİiI.>
+âüêW335ş¾>
+ .*>
+ô¤*à26àiW ğñTÒ f>
+ÍÃUSF29
+BJ45:30.52*uÉÃ  Z<6q<Ş¾Ü 0rdominiqu~)
+ JbLRos0aZy}L8524617uL˜82eb0eb-2c01-4a18-babf-0694cb7c1485 Do - 2usfZ @ÁÎ˜0cc65212-2869-4af2-ad65-6bb0ce9584f2DÜTayloryIÉ±16:43.95¥Æ E®I L>IF¸Š-F5 î2;Z8äRØæÁ‰²õŞ2õ	04ˆ"õ	 8}2şÚİ1.416 @-T ş{Z{ 0 42:59.7909ÿ0eÍÀW@Z7!6?¾ÀÑ¦
+ Ab=&
+Emily&f09546ú
+ôù?61€60270bdd-d01e-4159-a0b7-84fe52719í	
+ MaldonadF3 4“!737İ… €²ê$ *e<ä$ YZ}Š@Ví!¶îDÎ®b €İ	@QÒ	Q)õ2„îĞ61 6}TŒŒaTPP
+BR5é$5Ï‰¨şÏJÏún7(é$33:20.70İ… 1%)á2‚ì6YÀ™á	Z>(>!!‡Vc"é$Ashtİ–975112&Š!æ>(  :´,3cc3e9cb-d7fL4b-a133-04d23cf79459&>(Gilmore2”ê$ 9![071Gå$E×AÛ^ şê$şê$¶ê$h×ÖàVTÚZ	Jê$ Èşê$&ê$.® àşê$öê$ 2Spelmanvï	 2ej09}jï	¦dŞıĞ£sgodfrB™+>[f´8Shantaye
+Amar&š+81849&¡Xa3f3376d-60ad-493e-b0caa İb99a3$G	ğ	 s-•é		ô	˜4e4004ef-c768-4e84-8849-1e508542d494G	O0Holmes-Roll}eø	08:09.4p &²¼Ò¦+R ş¼V¼lªèŒÕ‘Ö* 
+Šøî 
+67†ëõ 3İ¬Šş¬î¬j¦)ì43:29.5.¦iB   ,¦ş	À–èaJš®(@àN¯®MalakayJ9668aõmJ 0Î¯Õ! 3…0bbacd77-7f03-44d5-8a2a-21e3dc3b8226"¯KearsB@25H78ü		a A®8 .!.V6ü	RzV9 !nîü	0`Å«¤Ì$ 8ñ	)Q ,1ÒêŞPBÀ2‚ÌşÙêÙ1U6İyã	(5:41:42.6846º 1)) P¦P,âÍæ *ddavi‚%( $bO0Devonte
+Lav2ô	47968uN 5ac1e10-ac15-47d4-99f0-e34a7ba9216bDavi*(ufÍˆ>úc4655d59'd3-4558-98ce-7432ec9f1150
+HMos:š 5
+02.62.·$³>®G $şGşGzGlXcUÌC.t+ PmGŒñŞG—14œ"— *İ—è¶NGR Ù©$şJÉ‚(15:17.86}aÉ˜  ¾< ò¦„Í+V<2„ayde&!8118506yKÊ	(o	fæ:„,3399ffb9-3d4aNL9f-aeff-c418e6718d10&„
+Velez™ƒéì04:08.90Í˜( ®Q >Qr¿6ŸRß	r@ ş¦ı(¬Åâ&2ÊúŞOroº
+âNO5Ë ûp
+Â f–“ 3Ó28.7FQ!08	– =–2 à¸.ˆfL€Ä8
+EthayH9841949qHÒ‡Iß ì:$ceaf3bab-5fb7-4f3e-943f-6b4a7314db30"p5ReidyGáã$2:55:45.06Í˜hF®GÕ*Å8Fâ6<RÛ	F5 ş1ñSÙÊ×	€AÁ…QL1ªî×	 52½8 4İø‚*Y33Y%\!ÄiJş9+Ş9+”$48©> 5209%,€U–C ¾‰¦$fa"$Brian*2411395‹$Ö/+)‚ @:%(edfe603-562N2L02-98d2-fd77f4ca8fe6"%8 Rapalo Gutierr.˜)Z838:33.192 Made/"2²qX!m` NBF%6ZR–F5 şZ°w3ù)JÙÈ@UaOQ.aZ2òæŞ›B(+ 9}Z€	Ø-5×		â]q]ÈáTÌ0½æc¡Ú5orù&ªU¸ğcActiveOnlineENG01030G32Spelmanà¹Ela Gr2.2023-09-12 13:40:27.552.2023-09-12 09:40:27ğ\ 0InterventionNoMIAMI-DADEàÊí ,sgodfrey@kippmiami.orgEnrolled      =@NFJ. TShantayeJahmilFL0ğ„9362121MNgs_a3f3376d-60ad-493e-b0ca-d7fb16db99a3$Godfrey - 2spelmanffffffö?š™™™™™@2Hd9b35b5b-6bf8-455e-88f6-a6465f5a0743G	Ş
+Lopez27h13:03:54.124  NÍÌÌÌÌL:@ á	r  8Y NVhYes
+FSA
+’ Level 1_¸$Z9 !j.KIPP )»\LIBERTY CITY2024-06-30 3-07-01E$ûñû·˜b×? !9†ó$-$10-06PM1 08-07 schoolStar ReadingT400067†ë0M5@	TA@¤æ  PPBR125Ls9½ 3@Ê fA<29G21Tuskegee.B 19ò820 14:02:29.4346  0	L@@N2On Watch%6F4€µÀ *ndupreezE.@A"!Ó> 4Nikkia
+DoyleyB752184qB˜8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2D‹-JeantaH1t1eHàfæ?…ëQ¸…ó?1Hafe0572d-73e9-4e0a-97f1-262ec38bfd27DuáV
+Sneed6D(3:30:55.078iOe¯ÙB®O 8!!.OF„6K¤JKF5 !pîG…èsd8ˆÖ?I€B@  	 @1¾ïîW36Èê0S 1}WÌŞyW400.Wæ?mW ûmáÂ zW1FSUbR02 18:49:48.02.R 2akD &Urgent z›8 úõ ,bdelbrunzVIm!â> 0Brenda
+BrucyV8154470qV˜0c3fb856-1787-4479-9be1-4ff07403aafaD	Œ - 1fsu-ª   ®Gáz®mK˜37a40b35-10da-4d89-acda-7862772e72dbD	K Daniels}G)R5:58.33Í–)Ôğ?Å‘Bé >ù  >GrŠRr@ ~î]¢Ğ>YöÙ¤1âêŞM$102269ú½-8 &.MÎ	JM)buÓ ğşMFM®å	 23:38.707Yå	±|€X@ÆP$At/Above Benchmark)Ø6¯ÀŠõ õ	@^b°&õ	JerichoÙ´123717q^âö	ä @ÉG ™ö	˜9e1d3d4e-33d3-470c-a857-d2f176df133dGö	Jackson2Jø	46.568 Donella1åæS®°¸9.±†’ 
+¦²
+ 4)¯¸$ŠB îm?şÀó5ÙÍÊÀXÁ¿%k €2üáŞ}B!
+ 9}}<¼È  3.866 
+| ) ş 
+F 
+e|2NY6ÉB] 31:15.8592.09	­ QÊx$ûˆ &ccolz%
+ÀWbu0ColeAshton}p63041qpÀ601ebbbb-5367-4b7a-8861-929abbc73f3dCole - 2nyuI÷f
+:i823c705b-f4de-4819-8c5b-58dcc776f784	’DonaldJh³2.989é¤“P®a œÊa qa²Şqa 3şašaF|§R×ma S@ÕX Q2Œãîa15"+
+ 6q8A@ºøia144ma†™@-è şaFav*
+09 16:05:02.87İÙ 2
+¶Ñ‚·õ¢+
+€Gb\+
+Mikaelay_ 663366FÅÒ-
+ÅY$fş?×£p=
+×-
+ˆ98872dd6-bbe4-4bba-a3e3-ed1d9f72aeb.-
+Morale.-
+09 15:53:46.28tk†Q®c ¦ic¾ YŠ‚uc¶öşc¾cõİ;‡TÙ§	~êõŞSB1
+.´È
+ÀaS1.162| ş| şRFRÅ³$2Columbia2İ¸Ó(3:34:14.330Ù¸20Å¸   SÆ¸4şÈé	 *dmizellv‰ @á N. 4DavonaSummyy]7579779q]Èffe9ae2a-1d82-4aff-b95a-3d101347f4c9(Williams - 2c1"»$Ì@Ãõ(\Â.
+˜ae606bae-b8a7-4ea6-9b8d-28fedef0f4b7WQKelley2H12:41]75mc¥QÙJ®c rqYue‚ç ÑÅŞ0. 2%Wş%
+‚%
+¹ÎÓĞÑÑÄ€FÁ¹ECÉÏ2ââêq406ŒÀ¢ 3İÄâ ÅÄ2.22qr93@	 şrFrÅÄ1Howard6)
+:D$3:59:44.86BqÂò4Â–÷ *mnunes2vh©Zh(MaiaA'Mi}f995353uf˜1d57a6a3-4d42-4386-a6a4-15531e140100 NŠî h%*ò2=P1f20ad33-6877-4995-88‰01c7f1418fc
+NM Matthew.Ä 0 48:34.232'
+â  †Aí	r şñşñ¶ñ¯Ø7•ØİÀÄıŞO 400389Šğ>.ñ¼
+şñŞñeP1FAbL 1Ò20 0BuI0@j"6å<‚œ‡ .jmerisierzO (b
+<JessicaCamari"
+6561588t¸840c1c6f-74c3-44c1-864b-6e191f3f3e5b"Bissainthz1faqS àI
+|18d6bd1-97c4-4774-a832-eb43c16e4ÂBNGaiterÙ·)[î6.823iV©D A®· .h
+Ñ·İ ¤N’V9 #îÌƒÈ«ŸÍ.9 ¢î9335ş¾Ñ—*@MzA@üÌN†I› àì ømÒÂ f†
+
+Š½24:39.26İ­5e¶\àù“šµ ObD#Amiru?#85"Æ³IÌ :³<ef6f686e-9544-40<ca4-2eb0eb77cbf3Wimberl*ì	i507:36.872‹ I®5 d>5şì	şì	zì	J+ ·ÖM»Ü	¤øê6 ."ü†Ü	1.9202  1Ì 	şÜ	FÜ	eDN43:31.5.NÂİ	Ş¬è¢Ejİ	E
+AkeemyM381423ÑŒêD}6D6297d4d1aG\2-48c1-bbd9-c68371115a7caP l•BarutiÙã	39ã	70şÔÖÔRq!şÔrÔã>TÖĞŞ&ã	2†öŞV10:2.ã	 ÚşÔâÔ¢ã	8:53.798YÍ›Av €VÆ ‚Éøªë	 >b§&ë	Olivi&£9665653£öë	 ø:ë	da9ce66c-829a-4e1e-8f1f-7f974fedd1082ë	ParloBë	04’10Í¶¢ N®¶ *É$ª·öö	ş£¶£ët¦ı£"£&g€V®1Äğêq6
+ 7*
+Ôò.é$’!EÄ!â		 şÈZÈ2USF^Ä27aq 2JA¤ÀR–ä$<Ü¾Ü 0rdominiquzÂ€FbfRosandr¤6Æ8807935ÑÆ88µ	x-2c01-4a18-babf-0694cb7c1485 D‘ - 2usfşšeU¨2Hc9c2fbb8-cbc7-402e-baca-2b2e520fc3dbDMBrad2)X16:20.48ÍÄsD®f%.eFª$6!R¹F5 şI'>¢pqM PaBQ#>2”âM04ˆR´ êşaîaŠW18:18.98*ëÉ¼%( :¦ŸÀ´í– ;E1!Ş> WKiyman&™Z 0êEÕÌô:l+7f5586ae-4e20-490d-841b-4106978125a2	“Reev.§i<07¥605 NÆ 8®A 8.AVYŠEV9 !gî’f!æòø.qI ÀyI :mI úò^!2ı.((°
+Ø.– 5^5Ğfş–F–¢
+6:59.21BKeKÅ?ºªâšôª
+ :bW"
+
+Sara}X74825"CŞ
+5Áñ1c563509-6769-4168-a535-bbbdf9a37e01.
+
+Lawal2OÕ$6:30.960¡² N-M L®^ ~>^†ˆ"§ş
+Î
+Œ½§$[MØ (acQD!1Ìéş
+"
+ 8*
+˜Ö.n¨5àşnvn¢í.0:1A*0:%/§†ë6eâÍæ¢ù. 9bqù.Charle&¥+x30"x eöû.5š2¾(5b2ca0f3-8a P46f-8a79-d93b7ea0f986>û.Mccra*9!S…! :S( 1nE¦K®~ xş~ş~º~×º®ˆ«²Öq~ JasQOi~ æâ~5
+2/ 4}~´Ê.~ 8şì¾ì Kj/Ñ 0ac.876y09)*ğ?†‡6x0‚äõ ,awhatl‚·5!ˆZ“!AshäNae*³5842048qv60F(bb-e0Ş4c0-b7cÙ0f73d65f143W	‹- k./2k˜f134f018-f4a9-4893-ae5f-fd53f8c47939W	K
+RolleÙâ!W 2:55:40.3Ò1C#À	Ä	^ ş(ş(¶(ÈÖÔU1Õà˜.õø$ üâb 102555¶Âğ.Uˆş8ş8~8 3n4.2.„!™Æğâèã¦F
+ÀabÕ"F
+Leil2 70396u`ŞH
+?
+ #H
+(7c509a74-125P719-b8fc-52d1b7bc090c29Franci*!­5:11.88.J
+ÀX®Ì ÆÊO ò$ğœ!< 9 5Íşó$‚ó$ªöªûŠ.T(¤úş<
+R<
+Ä¾/763Í½‰Í  ş©F©30G3¢31:55.21BÂ	² V–D§ØI(n§+I(Ev*£411022Ñµî:F(5075c61a-9d1f-43c5-8abc-cca721bb3d43&F(Buck>»D41:49.292 Arianaî	&
+²C D8.FŠşF5 á2îú_‰&¯Ñú€U
+Q"Á¬2â÷.B.öÈ¤+272O  6
+ ŞOÓÀ™Â]ÈáTÌ0½æc¡Ú5orù&ÀXÖ~ğcActiveOnlineENG01030G32Columbiaà¹Ela Gr2.2023-09-12 13:28:47.902.2023-09-12 09:28:4	  ğ\5@&Urgent InterventionNoMIAMI-DADEŞ©ş 4dmillerbrown@kippmiami.orgEnrolledd,@NJNhYesD'JuanaBrelyneFL0ğB8665711MNgs_ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(Williams - 2co-)è à?š™Ğ@2He59d0e37-22f8-4bcf-8a95-0f4e1ec7d863Miller-Bæ(Smith Jr.Bo@2:56.960 Dwightò	yğ? ô	r  8Y Nr%CT
+FSA
+’ Level 1f¸$v@ !‹.KIPP )à\LIBERTY CITY2024-06-30 3-07-01Ej jĞÒ
+1—Ø?ê @   52Ôç$=$10-06PM1 08-07 schoolStar ReadingT101769’¶S(@	TA@¾Ê  PPBR400L!m! à‘ø?Ê f†$29G21KSU2 1Y20a 12:06.3302 09H N2On Watch%‘ 2n8€—Ê ,awhatleyzj*@A4!×> 8AshleyAntwanyg3328yg˜605367bb-e077-44c0-b7cb-6ef73d65f143W	  - 1ksu3Øã?…ëQ¸…ó?1H279e80fa-85da-4be2-a1fd-c0c321066be2W	KRay2+412:57:04.864  × fæA@eJBæ >ö  28.OFs6D¤JDF5 hî9éuè^´ŸÖMŸ!/²óæ)2555¶ÂMÿ 0})ÂÔN)%²!³© ùŠÂ z)1Howard~-0:33.71F-š|@T@ÆP$At/Above Benchmark)Í6A4¢Í„ *mnunes2z@ Fb@(MaiaLeahu<$9763825FÅ£˜1d57a6a3-4d42-4386-a6a4-15531e140100 Nˆa: h% uI×fş:>l0a016445-3f89-49c7-ab33-3c34áa206
+NMSineusB?3:07.481i?%óSQ®?¤>@†~ Ñ¶öÑ 3)›¸$ŠB îY¼u\K×Í€VÁ‡Q;!1æïŞi$400389Šğ0	S<	\Á’¬¶	b4Í°%Ú%{3@	.Â ze1UFn2:58E
+432#08	• =Ê`(Ê‹ *ddavi‚` >b`4Devonte
+Ayde. 60484
+˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bDŒadufÙ ø:_˜ed219e96-3a30-41f3-a715-f6ef0c36d45c
+DH<Perez Cayetano2D,12:47:51.718!ş N	p€N®g Œigğ	 YŠ%ö	öa§÷	 2Åšşf‚f.ãy€Vqf 9a[QA!1êêf014œêqf 6İÏĞ	ğ&ø	105.ø	 øm÷ şjFj~ 2Spelman2o6d,13:44:16.537Y+12ü	%.ÁÏ 0~v,÷Ï	 ,sgodfr‚
+ ;bh@ShantayeAilani&r9012700ÑÏ˜a3f3376d-60ad-493e-b0ca-d7fb16db99a3$G	 - 2s-ÍÌ ô:p(10488ce1-bdaº\888-8d3e-578c12df9a65G	O Buitrag}nÙ 03:54.357Ah N­Z 8®n ed}mVƒ6
+R\V9 ş
+Í„2@"U 8aR  @T2Šğî]67†ëq] 7}]ì%Ô.] 6m]5ĞÉĞ ş]Z]2NY6(
+BY 30:31.915>Y!)  4†ª6(
+,àƒÒ &ccolez&
+R@AC!è> ColeZ:É9411207ÑÂ 601ebbbb-i`-4b7a-8861-929abbc73f3dHaTnyu£@	À<b34c05e4-534e-42!
+,086-796d8e38
+Pitt*
+iJD14:13.298 IsaiahÖ%ä¦K®Q x8ÁµuT‚£Õ¾Şa[ş¾¶¾É¡Gua3@"¶ 62€ãîa15Õ¾.a<¤¬  2.328m`
+@	 ş`F`428G10Harvard2½ kyK21Ï5:12.7282 08:
+ ¶„÷ŞÅcbarrett^_æ>SCÁµeKaylİ²8973028Ñ²˜640ec5e3-2cb3-43f8-bd20-1266cb514c50$B	… - 0h-Ù?)\Âõ(Ì?KHbf048fe0-b324-4005-b7Á²46f1af8ca51fB	O
+Elder25,12:36:30.383É¯iÙJ®^ rê^œ‚"ƒş
+š
+İÍe¤üÖQ!IîöêN794´öÑ¯ *İ¯”¸&
+"%d!Í…ËföŠÂ zv ~ 5l0.07*
+ 1  jD6Ÿ¢¤ßş.Malor}L9185816uLş	&	c23e977b-6df4-4485-b092-240af563bdcf"	Wellonİ¯!45:2ù	120iJ• Œ² 0>JVÀ	6ù	RV9 ªî¼eÕÁ	Å×M°ğûŞ: 1>.>¼ÒJ:É‰ ã¹şJF2Tennbë	!ï$3:59:01.89*
+20DiÒ2@†ä6KŞîÕaKmartin~ 4bí	DArneshaCe'Nayla"ô	86159}MLfd013d2-40ce-4826-ad43fbbb60d819Mö	tennuIã$Ìì?Ãõ(\Âø	D9a727994-1651-410eÁ <c-2d6eb033d604	L Jacksonİ—35:15.6ü	¶	)û *®™ ;ş«ş««»ëÚˆÖ" (ê	QAR2öâŞm 400664°ôÑ§ .İ§¤†*V32ö	…Á!ŞÉ§ şm÷Â ^1«FA6k*«	 33:29.169Y&¯	–0@jú6d<‚œ‡ .jmerisier^ó	Z $fe$JessicaCa±iW6561588W0840c1c6f-74c3¹1-864¹P191f3f3e5b"Bissainth]1fa]Ù?m¼˜3936f8e6-8ae7-4d72-b297-627599871545BNGait.ÿ	)[ 25:48.785Ac®³>®f $>ff|"	ş´ª´E¨l D.´ ¢âú 102335ş¾É *}G˜şî	Úî	Å´7:18.68FuGrÖH6NÀşšœ 1bJœTôisuI8241019qIÆ ‰Á æ7Í¨,32e8b71a-d75a‘L4f-ab4b-08bf73ad0db4”
+Dix.¤i<09:03.75ş©0 ®< ><rw6ø	Rñr@ !·îÿ	š
+ÛyK2úèê’6‡.¾ì*ÿ	382¯ æ± ûâ’bÃ$’ä	4.00B’¦9à¦öªŠ &b@ ÑŠJoelu?9906042q?Şˆ‰ à1}Íˆd1034fc3-90c6-41d2-9304-857b8b0f5104.ˆAguilar2Ë,13:06:42.136É‰e³&@®M (eM"ã YZ‰6FşŠªŠ%UÓÖMµ>°ùŞ?BŠ ,İŠŠ¾}?"x5Â		ş|$J|$ÍŠFI6Ñ	*#©: 18:38.2042|$	¤ğ?†Ó6Š4à¸ù ,dcezair~)Im¡> Dasheß(BlossomyR095494Š 0u$ˆ86b-9b63-49f2-b126-63df6e2f5e3bCe‘>fiuà  Í”˜8e72fcae-6196-4778-bafd-18f095c461f7C	ÜThoma*‰-^`1:05.492 Ariyah Patricea"1Y $Bü >şô'şô'¶ô'ØÁšv9ÙIğ?">2’êô'2197ê¼
+ $.xÎ	 ^ô'2† Ò ‚·zô' 2Á44.2Jg! 9	š 5¦I¢Ğı­– (f¾A (Doneys* 
+9841865qoÒù	× à>e!(e40df8d-f1d­!adÄ$0d-e9605b1ded4*ù4Rivera Mendez™»²$2:56:10.88øq €²Á *aŸşÁşÁjÁ´^$ÏÖqY I—çM+1¶î[6$(.ÑªÂşÑşÑvÑ 5Å¸84* (¢a¾¶”Àï†¢Ê €fó.ÊMarqua*½$119569
+ÒÊÏ>ş$671e1772-8cX4fd0-9a1f-3dcf9f17ef95ÕÊKn”.Fd24¦,74d ó²ı zeS*şışızı,-&~@•Ú"'
+2Îîe6¯ :İ¯° ²í429÷%cşírí&
+‚ª$27Ÿ¡V2.19**
+27 ( 6‰ƒ9@Z-6
+ Êü¦š¦$ Cbl&¦$PayA¹÷94302&Zú¥$ü?ì³. ë!
+(b2039c8f-bbU!P0a3-b4e4-b7022b720bf4&¥$Edward*"
+)V45:32.02Z!Noell
+tş¿.z¿.R¶ş¿.F¿.ôÂó¿ÓÑ«€AÙ« 92¾â
+4006£$ 5}U€
+ f+PBRmSü?)bfş@!F@!eS †y 3õ1706&¾É¨uOfÈ6Sş¥Å<!šrÁ+Fk5rİ¨ l+ryuT®860ò§EŞfö:,c8d5847d-b88D(H63-985e-6ce98d38a48*q
+CoaR¨$09.94D%îL:®»÷	İ¤V|6»RKV9 !_îú‘·¾…&"O+ .aDQ(C2Şâœ 1>S 2}Oêâ*œ13mR5ÍÑ®	Â fSeR2~Í8ü4:08r11:H! 0  ¾Èş¿ï¶.mizellz :b¨Davo¾8Kal
+uS936389"L+ fæ¾8)ƒ ó:,4833cceb-e9b2Tb1-b903-ecbf26cc8abd9WilJ55a[26U)÷ 4®[ >[r#Šbr@ şiğ«ÆNvû&$2úîı	406ŒÀ¬.õÀ}Y 2¨.5ÍÖ şYFYcŠ2 9!ú09*R_! 8Ä09¦bÂ™aK’2 "bK"2Kamro&E708954"	<Æ2)l Ù:9143b18a-b2f9-422b-b964-cc702749f6e92
+Kyle.ç	 0=É%.36Ÿ8 =®> ">>V`67 ¤N£8V9 ş0ZdæŸÓP&“1ŞüŞTØ	2Ø1.’$š°Nƒ5»‰›âÌ'
+æ&Ë]ÈáTÌ0½æc¡Ú5orù&®TÎğcActiveOnlineENG01030G32Spelmanà¹Ela Gr2.2023-09-12 13:18:57.743.2023-09-12 09:18:57ğr ÆP$At/Above BenchmarkYesMIAMI-DADEŞ§º ,sgodfrey@kippmiami.orgEnrolled     €N@NNoNoNoHShantayeIanFL0ğ„9596641MNgs_a3f3376d-60ad-493e-b0ca-d7fb16db99a3$Godfrey - 2spelman333333@š™™™™™@2Hf03f009e-f0a5-4e5b-891a-08969e081da1G	Û
+Ortiz2<@13:03:51.339  N	èÀH@ Ş	r  b8N YŠ„XFSA
+Ş’Level 2g¸$ŠA .KIPP )È\LIBERTY CITY2024-06-30 3-07-01E2$±LOsAİ? !IÄù$-$10-06PM1 08-07 schoolStar ReadingT400067†ë0): <@	PA@”‚  1.8195Lr 5Ã			@Ê şUiU 33:58.413209	œ:@Š˜ 6]»ò ¢]U@AC>Ye´y^Taymoniub$8761647Föb	å :b˜525051dd-6b76-4562-85f9-1a9581d854a3GqbGause2I·H1:34.519 Lontaviaê%ÿÙN®k9acuo‚ğ ql²aoml 3)Yşm‚mGÆt³×?)`ÀV@  	 :2¦ãş}u} 1}}€Úe} 2a}380i}ÍÌ@	 ş}Z}2USFrÎ27ay8572009I” VÆy@ş¥Å 0rdominiquevØ@RR{a‹DRosandraErickhoÙİ4035363Ñİ˜882eb0eb-2c01-4a18-babf-0694cb7c1485 D“ - 2usfi™:y0600aÚx-c8db-4093-b42d-1b5921d99218DM
+RollF{@6:00.398 Apolloa@ f¦K®y x8¶xşäòä?º]ßPØmw €}w2˜âîw04ˆê0M¡ 7}wœ®mw329mw¿À		 şwÎw27¡ 35:27.201yw27awiwx0@&Urgent Interventione6ïÀ½çªv¯ ZN
+uvOzzyÕí9240834úrAÿ(ffæ?ìQ¸…ëM
+ˆ40551236-fd6c-41d6-9cf0-38cc03289ac2rValde*P
+-`1:46.005P
+©p ®l !Ùá Nv‡  
+Ñä’ Ñã 1%£¸$v@ åîN
+üâ(N¿Ñá IÁÖQA!2Úïşjuj .}j@ºâ  PPBR40mk5Şik ûè
+Â f_
+$29G21KSU2â.R 0ak 02:12.015}k 0ak	–,@0zd0 ÈÇ
+ ,awhatl~° "bØ4Ashley
+Chrisua8968240qa˜605367bb-e077-44c0-b7cb-6ef73d65f143W	Œ - 1ksuÍÑÙ?…ëa`¸ó?1H5a839ba8-b281-496a-b516-b4edf010842aWh×@ Ogando BeriguetİÚ!\(2:55:41.761Ad N	t=®g  2dYZƒ6`¤J`f¼îYN,g×A¿U'í1ÒâQ$102555¶ÂS (}QŒ¬NQ¨!ĞiZ ö’Î fQ® 36:29.914yU  †ñ6¸şĞaT– 5bT&¦
+KhloeyV119246ş¤ÉMì?-“Í¹d9b2a533-d88b-4d56-a50c-d3acfd0f0d2a"¤Jean2<7.650Aa N­: *®N eN Yœ n<6UşµÆµ]ÚZìØe\  ó2š÷î¥2.†ÀÙ¥305ÊiT şşTZT2FI6¥FU9:07.588209:!$  Á¥rÔI6X4€‘Ø ,dcezairz„%ˆV
+Dashe6
+LoyaluY9162099Ñ¯ 0Á‘ˆ86b-9b63-49f2-b126-63df6e2f5e3bCe€fiuŞ  *˜¨2Hdd26ee9f-0c7b-4343-a75f-5f89d0fbc013C	ÚLeİ¢ 1® 02:06.428AaY ğ?T%2!6^  eNşTşTTd>çø9^sê6¸2ÎâŞd 102197ê¼Ñ¸ &İ¸úÎ	yd"	
+AS	 ğşdFd	
+ F~	
+ 25:18.164yd	
+  jE6Uà€ÊÁ­bdelbrunvÙn
+<BrendaBarringt&Ù10590612uW(c3fb856-178
+X79-9be1-4ff07403aafaD	‘
+fsuÍD Ó:
+˜7b436734-54b5-4619-ac84-2e4b2e3dc3a2D	K,Jackson Jr2:Á²8:11.053i^ì <®² >^VÇ	6«ş 
+ª 
+ı<œ®‰Ù¤1œúê@269ú½q@.ø	†ªNø	)TÓ?Í­ ôş@f@ A6¤*I©K 27:37.950Yô	aé  LÆ+<ÀÆÒ
+ .jmerisiervQ€Fbş	<JessicaKamoraÙ¥Añ09ş	0840c1c6f-74c3T1-864TP191f3f3e5b"BissainthÁ¨1fau"*-˜W˜276ca277-a568-4b34-929a-c259b896e0fbBN BlackmoF
+8:30.1Ñ°%şSQ®R ¤î¶ö»ş #Ôâ„Ø' @QJY1Ôêêt335ş¾qt 8İ´ø¶	b42¹ ş1á ş$Z$$2Columbia2¾*
+ÉŠ6.90*
+)Âi4€ Ó *dmizellvj’	Z
+4DavonaHeave&936ßmiÈffe9ae2a-1d82-4aff-b95a-3d101347f4c9(Williams - 2c1~6"h1439f692-9f40-44d4-8a46-147İa9e56WQSumpte.»‚06956A ş
+ş
+ş
+Š
+Çj µìÄØÍ?^œñêU406ŒÀqU.	
+„ş	
+Ş	
+Árm¶ 3¤ 4İâ	
+ 3E041ÆT“dšeÅ‚eA'LaysiÙÃ885102"e 0ÎhÅQÁ·Ãõ(\Â½Paa3b2c72-010c-4207-87a,020a8ae53ac"hBoyd&!U2:r2.512r 5®¹ jşişi¢iÿÒ¯8ĞÖ}PŠöêP6Y.½€È&Y 16Í ó&‡¡+Ê  v%2Tenn6
+.¦d44:33.45BR	š &Æ
+ ‰ñlmartin2z° Mf
+,ArneshaCal&º!7064162Ñ¯\6fd013d2-40ce-4826-adfd-}(bb60d819MŒ¼tenn
+@6V<ced8c918-7690-4cD3f4-e0ff3cd8c3e7	L
+Brow*
+)Y29È40ae¾³G®V Z>V†¬!ş4ò4†€\{ÍíÖ
+ Q
+Q<á«2ëŞh 400664°ô4 5*
+îö
+1.717
+x   	şgîg 52:34.0892}09Â¹ÀÏÛ¦^ ,†^Zhg"x7986607ÆÖ`Eø3ã?6`|71f1e555-82e2-4631-b0d0-675f1635%y`Smith2913:40Á 9ÁIişşşjÈEGû—.
+ ôâ
+BN.ÏÎÎfÏ ãÑ¶ ùí@Â ş¶Á¶53±+J	˜ KÆ¶›Ö!–¶ÀW†XHarmon*†!330703ş¹Á¹
+@6Yc58218b1-f43a-4663-aa19-9531bbe62357Ñ¹BaiB¸<34:09.038 SkieÁ…eÅ“P®½ œîÌşj(Òj(ş°ë)ÚÍ¿ÀWÁ´QEÉ¿öæş¿Õ¿ :İ¿Èøó$3.144ãÉ¿@¹ ş¿Z¿rv?3:15.13Fj(Â½şİªÛ .be*ÛNevaehÕ¿912374ufêt•ôtb407cb95-a005-4954-8b56-7720bdb87f4d"tLorenzoÙÁ!VH2:59:40.148 
+AvaniajØÊï$şæşææûÄMË±.Ç ˆşÖ&Ö *}VÔşÇrÇ ^“2Ö1Howard66fÆ 3Ñ80}[Ñ‰„ ¦ã$0Â¨ë *mnunes~v×VÑ,MaiaMicqu.374218"3˜1d57a6a3-4d42-4386-a6a4-15531e140100 N‹Ú h% uÕ à:Ş81aCe5-40bµ+X8c-a48c-e647ed95e723
+NM ReddickyWx38:48.3Î%>€?®» &a‰.QVÙv"8( ¤şØ$¦Ø$¬áûx.Ø âîW389ŠğW.B¼NB%S!¼		 øş	
+Z	
+r™!ì2:4»5.40:!( 8¦şşÔ÷	š >’’Camr& 0Ç$11"~+Ò’1t6÷	1de09cd0-4ec6-4a62-a6f3-fd84c59e442aÕ’NQ 2°328.95É5ô	 3ş†R½$frî(J}(,¼X.|ÄúŞÒ	BR!.Å.êì.ù 1Ó	5½		 şÓ	FÓ	Å|$1Tuskegee2¢:}$4:01:44.636•10	©ğ?¾»$0âµ€ *ndupreæº$0NikkiaJayd.ª0582P98e9af0Eúld5-487c-bfdc-5ed477b2288b2DŒ-Jeantm+ t1&	æ  6r+Lb6bf6882-98a5-43a1-a"(4d4fbdbb535d72V Jonaz>™ 4 97ş±Ö±R¡‚&în#2†D! E)iJ$Ô, ğî¸036È"C2.Ç´şÇŞÇe~ †Ğ$50!426y¦¸¶Ğ$ (b¸Ğ$Masu‚<880765"Ò. 0O¾Ì$)÷>î	xb19f6f8d-7c57-489c-a019-e4a3845ÁÓf"Ì$ a¸  - Baptis>Ñ. 3¸39.69.€@®ø	 *–ø	şÑ$âÑ$'¨ÛÕ.ù	ìõê¿fÑ$üÂşù	nù	ïQî]ÈáTÌ0½æc¡Ú5orù&ØTœğcActiveOnlineENG01029G21HowardUà¹Ela Gr1.2023-09-20 13:11:13.009.2023-09-20 09:11:13  ğX@&Urgent InterventionNoMIAMI-DADEÂ¨ë *mnunes2@kippmiami.orgEnrolled^   NEI. HMaiaMicqualFL0ğD9742189MNgs_1d57a6a3-4d42-4386-a6a4-15531e140100 Nunes - 1howarduÜØ  …ëQ¸…ó?1Ha2c40ffa-f744-4c22-b7bf-3900795bd9de
+NØ Reddick2@,13:02:34.571	Úâ  ğ? Ü	r  !Y Nr€hYes
+FSA
+¤ Level 1f¸$v@ !s.KIPP )Ã\LIBERTY CITY2024-06-30 3-07-01E4 Ù
+ÚÛªØ?	é!Gâë$-$10-06PM1 08-07 schoolStar ReadingT400389Šğ0-8$@	TA@ŒÎ	  PPBR400Lt!  	 ğŠÂ ^X 30G32NY6T 29û14!û 52:44.6452 09	– 0ÂT0Àş &ccole@vR0@A4!×> 8ColeTarvarisuS824101uSğl601ebbbb-5367-4b7a-8861-929abbc73f3dCole - 2nyuffffffæ?š™™™™™@2H46e45954-fe24-4c71-b8e8-d0d2f677ddea	”
+Dixon27¤0:51.237iKÍÌ@eFBâ >ò  !¢K>uJ’şJ¾JGZäëİ×?M%1@UÔ 02úèêZ015ê0^ ,}Z¢'ŞJZ%Ö!× 3 ûâZb²mZUSF.®.Z 2A
+31¡U640]# 2aZt ÆP$At/Above Benchmark©& 2§<ŞîÕ 0rdominiquzX€MbX@RosandraCarteryZ61907uZ˜882eb0eb-2c01-4a18-babf-0694cb7c1485 D‘ - 2usf-ˆ@2_˜c79641f8-024b-4b90-af24-33fb41b06844DM$Williams2Dag7:50.982ig%ì³G®g Z>g†Œ Ñ²ŞakÍ³ 2e„¸$ŠA î´uso¶ÖMĞaZÔ÷îZ04ˆuZ 4}Z<ìö  1.717Í³5È			@ÉÂ fY
+1FA6³F
+4:22.89}r
+	–,I@0~ 
+8±å .jmerisierz° $bXDJessicaSincrereyY862268
+¸840c1c6f-74c3-44c1-864b-6e191f3f3e5b"BissainthaZ1fau-€Ù?6
+˜b9af6c04-60ce-42b1-893f-07c298724c27BN
+GauseyX820 12:59:15.519.X >®X $>XVƒ †
+V9 ÁñîH¨Z¹Ø@	Õ² 9Á§Q/õ1²ïŞX$102335ş¾S ,}X–¸N²iPÙ?­3 ömâÂ fYÅ² 2Spelman^¶A$4:05:06.20*
+ 0i¶¶8€íï ,sgodfreyv\@Pb\(Shantaye0y[156860q[˜a3f3376d-60ad-493e-b0ca-d7fb16db99a3$G	Á² s-   @Ãõ(\Â
+(6d7e0b02-6bÁ¶\777-9524-17fc87d36151G	O,Montgomery6^(3:34:07.985Ai N
+ŒI®^ h>^ş¶ş¶z¶şºtIÚMÔÁ¶ĞöŞ^ 400067†ë
+ :}^Ü!W2225g
+@	 
+ş´F´e[$2Columbia‚\Á¹596e\E€€I@ŠØ6
+4Àûˆ *dmizellvcj
+<DavonaAulani"Â 332628FÂ˜ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(W½	ab c1"5”2c1086efc8-7fd3-4c44-af4c-52a44fe9520b&
+$De La Paz6K(2:49:09.671Sirosea3!
+ ó²!
+ \8.ˆşkşkzk¨=î¦ÑÙÀPÁÎQOiüâŞ{ 102406ŒÀÑÙ 7}{Ö'ø.1
+m}ÉØ ş1
+f1
+KSf1
+41 14:15:41.894]-1 10  †p6o0àèÔ	 ,awhatl~ÓéZ18AshleyMelodyyp693440qp60Øbb-e077,
+0-b7c,
+0f73d65f143W	 - 1ksu)ı|200903003ff-71c5)
+Pd-a345-717a490edabaKScrugg*€!:ÁÇ:24.54€gş2ş2ş2r2UmÉå§Ù×ÕÈ1 õêM555¶ÂqM &}Mâş2v2~ØFI6N 2y5 1Ø9:48.79İÆ12Ø—8N2On Watch·6C4ÀØÕ ,dcezairzÊ E@^CDasheT
+AjahhuE8119529qE 0a'ˆ86b-9b63-49f2-b126-63df6e2f5e3bCeÁ´fiuÍ¯ ş:',aa31ded6-126a
+T48-aafc-aae77ff47718KJohns2, 2m3.563¡Ÿ N©1ÙB®
+ 8!.¤ By6iR"F5 şeåÑİB‹Úu/2êóê/197ê¼q/.÷	†&°Á|P6ö	ş?éõ3şö	Zö	 †21:32.12B+©:Æ± ¡æª
+ÁZƒ&
+$AudriannauC7037411qCÚIã 2H8dc9ab4f-252e-4e76-b504-ee403dadde36*Docteur>‘14:31.98sişŒªŒRRrşş]iêÛMVÜt  Ş		õ 2şòt2 İœÈşœşœ~œ 07:04.7272$09%*€A¦•Õ¦¨ B¨Y'Hoshuyh936385" 0Î«ä3û:«ecee2b82-e506-4230-94a2-eb3f5a62477eÕ«
+Brow.Õåó 0+4.294 Nehemia‰ãÙ@®² ,‡.²VæŠ¶V9 ş]İ»QÂ#áÖq] ,aRQ3á§2˜çşÊÕÊ 1}]²”ÍÊ
+BR3v:Ô şÌZÌ‚I30:27.13*Iû	%,ÙVU6
+€Õë
+–€Jb[&Jad}V16305"FâÆ  Ë727fbfd9-c7ac-4671-bf4f-ace88c0178d8"
+Davi*H)R03È428A\F®Qn!.QFyeMz½F6 şJíu ¼©qJ@Qa?Qî2ÖâB.ÁúŞaJ1.512mK5Å		 şKFKÁšÌ$09”29*ÅÆh ÎÈ	 Å$ :bNMÅ$Ray'An"
+
+9095453cÚÄ$)| ô:½0ea70387e-eccc¾!Lf-af72-30e5e0d49598Ä$Flower}J (2:51:30.816A\ NIjÀL®J€>œªòöÈ$ş¶±!€:.•üôŞœBÇ$.R„Ø "Ç$15ã5ÎÕiàÂ î••18j756>ù	Âã¾·×
+¦ø	Iv¡4>  * JairouS7256274qSÒõ	1lŒ	Ñ›D22fa3c4b-f0d8-471f0d-68bf662833c* 
+Leyva2:(8:53.90	iÊ(É¡ NÁ¤rÅ¦ 
+c!şWÆW1ÿˆx]“Ù*´ĞúŞN10:´ $*ê	†	şGúG‚»$29:59.9FãI "Æ©€®Š®¹ Vb¨&¹Jhana&®8874042ú¶‰Ş :ö	d5a96d0d-873d-415b-a1bf-de8e5a2b6259*¶Thomaİ¯ù	16³,$202 RubyÁ{ísO®´ ’Ê´ qd²Ê$Í´ 3işÈ$‚È$DC¸²±§€W
+QM¡E2œâa
+ 0^Ø$öâ"2.9392Ä 1æ şÄbÄ‚v41½82*ñ$^%)€NÆv’Ü	ªv@QŠv
+KaM/#7154486ÑÎÚ+iu5k4950e2Ş$hf2b-438f-b9cb-f545fcff9cae}u
+Lynch>Ò15İ$$28 
+MalikauÄ J®u r8.sª(
+ş;(Î;(üàÂõFÛŠ À&Š€Nms¢ãŞêrsš ms—! 6Š…è3@	 âs ^ş.¦ŠË48.6:Š–! 7ewÊ¥ ÂşV2şV2âV2ˆc27ccd4b-bccd-4770-8016-317cf558189&’ZV2 4eo 7Ü)EÊA
+V2y"@
+ ¤şU2ÂU2üO‚RÅ­İ:B— 1şe2.e2 *P
+’şP
+ŞP
+eg$1Tuskegee2ş$6Æ 1è:03.51*Z(Éß 5  jÔ690â¬÷ *ndupre~; (bÌNikk±5ellanyÕÌ93609íï$˜8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2D-Jeant…! t1Iû à’º5,e4432075-bcf Xbe-9e27-591aa0442702D.V JackBK3:26H­ÉÕş™†™Rfş™V™öz
+Âã& /1¬âSÁµ36È" / ,}OâÈ&í:´5 àqà ø)Â ‚í†)
+2:08.12BíÂí€·„ª 
+ 8bT&–Aaleya&! 7aX 7şMEÜ™ñ:çf1bõ<1-a5c3-4036-abcfı+89¦+15a."
+Kal*ş.•28ˆ)254‰ NÖæ2®
+ >
+şóşórón’Ï	ê&A2úâÖ$aT2|.Tô¶*A"¡+5Ì÷á4Ò fTÅ£1UF^>5:3 4*9 1	™&@Z+:¡µ€+ dõ~P< 1bM,Devonte
+Istl972816"¤5˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bDŒ(uf-p ì:ˆ63ef051d-9c72-4088-a510-6fbd3836eef9É
+Moor}B!/ 5:27:05.8˜5%×şĞVĞvê	şÏFÏ¯×"$lÉE C:Q/1ÊéîE14œÕ.}Æ‚}<332¹ ì82 şŞä’$Ö]ÈáTÌ0½æc¡Ú5orù&èVÖğºActiveOnlineENG01030G32USFà¹Ela Gr2.2023-09-12 13:49:52.009.2023-09-12 09:49:52.009      W@N2On WatchNoMIAMI-DADEÀ¢ù 0rdominique@kippmiami.orgEnrolledWJ@NHNo2 TRosandraKhalilFL0ğ8212830MNgs_882eb0eb-2c01-4a18-babf-0694cb7c1485 Dominique - 2usfÍÌÌÌÌÌ @š™™™™™@2Hc27f2e01-2dd2-4b7c-a9bd-cc91c10aece6MLee2;413:20:48.119  İ ÍiE@ ß	r  L8Y N>{lYesFSA
+Ş’Level 2\¸$J6 !e.KIPP M%´\LIBERTY CITY2024-06-30 3-07-01E !E>«Ø?)¾ÀW@  	  2„ğ$=$10-06PM1|08-07 schoolStar ReadingT4!Ü4ˆê0S8@	PA@ Ü  1.4120LA•-\ @	@Ê zI$2SpelmanrM 16:12.157209	œ\7@0Intervention%  6Q4à‹ ,sgodfreyvO€BfO@ShantayeJa'DoreyP 851038FeP˜a3f3376d-60ad-493e-b0ca-d7fb16db99a3$G	 - 2s- 3û?2R˜dde3484b-6e5c-4767-9e5e-c562fc841cd8G	O Wilcher2B\13:08:31.627 Elizabethat3A®^ .8.^VŒeb 
+qb’ qa 1%¨¸$Z9 şeÓªô/ÁD×me 7ye2°éîe67†ëqe 6}e˜šaeP
+BRqd)b5× şdöd 58:30.6332"09D &Urgent zc ñì¢c  ©Õ!ä> yc
+Kyre.a33712Ñ±âa}6a6fa3a489-fdcc-4941-90d3-23afc773403cuaN± 48:45.625	Üc  ğ?Å¬Bë >û  >SrƒŠZr@ ~îÆ)zÀoyÏØ?	éaQÜùşQuQ &}Q@’	Î	  PPBR40Í·	yõ< ğŠÂ  î 
+ 
+ 34:06.604>O–@Q¦³€êç ª
+?@A>!Õ> &
+KaiÕ±9430137qPÚ
+Ø ø:¯ 1917811e-3dea-4009-a02f-45d1c45720c2Domß
+ Samuels2@,13:14:38.988iTå=®§  !ş§ş§j§?±Ú¹æÕ§ RÕ§@Q2ÆçîV2
+ 7}V ömV
+BR95
+5Ğ		 ş¨F¨$29G21KSU2
+ 19ü20%ü3:05.0202 
+¤|€I@ÆP$At/Above Benchmark©)6
+0€…Ö	 ,awhatl~
+ Eb[8AshleyKaleahu\7110942
+T605367bb-e077-44c0-b7cÍ	0f73d65f143W	 - 1ksuØü?…ëQ¸…ó?1Hbc2ab7ef-1aab-49e9-88c1-32174fdc017bW	K
+Aaron2A(12:55:40.69Íª[ìP®V >W†‚ 
+¶ö
+ 3)Ÿ¸$ŠB î®^un<¯Ù
+ €yh€Ieh1šãŞh$102555¶ÂI’ 9}h¨®
+ 
+%r!Û f şeFeº2Tenn6g*¼27ag35·885]& 7agÂ
+Çƒa^martin2vn!-Z½<ArneshaMellanÙ¼7878344u`fd013kp0ce-4826-adfd-c3fbbb60d819MltennuÉN™ñ?ìa` ë¼˜fe5232ec-9c2b-431e-963f-181f5ed8fff2ML8Cooper-Garcia2BÃ5:33.941É¾%ìæ2®h !.¾rÒ	ş
+ş
+‰[GYüê×ˆ	Á¼ÚúŞT$400664°ô0mT *}TÈ	¶Ñ¼BR22Í½ !Òia  şXFXÅ½$1TuskegeenÂ4:05¾ 2.[0 10ÅÂaV>Ë	6º4 ªÑ
+ *ndupreez[ (f¹Nikkiaaric&g9850389q[˜8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2D-JeantÅÁ t1!	á à:Æ˜1aa2fd72-9ba3-4022-96af-97a156c00b9fD.V Mathei*$
+!M(3:57:34.004ifEÙ@®f ,>fV6_¤şË¢Ëón(ÈªœÖÍ¼ 1Á±)X 91ìêh036È"0 .}hÊÊ$
+Fz à‘ ømòÂ zzFIb¾ 1z29-93B-Â¾4¾·×
+ ,dcezair~c 5bcDasheO
+Jairo&
+256274z 0 
+ˆ86b-9b63-49f2-b126-63df6e2f5e3bCeÁ¿fiuM  ğ:x˜39ca0368-814c-40ac-85e7-fc16348eb791C	Ú
+Leyvİ¶-S5:15.602y .®P 
+eP N Yv¶äv!rõ?î
+o³TÕ…Ö.µ Ğâµ 102197ê¼	
+ 3}MÚ”.µ6r ğqMşµJµ
+2NY~M7:53.84*‹Çeã@VÆr(şÑã
+ &ccolzS@TbS$ColeAmyuL8117660Ñ¯ 601ebbbb-q`-4b7a-8861-929abbc73f3dGaInyu™ :Â€8fb1256a-49b4-4f6a-b84c-7b9b3ee50aI	Castanoİ™iIL12:16.913 Penelopea
+¦M®R †p}Sªp²Ú×şpp»-Ûn™X"äT@¨@V2‚âpä15Õ´.äÒÈä2.6342- q ş
+F
+ef‚ä´4:01A046Ü
+ej ;@Z€6
+ëë ¢àj/"à Charlott*
+04250"ÕâÃõ(\Âx,146456b3-0ddaºP2f-958f-801b9ed73a7d"
+Brim*4!W 2ˆ 44.469 şkF®kidş6ş6J6Lœm	EƒqR  eGQ%û
+2øÚî
+2Ñ.RìŞÂ1.5ş6²6m1U6~!613©29.13}MÉ·35%(@PÆ·0‚Øó *ddavis~Ê =b¹<DevonteSabreaÙ¿76181"É˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bD'ufÉMfö?ÍÈ&$31b75daf-aÉ!`4cd9-8104-04c0e650959a
+DH,Lightbourn}QÍÃ7:19.11*Å N®O ŠÉº}P†º"‘!ögÍº 2ë	ş)‚)"¥•‚mugİ¹ Peg1†òm14œR¹„ê* 
+"!/9â şºFºeh1FA6 
+}i¡_3:26Î$24*m20+ei @†´6Á<Â¥ò .jmerisierzÙğFñ$¡@JessicaNafetar&68618775,
+0840c1c6f-74c3–1-86c!P191f3f3e5b"Bissainth2
+1fa{  6™@e50a75f4-8b4a-4c7ÁÀ@98-af7847931d78N
+Cadet*4ö48.586	ã)PşF¢FRÕşrÅp'ÁÚş ad	õ1ˆêŞÖ 102335ş¾  ÿ	A@şVzVbÜeo1Howardzs51©!5182(©!).  Âs,¢¼Ô *mnune‚ÛIl> ,MaiaMa'Leuk1006913ÕØ1d57a6ëTd42-4386-a6a4-15531e141 NŠÁØ h%^j˜09ac7198-180e-436b-a86e-28465c27c3ba
+NMButle*	%if 39:37.250	Ø)Cşfjf!5"äşeÊeš±aURue yenae¼ïŞe40/Šğ©.e’şezeb»!®e 04:27.686>eE"ÀRÊA
+‚İ¢f€CbA
+mfJordan">
+9747971IÚf%2icb65f6ba-3ed0-4ae3-851b-8356e6f0bf7emf
+Henry2>g 1n(33I)C²g Ê=
+ şgòg§Ù×»cß"«Ğ+	ùr1ÊâÏBj 4İÏ ¥PBR5ÚD
+şhJheg–©6.86.„@
+©	%, QÆh ¡×	€Gbh
+Taylr}i0269"İ+ 8ú) ş:36e770bdÁÓ 8
+Lf-9e19-660fabdd2679>Riggin*|Éá09=#187Éáq†Q®¹ ¦ş|ş|Â|ıiP4_äK%iqQP!1î| 02'.K%ÚÀa|1.16r%t!å6 ş¸Z¸n A$5:44:24.54*í+ 1  ğ?†ì6·À‡í¢!„Fµ	" Thaddeusyz842158ÑãÆ!Ú|2Ş@b3f565eb-76e4-41eü86e-1537d49591c8!Lucie:F%5:24D
+653	Ød  şD
+nD
+ŞşE
+êE
+T£×¡ğq_ê¶2z+ÁÛ ØòQ/2. ,ÆşE
+ŞE
+ÓzF%) 42:01.999&	„I! CÂ¨à”‚¦N% 3bÛ&N%Jacare*D87516îN% é:‘(db6546bd-91¯((845-8a0b-46c6781930=)&BurgesİÍ)]26ÅÍ62ijÖ $®Í x.…rÔ6jR´2r@ Óî“Ø}°ğq\uj ;Á¾Q>!2æê¯6X% .*E
+úü*ğ!34H
+T#!Ü){ üâğ!ş¯¯11ÁĞ 7.ğG
+).  ¦n/² "bd§MaşJ)… Ù:5
+0f484c96a-d251,d-+
+,-5df2cdcd210~07§& 7m_hşe/Še/ ¤şA%¦A%+N´ÚLn&ä! 1şğ.ğ (}AÄ¬}A"«2%T!¼
+ öâAbU«ö	4:É5.386†10˜%>*;Ô6ü	àù“¦˜ Hb4Õ˜Kanno&Ş70350å+î—•
+2mˆff1999bf-c8b3-43cb-a091-94e093a852bÙ—
+Kyleİ•!Gl51.64w(åóD®• F>•F <!v"ó	R‰V4 î~ÄI+ÙM£ª!àüşnÕn./ÆÌ738Íl5±		Ò íeÕ%]ÈáTÌ0½æc¡Ú5orù&ìP†ğÄActiveOnlineENG01029G21FSUà¹Ela Gr1.2023-09-20 13:52:32.662.2023-09-20 09:52:32.662      ğ?&Urgent InterventionNoMIAMI-DADEâ…‡ ,bdelbrun@kippmiami.orgEnrolled^NF> LBrendaTravisFL0ğB9841694MNgs_0c3fb856-1787-4479-9be1-4ff07403aafaDelbrun - 1fsuÜØ  …ëQ¸…ó?1H5694f7ca-a8f2-4eb2-8f73-4b9c132dcfe2D	Ø$Sangster2C013:39:33.196 Üä  ğ? â	r  !Y NjƒhYes
+FSA
+¤ Level 1f¸$v@ !y.KIPP MI!Æ\LIBERTY CITY2024-06-30 3-07-01E7 á}àgıØ?ê  . 1ê$=$10-06PM1 08-07 schoolStar ReadingT102269ú½S&@	TA@–Î	  PPBR400L!m!2† Ò fg830G32Spelman.k 2Y12A 24:54.9652 09	H@†¨.k8€Ûì ,sgodfreyâk8ShantayeCashuk7007208qk˜a3f3376d-60ad-493e-b0ca-d7fb16db99a3$G	 - 2s-   š™¸@2Hbd5031b6-0190-4e3f-88b7-c7b68019be0aGoÜ
+Carey2D,13:06:17.595şlÒl’şl¾lóÙ9f+8Ü?)Q!GÄèŞ\$400067†ë0-¡ }\ºş\z\ ^Ã¦\(4:23:52.5106 0)*ş\~\8@¡§¡J> ş\~\iSñ?	m\˜75d3d39a-6c30-44b9-a860-b3733732013bGi«Z\ 48:07.973i\ fæ2@ÅÃBì >ü  !¢È>ÕÇş[Æ[Åôx"ˆ×ÑÇH@ÕA2şk.k 4}kÀ!²ÙÇ235ÉÇ5ÚÍÌ @IËÂ zÇ2Tenn60
+İÅ820 14:03:43.598yi 0  ¾½8Àœø ,amartin2z½fa8Arnesha
+GraceÕ½$9123641F(
+\6fd013d2-40ce-4826-adfd-?
+(bb60d819MÁ¼tennu9„Ãõ(\Âq^af5d3c1-1893-461c-be3a-62a1c9765b5c	LHall673:34:1gÍ¸a[ş\r\6$
+ş]Æ]EwWÚ®¾×İ¸úê¸664°ôÑ¸ 3}MÈ°.M 4
+şMšM2USFv
+ 42:53.546Y12
+iãxW@ÆP$At/Above Benchmark)Ô6
+@à—Š 0rdominiquevVÀVf·4RosandraNova}V62096qV˜882eb0eb-2c01-4a18-babf-0694cb7c1485 DaYusfÒ@-—mW˜2d4c7fa4-179a-466a-a38c-f0cf1f46fc7dDMPierre2HP13:16:28.403 AdelaiÁ‡ Í¡DP®¿–9.À† ˆ²Ş‰ 3)­¸$ŠB î‹lËN6£İÍÄÀWÙÄ2¼âêw004ˆêqw <}w<âê  2.941mv%uÌ1è şÃÖÃˆ(4:08:39.06460 0á*ºpù“¦Ä MbnÕÄKannonuo703504"íÖÅÅ^f1†mn˜d0cfcea6-89ff-43f0-8e76-60c5f480d371Må
+Kyles6:(3:27:03.302"
+ 3³G®c ZÆb qbŞÁÉmb 2?
+şa‚ap•?n,7.ÈàüêQ6È 6}Q€'öaQ1.717mQÉÇ 1Ë 	şQæQÄ45.66*]ÉÉ34ÉÉL @N2On Watch%¯6½¾´Ş¢M€C†MAbigailuN6181869Ñ½ÖN‰Ô ü:qe0dfbf7e-7e32-4cf3-b49c-25f7e87fb7afqNPolancoBPH6:27.699 Claribela!%G@B®Y 48.»F‚Š
+F5 ¥î¢òÊt÷…ù"f 3Ù¢  2¦âşQuQ.fä¦aQPa5Ê©! şMZMš(39
+603209ÂcŞñÎ
+¦  5bR*ÄAndyuP(9331495U‹ú  ğ:Sd03a5b54-a0fc-4e67-a7f3-01107415ca61"ÄTima2;Á¡ 5
+839É¡)ñ .®H 
+eH…	ª‹şgÆg½Ê•Í õÖ*gŞ÷êN6 0İŸÂ”.g 9mS…ª!Ê		ş´^´2NYb²ï	 3^07.4972w	¤ <Âw(ôå	 &ccolza 1bT8ColeMal'AkhiuT7757631t 601ebbbb-5367-4b7a-8861-929abbc73f3dCol\nyuÍ æ:Mb2090c5d-81f8-4e15-9dc2-51b728116f81	”
+Eld.Ö)P01Ÿ55ì	iK ®K eBÖÖşKÆK9^ï¯TÕ©;@ Y <2Æî©015"K .}[ìê&38m[É¥æ?g3ûmåÂ  î==5:02.299y[=–@PÆÂ‚ŸbdfvÀ =b_>Malcolmu`8613252q`ê?ø?2?02837c764-6056Lc-a83f-b3801ee1e877"?(Outerbridg*ÂU(3:07:42.187É·W33N®l ŠÊ»"YöFşY¶Y_ôã‚qo€UadQE!1ÀğŞÊBE.ÊÜìİÊ11mo}!ä		 ş
+ö
+24:01.10RÎ	¨4@S@0Iv©!pš> <RkD&
+
+Aar*¾p90î@@Ém ô:Ó35_t9f-7505-435a-9cfb-c4ee88e9a6dd&@^t12C0228 WilliamÁ¨sL9®t 8.àV‰%3vèV9 Noò{(i€ÔŞÙÒ 9aXQ5ac2¨âŞcBL.{º
+Ú.c 5Í%d!×ÉÛ şcFc%41:11.60*¤!ÉÒÂ|Àìş É!€v%Ash}]936264u]êÉB%(a2c948e-f9b=L44-b03e-f24eede631c6ÙÉ Beaubrun2 @8:58.432 Wilyana!Erş%ş%ş%n%g¸³VJÙŸ	ÿ$šçŞWBº "*)
+Šşÿ$Úÿ$qW A6„6	„ 0È488Y"I C–"<à€Ê
+ .jmerisierz
+ ,R³¡G<JessicaKnight"
+9764801
+¸840c1c6f-74c3-44c1-864b-6e191f3f3e5b"Bissainth„1fa*„»	`(˜915b9b52-c5f1-45f8-8ed9-ee08e093a6c4BN
+Brim*
+Š 11:56.468‰5 Ù² 8a‰.ªFè6¦RU(F5 ![îÇƒÎîâ€Ö¿€GÁ—Q!í1ÄéêK335ş¾S 1}KœŞ*t"J(É™şt‚t1U65FJ9:10.99İ¡mJ)) >¦ 
+ àÊŞ	 *dd_+~€! (fL0Devonte
+Sana&É9755118m˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bDŒ - 1ufÑ àñmEb2f8d21f2-4dÁHdf4-5c1727c8be59
+DHGreen6biD1.48(iD @®î	 ,>DVµ	ŠHV9 şLƒŞ|îêÁqLÄ$Q#iL –â–+î	14œRÀúÈNL	} àmİ øí!Â zÀnL^5:30í	99*	 1  j”6´À“ï¢D "†DTavondr&Ç$8117645Ñ’ÆGÉƒ Ó:­0afc1c81e-21a73-aÑ+,631da5e43dbbqG
+EnichùÄ!.$5:19:21.81ç.	g <®C şCşCzCO@,¨…&í1Šîµ$63 (İ”
+¦N3)TÓ?"*Â-	f3¦m+î51.20*÷Í„ 7	o >Æ÷¾õø¦Ê.@RbI&‹Anari&¹$8418683Ñâ¬Å+™‚M!69b0999e-be0b-489b-b5e4-56280e2a50f0"¬BailJÍ.Î,(461 
+Janaya ƒ¦K®X x8.ß	†·$"üşU!ÎU!1líšq"A2 MÁ QJÁ«2¦æŞ÷	Á«2å. 7}x¾®¶$329˜iw@	 ş˜F˜ewÅ1:48.68B,(%)€EÊsÀÑšÆf'(2Taluƒ+¤589290ymÆÅ>!(34fd6e!dd3d6-4712-bb34-615a6dc924fÅSineuB²$Z7.71<%êsO®] ’ÊZ ³$ş(Ò($ ’‰?Úy	€NaTQ6i_ Ôòø2Ê :}_’àm_83q_)Üş(n( 1Howardb¤Ç$3:15:49.86*w!û  Zê:
+
+(¢Û *mnune‚N .bÁ4MaiaTristia&	(8545509
+P1d57a6a3-4d42-4386-a6:+45531e140100 NŒN h%
+*˜2¹H8d5fe9b2-32ae-47fa-8-5a96be6ba5fa
+MMcclai:í2:5»$522 C®Y >>¶F`ŠMF5 şI“†”ê[”&T!1´òê389ŠğD+ 2}/”şùzùbs5®052:57.916>09Æ+®;²V*ş;v;¥2~2;e1d84551-8488-49e3-98d3-18f025e939b9r;$3:40:46.44m;eş!r!a"€RÚrä$?îåj€/QÁ½ØÌ şP}P $}P¶ş v –ÈŸ]ÈáTÌ0½æc¡Ú5orù&´P®ğÄActiveOnlineENG01029G21FSUà¹Ela Gr1.2023-09-20 15:52:34.313.2023-09-20 11:52:34.313      @&Urgent InterventionNoMIAMI-DADEÂî ,bdelbrun@kippmiami.orgEnrolled^NF> HBrenda
+DeionFL0ğB9668047MNgs_0c3fb856-1787-4479-9be1-4ff07403aafaDelbrun - 1fsuÛØ  …ëQ¸…ó?1Hecc3dbac-b877-4619-8191-4806de15044cD	×Greene6@5:46!@694 Ùá  ğ? ß	r  !Y Nj€hYes
+FSA
+¤ Level 1f¸$v@ !v.KIPP MI!Ã\LIBERTY CITY2024-06-30 3-07-01E4 ˆÊhõåì×?ê@   1¢ì$=$10-06PM1 08-07 schoolStar ReadingT102269ú½S&@	TA@ÎÎ	  PPBR400L!m!†ğ?Ê zd1Howardfh48 18:38:14.875](8 14  † .`4¢›å *mnunes2â_,Maia
+Elenaq](10900089Fe]˜1d57a6a3-4d42-4386-a6a4-15531e140100 N‰ - 1h% u9ƒ×£p=
+×m_˜9ff48734-55a8-4465-954c-b69fed2674f2
+NM@Pierre Philidor6>(8:09:35.556şfşfşfšfoD÷l~ØMÌaVèıŞV$400389Šğ0-© $}VîşVòV1UFj¹(3:34:07.230]0 AÂQ,‚Ã† *ddaviêQ@DevonteAaliyahqV09411472qV˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bDaVuf-¨>°˜b847e56e-aa11-475f-abc5-3d0bbaea6156
+DH8Cardona Perez2<,13:28:18.315úOÅ¯ YvÕşµşµ`f{ĞŒ.O²úêO014œêNO ºş¥â¥430G32Spelman2T 29ÿ12!ÿ33:40.20}T12eTåAP@X@N2On WatchB6¢8à¯ÿ ,sgodfreyz£I@A3ˆ> 8ShantayeLond.
+162101qR˜a3f3376d-60ad-493e-b0ca-d7fb16db99a3$G	 - 2s-ÍÌ @š™¸@2H087a8786-fe7d-4c2c-900a-4daa670c3a77GoŞ
+Swaby>T 06:53.952}S@E@
+Bî >ş  H!.
+F{6H’Jı	F5 hîò	ı¹í»Øò	€Wç	  @X2úêîM67†ëqM 8İœ<ŒÒ  1.395ğ	5Ã		@‹Ê îğ	ğ	40 12:56:57.787YÁŸ 8œ4€I@0IzQï†¢ñ	&@A7!ä> ñ	Josi.œ733783Oòò	à?6Q3785a02d-2d98-40a7-9884-fc89687eca0fò	Duhart27!P¨528iG f&@®G (!.GVw6KRHV9 !gîOÇlØîıÖ*Û	ñê?6Û	 ,}?¾b1 àmĞ øŠÂ zA$1Tuskegee2:š$3:54:47.12İ¦aB 9	› 3¦B¢Á‘â	ndupreezfB<NikkiaAvianne&á	951969qE˜8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2D-JeantÁ•1t1 	à>N˜cdc15295-2d75-4e81-aafd-9d0964dc4ba4D.V 
+Silva6U(3:51:32.983úU NyXVşUâU ï;ÛÕÖQÔ 3Á™)V1ïêe036È"ñ	.e„ÀşeÖeñ	2Tenn6”}Iï	7:52.198Yï	),@vÇû6ú	€êöú	amartinæ(ArneshaJ:L8580275ú	\6fd013d2-40ce-4826-adfd-(bb60d819Mù	tenn*¡2÷	˜b029511a-8b3b-4153-9e40-f17be4f147c8MLBell2AH7:08.34şıÖıR 
+r=!Áî¼ë¾úŸİÍ2û	 üîû	664°ôû	 İ¼ˆ
+şíví ^QWû	3:39ë 2>û	 9şWşWşWWÃõ(\ÂN94969854-e1f8-4cd7-a82e-d2e660beb786ZW-Z4:13.48
+)FşTjTa"SşVÆVY\n Ù‡ÙÑ½  Ù½ 2şf.f.ıÚşfzfb·¦f57:33.94İÖ
+Â ıß
+ µ 5baÕµ Travniqu""
+10023586ş·Á·ğ?6`ˆad0cb0f3-2990-4efb-8909-e29a25b013ay`JohnsonÙºmc 5½327 ·L .®h 
+>hrz6
+şdÆdHü¤Ğ_×İºìôê
+6º 0İºä–&v 2·‘Å	aåÒ fT~Q5:40©42*
+A 1	™ ¦p ¶Ó¢R "fQ"RDavinci&q849820qÆRù	 Ù:±2f7a7fc9-ae28-4e34-b308-fc65ffa3167fR0Vernon Mitch2
+!?L5:29:17.350 Saquana!Àfæ=®Y "8şÁşÁjÁ÷c%E­!" 4Á¤Q2N1Àãê[6] *}[ğ
+´Nl5Ü%mfömåÂ f[Å¯2FIU2Ìİ”j21Á­64*j–Âj¾™áÁµdcezair~Ô!ˆFf!¥…DasheD"Ka'Maryg75978*l!˜5f1486b-9b63-49f2-b126-63df6e2f5e3bCe’nfi^l˜073579ad-8850-44bd-b4d6-7a2b8245a26dC	İ$LipscombÙ·)aD12:20.585 Javiera-)Tş!
+j!
+%9ş"
+ê"
+£ÙE—ƒê"ø es2°èŞs$102197ê¼-H.u!Òş"
+z"
+bˆÅÎ†u! 0‡10:29.5F$
+E#ş…b… (bÓş…Æ…08eef642a-cdb0D8-a8b6-08b1820e1fbv…(3:02:25.679‰G¥` Ù²… ,a—†Ä2yş„ª„ ÑÇ„Uì 1şŒ^ŒÈÊN»E—  şŒnŒÅ»$2ColumbiavÀ 1¸.65*¾$ÉÀ	²ğ?vï!Ù6*Hà‚ 4dmillerbrownz˜!‘ZÄD'Juana„!rrick")
+6747746)
+°ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(William~!2c1)	é  Iÿ+˜b35f2147-d9f1-403c-a5d3-e58596edaccaMå-Bæ
+SmithBÊ 3ä958 
+L@a2	tşÉşÉşÉjÉıpŞú("ë­'õQŒâæÉ1769’¶ÑÉ.ë®şÉzÉvëš™!29ª65*œi€E#ÀPÆ@
+·×@
+š¤! 8bÑ&¤!Adiarisu|9332265q|â¥!Åp™ñ?	W˜f56ebf6d-5338-45d8-8686-06248980fae2Gô!Huds.÷@
+03:50.76¥Dwayneaw8æ2®¥ 8.áşşşşrşà\ñÑd%³€BÁíQIiw Šò³2Ã! 4*³´¬. 4Å!5ãyÆ
+Ò zw’ 57:03.1092£09	œ 0¦şìà¦c >bn"cAdria&/4580Ò/î ø:i669d6be5-be2f-4fa3-ab25-afb5121b6987À4Flores-Lapaix2B  5…Ğ91AeN3 <®h eh*h(yR_V9 ©îĞèÉy€CaOQ.õ2ŒëŞÑ40:h.Zœğ}Z10mZ	} øh â%fš 8G10UIC2M
+ k>ı45:31.656&09Âº,ÂŞÇ (scurrbg(Ñ!Ø> Á»roc2Ama*±+106231ø/È5a650afc-cc88-4359-a698-a3a7a2076ba0Kelly - 0uic)w".
+DÉ?KH98ed27ee-1f¨(\3e2-8fd8-7b578c54408c
+CÎ
+DixF±e8.58mB©/ş¨j¨!4"é ‚ş^2Â^2yÀ©«F$&©+Kèöê?078œ"\(.Ù êş
+ö
+†‘Ú 2·513.5>d 8Iz .Â
+ŞÁä´mizellzŒ *b¢DavonY2mory"
+8761088Ñ îˆˆ à:Xb3c01bc9-768e-4440-814eÁ!,b5a74e23cWÙSistr:% 2:41:39.4î// YÙ¦ş
+ş
+r
+´i™ÜBÖU8É¦ ¼â„( 102406ŒÀw.³ô	ÈşøêøŠ³31:12.81Bse
+dÆP$At/Above Benchmark6ìÀõ‡ š¬€Pb\*«Á²re"`06056214q`êª :/\657250f0-f67a-4f76-8e9b-Ë5 110f60e1"ªWebste*±5 1c0ß0.77s(Å¸J®ú	 leT}Z ‚† 9Ş
+9 2ÅÕ¸$ŠA î
+
+İz¼™we\2ôáŞ»B”.ú	ô–/2.1249Åf@	 
+âù	bÊù	a:eBù	ÆSşú	şú	fú	Ë ÙEú	043200097-e6a9ı8Hd-908a-84951a2360c4vú	 24:.95ú		g²B pÆBvû	†‚îAÜZ,Y|yAşü	2ü	.•şHvH«Œ-]ÈáTÌ0½æc¡Ú5orù&ôT½ğcActiveOnlineENG01029G21Tuskegeeà¹Ela Gr1.2023-09-20 13:43:55.874.2023-09-20 09:43:5	  ğZÀU@ÆP$At/Above BenchmarkYesMIAMI-DADE‚Şô *ndupree@kippmiami.orgEnrolled_( €O@NNoB HNikkia
+MajorFL0ğP9953723MNgs_8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2Dupree-Jeanty - 1tuskegeeffØ@…ëQ¸…ó?1H8f1759b1-ee7c-45ba-a4ed-acb27ce4eac1DáV
+Jones>i(10:26.854  éõ@S@ ï	r ´9Y N‚‘XFSA
+œ¶Level 4)®¸$ŠÓ.KIPP )Ö\LIBERTY CITY2024-06-30 3-07-01Ea ôbtò-Ú?îT@  	ÀU1Ìê$=$10-06PM1 08-07 schoolStar ReadingT400036Èê0	S :@	PA@°ú  1.8180L!pš™@		@Ê z|1UF^v812 13:44:11.291Y&12 av—ÀSÆv8ÂÚŠ *ddavis2@rv 6bv@DevonteBrandonuy8554229qy˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bD - 1uf	Û ğ?3mk˜6fc9c596-41b7-464f-9901-479fd7de0129
+DHGaston2>,13:26:10.295}d I®d deW²c 
+qc¤ qb 1eÊşa‚aĞûÖèÖma  }a Sma Àòa14œua 4}aDò¤  PPBR265ibE¶!Û		  şbZb1FAUvc 26:41.2322%09¤Îc<€Òã
+ .jmerisierze [feJessicÅÜ s}c9721105qcØ840c1c6f-74c3-44c1-864b-6e191f3f3e5b"Bissainthe - 1fau	á @6i˜e2f53cfc-f2cc-419f-bff6-e293494eb7e5BNPlez2G13:04el39ileÊSW®l ÄÊĞ qmğÁÓÍĞ 5şĞšĞ‹ëb·U1Ømoá¾ÑĞqo Ââo$102335ş¾-· 6}o’ÁĞ3.351mn²ff) şnZn1HowardbrK
+(5:49:07.916Y+ 1X 0Intervention¥, 2;
+,€Ğ
+ *mnune‚Å "b`<MaiaTra'ZayahÕÄ$9659348F=
+˜1d57a6a3-4d42-4386-a6a4-15531e140100 NÁÄ h% uGÙ?64
+˜be83f6dd-32f9-47ad-80f6-fc4b744585ad
+NM8Williams Hill69$5:19:32.644
+%ïæ=®d ">ĞV½vÉV9 °î"
+ğ«<m\×?¥‹  
+´õê
+389Šğ0mB (qA@Ş°Ù±402
+Ù?)]föŠÂ ê
+a%3:27!ì8002Á°d¶¢¾‰¦
+ AbF&
+Meli2G364350qGÆ
+’ ù:Bc
+h80d3-5d8b-4bd9-82f4-a3a4a80Á³5
+ mB27,12:58:54.333AW NÍÌÌÌÌP®< –Ê  Ñ ö
+Í  2e(ş
+‚
+9 .ÿ!ÙMÃaMÄ÷êM6ş	 9}Mìˆ_ş	
+BR5Í5Í%mÌşF 30G32FI6‹6ä	,13:32:43.213Y`eâPÀT@N2On Watch%­64¡×	 ,dcezairzË EbJDashe­MichaelÙ“45390*Wf1486b-9b63-49f2-b126-63df6e2f5e3bC	‘ - 2fiuÅş?-‹0@2H830bd4­pdd3-434e-b6a7-bde4cd6f1da8C	K
+GreeB[403:38.590 EdÁZ%òÙB®V 88.bF€6’JWF5 şŠ9Qô_ÚÜ	€V@Q$C2ÔèŞM$102197ê¼	S2¬¢°aM12mJåê!ÈW3şJFJ%1KS6J*‘É—¡J2.556Õ	09Æ—8€Ë
+ ,awhatleyz> IbN0Ashley
+Roge&7113456=0605367bb-e077=0-b7c=f73d6ag3W	ŒŞ	ksu-§  :˜6fe93cd2-6ea1-41d6-b0b0-18d8f850c5dfW	KJohnÖ.Z: 0ı108AW NiD¹Q®D ¨Êš Ñš¶ÁÍš 3im ¸ş
+~
+Øé°£'?.è	ôüêN555¶ÂqN.*òÊaN1.2ùeÉ!Ï		 şPZPnùiO 09:03.3692£€J@jr6à˜¿¢ñ &bN"æ	LiamÙ—836641qNÆã	Ğ à:ã	b300a53d-f2f0-47c3-bfeb-8dab93469340ã	JacobBR 02:56.976iHh€?®H &>ŒVå6RçV9 ş”Êo²950×Í” 5Á‰	ç J1ÈéŞF@2ß **á	Ü¼N.}!Ì		 øk
+Â z.1F~˜56:08.976±09	– 4¦I8âÿ… ,bdelbrunz˜ (bJBrenda¡dilaniyL7367ã	v,0c3fb856-178ÁšX79-9be1-4ff07403aafaD	Áš fÕš>O˜8ef85a28-5df3-451c-aeca-6aeb4b5f0de4D	KEdie2‚47:44.130iOÛ	 @®O ,şOşOzOØ¯¬ç.€EaDQ%õ1şâO 102269ú½Ñ• ,}O¢ÈşOÖO1$2Columbia23B618:45.82B6)/H@&Urgent zĞD¾™á
+ 4dmillerbrow~_!‘F¥‹@D'JuanaKa'Moraua7598007˜ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(Wƒ- 2c1)	é  *4J551dbb93Bh5-43e3-b93e-90e0b5e85f54Må-Bæ$Lipscombypas,8.723 Toria=	vğ?ÅDÁH^  8Yrš%@"éR[r@ †îğËÎ6ŠŸwØÍ8!T ²êV1769’¶qs &}sæÎ	Jğ)b¸!kÖ fÂšs
+ 31:09.487Y 2! ÀXÆ	¾óÃDdmizellvÎ@[fÎ0DavonaSkyla&g9162931îlmlÅk$™@Ãõ(\Â¶d993c80-90dd-4b4e-82e8-73c8f0a1ce38şsBai2mH2:41:19.836 ArmanehW R®İ ¬Êt t¦²ş~!®~!P&£_¦®€XÁäQM¡^2ĞâŞ>
+ 102406ŒÀq| 8}|œ¤®556Õ)u@æ® ^ú$š{¡€¾!098Y3 0ª#54%.şîşîşîæî˜3142751f-8db3-4b21-9a2f-f37b4d930e35M’î$56:23.134 şîªîÁ®şíêí¡Sû˜Û¿ğ? / mşıİı  }ÎşıŞıW1|( 4C 23.046Ä10i‚ Âp
+¢Óö š{(Jk
+A={(ùss&i
+8952895Ñı 8ú}(„:ITd7c2d22-dce9-48bf-97ff~ 433b1a96:}(Oliver™Ôh/3.91İlıæ	r îh
+ ¤N%şh
+rh
+·’•Ä|”Îˆ$õü: Îâë:2z(.{æş{Ş{šıI44n?.0	(32¦¬!şÃ»€h
+ @‚h
+Nathani*81847gë+ê×k
+ù?6k
+˜10a8b423-1dd2-4884-a61f-a0d34174a4e9W(Lads.~(!Tk
+38.84.%³>®d
+ $ˆ *ÌVWŠÅV9 Óî¾•İ‘>71Ú*¾ ğîÆ6B
+.aÆş_(
+BR7B
+5¾şaîaa06ì$04*Èa©d &–aŞëÍ¦a CbE*aChae%ane& 037094Ñ· 0ı¾d)| ü:dba989bf3-854b-42de-9561-6bcf738b4f56"d(Petit-Homm*ˆL3:01:20.312 KeishaaæA®N 28.NF5ŠJF5 şF+Ú¬0}æ‡ R
+Q-˜ úî˜6j 5*
+¾ PBRmT5Ï%bfşZŠÓ 3é$ 3.  †56€—ÊaWšÒ!}Fs!ïÒ$Christoph*p9805330""æÖ  :
+,fec27354-5db%L8d-a9d1-493431161308¸¯ThomaF'8:36.247	ßIjşc¢cşû	Æû	 Ã[~z~&c1æûêç6Ö $}Oşë	òë	r%’5:33.64*ÑaRç  j*6KÀÀà¦¢ <¢Xavi}I811789ö%‰Ïô?6á	(0f388a34-6aá	L73d-bb59-dc9870ac544İBattlİ™)N35202iIjL9®’ >’V§	Š–V9 «îà	®UÓòÅ&¦!2˜òê;6Š 1};²	Úà	BR15+%T!¾É şF&2NY6ø$B23¥#è!ò9á	©J Q–á	( †é &ccol~?(fŞ	0ColeTeyann& 5‘5 6"†+ 601ebbbb-ø$`-4b7a-8861-929abbc73f3dKònyu-w>Ó	5505715”!(d0-4c44-9e2R$d35d5657f4“
+Bì.+Ê	 8í"96Ê	Nevaeha %ÛşÊ	şÊ	şÊ	Ê	'õyrG¦" !&5 Q@%2´âÊ	f15"5.æ$–¢şÊ	şÊ	RÊ	Ã31:39.64*Öi=i=  ÂÙÀäÈ<(şÒ	"Ò	D(J8"V<75650şÍ	Í	òó?pHd6da85af-4c0e-4abb-971c-c82a9e11afd3&Í	Josİ‚)X26:15.02Ô.)DşË	şË	şË	jË	(ì[­ÄÂ.ÆY8!Vèëê fÛ	ŠşÛ	vÛ	ñŠĞw]ÈáTÌ0½æc¡Ú5orù&¸TÕğÄActiveOnlineENG01030G32NYUà¹Ela Gr2.2023-09-12 13:32:15.237.2023-09-12 09:32:15.237 N2On WatchNoMIAMI-DADEàÍæ &ccole@kippmiami.orgEnrolled      D@NNoNoNDColeJazhiaFL0Ğ7084225FNgs_601ebbbb-5367-4b7a-8861-929abbc73f3dJ$ - 2nyuÍÌü?š™¨@2Hb96c6455-caf5-48bb-b25e-6b3a3c21e4de’(Washington2'D13:07:32.029  Nâ@B@ Ü	r  48Y N BohYes
+FSA
+’ Level 1[¸$J5 !a.KIPP )§\LIBERTY CITY2024-06-30 3-07-01E Ñÿ÷I	wÙ?Ó  !3îû$-$10-06PM1 08-07 schoolStar ReadingT400015ê0)" 9@	A@–¦bP5Lo9² f@Ê f <29G21Tuskegee.% 19å20!å 54:23.7242 09	x@&Urgent Intervention%”688Âî *ndupree@v:!% NE!İ. DNikkiaTahilianiu?9714280q?,8e9af0c6-4adA÷X7c-bfdc-5ed477b2288b2D,-Jeanty - 1t1)	éØ  …ëQ¸…ó?1H0a306714-fea0-4f1b-99a4-9a455833a5a2D.V Parris2T,13:49:22.004	î	pğ?eM2ù . aF.Rr”6]¤J]r@ vîh3şˆRúRÚ?ê@   1Ììîx36Èux  }xDÜÎ	  PPBR400i})r† ğÂ z}1Howard6¡.|48 18:50:10.793](8 14  † 6t4àÙÙ	 *mnunes2ât,MaiaYoshuÙ®$9735737MÅ®˜1d57a6a3-4d42-4386-a6a4-15531e140100 NŠag h% u9„×£p=
+×mf˜3c2a489b-1a37-49d4-91e2-79b0c17a70ae
+NMConyer._%P34Á±746ş_ş_ş_š__/³c†ÙÇ1œùêO389Šğ0-¡ "}OÔşOŞOì	$2Columbia2Ì*ñ	ÉÌA 9.245}P 0ÁÌiê ÂÌ4 ¬• *dmizellâX<DavonaMessiahÑÊ10104891q[°ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(Williama^2c1"	â   Ãõ(\Â
+˜77eef146-1f4d-404f-bee0-e9d269efad50WQHolme.aD0 12:48:19.238 Kÿ
+¡JÁ.	r îÅR"
+şÅrÅçÊ¦‰ÂØÁ+-] Å½2¶ñŞn$102406ŒÀS &}nœşnònŠZ 45:07.857yiZE‡0€V@0z.
+ŞÅ
+ &f;@Ay> fZacharyq^09162863q^Şg ô:gefefbfaK a
+Pb4e-9dd3-788c1ec34650“Fland2´ 1¥D08:26.719 JowellÜ 3 8®l 8.
+Vy6
+RNV9 !kî
+z2*_	×
+ 8aDQ%á°2„ãŞOB„ 5}O²"Ø&
+152‰ô?‰ ş‰F‰¶½ 9•146yTÍ½%/ 0@†ğ6
+ıß
+¢½ 0b]Ñ½Arian*
+123548†ê¼Eö3ã?6¼0c9b64fd-cea1-497e-a4b8-b19364d514abÙ¼
+HinJ»<2:33.356 
+Milana/> ®g 8Í	r|Šnr@ şu”Ó@€uu $ajQFiuâŞuBÄ .}u’
+Úyu"5â° ùáVÎ  ~USF^-
+©y 27:41.390ypÉÄedÆP$At/Above Benchmark)Ü6i<ÀÆá 0rdominiqu~õ RblTRosandraSkylar-RoseÙÑ012561qs˜882eb0eb-2c01-4a18-babf-0694cb7c1485 D–=usf-„@	+
+˜46cc6f6a-3baa-48ca-a498-53192a9b89baDM
+Evan*+
+)_14Ü925Ag N­d K®j vea*= ‚ HŞÁÛI 2eG¸$ŠA îá5`!=ç<&2€öŞ\ÁÑ04ˆ"İ.U(Ôª  2. 8Üi[@	 şĞFĞ 2Y1U6Z.×S27:37.04}ZÉÊeóÀV@Š“:bçàddavi‚à Lb_<DevonteJelain*+
+730624qZ<05ac1e10-ac15-47—H9f0-e34a7ba9216bDäufÍT @6E$48817ecc-2ßX3d2-b6a7-8d1ab7e9cbc9
+H Presvot™™!X(2:59:57.033iSÅ½lR®S®eT‹ YŠ€ qT¶öqT 3‰ÿşU‚Uñ 1åuÑÁÀUÁ¶Q=!1„êîe14œue.6
+øàº1.51225
+ @)~ ÌÒÒ ‚ÀNY6=*í©a30L559Y'ÉÀe ²À€ß–„@Sb\„
+LoayW1086êqWÆ‚-f:¬(f5b3a5f4-9eéP996-b304-b243d177a3e6‘4 Silverio SantÀ
+:/ 07:43.698AXïÀL®_ €i_ş³ş³¦³ÄK½Ö¡tÛ22ÜúòN 5* 8*
+¼Í³531mNv  ) ş³F³ƒ n
+27šu3.26}g27;	­|ºVÀØÕ®
+ Pb[&
+Ur6„330913q`Ú
+"C ì  ë
+7d063219-c800-44e9-9f23-8511b2595837*
+Coicouy`!c$2:51:55.38
+%O@I®` fÑµÕÁ‚Šş
+ò
+¹Z±VpØó@T@"y ;2çîo2"
+.oÄŒao22qmr ±B 	şmbm N~» 24:24.208Y#É»Æ»¾áÏ–»€]b`É»Rond‰¦!9424609æ?iX 1{mXd2713dad-2539-4df6-9dc5-7269d24ecefd	“Turner20¢! 6
+150É³
+ŒS®S ¶Ê³ 
+¦²
+ 4ş
+š
+ è)K< Û9AãøîE2´ ;Ñ‹A@®Àg3.764g…¸ 1Ì şGFG’g5:35Á086î11  †]6^‚‚İ²!–^It¢> &^Niyan&ç09953839Ñ§Æ^)~  :£!Á‚|8bd5-fb2f-442a-9f84-035be76e8277"^LorenzoyL^(5:21:47.477	Ø	işœ!şœ!şœ!jœ!‚²ìJå×uH1Ğö%.J.Ï‚şŒ!ÚŒ!ı	†=P22‰87*€Í•ÂOHşÚİ 4dmillerbrownz: 4b›D'Ju¶ ¿Ñ78™! 8ÑêÅ@Ìì:æ˜970da825-a3ef-41ab-80af-0edc4fede22cMä-BåEdÿ"F3:02´idé *®° >
+r?şş²C+oyd2¸÷Ş¬ 101769’¶3 0İ¬è„*ä33Í­5Ò? şmîÂ ‚¯FIz¯24:39.66İ®m_	– 6Æß0¤Ğ ,dcezair~t 7bcDashelj,Treasur&r709505"ª+˜05f1486b-9b63-49f2-b126-63df6e2f5e3bC	’pfiú$ ğ:`˜525a7a1c-dd26-482b-85a0-1e8dfad3d3e4C	K
+Sena*‰½d04:18.709 Ciara Seraphina0EL1®h 8.Êşhşhrh=jÀÊí& =@"i 62ğîç197ê¼qx.&Š¢}x27mxIËğ?	  ş%
+Z%
+1FS6xB52#90İ×Â×4€Æğ ,bdelbru~Ó©ë>#
+Brenda/
+ëyl811750"¯!˜0c3fb856-1787-4479-9be1-4ff07403aafaD	†fsqlB)
+ˆ69c79d6-82e2-45f1-b281-d8b09efe113aÙ
+JoBJ(3:44:16.552	Ú1ëû$İá^ î %¤şÅ+¾Å+FªîçhfÙÍ;µ+ ®êÅ2269ú½qM.f(’ş)
+Ş)
+ 2–Ù/0.9F£!I‚›6{¢»¤!Ù€AbÄ"{Zaiden"&
+¼+ 5&%Æz?ù?6Ø,cba9be52-3c1aœ aX(419-19a6be94aa2"zMccá^ k6{3:0096Ùj9P®¯ ˜ÊÇşÙöÙšÎ¡àÖÍ" €&Ù SÅ³1öéŞ+
+>2 4*+
+®ÙP
+BR4Š%t!Ş,Ìş±Z±†/B06:48.72./ 0ei €ÊiÂõø "/f-
+"/AlexzÁ¾ ayj41140"•2Ú&/)‘ ñ:o03215f87-9fc2-46fa-8ce3-c4de4cf391b8&/Robins.Ø5!^ 2†243.49ê%òLJ®oV
+.
+†î"‰öÁÄş›!¶›!¼fÙe‰ RabQAáÆ1Ôëêm69/ 7}m‚´. 
+˜5Ş%} Ìş 
+ê 
+39:50.24B 6Â 
+ÀÃÙş 
+. 
+Cal*ô569608&Cş
+&
+ 7bb01d6a-9c02-47c0-990e-e5d23820857eDelö
+
+Smith>Ë36-33’EeşFşFşFnF~(N¤lİ&â1êş
+&
+.F¾ş
+ò
+O947F37*çÉºI .¦/€»Á¿+–H9 $b
+H9GabrielÙ±69739"×58e9òF9‰Ü Ù:ºˆ1d240061-3df3-4484-9ae6-a78fdb4520aFF9LadBÀ(3:43:27.284¡» NF³>®À $>ŞVó.6?RzV9 ù .ê <öpúBĞ€DÁ¥Q7õ1Èòö$289 *İ°ˆ¸N·+5ÔH öÂ CÊ<é]ÈáTÌ0½æc¡Ú5orù&ÌRğ~ğcActiveOnlineENG01029G21HowardUà¹Ela Gr1.2023-09-20 13:09:49.506.2023-09-20 09:09:49  ğLH@N2On WatchNoMIAMI-DADEşÑã
+ *mnunes2@kippmiami.orgEnrolledT1@NEI. DMaiaVirgelFL0ğ9887759MNgs_1d57a6a3-4d42-4386-a6a4-15531e140100 Nunes - 1howarduš™™™™™é?…ëQ¸…ó?1Ha81be883-7770-4b02-a6f4-2b3d660a622c
+M$Williams25412:59:33.459  Ú 3óD@ Ü	r  F8Y NFuhYes
+FSA
+¤ Level 1[¸$J5 !].KIPP )­\LIBERTY CITY2024-06-30 3-07-01E /¥'åœˆÖ?E  !2€ñ$-$10-06PM1 08-07 schoolStar ReadingT400389Šğ0M2@	TA@Ğ	ö  PPBR360Lt9¶ÍÌ üŠÂ z71UFZ2812 13:36:02.2599ı12a2	•xğ?&Urgent Intervention%“6=,Â“ş *ddavi‚=!†V=4DevonteCoriy> 715453Fe>˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bD‹ - 1uf×  IØ 3m9\c855ecf2-6108-4034-8407-G(69f76e88
+DHGatlin2:,13:22:51.897	Ô1?e2%,AÃ^  a+.7rzŠBr@ †îM€3&îgØ?ê  . 1ïê]014œê0S $}]¬Î	y]40m])r2† Ò  b” 30G32US6^ 2> 43:50.3852 Áš@V–@¼íÂ 0rdominiquev“€Cb“@RosandraIrivinuY739400Õ—˜882eb0eb-2c01-4a18-babf-0694cb7c1485 D‘ - 2usf•Øê¸@2H2382ec90-232a-450d-9d73-5c8b5f6ddd77DoŞ
+Smith2=<13:14:01.937 Ra+)D B®š 48.c~š’şš’šrèÍ¬`İmM€B@QÇ@V2šéîM04ˆuM <}Mø¤²PmHÑœf@%hÆ fHÜ	1KSrØ	$5:38:17.21}H20 11	—Æ¦8¢µ ,awhatleyvQUZ§ Ashley
+ ruN8808935Ñ§˜605367bb-e077-44c0-b7cb-6ef73d65f143W	ŒÁ©ksuÛ  2ã	˜8f3d3409-ddbf-46ec-8927-a351c39684a3W	KThetai:ä	5:31:56 !û Nk ğş­ş­ş­f­DXNç|Úm`  aU!×  õ
+
+úëŞ`$102555¶ÂS  }`úş­z­ rA‚e(3:55:34.868¹p=%*|€I@ÆP$At/Above Benchmark‘6
+¢ñû¦f 9b·qfJanayaug969508ögß
+2gˆ59a65156-7a07-40d5-b143-ede4f96699e.gAlm­
+:™ 30:19.933Ad N©Q¦K®± xy.±rƒÔ	 UöXV 2¸$v@ T
+î
+¯Ë*ù¾o×mh@Uuh€I1œêşhuh 6}hÖÈ&
+19ÍÍ5Ş š1 şÍFÍ
+ 2Spelman2wF
+ 0w60İÑwil,F@0zp0Àòÿ ,sgodfr‚Ê Bbd@ShantayeAlaysh}g1630&u˜a3f3376d-60ad-493e-b0ca-d7fb16db99a3$G	
+ s-) û:
+˜c230b5c6-210f-428b-a4cb-449e612d474fG	OBellyhÏ04)(997 
+Noriaa6	n A®n .8.nV…e'"½R#
+V9 a î_Û7i€Öm_€MaT  €F2ºàŞ_ 400067†ët 3}_À!–'
+
+BR25Ï)b5Ğ ş]F]*
+†47 16:51:37.160Y—  Jï!“:µÙ÷¢ş0@A3E> şTionneÙ²114046
+şş×£p=
+×ÅÀ2b2f783f-f720-4d59-b906-51f955f2a27f
+NunesAmos6) 6Á¯33.234É¯¥3 Y²ú B!.A~`şúšúÅèb$[.úĞıê) 3búàğ.ú 7Íˆ%L°^a¶Ê fUÅˆŠ 19:54.0479şÉ„	˜ ;Æğ	Ş•Æ	ª©@Pb>&©
+KarisuA6655611?Ú¨	â@-˜¨˜d5e8d91f-dd61-4429-aa8d-6df3769aea41Dõ(Brown Iii2L¬55.40mJ%õŒI®‹ h>Jrù	Å’"ú	ŞÁ•şú	¶ú	‰EsÃ×MØÁ‹ öâê	Á‹2².‹Ô¡22ÑŠªf@	 
+şŠFŠ_ 24:43.124209I}@†  2—€Ûìª^;Z¶y^Giovann&b7099892şaea  óma,26b58e8b-ef2ë	L2e-ac5e-c0720c81d8d6.	HiJí	 7:23.983 ÁÆiråíÌá‡	r înRó	şnrn¨U.èÍNÁ ú	 âêÑ6o.Áşnîn$2Columbia^Zä	3:01:396Z27aw  †¡6o¡×	Émizellz"fDavonaÑzere&V605720"
+˜ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(WµW c1‰şæ?ì ëmmhe7722465-989b-468c-9324-f2e)96f68* J 748:09.18.ÌÌ®Ì a£.
+r+ÅÌv^r@ ‰îe£ŸI.#2ØİÊºõŞ[ 102406ŒÀ **UÔè.,
+´5Ï`‰ŞÂ f,
+W1FfX 41:42.796>Í	– ,Æ,
+8àÅ
+ ,bdelbrunz` 2b*
+4Brenda
+Kelly.(
+3488i,0c3fb856-178‚X79-9be1-4ff07403aafaD	Œ‚fsu·	Ìì?-‰gˆ7e21a280-3369-4ecf-8c34-cdf40ca09d5eî×Nicola*‚)[25![096Ë Nˆ
+ F®V.V†"
+uV ¤Nq!†@ îWañQÒáY (Á·Q=!1ìâã 102269ú½qg.1
+‚ˆ*32“•!Şip şşgFg4
+ŠÂÅ$,8.3FÅ$)/ 9Â9
+ •äÒ–Ê 5fjÍÊAc&Ñ8279ehÏ$êÆ5Ãõ(\ÂÑÆ,9d65366-8231ÁÆ8-917$10f390494fİ¼
+Vance™¯!\D2:46:15.328 
+Lama4
+	p .®s 
+şÉşÉ²ÉşÑ$×Û. =agQCar2Àâ4
+BÙ.ÿ$ô’.r¢!)r ìZşr^r2NY6ZB‰21160*K()* &–¢!(€ß &ccolz! Fb` ColeAv&$
+9462691ÑÆ 601ebbbb-O`-4b7a-8861-929abbc73f3dG 
+nyu•ÜÍamU,a0d830d2-324Â<d9-8604-d35b27e9	 KirklandyTÉÁ 07:57.278AKC€C®N <>N~-RwF5 ş
+Ø·¸ƒÆq8ÀQ@! &2´èŞ
+Û15"!.8Àºf1.14fÑŸ† şÜbÜ N~639ã&67*bi6ÂeàôÖš9 6z9
+Danny"
+8823360ÈÆ;‰ ğ:;762843ee-037c-4754-b44c-90e2d4a039d2i;CarterR 5:25.685i=©ş‹ş‹ş‹j‹8ÕüæŸ°.ŒöşCuC 1*Tô–İ{29mE5Í		"Ò fTí	r{Œ3:44 58*!p!šÀVÆTşÃ»–N€Q†Nvid}N3365"wÆNIã@6Ş	3a12af00-31fd-43dd-aa9e-3e412ccfe867iNCI rÙ‡!O 2Š0.06ûDuranÁUnÙJ®
+¶NşpòpÖ‡]­u"+W@Ñ¥ À2( Šâİ	B¥ 8}bè¢€2.‚ 6ma¬@	 ş¦Z¦ši!22^55Bªie S–à	ŒÛ­še! Eb\*e!Jaasi.255297Õ°âe!"/eò	2ebaff6d-03b0-40fa-b784-b292e5fda22b"e!<Sanchez Vasquezyuü	3:52.21ì.s &²ü	 :a§.oFÇ	ŠF5 şü	òªWŸ_NW Sab2èòÖ.2b!.WÔ²ü	13¢%Xfşşú	jú		†`!¡05:26.44*MÉ¹eT €âº)(‚íï¢t! 9b_t!NailahÕ¼9952354EÚt!‰á ó:r581505814-c136-4f6f-9a23-e1037edef21ct!McintyrFŸ8:38.16+e¹ ²'( t>O†Õ¾ş((Î((q°6/j˜"ce\Q=1„îg 32 ! 4İ¾àÂ. 
+ 0mk5Ş%}ş((N((eknš5af 5î49.47*Ÿ! 1Âdì.ş’5&’5D'Asi*¥68148"Éê”52ƒ+˜6c6e200b-cfb4-4962-ab46-f67428f27875
+D”5LovettÙ¨!4 5:24:10.7»Ebò-Á'	r î&Reş»r»EvŒ„¿+ØÊÁLóòg.„5 &}GşŞeG ~<2 3`38.72B®25E €ş×.‚×. 3b¯ş×.n×.p ì:¯˜bc6563a2-080f-4882-8dd6-37deba694677W>2R×.2:56iWû¥<³G®n ZÆ°ş¼î¼å}u¿.ğ.?(şÇ.*Ç. 5}XĞş:v:Öà)]ÈáTÌ0½æc¡Ú5orù&¬Vƒ€ğØActiveOnlineENG01030G32USFà¹Ela Gr2.2023-09-12 13:26:05.216.2023-09-12 09:26:05.216     €J@ÆP$At/Above BenchmarkYesMIAMI-DADE¾ÒÔ 0rdominique@kippmiami.orgEnrolled     @Y@NNo: TRosandraNevaehFL0ğ4028413FNgs_882eb0eb-2c01-4a18-babf-0694cb7c1485 Dominique - 2usf333333@š™™™™™@2H629ef75e-cd1a-4be0-8137-8e0ab7d99598M$Williams2LT13:16:04.580 NovaN	sSQ@ No	r ¤9Y N ~’\FSA
+²ŞLevel 3%¯¸$ŠÔ.KIPP M%×\LIBERTY CITY2024-06-30 3-07-01EI ¨œ³¿Í×?ID@R@  	€J2¼ã$=$10-06PM1|08-07 schoolStar ReadingT4%ÿˆê0	S 5@	PA@²	Œ  3.3500LAbf@)~3@Ê ^x829G21HowardU.| 1Y20A 49:22.1762 09	œH@Š¨ 2|4şÑã
+ *mnunes2vy 2@AM :u0MaiaVirgeluu$9887759Meu˜1d57a6a3-4d42-4386-a6a4-15531e140100 NŠ - 1h%uÍÌØì?…ëQ¸…ó?1H8223af60-84ab-454a-85b0-c59b193bf415
+NMNq)Z(39:51.926  ÚeÖYF®l P8¢k!+ 
+qj¤ qi 1şh‚hŠh}Ömh Ca]Q;!1€ñêh389Šğqh 3}hDô†  PPBR325ii5Üeqfş?	Â fáei$1Tuskegeevj37:09.206ƒ09	›xğ?&Urgent Intervention%Î6i4âí‘ *ndupreezi!Œ NEA2. 4Nikkia
+Denimyj684452Õß˜e9af0c6-4ad5-487c-bfdc-5ed477b2288b2Du‹-Jeantyar t1%	å  6s˜0126abb5-873c-47ca-b36b-18866aef45d3DáV$Pearsall2¼,13:09:53.615	ì	rğ?Åâ2÷ . >{r’ÅÉv|r@ vîãƒ
+Øq{ğ?Ñã	1¬êê{036ÈÕã $}{ÆÎ	y{ 4Ñä)r2† Ò ş{m{45:26.79B{Ÿ0€L@0zt¢ñû¢t "bİqtJaycinyu733755ÑßşuÅ~™Ù:è414c6e92-2e54-4151-a820-9b9d5486d4df:uJackson>t 40:41.323itq=®ï  >tV‹ŠmV9 şf°£®Ş'S×ÁGU/í1¦ş^y^ (}^º®J^%\!ÍÉÙ ö’Î z^1KSr>
+ 5Á»34.3986 1	™ÆÔ8Â„ô ,awhatleyæÕ0Ashley
+Chaseu`8613530q`˜605367bb-e077-44c0-b7cb-6ef73d65f143W	ŒÁÏksuÛ>Ê˜21982efe-5631-4da2-9a33-ca43717bf966W	K
+Jone*­<
+(5:33:02.250A` NişÁşÁşÁjÁ¹®¦£unÁøéŞÁ$102555¶Â-H &}c şÁÚÁ$2Columbia2<
+*"A(3:47:39.0502h¦aÍ~ˆ65
+4¾¢ê *dmizellv`€MfÁ,DavonaMadiÁ83938517
+˜ffe9ae2a-1d82-4aff-b95a-3d101347f4c9(W¾ - 2c1‰ç @Ãõ(\Â052dac76-2bf0-4b8e-95ac-b69331d42e36&John "})[27,
+508ik…óG®¸ \>¸† ¨Ş’© 2Å£ş©‚©-¥5¸qÚÍ6ôê]406ŒÀq] :}]Âø1.717˜É¿ é 	âîyy41:38.52}WyÉ¿2@†Á6^ ’ë ¦x .ba&xDa'Morayc50198şyyã?9™°2Hc3517703-b312-4f5b-b5a1-86e2a7f18fbaDomW
+Youngy^ 1ÛL16:37.113 Nichellea/œ ®g 8.rS6&
+’Jr@ ş-
+d47Kv 9*
+QLj2Ìşv&v ,}uºÖN5
+…Ù9æ ùmÿÂ ‚vFI65
+İÍI28:01.1.iv	– ;Æs4Ş…‡ ,dcezair~ PbuDasheÍBrando&›7446014;
+ 0
+ˆ86b-9b63-49f2-b126-63df6e2f5e3bCe‘ÁØfi;
+ ±ÍÓ˜6218932e-5e28-464f-b7eb-92b56b5a77b3C	Ü
+Gree*ˆ)^12:06.41weiŒI®i h>işĞşĞzĞşçª»ÛÖşÀSa`QAikÆğêà197ê¼Ñà 0}kö	b222ß@¶ 
+şŞFŞ²v51:12.646¢!), ÂãÂ¥òşv.vMicha*â706587"£ş	çB®(59f3cb8-40c­Pb9-a8a4-94648384d72d:$Brown IiiÙïM
+ 42:31.679Aş¸ş¸ş¸Š¸=7‰÷ì]Úm{  ap)h 1¨ş&  }{’ş¸Ş¸e~1Fj1 18:ÿ9.68İÿ 4)* :Ææ‚ºıÁæbdelbrunv¼ 9bæ<BrendaJeremia&Ó933328"^,0c3fb856-178X79-9be1-4ff07403aafaD	fs\ ô:t˜dbcefd74-63f9-4113-804e-4c877a75fc19D	K$Ragin Jr}j%_ 27:30.184ij#¦K®ç xêçöbÉş·š·5äÂ.ßÔ"R
+ 4aaQB!1èîêç269ú½S.R
+ÚÊ*`18È[!à%}fşêFê$2TennbT
+29 Û 0:47.91.ç9 	  †ğ6Â¾™ğmartin~¿!‚VVArnesha:'Cory"¿942284"I
+6fd013d2Á‹,e-4826-adfd-a|(bb60d819MH
+tennJ
+  ìÁ ëJ
+˜503cba0c-21f5-4328-81f6-3fe3f4931146MLN09 15:50:51.39şÎÖÎş´Æ´Şÿ7*.ùŞR 400664°ô² "İ¾¨	ş¾ò¾1UF2p*E 2¼ 086 09¶p€ÿãpdavi~"Àab´<DevonteJustic"Ó10661616&˜ac1e10-ac15-47d4-99f0-e34a7ba9216bDÁ²ufÈ š#"˜3bd97704-29bc-4eba-a12f-caca9dfd8290
+DHMccantÙ­)O18d877‰&¥¶ÀX®­ ÆÊw% eğœÑ® 5şf‚f¡§ÚÙg
+æõêMq œ"„ 8}M¢
+°g%66ƒğ 1Í şFŠ
+
+c%5:34.714Y20aMÌ%<N2On Watch6‘‚¨‰ ö	fQö	Jamia&Ø976625"pÒô	 æ:ô	(25447f8e-40¢%<2d5-a43b-eb59306aJ baÙÎ
+ Olivera2/Ö!8:03.70Úk&C®F :ó	¶( NL>w68 ¤NG%F5 !¬îÀ!ØÓˆ/pYÖ}, ây10:Ë	 1},–#ä*39Ë	%L!·i6 ûŠÂ  v“ zË	 7!ç32:40.91.9 7a/	˜Æ²ŞÇåşÓ	2Ó	K
+ i"Ò	,49şÒ	RÒ	(bc51d5d8-22
+T9d1-ac73-ec6fe20a3b0d"Ò	Sibbö&í%\25:11.00¥!)HşX¢XşÒ	ÆÒ	LU¹Îµ–Ù  ğ&% 2¶èê•6â	.%„şâ	òâ	v Å–39:35.4F  jH#6šâ»òª $bÜ	ÑšAlexqU10083837"Ø	¾Œt> %|ae9e24a7-254f-4e26-8cf7-94c930a3"Œ$Alm/(rez-Pacheco}`)U%75m`¥N³>®£ $>£ R&Š§V9 ş«.ÎWwñ%u1¾úŞBB« *İ«¬¶İ«"[(5ÊÉ´şı$fı$FA6t*)í25:33.656 %!$  q"‚l6Q<¢÷í .jmerisierzâW!Û> Jessic}ounre".}982"Ÿ!0840c1c6f-74c3%ê 4%T191f3f3e5b"Bissainthe3fa*2A/T46d512a3-7ff6-4165-ada«!,4eaa1ef4afNFenelu:	%Ê+01.76!)Pş±¢±Rÿ	‚Ëî
+
+ÏjîhÕ± Ú	õ &1âîÌ335ş¾å.±Àş±Ş±åŠ&6 43:27.845¹u7)*T@Z£6d¾™á
+®¢! Jb·&¢!Treasur.g53775% 8Ö6k  :/˜e31cd339-f48f-41af-b61c-8652ec33cd9cD&£!Grate2?6@9:50.519 D'Ionn6	s E®¼ LÅ¼*6F*6¸R
+F5 ÕîU·7N.ñ.qU€NaJQ+¡;2äî
+00.6 9İÄ’Ú%411n)[ @	‹
+Ò fn›’65:35"803YÁà 1¦	
+àÊŞ	¢ò5f/ò5Arian"î$10867*Q(Úò5"@2±677f5bbf-166b-4f40-8d7f-a59da506f4c4ò5Ducass}I!0$5:19:25.69ı	  æ²/ ">AVÄ	6ER¥V9 şIëôTrL2ı	 ûŞı	40:Ó5.ı	æ²şı	òı	zú.$3:14:54.24.¦ÕiÔ<@j6’‚ùâªó. &b"ó.TylerH0975162" êó. à>à˜fb1afd1-b7da-4d77-8c77-b2adab82e6f1WhÊ/Holm>ô.3:03Ã 2µ5e?&@®€ (ş?ş?z?½â˜Tşì©$ ?Á}Q%Áˆ1ÎìŞOBæ..Â´
+¾NO	} à øŞ÷‰Zƒë]ÈáTÌ0½æc¡Ú5orù&¼T‹ğcActiveOnlineENG01029G21Tuskegeeà¹Ela Gr1.2023-09-20 13:30:56.104.2023-09-20 09:30:5	  ğN€L@N2On WatchNoMIAMI-DADEâ‘ú *ndupree@kippmiami.orgEnrolledS  ,@NEI. LNikkiaCarterFL0ğP9700188MNgs_8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2Dupree-Jeanty - 1tuskegee33Øã?…ëQ¸…ó?1H332a6464-f68e-4633-9e08-fb71b373b2d1DâV Altenor>`(09:42.148  ì ÍÌÌÌÌŒB@ î	r  68Y NF‡hYes
+FSA
+¤ Level 1[¸$J5 !o.KIPP )¿\LIBERTY CITY2024-06-30 3-07-01E> å»¡=Ñ_Ö?M J@   L1òé$=$10-06PM1 08-07 schoolStar ReadingT400036Èê0	S 0@	TA@ôÚ  PPBR400LAO !Ë 3!Íš™ù?Ê zZ1FAU^U12aU 42:31.066Y12 EX 0Intervention%•6Q@‚±ƒ .jmerisier@vS&@E# NFT8Jessica
+FaithyS 331654FiSØ40c1c6f-74c3-44c1-864b-6e191f3f3e5b"Bissainthe - 1fau)ià?-‡mKàbf882d24-f8ab-4dd6-81ca-910f679fb4e4BissaintheHarrell2: 1…¨00.47mH f&@®H (!.HV‚ŠLV9 !tîPcÏtãÖM¶a@†õŞ@$102335ş¾m7 ,}@Ü¾N@5Â		 øŠÂ f@(30G32Tenn6B 29ï829 16:32:01.5896  2	˜HQ@&Urgent zQ8 ’ë ,amartin2zP 1fP<ArneshaDa'MyrauR8502206qR˜6fd013d2-40ce-4826-adfd-c3fbbb60d819M  - 2tennuIâfæ?ìÁš¸ë@2H4b9d7cd0-afbf-4a71-ac59-d09d9e469614ML
+Young6B 509.515 áfcoleaÅ™Ì@Å”EÑAÕb 8.Q n‰6X’J¤r@ †î_€\Ç,ØÑ¯ IÁ¤QCáœ2ÊãŞo$400664°ô0S.oà.ä}o395É¯Â%áÉ¸ ûşoFo	
+1Howard6q 1]01 18:19:19.24:  4). MÂq0Âœø *mnunes~p!‹V
+4MaiaU'Niqueqm10059498qm|1d57a6a3-4d42-4386-a6a4-15531e141 N‹Áº h%Ñ¾  6	
+(cf466ee0-60Á¾X78c-8600-8c2346da28d8
+MWright>X09Á¸913	Ù)Dğ?ebEÙAİ^  êgR
+şgrgÒ\}ÑØMÍÁÆøğêW389ŠğqW &İÆÔ	Î	J
+)bŒ
+!kÖ r`šWÁÈ9.23._1 14	Ÿ M–_²L *b¼şLrL‰Ğ>Uc0f79cde-4089-4757-93d4-c918b0261d14vL21¬711iL¥AæA®³ 2>LFLa‡şK¾KsÊc…¦K  @Qì 1şE.E .}EÈ	ÔİœşKÆKKSf˜40 15:35:51.717½Y0 11)* Â˜¢è	
+whatleyz	
+!ˆV™8AshleyReginaÕ›09714665Ñ›0605367bb-e077Z0-b7cZ0f73d65f143W	Áks^™˜a19697d7-f3a1-4a4f-b87b-fc8737213920W	K Johnson6C 5ã41.64mP)Hşœşœşœjœğ¬?¾,Ú
+ a\	õ 1æâ¬$102555¶ÂS  }gìş¬z¬br 2Spelman2¶*t¶ 1«138Y(¶). IÂk0¾ÕÍ
+ ,sgodfr‚k 3b¸ Shantayedden
+08184081a3f3376dº	hd-493e-b0ca-d7fb16db99a3$G	u s-"<é?	w˜f4400c69-37e3-4f89-b14b-3c77fddbea1eG	O
+Gree}n)_03:52.12mnq $®¾ >¾rÊ	şqşqÖ\ŞÈôÕÕ Dac  |2œìê
+067†ë
+ 1}n˜øİÕ35q5Û){ ü¤
+Â f
+en2USFvju3.75B 	–;@jm6(0Ş•Æ	 0rdomin"vĞ€B@ANî> <Rosandra
+Karisud665561ud,882eb0eb-2c0Á…X18-babf-0694cb7c1485 Dafusf
+ û:b˜9621bd9e-57b8-4d3f-9d00-2ac8f4badfa8DM(Brown Iii2®,13:22:33.959é²
+²&
+ .!.Ùfñ"*
+RÑf8 îÊµ7œõë2×ÍÇ@RyY ;2öêîY04ˆ"y 6}Yèš!VP
+BR20È)a5Ğ@I»Â zÅ2FI6,
+BÁ34:39.09*5ÉÁ¦w4¡×	 ,dcezairzMa¨Z
+DasheŸDariuuO100Ÿ 7Ñ³ 0
+ˆ86b-9b63-49f2-b126-63df6e2f5e3bCeaMfiuË ô:M˜729ca1b4-25db-4cf6-bb01-54413872b94aC	Û$Williams>JaM3.32t)Ò 7®² !†J 2ÀşKªK&¶§gut&®2Äît197ê¼
+.;öÎ&®17Í”É‹ô?Ífş=F=Š´18:47.89Fş	IxN@ÆP$At/Above Benchmark)Í6œÀ‡í¦Ä€Pb›"ÄDwa&ı	9759813úÃ‰Ê@	Ãd52cd96c-0e8c-44b7-a93f-c7e33730cbc22ÃGriffiR
+8.187¡C N)ûŒS®O¶>P†Šœ¶ 4)§¸$ŠB î¬¨ûiÒRÉÑ¬É¡QG!1ŞëŞ¬Bå 7İ¬<ô†  1.920mp
+@	 	şpZp†40 12:55:24.053¹z20 08)- 1Ârâ õˆ!şuuAchilleÕ¼097221&
+şv2vT1130ded4-5fc7-4a9a-979‚ $4815f0f347v
+Lewiİ¹-X0:59.43k)DşÙşÙşÙjÙ²ÎË‹ÆmÚÑÉ âÉ40:u.É şÉ~Éşu 005:29.1564ŠI 1¦_²P "bÁyşP^P‰Ş Ù:Ï$ˆ1f5bd31a-ff75-4b09-bd4d-52f83d42899"zNP(3:00:23.552¡³ N	g=®º  >¹f"SR½f8 î§øi5“Ñ§€@ÁœQ#ô 1şQ.Q (İ§â®*¬"5ÊåfömÛÂ fU
+Â0.310Ù¤U 2Ú310e¶
+Â±å¦
+ 4bO"
+Alicia"«9996089ş
+)p ğ:Õ$04d106bc-5a5d-4799-ae3a-1f51c41913fb.
+Floreİ§×$5.39Í§
+ H®W ^eW(‚Šv_†@ îg°65)×MÍÁ¨Äóşş	"ş	 4}W¢˜*o29¬5Ğ		  şÿ	Zÿ	 ~Ø$3:44:53.36*Åû	 9	¤ OÆoÂ×‘ªÙ Lb^ÙKay.l99536&lÒØù @6q!8f706969-fde9-4f93-aa62-97ba562f383c"ØM•
+Bs+9.06s!jlR®W ®Êh h¶öh 3şhšhƒm‰1{ZÙÀWÁ¶Q@ÉÁ¢ïêj6Û 9}j¶Ş1.41%u!ß		kÒ zÀ’h$3:01:48.08.†!å.i ²Ôâ¸ê¢Ö$ 5bd
+Braydo*Ò478300ò` ğ:
+,e12f0b86-191ˆee-91×28f(2e33`WilB:(2:50:04.444A\ NIj À²º bÅ±*Ö.†zşºîºáEårÈÛ.+øûŞPBb.ºş
+ .º 7şº¶ºQ6:38.44Fb& ‚.2€Æğ¦E .~EGenes*°Á¨16"
+ÚE‚ æ:E88fe9ab61-25be-4Z@b575-3fd45a9d7aafqE<Carmona Pacheco&J°(2:58:08.896iN©3 C®± >eN"
+ YJØ$ 2dR\V%îñ	ö~W2‰“.7 ¸ş7y7.ôúê*H38ğ5½] û{
+Â zˆ1U6ó.G+”27:55.476 09	• QÆğ	‚äæaFddavi~a+ÀUbF8Devonte
+Larry2L176ÑŒ˜05ac1e10-ac15-47d4-99f0-e34a7ba9216bDŒÅ$ufÙ >ì	(3bb562a-464i2X41-857e-154b064d79e6
+DH,Stinson Iv6=åÜ32.93î	9¹U®= ÀÊî	şVöVÈ<ÔÃéI"î	 Uã	Q>D1Äò[!14œ" 8*î	ØÖV2.73Ñ‰²@	 şWbW Fv/(3:31A44:R 9))ğ?v>#!6Å8âÇå ,bdelbrunv_!n/(,Brenda
+Alan*²67755"52 02856-178¥	X79-9be1-4ff07403aafaD	Œah fb-(˜132783a9-b67b-4b89-a2b8-b4a5c0a04974D	K$Kirkland>i}36.435Abô	şUşUşUnU&½p³©ÛSê  U<!1ñŞ
+ 102269ú½, }eàş.(Ş.(~f29i!72B½á1¶P‚Æÿµš_ 6bÆq_DanariÕÆ851248ÙÆÎ`Å]™ñ:
+44ee537d-918c-42f1-ba1c-6f335ed7328fu`MccleoB_08+ 7d©S I®È j
+²S µö
+5< 2…şş‚´€Ï»€.
+ Ôî}!6Q.1<Ô¬.T 4
+5Ï)m  Ş·¦o#{]ÈáTÌ0½æc¡Ú5orù$şQùyğÄActiveOnlineENG01030G32NYUà¹Ela Gr2.2023-09-12 13:19:10.703.2023-09-12 09:19:10.703 N2On WatchNoMIAMI-DADE¹Ì
+ &ccole@kippmiami.orgEnrolled      I@NNoNoNHColeDeondreFL0Ğ8762471MNgs_601ebbbb-5367-4b7a-8861-929abbc73f3dK - 2nyu	x @š™¨@2Hfdb44084-a71f-4c2b-abc6-cca070ee8272“,Montina Jr.2)@13:06:27.206  N	l@E@ Ş	r  H8Y N BqhYes
+FSA
+’ Level 1[¸$J5 !c.KIPP )©\LIBERTY CITY2024-06-30 3-07-01E †Jö÷™×?)?!4Ìö$-$10-06PM1 08-07 schoolStar ReadingT400015ê0)" 7@	LA@öĞ  1.395Lr  (@Ê f%029G21Howard6) 19ç20!ç 12:29.3832 09œ€€F@ÆP$At/Above Benchmark%Ë6=8àâÓ
+ *mnunes2@v?` N%Ü!à. 8MaiaBernardoy@973226q@˜1d57a6a3-4d42-4386-a6a4-15531e140100 NŒ - 1h%ufØş?…ëQ¸…ó?1Hb555589f-c95f-4d13-9ac5-e46fa396670e
+NM8Mendez Tejeda2H,12:52:03.480iH 3SQ®H¤a=iC YŠ‰ qT¶öqU 3)¦¸$ŠB îbÈ‰¥HÚaØ?I;@V@ M÷€F1âéêr389Šğ0	^ 8qJA@”¶ar140ip%à!á!z33şpFpÍ•USFàj• 22:34.436Y$É•el| .@&Urgent Interventione6k@ëë 0rdominiquezn*@AK.fHRosandraJeremiahur9123730qr˜882eb0eb-2c01-4a18-babf-0694cb7c1485 D“Á·usfäà?6·˜cafcfb75-2e85-4044-b2d5-e61322f2bfddDMNoel2Iá÷5:07.184im)Nğ?Å°çï>  !acÅ²Nv‰…õvÀ‚Éîi	R¢‚ìë×mi€@a^	õ .2 âêi004ˆÕÛ (}i@ş¾  PPBR40mm	} à‘ øíeÂ fİem2Tenn6Û*
+27A27:55.98.ô 7ÁÛ  †6g4¾¢Û ,amartin~ÓI…>bHArneshaAlexanderye332779qe˜6fd013d2-40ce-4826-adfd-c3fbbb60d819M‘abtennu-ˆ  ìÁÕ ë
+˜c350b26a-fe2d-4d01-8b01-ac8b0dce5af7ML(Rodriguezyf)Y 19:37.140	á)İşfşfşfjfKø©òÚØMÌaVŞúêV664°ôÑ¿ &}VæÎ	bVñE!kÖ fV3
+$1Tuskegee2È}@ 1] 39:59.445YÉÈ @SÆ4
+ÀÆÒ4
+ndupre~Æ <bÆ0Nikkia
+Chlo&s$9690649Fs˜8e9af0c6-4ad5-487c-bfdc-5ed477b2288b2D‹-Jeanty;
+ t1&[ö?[<
+˜3fb8d3f8-b28e-417d-aedb-2421ed016c92D.V 
+Woods2P13©05.923iiçYM®<
+ „:<
+ NŠú	 <
+ö|
+‘ 2…¹ş;
+‚;
+@d‚­ÌÙÑA HÁÇQM!1®ìê|036ÈÕÒ 9}|Šây|13¯:ä ş?
+F?
+e|1FA6ĞBw18:52.9.«iw%* LÂ?
+<€Øä	 .jmerisierz>
+!‰V¬Jessiceyas}y596553ÑÕ¸840c1c6f-74c3-44c1-864b-6e191f3f3e5b"Bissainth;
+1faİ×Ì ó­e34f3bdaƒ
+h6-4bcc-9506-5dc17c4ba4cdBNõvre>r 12:32.965	ã)PşÛ¢Û¤JşA
+rA
+Q˜„kÙÛ1°êŞ_$102335ş¾-8.ÛøşÛzÛ ^3–_ 4!û55.4./
+Áï 0I,L@0z—ºX $bĞşXzXÅZ™Ù:É2ad49776-aaa4-465f-a3f2-5c4e316b5577X$4:09:24.11.3
+€?®Ê &.™f„"‘RPf8 îŠÑÈ#œQŠ AÁ­Q/LşY2Y *İ¸¦ºNŠ5ÓÑÁ	Â zYšg46:57.93*3
+20ŒÂŒ€Æğ¢^!ƒV²^Genesis&†95316"*
+Ú]1n6]0c7d8e67-75f6-433f-a074-995b93654baf]<Carmona PachecoÙ±À40#
+ 6î±Å±ïY†qv`ş°r°6ŠèìQnÙMÍè¸ûŞ°40:J "}W¸ş‹î‹1KSb
+!ú5:32ì3996 1ÂS‚Æÿßwhatleyâ
+,Ashley
+Ame*ñ9837137
+60êbb-e077
+0-b7c
+0f73d65f143W	Œxks*
+2¯˜3c77c5a1-ebf4-4d38-880e-2dc72a6e69fdW	KWilson68(5:26:33.837‰-i¼şü	şü	şü	jü	/¬y«.ü	ÚüŞL 102555¶ÂNü	 šşü	~ü	b/ü	 ‚×aQ$3:50:45.44BI P¦
+Âı šÏ "bÿ	ÏJohnnyÑ¦10113132qRşĞV Ó:78c613dd-a430-4779-92f3-f4599de51065:ĞKithe:c3:45~ 323<®
+ –
+6™ş
+ª
+¥çû
+…]U.P1’ñŞ]e2¸.ŠªN 
+5ÌÍÌ ôí3Â f]ŠŠŒ!24Á©96*¡¸	– 6Æ/¾ÕÍ
+ &Š !€Mb^ !Jahzielq] 08545243-Æ !z : !(461f506b-c9Á÷P50d-8d20-ed4dded53fd8“
+Brya}ET3:08:11.880 Paradisea%òóG®N \8.U†ã Ş±!ş¶y‘q)Ş¶"f Na[Q<af2üçîfbË!øøY1.717e 1â 	şÎÉ½¨7.2502Ö 0% :)) ,¦½¢ß‡ªŠ¾Zemir.R888202qdŞ)ˆ Ù:¹c84e2b1d-20c1-418a-92e4-25c2ec0ab135.À Streeter2Eas1:34.26%ej³>®j $>jV‡ş¸â¸åu}FuZ (aOQ1aZ1¦âxB.À–¶NÀ5Ó©F öşÀFÀ 2'%
+38:12.78İÅÁ)/ HÆÅ€²Ç	%
+€BbÇ%
+
+Emor*$
+!05ş$
+6$
+ û:k,90e5fd7f-2ceJPd0-924d-4c5dd43ea1cc:$
+MarceliİáÌ1:3¹‰I P®n š÷*|(†Ù ÑÙş3%Ò3%§’u?(Øø€TauQQi€ğïîÚ2@
+5@\A@ú˜ÁÚP
+BR2ÍÙ…â!æi‡ şÙfÙvç3:37î69*my)(ğ?†{6Î!8€ÿÔ
+ ,bdelbrunæïBrenda"÷á+995198"D 0³!856-178ğHHbe1-4ff07403aafaD	ğ fbğ08132e66b-29a5BH8-896e-dfa7914b9958q,Ø¡( oza Macia*fioœ2.632Ahê+ÎøCŠäşDrDNŒ¡I|œØmkê«ğ?!1ğâ( 102269ú½ $}kŠşTŞT« 2Spelman2Ş!İÑ_12:25.476 J
+eq€IÂgà¼?%sgodfrB`Unenr.S/ 3bì@ShantayeTimothÕğ 0¥(828S
+˜a3f3376d-60ad-493e-b0ca-d7fb16db99a3$G	’A% s-%‰ú é:§((5d4beb85-57T
+\7ed-9144-a80f6547e69dG	ODunİß)a007:54.889 R
+¢ $®á 8.àr26rRg/r@ ³&î•Zçl·"]
+ 9ÁÒ  €I2âîİ67†ëQ% 1}rœö*]
+36§(5Ü){ üş]
+F]
+erŠ§(2:58¡86.È7 08!+  =ÆZ
+ÎÈ	Ñ’°(àe@AV!í> "°(
+Lyl.¿227575qlÖ¬(à	@6¬(T26e05043-fe47-43b3-9efá8(f22f3912c4¬(FÒ 7|/48:18.51
+Greiß%LÀX®m ÆÊN
+Õ2ğ¦' 5i‹şF%‚F%ø{ªjoqqÀUafù =2Âãêq6Â( 6}q®	¶ó25.297mp)ã@X
+ şO
+FO
+epšâ 23:41.604&ç‘%-€KÆr€Øó ^ãE6á PRr¥¯ÙâCerenitÙã6014327qwâãæ ¿&,ˆ7888d829-9acc-438f-afe3-5aeae0aa575İã
+MooJH% 4:58.148 !n'Ea{¥mŒI®{ h8.è†Èş¡ò¡˜xFqy*‘/€Kmy †şêÙê.Ç–¾
+2222w@m€ 
+şwFwD1†Æ6:08.70B "EÎg6À®İÁåšÇeV
+"ÇKyndal&	904221ÕæÒÈr ñ:7(fd766bdc-06-Ld16-8efa-5356a922d0c9:ÈHeight™¶À11\%909!ÿ NifJ®f lêfş%,Î%,HCEìà7uf Ea[Q?!1¬î­6Â 4İß–°*%, 2d65Ş…ãÌ ŞiêQ‹û]ÈáTÌ0½æc¡Ú5orù
