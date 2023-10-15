@@ -22,7 +22,10 @@ from teamster.core.utils.functions import regex_pattern_replace
 
 def listdir_attr_r(sftp_client: SFTPClient, remote_dir: str, files: list = []):
     for file in sftp_client.listdir_attr(remote_dir):
-        filepath = str(pathlib.Path(remote_dir) / file.filename)
+        try:
+            filepath = str(pathlib.Path(remote_dir) / file.filepath)
+        except AttributeError:
+            filepath = str(pathlib.Path(remote_dir) / file.filename)
 
         if S_ISDIR(file.st_mode):
             listdir_attr_r(sftp_client=sftp_client, remote_dir=filepath, files=files)
@@ -39,10 +42,15 @@ def match_sftp_files(ssh: SSHConfigurableResource, remote_dir, remote_file_regex
         with conn.open_sftp() as sftp_client:
             files = listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
 
+    if remote_dir == ".":
+        pattern = remote_file_regex
+    else:
+        pattern = f"{remote_dir}/{remote_file_regex}"
+
     return [
         f.filepath
         for f in files
-        if re.match(pattern=remote_file_regex, string=f.filepath) is not None
+        if re.match(pattern=pattern, string=f.filepath) is not None
     ]
 
 
@@ -97,27 +105,39 @@ def build_sftp_asset(
         ssh: SSHConfigurableResource = getattr(context.resources, ssh_resource_key)
 
         # find matching file for partition
+        remote_file_regex_composed = compose_regex(
+            regexp=remote_file_regex, context=context
+        )
+
         file_matches = match_sftp_files(
-            ssh=ssh,
-            remote_dir=remote_dir,
-            remote_file_regex=compose_regex(regexp=remote_file_regex, context=context),
+            ssh=ssh, remote_dir=remote_dir, remote_file_regex=remote_file_regex_composed
         )
 
         # exit if no matches
         if not file_matches:
-            context.log.warning(f"Found no files matching: {remote_file_regex}")
+            context.log.warning(
+                f"Found no files matching: {remote_dir}/{remote_file_regex_composed}"
+            )
+            raise Exception(
+                f"Found no files matching: {remote_dir}/{remote_file_regex_composed}"
+            )
             yield Output(value=([{}], avro_schema), metadata={"records": 0})
             return
 
         # download file from sftp
         if len(file_matches) > 1:
-            context.log.warning(f"Found multiple files matching: {remote_file_regex}")
+            context.log.warning(
+                msg=(
+                    f"Found multiple files matching: {remote_file_regex_composed}\n"
+                    f"{file_matches}"
+                )
+            )
             file_match = file_matches[0]
         else:
             file_match = file_matches[0]
 
         local_filepath = ssh.sftp_get(
-            remote_filepath=file_match, local_filepath=f"./data/{file_match}"
+            remote_filepath=file_match, local_filepath=f"./env/{file_match}"
         )
 
         # exit if file is empty
@@ -133,9 +153,9 @@ def build_sftp_asset(
             )
 
             with zipfile.ZipFile(file=local_filepath) as zf:
-                zf.extract(member=archive_filepath_composed, path="./data")
+                zf.extract(member=archive_filepath_composed, path="./env")
 
-            local_filepath = f"./data/{archive_filepath_composed}"
+            local_filepath = f"./env/{archive_filepath_composed}"
 
             # exit if extracted file is empty
             if os.path.getsize(local_filepath) == 0:
