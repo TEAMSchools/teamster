@@ -1,47 +1,37 @@
-import pathlib
-import re
-from stat import S_ISDIR, S_ISREG
+from dagster import EnvVar, build_asset_context, build_resources
 
-from dagster import EnvVar, build_resources
-from paramiko import SFTPClient
-
+from teamster.core.sftp.assets import match_sftp_files
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
-def listdir_attr_r(sftp_client: SFTPClient, remote_dir: str, files: list = []):
-    for file in sftp_client.listdir_attr(remote_dir):
-        filepath = str(pathlib.Path(remote_dir) / file.filename)
-
-        if S_ISDIR(file.st_mode):
-            listdir_attr_r(sftp_client=sftp_client, remote_dir=filepath, files=files)
-        elif S_ISREG(file.st_mode):
-            files.append(filepath)
-
-    return files
-
-
 def _test(ssh_configurable_resource, remote_file_regex_composed, remote_dir="."):
+    context = build_asset_context()
+
     with build_resources(resources={"ssh": ssh_configurable_resource}) as resources:
         ssh: SSHConfigurableResource = resources.ssh
 
-    # list files remote filepath
-    with ssh.get_connection() as conn:
-        with conn.open_sftp() as sftp_client:
-            files = listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
-
     # find matching file for partition
-    if remote_dir == ".":
-        match_pattern = remote_file_regex_composed
+    file_matches = match_sftp_files(
+        ssh=ssh, remote_dir=remote_dir, remote_file_regex=remote_file_regex_composed
+    )
+
+    # exit if no matches
+    if not file_matches:
+        raise Exception(f"Found no files matching: {remote_file_regex_composed}")
+
+    # download file from sftp
+    if len(file_matches) > 1:
+        context.log.warning(
+            (
+                f"Found multiple files matching: {remote_file_regex_composed}\n"
+                f"{file_matches}"
+            )
+        )
+        file_match = file_matches[0]
     else:
-        match_pattern = f"{remote_dir}/{remote_file_regex_composed}"
+        file_match = file_matches[0]
 
-    file_matches = [
-        f for f in files if re.match(pattern=match_pattern, string=f) is not None
-    ]
-
-    file_match = file_matches[0] if file_matches else None
-
-    print(file_match)
+    context.log.info(file_match)
 
 
 def test_iready_nj():
@@ -52,7 +42,7 @@ def test_iready_nj():
             password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
         remote_dir="/exports/nj-kipp_nj",
-        remote_file_regex_composed=r"Current_Year/diagnostic_results_ela\.csv",
+        remote_file_regex_composed="Current_Year/diagnostic_results_ela.csv",
     )
 
 
@@ -63,7 +53,7 @@ def test_renlearn_miami():
             username=EnvVar("KIPPMIAMI_RENLEARN_SFTP_USERNAME"),
             password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
         ),
-        remote_file_regex_composed=r"KIPP Miami\.zip",
+        remote_file_regex_composed="KIPP Miami.zip",
     )
 
 
@@ -75,5 +65,5 @@ def test_fldoe():
             password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
         remote_dir="/teamster-kippmiami/couchdrop/fldoe/fast",
-        remote_file_regex_composed=r"2022/PM1/.*3\w*ELAReading.*\.csv",
+        remote_file_regex_composed="2022/PM1/.*3\w*ELAReading.*\.csv",
     )
