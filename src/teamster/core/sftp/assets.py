@@ -118,9 +118,6 @@ def build_sftp_asset(
             context.log.warning(
                 f"Found no files matching: {remote_dir}/{remote_file_regex_composed}"
             )
-            raise Exception(
-                f"Found no files matching: {remote_dir}/{remote_file_regex_composed}"
-            )
             yield Output(value=([{}], avro_schema), metadata={"records": 0})
             return
 
