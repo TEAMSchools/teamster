@@ -14,5 +14,6 @@ select
     graduation_year,
     district_entry_date,
     school_entry_date,
+    retained_tf,
 from {{ source("kipptaf_extracts", "rpt_powerschool__autocomm_students") }}
 where code_location = '{{ project_name }}'
