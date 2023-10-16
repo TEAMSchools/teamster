@@ -23,6 +23,8 @@ __all__ = [
 for job in fivetran_start_sync_jobs:
     if job.name == "kipptaf_adp_workforce_now_fivetran_start_sync_job":
         cron_schedule = "0 0-19 * * *"
+    elif job.name == "kipptaf_illuminate_fivetran_start_sync_job":
+        cron_schedule = "5 * * * *"
     else:
         cron_schedule = "0 * * * *"
 
