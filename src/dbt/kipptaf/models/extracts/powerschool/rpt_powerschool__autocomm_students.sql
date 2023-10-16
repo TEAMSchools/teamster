@@ -27,7 +27,8 @@ select
 
     format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
     format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
-    case when se.is_retained_year then 1 else 0 end as retained_tf
+
+    if(se.is_retained_year, 1, 0) as retained_tf,
 from {{ ref("base_powerschool__student_enrollments") }} as se
 left join
     {{ ref("int_powerschool__district_entry_date") }} as de
