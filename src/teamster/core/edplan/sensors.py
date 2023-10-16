@@ -18,19 +18,19 @@ from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def build_sftp_sensor(
-    code_location,
-    source_system,
+    sensor_name,
     asset_defs: list[AssetsDefinition],
     timezone,
     minimum_interval_seconds=None,
 ):
     @sensor(
-        name=f"{code_location}_{source_system}_sftp_sensor",
+        name=sensor_name,
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHConfigurableResource):
         cursor: dict = json.loads(context.cursor or "{}")
+        now = pendulum.now(tz=timezone)
 
         try:
             ls = get_sftp_ls(ssh=ssh_edplan, asset_defs=asset_defs)
@@ -67,7 +67,7 @@ def build_sftp_sensor(
                             )
                         )
 
-                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

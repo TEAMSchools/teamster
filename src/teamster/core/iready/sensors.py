@@ -32,6 +32,7 @@ def build_sftp_sensor(
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHConfigurableResource):
         cursor: dict = json.loads(context.cursor or "{}")
+        now = pendulum.now(tz=timezone)
 
         try:
             ls = get_sftp_ls(ssh=ssh_iready, asset_defs=asset_defs)
@@ -44,17 +45,18 @@ def build_sftp_sensor(
 
         run_requests = []
         for asset_identifier, asset_dict in ls.items():
+            last_run = cursor.get(asset_identifier, 0)
+
             asset = asset_dict["asset"]
             files = asset_dict["files"]
 
-            last_run = cursor.get(asset_identifier, 0)
+            asset_metadata = asset.metadata_by_key[asset.key]
+
+            remote_file_regex = asset_metadata["remote_file_regex"]
 
             updates = []
             for f in files:
-                match = re.match(
-                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                    string=f.filename,
-                )
+                match = re.match(pattern=remote_file_regex, string=f.filename)
 
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
@@ -81,7 +83,7 @@ def build_sftp_sensor(
                         )
                     )
 
-                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
