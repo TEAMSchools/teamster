@@ -19,8 +19,8 @@ select
     p.projected_credits_cum as grades_y1_credits_projected,
     p.n_failing as grades_y1_failing_projected,
     p.ada_term_running,
-    p.iready_reading_recent,
-    p.iready_math_recent,
+    coalesce(p.iready_reading_recent, '(No Data)') as iready_reading_recent,
+    coalesce(p.iready_math_recent, '(No Data)') as iready_math_recent,
     p.projected_credits_y1_term,
 
     null as promo_status_lit,
