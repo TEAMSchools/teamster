@@ -56,6 +56,7 @@ select
     enr.currentabsences,
     enr.currenttardies,
 
+    fg.need_60,
     max(fg.term_percent_grade_adjusted_rt1) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
@@ -107,13 +108,6 @@ select
     coalesce(kctz.ctz_rt4, cat.ctz_rt4) as ctz_rt4,
 
     comm.comment_value,
-
-    coalesce(
-        lead(fg.need_60, 1) over (
-            partition by fg.studentid, fg.course_number order by fg.storecode
-        ),
-        fg.need_60
-    ) as need_60,
 
     null as e1_pct,
     null as e2_pct,
