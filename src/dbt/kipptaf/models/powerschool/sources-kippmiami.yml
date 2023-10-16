@@ -683,3 +683,11 @@ sources:
               - kippmiami
               - powerschool
               - int_powerschool__final_grades_pivot
+      - name: int_powerschool__attendance_streak
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - int_powerschool__attendance_streak
