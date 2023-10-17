@@ -2,7 +2,7 @@ with
     adp_worker_person as (
         select
             if(
-                work_assignment__fivetran_start < '2021-01-01',
+                work_assignment__fivetran_start < timestamp('2021-01-01'),
                 timestamp('2021-01-01'),
                 work_assignment__fivetran_start
             ) as work_assignment__fivetran_start,
