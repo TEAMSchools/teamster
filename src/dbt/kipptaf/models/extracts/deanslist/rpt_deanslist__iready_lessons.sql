@@ -2,7 +2,7 @@ select
     pl.student_id,
     pl.subject,
     sum(pl.passed_or_not_passed_numeric) as lessons_passed,
-    count(distinct pl.lesson_id) as total_lessons,
+    count(pl.lesson_id) as total_lessons,
     round(sum(passed_or_not_passed_numeric) / count(pl.lesson_id), 2)
     * 100 as pct_passed,
 

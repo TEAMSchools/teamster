@@ -294,10 +294,12 @@ select
 
     'CoupaPay' as `Employee Payment Channel`,
 
+{# audit cols
     sub.business_unit_home_code,
     sub.home_work_location_name,
     sub.department_home_name,
     sub.job_title,
+#}
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna

@@ -1,6 +1,6 @@
 assets:
   - asset_name: accelerated_reader
-    remote_filepath: .
+    remote_dir: .
     remote_file_regex: KIPP TEAM & Family.zip
     archive_filepath: (?P<subject>).csv
     partition_keys:
@@ -8,7 +8,7 @@ assets:
       subject:
         - AR
   - asset_name: star
-    remote_filepath: .
+    remote_dir: .
     remote_file_regex: KIPP TEAM & Family.zip
     archive_filepath: (?P<subject>).csv
     partition_keys:

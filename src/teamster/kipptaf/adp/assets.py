@@ -8,6 +8,7 @@ from dagster import (
 from teamster.core.adp.assets import build_wfm_asset
 from teamster.core.adp.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
+from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
@@ -15,9 +16,11 @@ config_dir = f"src/teamster/{CODE_LOCATION}/adp/config"
 
 sftp_assets = [
     build_sftp_asset(
-        code_location=CODE_LOCATION,
-        source_system="adp_workforce_now",
-        asset_fields=ASSET_FIELDS,
+        asset_key=[CODE_LOCATION, "adp_workforce_now", a["asset_name"]],
+        ssh_resource_key="ssh_adp_workforce_now",
+        avro_schema=get_avro_record_schema(
+            name=a["asset_name"], fields=ASSET_FIELDS[a["asset_name"]]
+        ),
         **a,
     )
     for a in config_from_files([f"{config_dir}/sftp-assets.yaml"])["assets"]
