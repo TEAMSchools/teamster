@@ -98,6 +98,6 @@ ASSET_FIELDS = {
     "additional_earnings_report": ADDITIONAL_EARNING_FIELDS,
     "comprehensive_benefits_report": COMPREHENSIVE_BENEFIT_FIELDS,
     "pension_and_benefits_enrollments": PENSION_BENEFIT_FIELDS,
-    "AccrualReportingPeriodSummary": ACCRUAL_REPORTING_PERIOD_SUMMARY_FIELDS,
-    "TimeDetails": TIME_DETAIL_FIELDS,
+    "accrual_reporting_period_summary": ACCRUAL_REPORTING_PERIOD_SUMMARY_FIELDS,
+    "time_details": TIME_DETAIL_FIELDS,
 }
