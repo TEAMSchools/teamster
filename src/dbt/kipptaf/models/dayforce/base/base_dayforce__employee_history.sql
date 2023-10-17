@@ -2,17 +2,33 @@ with
     date_scaffold as (
         select
             employee_number,
-            work_assignment_effective_start_date as effective_start_date,
+            if(
+                work_assignment_effective_start_date > '2020-12-31',
+                '2020-12-31',
+                work_assignment_effective_start_date
+            ) as effective_start_date,
         from {{ ref("stg_dayforce__employee_work_assignment") }}
 
         union distinct
 
-        select employee_number, status_effective_start_date as effective_start_date,
+        select
+            employee_number,
+            if(
+                status_effective_start_date > '2020-12-31',
+                '2020-12-31',
+                status_effective_start_date
+            ) as effective_start_date,
         from {{ ref("stg_dayforce__employee_status") }}
 
         union distinct
 
-        select employee_number, manager_effective_start_date as effective_start_date,
+        select
+            employee_number,
+            if(
+                manager_effective_start_date > '2020-12-31',
+                '2020-12-31',
+                manager_effective_start_date
+            ) as effective_start_date,
         from {{ ref("stg_dayforce__employee_manager") }}
     ),
 
