@@ -37,7 +37,6 @@ def get_custom_dagster_dbt_translator(code_location):
                 else:
                     components = [node_info["name"]]
 
-            # components.insert(0, "dbt")
             components.insert(0, code_location)
 
             return AssetKey(components)

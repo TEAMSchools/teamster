@@ -1,5 +1,6 @@
 assets:
-  - asset_name: TimeDetails
+  - asset_name: time_details
+    report_name: TimeDetails
     symbolic_ids:
       - Previous_SchedPeriod
       - Current_SchedPeriod

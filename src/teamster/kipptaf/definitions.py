@@ -28,7 +28,6 @@ from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.ldap.resources import LdapResource
 from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
-from teamster.core.sqlalchemy.resources import MSSQLResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.jobs import asset_observation_job
 from teamster.kipptaf import (
@@ -115,18 +114,6 @@ defs = Definitions(
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
-        "db_mssql": MSSQLResource(
-            engine=SqlAlchemyEngineResource(
-                dialect="mssql",
-                driver="pyodbc",
-                host="winsql05.kippnj.org",
-                port=1433,
-                database="gabby",
-                username=EnvVar("MSSQL_USERNAME"),
-                password=EnvVar("MSSQL_PASSWORD"),
-            ),
-            driver="ODBC Driver 18 for SQL Server",
-        ),
         "adp_wfm": AdpWorkforceManagerResource(
             subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
             app_key=EnvVar("ADP_WFM_APP_KEY"),

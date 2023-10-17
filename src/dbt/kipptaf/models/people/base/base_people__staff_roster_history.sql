@@ -1,7 +1,11 @@
 with
-    worker_person as (
+    adp_worker_person as (
         select
-            timestamp('2021-01-01') as work_assignment__fivetran_start,
+            if(
+                work_assignment__fivetran_start < timestamp('2021-01-01'),
+                timestamp('2021-01-01'),
+                work_assignment__fivetran_start
+            ) as work_assignment__fivetran_start,
             work_assignment__fivetran_end,
             work_assignment__fivetran_active,
             work_assignment_id,
@@ -183,30 +187,21 @@ with
                 then 'Bi/Multiracial'
                 else person_race_long_name
             end as race_ethnicity_reporting,
+
+            if(
+                work_assignment_hire_date > current_date('{{ var("local_timezone") }}')
+                and work_assignment_assignment_status_long_name = 'Active'
+                and (
+                    work_assignment_assignment_status_long_name_prev is null
+                    or work_assignment_assignment_status_long_name_prev = 'Terminated'
+                ),
+                true,
+                false
+            ) as is_prestart,
         from {{ ref("base_adp_workforce_now__worker_person") }}
         where
             not worker__fivetran_deleted
-            and work_assignment__fivetran_end >= '2021-01-01'
-    ),
-
-    with_prestart as (
-        select *, false as is_prestart
-        from worker_person
-        where
-            assignment_status_effective_date
-            <= current_date('{{ var("local_timezone") }}')
-
-        union all
-
-        select *, true as is_prestart,
-        from worker_person
-        where
-            assignment_status_effective_date
-            > current_date('{{ var("local_timezone") }}')
-            and assignment_status = 'Active'
-            and (
-                assignment_status_prev is null or assignment_status_prev = 'Terminated'
-            )
+            and work_assignment__fivetran_end >= timestamp('2021-01-01')  -- after transistion from Dayforce
     ),
 
     with_dayforce as (
@@ -219,7 +214,7 @@ with
             en.employee_number,
 
             null as report_to_employee_number,
-        from with_prestart as wp
+        from adp_worker_person as wp
         inner join
             {{ ref("stg_people__employee_numbers") }} as en
             on wp.worker_id = en.adp_associate_id
