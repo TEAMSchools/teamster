@@ -85,8 +85,10 @@ left join {{ source("zendesk", "users") }} as a on t.assignee_id = a.id
 left join {{ source("zendesk", "groups") }} as g on t.group_id = g.id
 left join {{ source("zendesk", "ticket_metrics") }} as tm on t.id = tm.ticket_id
 left join group_updated as gu on t.id = gu.ticket_id
-left join original_value as og on t.id = og.ticket_id and og.event_field_name = 'group_id'
-left join original_value as oa on t.id = oa.ticket_id and oa.event_field_name = 'assignee_id'
+left join
+    original_value as og on t.id = og.ticket_id and og.event_field_name = 'group_id'
+left join
+    original_value as oa on t.id = oa.ticket_id and oa.event_field_name = 'assignee_id'
 left join
     {{ ref("base_people__staff_roster") }} as sx on s.email = sx.user_principal_name
 left join {{ ref("base_people__staff_roster") }} as c on a.email = c.user_principal_name
