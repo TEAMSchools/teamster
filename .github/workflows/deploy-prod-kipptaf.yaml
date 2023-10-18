@@ -1,4 +1,4 @@
-name: kipptaf - Hybrid Prod Deployment
+name: kipptaf
 
 on:
   workflow_dispatch: null

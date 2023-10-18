@@ -1,4 +1,4 @@
-name: kippmiami - Hybrid Prod Deployment
+name: kippmiami
 
 on:
   workflow_dispatch: null
