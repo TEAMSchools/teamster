@@ -1,4 +1,4 @@
-name: kippnewark - Hybrid Prod Deployment
+name: kippnewark
 
 on:
   workflow_dispatch: null
