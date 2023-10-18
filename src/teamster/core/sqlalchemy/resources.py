@@ -32,7 +32,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         partition_size,
         connect_kwargs={},
         output_format=None,
-        data_filepath="data/data.avro",
+        data_filepath="env/data.avro",
     ):
         context = self.get_resource_context()
 
