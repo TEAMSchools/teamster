@@ -76,7 +76,7 @@ For more information about using a codespace for working on GitHub documentation
        to merge them.
 
 2. Install or update to **Node.js**, at the version specified in `.node-version`. For more
-   information, see [the development guide](contributing/development.md).
+   information, see [the development guide](development.md).
 
 3. Create a working branch and start with your changes!
 
