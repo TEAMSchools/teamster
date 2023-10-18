@@ -1,15 +1,15 @@
 assets:
   # not partitionable
   - asset_name: attendance_conversion_items
-  - asset_name: gen
-  - asset_name: test
-  - asset_name: testscore
-  - asset_name: attendance_code
-  - asset_name: bell_schedule
-  - asset_name: cycle_day
-  - asset_name: fte
-  - asset_name: period
-  - asset_name: reenrollments
-  - asset_name: calendar_day
-  - asset_name: spenrollments
-  - asset_name: log
+  # - asset_name: gen
+  # - asset_name: test
+  # - asset_name: testscore
+  # - asset_name: attendance_code
+  # - asset_name: bell_schedule
+  # - asset_name: cycle_day
+  # - asset_name: fte
+  # - asset_name: period
+  # - asset_name: reenrollments
+  # - asset_name: calendar_day
+  # - asset_name: spenrollments
+  # - asset_name: log
