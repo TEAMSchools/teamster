@@ -4,6 +4,7 @@
 site_name: teamster
 theme:
   name: material
+  favicon: images/horse-variant.svg
   icon:
     logo: material/horse-variant
   features:

@@ -5,6 +5,7 @@ import pathlib
 import re
 
 import pendulum
+import requests
 from dagster import AssetExecutionContext, AssetKey, asset
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud import bigquery, storage
@@ -78,6 +79,8 @@ def load_sftp(
     file_name,
     destination_path,
 ):
+    context.log.debug(requests.get(url="https://api.ipify.org").text)
+
     conn = ssh.get_connection()
 
     with conn.open_sftp() as sftp:
