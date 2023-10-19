@@ -1,10 +1,20 @@
 # https://www.mkdocs.org/user-guide/configuration/
+# https://squidfunk.github.io/mkdocs-material/setup/
 
 site_name: teamster
 theme:
   name: material
   icon:
-    logo: material/donkey
+    logo: material/horse-variant
+  features:
+    - navigation.instant
+    - navigation.tabs
+
+nav:
+  - Home: README.md
+  - Getting Started:
+      - Installation: getting-started.md
+  - Contributing: contributing/CONTRIBUTING.md
 
 markdown_extensions:
   - attr_list
