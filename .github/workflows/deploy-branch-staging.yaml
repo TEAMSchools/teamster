@@ -1,4 +1,4 @@
-name: staging - Hybrid Branch Deployment
+name: staging
 
 on:
   workflow_dispatch: null

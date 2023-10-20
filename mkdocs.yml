@@ -1,5 +1,24 @@
 # https://www.mkdocs.org/user-guide/configuration/
+# https://squidfunk.github.io/mkdocs-material/setup/
 
 site_name: teamster
 theme:
   name: material
+  favicon: images/horse-variant.svg
+  icon:
+    logo: material/horse-variant
+  features:
+    - navigation.instant
+    - navigation.tabs
+
+nav:
+  - Home: README.md
+  - Getting Started:
+      - Installation: getting-started.md
+  - Contributing: contributing/CONTRIBUTING.md
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg

@@ -1,5 +1,3 @@
-# trunk-ignore-all(ruff/E501)
-
 FAST_FIELDS = [
     {
         "name": "date_taken",

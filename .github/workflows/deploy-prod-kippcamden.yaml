@@ -1,4 +1,4 @@
-name: kippcamden - Hybrid Prod Deployment
+name: kippcamden
 
 on:
   workflow_dispatch: null
