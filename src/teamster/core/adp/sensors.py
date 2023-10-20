@@ -32,6 +32,7 @@ def build_sftp_sensor(
         context: SensorEvaluationContext, ssh_adp_workforce_now: SSHConfigurableResource
     ):
         cursor: dict = json.loads(context.cursor or "{}")
+        now = pendulum.now(tz=timezone)
 
         run_requests = []
         for asset in asset_defs:
@@ -78,7 +79,7 @@ def build_sftp_sensor(
                         )
                     )
 
-            cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+            cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
