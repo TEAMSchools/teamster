@@ -91,6 +91,8 @@ with
             fg.exclude_from_gpa = 0
             /* ensures already stored grades are excluded */
             and sg.studentid is null
+            and current_date('{{ var("local_timezone") }}')
+            between fg.termbin_start_date and fg.termbin_end_date
 
         union all
 
