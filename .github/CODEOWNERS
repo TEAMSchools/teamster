@@ -7,6 +7,9 @@
 # dbt code
 /src/dbt/kipptaf/models/extracts @TEAMSchools/analytics-engineers
 
+# docs
+/docs @TEAMSchools/data-team
+
 # Each line is a file pattern followed by one or more owners.
 
 # These owners will be the default owners for everything in

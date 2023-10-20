@@ -4,6 +4,7 @@ import re
 import zipfile
 from stat import S_ISDIR, S_ISREG
 
+import requests
 from dagster import (
     AssetExecutionContext,
     DagsterInvariantViolationError,
@@ -102,6 +103,8 @@ def build_sftp_asset(
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: AssetExecutionContext):
+        context.log.debug(requests.get(url="https://api.ipify.org").text)
+
         ssh: SSHConfigurableResource = getattr(context.resources, ssh_resource_key)
 
         # find matching file for partition
