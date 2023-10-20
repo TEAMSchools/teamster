@@ -110,6 +110,48 @@ with
             on e.id = fa.enrollment
             and fa.status = 'Offered'
         where e.rn_matric = 1
+    ),
+
+    benchmark as (
+        select
+            academic_year,
+            contact,
+            benchmark_school_enrolled,
+            benchmark_path,
+            benchmark_date,
+            benchmark_completion_date,
+            benchmark_status,
+            benchmark_semester,
+            benchmark_overall_color,
+            benchmark_academic_color,
+            benchmark_financial_color,
+            benchmark_ppp_color,
+            row_number() over (
+                partition by academic_year, contact order by benchmark_date desc
+            ) as rn_benchmark
+        from
+            (
+                select
+                    {{
+                        teamster_utils.date_to_fiscal_year(
+                            date_field="benchmark_date",
+                            start_month=7,
+                            year_source="start",
+                        )
+                    }} as academic_year,
+                    contact,
+                    enrollment as benchmark_school_enrolled,
+                    benchmark_path,
+                    benchmark_date,
+                    date_completed as benchmark_completion_date,
+                    benchmark_status as benchmark_status,
+                    benchmark_period as benchmark_semester,
+                    overall_score as benchmark_overall_color,
+                    academic_color as benchmark_academic_color,
+                    financial_color as benchmark_financial_color,
+                    passion_purpose_plan_score as benchmark_ppp_color,
+                from {{ ref("stg_kippadb__college_persistence") }}
+            )
     )
 
 select
@@ -315,6 +357,21 @@ select
     gp.grad_plan_year as most_recent_grad_plan_year,
 
     fa.unmet_need as unmet_need,
+
+    b.benchmark_school_enrolled,
+    b.benchmark_path,
+    b.benchmark_date,
+    b.benchmark_status,
+    b.benchmark_semester,
+    b.benchmark_overall_color,
+    b.benchmark_academic_color,
+    b.benchmark_financial_color,
+    b.benchmark_ppp_color,
+
+    a.adjusted_6_year_minority_graduation_rate,
+    a.act_composite_25_75,
+    a.competitiveness_ranking
+
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -353,6 +410,12 @@ left join
     and tier.rn_contact_year_desc = 1
 left join grad_plan as gp on c.contact_id = gp.contact and gp.rn_contact_desc = 1
 left join finaid as fa on c.contact_id = fa.student and fa.rn_finaid = 1
+left join
+    benchmark as b
+    on c.contact_id = b.contact
+    and ay.academic_year = b.academic_year
+    and b.rn_benchmark = 1
+left join {{ ref("stg_kippadb__account") }} as a on a.nces_id = ei.ugrad_nces_id
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
