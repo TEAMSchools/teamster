@@ -57,7 +57,6 @@ with
             coalesce(
                 sr.home_work_location_abbreviation, sr.home_work_location_name
             ) as location_abbr,
-            coalesce(cc.name, sr.home_work_location_name) as campus,
             case
                 when
                     sr.home_work_location_name not like '%Room%'
@@ -76,7 +75,8 @@ with
                     and sr.business_unit_home_name like '%Family%'
                 then 'CMO'
                 else 'Regional'
-            end as route
+            end as route,
+            coalesce(cc.name, sr.home_work_location_name) as campus,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ ref("stg_people__campus_crosswalk") }} as cc
@@ -87,7 +87,20 @@ with
     )
 
 select
-    r.*,
+    r.employee_number,
+    r.payroll_group_code,
+    r.worker_id,
+    r.file_number,
+    r.position_id,
+    r.job_title,
+    r.location,
+    r.department,
+    r.preferred_name,
+    r.email,
+    r.google_email,
+    r.status,
+    r.region,
+    r.worker_termination_date,
     a.first_approver_employee_number,
     a.first_approver_name,
     a.first_approver_email,
