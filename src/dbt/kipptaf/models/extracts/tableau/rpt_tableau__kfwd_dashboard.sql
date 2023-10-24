@@ -130,7 +130,6 @@ with
                 partition by contact, academic_year order by benchmark_date desc
             ) as rn_benchmark,
         from {{ ref("stg_kippadb__college_persistence") }}
-
     )
 
 select
