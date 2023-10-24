@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     powerschool_teacher_number as `01 User ID`,
     preferred_name_family_name as `02 User Last Name`,

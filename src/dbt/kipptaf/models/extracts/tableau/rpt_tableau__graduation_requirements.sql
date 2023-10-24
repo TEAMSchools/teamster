@@ -9,7 +9,6 @@ with
             e.school_abbreviation,
             e.students_dcid,
             e.student_number,
-            safe_cast(e.state_studentnumber as int) as state_studentnumber,
             e.lastfirst,
             e.first_name,
             e.last_name,
@@ -28,6 +27,8 @@ with
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
+
+            safe_cast(e.state_studentnumber as int) as state_studentnumber,
 
             coalesce(adb.kipp_hs_class, e.cohort) as ktc_cohort,
         from {{ ref("base_powerschool__student_enrollments") }} as e
@@ -56,12 +57,11 @@ with
             localstudentidentifier,
             statestudentidentifier,
             subject,
+            testcode,
+            testscalescore,
             case
                 when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
             end as discipline,
-            testcode,
-            testscalescore,
-
         from {{ ref("stg_pearson__njgpa") }}
         where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
     ),
@@ -87,6 +87,7 @@ with
         select
             contact,
             test_type,
+            score,
             case
                 when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
                 then 'ELA'
@@ -103,7 +104,6 @@ with
                 when score_type = 'sat_ebrw'
                 then 'EBRW'
             end as subject,
-            score,
             case
                 when score_type in ('act_reading', 'act_math') and score >= 17
                 then true

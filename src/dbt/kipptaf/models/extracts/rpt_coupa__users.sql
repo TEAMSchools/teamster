@@ -198,7 +198,7 @@ with
             and a.active
     )
 
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     sub.sam_account_name as `Login`,
     sub.user_principal_name as `Sso Identifier`,
@@ -213,12 +213,18 @@ select
     sub.city as `Default Address City`,
     sub.state as `Default Address State`,
     sub.postal_code as `Default Address Postal Code`,
-    'US' as `Default Address Country Code`,
     sub.attention as `Default Address Attention`,
     sub.address_name as `Default Address Name`,
     sub.coupa_status as `Status`,
+    sub.employee_number as `Sage Intacct ID`,
+
+    ifl.sage_intacct_fund as `Sage Intacct Fund`,
+
+    'US' as `Default Address Country Code`,
     'SAML' as `Authentication Method`,
     'No' as `Generate Password And Notify User`,
+    'CoupaPay' as `Employee Payment Channel`,
+
     case
         when regexp_contains(sub.worker_type, r'Part Time|Intern')
         then 'No'
@@ -263,10 +269,6 @@ select
         coalesce(sna.coupa_school_name, sub.coupa_school_name)
     ) as `School Name`,
 
-    sub.employee_number as `Sage Intacct ID`,
-
-    ifl.sage_intacct_fund as `Sage Intacct Fund`,
-
     coalesce(
         ipl1.sage_intacct_program, ipl2.sage_intacct_program
     ) as `Sage Intacct Program`,
@@ -292,15 +294,6 @@ select
             safe_cast(ill3.sage_intacct_location as int)
         )
     ) as `Sage Intacct Location`,
-
-    'CoupaPay' as `Employee Payment Channel`,
-
-{# audit cols
-    sub.business_unit_home_code,
-    sub.home_work_location_name,
-    sub.department_home_name,
-    sub.job_title,
-#}
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna

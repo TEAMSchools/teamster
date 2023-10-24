@@ -13,7 +13,7 @@ with
         }}
     )
 
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     ktc.contact_id as `Salesforce ID`,
     ktc.contact_school_specific_id as `SIS ID`,
