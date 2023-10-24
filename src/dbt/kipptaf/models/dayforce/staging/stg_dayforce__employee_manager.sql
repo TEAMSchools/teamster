@@ -1,5 +1,5 @@
 with
-    parsed_dates as ( -- noqa: ST03
+    parsed_dates as (  -- noqa: ST03
         select
             employee_reference_code,
             manager_employee_number,
