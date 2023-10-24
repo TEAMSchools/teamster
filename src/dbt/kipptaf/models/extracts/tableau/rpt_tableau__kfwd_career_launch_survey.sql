@@ -23,6 +23,9 @@ with
             c.gender,
             c.ethnicity,
 
+            extract(month from sd.actual_end_date) as actual_end_date_month,
+            extract(year from sd.actual_end_date) as actual_end_date_year,
+
             row_number() over (
                 partition by e.student order by e.actual_end_date desc
             ) as rn_latest,
@@ -204,12 +207,14 @@ with
 
 select
     ad.*,
+
     sw.*,
+
     case
-        when extract(month from actual_end_date) between 1 and 6
-        then concat('Spring ', extract(year from actual_end_date))
-        when extract(month from actual_end_date) between 7 and 12
-        then concat('Fall ', extract(year from actual_end_date))
+        when ad.actual_end_date_month between 1 and 6
+        then concat('Spring ', ad.actual_end_date_year)
+        when ad.actual_end_date_month between 7 and 12
+        then concat('Fall ', ad.actual_end_date_year)
     end as season_label,
 from survey_weighted as sw
 full join

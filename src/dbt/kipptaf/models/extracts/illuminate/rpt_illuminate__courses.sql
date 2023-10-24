@@ -1,4 +1,5 @@
 select distinct
+    -- noqa: disable=RF05
     course_number as `01 Course ID`,
     course_name as `02 Full Name`,
     course_name as `03 Short Name`,
@@ -22,5 +23,5 @@ select distinct
     null as `21 Instructional Strategy`,
     null as `22 Program Funding Source`,
     null as `23 Cte Funding Provider`,
-    null as `24 Tech Prep`
+    null as `24 Tech Prep`,
 from {{ ref("stg_powerschool__courses") }}

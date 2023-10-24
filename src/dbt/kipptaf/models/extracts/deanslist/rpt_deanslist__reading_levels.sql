@@ -12,9 +12,10 @@ with
             first_name as student_first_name,
             last_name as student_last_name,
             academic_year,
-            if(grade_level = 0, 'K', safe_cast(grade_level as string)) as grade_level,
 
             'KIPP NJ/MIAMI' as district,
+
+            if(grade_level = 0, 'K', safe_cast(grade_level as string)) as grade_level,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             academic_year = {{ var("current_academic_year") }}
@@ -146,11 +147,11 @@ with
             composite_level,
             composite_expectations,
             literacy_key_concept,
-            description,
+            `description`,
             performance_level,
 
             'Not applicable' as growth_level,
-            'Q1' as quarter,
+            'Q1' as `quarter`,
         from composite_and_non_composite
         where mclass_period = 'BOY'
     ),
@@ -163,11 +164,11 @@ with
             composite_level,
             composite_expectations,
             literacy_key_concept,
-            description,
+            `description`,
             performance_level,
             measure_semester_growth as growth_level,
 
-            'Q2' as quarter,
+            'Q2' as `quarter`,
         from composite_and_non_composite
         where mclass_period = 'MOY'
     ),
@@ -180,11 +181,11 @@ with
             composite_level,
             composite_expectations,
             literacy_key_concept,
-            description,
+            `description`,
             performance_level,
             measure_semester_growth as growth_level,
 
-            'Q3' as quarter,
+            'Q3' as `quarter`,
         from composite_and_non_composite
         where mclass_period = 'MOY'
     ),
@@ -197,23 +198,29 @@ with
             composite_level,
             composite_expectations,
             literacy_key_concept,
-            description,
+            `description`,
             performance_level,
             measure_year_growth as growth_level,
 
-            'Q4' as quarter,
+            'Q4' as `quarter`,
         from composite_and_non_composite
         where mclass_period = 'EOY'
     )
 
-select *
+select *,
 from q1
+
 union all
-select *
+
+select *,
 from q2
+
 union all
-select *
+
+select *,
 from q3
+
 union all
-select *
+
+select *,
 from q4

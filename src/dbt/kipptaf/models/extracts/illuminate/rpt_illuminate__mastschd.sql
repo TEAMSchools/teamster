@@ -1,4 +1,5 @@
 select
+    -- noqa: disable=RF05
     concat(
         regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_'), sec.id
     ) as `01 Section ID`,
@@ -26,7 +27,7 @@ select
 
     1 as `14 Primary Teacher`,
     null as `15 Teacher Competency Level`,
-    null as `16 Is Attendance Enabled`
+    null as `16 Is Attendance Enabled`,
 from {{ ref("stg_powerschool__terms") }} as tr
 inner join
     {{ ref("stg_powerschool__sections") }} as sec

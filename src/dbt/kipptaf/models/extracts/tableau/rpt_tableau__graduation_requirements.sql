@@ -29,7 +29,7 @@ with
             s.teacher_lastfirst,
             s.sections_external_expression,
 
-            ifnull(adb.kipp_hs_class, e.cohort) as ktc_cohort,
+            coalesce(adb.kipp_hs_class, e.cohort) as ktc_cohort,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -137,7 +137,7 @@ with
             a.testcode as test_type,
             a.discipline,
             a.subject,
-            safe_cast(a.testscalescore as string) as value,
+            safe_cast(a.testscalescore as string) as `value`,
             if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
 
             'State Assessment' as grad_eligible_type,
@@ -152,7 +152,7 @@ with
             a.test_type,
             a.discipline,
             a.subject,
-            safe_cast(a.score as string) as value,
+            safe_cast(a.score as string) as `value`,
             a.met_pathway_requirement,
 
             'ACT/SAT' as grad_eligible_type,
@@ -169,7 +169,7 @@ with
                 a.subject when 'ela' then 'ELA' when 'math' then 'Math'
             end as discipline,
             case a.subject when 'ela' then 'ELA' when 'math' then 'Math' end as subject,
-            a.values_column as value,
+            a.values_column as `value`,
             a.met_requirement as met_pathway_requirement,
             case
                 when a.is_iep_eligible

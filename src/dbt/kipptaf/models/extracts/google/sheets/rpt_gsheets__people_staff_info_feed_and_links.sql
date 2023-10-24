@@ -45,40 +45,40 @@ select
             ' ',
             coalesce(w.preferred_name_family_name, w.legal_name_family_name),
             ' - ',
-            ifnull(w.home_work_location_name, ''),
+            coalesce(w.home_work_location_name, ''),
             ' (',
             ltrim(cast(w.employee_number as string format '999999')),  -- Name + ID
             ')',
             '&entry.1688914034=',
-            replace(ifnull(w.race_ethnicity, ''), ', ', '&entry.1688914034='),  -- Race/Ethnicity
+            replace(coalesce(w.race_ethnicity, ''), ', ', '&entry.1688914034='),  -- Race/Ethnicity
             '&entry.600247632=',
-            ifnull(w.gender_identity, ''),  -- gender identity
+            coalesce(w.gender_identity, ''),  -- gender identity
             '&entry.2102492257=',
-            replace(ifnull(w.community_grew_up, ''), ', ', '&entry.2102492257='),  -- Community Grew Up
+            replace(coalesce(w.community_grew_up, ''), ', ', '&entry.2102492257='),  -- Community Grew Up
             '&entry.1197736651=',
             replace(
-                ifnull(w.community_professional_exp, ''), ', ', '&entry.1197736651='
+                coalesce(w.community_professional_exp, ''), ', ', '&entry.1197736651='
             ),  -- Community Work Exp
             '&entry.1551531542=',
-            replace(ifnull(w.languages_spoken, ''), ',', '&entry.1551531542='),  -- languages spoken
+            replace(coalesce(w.languages_spoken, ''), ',', '&entry.1551531542='),  -- languages spoken
             '&entry.53823493=',
-            ifnull(w.additional_languages, ''),  -- additional languages
+            coalesce(w.additional_languages, ''),  -- additional languages
             '&entry.928329961=',
-            ifnull(w.level_of_education, ''),  -- level of education
+            coalesce(w.level_of_education, ''),  -- level of education
             '&entry.844913390=',
-            ifnull(w.undergraduate_school, ''),  -- undergraduate school
+            coalesce(w.undergraduate_school, ''),  -- undergraduate school
             '&entry.2136123484=',
-            ifnull(cast(w.years_exp_outside_kipp as string), ''),  -- years outside of kipp
+            coalesce(cast(w.years_exp_outside_kipp as string), ''),  -- years outside of kipp
             '&entry.2038589601=',
-            ifnull(cast(w.years_teaching_in_njfl as string), ''),  -- years teaching njfl
+            coalesce(cast(w.years_teaching_in_njfl as string), ''),  -- years teaching njfl
             '&entry.1922494504=',
-            ifnull(cast(w.years_teaching_outside_njfl as string), ''),  -- years outside njfl
+            coalesce(cast(w.years_teaching_outside_njfl as string), ''),  -- years outside njfl
             '&entry.1216415935=',
-            ifnull(w.alumni_status, ''),  -- alumni status
+            coalesce(w.alumni_status, ''),  -- alumni status
             '&entry.553510009=',
-            ifnull(w.relay_status, ''),  -- relay status
+            coalesce(w.relay_status, ''),  -- relay status
             '&entry.1130804124=',
-            replace(ifnull(w.path_to_education, ''), ',', '&entry.1130804124='),  -- path to education'
+            replace(coalesce(w.path_to_education, ''), ',', '&entry.1130804124='),  -- path to education'
             if(
                 w.job_title in (
                     'Teacher',

@@ -5,7 +5,7 @@ with
 
             coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
-            ) as school_id
+            ) as school_id,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ ref("stg_people__campus_crosswalk") }} as ccw
@@ -151,7 +151,7 @@ with
                 'teacher_',
                 row_number() over (partition by section_id order by sortorder asc),
                 '_id'
-            ) as input_column
+            ) as input_column,
         from teachers_long
     )
 
