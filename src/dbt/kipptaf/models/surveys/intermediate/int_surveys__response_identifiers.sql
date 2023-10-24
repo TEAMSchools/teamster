@@ -83,7 +83,7 @@ with
         from
             identifier_responses pivot (
                 max(response_string_value) for question_short_name in (
-                    '{{ var("alchemer_survey_identifier_short_names") | join("', '") }}'
+                    '{{ var("alchemer_survey_identifier_short_names") | join("', '") }}'  -- noqa: LT05
                 )
             )
     ),
