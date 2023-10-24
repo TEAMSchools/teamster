@@ -202,7 +202,7 @@ with
             ethnicity,
             fedethnicity,
             (yearid + 1990) as academic_year,
-            ifnull(track, 'A') as track,
+            coalesce(track, 'A') as track,
             if(
                 lunchstatus in unnest({{ invalid_lunch_status }}), null, lunchstatus
             ) as lunch_status,
@@ -299,7 +299,7 @@ with
                     <= min(grade_level_prev) over (partition by studentid, yearid)
                 then true
                 else false
-            end as is_retained_year
+            end as is_retained_year,
         from enr_order
     )
 

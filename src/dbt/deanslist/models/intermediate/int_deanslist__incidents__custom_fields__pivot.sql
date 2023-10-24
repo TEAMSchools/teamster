@@ -4,7 +4,7 @@ with
         from {{ ref("stg_deanslist__incidents__custom_fields") }}
     )
 
-select *
+select *,
 from
     pivot_source pivot (
         max(`value`) for field_name in (

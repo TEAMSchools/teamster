@@ -121,8 +121,8 @@ with
         select
             studentid,
             student_number,
-            person_type || '_' || contact_category_type as pivot_column,
             contact as input_column,
+            person_type || '_' || contact_category_type as pivot_column,
         from person_contacts
         where contact_category_type_priority = 1
     )
