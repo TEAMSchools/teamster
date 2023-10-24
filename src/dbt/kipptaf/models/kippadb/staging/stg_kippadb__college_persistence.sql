@@ -103,5 +103,10 @@ select
     writing_remedial_course_name__c as `writing_remedial_course_name`,
     writing_remedial_course_status__c as `writing_remedial_course_status`,
     writing_remediation__c as `writing_remediation`,
+    {{
+        teamster_utils.date_to_fiscal_year(
+            date_field="benchmark_date__c", start_month=7, year_source="start"
+        )
+    }} as academic_year,
 from {{ source("kippadb", "college_persistence") }}
 where not isdeleted
