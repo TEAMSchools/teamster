@@ -38,7 +38,7 @@ with
             surrogate_key as surrogate_key_new,
             lag(surrogate_key, 1) over (
                 partition by position_id order by dbt_valid_from
-            ) as surrogate_key_prev
+            ) as surrogate_key_prev,
         from staff_roster_history
     )
 

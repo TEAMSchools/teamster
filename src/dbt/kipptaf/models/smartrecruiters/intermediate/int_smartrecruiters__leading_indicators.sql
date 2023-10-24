@@ -19,7 +19,7 @@ with
             as phone_screen_complete,
             application_status_interview_demo_date as final_interview_demo,
             application_state_offer_date as offer_date,
-            application_state_hired_date as hired_date
+            application_state_hired_date as hired_date,
         from {{ source("smartrecruiters", "src_smartrecruiters__applications") }}
     ),
 

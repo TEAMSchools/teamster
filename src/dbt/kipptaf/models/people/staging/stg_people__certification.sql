@@ -186,5 +186,5 @@ select
     row_number() over (
         partition by employee_number
         order by last_submitted_time asc, cert_submission_number asc
-    ) as cert_number
+    ) as cert_number,
 from certifications_long

@@ -50,7 +50,7 @@ with
             prod_migration__c as prod_migration,
             pursuing_degree_type__c as pursuing_degree_type,
             school__c as school,
-            source__c as source,
+            source__c as `source`,
             special_enrollment_circumstance__c as special_enrollment_circumstance,
             start_date__c as `start_date`,
             startinggrade__c as starting_grade,

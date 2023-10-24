@@ -14,8 +14,6 @@ with
     all_regions as (
         select
             seu.*,
-            regexp_extract(seu._dbt_source_relation, r'(kipp\w+)_') as code_location,
-            initcap(regexp_extract(seu._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             suf.fleid,
             suf.newark_enrollment_number,
@@ -23,7 +21,6 @@ with
             suf.infosnap_opt_in,
             suf.media_release,
             suf.rides_staff,
-            ifnull(suf.is_504, false) as is_504,
 
             nj.districtcoderesident,
             nj.referral_date,
@@ -53,6 +50,11 @@ with
             sl.username as student_web_id,
             sl.default_password as student_web_password,
             sl.google_email as student_email_google,
+
+            regexp_extract(seu._dbt_source_relation, r'(kipp\w+)_') as code_location,
+            initcap(regexp_extract(seu._dbt_source_relation, r'kipp(\w+)_')) as region,
+
+            coalesce(suf.is_504, false) as is_504,
         from student_enrollments_union as seu
         left join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf

@@ -1,6 +1,5 @@
--- profile visits by date, daily reach, 28 day reach
 with
-    user_history as (
+    user_history as (  -- noqa: ST03
         select
             id,
             followers_count,
@@ -27,5 +26,5 @@ select
     _fivetran_synced_date,
     lag(_fivetran_synced_date, 1, '2010-10-06') over (
         partition by id order by _fivetran_synced_date asc
-    ) as _fivetran_synced_date_prev
+    ) as _fivetran_synced_date_prev,
 from deduplicate
