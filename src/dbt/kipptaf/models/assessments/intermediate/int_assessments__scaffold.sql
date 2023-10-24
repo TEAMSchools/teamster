@@ -32,7 +32,7 @@ with
     ),
 
     internal_assessments as (
-        {# /* K-8 */ #}
+        /* K-8 */
         select
             a.assessment_id,
             a.title,
@@ -71,15 +71,11 @@ with
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
             and s.local_student_id = ce.powerschool_student_number
             and not ce.is_advanced_math_student
-        where
-            a.is_internal_assessment
-            and a.subject_area
-            in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
-            and agl.grade_level_id <= 9
+        where a.is_internal_assessment and agl.grade_level_id <= 9
 
         union all
 
-        {# /* HS */#}
+        /* HS */
         select
             a.assessment_id,
             a.title,
@@ -92,7 +88,7 @@ with
             a.subject_area,
             a.is_internal_assessment,
 
-            agl.grade_level_id,
+            ce.illuminate_grade_level_id as grade_level_id,
 
             s.student_id as illuminate_student_id,
 
@@ -102,23 +98,16 @@ with
             false as is_replacement,
         from assessments as a
         inner join
-            {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
-            on a.assessment_id = agl.assessment_id
-        inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on agl.grade_level_id = ce.illuminate_grade_level_id
-            and a.subject_area = ce.illuminate_subject_area
+            on a.subject_area = ce.illuminate_subject_area
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
         inner join
             {{ ref("stg_illuminate__students") }} as s
             on ce.powerschool_student_number = s.local_student_id
-        where
-            a.is_internal_assessment
-            and a.subject_area
-            not in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
-            and agl.grade_level_id >= 10
+        where a.is_internal_assessment and ce.illuminate_grade_level_id >= 10
     )
 
+/* internal assessments */
 select
     ia.illuminate_student_id,
     ia.powerschool_student_number,
@@ -161,7 +150,7 @@ left join
 
 union all
 
-{# /* K-8 replacement curriculum */ #}
+/* K-8 replacement curriculum */
 select
     sa.student_id as illuminate_student_id,
 
@@ -210,7 +199,7 @@ where
 
 union all
 
-{# all other assessments #}
+/* all other assessments */
 select
     sa.student_id as illuminate_student_id,
 
