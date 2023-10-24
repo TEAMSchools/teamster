@@ -114,44 +114,23 @@ with
 
     benchmark as (
         select
-            academic_year,
             contact,
-            benchmark_school_enrolled,
-            benchmark_path,
+            academic_year,
             benchmark_date,
-            benchmark_completion_date,
-            benchmark_status,
-            benchmark_semester,
-            benchmark_overall_color,
-            benchmark_academic_color,
-            benchmark_financial_color,
-            benchmark_ppp_color,
+            benchmark_path,
+            enrollment as benchmark_school_enrolled,
+            date_completed as benchmark_completion_date,
+            benchmark_status as benchmark_status,
+            benchmark_period as benchmark_semester,
+            overall_score as benchmark_overall_color,
+            academic_color as benchmark_academic_color,
+            financial_color as benchmark_financial_color,
+            passion_purpose_plan_score as benchmark_ppp_color,
             row_number() over (
-                partition by academic_year, contact order by benchmark_date desc
-            ) as rn_benchmark
-        from
-            (
-                select
-                    {{
-                        teamster_utils.date_to_fiscal_year(
-                            date_field="benchmark_date",
-                            start_month=7,
-                            year_source="start",
-                        )
-                    }} as academic_year,
-                    contact,
-                    enrollment as benchmark_school_enrolled,
-                    benchmark_path,
-                    benchmark_date,
-                    date_completed as benchmark_completion_date,
-                    benchmark_status as benchmark_status,
-                    benchmark_period as benchmark_semester,
-                    overall_score as benchmark_overall_color,
-                    academic_color as benchmark_academic_color,
-                    financial_color as benchmark_financial_color,
-                    passion_purpose_plan_score as benchmark_ppp_color,
-                from {{ ref("stg_kippadb__college_persistence") }}
-            )
+                partition by contact, academic_year order by benchmark_date desc
+            ) as rn_benchmark,
+        from {{ ref("stg_kippadb__college_persistence") }}
+
     )
 
 select
@@ -227,6 +206,9 @@ select
     ei.cte_status,
     ei.cte_actual_end_date,
     ei.hs_account_name,
+    ei.ugrad_adjusted_6_year_minority_graduation_rate,
+    ei.ugrad_act_composite_25_75,
+    ei.ugrad_competitiveness_ranking,
 
     apps.name as application_name,
     apps.account_type as application_account_type,
@@ -367,11 +349,6 @@ select
     b.benchmark_academic_color,
     b.benchmark_financial_color,
     b.benchmark_ppp_color,
-
-    a.adjusted_6_year_minority_graduation_rate,
-    a.act_composite_25_75,
-    a.competitiveness_ranking
-
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -415,7 +392,6 @@ left join
     on c.contact_id = b.contact
     and ay.academic_year = b.academic_year
     and b.rn_benchmark = 1
-left join {{ ref("stg_kippadb__account") }} as a on a.nces_id = ei.ugrad_nces_id
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
