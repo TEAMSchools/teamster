@@ -32,6 +32,7 @@ with
             on u.internal_id = safe_cast(sr.employee_number as string)
         where ur.role_name != 'Whetstone'
     ),
+
     boxes as (
         select
             observation_id,
@@ -136,7 +137,6 @@ with
                 then 3
                 when o.score > 3.5
                 then 4
-                else null
             end as tier,
             regexp_replace(
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
@@ -163,12 +163,15 @@ select
     row_number() over (
         partition by s.type, s.name, s.internal_id, o.score_measurement_id
         order by o.observed_at desc
-    ) as rn_submission
+    ) as rn_submission,
 from scaffold as s
 left join
     observations as o
     on cast(o.observed_at as date) between s.start_date and s.end_date
-    /* Matches on name for PM Rounds to distinguish Self and Coach, matches only on type and date for weekly forms*/
+    /*
+        Matches on name for PM Rounds to distinguish Self and Coach,
+        matches only on type and date for weekly forms
+    */
     and (
         (s.type = 'PM' and s.name = o.reporting_term_name and s.user_id = o.teacher_id)
         or (

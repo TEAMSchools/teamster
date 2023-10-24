@@ -278,6 +278,16 @@ select
     gpa_spr.semester_gpa as spr_semester_gpa,
     gpa_spr.cumulative_gpa as spr_cumulative_gpa,
     gpa_spr.semester_credits_earned as spr_semester_credits_earned,
+
+    ln.comments as latest_as_comments,
+    ln.next_steps as latest_as_next_steps,
+
+    tier.tier,
+
+    gp.grad_plan_year as most_recent_grad_plan_year,
+
+    fa.unmet_need as unmet_need,
+
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
@@ -306,15 +316,6 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
-
-    ln.comments as latest_as_comments,
-    ln.next_steps as latest_as_next_steps,
-
-    tier.tier,
-
-    gp.grad_plan_year as most_recent_grad_plan_year,
-
-    fa.unmet_need as unmet_need,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student

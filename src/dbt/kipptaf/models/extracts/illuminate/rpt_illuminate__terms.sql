@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     t.schoolid as `01 Site ID`,
     t.`name` as `02 Term Name`,

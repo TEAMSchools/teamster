@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     school_number as `01 Site ID`,
     name as `02 Site Name`,

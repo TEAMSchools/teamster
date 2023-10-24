@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     concat(sr.employee_number, '@kippnj.org') as `Username`,
     sr.mail as `Email`,

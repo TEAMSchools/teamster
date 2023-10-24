@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     ktc.contact_currently_enrolled_school as `Currently Enrolled School`,
     ktc.last_name as `Last Name`,

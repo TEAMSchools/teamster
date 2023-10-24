@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     student_number,
     if(region = 'Miami', fleid, newark_enrollment_number) as newark_enrollment_number,
     state_studentnumber,

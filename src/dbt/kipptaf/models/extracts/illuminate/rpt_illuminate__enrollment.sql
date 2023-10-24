@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     -- noqa: disable=RF05
     student_number as `01 Student ID`,
     state_studentnumber as `02 Ssid`,
