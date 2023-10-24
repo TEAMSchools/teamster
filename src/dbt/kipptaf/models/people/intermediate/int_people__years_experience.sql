@@ -23,8 +23,7 @@ with
             cast(
                 assignment_status_effective_date_start as datetime
             ) as work_assignment_start_date,
-            if
-            (
+            if(
                 cast(assignment_status_effective_date_end as datetime)
                 >= current_datetime('{{ var("local_timezone") }}'),
                 current_datetime('{{ var("local_timezone") }}'),

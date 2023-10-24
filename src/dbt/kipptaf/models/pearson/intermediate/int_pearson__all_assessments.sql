@@ -13,7 +13,7 @@ with
         }}
     )
 
-select
+select  -- noqa: AM04
     * except (statestudentidentifier),
     safe_cast(statestudentidentifier as string) as statestudentidentifier,
     upper(regexp_extract(_dbt_source_relation, r'__(\w+)`$')) as assessment_name,

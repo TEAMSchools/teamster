@@ -4,7 +4,7 @@ with
             e.id as enrollment_id,
             e.student,
             e.start_date,
-            ifnull(
+            coalesce(
                 e.actual_end_date, date({{ var("current_fiscal_year") }}, 6, 30)
             ) as actual_end_date,
             if(e.status = 'Graduated', 1, 0) as is_graduated,
@@ -27,7 +27,7 @@ with
                 then 'Primary'
                 when
                     e.pursuing_degree_type = 'Certificate'
-                    and ifnull(e.account_type, '') not in (
+                    and coalesce(e.account_type, '') not in (
                         'Traditional Public School',
                         'Alternative High School',
                         'KIPP School'
@@ -40,7 +40,7 @@ with
                     extract(year from c.contact_actual_hs_graduation_date),
                     10,
                     31
-                ) between e.start_date and ifnull(
+                ) between e.start_date and coalesce(
                     e.actual_end_date, date({{ var("current_fiscal_year") }}, 6, 30)
                 ),
                 1,
@@ -60,7 +60,7 @@ with
             coalesce(
                 `start_date`, enlist_date, bmt_start_date, meps_start_date
             ) as `start_date`,
-            ifnull(
+            coalesce(
                 coalesce(end_date, discharge_date, bmt_end_date, meps_end_date),
                 date({{ var("current_fiscal_year") }}, 6, 30)
             ) as actual_end_date,
@@ -415,7 +415,7 @@ select
 
     uga.name as ugrad_account_name,
     uga.billing_state as ugrad_billing_state,
-    uga.nces_id as ugrad_nces_id
+    uga.nces_id as ugrad_nces_id,
 from enrollment_wide as ew
 left join {{ ref("stg_kippadb__enrollment") }} as ug on ew.ugrad_enrollment_id = ug.id
 left join {{ ref("stg_kippadb__account") }} as uga on ug.school = uga.id

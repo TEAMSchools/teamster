@@ -1,4 +1,3 @@
--- Insights, with row recent
 with
     deduplicate as (
         {{
@@ -10,5 +9,5 @@ with
         }}
     )
 
-select *, like_count + comment_count as total_like_comments,
+select *, like_count + comment_count as total_like_comments,  -- noqa: AM04
 from deduplicate

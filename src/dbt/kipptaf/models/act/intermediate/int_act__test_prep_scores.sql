@@ -16,11 +16,12 @@ with
             asr.performance_band_level as overall_performance_band,
             asr.percent_correct as overall_percent_correct,
             asr.number_of_questions,
+
+            s.local_student_id as student_number,
+
             round(
                 safe_divide(asr.percent_correct, 100) * asr.number_of_questions, 0
             ) as overall_number_correct,
-
-            s.local_student_id as student_number,
         from {{ ref("base_illuminate__assessments") }} as ais
         inner join
             {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
@@ -37,7 +38,7 @@ with
         where ais.scope = 'ACT Prep'
     ),
 
-    scaled as (
+    scaled as (  -- noqa: ST03
         select
             ld.student_number,
             ld.illuminate_student_id,
@@ -180,8 +181,12 @@ select
     std.root_standard_description as standard_strand,
 
     row_number() over (
-        partition by student_number, subject_area, academic_year, administration_round
-        order by student_number
+        partition by
+            sub.student_number,
+            sub.subject_area,
+            sub.academic_year,
+            sub.administration_round
+        order by sub.student_number asc
     ) as rn_student_assessment,
 from sub
 left join

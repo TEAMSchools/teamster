@@ -4,6 +4,34 @@ with
             student_id,
             local_id,
             _dagster_partition_school_year_term as academic_year,
+
+            `1_reading_prose_and_poetry_performance` as reading_prose_and_poetry,
+            `2_reading_informational_text_performance` as reading_informational_text,
+            `3_reading_across_genres_vocabulary_performance`
+            as reading_across_genres_vocabulary,
+            `1_number_sense_and_additive_reasoning_performance`
+            as number_sense_and_additive_reasoning,
+            `1_number_sense_and_operations_and_algebraic_reasoning_performance`
+            as number_sense_and_operations_and_algebraic_reasoning,
+            `1_number_sense_and_operations_and_probability_performance`
+            as number_sense_and_operations_and_probability,
+            `1_number_sense_and_operations_performance` as number_sense_and_operations,
+            `1_number_sense_and_operations_with_whole_numbers_performance`
+            as number_sense_and_operations_with_whole_numbers,
+            `2_number_sense_and_multiplicative_reasoning_performance`
+            as number_sense_and_multiplicative_reasoning,
+            `2_number_sense_and_operations_with_fractions_and_decimals_performance`
+            as number_sense_and_operations_with_fractions_and_decimals,
+            `2_proportional_reasoning_and_relationships_performance`
+            as proportional_reasoning_and_relationships,
+            `3_fractional_reasoning_performance` as fractional_reasoning,
+            `3_geometric_reasoning_data_analysis_and_probability_performance`
+            as geometric_reasoning_data_analysis_and_probability,
+            `3_linear_relationships_data_analysis_and_functions_performance`
+            as linear_relationships_data_analysis_and_functions,
+            `4_data_analysis_and_probability_performance`
+            as data_analysis_and_probability,
+
             parse_date('%m/%d/%Y', date_taken) as date_taken,
             parse_date('%m/%d/%Y', test_completion_date) as test_completion_date,
             regexp_extract(test_reason, r'\w+\d') as administration_window,
@@ -107,32 +135,6 @@ with
                 safe_cast(grade_8_fast_mathematics_scale_score.string_value as int)
             ) as scale_score,
 
-            `1_reading_prose_and_poetry_performance` as reading_prose_and_poetry,
-            `2_reading_informational_text_performance` as reading_informational_text,
-            `3_reading_across_genres_vocabulary_performance`
-            as reading_across_genres_vocabulary,
-            `1_number_sense_and_additive_reasoning_performance`
-            as number_sense_and_additive_reasoning,
-            `1_number_sense_and_operations_and_algebraic_reasoning_performance`
-            as number_sense_and_operations_and_algebraic_reasoning,
-            `1_number_sense_and_operations_and_probability_performance`
-            as number_sense_and_operations_and_probability,
-            `1_number_sense_and_operations_performance` as number_sense_and_operations,
-            `1_number_sense_and_operations_with_whole_numbers_performance`
-            as number_sense_and_operations_with_whole_numbers,
-            `2_number_sense_and_multiplicative_reasoning_performance`
-            as number_sense_and_multiplicative_reasoning,
-            `2_number_sense_and_operations_with_fractions_and_decimals_performance`
-            as number_sense_and_operations_with_fractions_and_decimals,
-            `2_proportional_reasoning_and_relationships_performance`
-            as proportional_reasoning_and_relationships,
-            `3_fractional_reasoning_performance` as fractional_reasoning,
-            `3_geometric_reasoning_data_analysis_and_probability_performance`
-            as geometric_reasoning_data_analysis_and_probability,
-            `3_linear_relationships_data_analysis_and_functions_performance`
-            as linear_relationships_data_analysis_and_functions,
-            `4_data_analysis_and_probability_performance`
-            as data_analysis_and_probability,
             coalesce(
                 `2_algebraic_reasoning_performance`, `3_algebraic_reasoning_performance`
             ) as algebraic_reasoning,
@@ -140,8 +142,10 @@ with
                 `3_geometric_reasoning_performance`, `4_geometric_reasoning_performance`
             ) as geometric_reasoning,
             coalesce(
+                -- noqa: disable=LT05
                 `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`,
                 `4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
+            -- noqa: enable=LT05
             ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
         from {{ source("fldoe", "src_fldoe__fast") }}
     ),

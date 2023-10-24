@@ -10,7 +10,7 @@ select
         )
     }},
 
-    lead(minimum_value, 1, 9999) over (
+    lead(pb.minimum_value, 1, 9999) over (
         partition by pbs.performance_band_set_id order by pb.label_number
     )
     - 0.1 as maximum_value,

@@ -71,14 +71,14 @@ select
     e.ethnicity,
     e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
     case
-        ethnicity
+        e.ethnicity
         when 'Black or African American'
         then 'Black/African American'
         when 'Hispanic or Latino'
         then 'Latinx/Hispanic/Chicana(o)'
         when 'Two or more races (Not Hispanic or Latino)'
         then 'Bi/Multiracial'
-        else ethnicity
+        else e.ethnicity
     end as race_ethnicity_reporting,
 
     wa.work_assignment_effective_start_date,
