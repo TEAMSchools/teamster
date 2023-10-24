@@ -157,7 +157,13 @@ with
             and o.is_published = true
     )
 
-select s.*, o.*,
+select
+    s.*,
+    o.*,
+    row_number() over (
+        partition by s.type, s.name, s.internal_id, o.score_measurement_id
+        order by o.observed_at desc
+    ) as rn_submission
 from scaffold as s
 left join
     observations as o
