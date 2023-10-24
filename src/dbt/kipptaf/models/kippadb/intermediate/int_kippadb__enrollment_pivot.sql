@@ -416,6 +416,10 @@ select
     uga.name as ugrad_account_name,
     uga.billing_state as ugrad_billing_state,
     uga.nces_id as ugrad_nces_id,
+    uga.act_composite_25_75 as ugrad_act_composite_25_75,
+    uga.competitiveness_ranking as ugrad_competitiveness_ranking,
+    uga.adjusted_6_year_minority_graduation_rate
+    as ugrad_adjusted_6_year_minority_graduation_rate,
 from enrollment_wide as ew
 left join {{ ref("stg_kippadb__enrollment") }} as ug on ew.ugrad_enrollment_id = ug.id
 left join {{ ref("stg_kippadb__account") }} as uga on ug.school = uga.id
