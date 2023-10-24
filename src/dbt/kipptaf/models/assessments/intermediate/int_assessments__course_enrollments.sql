@@ -55,7 +55,7 @@ with
     {{
         dbt_utils.deduplicate(
             relation="enrollments_union",
-            partition_by="powerschool_student_number, illuminate_academic_year, illuminate_subject_area",
-            order_by="cc_dateenrolled desc, cc_dateleft desc",
+            partition_by="powerschool_student_number, illuminate_academic_year, illuminate_subject_area, cc_dateenrolled",
+            order_by="cc_dateleft desc",
         )
     }}
