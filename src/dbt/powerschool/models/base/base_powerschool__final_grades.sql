@@ -78,12 +78,13 @@ with
             sg.grade as sg_letter_grade,
             sg.excludefromgpa as sg_exclude_from_gpa,
             sg.excludefromgraduation as sg_exclude_from_graduation,
+
+            sgs.grade_points as sg_grade_points,
+
             sg.percent / 100.000 as sg_percent,
             if(
                 sg.potentialcrhrs != 0.0, sg.potentialcrhrs, null
             ) as sg_potential_credit_hours,
-
-            sgs.grade_points as sg_grade_points,
 
             case
                 when te.is_dropped_section and sg.percent is null
@@ -359,23 +360,23 @@ with
             #}
             (
                 (y1_weighted_points_possible_running_lead * 0.900)
-                - ifnull(term_weighted_points_earned, 0.000)
+                - coalesce(term_weighted_points_earned, 0.000)
             )
             / (term_weighted_points_possible / 100.000) as need_90,
             (
                 (y1_weighted_points_possible_running_lead * 0.800)
-                - ifnull(term_weighted_points_earned, 0.000)
+                - coalesce(term_weighted_points_earned, 0.000)
             )
             / (term_weighted_points_possible / 100.000) as need_80,
             (
                 (y1_weighted_points_possible_running_lead * 0.700)
-                - ifnull(term_weighted_points_earned, 0.000)
+                - coalesce(term_weighted_points_earned, 0.000)
 
             )
             / (term_weighted_points_possible / 100.000) as need_70,
             (
                 (y1_weighted_points_possible_running_lead * 0.600)
-                - ifnull(term_weighted_points_earned, 0.000)
+                - coalesce(term_weighted_points_earned, 0.000)
             )
             / (term_weighted_points_possible / 100.000) as need_60,
         from fg_running

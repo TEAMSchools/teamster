@@ -76,7 +76,7 @@ with
             *,
             row_number() over (
                 partition by row_hash, staging.fiscal_year order by effective_date asc
-            ) as rn_row_year_asc
+            ) as rn_row_year_asc,
         from staging
     )
 
