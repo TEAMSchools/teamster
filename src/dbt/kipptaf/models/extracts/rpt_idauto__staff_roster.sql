@@ -8,7 +8,7 @@ select
     department_assigned_name as `Business Unit Description`,
     department_assigned_name as `Home Department Description`,
     job_title as `Job Title Description`,
-    report_to_employee_number as `Business Unit Code`,
+    safe_cast(report_to_employee_number as string) as `Business Unit Code`,
     format_date('%m/%d/%Y', worker_rehire_date) as `Rehire Date`,
     format_date('%m/%d/%Y', worker_termination_date) as `Termination Date`,
     format_date('%m/%d/%Y', birth_date) as `Birth Date`,
