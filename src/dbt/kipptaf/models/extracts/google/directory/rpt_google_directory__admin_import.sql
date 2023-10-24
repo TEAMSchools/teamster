@@ -2,6 +2,9 @@ with
     staff_roster as (
         select
             sr.google_email,
+
+            u.id as `assignedTo`,
+
             case
                 sr.home_work_location_dagster_code_location
                 when 'kippnewark'
@@ -54,8 +57,6 @@ with
                 when 30200804
                 then 'Royalty Academy'
             end as org_unit_path,
-
-            u.id as `assignedTo`,
         from {{ ref("base_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_google_directory__users") }} as u
@@ -74,7 +75,7 @@ with
 
             r.role_id as `roleId`,
 
-            split(ous.org_unit_id, ":")[1] as `orgUnitId`,
+            split(ous.org_unit_id, ':')[1] as `orgUnitId`,
         from staff_roster as sr
         inner join
             {{ ref("stg_google_directory__roles") }} as r

@@ -1,6 +1,6 @@
 with
     wfm_updates as (
-        select distinct worker_id
+        select distinct worker_id,
         from {{ ref("int_people__field_history") }}
         where
             dbt_valid_from between date_sub(

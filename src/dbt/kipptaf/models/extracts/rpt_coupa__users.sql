@@ -64,7 +64,7 @@ with
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
             >= date({{ var("current_fiscal_year") }} - 2, 7, 1)
-            and not regexp_contains(worker_type, r'Part Time|Intern')
+            and not regexp_contains(sr.worker_type, r'Part Time|Intern')
             and (
                 sr.custom_wfmgr_pay_rule != 'PT Hourly'
                 or sr.custom_wfmgr_pay_rule is null
@@ -101,7 +101,7 @@ with
         where
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
-            and not regexp_contains(worker_type, r'Part Time|Intern')
+            and not regexp_contains(sr.worker_type, r'Part Time|Intern')
             and (
                 sr.custom_wfmgr_pay_rule != 'PT Hourly'
                 or sr.custom_wfmgr_pay_rule is null
@@ -199,6 +199,7 @@ with
     )
 
 select
+    -- noqa: disable=RF05
     sub.sam_account_name as `Login`,
     sub.user_principal_name as `Sso Identifier`,
     sub.mail as `Email`,
@@ -245,7 +246,7 @@ select
     ) as `Content Groups`,
     concat(
         if(sub.assignment_status = 'Terminated', 'X', ''),
-        ifnull(
+        coalesce(
             regexp_replace(
                 concat(sub.legal_name_given_name, sub.legal_name_family_name),
                 r'[^A-Za-z0-9]',
@@ -253,7 +254,7 @@ select
             ),
             ''
         ),
-        ifnull(regexp_extract(sub.sam_account_name, r'\d+$'), '')
+        coalesce(regexp_extract(sub.sam_account_name, r'\d+$'), '')
     ) as `Mention Name`,
 
     if(

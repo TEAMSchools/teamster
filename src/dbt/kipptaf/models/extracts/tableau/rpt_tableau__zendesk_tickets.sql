@@ -1,6 +1,6 @@
 with
     group_updated as (
-        select ticket_id, max(ticket_audit_created_at) as max_created_at
+        select ticket_id, max(ticket_audit_created_at) as max_created_at,
         from {{ ref("stg_zendesk__ticket_audits__events") }}
         where event_field_name = 'group_id'
         group by ticket_id

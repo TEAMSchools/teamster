@@ -25,7 +25,7 @@ with
             {# import terminated staff up to a week after termination date #}
             date_diff(
                 current_date('{{ var("local_timezone") }}'),
-                ifnull(
+                coalesce(
                     sr.worker_termination_date,
                     current_date('{{ var("local_timezone") }}')
                 ),
@@ -60,7 +60,7 @@ with
             {# import terminated staff up to a week after termination date #}
             date_diff(
                 current_date('{{ var("local_timezone") }}'),
-                ifnull(
+                coalesce(
                     sr.worker_termination_date,
                     current_date('{{ var("local_timezone") }}')
                 ),
@@ -85,7 +85,7 @@ with
                 when
                     date_diff(
                         current_date('{{ var("local_timezone") }}'),
-                        ifnull(
+                        coalesce(
                             worker_termination_date,
                             current_date('{{ var("local_timezone") }}')
                         ),

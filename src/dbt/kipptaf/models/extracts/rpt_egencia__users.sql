@@ -1,4 +1,5 @@
 select
+    -- noqa: disable=RF05
     concat(sr.employee_number, '@kippnj.org') as `Username`,
     sr.mail as `Email`,
     sr.user_principal_name as `Single Sign On ID`,

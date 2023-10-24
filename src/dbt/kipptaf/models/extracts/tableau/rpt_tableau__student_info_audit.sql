@@ -50,6 +50,7 @@ with
             cast(cec.sectionid_count as string) as sectionid_count,
             if(cec.sectionid_count <= 3, true, false) as underenrollment_flag,
 
+            -- noqa: disable=CV10
             case
                 when se.fteid != fte.id
                 then concat(se.fteid, ' != ', fte.id)

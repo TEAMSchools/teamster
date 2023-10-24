@@ -1,4 +1,5 @@
 select
+    -- noqa: disable=RF05
     worker_id as `Associate ID`,
     employee_number as `Position ID`,
     preferred_name_given_name as `First Name`,

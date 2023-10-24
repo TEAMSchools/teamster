@@ -1,6 +1,6 @@
 with
     date_range as (
-        select safe_cast(date_day as date) as date_day
+        select safe_cast(date_day as date) as date_day,
         from {{ ref("utils__date_spine") }}
         where
             date_day
@@ -78,7 +78,7 @@ select
 
     if(sp.specprog_name is not null, true, false) as is_tutoring,
 from {{ ref("base_powerschool__student_enrollments") }} as co
-cross join unnest(["Reading", "Math"]) as subj
+cross join unnest(['Reading', 'Math']) as subj
 cross join date_range as w
 left join
     expanded_terms as rt

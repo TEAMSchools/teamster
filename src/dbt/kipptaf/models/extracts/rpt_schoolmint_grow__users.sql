@@ -92,7 +92,7 @@ with
                     )
                 then 'Teacher'
                 else 'No Role'
-            end as role_name
+            end as role_name,
         from {{ ref("base_people__staff_roster") }} as sr
         where
             sr.user_principal_name is not null
@@ -314,7 +314,7 @@ with
         from roster
     )
 
-select *
+select *,
 from surrogate_keys
 where
     {# create/update in SMG #}
