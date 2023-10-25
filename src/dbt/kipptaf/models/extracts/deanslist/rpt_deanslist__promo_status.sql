@@ -1,9 +1,6 @@
 select
     co.student_number,
     co.academic_year,
-    case
-        co.grade_level when 9 then 25 when 10 then 50 when 11 then 85 when 12 then 120
-    end as promo_credits_needed,
 
     rt.name as term,
 
@@ -19,15 +16,20 @@ select
     p.projected_credits_cum as grades_y1_credits_projected,
     p.n_failing as grades_y1_failing_projected,
     p.ada_term_running,
-    coalesce(p.iready_reading_recent, '(No Data)') as iready_reading_recent,
-    coalesce(p.iready_math_recent, '(No Data)') as iready_math_recent,
     p.projected_credits_y1_term,
 
     null as promo_status_lit,
     null as promo_status_qa_math,
     null as grades_y1_credits_enrolled,
+
+    case
+        co.grade_level when 9 then 25 when 10 then 50 when 11 then 85 when 12 then 120
+    end as promo_credits_needed,
+
+    coalesce(p.iready_reading_recent, '(No Data)') as iready_reading_recent,
+    coalesce(p.iready_math_recent, '(No Data)') as iready_math_recent,
 from {{ ref("base_powerschool__student_enrollments") }} as co
-cross join (select * from unnest(["Q1", "Q2", "Q3", "Q4"]) as name) as rt
+cross join (select *, from unnest(['Q1', 'Q2', 'Q3', 'Q4']) as `name`) as rt
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as cum
     on co.studentid = cum.studentid

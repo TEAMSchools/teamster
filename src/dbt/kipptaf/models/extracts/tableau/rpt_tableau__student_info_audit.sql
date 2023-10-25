@@ -36,6 +36,9 @@ with
             se.grade_level,
             se.advisory_name,
             se.fteid,
+
+            r.racecd,
+
             safe_cast(se.dob as string) as dob,
             if(
                 regexp_contains(se.lastfirst, r"\s{2,}|[^\w\s',-]"), 1, 0
@@ -45,11 +48,10 @@ with
             if(se.state_studentnumber is null, 1, 0) as missing_sid_flag,
             if(se.dob is null, 1, 0) as missing_dob_flag,
 
-            r.racecd,
-
-            cast(cec.sectionid_count as string) as sectionid_count,
+            safe_cast(cec.sectionid_count as string) as sectionid_count,
             if(cec.sectionid_count <= 3, true, false) as underenrollment_flag,
 
+            -- noqa: disable=CV10
             case
                 when se.fteid != fte.id
                 then concat(se.fteid, ' != ', fte.id)

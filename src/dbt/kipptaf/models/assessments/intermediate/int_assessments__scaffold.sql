@@ -136,7 +136,7 @@ select
     if(
         ia.scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
         and ia.grade_level_id in (1, 2),
-        replace(module_number, 'CRQ', 'CP'),
+        replace(ia.module_number, 'CRQ', 'CP'),
         ia.module_number
     ) as module_number,
 

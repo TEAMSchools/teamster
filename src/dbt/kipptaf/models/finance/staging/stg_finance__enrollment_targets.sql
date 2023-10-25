@@ -13,9 +13,10 @@ select
     et.at_risk_only_ratio,
     et.lep_only_ratio,
     et.sped_ratio,
-    et.fiscal_year - 1 as academic_year,
 
     sch._dbt_source_relation,
+
+    et.fiscal_year - 1 as academic_year,
 from {{ source("finance", "src_finance__enrollment_targets") }} as et
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on et.schoolid = sch.school_number

@@ -67,7 +67,7 @@ left join
     aci as aci_real
     on mv.fteid = aci_real.fteid
     and mv.attendance_conversion_id = aci_real.attendance_conversion_id
-    and ifnull(ada_1.attendance_codeid, tac.id) = aci_real.input_value
+    and coalesce(ada_1.attendance_codeid, tac.id) = aci_real.input_value
 left join
     aci as aci_potential
     on mv.fteid = aci_potential.fteid

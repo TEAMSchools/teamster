@@ -7,7 +7,7 @@ with
     )
 
 /* active staff info*/
-select
+select  -- noqa: disable=ST06
     mgr.employee_number as df_employee_number,
     concat(
         mgr.preferred_name_lastfirst, ' - ', mgr.home_work_location_name

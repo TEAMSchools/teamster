@@ -48,7 +48,7 @@ select
     payment_type__c as payment_type,
     salary_annual__c as salary_annual,
     self_sufficient__c as self_sufficient,
-    source__c as source,
+    source__c as `source`,
     start_date__c as `start_date`,
     status__c as `status`,
     subcategory__c as subcategory,

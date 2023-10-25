@@ -41,7 +41,7 @@ with
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
-                select id
+                select id,
                 from {{ ref("stg_kippadb__record_type") }}
                 where name = 'Cumulative College'
             )
@@ -301,6 +301,26 @@ select
     gpa_spr.semester_gpa as spr_semester_gpa,
     gpa_spr.cumulative_gpa as spr_cumulative_gpa,
     gpa_spr.semester_credits_earned as spr_semester_credits_earned,
+
+    ln.comments as latest_as_comments,
+    ln.next_steps as latest_as_next_steps,
+
+    tier.tier,
+
+    gp.grad_plan_year as most_recent_grad_plan_year,
+
+    fa.unmet_need as unmet_need,
+
+    b.benchmark_school_enrolled,
+    b.benchmark_path,
+    b.benchmark_date,
+    b.benchmark_status,
+    b.benchmark_semester,
+    b.benchmark_overall_color,
+    b.benchmark_academic_color,
+    b.benchmark_financial_color,
+    b.benchmark_ppp_color,
+
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
@@ -329,25 +349,6 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
-
-    ln.comments as latest_as_comments,
-    ln.next_steps as latest_as_next_steps,
-
-    tier.tier,
-
-    gp.grad_plan_year as most_recent_grad_plan_year,
-
-    fa.unmet_need as unmet_need,
-
-    b.benchmark_school_enrolled,
-    b.benchmark_path,
-    b.benchmark_date,
-    b.benchmark_status,
-    b.benchmark_semester,
-    b.benchmark_overall_color,
-    b.benchmark_academic_color,
-    b.benchmark_financial_color,
-    b.benchmark_ppp_color,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student

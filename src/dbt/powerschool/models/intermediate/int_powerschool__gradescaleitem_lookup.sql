@@ -9,7 +9,7 @@ select
     lead(items.cutoffpercentage, 1, 1000) over (
         partition by parent.id order by items.cutoffpercentage
     )
-    - 0.1 as max_cutoffpercentage
+    - 0.1 as max_cutoffpercentage,
 from {{ ref("stg_powerschool__gradescaleitem") }} as parent
 inner join
     {{ ref("stg_powerschool__gradescaleitem") }} as items

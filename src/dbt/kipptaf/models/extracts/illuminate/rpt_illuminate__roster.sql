@@ -1,4 +1,5 @@
-select
+select  -- noqa: disable=ST06
+    -- noqa: disable=RF05
     s.student_number as `01 Student ID`,
 
     null as `02 SSID`,
@@ -27,7 +28,7 @@ select
     end as `13 Grade Level ID`,
     concat(s.academic_year, '-', (s.academic_year + 1)) as `14 Academic Year`,
 
-    null as `15 Session Type ID`
+    null as `15 Session Type ID`,
 from {{ ref("base_powerschool__student_enrollments") }} as s
 inner join
     {{ ref("base_powerschool__course_enrollments") }} as enr

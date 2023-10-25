@@ -44,14 +44,14 @@ select
     sr.membershipshare,
     sr.track,
 
-    ifnull(f.dflt_att_mode_code, '-1') as dflt_att_mode_code,
-    ifnull(f.dflt_conversion_mode_code, '-1') as dflt_conversion_mode_code,
-
     t.yearid,
+
+    coalesce(f.dflt_att_mode_code, '-1') as dflt_att_mode_code,
+    coalesce(f.dflt_conversion_mode_code, '-1') as dflt_conversion_mode_code,
 
     if(p.value like 'P', 'Present', 'Absent') as att_calccntpresentabsent,
 
-    cast(p2.value as string) as att_intervalduration
+    safe_cast(p2.value as string) as att_intervalduration,
 from union_relations as sr
 left join {{ ref("stg_powerschool__fte") }} as f on sr.fteid = f.id
 left join

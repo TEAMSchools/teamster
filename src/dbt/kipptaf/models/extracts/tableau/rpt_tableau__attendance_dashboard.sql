@@ -4,8 +4,6 @@ with
             mem.studentid,
             mem.calendardate,
             mem.membershipvalue,
-            cast(mem.attendancevalue as numeric) as is_present,
-            abs(mem.attendancevalue - 1) as is_absent,
 
             co.student_number,
             co.lastfirst,
@@ -28,6 +26,12 @@ with
             enr.teacher_lastfirst as teacher_name,
 
             att.att_code,
+
+            dt.name as term,
+
+            cast(mem.attendancevalue as numeric) as is_present,
+            abs(mem.attendancevalue - 1) as is_absent,
+
             if(att.att_code in ('T', 'T10'), 0.0, 1.0) as pct_ontime_running,
             if(
                 att.att_code in ('OS', 'OSS', 'OSSP', 'SHI'), 1.0, 0.0
@@ -40,8 +44,6 @@ with
             if(sp.studentid is not null, 1, 0) as is_counselingservices,
 
             if(sa.studentid is not null, 1, 0) as is_studentathlete,
-
-            dt.name as term,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
