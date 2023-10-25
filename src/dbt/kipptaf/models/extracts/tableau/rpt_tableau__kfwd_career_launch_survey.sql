@@ -23,8 +23,8 @@ with
             c.gender,
             c.ethnicity,
 
-            extract(month from sd.actual_end_date) as actual_end_date_month,
-            extract(year from sd.actual_end_date) as actual_end_date_year,
+            extract(month from e.actual_end_date) as actual_end_date_month,
+            extract(year from e.actual_end_date) as actual_end_date_year,
 
             row_number() over (
                 partition by e.student order by e.actual_end_date desc
