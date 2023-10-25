@@ -3,56 +3,59 @@
 Read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
 
 In this guide you will get an overview of the contribution workflow from opening an issue, creating
-a PR, reviewing, and merging the PR.
+a pull request, reviewing, and merging the pull request.
 
 ## New contributor guide
 
-To get an overview of the project, read the [README](/) file. Here are some resources to help you
-get started with open source contributions:
+Here are some resources to help you get started with open source contributions:
 
-- [Finding ways to contribute to open source on GitHub](https://docs.github.com/en/get-started/exploring-projects-on-github/finding-ways-to-contribute-to-open-source-on-github)
 - [Set up Git](https://docs.github.com/en/get-started/quickstart/set-up-git)
 - [GitHub flow](https://docs.github.com/en/get-started/quickstart/github-flow)
 - [Collaborating with pull requests](https://docs.github.com/en/github/collaborating-with-pull-requests)
 
 ## Getting started
 
-To navigate our codebase with confidence, see
-[the introduction to working in the docs repository](/contributing/working-in-docs-repository.md)
-:confetti_ball:. For more information on how we write our markdown files, see
-[the GitHub Markdown reference](contributing/content-markup-reference.md).
+### Account setup
 
-Check to see what [types of contributions](/contributing/types-of-contributions.md) we accept before
-making changes. Some of them don't even require writing a single line of code :sparkles:.
+- [ ] Google Workspace
+- [ ] dbt Cloud
+- [ ] GitHub
 
-## Issues
+To access our BigQuery project, you must be a member of either:
 
-### Create a new issue
+- TEAMster Analysts KTAF
+- TEAMster Analysts NJ
 
-If you spot a problem with the docs,
-[search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments).
-If a related issue doesn't exist, you can open a new issue using a relevant
-[issue form](https://github.com/github/docs/issues/new/choose).
+### dbt Cloud configuration
+
+- dataset name
+- sqlfmt
 
 ## Make Changes
 
 ### Make changes in dbt Cloud
 
-1. "Create branch"
-2. Make your changes
-3. Commit your changes
+#### Create a branch
 
-### Commit your update
+https://docs.getdbt.com/docs/collaborate/git/version-control-basics
 
-Commit the changes once you are happy with them. Don't forget to
-[self-review](/contributing/self-review.md) to speed up the review process:zap:.
+![Alt text](../images/dbt-cloud/version-control.png)
+
+#### Make your changes
+
+- naming conventions
+- Format button
+
+#### Commit your changes
+
+...
 
 ### Pull Request
 
-When you're finished with the changes, create a pull request, also known as a PR.
+When you're finished with the changes, create a **Pull Request** ("PR").
 
-1. On dbt Cloud: "Create a pull request on GitHub"
-2. On GitHub: "Create pull request"
+1. On dbt Cloud, click "Create a pull request on GitHub"
+2. On the GitHub page that pops up, click "Create pull request"
 
 - Fill the "Ready for review" template so that we can review your PR. This template helps reviewers
   understand your changes as well as the purpose of your pull request.
@@ -66,6 +69,19 @@ When you're finished with the changes, create a pull request, also known as a PR
 - If you run into any merge issues, checkout this
   [git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
   conflicts and other issues.
+
+You should always review your own PR first. For content changes, make sure that you:
+
+- [ ] Confirm that the changes meet the user experience and goals outlined in the content design
+      plan (if there is one).
+- [ ] Compare your pull request's source changes to staging to confirm that the output matches the
+      source and that everything is rendering as expected. This helps spot issues like typos,
+      content that doesn't follow the style guide, or content that isn't rendering due to versioning
+      problems. Remember that lists and tables can be tricky.
+- [ ] Review the content for technical accuracy.
+- [ ] Copy-edit the changes for grammar, spelling, and adherence to the
+      [style guide](https://github.com/github/docs/blob/main/contributing/content-style-guide.md).
+- [ ] If there are any failing checks in your PR, troubleshoot them until they're all passing.
 
 ### Your PR is merged
 
