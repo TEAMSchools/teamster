@@ -320,7 +320,7 @@ select
     b.benchmark_academic_color,
     b.benchmark_financial_color,
     b.benchmark_ppp_color,
-    
+
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
