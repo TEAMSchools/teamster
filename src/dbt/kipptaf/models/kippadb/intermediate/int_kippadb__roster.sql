@@ -50,7 +50,7 @@ with
             || c.contact_mailing_state
             || ' '
             || c.contact_mailing_postal_code as contact_mailing_address,
-            ifnull(
+            coalesce(
                 c.contact_current_kipp_student, 'Missing from Salesforce'
             ) as contact_current_kipp_student,
             (
@@ -58,10 +58,10 @@ with
                 - extract(year from c.contact_actual_hs_graduation_date)
             ) as years_out_of_hs,
 
-            ifnull(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
-            ifnull(c.contact_first_name, se.first_name) as first_name,
-            ifnull(c.contact_last_name, se.last_name) as last_name,
-            ifnull(
+            coalesce(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
+            coalesce(c.contact_first_name, se.first_name) as first_name,
+            coalesce(c.contact_last_name, se.last_name) as last_name,
+            coalesce(
                 c.contact_last_name || ', ' || c.contact_first_name, se.lastfirst
             ) as lastfirst,
             if(
@@ -93,6 +93,6 @@ with
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 
-select *
+select *,
 from roster
 where ktc_status is not null

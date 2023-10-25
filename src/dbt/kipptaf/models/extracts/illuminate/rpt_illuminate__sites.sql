@@ -1,4 +1,5 @@
-select
+select  -- noqa: disable=ST06
+    -- noqa: disable=RF05
     school_number as `01 Site ID`,
     name as `02 Site Name`,
     school_number as `03 State Site ID`,
@@ -35,6 +36,6 @@ select
     null as `12 Local Site Code`,
     null as `13 Annual Hours Of Instruction`,
     null as `14 Annual Number Of Weeks Of Instruction`,
-    null as `15 Parent Site ID`
+    null as `15 Parent Site ID`,
 from {{ ref("stg_powerschool__schools") }}
 where state_excludefromreporting = 0

@@ -9,7 +9,6 @@ with
             e.school_abbreviation,
             e.students_dcid,
             e.student_number,
-            safe_cast(e.state_studentnumber as int) as state_studentnumber,
             e.lastfirst,
             e.first_name,
             e.last_name,
@@ -29,7 +28,9 @@ with
             s.teacher_lastfirst,
             s.sections_external_expression,
 
-            ifnull(adb.kipp_hs_class, e.cohort) as ktc_cohort,
+            safe_cast(e.state_studentnumber as int) as state_studentnumber,
+
+            coalesce(adb.kipp_hs_class, e.cohort) as ktc_cohort,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -56,12 +57,11 @@ with
             localstudentidentifier,
             statestudentidentifier,
             subject,
+            testcode,
+            testscalescore,
             case
                 when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
             end as discipline,
-            testcode,
-            testscalescore,
-
         from {{ ref("stg_pearson__njgpa") }}
         where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
     ),
@@ -87,6 +87,7 @@ with
         select
             contact,
             test_type,
+            score,
             case
                 when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
                 then 'ELA'
@@ -103,7 +104,6 @@ with
                 when score_type = 'sat_ebrw'
                 then 'EBRW'
             end as subject,
-            score,
             case
                 when score_type in ('act_reading', 'act_math') and score >= 17
                 then true
@@ -137,7 +137,7 @@ with
             a.testcode as test_type,
             a.discipline,
             a.subject,
-            safe_cast(a.testscalescore as string) as value,
+            safe_cast(a.testscalescore as string) as `value`,
             if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
 
             'State Assessment' as grad_eligible_type,
@@ -152,7 +152,7 @@ with
             a.test_type,
             a.discipline,
             a.subject,
-            safe_cast(a.score as string) as value,
+            safe_cast(a.score as string) as `value`,
             a.met_pathway_requirement,
 
             'ACT/SAT' as grad_eligible_type,
@@ -169,7 +169,7 @@ with
                 a.subject when 'ela' then 'ELA' when 'math' then 'Math'
             end as discipline,
             case a.subject when 'ela' then 'ELA' when 'math' then 'Math' end as subject,
-            a.values_column as value,
+            a.values_column as `value`,
             a.met_requirement as met_pathway_requirement,
             case
                 when a.is_iep_eligible

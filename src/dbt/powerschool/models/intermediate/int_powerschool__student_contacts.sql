@@ -5,11 +5,13 @@ select
     c.relationship_type,
     c.isemergency,
     c.schoolpickupflg,
-    concat(c.firstname, ' ', c.lastname) as contact_name,
 
     pc.contact_category,
     pc.contact,
     pc.priority_order as contact_priority_order,
+
+    concat(c.firstname, ' ', c.lastname) as contact_name,
+
     if(
         pc.contact_category in ('Email', 'Address'),
         lower(pc.contact_category),

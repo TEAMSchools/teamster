@@ -11,6 +11,6 @@ select
     row_number() over (
         partition by fr._dagster_partition_key, r.respondentemail
         order by r.lastsubmittedtime desc
-    ) as rn_form_respondent_submitted_desc
+    ) as rn_form_respondent_submitted_desc,
 from {{ source("google_forms", "src_google_forms__responses") }} as fr
 cross join unnest(responses) as r

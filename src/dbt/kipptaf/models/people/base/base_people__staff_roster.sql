@@ -1,8 +1,8 @@
 {%- set ref_staff_history = ref("base_people__staff_roster_history") -%}
 
 with
-    staff_roster_active as (
-        select * from {{ ref_staff_history }} where work_assignment__fivetran_active
+    staff_roster_active as (  -- noqa: ST03
+        select *, from {{ ref_staff_history }} where work_assignment__fivetran_active
     ),
 
     deduplicate as (

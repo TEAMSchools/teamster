@@ -46,7 +46,7 @@ select
     s.question_short_name,
     s.avg_weighted_scores,
 
-    w.item_weight / 10.0 as percent_weight,
     w.question_title_english as question_title,
+    w.item_weight / 10.0 as percent_weight,
 from avg_scores as s
 inner join score_weights as w on s.question_short_name = w.question_short_name

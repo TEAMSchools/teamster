@@ -25,7 +25,7 @@ with
                 true,
                 false
             ) as is_current,
-        from {{ ref("base_powerschool__final_grades") }} as fg
+        from {{ ref("base_powerschool__final_grades") }}
         where exclude_from_gpa = 0 and potential_credit_hours > 0
 
         union all
@@ -49,9 +49,7 @@ with
             if(sg.percent is null, null, c.credit_hours) as potential_credit_hours_term,
             if(y1.percent is null, null, c.credit_hours) as potential_credit_hours_y1,
 
-            case
-                when sg.storecode in ('Q4', 'T3') then true else false
-            end as is_current,
+            if(sg.storecode in ('Q4', 'T3'), true, false) as is_current,
         from {{ ref("stg_powerschool__storedgrades") }} as sg
         inner join
             {{ ref("stg_powerschool__courses") }} as c

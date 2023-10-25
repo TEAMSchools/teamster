@@ -1,13 +1,13 @@
 {% set source_table = source("illuminate", "agg_student_responses_group") %}
 
 with
-    source as (
-        select *
+    source as (  -- noqa: ST03
+        select *,
         from {{ source_table }}
         where
             points_possible > 0
             and student_assessment_id not in (
-                select student_assessment_id
+                select student_assessment_id,
                 from {{ source("illuminate", "students_assessments_archive") }}
             )
     ),

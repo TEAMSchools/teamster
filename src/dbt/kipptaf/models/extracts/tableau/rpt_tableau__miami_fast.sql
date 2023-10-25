@@ -12,7 +12,7 @@ with
             'Math' as iready_subject,
             'Mathematics' as fast_subject,
             'MATH' as ps_credittype,
-            'Mathematics' as illuminate_subject
+            'Mathematics' as illuminate_subject,
     ),
 
     iready_lessons as (
@@ -24,7 +24,7 @@ with
         from {{ ref("stg_iready__personalized_instruction_by_lesson") }}
         where
             completion_date in (
-                select date_value
+                select date_value,
                 from
                     unnest(
                         generate_date_array(
@@ -80,7 +80,6 @@ select
 
     ir.total_lessons,
     ir.lessons_passed,
-    round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
     ia.qaf1,
     ia.qaf2,
@@ -108,7 +107,6 @@ select
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
-    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
 
     cwf.sublevel_name as fast_sublevel_name,
     cwf.sublevel_number as fast_sublevel_number,
@@ -116,6 +114,10 @@ select
     fs.standard as standard_domain,
     fs.performance as mastery_indicator,
     fs.performance as mastery_number,
+
+    round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
+
+    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
 
     if(
         not co.is_retained_year
@@ -136,7 +138,7 @@ select
     ) as rn_test_fast,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
-cross join unnest(["PM1", "PM2", "PM3"]) as administration_window
+cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number

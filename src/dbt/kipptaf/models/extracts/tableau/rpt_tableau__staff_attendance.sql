@@ -1,6 +1,6 @@
 with
     worked_holiday_edit as (
-        select distinct location, transaction_apply_date
+        select distinct location, transaction_apply_date,
         from {{ ref("stg_adp_workforce_manager__time_details") }}
         where transaction_type = 'Worked Holiday Edit'
     ),
@@ -41,8 +41,6 @@ select
     td.transaction_type,
     td.transaction_apply_to,
     td.hours,
-    if(td.transaction_in_exceptions = 'Late In', 1, 0) as late_status,
-    if(td.transaction_out_exceptions = 'Early Out', 1, 0) as early_out_status,
 
     sr.employee_number as df_employee_number,
     sr.preferred_name_lastfirst as preferred_name,
@@ -72,6 +70,9 @@ select
     asp.balance_sick as sick_balance,
     asp.balance_unused_pto as unused_pto_balance,
     asp.balance_vacation as vacation_balance,
+
+    if(td.transaction_in_exceptions = 'Late In', 1, 0) as late_status,
+    if(td.transaction_out_exceptions = 'Early Out', 1, 0) as early_out_status,
 
     coalesce(
         td.transaction_in_exceptions,

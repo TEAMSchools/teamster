@@ -2,6 +2,8 @@ select
     swd.local_student_id as student_number,
     swd.date_administered,
     swd.field_label as word,
+
+    rt.name as term_name,
     case
         swd.`value`
         when 'yes'
@@ -14,8 +16,6 @@ select
     case
         swd.`value` when 'yes' then 1 when 'retested' then 1 when 'no' then 0
     end as is_mastery,
-
-    rt.name as term_name,
 from {{ ref("base_illuminate__repository_data") }} as swd
 inner join
     {{ ref("stg_reporting__terms") }} as rt

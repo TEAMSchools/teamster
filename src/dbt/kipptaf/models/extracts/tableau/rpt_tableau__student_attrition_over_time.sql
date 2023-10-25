@@ -21,7 +21,6 @@ select
     y1.grade_level,
     y1.entrydate,
     y1.exitdate as y1_exitdate,
-    regexp_extract(y1._dbt_source_relation, r'(kipp\w+)_') as db_name,
 
     s.exitdate,
     s.exitcode,
@@ -30,6 +29,8 @@ select
     d.date_day as `date`,
 
     y2.entrydate as y2_entrydate,
+
+    regexp_extract(y1._dbt_source_relation, r'(kipp\w+)_') as db_name,
 
     case
         /* graduates != attrition */
@@ -57,5 +58,5 @@ left join
 inner join
     attrition_dates as d
     on y1.academic_year = d.attrition_year
-    and d.date_day <= current_datetime("America/New_York")
+    and d.date_day <= current_datetime('{{ var("local_timezone") }}')
 where date(y1.academic_year, 10, 1) between y1.entrydate and y1.exitdate

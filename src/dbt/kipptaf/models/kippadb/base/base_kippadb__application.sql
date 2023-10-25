@@ -11,7 +11,7 @@ with
                 )
             }},
 
-            ifnull(
+            coalesce(
                 app.starting_application_status, app.application_status
             ) as starting_application_status,
 

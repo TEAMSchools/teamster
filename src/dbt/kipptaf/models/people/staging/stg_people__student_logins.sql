@@ -31,18 +31,18 @@
                 format_date('%d', dob) as dob_day,
                 format_date('%y', dob) as dob_year,
                 regexp_replace(
-                    normalize(lower(first_name), nfd), r"[\pM\W]", ''
+                    normalize(lower(first_name), nfd), r'[\pM\W]', ''
                 ) as first_name_clean,
                 regexp_replace(
                     normalize(
                         lower(regexp_replace(last_name, r'\s[IiVvXxJjRr\.]*$', '')), nfd
                     ),
-                    r"[\pM\W]",
+                    r'[\pM\W]',
                     ''
                 ) as last_name_clean,
             from {{ ref("stg_powerschool__students") }}
             where
-                student_number not in (select student_number from {{ this }})
+                student_number not in (select student_number, from {{ this }})
                 and dob is not null
                 and first_name is not null
                 and last_name is not null
@@ -115,7 +115,7 @@
                     order by priority_order asc, student_number asc
                 ) as rn_username,
             from username_options
-            where username not in (select username from {{ this }})
+            where username not in (select username, from {{ this }})
         ),
 
         username_password as (
@@ -127,7 +127,7 @@
                 if(
                     length(concat(c.last_name_clean, c.dob_year)) < 8,
                     left(concat(c.last_name_clean, c.dob_year, c.student_number), 8),
-                    concat(left(c.last_name_clean, 18), c.dob_year)  -- PS has a 20 char limit
+                    concat(left(c.last_name_clean, 18), c.dob_year)  /* 20 char limit */
                 ) as default_password,
             from components as c
             left join

@@ -1,4 +1,5 @@
 select
+    -- noqa: disable=RF05
     worker_id as `Associate ID`,
     employee_number as `Position ID`,
     preferred_name_given_name as `First Name`,
@@ -8,12 +9,14 @@ select
     department_assigned_name as `Business Unit Description`,
     department_assigned_name as `Home Department Description`,
     job_title as `Job Title Description`,
+
+    null as `Preferred Name`,
+
     safe_cast(report_to_employee_number as string) as `Business Unit Code`,
     format_date('%m/%d/%Y', worker_rehire_date) as `Rehire Date`,
     format_date('%m/%d/%Y', worker_termination_date) as `Termination Date`,
     format_date('%m/%d/%Y', birth_date) as `Birth Date`,
     if(is_prestart, 'Active', assignment_status) as `Position Status`,
-    null as `Preferred Name`,
 from {{ ref("base_people__staff_roster") }}
 where
     coalesce(worker_rehire_date, worker_original_hire_date)
