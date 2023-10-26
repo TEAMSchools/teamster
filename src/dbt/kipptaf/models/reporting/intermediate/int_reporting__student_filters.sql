@@ -26,7 +26,7 @@ with
             st.local_student_id as student_number,
             right(
                 left(g.group_name, length(g.group_name) - 8), length(g.group_name) - 19
-            ) as subject
+            ) as subject,
         from {{ source("illuminate", "group_student_aff") }} as s
         inner join
             {{ source("illuminate", "groups") }} as g
@@ -60,12 +60,12 @@ with
                     when testperformancelevel > 3
                     then 'At/Above'
                 end
-            ) as njsla_proficiency
+            ) as njsla_proficiency,
         from {{ ref("stg_pearson__njsla") }}
     ),
 
     tutoring_nj as (
-        select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject
+        select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject,
         from {{ ref("int_powerschool__spenrollments") }}
         where
             (current_date('America/New_York') between enter_date and exit_date)
