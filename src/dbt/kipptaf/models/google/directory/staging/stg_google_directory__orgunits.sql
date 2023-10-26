@@ -8,5 +8,5 @@ select
     ous.orgunitpath as `org_unit_path`,
     ous.parentorgunitid as `parent_org_unit_id`,
     ous.parentorgunitpath as `parent_org_unit_path`,
-from {{ source("google_directory", "src_google_directory__orgunits") }} as o
+from {{ source("google_directory", "src_google_directory__orgunits") }} as o  -- noqa: AL05, LT05
 cross join unnest(o.organizationunits) as ous

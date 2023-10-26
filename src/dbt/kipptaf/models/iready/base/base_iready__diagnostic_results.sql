@@ -103,27 +103,9 @@ select
     dr.most_recent_lexile_range,
     dr.most_recent_rush_flag,
     dr.rn_subj_year,
-    round(
-        dr.most_recent_diagnostic_gain / dr.annual_typical_growth_measure, 2
-    ) as progress_to_typical,
-    round(
-        dr.most_recent_diagnostic_gain / dr.annual_stretch_growth_measure, 2
-    ) as progress_to_stretch,
 
     lc.region,
     lc.abbreviation as school_abbreviation,
-
-    right(rt.code, 1) as round_number,
-    coalesce(rt.name, 'Outside Round') as test_round,
-    case
-        rt.name
-        when 'BOY'
-        then 'Fall ' || left(dr.academic_year, 4)
-        when 'MOY'
-        then 'Winter ' || right(dr.academic_year, 4)
-        when 'EOY'
-        then 'Spring ' || right(dr.academic_year, 4)
-    end as test_round_date,
 
     cwo.sublevel_name as projected_sublevel,
     cwo.sublevel_number as projected_sublevel_number,
@@ -138,6 +120,25 @@ select
     cws.sublevel_number as projected_sublevel_number_stretch,
 
     cwp.scale_low as proficent_scale_score,
+
+    round(
+        dr.most_recent_diagnostic_gain / dr.annual_typical_growth_measure, 2
+    ) as progress_to_typical,
+    round(
+        dr.most_recent_diagnostic_gain / dr.annual_stretch_growth_measure, 2
+    ) as progress_to_stretch,
+
+    right(rt.code, 1) as round_number,
+    coalesce(rt.name, 'Outside Round') as test_round,
+    case
+        rt.name
+        when 'BOY'
+        then 'Fall ' || left(dr.academic_year, 4)
+        when 'MOY'
+        then 'Winter ' || right(dr.academic_year, 4)
+        when 'EOY'
+        then 'Spring ' || right(dr.academic_year, 4)
+    end as test_round_date,
 
     if(
         cwp.scale_low - dr.most_recent_overall_scale_score <= 0,

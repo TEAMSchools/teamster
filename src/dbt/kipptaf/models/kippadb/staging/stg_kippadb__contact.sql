@@ -285,5 +285,5 @@ select
 
     safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
     safe_cast(school_specific_id__c as int) as school_specific_id,
-from {{ source("kippadb", "contact") }} as c
+from {{ source("kippadb", "contact") }}
 where not isdeleted

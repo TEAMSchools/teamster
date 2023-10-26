@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     worker_id as associate_id,
     preferred_name_given_name as preferred_first_name,
     preferred_name_family_name as preferred_last_name,

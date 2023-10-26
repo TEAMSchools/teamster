@@ -19,7 +19,7 @@ select
                         when component = 'test'
                         then 'Subscore'
                         else initcap(component)
-                    end
+                    end,
                 from unnest(split(score_type, '_')) as component
                 where
                     component

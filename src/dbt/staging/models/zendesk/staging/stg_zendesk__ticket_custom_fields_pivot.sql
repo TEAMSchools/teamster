@@ -15,7 +15,7 @@ with
             on cfo._airbyte_ticket_fields_hashid = tf._airbyte_ticket_fields_hashid
     )
 
-select *
+select _airbyte_tickets_hashid, `name`, title,
 from
     custom_fields pivot (
         max(`name`) for title in (

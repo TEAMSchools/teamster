@@ -2,12 +2,11 @@ with
     ou_unpivot as (
         select
             id,
-            lower(regexp_replace(type_short_name, r'\W', '_')) as type_short_name,
             name_column,
             values_column,
+            lower(regexp_replace(type_short_name, r'\W', '_')) as type_short_name,
         from
-            {{ source("adp_workforce_now", "organizational_unit") }}
-            unpivot exclude nulls(
+            {{ source("adp_workforce_now", "organizational_unit") }} unpivot (
                 values_column for name_column
                 in (`name`, name_long_name, name_short_name)
             )
@@ -47,7 +46,7 @@ with
         inner join ou_unpivot as ouu on ur.id = ouu.id
     )
 
-select *
+select *,
 from
     wou_join pivot (
         max(values_column) for input_column in (

@@ -3,8 +3,8 @@ with
         select
             first_name as `givenName`,
             last_name as `familyName`,
-            to_hex(sha1(student_web_password)) as `password`,
             student_email_google as `primaryEmail`,
+            to_hex(sha1(student_web_password)) as `password`,
             concat('group-students-', lower(region), '@teamstudents.org') as `groupKey`,
             if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
             if(enroll_status = 0, false, true) as `suspended`,
@@ -56,6 +56,14 @@ with
             s.`password`,
             s.`changePasswordAtNextLogin`,
             s.`groupKey`,
+
+            u.name__given_name as given_name_target,
+            u.name__family_name as family_name_target,
+            u.suspended as suspended_target,
+            u.org_unit_path as org_unit_path_target,
+
+            'SHA-1' as `hashFunction`,
+
             concat(
                 '/Students/',
                 case
@@ -66,13 +74,6 @@ with
                     else s.ou_region || '/' || s.ou_school_name
                 end
             ) as `orgUnitPath`,
-
-            'SHA-1' as `hashFunction`,
-
-            u.name__given_name as given_name_target,
-            u.name__family_name as family_name_target,
-            u.suspended as suspended_target,
-            u.org_unit_path as org_unit_path_target,
             if(u.primary_email is not null, true, false) as `matched`,
         from students as s
         left join
@@ -114,6 +115,6 @@ with
         from with_google
     )
 
-select *
+select *,
 from final
 where is_create or is_update

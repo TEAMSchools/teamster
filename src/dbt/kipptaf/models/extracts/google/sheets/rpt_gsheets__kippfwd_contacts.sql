@@ -1,4 +1,5 @@
-select
+select  -- noqa: disable=ST06
+    -- noqa: disable=RF05
     ktc.contact_currently_enrolled_school as `Currently Enrolled School`,
     ktc.last_name as `Last Name`,
     ktc.first_name as `First Name`,
@@ -30,7 +31,7 @@ select
     end as `Type`,
 
     null as `Category`,
-    null as `Current Category Ranking`
+    null as `Current Category Ranking`,
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join
     {{ ref("stg_powerschool__students") }} as s on ktc.student_number = s.student_number

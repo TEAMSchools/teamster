@@ -1,1 +1,1 @@
-select * from {{ source("assessments", "src_assessments__academic_goals") }}
+select *, from {{ source("assessments", "src_assessments__academic_goals") }}

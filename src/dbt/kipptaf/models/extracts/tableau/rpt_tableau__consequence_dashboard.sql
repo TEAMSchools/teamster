@@ -1,4 +1,3 @@
-{# {{ config(enabled=False) }}#}
 with
     suspension_att as (
         select
@@ -12,6 +11,7 @@ with
     )
 
 select
+    -- noqa: disable=RF05
     co.student_number,
     co.state_studentnumber,
     co.lastfirst,
@@ -46,8 +46,6 @@ select
     dli.infraction as incident_type,
     dli.is_referral,
     dli.category as referral_category,
-    concat(dli.create_last, ', ', dli.create_first) as created_staff,
-    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
 
     dlp.penalty_name as penaltyname,
     dlp.start_date as startdate,
@@ -68,6 +66,9 @@ select
     att.days_suspended_att,
 
     'Referral' as dl_category,
+
+    concat(dli.create_last, ', ', dli.create_first) as created_staff,
+    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__incidents") }} as dli

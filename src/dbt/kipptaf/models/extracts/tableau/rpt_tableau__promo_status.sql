@@ -12,7 +12,6 @@ select
     co.gender,
     co.is_retained_year,
     co.is_retained_ever,
-    if(co.spedlep like 'SPED%', 'Has IEP', co.spedlep) as iep_status,
 
     rt.name as term,
     rt.is_current,
@@ -27,6 +26,8 @@ select
     ps.attendance_status,
     ps.academic_status,
     ps.overall_status as promo_status_overall,
+
+    if(co.spedlep like 'SPED%', 'Has IEP', co.spedlep) as iep_status,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as rt

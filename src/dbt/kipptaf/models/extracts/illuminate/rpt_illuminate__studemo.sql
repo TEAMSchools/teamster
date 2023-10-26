@@ -1,4 +1,5 @@
-select
+select  -- noqa: disable=ST06
+    -- noqa: disable=RF05
     student_number as `01 Import Student ID`,
     state_studentnumber as `02 State Student ID`,
     last_name as `03 Last Name`,
@@ -88,7 +89,7 @@ select
     null as `61 Graduation Requirement Year`,
     null as `62 Next School Site ID`,
     null as `63 Prior District`,
-    null as `64 Prior School`
+    null as `64 Prior School`,
 from {{ ref("base_powerschool__student_enrollments") }}
 where
     academic_year = {{ var("current_academic_year") }}

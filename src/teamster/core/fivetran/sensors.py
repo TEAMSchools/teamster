@@ -18,7 +18,7 @@ from dagster_gcp import BigQueryResource
 def render_fivetran_audit_query(dataset, done):
     return f"""
         select distinct table_name
-        from `fivetran_log_stg_fivetran_log.stg_fivetran_log__incremental_mar`
+        from fivetran_log.incremental_mar
         where schema_name = '{dataset}'
         and updated_at >= '{done}'
         and (incremental_rows != 0 or free_Type = 'FREE_RESYNC')

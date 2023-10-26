@@ -34,6 +34,16 @@ with
             co.lunch_balance,
             co.dob,
             co._dbt_source_relation,
+
+            s.sched_nextyeargrade,
+
+            ktc.contact_owner_name as ktc_counselor_name,
+            ktc.contact_owner_phone as ktc_counselor_phone,
+            ktc.contact_owner_email as ktc_counselor_email,
+
+            gpa.`GPA_Y1`,
+            gpa.gpa_term,
+
             co.student_web_id || '.fam' as family_access_id,
             co.student_web_id || '@teamstudents.org' as student_email,
             concat(co.student_web_password, 'kipp') as student_web_password,
@@ -53,15 +63,6 @@ with
                 when 3
                 then 'Graduated'
             end as enroll_status,
-
-            s.sched_nextyeargrade,
-
-            ktc.contact_owner_name as ktc_counselor_name,
-            ktc.contact_owner_phone as ktc_counselor_phone,
-            ktc.contact_owner_email as ktc_counselor_email,
-
-            gpa.`GPA_Y1`,
-            gpa.gpa_term,
 
             if(co.schoolid = 999999, ug.schoolid, co.schoolid) as schoolid,
         from {{ ref("base_powerschool__student_enrollments") }} as co
