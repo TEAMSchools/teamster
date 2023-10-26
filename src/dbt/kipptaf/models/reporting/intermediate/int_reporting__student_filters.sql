@@ -75,11 +75,9 @@ select
     sj.iready_subject,
     sj.illuminate_subject_area,
     sj.powerschool_credittype,
-    coalesce(nj.subject, 'Not Bucket 2') as bucket_two,
+    if(nj.subject is not null, true, false) as bucket_two,
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
-    case
-        when t.iready_subject is not null then 'Tutored' else 'Not Tutored'
-    end as tutoring_nj
+    if(t.iready_subject is not null, true, false) as tutoring_nj
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
