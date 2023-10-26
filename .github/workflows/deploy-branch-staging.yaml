@@ -5,6 +5,8 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - src/teamster/**
     types:
       - opened
       - synchronize

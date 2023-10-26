@@ -41,7 +41,7 @@ with
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
-                select id
+                select id,
                 from {{ ref("stg_kippadb__record_type") }}
                 where name = 'Cumulative College'
             )
@@ -110,6 +110,26 @@ with
             on e.id = fa.enrollment
             and fa.status = 'Offered'
         where e.rn_matric = 1
+    ),
+
+    benchmark as (
+        select
+            contact,
+            academic_year,
+            benchmark_date,
+            benchmark_path,
+            enrollment as benchmark_school_enrolled,
+            date_completed as benchmark_completion_date,
+            benchmark_status as benchmark_status,
+            benchmark_period as benchmark_semester,
+            overall_score as benchmark_overall_color,
+            academic_color as benchmark_academic_color,
+            financial_color as benchmark_financial_color,
+            passion_purpose_plan_score as benchmark_ppp_color,
+            row_number() over (
+                partition by contact, academic_year order by benchmark_date desc
+            ) as rn_benchmark,
+        from {{ ref("stg_kippadb__college_persistence") }}
     )
 
 select
@@ -185,6 +205,9 @@ select
     ei.cte_status,
     ei.cte_actual_end_date,
     ei.hs_account_name,
+    ei.ugrad_adjusted_6_year_minority_graduation_rate,
+    ei.ugrad_act_composite_25_75,
+    ei.ugrad_competitiveness_ranking,
 
     apps.name as application_name,
     apps.account_type as application_account_type,
@@ -278,6 +301,26 @@ select
     gpa_spr.semester_gpa as spr_semester_gpa,
     gpa_spr.cumulative_gpa as spr_cumulative_gpa,
     gpa_spr.semester_credits_earned as spr_semester_credits_earned,
+
+    ln.comments as latest_as_comments,
+    ln.next_steps as latest_as_next_steps,
+
+    tier.tier,
+
+    gp.grad_plan_year as most_recent_grad_plan_year,
+
+    fa.unmet_need as unmet_need,
+
+    b.benchmark_school_enrolled,
+    b.benchmark_path,
+    b.benchmark_date,
+    b.benchmark_status,
+    b.benchmark_semester,
+    b.benchmark_overall_color,
+    b.benchmark_academic_color,
+    b.benchmark_financial_color,
+    b.benchmark_ppp_color,
+
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
@@ -306,15 +349,6 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
-
-    ln.comments as latest_as_comments,
-    ln.next_steps as latest_as_next_steps,
-
-    tier.tier,
-
-    gp.grad_plan_year as most_recent_grad_plan_year,
-
-    fa.unmet_need as unmet_need,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -353,6 +387,11 @@ left join
     and tier.rn_contact_year_desc = 1
 left join grad_plan as gp on c.contact_id = gp.contact and gp.rn_contact_desc = 1
 left join finaid as fa on c.contact_id = fa.student and fa.rn_finaid = 1
+left join
+    benchmark as b
+    on c.contact_id = b.contact
+    and ay.academic_year = b.academic_year
+    and b.rn_benchmark = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

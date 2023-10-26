@@ -11,7 +11,7 @@ with
         where rn_school = 1
     ),
 
-    ms_enr as (
+    ms_enr as (  -- noqa: ST03
         select student_number, exitdate, school_name, _dbt_source_relation,
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'MS'
@@ -103,6 +103,21 @@ select
     parcc.testperformancelevel as test_performance_level,
     parcc.testreadingcsem as test_standard_error,
     parcc.staffmemberidentifier as staff_member_identifier,
+
+    promo.attended_es,
+    promo.attended_ms,
+
+    ms.school_name as ms_attended,
+
+    pu.lastfirst as teacher_lastfirst,
+
+    null as pct_prof_parcc,
+    'PARCC' as test_type,
+
+    ext.percent_proficient_state * 100 as pct_prof_nj,
+    ext.percent_proficient_newark * 100 as pct_prof_nps,
+    ext.percent_proficient_camden * 100 as pct_prof_cps,
+
     case
         when parcc.studentwithdisabilities in ('IEP', 'Y', 'B')
         then 'SPED'
@@ -118,20 +133,6 @@ select
         when parcc.testperformancelevel < 4
         then 0.0
     end as is_proficient,
-
-    promo.attended_es,
-    promo.attended_ms,
-
-    ms.school_name as ms_attended,
-
-    pu.lastfirst as teacher_lastfirst,
-
-    ext.percent_proficient_state * 100 as pct_prof_nj,
-    ext.percent_proficient_newark * 100 as pct_prof_nps,
-    ext.percent_proficient_camden * 100 as pct_prof_cps,
-    null as pct_prof_parcc,
-
-    'PARCC' as test_type,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("stg_pearson__parcc") }} as parcc

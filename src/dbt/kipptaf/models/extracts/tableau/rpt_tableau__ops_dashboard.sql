@@ -105,8 +105,6 @@ select
     se.is_enrolled_oct01,
     se.is_enrolled_oct15,
     se.is_enrolled_recent,
-    null as is_enrolled_oct15_week,
-    null as is_enrolled_jan15_week,
     se.track,
     se.exit_code_kf,
     se.exit_code_ts,
@@ -129,6 +127,24 @@ select
     se.physical_therapy_services_yn,
     se.speech_lang_theapy_services_yn,
     se.other_related_services_yn,
+
+    cal.days_remaining,
+    cal.days_total,
+
+    t.target_enrollment,
+    t.target_enrollment_finance,
+    t.grade_band_ratio,
+    t.at_risk_and_lep_ratio,
+    t.at_risk_only_ratio,
+    t.lep_only_ratio,
+    t.sped_ratio,
+
+    null as is_enrolled_oct15_week,
+    null as is_enrolled_jan15_week,
+
+    coalesce(att_mem.n_attendance, 0) as n_attendance,
+    coalesce(att_mem.n_membership, 0) as n_membership,
+
     lead(se.schoolid, 1) over (
         partition by se.student_number order by se.academic_year asc
     ) as next_schoolid,
@@ -153,20 +169,6 @@ select
     lead(se.is_enrolled_oct15, 1, false) over (
         partition by se.student_number order by se.academic_year
     ) as is_enrolled_oct15_next,
-
-    cal.days_remaining,
-    cal.days_total,
-
-    ifnull(att_mem.n_attendance, 0) as n_attendance,
-    ifnull(att_mem.n_membership, 0) as n_membership,
-
-    t.target_enrollment,
-    t.target_enrollment_finance,
-    t.grade_band_ratio,
-    t.at_risk_and_lep_ratio,
-    t.at_risk_only_ratio,
-    t.lep_only_ratio,
-    t.sped_ratio,
 from {{ ref("base_powerschool__student_enrollments") }} as se
 left join
     {{ ref("int_powerschool__calendar_rollup") }} as cal

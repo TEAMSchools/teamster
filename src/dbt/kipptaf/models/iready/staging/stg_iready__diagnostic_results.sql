@@ -11,7 +11,7 @@ with
     ),
 
     with_code_location as (
-        select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
+        select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,  -- noqa: AM04, LT05
         from union_relations
     )
 

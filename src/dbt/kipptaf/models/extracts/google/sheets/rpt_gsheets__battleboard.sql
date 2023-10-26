@@ -61,7 +61,8 @@ select
     null as pm1,
     null as pm2,
     null as pm3,
-    null as `last year final`,
+    -- TODO: rename
+    null as `last year final`,  -- noqa: RF05
     null as intent_to_return,
     null as reason_for_leaving_primary,
     null as reason_for_leaving_secondary,

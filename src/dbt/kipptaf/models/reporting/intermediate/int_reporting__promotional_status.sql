@@ -4,6 +4,9 @@ with
             mem._dbt_source_relation,
             mem.studentid,
             mem.yearid,
+
+            rt.name as term_name,
+
             round(avg(mem.attendancevalue), 2) as ada_term_running,
             coalesce(sum(abs(mem.attendancevalue - 1)), 0) as n_absences_y1_running,
             case
@@ -13,8 +16,6 @@ with
                 when 'kippcamden'
                 then 36
             end as hs_at_risk_absences,
-
-            rt.name as term_name,
 
             case
                 when
@@ -179,7 +180,7 @@ with
                 else 'On-Track'
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join (select * from unnest(["Q1", "Q2", "Q3", "Q4"]) as term_name) as rt
+        cross join (select *, from unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name) as rt
         left join
             attendance as att
             on co.studentid = att.studentid

@@ -1,5 +1,6 @@
 /* KNJ specific departments = all CMO schools */
 select
+    -- noqa: disable=RF05
     sr.powerschool_teacher_number as `01 Local User ID`,
 
     sch.school_number as `02 Site ID`,
@@ -8,7 +9,7 @@ select
     concat(
         {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
     ) as `04 Academic Year`,
-    1 as `05 Session Type ID`
+    1 as `05 Session Type ID`,
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
@@ -29,7 +30,7 @@ select
     concat(
         {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
     ) as `04 Academic Year`,
-    1 as `05 Session Type ID`
+    1 as `05 Session Type ID`,
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_people__campus_crosswalk") }} as cc
@@ -51,7 +52,7 @@ select
     concat(
         {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
     ) as `04 Academic Year`,
-    1 as `05 Session Type ID`
+    1 as `05 Session Type ID`,
 from {{ ref("base_people__staff_roster") }}
 where
     assignment_status != 'Terminated'

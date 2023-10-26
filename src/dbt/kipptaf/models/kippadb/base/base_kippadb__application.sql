@@ -11,7 +11,7 @@ with
                 )
             }},
 
-            ifnull(
+            coalesce(
                 app.starting_application_status, app.application_status
             ) as starting_application_status,
 
@@ -65,6 +65,7 @@ with
 
             acc.name as account_name,
             acc.type as account_type,
+            acc.adjusted_6_year_minority_graduation_rate,
 
             enr.status as enrollment_status,
             enr.pursuing_degree_type as enrollment_pursuing_degree_type,

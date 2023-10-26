@@ -10,7 +10,7 @@ inner join
     {{ ref("stg_powerschool__students") }} as s
     on cc.studentid = s.id
     and {{ union_dataset_join_clause(left_alias="cc", right_alias="s") }}
-where cc.dateleft >= current_date("America/New_York")
+where cc.dateleft >= current_date('{{ var("local_timezone") }}')
 
 union all
 

@@ -1,1 +1,1 @@
-select * from {{ source("people", "src_people__campus_crosswalk") }}
+select *, from {{ source("people", "src_people__campus_crosswalk") }}
