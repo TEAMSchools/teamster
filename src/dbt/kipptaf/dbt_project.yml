@@ -75,6 +75,8 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+      deanslist:
+        +materialized: view
       google:
         sheets:
           +materialized: view
