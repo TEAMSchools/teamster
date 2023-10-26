@@ -76,10 +76,10 @@ select
     iu.last_week_end_date,
     iu.last_week_time_on_task_min,
 
-    -- if(sp.specprog_name is not null, true, false) as is_tutoring,
     f.tutoring_nj as is_tutoring,
     f.state_test_proficiency,
-    f.bucket_two as is_bucket_2
+    f.bucket_two as is_bucket_2,
+
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join unnest(['Reading', 'Math']) as subj
 cross join date_range as w

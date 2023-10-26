@@ -20,6 +20,7 @@ with
             ) as powerschool_credittype,
         from unnest(['Reading', 'Math']) as subject
     ),
+
     intervention_nj as (
         select
             st.local_student_id as student_number,
@@ -35,6 +36,7 @@ with
             {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
         where s.end_date is null or s.end_date < current_date('America/New_York')
     ),
+
     prev_yr_state_test as (
         select
             localstudentidentifier,
@@ -61,6 +63,7 @@ with
             ) as njsla_proficiency
         from {{ ref("stg_pearson__njsla") }}
     ),
+
     tutoring_nj as (
         select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject
         from {{ ref("int_powerschool__spenrollments") }}
@@ -68,6 +71,7 @@ with
             (current_date('America/New_York') between enter_date and exit_date)
             and specprog_name = 'Tutoring'
     )
+
 select
     co._dbt_source_relation,
     co.student_number,
@@ -77,7 +81,8 @@ select
     sj.powerschool_credittype,
     if(nj.subject is not null, true, false) as bucket_two,
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
-    if(t.iready_subject is not null, true, false) as tutoring_nj
+    if(t.iready_subject is not null, true, false) as tutoring_nj,
+
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
