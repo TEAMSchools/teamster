@@ -30,9 +30,6 @@ workspace:
   # Branch deployments servers have a default TTL of 24 hours.
   # The max code servers defaults to 25, and only applies to servers with TTL.
   serverTTL:
-    fullDeployments:
-      enabled: true
-      ttlSeconds: 300
     branchDeployments:
       ttlSeconds: 300
 
