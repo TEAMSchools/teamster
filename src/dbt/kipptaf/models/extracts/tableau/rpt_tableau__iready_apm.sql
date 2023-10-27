@@ -23,7 +23,8 @@ with
                 when 'KIPP Cooper Norcross Academy'
                 then 'Camden'
             end as region,
-            -- TODO: why???
+            -- end_date contains test window end date
+            -- this needs continuous dates
             coalesce(
                 lead(start_date, 1) over (
                     partition by academic_year, region order by code asc
@@ -79,7 +80,6 @@ select
     f.tutoring_nj as is_tutoring,
     f.state_test_proficiency,
     f.bucket_two as is_bucket_2,
-
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join unnest(['Reading', 'Math']) as subj
 cross join date_range as w
