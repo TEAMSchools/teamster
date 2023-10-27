@@ -15,13 +15,15 @@ from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 
 
-def render_fivetran_audit_query(dataset, done):
+def render_fivetran_audit_query(connector_id, timestamp):
     return f"""
-        select distinct table_name
-        from fivetran_log.incremental_mar
-        where schema_name = '{dataset}'
-        and updated_at >= '{done}'
-        and (incremental_rows != 0 or free_Type = 'FREE_RESYNC')
+        select distinct
+            json_extract_scalar(message_data, '$.table') as table_name,
+        from fivetran_log.log
+        where
+            connector_id = '{connector_id}'
+            and message_event = 'records_modified'
+            and _fivetran_synced >= '{timestamp}'
     """
 
 
@@ -78,15 +80,15 @@ def build_fivetran_sync_status_sensor(
                 for schema in connector_schemas:
                     # get fivetran_audit table
                     query = render_fivetran_audit_query(
-                        dataset=schema.replace(".", "_"),
-                        done=last_update.to_iso8601_string(),
+                        connector_id=connector_id,
+                        timestamp=last_update.to_iso8601_string(),
                     )
-                    # context.log.info(query)
+                    context.log.info(query)
 
                     query_job = bq.query(query=query)
 
                     for row in query_job.result():
-                        context.log.debug(row)
+                        context.log.info(row)
 
                         asset_key = AssetKey(
                             [code_location, *schema.split("."), row.table_name]
@@ -101,7 +103,7 @@ def build_fivetran_sync_status_sensor(
             return SensorResult(
                 run_requests=[
                     RunRequest(
-                        run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
+                        run_key=f"{context.sensor_name}_{pendulum.now().timestamp()}",
                         asset_selection=asset_keys,
                     )
                 ],

@@ -1,4 +1,5 @@
 {%- set surrogate_key_field_list = [
+    "assignment_status",
     "base_remuneration_annual_rate_amount_amount_value",
     "business_unit_assigned_name",
     "custom_wfmgr_accrual_profile",
@@ -24,7 +25,6 @@ with
         from {{ ref("snapshot_people__staff_roster") }}
         where
             position_id is not null
-            and assignment_status != 'Terminated'
             and coalesce(worker_rehire_date, worker_original_hire_date)
             <= current_date('{{ var("local_timezone") }}')
     ),
@@ -49,6 +49,7 @@ select
     dbt_valid_from,
     surrogate_key_prev,
     surrogate_key_new,
+    row_number() over (partition by associate_oid order by dbt_valid_from desc) as rn,
 from surrogate_key_lag
 where
     surrogate_key_new != surrogate_key_prev
