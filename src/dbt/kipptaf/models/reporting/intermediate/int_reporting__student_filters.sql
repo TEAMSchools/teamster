@@ -62,9 +62,9 @@ with
 
     prev_yr_iready as (
         select
-            academic_year_int + 1 as academic_year_plus,
             student_id,
             subject,
+            academic_year_int + 1 as academic_year_plus,
             case
                 when overall_relative_placement_int < 3
                 then 'Below/Far Below'
@@ -72,7 +72,7 @@ with
                 then 'Approaching'
                 when overall_relative_placement_int > 3
                 then 'At/Above'
-            end as iready_proficiency
+            end as iready_proficiency,
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
     )
