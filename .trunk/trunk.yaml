@@ -42,7 +42,7 @@ lint:
     - svgo@3.0.2
     - sqlfmt@0.21.0
     - isort@5.12.0
-    - ruff@0.1.2
+    - ruff@0.1.3
     - actionlint@1.6.26
     - black@23.9.1
     - git-diff-check
