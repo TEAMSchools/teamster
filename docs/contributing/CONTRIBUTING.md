@@ -21,10 +21,8 @@ Here are some resources to help you get started with open source contributions:
 - [ ] dbt Cloud
 - [ ] GitHub
 
-To access our BigQuery project, you must be a member of either:
-
-- TEAMster Analysts KTAF
-- TEAMster Analysts NJ
+To contribute on GitHub, you must be a member of ... To access our BigQuery project, you must be a
+member of TEAMster Analysts KTAF
 
 ### dbt Cloud configuration
 
