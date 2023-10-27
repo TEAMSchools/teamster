@@ -128,8 +128,8 @@ left join
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on co.student_number = f.student_number
-    and subj = f.iready_subject
     and co.academic_year = f.academic_year
+    and subj = f.iready_subject
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
