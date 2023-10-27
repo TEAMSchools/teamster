@@ -15,7 +15,8 @@ left join
     on sr.worker_id = wfm.worker_id
     and wfm.rn = 1
 where
-    sr.mail is not null
+    sr.associate_oid is not null
+    and sr.mail is not null
     and (
         sr.employee_number != sr.custom_employee_number
         or sr.employee_number != sr.custom_wfmgr_badge_number
