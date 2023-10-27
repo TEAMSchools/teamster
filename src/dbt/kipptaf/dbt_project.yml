@@ -85,9 +85,6 @@ models:
       tableau:
         +schema: tableau
         +materialized: view
-    facebook:
-      pages:
-        +schema: facebook_pages
     finance:
       +schema: finance
       staging:

@@ -9,13 +9,13 @@ from teamster.kipptaf.fivetran import assets
 from teamster.kipptaf.fivetran.sensors import build_fivetran_sync_status_sensor
 
 CURSOR = {
-    "genuine_describing": 1695827116.079,
-    "sameness_cunning": 1695827251.39,
-    "muskiness_cumulative": 1695827695.906,
-    "bellows_curliness": 1695827447.258,
-    "jinx_credulous": 1695827537.198,
-    "aspirate_uttering": 1695827584.416,
-    "regency_carrying": 1695827426.91,
+    "sameness_cunning": 1698296400,  # adp_workforce_now
+    "genuine_describing": 1698296400,
+    "muskiness_cumulative": 1698296400,
+    "bellows_curliness": 1698296400,
+    "jinx_credulous": 1698296400,
+    "aspirate_uttering": 1698296400,
+    "regency_carrying": 1698296400,
 }
 
 
