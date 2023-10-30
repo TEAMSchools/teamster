@@ -81,6 +81,9 @@ You should always review your own PR first. For content changes, make sure that 
       [style guide](https://github.com/github/docs/blob/main/contributing/content-style-guide.md).
 - [ ] If there are any failing checks in your PR, troubleshoot them until they're all passing.
 
+- dbt action
+- trunk action, sqlfluff style guide
+
 ### Your PR is merged
 
 Congratulations :tada::tada: The GitHub team thanks you :sparkles:.

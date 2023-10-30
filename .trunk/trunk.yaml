@@ -38,7 +38,7 @@ lint:
         - .helm/**/values.yaml
   enabled:
     - oxipng@9.0.0
-    - sqlfluff@2.3.4
+    - sqlfluff@2.3.5
     - svgo@3.0.2
     - sqlfmt@0.21.0
     - isort@5.12.0
