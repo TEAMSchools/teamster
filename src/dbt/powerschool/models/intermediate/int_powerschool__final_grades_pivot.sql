@@ -45,7 +45,7 @@ with
     ),
 
     grades_pivot as (
-        select *
+        select *,
         from
             grades_union pivot (
                 max(term_letter_grade) as term_letter_grade,

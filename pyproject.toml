@@ -6,28 +6,28 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 dependencies = [
-  "dagster>=1.4.0",
-  "dagster-cloud>=1.4.0",
-  "dagster-graphql>=1.4.0",
-  "dagster-dbt>=0.20.0",
-  "dagster-gcp>=0.20.0",
-  "dagster-k8s>=0.20.0",
-  "dagster-ssh>=0.20.0",
-  "dagster-fivetran>=0.20.0",
-  "dagster-airbyte>=0.20.0",
+  "dagster>=1.5.5",
+  "dagster-cloud>=1.5.5",
+  "dagster-graphql>=1.5.5",
+  "dagster-dbt>=0.21.5",
+  "dagster-gcp>=0.21.5",
+  "dagster-k8s>=0.21.5",
+  "dagster-ssh>=0.21.5",
+  "dagster-fivetran>=0.21.5",
+  "dagster-airbyte>=0.21.5",
+  "dbt-bigquery>=1.6.7",
+  "fastavro>=1.9.0",
+  "cramjam>=2.7.0",
   "alchemer>=0.6.1",
-  "fastavro>=1.7.1",
-  "gspread>=5.7.2",
-  "oracledb>=1.2.2",
-  "python-snappy>=0.6.1",
-  "beautifulsoup4>=4.12.2",
+  "gspread>=5.12.0",
+  "oracledb>=1.4.2",
   "ldap3>=2.9.1",
-  "pandas>=2.0.3",
-  "tenacity>=8.2.2",
-  "dbt-bigquery>=1.6.6",
+  "pandas>=2.1.2",
+  "beautifulsoup4>=4.12.2",
   "pycryptodome>=3.19.0",
+  "tenacity>=8.2.3",
 ]
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.11,<3.12"
 license = { text = "GPL-3.0-or-later" }
 
 [build-system]
@@ -37,14 +37,11 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = ["pytest>=7.4.0"]
+dev = ["pytest>=7.4.3"]
 
 [tool.pdm.scripts]
 _.env_file = "env/.env"
 clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
-docs-build = { shell = "mkdocs build", help = "Build the MkDocs documentation" }
-docs-serve = { shell = "mkdocs serve", help = "Run the builtin development server" }
-docs-deploy = { shell = "mkdocs gh-deploy", help = "Deploy your documentation to GitHub Pages" }
 test = { shell = "pytest --capture=no", help = "Run tests with the default Python" }
 secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret for branch" }
 install-dagster = { shell = "bash .pdm/scripts/install-dagster.sh", help = "Install Dagster Cloud via Helm" }

@@ -1,12 +1,13 @@
 select
     pl.student_id,
     pl.subject,
-    sum(pl.passed_or_not_passed_numeric) as lessons_passed,
-    count(pl.lesson_id) as total_lessons,
-    round(sum(passed_or_not_passed_numeric) / count(pl.lesson_id), 2)
-    * 100 as pct_passed,
 
     t.name as term,
+
+    sum(pl.passed_or_not_passed_numeric) as lessons_passed,
+    count(pl.lesson_id) as total_lessons,
+    round(sum(pl.passed_or_not_passed_numeric) / count(pl.lesson_id), 2)
+    * 100 as pct_passed,
 from {{ ref("stg_iready__personalized_instruction_by_lesson") }} as pl
 inner join {{ ref("stg_people__location_crosswalk") }} as sc on pl.school = sc.name
 inner join

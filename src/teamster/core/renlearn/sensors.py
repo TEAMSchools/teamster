@@ -10,11 +10,12 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
+    StaticPartitionsDefinition,
     sensor,
 )
 from paramiko.ssh_exception import SSHException
 
-from teamster.core.sftp.sensors import get_sftp_ls
+from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
@@ -26,6 +27,8 @@ def build_sftp_sensor(
     timezone,
     minimum_interval_seconds=None,
 ):
+    fiscal_year_start_string = fiscal_year.start.to_date_string()
+
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -35,53 +38,58 @@ def build_sftp_sensor(
         context: SensorEvaluationContext, ssh_renlearn: SSHConfigurableResource
     ):
         cursor: dict = json.loads(context.cursor or "{}")
-
-        try:
-            ls = get_sftp_ls(ssh=ssh_renlearn, asset_defs=asset_defs)
-        except SSHException as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
-        except ConnectionResetError as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+        now = pendulum.now(tz=timezone)
 
         run_requests = []
-        for asset_identifier, asset_dict in ls.items():
-            asset: AssetsDefinition = asset_dict["asset"]
-            files = asset_dict["files"]
+        for asset in asset_defs:
+            asset_metadata = asset.metadata_by_key[asset.key]
+            asset_identifier = asset.key.to_python_identifier()
+            context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
 
+            try:
+                with ssh_renlearn.get_connection() as conn:
+                    with conn.open_sftp() as sftp_client:
+                        files = listdir_attr_r(
+                            sftp_client=sftp_client,
+                            remote_dir=asset_metadata["remote_dir"],
+                            files=[],
+                        )
+            except SSHException as e:
+                context.log.error(e)
+                return SensorResult(skip_reason=SkipReason(str(e)))
+            except ConnectionResetError as e:
+                context.log.error(e)
+                return SensorResult(skip_reason=SkipReason(str(e)))
+
+            subjects: StaticPartitionsDefinition = (
+                asset.partitions_def.get_partitions_def_for_dimension("subject")
+            )
+
             for f in files:
                 match = re.match(
-                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                    string=f.filename,
+                    pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     if f.st_mtime > last_run and f.st_size > 0:
-                        for (
-                            subject
-                        ) in (
-                            asset.partitions_def.secondary_dimension.partitions_def.get_partition_keys()
-                        ):
+                        for subject in subjects.get_partition_keys():
                             run_requests.append(
                                 RunRequest(
                                     run_key=f"{asset_identifier}_{f.st_mtime}",
                                     asset_selection=[asset.key],
                                     partition_key=MultiPartitionKey(
                                         {
-                                            "start_date": (
-                                                fiscal_year.start.to_date_string()
-                                            ),
+                                            "start_date": fiscal_year_start_string,
                                             "subject": subject,
                                         }
                                     ),
                                 )
                             )
 
-                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

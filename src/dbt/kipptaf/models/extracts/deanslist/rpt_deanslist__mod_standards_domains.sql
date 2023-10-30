@@ -5,11 +5,12 @@ with
             sr.academic_year,
             sr.term_administered,
             sr.percent_correct,
+
+            st.standard_domain,
+
             if(
                 sr.subject_area = 'Writing', 'Text Study', sr.subject_area
             ) as subject_area,
-
-            st.standard_domain,
         from {{ ref("int_assessments__response_rollup") }} as sr
         inner join
             {{ ref("stg_assessments__standard_domains") }} as st
@@ -21,7 +22,7 @@ with
             and sr.subject_area in ('Text Study', 'Mathematics', 'Writing')
             and sr.module_type in ('QA', 'MQQ')
             and sr.powerschool_student_number in (
-                select student_number
+                select student_number,
                 from {{ ref("stg_powerschool__students") }}
                 where
                     grade_level < 5

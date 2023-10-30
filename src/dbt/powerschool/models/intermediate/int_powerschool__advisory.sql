@@ -1,5 +1,5 @@
 with
-    hr_enrollments as (
+    hr_enrollments as (  -- noqa: ST03
         select
             cc_studentid as studentid,
             cc_yearid as yearid,

@@ -1,7 +1,6 @@
 with
     source as (
         select
-            _dagster_partition_fiscal_year - 1 as academic_year,
             _dagster_partition_date as symbolic_period_begin,
             location as budget_location,
             job,
@@ -13,6 +12,7 @@ with
             days,
             hours,
             money,
+            _dagster_partition_fiscal_year - 1 as academic_year,
             regexp_extract(employee_name, r'\((\w+)\)') as worker_id,
             parse_date('%b %d, %Y', transaction_apply_date) as transaction_apply_date,
             parse_datetime(

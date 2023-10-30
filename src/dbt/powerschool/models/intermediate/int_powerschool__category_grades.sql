@@ -1,5 +1,5 @@
 with
-    enr_gr as (
+    enr_gr as (  -- noqa: ST03
         select
             enr.cc_abs_sectionid as sectionid,
             enr.cc_studentid as studentid,
@@ -52,7 +52,21 @@ with
     )
 
 select
-    *,
+    sectionid,
+    studentid,
+    schoolid,
+    course_number,
+    credittype,
+    is_dropped_section,
+    yearid,
+    storecode,
+    termbin_start_date,
+    termbin_end_date,
+    storecode_type,
+    reporting_term,
+    is_current,
+    percent_grade,
+    citizenship_grade,
     round(
         avg(percent_grade) over (
             partition by studentid, yearid, course_number, storecode_type
