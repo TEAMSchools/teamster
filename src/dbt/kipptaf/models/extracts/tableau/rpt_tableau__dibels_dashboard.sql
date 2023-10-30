@@ -25,12 +25,7 @@ with
             cast(academic_year as string) as academic_year,
             'KIPP NJ/MIAMI' as district,
             region,
-            case
-                when region in ('Camden', 'Newark')
-                then 'NJ'
-                when region = 'Miami'
-                then 'FL'
-            end as city,
+
             schoolid,
             school_abbreviation as school,
             studentid,
@@ -38,19 +33,27 @@ with
             lastfirst as student_name,
             first_name as student_first_name,
             last_name as student_last_name,
-            case
-                when cast(grade_level as string) = '0'
-                then 'K'
-                else cast(grade_level as string)
-            end as grade_level,
+
             is_out_of_district as ood,
             gender,
             ethnicity,
             is_homeless,
             is_504,
-            case when spedlep in ('No IEP', null) then 0 else 1 end as sped,
+
             lep_status,
             lunch_status,
+            case
+                when region in ('Camden', 'Newark')
+                then 'NJ'
+                when region = 'Miami'
+                then 'FL'
+            end as city,
+            case
+                when cast(grade_level as string) = '0'
+                then 'K'
+                else cast(grade_level as string)
+            end as grade_level,
+            case when spedlep in ('No IEP', null) then 0 else 1 end as sped,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             academic_year = {{ var("current_academic_year") }}
@@ -66,12 +69,7 @@ with
             cast(e.academic_year as string) as academic_year,
             'KIPP NJ/MIAMI' as district,
             e.region as region,
-            case
-                when e.region in ('Camden', 'Newark')
-                then 'NJ'
-                when e.region = 'Miami'
-                then 'FL'
-            end as city,
+
             e.schoolid,
             e.school_abbreviation as school,
             e.studentid,
@@ -85,9 +83,16 @@ with
             e.ethnicity,
             e.is_homeless,
             e.is_504,
-            case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
+
             e.lep_status,
             e.lunch_status,
+            case
+                when e.region in ('Camden', 'Newark')
+                then 'NJ'
+                when e.region = 'Miami'
+                then 'FL'
+            end as city,
+            case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         inner join iready_roster as i on e.student_number = i.student_number
         where
@@ -172,15 +177,19 @@ with
             cast(c.cc_academic_year as string) as schedule_academic_year,
             'KIPP NJ/MIAMI' as schedule_district,
             e.region as schedule_region,
-            case
-                when e.region in ('Camden', 'Newark')
-                then 'NJ'
-                when e.region = 'Miami'
-                then 'FL'
-            end as schedule_city,
+
             c.cc_schoolid as schedule_schoolid,
             c.cc_studentid as schedule_studentid,
             e.student_number as schedule_student_number,
+
+            c.cc_teacherid as teacherid,
+            c.teacher_lastfirst as teacher_name,
+            c.courses_course_name as course_name,
+            c.cc_course_number as course_number,
+            c.cc_section_number as section_number,
+            e.advisory_name,
+            period as expected_test,
+            1 as scheduled,
             case
                 when c.courses_course_name in ('ELA GrK', 'ELA K')
                 then 'K'
@@ -193,14 +202,12 @@ with
                 when c.courses_course_name = 'ELA Gr4'
                 then '4'
             end as schedule_student_grade_level,
-            c.cc_teacherid as teacherid,
-            c.teacher_lastfirst as teacher_name,
-            c.courses_course_name as course_name,
-            c.cc_course_number as course_number,
-            c.cc_section_number as section_number,
-            e.advisory_name,
-            period as expected_test,
-            1 as scheduled,
+            case
+                when e.region in ('Camden', 'Newark')
+                then 'NJ'
+                when e.region = 'Miami'
+                then 'FL'
+            end as schedule_city,
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
             student_number as e
@@ -230,6 +237,13 @@ with
             u.measure as mclass_measure,
             u.score as mclass_measure_score,
             u.level as mclass_measure_level,
+
+            u.national_norm_percentile as mclass_measure_percentile,
+            u.semester_growth as mclass_measure_semester_growth,
+            u.year_growth as mclass_measure_year_growth,
+            null as mclass_probe_number,
+            null as mclass_total_number_of_probes,
+            null as mclass_score_change,
             case
                 when u.level = 'Above Benchmark'
                 then 4
@@ -241,12 +255,6 @@ with
                 then 1
                 else null
             end as mclass_measure_level_int,
-            u.national_norm_percentile as mclass_measure_percentile,
-            u.semester_growth as mclass_measure_semester_growth,
-            u.year_growth as mclass_measure_year_growth,
-            null as mclass_probe_number,
-            null as mclass_total_number_of_probes,
-            null as mclass_score_change,
 
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
@@ -440,6 +448,16 @@ with
             ) as mclass_total_number_of_probes,
             p.boy_probe_eligible,
             p.moy_probe_eligible,
+
+            s.mclass_measure,
+            s.mclass_measure_score,
+            s.mclass_score_change,
+            s.mclass_measure_level,
+            s.mclass_measure_level_int,
+            s.mclass_measure_percentile,
+            s.mclass_measure_semester_growth,
+            s.mclass_measure_year_growth,
+
             case
                 when p.boy_probe_eligible = 'Yes' and s.expected_test = 'BOY->MOY'
                 then p.boy_probe_eligible
@@ -474,14 +492,6 @@ with
                 then 'No'
                 else 'Not applicable'
             end as pm_probe_tested,
-            s.mclass_measure,
-            s.mclass_measure_score,
-            s.mclass_score_change,
-            s.mclass_measure_level,
-            s.mclass_measure_level_int,
-            s.mclass_measure_percentile,
-            s.mclass_measure_semester_growth,
-            s.mclass_measure_year_growth,
 
         from students_schedules_and_assessments_scores as s
         left join
