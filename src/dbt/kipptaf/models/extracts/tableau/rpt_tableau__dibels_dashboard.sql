@@ -34,7 +34,7 @@ with
             first_name as student_first_name,
             last_name as student_last_name,
 
-            is_out_of_district,
+            is_out_of_district,  -- noqa: RF02
             gender,
             ethnicity,
             is_homeless,
@@ -175,7 +175,7 @@ with
 
     assessments_scores as (
         select
-            left(bss.school_year, 4) as mclass_academic_year,  -- needed to extract the academic year format that matches NJ's syntax
+            left(bss.school_year, 4) as mclass_academic_year,
             bss.student_primary_id as mclass_student_number,
             'benchmark' as assessment_type,
             bss.assessment_grade as mclass_assessment_grade,
@@ -202,15 +202,12 @@ with
                 when u.level = 'Well Below Benchmark'
                 then 1
             end as mclass_measure_level_int,
-
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         where cast(left(bss.school_year, 4) as int) = {{ var("current_academic_year") }}
-
         union all
-
         select
             left(school_year, 4) as mclass_academic_year,  -- needed to extract the academic year format that matches NJ's syntax
             student_primary_id as mclass_student_number,
@@ -327,16 +324,16 @@ with
             c.moy,
             c.eoy,
             case
-                when boy in ('Below Benchmark', 'Well Below Benchmark')
+                when boy in ('Below Benchmark', 'Well Below Benchmark') -- noqa: RF02
                 then 'Yes'
-                when boy is null
+                when boy is null -- noqa: RF02
                 then 'No data'
                 else 'No'
             end as boy_probe_eligible,
             case
-                when moy in ('Below Benchmark', 'Well Below Benchmark')
+                when moy in ('Below Benchmark', 'Well Below Benchmark') -- noqa: RF02
                 then 'Yes'
-                when moy is null
+                when moy is null -- noqa: RF02
                 then 'No data'
                 else 'No'
             end as moy_probe_eligible,
