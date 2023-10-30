@@ -56,10 +56,29 @@ with
         from {{ ref("int_powerschool__spenrollments") }}
         where
             specprog_name = 'Tutoring'
-            and current_date('America/New_York') between enter_date and exit_date
+            and current_date('{{ var("local_timezone") }}')
+            between enter_date and exit_date
+    ),
+
+    prev_yr_iready as (
+        select
+            student_id,
+            subject,
+            academic_year_int + 1 as academic_year_plus,
+            case
+                when overall_relative_placement_int < 3
+                then 'Below/Far Below'
+                when overall_relative_placement_int = 3
+                then 'Approaching'
+                when overall_relative_placement_int > 3
+                then 'At/Above'
+            end as iready_proficiency,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where rn_subj_round = 1 and test_round = 'EOY'
     )
 
 select
+    co.academic_year,
     co._dbt_source_relation,
     co.student_number,
     co.studentid,
@@ -73,6 +92,10 @@ select
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
     if(t.iready_subject is not null, true, false) as tutoring_nj,
+
+    coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
+
+    if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -91,4 +114,9 @@ left join
     and co.academic_year = t.academic_year
     and sj.iready_subject = t.iready_subject
     and {{ union_dataset_join_clause(left_alias="co", right_alias="t") }}
+left join
+    prev_yr_iready as pr
+    on co.student_number = pr.student_id
+    and co.academic_year = pr.academic_year_plus
+    and sj.iready_subject = pr.subject
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
