@@ -5,6 +5,7 @@ with
             a.illuminate_student_id,
             a.powerschool_student_number,
             a.scope,  -- ACT or SAT
+            'Practice' as test_type,
             a.assessment_id,
             a.title as assessment_title,
             concat(
