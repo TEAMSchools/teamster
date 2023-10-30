@@ -1,4 +1,4 @@
-{% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}  -- Force expected assessments
+{% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}
 
 with
     iready_roster as (
@@ -19,7 +19,7 @@ with
             and subject = 'Reading'
     ),
 
-    student_k_2 as (
+    students as (
         select
             _dbt_source_relation,
             cast(academic_year as string) as academic_year,
@@ -34,7 +34,7 @@ with
             first_name as student_first_name,
             last_name as student_last_name,
 
-            is_out_of_district as ood,
+            is_out_of_district,
             gender,
             ethnicity,
             is_homeless,
@@ -61,9 +61,7 @@ with
             and rn_year = 1
             and grade_level <= 2
             and not is_self_contained
-    ),
-
-    student_3_4 as (
+        union all
         select
             e._dbt_source_relation,
             cast(e.academic_year as string) as academic_year,
@@ -78,7 +76,7 @@ with
             e.first_name as student_first_name,
             e.last_name as student_last_name,
             cast(e.grade_level as string) as grade_level,
-            is_out_of_district as ood,
+            is_out_of_district,
             e.gender,
             e.ethnicity,
             e.is_homeless,
@@ -100,56 +98,6 @@ with
             and e.enroll_status = 0
             and e.rn_year = 1
             and not is_self_contained
-    ),
-
-    students as (
-        select
-            _dbt_source_relation,
-            academic_year,
-            district,
-            region,
-            city,
-            schoolid,
-            school,
-            studentid,
-            student_number,
-            student_name,
-            student_first_name,
-            student_last_name,
-            grade_level,
-            ood,
-            gender,
-            ethnicity,
-            is_homeless,
-            is_504,
-            sped,
-            lep_status,
-            lunch_status,
-        from student_k_2
-        union all
-        select
-            _dbt_source_relation,
-            academic_year,
-            district,
-            region,
-            city,
-            schoolid,
-            school,
-            studentid,
-            student_number,
-            student_name,
-            student_first_name,
-            student_last_name,
-            grade_level,
-            ood,
-            gender,
-            ethnicity,
-            is_homeless,
-            is_504,
-            sped,
-            lep_status,
-            lunch_status,
-        from student_3_4
     ),
 
     student_number as (
@@ -253,7 +201,6 @@ with
                 then 2
                 when u.level = 'Well Below Benchmark'
                 then 1
-                else null
             end as mclass_measure_level_int,
 
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
@@ -358,14 +305,14 @@ with
     composite_only  -- Extract final composite by student per window
     as (
         select distinct
-            academic_year, student_number, expected_test, mclass_measure_level
+            academic_year, student_number, expected_test, mclass_measure_level,
         from students_schedules_and_assessments_scores
         where mclass_measure = 'Composite'
     ),
 
     overall_composite_by_window  -- Pivot final composite by student per window
     as (
-        select distinct academic_year, student_number, p.boy, p.moy, p.eoy
+        select distinct academic_year, student_number, p.boy, p.moy, p.eoy,
         from
             composite_only pivot (
                 max(mclass_measure_level) for expected_test in ('BOY', 'MOY', 'EOY')
@@ -418,7 +365,7 @@ with
             s.schedule_schoolid,
             s.schedule_student_number,
             s.schedule_student_grade_level,
-            s.ood,
+            s.is_out_of_district,
             s.gender,
             s.ethnicity,
             s.is_homeless,
@@ -433,22 +380,13 @@ with
             s.section_number,
             s.advisory_name,
             s.expected_test,
-            coalesce(s.scheduled, 0) as scheduled,
             s.mclass_student_number,
             s.mclass_assessment_grade,
             s.mclass_period,
             s.mclass_client_date,
             s.mclass_sync_date,
-            coalesce(p.boy, 'No data') as boy_composite,
-            coalesce(p.moy, 'No data') as moy_composite,
-            coalesce(p.eoy, 'No data') as eoy_composite,
-            coalesce(s.mclass_probe_number, 0) as mclass_probe_number,
-            coalesce(
-                s.mclass_total_number_of_probes, 0
-            ) as mclass_total_number_of_probes,
             p.boy_probe_eligible,
             p.moy_probe_eligible,
-
             s.mclass_measure,
             s.mclass_measure_score,
             s.mclass_score_change,
@@ -457,7 +395,14 @@ with
             s.mclass_measure_percentile,
             s.mclass_measure_semester_growth,
             s.mclass_measure_year_growth,
-
+            coalesce(s.scheduled, 0) as scheduled,
+            coalesce(p.boy, 'No data') as boy_composite,
+            coalesce(p.moy, 'No data') as moy_composite,
+            coalesce(p.eoy, 'No data') as eoy_composite,
+            coalesce(s.mclass_probe_number, 0) as mclass_probe_number,
+            coalesce(
+                s.mclass_total_number_of_probes, 0
+            ) as mclass_total_number_of_probes,
             case
                 when p.boy_probe_eligible = 'Yes' and s.expected_test = 'BOY->MOY'
                 then p.boy_probe_eligible
@@ -492,7 +437,6 @@ with
                 then 'No'
                 else 'Not applicable'
             end as pm_probe_tested,
-
         from students_schedules_and_assessments_scores as s
         left join
             probe_eligible_tag as p
