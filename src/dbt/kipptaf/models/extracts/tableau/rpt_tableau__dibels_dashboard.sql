@@ -15,8 +15,7 @@ with
             and student_grade in ('3', '4')
             and rn_subj_round = 1
             and overall_relative_placement_int <= 2
-            and left(academic_year, 4)
-            = cast({{ var("current_academic_year") }} as string)
+            and academic_year_int = {{ var("current_academic_year") }}
             and subject = 'Reading'
     ),
 
@@ -90,14 +89,12 @@ with
             e.lep_status,
             e.lunch_status
         from {{ ref("base_powerschool__student_enrollments") }} as e
-        left join iready_roster as i on e.student_number = i.student_number
+        inner join iready_roster as i on e.student_number = i.student_number
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.enroll_status = 0
             and e.rn_year = 1
             and not is_self_contained
-            and e.student_number
-            in (select distinct i.student_number from iready_roster)
     ),
 
     students as (
@@ -255,7 +252,7 @@ with
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
-        where left(bss.school_year, 4) = '2023'  -- Cannot use {{ var("current_academic_year") }} - errors out
+        where cast(left(bss.school_year, 4) as int) = {{ var("current_academic_year") }}
 
         union all
 
@@ -278,10 +275,10 @@ with
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change
         from {{ ref("stg_amplify__pm_student_summary") }}
-        where left(school_year, 4) = '2023'  -- Cannot use {{ var("current_academic_year") }} - errors out
+        where cast(left(school_year, 4) as int) = {{ var("current_academic_year") }}
     ),
 
-    students_and_schedules as (
+    students_schedules_and_assessments_scores as (
         select
             s.academic_year,
             s.district,
@@ -318,54 +315,7 @@ with
             m.section_number,
             m.advisory_name,
             m.expected_test,
-            m.scheduled
-        from students as s
-        left join
-            schedules as m
-            on s.academic_year = m.schedule_academic_year
-            and s.schoolid = m.schedule_schoolid
-            and s.student_number = m.schedule_student_number
-        where m.section_number not like '%SC%'
-    ),
-
-    students_schedules_and_assessments_scores as (
-        select
-            s.academic_year,
-            s.district,
-            s.region,
-            s.city,
-            s.schoolid,
-            s.school,
-            s.studentid,
-            s.student_number,
-            s.student_name,
-            s.student_first_name,
-            s.student_last_name,
-            s.grade_level,
-            s.ood,
-            s.gender,
-            s.ethnicity,
-            s.is_homeless,
-            s.is_504,
-            s.sped,
-            s.lep_status,
-            s.lunch_status,
-            s.schedule_academic_year,
-            s.schedule_district,
-            s.region as schedule_region,
-            s.schedule_city,
-            s.schedule_schoolid,
-            s.schedule_studentid,
-            s.schedule_student_number,
-            s.schedule_student_grade_level,
-            s.teacherid,
-            s.teacher_name,
-            s.course_name,
-            s.course_number,
-            s.section_number,
-            s.advisory_name,
-            s.expected_test,
-            s.scheduled,
+            m.scheduled,
             a.mclass_academic_year,
             a.mclass_student_number,
             a.assessment_type,
@@ -383,12 +333,18 @@ with
             a.mclass_probe_number,
             a.mclass_total_number_of_probes,
             a.mclass_score_change
-        from students_and_schedules as s
+        from students as s
+        left join
+            schedules as m
+            on s.academic_year = m.schedule_academic_year
+            and s.schoolid = m.schedule_schoolid
+            and s.student_number = m.schedule_student_number
         left join
             assessments_scores as a
-            on s.schedule_academic_year = a.mclass_academic_year
-            and s.schedule_student_number = a.mclass_student_number
-            and s.expected_test = a.mclass_period
+            on m.schedule_academic_year = a.mclass_academic_year
+            and m.schedule_student_number = a.mclass_student_number
+            and m.expected_test = a.mclass_period
+        where m.section_number not like '%SC%'
     ),
 
     composite_only  -- Extract final composite by student per window
@@ -532,17 +488,6 @@ with
             probe_eligible_tag as p
             on s.academic_year = p.academic_year
             and s.student_number = p.student_number
-    ),
-
-    terms as (
-        select
-            name,
-            start_date,
-            end_date,
-            academic_year as academic_year_term,
-            region as region_term
-        from {{ ref("stg_reporting__terms") }}
-        where type = 'LIT' and academic_year = {{ var("current_academic_year") }}
     )
 
 select
@@ -605,7 +550,8 @@ select
     t.end_date,
 from base_roster as b
 left join
-    terms as t
-    on cast(b.academic_year as int) = t.academic_year_term
+    {{ ref("stg_reporting__terms") }} as t
+    on cast(b.academic_year as int) = t.academic_year
     and b.expected_test = t.name
-    and b.region = t.region_term
+    and b.region = t.region
+    and t.type = 'LIT'
