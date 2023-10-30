@@ -80,6 +80,7 @@ select
     f.tutoring_nj as is_tutoring,
     f.state_test_proficiency,
     f.bucket_two as is_bucket_2,
+    f.bucket_one,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join unnest(['Reading', 'Math']) as subj
 cross join date_range as w
@@ -127,6 +128,7 @@ left join
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on co.student_number = f.student_number
+    and co.academic_year = f.academic_year
     and subj = f.iready_subject
 where
     co.academic_year = {{ var("current_academic_year") }}
