@@ -1,10 +1,12 @@
-name: staging - Hybrid Branch Deployment
+name: staging
 
 on:
   workflow_dispatch: null
   pull_request:
     branches:
       - main
+    paths:
+      - src/teamster/**
     types:
       - opened
       - synchronize

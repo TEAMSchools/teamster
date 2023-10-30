@@ -1,6 +1,6 @@
 with
-    ccdm as (
-        select contact, `date`
+    ccdm as (  -- noqa: ST03
+        select contact, `date`,
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` = 'CCDM'
     ),
@@ -13,7 +13,8 @@ with
         }}
     )
 
-select
+select  -- noqa: disable=ST06
+    -- noqa: disable=RF05
     ktc.contact_id as `Salesforce ID`,
     ktc.contact_school_specific_id as `SIS ID`,
     ktc.contact_owner_name as `College Counselor`,

@@ -13,7 +13,7 @@ from dagster import (
 )
 from paramiko.ssh_exception import SSHException
 
-from teamster.core.sftp.sensors import get_sftp_ls
+from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHConfigurableResource
 
 
@@ -32,28 +32,34 @@ def build_sftp_sensor(
         context: SensorEvaluationContext, ssh_adp_workforce_now: SSHConfigurableResource
     ):
         cursor: dict = json.loads(context.cursor or "{}")
-
-        try:
-            ls = get_sftp_ls(ssh=ssh_adp_workforce_now, asset_defs=asset_defs)
-        except SSHException as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
-        except ConnectionResetError as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+        now = pendulum.now(tz=timezone)
 
         run_requests = []
-        for asset_identifier, asset_dict in ls.items():
+        for asset in asset_defs:
+            asset_metadata = asset.metadata_by_key[asset.key]
+            asset_identifier = asset.key.to_python_identifier()
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
-            asset = asset_dict["asset"]
-            files = asset_dict["files"]
 
-            asset_metadata = asset.metadata_by_key[asset.key]
+            try:
+                with ssh_adp_workforce_now.get_connection() as conn:
+                    with conn.open_sftp() as sftp_client:
+                        files = listdir_attr_r(
+                            sftp_client=sftp_client,
+                            remote_dir=asset_metadata["remote_dir"],
+                            files=[],
+                        )
+            except SSHException as e:
+                context.log.error(e)
+                return SensorResult(skip_reason=SkipReason(str(e)))
+            except ConnectionResetError as e:
+                context.log.error(e)
+                return SensorResult(skip_reason=SkipReason(str(e)))
 
             updates = []
             for f in files:
+                # print(f.filepath)
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
@@ -73,7 +79,7 @@ def build_sftp_sensor(
                         )
                     )
 
-            cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+            cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

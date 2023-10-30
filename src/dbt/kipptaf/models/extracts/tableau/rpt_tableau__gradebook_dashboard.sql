@@ -162,7 +162,7 @@ select
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
 
-    round(ada.ada, 3) as ada
+    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     final_grades as gr
@@ -251,7 +251,7 @@ select
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
 
-    round(ada.ada, 3) as ada
+    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     final_grades as gr
@@ -343,8 +343,7 @@ select
     null as need_80,
     null as need_90,
 
-    round(ada.ada, 3) as ada
-
+    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("int_powerschool__category_grades") }} as cg
@@ -425,8 +424,7 @@ select
     null as need_80,
     null as need_90,
 
-    round(ada.ada, 3) as ada
-
+    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("int_powerschool__category_grades") }} as cy
@@ -505,8 +503,7 @@ select
     null as need_80,
     null as need_90,
 
-    round(ada.ada, 3) as ada
-
+    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("stg_powerschool__storedgrades") }} as sg
@@ -591,8 +588,7 @@ select
     null as need_80,
     null as need_90,
 
-    round(ada.ada, 3) as ada
-
+    round(ada.ada, 3) as ada,
 from {{ ref("stg_powerschool__storedgrades") }} as tr
 left join
     student_roster as co

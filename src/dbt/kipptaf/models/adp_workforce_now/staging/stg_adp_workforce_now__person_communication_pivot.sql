@@ -37,8 +37,8 @@ with
     pivot_source as (
         select
             worker_id,
+            email_uri as pivot_column,
             source_relation_type || '_' || `type` as input_column,
-            email_uri as pivot_column
         from source_relation_parsed
         where `type` = 'email'
 
@@ -46,13 +46,13 @@ with
 
         select
             worker_id,
+            formatted_number as pivot_column,
             source_relation_type || '_' || `type` as input_column,
-            formatted_number as pivot_column
         from source_relation_parsed
         where `type` in ('mobile', 'landline')
     )
 
-select *
+select *,
 from
     pivot_source pivot (
         max(pivot_column) for input_column in (

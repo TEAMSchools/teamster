@@ -13,5 +13,5 @@ with recursive
             on s1.standard_id = s2.parent_standard_id
     )
 
-select *
+select root_standard_id, parent_standard_id, standard_id,
 from standards

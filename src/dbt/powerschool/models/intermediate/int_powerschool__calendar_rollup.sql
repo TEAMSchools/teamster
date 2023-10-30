@@ -17,7 +17,7 @@ with
     ),
 
     cal_long as (
-        select schoolid, date_value, yearid, upper(name_column) as track, values_column
+        select schoolid, date_value, yearid, values_column, upper(name_column) as track,
         from calendar_day unpivot (values_column for name_column in (a, b, c, d, e, f))
     )
 

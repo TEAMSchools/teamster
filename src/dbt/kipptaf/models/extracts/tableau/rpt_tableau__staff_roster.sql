@@ -56,7 +56,7 @@ select
     + coalesce(b.years_teaching_outside_njfl, 0) as years_teaching_total,
 
     ye.years_active_at_kipp
-    + years_inactive_at_kipp
+    + ye.years_inactive_at_kipp
     + coalesce(b.years_exp_outside_kipp, 0) as years_experience_total,
 
     {# retired fields, kept to not break tableau #}

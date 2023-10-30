@@ -1,12 +1,15 @@
+-- noqa: disable=ST06
 select
-    cast(sr.schoolid as string) as school_id,
-    cast(sr.student_number as string) as student_id,
-    cast(sr.student_number as string) as student_number,
+    safe_cast(sr.schoolid as string) as school_id,
+    safe_cast(sr.student_number as string) as student_id,
+    safe_cast(sr.student_number as string) as student_number,
     if(sr.region = 'Miami', sr.fleid, sr.state_studentnumber) as state_id,
     sr.last_name as last_name,
     sr.middle_name as middle_name,
     sr.first_name as first_name,
-    if(sr.grade_level = 0, 'Kindergarten', cast(sr.grade_level as string)) as grade,
+    if(
+        sr.grade_level = 0, 'Kindergarten', safe_cast(sr.grade_level as string)
+    ) as grade,
     sr.gender as gender,
     sr.cohort as graduation_year,
     format_date('%m/%d/%Y', sr.dob) as dob,

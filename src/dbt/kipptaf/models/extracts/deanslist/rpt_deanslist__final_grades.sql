@@ -1,5 +1,5 @@
 with
-    enr as (
+    enr as (  -- noqa: ST03
         select
             enr._dbt_source_relation,
             enr.cc_studentid,
@@ -14,12 +14,13 @@ with
             enr.sections_section_number,
             enr.students_student_number,
             enr.teacher_lastfirst,
-            ifnull(enr.cc_currentabsences, 0) as currentabsences,
-            ifnull(enr.cc_currenttardies, 0) as currenttardies,
-            abs(enr.courses_sched_do_not_print - 1) as include_grades_display,
 
             rt.name as term_name,
             rt.code as term_code,
+
+            coalesce(enr.cc_currentabsences, 0) as currentabsences,
+            coalesce(enr.cc_currenttardies, 0) as currenttardies,
+            abs(enr.courses_sched_do_not_print - 1) as include_grades_display,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         inner join
             {{ ref("stg_reporting__terms") }} as rt
@@ -57,6 +58,20 @@ select
     enr.currenttardies,
 
     fg.need_60,
+
+    cat.f_cur as f_term,
+    cat.s_cur as s_term,
+    cat.w_cur as w_term,
+    cat.w_rt1,
+    cat.w_rt2,
+    cat.w_rt3,
+    cat.w_rt4,
+
+    comm.comment_value,
+
+    null as e1_pct,
+    null as e2_pct,
+
     max(fg.term_percent_grade_adjusted_rt1) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
@@ -93,24 +108,11 @@ select
     coalesce(sgy1.percent, fg.y1_percent_grade_adjusted) as y1_pct,
     coalesce(sgy1.grade, fg.y1_letter_grade) as y1_letter,
 
-    cat.f_cur as f_term,
-    cat.s_cur as s_term,
-    cat.w_cur as w_term,
-    cat.w_rt1,
-    cat.w_rt2,
-    cat.w_rt3,
-    cat.w_rt4,
-
     coalesce(kctz.ctz_cur, cat.ctz_cur) as ctz_cur,
     coalesce(kctz.ctz_rt1, cat.ctz_rt1) as ctz_rt1,
     coalesce(kctz.ctz_rt2, cat.ctz_rt2) as ctz_rt2,
     coalesce(kctz.ctz_rt3, cat.ctz_rt3) as ctz_rt3,
     coalesce(kctz.ctz_rt4, cat.ctz_rt4) as ctz_rt4,
-
-    comm.comment_value,
-
-    null as e1_pct,
-    null as e2_pct,
 from enr_deduplicate as enr
 left join
     {{ ref("int_powerschool__final_grades_pivot") }} as fg

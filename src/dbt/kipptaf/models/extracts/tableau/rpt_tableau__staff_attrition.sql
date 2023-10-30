@@ -19,13 +19,13 @@ with
         select
             position_id,
             assignment_status_effective_date as termination_effective_date,
-            ifnull(
+            coalesce(
                 assignment_status_reason_long_name, assignment_status_reason_short_name
             ) as termination_reason,
 
             lag(assignment_status_effective_date) over (
                 partition by position_id order by assignment_status_effective_date
-            ) as termination_effective_date_prev
+            ) as termination_effective_date_prev,
         from {{ source("adp_workforce_now", "work_assignment_history") }}
         where assignment_status_long_name = 'Terminated'
     ),
@@ -71,12 +71,14 @@ with
             r.alumni_status,
             r.path_to_education,
             r.primary_grade_level_taught,
-            ifnull(
+
+            y.years_at_kipp_total,
+
+            coalesce(
                 r.worker_rehire_date, r.worker_original_hire_date
             ) as most_recent_hire_date,
 
-            y.years_at_kipp_total,
-            + coalesce(r.years_teaching_in_njfl, 0)
+            coalesce(r.years_teaching_in_njfl, 0)
             + coalesce(r.years_teaching_outside_njfl, 0) as years_teaching_total,
 
             y.years_active_at_kipp
@@ -88,7 +90,7 @@ with
                 r.worker_termination_date,
                 date(9999, 12, 31)
             ) as most_recent_termination_date,
-            ifnull(t.termination_reason, r.assignment_status_reason) as status_reason,
+            coalesce(t.termination_reason, r.assignment_status_reason) as status_reason,
         from {{ ref("base_people__staff_roster") }} as r
         left join
             {{ ref("int_people__years_experience") }} as y
@@ -124,7 +126,7 @@ with
             if(
                 r.assignment_status = 'Terminated'
                 and r.end_academic_year = y.academic_year,
-                most_recent_termination_date,
+                r.most_recent_termination_date,
                 null
             ) as termination_date,
 
@@ -142,7 +144,7 @@ with
     with_academic_year_exitdate as (
         select
             *,
-            ifnull(
+            coalesce(
                 if(academic_year = end_academic_year, termination_date, null),
                 default_exit_date
             ) as academic_year_exitdate,
@@ -198,7 +200,9 @@ with
     with_dates as (
         select
             *,
-            ifnull(academic_year_exitdate_next, termination_date) as attrition_exitdate,
+            coalesce(
+                academic_year_exitdate_next, termination_date
+            ) as attrition_exitdate,
         from scaffold
     )
 
@@ -260,7 +264,7 @@ select
     )
     / 365.25 as years_at_kipp_total,
 
-    years_experience_total - date_diff(
+    wd.years_experience_total - date_diff(
         coalesce(sr.worker_termination_date, current_date()),
         wd.academic_year_exitdate,
         day
