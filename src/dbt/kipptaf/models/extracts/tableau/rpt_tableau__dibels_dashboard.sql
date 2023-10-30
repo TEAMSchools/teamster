@@ -8,7 +8,7 @@ with
             school_abbreviation,
             student_id as student_number,
             student_grade,
-            subject
+            subject,
         from {{ ref("base_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
@@ -50,7 +50,7 @@ with
             is_504,
             case when spedlep in ('No IEP', null) then 0 else 1 end as sped,
             lep_status,
-            lunch_status
+            lunch_status,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             academic_year = {{ var("current_academic_year") }}
@@ -87,7 +87,7 @@ with
             e.is_504,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
             e.lep_status,
-            e.lunch_status
+            e.lunch_status,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         inner join iready_roster as i on e.student_number = i.student_number
         where
@@ -119,7 +119,7 @@ with
             is_504,
             sped,
             lep_status,
-            lunch_status
+            lunch_status,
         from student_k_2
         union all
         select
@@ -143,7 +143,7 @@ with
             is_504,
             sped,
             lep_status,
-            lunch_status
+            lunch_status,
         from student_3_4
     ),
 
@@ -157,7 +157,7 @@ with
             studentid,
             student_number,
             enroll_status,
-            advisory_name
+            advisory_name,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             academic_year = {{ var("current_academic_year") }}
@@ -200,7 +200,7 @@ with
             c.cc_section_number as section_number,
             e.advisory_name,
             period as expected_test,
-            1 as scheduled
+            1 as scheduled,
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
             student_number as e
@@ -246,7 +246,7 @@ with
             u.year_growth as mclass_measure_year_growth,
             null as mclass_probe_number,
             null as mclass_total_number_of_probes,
-            null as mclass_score_change
+            null as mclass_score_change,
 
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
@@ -273,7 +273,7 @@ with
             null as mclass_measure_year_growth,
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
-            score_change as mclass_score_change
+            score_change as mclass_score_change,
         from {{ ref("stg_amplify__pm_student_summary") }}
         where cast(left(school_year, 4) as int) = {{ var("current_academic_year") }}
     ),
@@ -332,7 +332,7 @@ with
             a.mclass_measure_year_growth,
             a.mclass_probe_number,
             a.mclass_total_number_of_probes,
-            a.mclass_score_change
+            a.mclass_score_change,
         from students as s
         left join
             schedules as m
@@ -384,7 +384,7 @@ with
                 when moy is null
                 then 'No data'
                 else 'No'
-            end as moy_probe_eligible
+            end as moy_probe_eligible,
         from students_schedules_and_assessments_scores as s
         left join
             overall_composite_by_window as c
