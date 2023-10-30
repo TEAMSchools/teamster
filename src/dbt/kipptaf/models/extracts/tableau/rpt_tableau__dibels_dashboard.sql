@@ -34,7 +34,7 @@ with
             first_name as student_first_name,
             last_name as student_last_name,
 
-            is_out_of_district,  -- noqa: RF02
+            is_out_of_district, -- noqa: RF02
             gender,
             ethnicity,
             is_homeless,
@@ -324,16 +324,16 @@ with
             c.moy,
             c.eoy,
             case
-                when boy in ('Below Benchmark', 'Well Below Benchmark') -- noqa: RF02
+                when boy in ('Below Benchmark', 'Well Below Benchmark')  -- noqa: RF02
                 then 'Yes'
-                when boy is null -- noqa: RF02
+                when boy is null  -- noqa: RF02
                 then 'No data'
                 else 'No'
             end as boy_probe_eligible,
             case
-                when moy in ('Below Benchmark', 'Well Below Benchmark') -- noqa: RF02
+                when moy in ('Below Benchmark', 'Well Below Benchmark')  -- noqa: RF02
                 then 'Yes'
-                when moy is null -- noqa: RF02
+                when moy is null  -- noqa: RF02
                 then 'No data'
                 else 'No'
             end as moy_probe_eligible,
