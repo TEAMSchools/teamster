@@ -314,16 +314,16 @@ with
             c.moy,
             c.eoy,
             case
-                when boy in ('Below Benchmark', 'Well Below Benchmark')
+                when c.boy in ('Below Benchmark', 'Well Below Benchmark')
                 then 'Yes'
-                when boy is null
+                when c.boy is null
                 then 'No data'
                 else 'No'
             end as boy_probe_eligible,
             case
-                when moy in ('Below Benchmark', 'Well Below Benchmark')
+                when c.moy in ('Below Benchmark', 'Well Below Benchmark')
                 then 'Yes'
-                when moy is null
+                when c.moy is null
                 then 'No data'
                 else 'No'
             end as moy_probe_eligible,
