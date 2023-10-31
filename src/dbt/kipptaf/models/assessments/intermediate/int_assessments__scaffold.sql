@@ -1,36 +1,6 @@
 {{ config(materialized="table") }}
 
 with
-    assessments as (
-        select
-            a.assessment_id,
-            a.title,
-            a.administered_at,
-            a.performance_band_set_id,
-            a.academic_year,
-            a.academic_year_clean,
-            a.scope,
-            a.subject_area,
-
-            ias.module_type,
-            if(ias.module_type is not null, true, false) as is_internal_assessment,
-
-            regexp_replace(
-                coalesce(
-                    regexp_extract(a.title, ias.module_number_pattern_1 || r'\s?\d+'),
-                    regexp_extract(a.title, ias.module_number_pattern_2 || r'\s?\d+')
-                ),
-                r'\s',
-                ''
-            ) as module_number,
-        from {{ ref("base_illuminate__assessments") }} as a
-        left join
-            {{ source("assessments", "src_assessments__internal_assessment_scopes") }}
-            as ias
-            on a.scope = ias.scope
-            and a.academic_year_clean = ias.academic_year
-    ),
-
     internal_assessments as (
         /* K-8 */
         select
@@ -54,7 +24,7 @@ with
             ce.powerschool_school_id,
 
             false as is_replacement,
-        from assessments as a
+        from {{ ref("base_assessments__assessments") }} as a
         inner join
             {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
@@ -96,7 +66,7 @@ with
             ce.powerschool_school_id,
 
             false as is_replacement,
-        from assessments as a
+        from {{ ref("base_assessments__assessments") }} as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
             on a.subject_area = ce.illuminate_subject_area
@@ -177,7 +147,7 @@ select
 
     sa.student_assessment_id,
     sa.date_taken,
-from assessments as a
+from {{ ref("base_assessments__assessments") }} as a
 inner join
     {{ ref("stg_illuminate__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id
@@ -226,7 +196,7 @@ select
 
     sa.student_assessment_id,
     sa.date_taken,
-from assessments as a
+from {{ ref("base_assessments__assessments") }} as a
 inner join
     {{ ref("stg_illuminate__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id
