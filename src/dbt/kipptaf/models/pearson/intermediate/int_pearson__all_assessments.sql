@@ -39,7 +39,8 @@ select  -- noqa: AM04
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
     case
-        when subject = 'Science' and testperformancelevel >= 3 then true
+        when subject = 'Science' and testperformancelevel >= 3
+        then true
         when testperformancelevel >= 4
         then true
         when testperformancelevel < 4
