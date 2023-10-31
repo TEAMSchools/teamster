@@ -41,6 +41,8 @@ select  -- noqa: AM04
     case
         when subject = 'Science' and testperformancelevel >= 3
         then true
+        when testcode in ('MATGP', 'ELAGP') and testperformancelevel = 2
+        then true
         when testperformancelevel >= 4
         then true
         when testperformancelevel < 4
