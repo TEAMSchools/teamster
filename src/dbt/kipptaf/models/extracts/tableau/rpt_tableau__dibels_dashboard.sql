@@ -201,7 +201,7 @@ with
         where cast(left(bss.school_year, 4) as int) = {{ var("current_academic_year") }}
         union all
         select
-            left(school_year, 4) as mclass_academic_year,  -- noqa: LT01
+            left(school_year, 4) as mclass_academic_year,
             student_primary_id as mclass_student_number,
             'pm' as assessment_type,
             cast(assessment_grade as string) as mclass_assessment_grade,
@@ -291,16 +291,14 @@ with
         where m.section_number not like '%SC%'
     ),
 
-    composite_only  -- noqa: LT01
-    as (
+    composite_only as (
         select distinct
             academic_year, student_number, expected_test, mclass_measure_level,
         from students_schedules_and_assessments_scores
         where mclass_measure = 'Composite'
     ),
 
-    overall_composite_by_window  -- noqa: LT01
-    as (
+    overall_composite_by_window as (
         select distinct academic_year, student_number, p.boy, p.moy, p.eoy,
         from
             composite_only pivot (
@@ -316,16 +314,16 @@ with
             c.moy,
             c.eoy,
             case
-                when boy in ('Below Benchmark', 'Well Below Benchmark')  -- noqa: RF02
+                when boy in ('Below Benchmark', 'Well Below Benchmark')
                 then 'Yes'
-                when boy is null  -- noqa: RF02
+                when boy is null
                 then 'No data'
                 else 'No'
             end as boy_probe_eligible,
             case
-                when moy in ('Below Benchmark', 'Well Below Benchmark')  -- noqa: RF02
+                when moy in ('Below Benchmark', 'Well Below Benchmark')
                 then 'Yes'
-                when moy is null  -- noqa: RF02
+                when moy is null
                 then 'No data'
                 else 'No'
             end as moy_probe_eligible,
