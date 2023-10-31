@@ -1,0 +1,151 @@
+# https://github.com/dagster-io/dagster-cloud-hybrid-quickstart
+# https://github.com/dagster-io/dagster-cloud-action
+
+name: staging
+
+on:
+  workflow_dispatch: null
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/teamster/**
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+
+concurrency:
+  # Cancel in-progress deploys to the same branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CODE_LOCATION: kippcamden
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # The organization name in Dagster Cloud
+  DAGSTER_CLOUD_ORGANIZATION: "<organization-name>"
+  # Path to the root folder containing the dagster project
+  DAGSTER_PROJECT_DIR: "."
+  # Path to dagster_cloud.yaml relative to DAGSTER_PROJECT_DIR
+  DAGSTER_CLOUD_YAML_PATH: "dagster_cloud.yaml"
+  # The IMAGE_REGISTRY should match the 'registry:'' in dagster_cloud.yaml
+  IMAGE_REGISTRY: "<account-id>.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-image"
+
+jobs:
+  dagster-cloud-deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      # If this is a closed PR the prerun step closes the branch deployment and returns
+      # output.result='skip' which is used to skip other steps in this workflow.
+      - name: Pre-run checks
+        id: prerun
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
+
+      # Checkout the project
+      - name: Checkout
+        uses: actions/checkout@v4
+        if: steps.prerun.outputs.result != 'skip'
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Validate dagster_cloud.yaml and the connection to dagster.cloud
+      - name: Validate configuration
+        id: ci-validate
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        with:
+          command:
+            "ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{
+            env.DAGSTER_CLOUD_YAML_PATH }}"
+
+      # Parse dagster_cloud.yaml, detect if this is branch deployment and initialize
+      # the build session
+      - name: Initialize build session
+        id: ci-init
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@v0.1
+        with:
+          project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
+          dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_YAML_PATH }}
+          # The full deployment name. If this run is for a PR,
+          # this value is ignored and a branch deployment is used.
+          deployment: prod
+
+      # Any value can be used as the docker image tag. It is recommended to use a
+      # unique value for each build so that multiple builds do not overwrite each other.
+      - name: Generate docker image tag
+        id: generate-image-tag
+        if: steps.prerun.outputs.result != 'skip'
+        run:
+          echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV && echo
+          $IMAGE_TAG
+
+      # Building and deploying the docker image requires a login step specific to the
+      # container registry.
+      # https://github.com/google-github-actions/auth
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: access_token
+          workload_identity_provider:
+            projects/${{ secrets.GCP_PROJECT_NUMBER
+            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account:
+            ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}@${{ secrets.GCP_PROJECT_ID
+            }}.iam.gserviceaccount.com
+
+      # https://github.com/docker/login-action
+      - name: Login to GAR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      # For each code location, the "build-push-action" builds the docker image and a
+      # "set-build-output" command records the image tag for each code location.
+      - name: Build and upload Docker image for "example_location"
+        if: steps.prerun.outputs.result != 'skip'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-example-location
+
+      - name: Update build session with image tag for example_location
+        id: ci-set-build-output-example-location
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        with:
+          command:
+            ci set-build-output --location-name=data-eng-pipeline
+            --image-tag=$IMAGE_TAG-example-location
+
+      # Deploy all code locations in this build session to Dagster Cloud
+      - name: Deploy to Dagster Cloud
+        id: ci-deploy
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        with:
+          command: ci deploy
+
+      # Update a PR comment - this runs always() so the comment is updated on success
+      # and failure
+      - name: Update PR comment for branch deployments
+        id: ci-notify
+        if: steps.prerun.outputs.result != 'skip' && always()
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        with:
+          command: "ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}"
+
+      # Generate a summary that shows up on the Workflow Summary page
+      - name: Generate a summary
+        id: ci-summary
+        if: steps.prerun.outputs.result != 'skip' && always()
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1.27
+        with:
+          command: ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY

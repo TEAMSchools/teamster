@@ -55,9 +55,14 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Pre-run checks
+        id: prerun
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
+
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v3
+        if: steps.prerun.outputs.result != 'skip'
         with:
           ref: ${{ github.head_ref }}
           submodules: true
@@ -69,6 +74,7 @@ jobs:
       - id: auth
         name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
+        if: steps.prerun.outputs.result != 'skip'
         with:
           token_format: access_token
           workload_identity_provider:
@@ -81,6 +87,7 @@ jobs:
       # https://github.com/docker/login-action
       - name: Login to GAR
         uses: docker/login-action@v2
+        if: steps.prerun.outputs.result != 'skip'
         with:
           registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
@@ -89,6 +96,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action
       - name: Build and deploy to Dagster Cloud hybrid
         uses: dagster-io/dagster-cloud-action/actions/hybrid_branch_deploy@v0.1
+        if: steps.prerun.outputs.result != 'skip'
         with:
           organization_id: ${{ secrets.DAGSTER_ORGANIZATION_ID }}
           dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
@@ -98,7 +106,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # https://github.com/GoogleCloudPlatform/gcr-cleaner/blob/main/docs/deploy-github-actions.md
-      - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
+      - name: Clean GAR repo
+        uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
+        if: steps.prerun.outputs.result != 'skip'
         with:
           args: >-
             -repo=us-central1-docker.pkg.dev/teamster-332318/teamster-staging -recursive -keep=1
