@@ -32,7 +32,7 @@ with
             lastfirst as student_name,
             first_name as student_first_name,
             last_name as student_last_name,
-            is_out_of_district, 
+            is_out_of_district,
             gender,
             ethnicity,
             is_homeless,
@@ -294,7 +294,7 @@ with
         where m.section_number not like '%SC%'
     ),
 
-    composite_only  -- Extract final composite by student per window
+    composite_only  -- noqa: LT01
     as (
         select distinct
             academic_year, student_number, expected_test, mclass_measure_level,
@@ -302,7 +302,7 @@ with
         where mclass_measure = 'Composite'
     ),
 
-    overall_composite_by_window  -- Pivot final composite by student per window
+    overall_composite_by_window  -- noqa: LT01
     as (
         select distinct academic_year, student_number, p.boy, p.moy, p.eoy,
         from
