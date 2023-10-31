@@ -30,7 +30,7 @@ def test_staff_info():
 
 
 def test_support():
-    _test_resource("1FAIpQLSf-KQi1iI4gEhilQABKe8gTHtb7wPHuJHG0i_ZX6Bln1JiwwA")
+    _test_resource("1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI")
 
 
 def test_manager():
