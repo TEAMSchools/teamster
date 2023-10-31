@@ -25,7 +25,9 @@ google_sheets_assets = [
 
 # google forms
 FORM_IDS = [
-    "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",
+    "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",  # staff info
+    "1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0",  # manager
+    # "1FAIpQLSf-KQi1iI4gEhilQABKe8gTHtb7wPHuJHG0i_ZX6Bln1JiwwA",  # support
 ]
 
 google_forms_assets = build_google_forms_assets(
