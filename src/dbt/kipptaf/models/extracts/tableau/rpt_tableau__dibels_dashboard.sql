@@ -217,7 +217,7 @@ with
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change,
-            null mclass_measure_level_int,
+            null as mclass_measure_level_int,
         from {{ ref("stg_amplify__pm_student_summary") }}
         where cast(left(school_year, 4) as int) = {{ var("current_academic_year") }}
     ),
