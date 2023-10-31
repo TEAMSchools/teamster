@@ -204,7 +204,7 @@ with
         where cast(left(bss.school_year, 4) as int) = {{ var("current_academic_year") }}
         union all
         select
-            left(school_year, 4) as mclass_academic_year,  -- needed to extract the academic year format that matches NJ's syntax
+            left(school_year, 4) as mclass_academic_year,  -- noqa: LT01
             student_primary_id as mclass_student_number,
             'pm' as assessment_type,
             cast(assessment_grade as string) as mclass_assessment_grade,
