@@ -35,7 +35,6 @@ select
     a.scope,
     a.subject_area,
     a.tags,
-    a.creator_first_name || ' ' || a.creator_last_name as created_by,
     a.module_type,
     a.module_number,
     a.is_internal_assessment as is_normed_scope,
@@ -53,6 +52,8 @@ select
     frg.label as question_reporting_group,
 
     sg.standard_codes as question_standard_codes,
+
+    a.creator_first_name || ' ' || a.creator_last_name as created_by,
 from {{ ref("base_assessments__assessments") }} as a
 inner join
     {{ ref("stg_illuminate__assessment_fields") }} as f
