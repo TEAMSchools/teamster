@@ -37,4 +37,7 @@ left join
     {{ ref("int_illuminate__agg_student_responses") }} as asr
     on s.student_assessment_id = asr.student_assessment_id
     and asr.response_type = 'overall'
-where s.is_internal_assessment and not s.is_replacement
+where
+    s.academic_year = {{ var("current_academic_year") }}
+    and s.is_internal_assessment
+    and not s.is_replacement
