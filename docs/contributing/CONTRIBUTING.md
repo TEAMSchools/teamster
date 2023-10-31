@@ -2,7 +2,7 @@
 
 Read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
 
-In this guide you will get an overview of the contribution workflow from opening an issue, creating
+In this guide you will get an overview of the contribution workflow from creating a branch, creating
 a pull request, reviewing, and merging the pull request.
 
 ## New contributor guide
@@ -21,8 +21,15 @@ Here are some resources to help you get started with open source contributions:
 - [ ] dbt Cloud
 - [ ] GitHub
 
-To contribute on GitHub, you must be a member of ... To access our BigQuery project, you must be a
-member of TEAMster Analysts KTAF
+To contribute on GitHub, you must be a member of our
+[Data Team](https://github.com/orgs/TEAMSchools/teams/data-team), and your ability to approve and
+merge pull requests depends on your membership in one of these subgroups:
+
+- [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers)
+- [Data Engineers](https://github.com/orgs/TEAMSchools/teams/data-engineers)
+- [Admins](https://github.com/orgs/TEAMSchools/teams/admins)
+
+To access our BigQuery project and its datasets, you must be a member of `TEAMster Analysts KTAF`.
 
 ### dbt Cloud configuration
 
