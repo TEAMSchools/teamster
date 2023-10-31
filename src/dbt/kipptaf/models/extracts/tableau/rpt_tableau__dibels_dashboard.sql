@@ -25,7 +25,6 @@ with
             cast(academic_year as string) as academic_year,
             'KIPP NJ/MIAMI' as district,
             region,
-
             schoolid,
             school_abbreviation as school,
             studentid,
@@ -33,13 +32,11 @@ with
             lastfirst as student_name,
             first_name as student_first_name,
             last_name as student_last_name,
-
-            is_out_of_district, -- noqa: RF02
+            is_out_of_district, 
             gender,
             ethnicity,
             is_homeless,
             is_504,
-
             lep_status,
             lunch_status,
             case
@@ -67,7 +64,6 @@ with
             cast(e.academic_year as string) as academic_year,
             'KIPP NJ/MIAMI' as district,
             e.region as region,
-
             e.schoolid,
             e.school_abbreviation as school,
             e.studentid,
@@ -76,12 +72,11 @@ with
             e.first_name as student_first_name,
             e.last_name as student_last_name,
             cast(e.grade_level as string) as grade_level,
-            is_out_of_district,
+            e.is_out_of_district,
             e.gender,
             e.ethnicity,
             e.is_homeless,
             e.is_504,
-
             e.lep_status,
             e.lunch_status,
             case
@@ -97,7 +92,7 @@ with
             e.academic_year = {{ var("current_academic_year") }}
             and e.enroll_status = 0
             and e.rn_year = 1
-            and not is_self_contained
+            and not e.is_self_contained
     ),
 
     student_number as (
