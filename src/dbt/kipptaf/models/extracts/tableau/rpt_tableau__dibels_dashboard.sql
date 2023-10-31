@@ -63,7 +63,7 @@ with
             e._dbt_source_relation,
             cast(e.academic_year as string) as academic_year,
             'KIPP NJ/MIAMI' as district,
-            e.region as region,
+            e.region,
             e.schoolid,
             e.school_abbreviation as school,
             e.studentid,
@@ -71,7 +71,6 @@ with
             e.lastfirst as student_name,
             e.first_name as student_first_name,
             e.last_name as student_last_name,
-            cast(e.grade_level as string) as grade_level,
             e.is_out_of_district,
             e.gender,
             e.ethnicity,
@@ -85,6 +84,7 @@ with
                 when e.region = 'Miami'
                 then 'FL'
             end as city,
+            cast(e.grade_level as string) as grade_level,
             case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         inner join iready_roster as i on e.student_number = i.student_number
@@ -119,17 +119,15 @@ with
             c._dbt_source_relation,
             cast(c.cc_academic_year as string) as schedule_academic_year,
             'KIPP NJ/MIAMI' as schedule_district,
-            e.region as schedule_region,
-
             c.cc_schoolid as schedule_schoolid,
             c.cc_studentid as schedule_studentid,
-            e.student_number as schedule_student_number,
-
             c.cc_teacherid as teacherid,
             c.teacher_lastfirst as teacher_name,
             c.courses_course_name as course_name,
             c.cc_course_number as course_number,
             c.cc_section_number as section_number,
+            e.region as schedule_region,
+            e.student_number as schedule_student_number,
             e.advisory_name,
             period as expected_test,
             1 as scheduled,
@@ -180,7 +178,6 @@ with
             u.measure as mclass_measure,
             u.score as mclass_measure_score,
             u.level as mclass_measure_level,
-
             u.national_norm_percentile as mclass_measure_percentile,
             u.semester_growth as mclass_measure_semester_growth,
             u.year_growth as mclass_measure_year_growth,
@@ -214,13 +211,13 @@ with
             measure as mclass_measure,
             score as mclass_measure_score,
             null as mclass_measure_level,
-            null mclass_measure_level_int,
             null as mclass_measure_percentile,
             null as mclass_measure_semester_growth,
             null as mclass_measure_year_growth,
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change,
+            null mclass_measure_level_int,
         from {{ ref("stg_amplify__pm_student_summary") }}
         where cast(left(school_year, 4) as int) = {{ var("current_academic_year") }}
     ),
