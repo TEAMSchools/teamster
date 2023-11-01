@@ -18,7 +18,7 @@ with
             max(is_accepted_certificate) as is_accepted_certificate,
 
             sum(if(is_submitted, 1, 0)) as n_submitted,
-            sum(if(is_accepted, 1, 0)) as n_accepted,
+            sum(if(is_accepted, 1, 0)) as n_accepted
         from {{ ref("base_kippadb__application") }}
         group by applicant
     ),
@@ -37,11 +37,11 @@ with
             row_number() over (
                 partition by student, academic_year, semester
                 order by transcript_date desc
-            ) as rn_semester,
+            ) as rn_semester
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
-                select id,
+                select id
                 from {{ ref("stg_kippadb__record_type") }}
                 where name = 'Cumulative College'
             )
@@ -55,7 +55,7 @@ with
             next_steps,
             row_number() over (
                 partition by contact, academic_year order by `date` desc
-            ) as rn_contact_year_desc,
+            ) as rn_contact_year_desc
         from {{ ref("stg_kippadb__contact_note") }}
         where regexp_contains(`subject`, r'^AS\d')
     ),
@@ -67,7 +67,7 @@ with
             `subject` as tier,
             row_number() over (
                 partition by contact, academic_year order by `date` desc
-            ) as rn_contact_year_desc,
+            ) as rn_contact_year_desc
         from {{ ref("stg_kippadb__contact_note") }}
         where regexp_contains(subject, r'Tier\s\d$')
     ),
@@ -78,7 +78,7 @@ with
             `subject` as grad_plan_year,
             row_number() over (
                 partition by contact order by `date` desc
-            ) as rn_contact_desc,
+            ) as rn_contact_desc
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` like 'Grad Plan FY%'
     ),
@@ -90,7 +90,7 @@ with
 
             row_number() over (
                 partition by student order by `start_date` desc
-            ) as rn_matric,
+            ) as rn_matric
         from {{ ref("stg_kippadb__enrollment") }}
         where status = 'Matriculated'
     ),
@@ -103,7 +103,7 @@ with
 
             row_number() over (
                 partition by e.id order by fa.offer_date desc
-            ) as rn_finaid,
+            ) as rn_finaid
         from matric as e
         inner join
             {{ ref("stg_kippadb__subsequent_financial_aid_award") }} as fa
@@ -128,7 +128,7 @@ with
             passion_purpose_plan_score as benchmark_ppp_color,
             row_number() over (
                 partition by contact, academic_year order by benchmark_date desc
-            ) as rn_benchmark,
+            ) as rn_benchmark
         from {{ ref("stg_kippadb__college_persistence") }}
     )
 
@@ -320,6 +320,67 @@ select
     b.benchmark_academic_color,
     b.benchmark_financial_color,
     b.benchmark_ppp_color,
+
+    case
+        when c.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when c.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when c.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when c.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when c.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
+
+    case
+        when
+            ei.ba_status = 'Graduated'
+            and ei.ba_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_ba_grad_int,
+
+    case
+        when
+            ei.ba_status = 'Graduated'
+            and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_ba_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
+        then 1
+        else 0
+    end as is_2yr_aa_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31)
+        then 1
+        else 0
+    end as is_3yr_aa_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31)
+        then 1
+        else 0
+    end as is_1yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
+        then 1
+        else 0
+    end as is_2yr_cte_grad_int,
 
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
