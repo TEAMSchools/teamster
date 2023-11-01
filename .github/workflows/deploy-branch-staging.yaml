@@ -19,3 +19,4 @@ jobs:
     uses: ./.github/workflows/dagster-cloud-deploy.yaml
     with:
       code-location: staging
+    secrets: inherit
