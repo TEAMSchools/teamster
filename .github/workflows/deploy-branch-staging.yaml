@@ -10,6 +10,7 @@ on:
       - main
     paths:
       - src/teamster/**
+      - .github/workflows/deploy-branch-staging.yaml
     types:
       - opened
       - synchronize
