@@ -35,7 +35,12 @@ env:
 
 jobs:
   dagster-cloud-deploy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
