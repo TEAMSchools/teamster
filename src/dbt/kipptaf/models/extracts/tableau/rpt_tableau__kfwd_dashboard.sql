@@ -41,7 +41,7 @@ with
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
-                select id
+                select id,
                 from {{ ref("stg_kippadb__record_type") }}
                 where name = 'Cumulative College'
             )
