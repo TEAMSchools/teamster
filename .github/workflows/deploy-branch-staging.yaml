@@ -16,6 +16,6 @@ on:
 
 jobs:
   dagster-cloud-deploy:
-    uses: TEAMSchools/teamster/.github/workflows/dagster-cloud-deploy.yaml@main
+    uses: ./.github/workflows/dagster-cloud-deploy.yaml
     with:
       code-location: staging
