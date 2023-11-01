@@ -783,7 +783,7 @@ SURVEY_RESPONSE_FIELDS = [
                     },
                 ],
                 "default": {},
-            }
+            },
             # get_avro_record_schema(name="data_quality", fields=DATA_QUALITY_FIELDS),
         ],
         "default": None,

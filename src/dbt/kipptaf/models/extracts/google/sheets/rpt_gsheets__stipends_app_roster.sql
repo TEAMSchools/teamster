@@ -76,7 +76,7 @@ with
                 then 'CMO'
                 else 'Regional'
             end as route,
-    
+
             coalesce(cc.name, sr.home_work_location_name) as campus,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
@@ -102,7 +102,7 @@ select
     r.location_abbr,
     r.route,
     r.campus,
-    
+
     a.first_approver_employee_number,
     a.first_approver_name,
     a.first_approver_email,
