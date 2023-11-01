@@ -40,6 +40,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pull-requests: write
 
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
