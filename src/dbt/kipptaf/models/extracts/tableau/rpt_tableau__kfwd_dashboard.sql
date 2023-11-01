@@ -18,7 +18,7 @@ with
             max(is_accepted_certificate) as is_accepted_certificate,
 
             sum(if(is_submitted, 1, 0)) as n_submitted,
-            sum(if(is_accepted, 1, 0)) as n_accepted
+            sum(if(is_accepted, 1, 0)) as n_accepted,
         from {{ ref("base_kippadb__application") }}
         group by applicant
     ),
@@ -37,7 +37,7 @@ with
             row_number() over (
                 partition by student, academic_year, semester
                 order by transcript_date desc
-            ) as rn_semester
+            ) as rn_semester,
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
@@ -55,7 +55,7 @@ with
             next_steps,
             row_number() over (
                 partition by contact, academic_year order by `date` desc
-            ) as rn_contact_year_desc
+            ) as rn_contact_year_desc,
         from {{ ref("stg_kippadb__contact_note") }}
         where regexp_contains(`subject`, r'^AS\d')
     ),
@@ -67,7 +67,7 @@ with
             `subject` as tier,
             row_number() over (
                 partition by contact, academic_year order by `date` desc
-            ) as rn_contact_year_desc
+            ) as rn_contact_year_desc,
         from {{ ref("stg_kippadb__contact_note") }}
         where regexp_contains(subject, r'Tier\s\d$')
     ),
@@ -78,7 +78,7 @@ with
             `subject` as grad_plan_year,
             row_number() over (
                 partition by contact order by `date` desc
-            ) as rn_contact_desc
+            ) as rn_contact_desc,
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` like 'Grad Plan FY%'
     ),
@@ -90,7 +90,7 @@ with
 
             row_number() over (
                 partition by student order by `start_date` desc
-            ) as rn_matric
+            ) as rn_matric,
         from {{ ref("stg_kippadb__enrollment") }}
         where status = 'Matriculated'
     ),
@@ -103,7 +103,7 @@ with
 
             row_number() over (
                 partition by e.id order by fa.offer_date desc
-            ) as rn_finaid
+            ) as rn_finaid,
         from matric as e
         inner join
             {{ ref("stg_kippadb__subsequent_financial_aid_award") }} as fa
@@ -128,7 +128,7 @@ with
             passion_purpose_plan_score as benchmark_ppp_color,
             row_number() over (
                 partition by contact, academic_year order by benchmark_date desc
-            ) as rn_benchmark
+            ) as rn_benchmark,
         from {{ ref("stg_kippadb__college_persistence") }}
     )
 
