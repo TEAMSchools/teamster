@@ -121,14 +121,14 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-${{ env.CODE_LOCATION }}
 
-      - name: Update build session with image tag for example_location
-        id: ci-set-build-output-example-location
+      - name: Update build session with image tag
+        id: ci-set-build-output
         if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         with:
           command:
-            ci set-build-output --location-name=data-eng-pipeline
-            --image-tag=$IMAGE_TAG-example-location
+            ci set-build-output --location-name=${{ env.CODE_LOCATION }} --image-tag=${{
+            env.IMAGE_TAG }}-${{ env.CODE_LOCATION }}
 
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud
