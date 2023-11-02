@@ -121,27 +121,21 @@ with
             case
                 /* Gr K-8 */
                 when co.grade_level <= 8 and att.ada_term_running is null
-                then 'At-Risk'
+                then 'Off-Track'
                 /* Gr K */
                 when co.grade_level = 0 and att.ada_term_running < 0.75
-                then 'At-Risk'
-                when co.grade_level = 0 and att.ada_term_running < 0.85
                 then 'Off-Track'
                 /* Gr 1-2 */
                 when co.grade_level between 1 and 2 and att.ada_term_running < 0.80
-                then 'At-Risk'
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.90
                 then 'Off-Track'
                 /* Gr3-8 */
                 when co.grade_level between 3 and 8 and att.ada_term_running < 0.85
-                then 'At-Risk'
-                when co.grade_level between 3 and 8 and att.ada_term_running < 0.90
                 then 'Off-Track'
                 /* HS */
                 when
                     co.grade_level >= 9
                     and att.n_absences_y1_running >= att.hs_at_risk_absences
-                then 'At-Risk'
+                then 'Off-Track'
                 when
                     co.grade_level >= 9
                     and att.n_absences_y1_running >= att.hs_off_track_absences
@@ -155,10 +149,6 @@ with
                     co.grade_level between 1 and 2
                     and coalesce(ir.iready_reading_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                then 'At-Risk'
-                when
-                    co.grade_level between 1 and 2
-                    and ir.iready_reading_recent = '1 Grade Level Below'
                 then 'Off-Track'
                 /* Gr3-8 */
                 when
@@ -167,16 +157,16 @@ with
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                     and coalesce(ir.iready_math_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                then 'At-Risk'
+                then 'Off-Track'
                 /* HS */
                 when co.grade_level = 9 and c.projected_credits_cum < 25
-                then 'At-Risk'
+                then 'Off-Track'
                 when co.grade_level = 10 and c.projected_credits_cum < 50
-                then 'At-Risk'
+                then 'Off-Track'
                 when co.grade_level = 11 and c.projected_credits_cum < 85
-                then 'At-Risk'
+                then 'Off-Track'
                 when co.grade_level = 12 and c.projected_credits_cum < 120
-                then 'At-Risk'
+                then 'Off-Track'
                 else 'On-Track'
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
@@ -218,18 +208,12 @@ select
         then attendance_status
         when
             grade_level between 1 and 8
-            and academic_status = 'At-Risk'
-            and attendance_status = 'At-Risk'
-        then 'At-Risk'
-        when
-            grade_level between 1 and 8
-            and (academic_status != 'On-Track' or attendance_status != 'On-Track')
+            and academic_status = 'Off-Track'
+            and attendance_status = 'Off-Track'
         then 'Off-Track'
         when
             grade_level >= 9
             and (academic_status = 'At-Risk' or attendance_status = 'At-Risk')
-        then 'At-Risk'
-        when grade_level >= 9 and attendance_status = 'Off-Track'
         then 'Off-Track'
         else 'On-Track'
     end as overall_status,
