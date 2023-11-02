@@ -46,7 +46,12 @@ defs = Definitions(
         ),
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
-    schedules=[*datagun.schedules, *powerschool.schedules, *deanslist.schedules],
+    schedules=[
+        *datagun.schedules,
+        *dbt.schedules,
+        *powerschool.schedules,
+        *deanslist.schedules,
+    ],
     sensors=[*powerschool.sensors, *edplan.sensors, *titan.sensors],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
