@@ -89,6 +89,7 @@ defs = Definitions(
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
+        *dbt.schedules,
         *fivetran.schedules,
         *google.schedules,
         *ldap.schedules,
@@ -103,7 +104,6 @@ defs = Definitions(
         *clever.sensors,
         *fivetran.sensors,
         *google.sensors,
-        *dbt.sensors,
     ],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
