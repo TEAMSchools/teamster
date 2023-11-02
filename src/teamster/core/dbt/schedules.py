@@ -37,6 +37,7 @@ def build_dbt_code_version_schedule(
             if current_code_version != latest_code_version:
                 asset_selection.append(asset_key)
 
-        return RunRequest(run_key=schedule_name, asset_selection=asset_selection)
+        if asset_selection:
+            return RunRequest(run_key=schedule_name, asset_selection=asset_selection)
 
     return _schedule
