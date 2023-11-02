@@ -103,6 +103,7 @@ defs = Definitions(
         *clever.sensors,
         *fivetran.sensors,
         *google.sensors,
+        *dbt.sensors,
     ],
     resources={
         "io_manager": ConfigurablePickledObjectGCSIOManager(
