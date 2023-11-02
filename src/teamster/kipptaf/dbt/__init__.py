@@ -1,7 +1,7 @@
 from .assets import __all__ as assets
-from .sensors import __all__ as sensors
+from .schedules import __all__ as schedules
 
 __all__ = [
     assets,
-    sensors,
+    schedules,
 ]
