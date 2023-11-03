@@ -213,14 +213,7 @@ select
     apps.account_type as application_account_type,
 
     ar.n_submitted,
-    ar.is_submitted_aa,
-    ar.is_submitted_ba,
-    ar.is_submitted_certificate as is_submitted_cert,
     ar.n_accepted,
-    ar.is_accepted_aa,
-    ar.is_accepted_ba,
-    ar.is_accepted_certificate as is_accepted_cert,
-    ar.is_eof_applicant,
     ar.is_matriculated,
 
     cnr.as1,
@@ -410,6 +403,13 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
+    coalesce(ar.is_submitted_aa, false) as is_submitted_aa,
+    coalesce(ar.is_submitted_ba, false) as is_submitted_ba,
+    coalesce(ar.is_submitted_certificate, false) as is_submitted_cert,
+    coalesce(ar.is_accepted_aa, false) as is_accepted_aa,
+    coalesce(ar.is_accepted_ba, false) as is_accepted_ba,
+    coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
+    coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
