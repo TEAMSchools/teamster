@@ -1,4 +1,9 @@
-from dagster import ScheduleDefinition, build_schedule_from_partitioned_job, schedule
+from dagster import (
+    RunRequest,
+    ScheduleDefinition,
+    build_schedule_from_partitioned_job,
+    schedule,
+)
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .jobs import (
@@ -15,13 +20,9 @@ from .jobs import (
 )
 def schoolmint_grow_static_partition_asset_job_schedule():
     for archived in ["t", "f"]:
-        yield static_partition_asset_job.run_request_for_partition(
+        yield RunRequest(
+            run_key=f"{CODE_LOCATION}_schoolmint_grow_static_partition_{archived}",
             partition_key=archived,
-            run_key=(
-                CODE_LOCATION
-                + "_schoolmint_grow_static_partition_asset_job_"
-                + archived
-            ),
         )
 
 
