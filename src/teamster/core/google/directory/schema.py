@@ -367,7 +367,7 @@ USER_FIELDS = [
         "name": "notes",
         "type": [
             "null",
-            get_avro_record_schema(name="notes", fields=NOTE_FIELDS, namespace="user")
+            get_avro_record_schema(name="notes", fields=NOTE_FIELDS, namespace="user"),
             # {
             #     "type": "array",
             #     "items": get_avro_record_schema(

@@ -89,6 +89,7 @@ defs = Definitions(
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
+        *dbt.schedules,
         *fivetran.schedules,
         *google.schedules,
         *ldap.schedules,

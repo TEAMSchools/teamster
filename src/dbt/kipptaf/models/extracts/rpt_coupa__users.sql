@@ -1,7 +1,7 @@
 with
     roles_union as (
         select urm.user_id, r.name as role_name,
-        from {{ source("coupa", "user_role_mapping") }} as urm
+        from {{ ref("stg_coupa__user_role_mapping") }} as urm
         inner join {{ source("coupa", "role") }} as r on urm.role_id = r.id
 
         union distinct

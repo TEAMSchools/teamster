@@ -64,6 +64,10 @@ models:
       +schema: assessments
       staging:
         +materialized: table
+    coupa:
+      +schema: coupa
+      staging:
+        +materialized: table
     dayforce:
       +schema: dayforce
       staging:
