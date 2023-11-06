@@ -15,13 +15,21 @@ with
             enr.students_student_number,
             enr.teacher_lastfirst,
 
+            s.grade_level,
+
             rt.name as term_name,
             rt.code as term_code,
+
+            {{ extract_code_location("enr") }} as code_location,
 
             coalesce(enr.cc_currentabsences, 0) as currentabsences,
             coalesce(enr.cc_currenttardies, 0) as currenttardies,
             abs(enr.courses_sched_do_not_print - 1) as include_grades_display,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
+        inner join
+            {{ ref("stg_powerschool__students") }} as s
+            on enr.students_student_number = s.student_number
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="s") }}
         inner join
             {{ ref("stg_reporting__terms") }} as rt
             on enr.cc_schoolid = rt.school_id
@@ -40,6 +48,70 @@ with
                 order_by="cc_dateenrolled desc",
             )
         }}
+    ),
+
+    enr_fg as (
+        select
+            enr._dbt_source_relation,
+            enr.students_student_number,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_academic_year,
+            enr.cc_course_number,
+            enr.cc_sectionid,
+            enr.sections_dcid,
+            enr.sections_section_number,
+            enr.teacher_lastfirst,
+            enr.courses_course_name,
+            enr.courses_credit_hours,
+            enr.term_name,
+            enr.term_code,
+            enr.include_grades_display,
+            enr.currentabsences,
+            enr.currenttardies,
+
+            fg.need_60,
+            fg.term_percent_grade_adjusted_rt1,
+            fg.term_percent_grade_adjusted_rt2,
+            fg.term_percent_grade_adjusted_rt3,
+            fg.term_percent_grade_adjusted_rt4,
+            fg.y1_percent_grade_adjusted,
+
+            if(
+                enr.code_location = 'kippmiami' and enr.grade_level = 0,
+                fg.term_letter_grade_rt1,
+                fg.term_letter_grade_adjusted_rt1
+            ) as term_letter_grade_adjusted_rt1,
+            if(
+                enr.code_location = 'kippmiami' and enr.grade_level = 0,
+                fg.term_letter_grade_rt2,
+                fg.term_letter_grade_adjusted_rt2
+            ) as term_letter_grade_adjusted_rt2,
+            if(
+                enr.code_location = 'kippmiami' and enr.grade_level = 0,
+                fg.term_letter_grade_rt3,
+                fg.term_letter_grade_adjusted_rt3
+            ) as term_letter_grade_adjusted_rt3,
+            if(
+                enr.code_location = 'kippmiami' and enr.grade_level = 0,
+                fg.term_letter_grade_rt4,
+                fg.term_letter_grade_adjusted_rt4
+            ) as term_letter_grade_adjusted_rt4,
+            if(
+                enr.code_location = 'kippmiami'
+                and enr.grade_level = 0
+                and fg.y1_letter_grade = 'F*',
+                'U',
+                fg.y1_letter_grade
+            ) as y1_letter_grade,
+        from enr_deduplicate as enr
+        left join
+            {{ ref("int_powerschool__final_grades_pivot") }} as fg
+            on enr.cc_studentid = fg.studentid
+            and enr.cc_yearid = fg.yearid
+            and enr.cc_course_number = fg.course_number
+            and enr.term_name = fg.storecode
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="fg") }}
     )
 
 select
@@ -56,8 +128,7 @@ select
     enr.include_grades_display,
     enr.currentabsences,
     enr.currenttardies,
-
-    fg.need_60,
+    enr.need_60,
 
     cat.f_cur as f_term,
     cat.s_cur as s_term,
@@ -72,55 +143,48 @@ select
     null as e1_pct,
     null as e2_pct,
 
-    max(fg.term_percent_grade_adjusted_rt1) over (
+    max(enr.term_percent_grade_adjusted_rt1) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q1_pct`,
-    max(fg.term_letter_grade_adjusted_rt1) over (
+    max(enr.term_letter_grade_adjusted_rt1) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q1_letter`,
-    max(fg.term_percent_grade_adjusted_rt2) over (
+    max(enr.term_percent_grade_adjusted_rt2) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q2_pct`,
-    max(fg.term_letter_grade_adjusted_rt2) over (
+    max(enr.term_letter_grade_adjusted_rt2) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q2_letter`,
-    max(fg.term_percent_grade_adjusted_rt3) over (
+    max(enr.term_percent_grade_adjusted_rt3) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q3_pct`,
-    max(fg.term_letter_grade_adjusted_rt3) over (
+    max(enr.term_letter_grade_adjusted_rt3) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q3_letter`,
-    max(fg.term_percent_grade_adjusted_rt4) over (
+    max(enr.term_percent_grade_adjusted_rt4) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q4_pct`,
-    max(fg.term_letter_grade_adjusted_rt4) over (
+    max(enr.term_letter_grade_adjusted_rt4) over (
         partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
         order by enr.term_name asc
     ) as `Q4_letter`,
 
-    coalesce(sgy1.percent, fg.y1_percent_grade_adjusted) as y1_pct,
-    coalesce(sgy1.grade, fg.y1_letter_grade) as y1_letter,
+    coalesce(sgy1.percent, enr.y1_percent_grade_adjusted) as y1_pct,
+    coalesce(sgy1.grade, enr.y1_letter_grade) as y1_letter,
 
     coalesce(kctz.ctz_cur, cat.ctz_cur) as ctz_cur,
     coalesce(kctz.ctz_rt1, cat.ctz_rt1) as ctz_rt1,
     coalesce(kctz.ctz_rt2, cat.ctz_rt2) as ctz_rt2,
     coalesce(kctz.ctz_rt3, cat.ctz_rt3) as ctz_rt3,
     coalesce(kctz.ctz_rt4, cat.ctz_rt4) as ctz_rt4,
-from enr_deduplicate as enr
-left join
-    {{ ref("int_powerschool__final_grades_pivot") }} as fg
-    on enr.cc_studentid = fg.studentid
-    and enr.cc_yearid = fg.yearid
-    and enr.cc_course_number = fg.course_number
-    and enr.term_name = fg.storecode
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="fg") }}
+from enr_fg as enr
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as cat
     on enr.cc_studentid = cat.studentid
@@ -130,10 +194,10 @@ left join
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="cat") }}
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as kctz
-    on fg.studentid = kctz.studentid
-    and fg.yearid = kctz.yearid
-    and fg.storecode = kctz.reporting_term
-    and {{ union_dataset_join_clause(left_alias="fg", right_alias="kctz") }}
+    on enr.cc_studentid = kctz.studentid
+    and enr.cc_yearid = kctz.yearid
+    and enr.term_name = kctz.reporting_term
+    and {{ union_dataset_join_clause(left_alias="enr", right_alias="kctz") }}
     and kctz.course_number = 'HR'
     and left(enr.sections_section_number, 1) = '0'
 left join
