@@ -23,15 +23,6 @@ echo "${DEANSLIST_API_KEY_MAP}" |
 echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" |
   sudo tee /etc/secret-volume/gcloud_service_account_json >/dev/null
 
-# update pip
-python -m pip install --no-cache-dir --upgrade pip
-
-# update pdm
-sudo /usr/local/py-utils/bin/pdm self update
-
-# install pdm dependencies
-pdm install --no-lock
-
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
 
@@ -51,3 +42,6 @@ find ./src/dbt -maxdepth 2 -name "dbt_project.yml" -print0 |
 
     pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" parse
   done
+
+# install pdm dependencies
+pdm install --no-lock
