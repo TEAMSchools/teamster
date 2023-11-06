@@ -50,7 +50,12 @@ defs = Definitions(
         ),
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
-    schedules=[*datagun.schedules, *deanslist.schedules, *powerschool.schedules],
+    schedules=[
+        *datagun.schedules,
+        *dbt.schedules,
+        *deanslist.schedules,
+        *powerschool.schedules,
+    ],
     sensors=[
         *edplan.sensors,
         *iready.sensors,

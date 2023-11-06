@@ -213,14 +213,7 @@ select
     apps.account_type as application_account_type,
 
     ar.n_submitted,
-    ar.is_submitted_aa,
-    ar.is_submitted_ba,
-    ar.is_submitted_certificate as is_submitted_cert,
     ar.n_accepted,
-    ar.is_accepted_aa,
-    ar.is_accepted_ba,
-    ar.is_accepted_certificate as is_accepted_cert,
-    ar.is_eof_applicant,
     ar.is_matriculated,
 
     cnr.as1,
@@ -321,6 +314,67 @@ select
     b.benchmark_financial_color,
     b.benchmark_ppp_color,
 
+    case
+        when c.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when c.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when c.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when c.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when c.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
+
+    case
+        when
+            ei.ba_status = 'Graduated'
+            and ei.ba_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_ba_grad_int,
+
+    case
+        when
+            ei.ba_status = 'Graduated'
+            and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_ba_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
+        then 1
+        else 0
+    end as is_2yr_aa_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31)
+        then 1
+        else 0
+    end as is_3yr_aa_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31)
+        then 1
+        else 0
+    end as is_1yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
+        then 1
+        else 0
+    end as is_2yr_cte_grad_int,
+
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
@@ -349,6 +403,13 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
+    coalesce(ar.is_submitted_aa, false) as is_submitted_aa,
+    coalesce(ar.is_submitted_ba, false) as is_submitted_ba,
+    coalesce(ar.is_submitted_certificate, false) as is_submitted_cert,
+    coalesce(ar.is_accepted_aa, false) as is_accepted_aa,
+    coalesce(ar.is_accepted_ba, false) as is_accepted_ba,
+    coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
+    coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student

@@ -1,7 +1,9 @@
 from dagster import build_schedule_context
 
 from teamster.core.utils.functions import get_dagster_cloud_instance
-from teamster.kippnewark.deanslist.schedules import multi_partition_asset_job_schedule
+from teamster.kippcamden.deanslist.schedules import (
+    deanslist_comm_log_midday_job_schedule,
+)
 
 
 def test_schedule():
@@ -9,7 +11,7 @@ def test_schedule():
         instance=get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
     )
 
-    output = multi_partition_asset_job_schedule()
+    output = deanslist_comm_log_midday_job_schedule()
 
     for o in output:
         context.log.info(o)

@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: performance_management
+    schema: kipptaf_performance_management
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_performance_management__scores_overall_archive
+        external:
+          location:
+            "{{ var('couchdrop_cloud_storage_uri_base') }}/performance-management/scores-overall.csv"
+          options:
+            format: CSV
+      - name: src_performance_management__scores_detail_archive
+        external:
+          location:
+            "{{ var('couchdrop_cloud_storage_uri_base') }}/performance-management/scores-detail.csv"
+          options:
+            format: CSV

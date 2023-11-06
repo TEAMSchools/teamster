@@ -2,7 +2,7 @@
 
 Read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
 
-In this guide you will get an overview of the contribution workflow from opening an issue, creating
+In this guide you will get an overview of the contribution workflow from creating a branch, creating
 a pull request, reviewing, and merging the pull request.
 
 ## New contributor guide
@@ -21,13 +21,47 @@ Here are some resources to help you get started with open source contributions:
 - [ ] dbt Cloud
 - [ ] GitHub
 
-To contribute on GitHub, you must be a member of ... To access our BigQuery project, you must be a
-member of TEAMster Analysts KTAF
+To contribute on GitHub, you must be a member of our
+[Data Team](https://github.com/orgs/TEAMSchools/teams/data-team), and your ability to approve and
+merge pull requests depends on your membership in one of these subgroups:
+
+- [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers)
+- [Data Engineers](https://github.com/orgs/TEAMSchools/teams/data-engineers)
+- [Admins](https://github.com/orgs/TEAMSchools/teams/admins)
+
+To access our BigQuery project and its datasets, you must be a member of `TEAMster Analysts KTAF`.
 
 ### dbt Cloud configuration
 
-- dataset name
-- sqlfmt
+#### Development Dataset
+
+When you first login to dbt Cloud, you will be asked to set up **Development credentials**. Every
+user gets their own development _branch_ of the database, and dbt will prefix every dataset it
+generates with a name specific to you. By default, this will be your username, but please add an
+underscore (`_`) to avoid cluttering up our BigQuery navigation. BigQuery will hide any datasets
+that begin with an underscore from the left nav.
+
+![Alt text](../images/dbt-cloud/settings_profile_credentials.png)
+
+#### sqlfmt
+
+<!-- adapted from https://docs.getdbt.com/docs/cloud/dbt-cloud-ide/lint-format#format-sql -->
+
+To format our SQL code, we use [sqlfmt](https://sqlfmt.com/), an uncompromising SQL query formatter
+that provides one way to format SQL and works with Jinja templating.
+
+To enable sqlfmt:
+
+1. Make sure you're on a development branch. Formatting isn't available on main or read-only
+   branches.
+2. Open a `.sql` file and click on the **Code Quality** tab.
+3. Click on the <kbd></> Config</kbd> button on the right side of the console.
+4. In the code quality tool config pop-up, you have the option to select **sqlfluff** or **sqlfmt**.
+5. To format your code, select the `sqlfmt` radio button.
+6. Once selected, go to the console section (located below the File editor) and select the
+   <kbd>Format</kbd> button.
+7. This button auto-formats your code in the File editor. Once you've auto-formatted, you'll see a
+   message confirming the outcome.
 
 ## Make Changes
 
