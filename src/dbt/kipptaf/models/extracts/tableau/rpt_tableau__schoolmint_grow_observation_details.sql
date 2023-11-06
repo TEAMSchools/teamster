@@ -41,7 +41,7 @@ with
             measurement,
             `value` as text_box_value,
             null as checkbox_value,
-            'textbox' as [type],
+            'textbox' as question_type,
         from
             {{
                 ref(
