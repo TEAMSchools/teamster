@@ -3,9 +3,7 @@
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install \
-    bash-completion \
-    google-cloud-sdk-gke-gcloud-auth-plugin &&
+  sudo apt-get -y --no-install-recommends install bash-completion &&
   sudo apt-get -y autoremove &&
   sudo apt-get -y clean
 
