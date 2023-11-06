@@ -60,8 +60,8 @@ with
             o.observer_name,
             o.observer_email,
             o.score as overall_score,
-            o.array_to_string(list_two_column_a, '|') as glows,
-            o.array_to_string(list_two_column_b, '|') as grows,
+            array_to_string(o.list_two_column_a, '|') as glows,
+            array_to_string(o.list_two_column_b, '|') as grows,
 
             os.measurement as score_measurement_id,
             os.percentage as score_percentage,
