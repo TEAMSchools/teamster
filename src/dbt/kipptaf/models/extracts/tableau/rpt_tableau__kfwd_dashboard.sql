@@ -375,6 +375,14 @@ select
         else 0
     end as is_2yr_cte_grad_int,
 
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date <= current_date('America/New_York')
+        then 1
+        else 0
+    end as is_grad_ever,
+
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
