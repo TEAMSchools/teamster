@@ -113,7 +113,7 @@ with
                     and date(
                         o.observed_at
                     ) between date({{ var("current_academic_year") }}, 11, 1) and date(
-                        {{ var("current_academic_year")+1 }}, 2, 29
+                        {{ var("current_academic_year") + 1 }}, 2, 29
                     )
                 then 'MOY (Coach)'
                 when
@@ -121,23 +121,21 @@ with
                     and date(
                         o.observed_at
                     ) between date({{ var("current_academic_year") }}, 11, 1) and date(
-                        {{ var("current_academic_year")+1 }}, 2, 29
+                        {{ var("current_academic_year") + 1 }}, 2, 29
                     )
                 then 'MOY (Self)'
                 when
                     o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_academic_year")+1 }}, 3, 1) and date(
-                        {{ var("current_academic_year")+1 }}, 6, 30
+                    and date(o.observed_at)
+                    between date({{ var("current_academic_year") + 1 }}, 3, 1) and date(
+                        {{ var("current_academic_year") + 1 }}, 6, 30
                     )
                 then 'EOY (Coach)'
                 when
                     o.rubric_name = 'Coaching Tool: Teacher Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_academic_year")+1 }}, 3, 1) and date(
-                        {{ var("current_academic_year")+1 }}, 6, 30
+                    and date(o.observed_at)
+                    between date({{ var("current_academic_year") + 1 }}, 3, 1) and date(
+                        {{ var("current_academic_year") + 1 }}, 6, 30
                     )
                 then 'EOY (Self)'
             end as reporting_term_name,
