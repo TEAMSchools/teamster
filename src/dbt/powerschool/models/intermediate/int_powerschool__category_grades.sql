@@ -46,7 +46,7 @@ with
             dbt_utils.deduplicate(
                 relation="enr_gr",
                 partition_by="studentid, yearid, course_number, storecode",
-                order_by="is_dropped_section desc, percent_grade desc",
+                order_by="is_dropped_section asc, percent_grade desc",
             )
         }}
     )

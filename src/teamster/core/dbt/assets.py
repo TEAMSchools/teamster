@@ -72,19 +72,25 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
     for source in external_sources:
         source_name = source["source_name"]
         table_name = source["name"]
-        dep_key_prefix = source["fqn"][1:-2]
 
-        if not dep_key_prefix:
-            dep_key_prefix = [source_name]
+        dep_key = source["meta"].get("dagster", {}).get("dep_key")
 
-        identifier = source["identifier"]
+        if dep_key is None:
+            dep_key_prefix = source["fqn"][1:-2]
 
-        if identifier[-3:].lower() == "__c":
-            dep_name = identifier
+            if not dep_key_prefix:
+                dep_key_prefix = [source_name]
+
+            identifier = source["identifier"]
+
+            if identifier[-3:].lower() == "__c":
+                dep_name = identifier
+            else:
+                dep_name = identifier.split("__")[-1]
+
+            dep_key = AssetKey([code_location, *dep_key_prefix, dep_name])
         else:
-            dep_name = identifier.split("__")[-1]
-
-        dep_key = AssetKey([code_location, *dep_key_prefix, dep_name])
+            dep_key = AssetKey(dep_key)
 
         deps.append(dep_key)
 
