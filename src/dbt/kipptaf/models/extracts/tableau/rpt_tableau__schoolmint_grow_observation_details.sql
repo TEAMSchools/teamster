@@ -158,122 +158,311 @@ with
             o.is_published
             and o.observed_at
             >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
+    ),
+    observation_details as (
+        select
+            s.user_id,
+            s.role_name,
+            s.internal_id,
+            s.type,
+            s.code,
+            s.name,
+            s.start_date,
+            s.end_date,
+            s.academic_year,
+            s.employee_number,
+            s.preferred_name_lastfirst,
+            s.business_unit_home_name,
+            s.home_work_location_name,
+            s.home_work_location_grade_band,
+            s.home_work_location_powerschool_school_id,
+            s.department_home_name,
+            s.primary_grade_level_taught,
+            s.job_title,
+            s.report_to_preferred_name_lastfirst,
+            s.worker_original_hire_date,
+            s.assignment_status,
+
+            o.observation_id,
+            o.teacher_id,
+            o.rubric_name,
+            o.created,
+            o.observed_at,
+            o.observer_name,
+            o.overall_score,
+            o.glows,
+            o.grows,
+            o.score_measurement_id,
+            o.score_percentage,
+            o.row_score_value,
+            o.measurement_name,
+            o.measurement_scale_min,
+            o.measurement_scale_max,
+            o.reporting_term_type,
+            o.tier,
+            o.reporting_term_name,
+            o.text_box,
+
+            row_number() over (
+                partition by s.type, s.name, s.internal_id, o.score_measurement_id
+                order by o.observed_at desc
+            ) as rn_submission,
+        from scaffold as s
+        left join
+            observations as o
+            on cast(o.observed_at as date) between s.start_date and s.end_date
+            /*
+    Matches on name for PM Rounds to distinguish Self and Coach,
+    */
+            and s.type = 'PM'
+            and s.name = o.reporting_term_name
+            and s.user_id = o.teacher_id
+
+        union all
+
+        select
+            s.user_id,
+            s.role_name,
+            s.internal_id,
+            s.type,
+            s.code,
+            s.name,
+            s.start_date,
+            s.end_date,
+            s.academic_year,
+            s.employee_number,
+            s.preferred_name_lastfirst,
+            s.business_unit_home_name,
+            s.home_work_location_name,
+            s.home_work_location_grade_band,
+            s.home_work_location_powerschool_school_id,
+            s.department_home_name,
+            s.primary_grade_level_taught,
+            s.job_title,
+            s.report_to_preferred_name_lastfirst,
+            s.worker_original_hire_date,
+            s.assignment_status,
+
+            o.observation_id,
+            o.teacher_id,
+            o.rubric_name,
+            o.created,
+            o.observed_at,
+            o.observer_name,
+            o.overall_score,
+            o.glows,
+            o.grows,
+            o.score_measurement_id,
+            o.score_percentage,
+            o.row_score_value,
+            o.measurement_name,
+            o.measurement_scale_min,
+            o.measurement_scale_max,
+            o.reporting_term_type,
+            o.tier,
+            o.reporting_term_name,
+            o.text_box,
+
+            row_number() over (
+                partition by s.type, s.name, s.internal_id, o.score_measurement_id
+                order by o.observed_at desc
+            ) as rn_submission,
+        from scaffold as s
+        left join
+            observations as o
+            on cast(o.observed_at as date) between s.start_date and s.end_date
+            /*
+    matches only on type and date for weekly forms
+    */
+            and s.type in ('WT', 'O3')
+            and s.type = o.reporting_term_type
+            and s.user_id = o.teacher_id
+    ),
+    historical_overall_scores as (
+        select
+            employee_number,
+            academic_year,
+            pm_term as code,
+            etr_score,
+            so_score,
+            overall_score,
+            etr_tier,
+            so_tier,
+            overall_tier as tier
+        from
+            {{
+                source(
+                    "performance_management",
+                    "src_performance_management__scores_overall_archive",
+                )
+            }}
+
+        union distinct
+
+        select
+            employee_number,
+            academic_year,
+            code,
+            null as etr_score,
+            null as so_score,
+            overall_score,
+            null as etr_tier,
+            null as so_tier,
+            tier,
+        from observation_details
+        where type = 'PM' and overall_score is not null
+    ),
+
+    historical_detail_scores as (
+        select
+            subject_employee_number as employee_number,
+            academic_year,
+            pm_term as code,
+            score_type,
+            observer_employee_number,
+            null as observer_name,
+            observed_at,
+            measurement_name,
+            score_value as row_score_value,
+
+        from
+            {{
+                source(
+                    "performance_management",
+                    "src_performance_management__scores_detail_archive",
+                )
+            }}
+
+        union all
+
+        select
+            employee_number,
+            academic_year,
+            code,
+            null as score_type,
+            null as observer_employee_number,
+            observer_name,
+            observed_at,
+            measurement_name,
+            row_score_value,
+
+        from observation_details
+        where type = 'PM' and overall_score is not null
+    ),
+    historical_data as (
+        select
+            ds.employee_number,
+            ds.academic_year,
+            ds.code,
+            ds.score_type,
+            ds.observer_employee_number,
+            ds.observer_name,
+            ds.observed_at,
+            ds.measurement_name,
+            ds.row_score_value,
+
+            os.etr_score,
+            os.so_score,
+            os.overall_score,
+            os.etr_tier,
+            os.so_tier,
+            os.tier.
+        from detail_scores as ds
+        left join
+            overall_scores as os
+            on ds.employee_number = os.employee_number
+            and ds.academic_year = os.academic_year
+            and ds.code = os.code
     )
 
 select
-    s.user_id,
-    s.role_name,
-    s.internal_id,
-    s.type,
-    s.code,
-    s.name,
-    s.start_date,
-    s.end_date,
-    s.academic_year,
-    s.employee_number,
-    s.preferred_name_lastfirst,
-    s.business_unit_home_name,
-    s.home_work_location_name,
-    s.home_work_location_grade_band,
-    s.home_work_location_powerschool_school_id,
-    s.department_home_name,
-    s.primary_grade_level_taught,
-    s.job_title,
-    s.report_to_preferred_name_lastfirst,
-    s.worker_original_hire_date,
-    s.assignment_status,
+    user_id,
+    role_name,
+    internal_id,
+    type,
+    code,
+    name,
+    start_date,
+    end_date,
+    academic_year,
+    employee_number,
+    preferred_name_lastfirst,
+    business_unit_home_name,
+    home_work_location_name,
+    home_work_location_grade_band,
+    home_work_location_powerschool_school_id,
+    department_home_name,
+    primary_grade_level_taught,
+    job_title,
+    report_to_preferred_name_lastfirst,
+    worker_original_hire_date,
+    assignment_status,
+    observation_id,
+    teacher_id,
+    rubric_name,
+    created,
+    observed_at,
+    observer_name,
+    overall_score,
+    glows,
+    grows,
+    score_measurement_id,
+    score_percentage,
+    row_score_value,
+    measurement_name,
+    measurement_scale_min,
+    measurement_scale_max,
+    reporting_term_type,
+    tier,
+    reporting_term_name,
+    text_box,
+    rn_submission,
 
-    o.observation_id,
-    o.teacher_id,
-    o.rubric_name,
-    o.created,
-    o.observed_at,
-    o.observer_name,
-    o.overall_score,
-    o.glows,
-    o.grows,
-    o.score_measurement_id,
-    o.score_percentage,
-    o.row_score_value,
-    o.measurement_name,
-    o.measurement_scale_min,
-    o.measurement_scale_max,
-    o.reporting_term_type,
-    o.tier,
-    o.reporting_term_name,
-    o.text_box,
-
-    row_number() over (
-        partition by s.type, s.name, s.internal_id, o.score_measurement_id
-        order by o.observed_at desc
-    ) as rn_submission,
-from scaffold as s
-left join
-    observations as o
-    on cast(o.observed_at as date) between s.start_date and s.end_date
-    /*
-    Matches on name for PM Rounds to distinguish Self and Coach,
-    */
-    and s.type = 'PM'
-    and s.name = o.reporting_term_name
-    and s.user_id = o.teacher_id
+from observation_details as od
 
 union all
 
 select
-    s.user_id,
-    s.role_name,
-    s.internal_id,
-    s.type,
-    s.code,
-    s.name,
-    s.start_date,
-    s.end_date,
-    s.academic_year,
-    s.employee_number,
-    s.preferred_name_lastfirst,
-    s.business_unit_home_name,
-    s.home_work_location_name,
-    s.home_work_location_grade_band,
-    s.home_work_location_powerschool_school_id,
-    s.department_home_name,
-    s.primary_grade_level_taught,
-    s.job_title,
-    s.report_to_preferred_name_lastfirst,
-    s.worker_original_hire_date,
-    s.assignment_status,
+    NULL AS user_id,
+    NULL AS role_name,
+    NULL AS internal_id,
+    'PM' AS type,
+    code,
+    NULL AS name,
+    NULL AS start_date,
+    NULL AS end_date,
+    academic_year,
+    employee_number,
+    NULL AS preferred_name_lastfirst,
+    NULL AS business_unit_home_name,
+    NULL AS home_work_location_name,
+    NULL AS home_work_location_grade_band,
+    NULL AS home_work_location_powerschool_school_id,
+    NULL AS department_home_name,
+    NULL AS primary_grade_level_taught,
+    NULL AS job_title,
+    NULL AS report_to_preferred_name_lastfirst,
+    NULL AS worker_original_hire_date,
+    NULL AS assignment_status,
 
-    o.observation_id,
-    o.teacher_id,
-    o.rubric_name,
-    o.created,
-    o.observed_at,
-    o.observer_name,
-    o.overall_score,
-    o.glows,
-    o.grows,
-    o.score_measurement_id,
-    o.score_percentage,
-    o.row_score_value,
-    o.measurement_name,
-    o.measurement_scale_min,
-    o.measurement_scale_max,
-    o.reporting_term_type,
-    o.tier,
-    o.reporting_term_name,
-    o.text_box,
-
-    row_number() over (
-        partition by s.type, s.name, s.internal_id, o.score_measurement_id
-        order by o.observed_at desc
-    ) as rn_submission,
-from scaffold as s
-left join
-    observations as o
-    on cast(o.observed_at as date) between s.start_date and s.end_date
-    /*
-    matches only on type and date for weekly forms
-    */
-    and s.type in ('WT', 'O3')
-    and s.type = o.reporting_term_type
-    and s.user_id = o.teacher_id
+    NULL AS observation_id,
+    NULL AS teacher_id,
+    NULL AS rubric_name,
+    NULL AS created,
+    observed_at,
+    observer_name,
+    overall_score,
+    NULL AS glows,
+    NULL AS grows,
+    NULL AS score_measurement_id,
+    NULL AS score_percentage,
+    row_score_value,
+    NULL AS measurement_name,
+    NULL AS measurement_scale_min,
+    NULL AS measurement_scale_max,
+    NULL AS reporting_term_type,
+    tier,
+    NULL AS reporting_term_name,
+    NULL AS text_box,
+    1 as rn_submission,
+from historical_data
