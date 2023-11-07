@@ -366,10 +366,10 @@ with
             os.overall_score,
             os.etr_tier,
             os.so_tier,
-            os.tier.
-        from detail_scores as ds
+            os.tier,
+        from historical_detail_scores as ds
         left join
-            overall_scores as os
+            historical_overall_scores as os
             on ds.employee_number = os.employee_number
             and ds.academic_year = os.academic_year
             and ds.code = os.code
@@ -419,6 +419,7 @@ select
     rn_submission,
 
 from observation_details as od
+where rn_submission = 1
 
 union all
 
@@ -427,42 +428,44 @@ select
     NULL AS role_name,
     NULL AS internal_id,
     'PM' AS type,
-    code,
+    hd.code,
     NULL AS name,
     NULL AS start_date,
     NULL AS end_date,
-    academic_year,
-    employee_number,
-    NULL AS preferred_name_lastfirst,
-    NULL AS business_unit_home_name,
-    NULL AS home_work_location_name,
-    NULL AS home_work_location_grade_band,
-    NULL AS home_work_location_powerschool_school_id,
-    NULL AS department_home_name,
-    NULL AS primary_grade_level_taught,
-    NULL AS job_title,
-    NULL AS report_to_preferred_name_lastfirst,
-    NULL AS worker_original_hire_date,
-    NULL AS assignment_status,
+    hd.academic_year,
+    hd.employee_number,
+    sr.preferred_name_lastfirst,
+    sr.business_unit_home_name,
+    sr.home_work_location_name,
+    sr.home_work_location_grade_band,
+    sr.home_work_location_powerschool_school_id,
+    sr.department_home_name,
+    sr.primary_grade_level_taught,
+    sr.job_title,
+    sr.report_to_preferred_name_lastfirst,
+    sr.worker_original_hire_date,
+    sr.assignment_status,
 
     NULL AS observation_id,
     NULL AS teacher_id,
     NULL AS rubric_name,
     NULL AS created,
-    observed_at,
-    observer_name,
-    overall_score,
+    hd.observed_at,
+    hd.observer_name,
+    hd.overall_score,
     NULL AS glows,
     NULL AS grows,
     NULL AS score_measurement_id,
     NULL AS score_percentage,
-    row_score_value,
-    NULL AS measurement_name,
+    hd.row_score_value,
+    hd.measurement_name,
     NULL AS measurement_scale_min,
     NULL AS measurement_scale_max,
     NULL AS reporting_term_type,
-    tier,
+    hd.tier,
     NULL AS reporting_term_name,
     NULL AS text_box,
     1 as rn_submission,
-from historical_data
+from historical_data as hd
+left join {{ ref('base_people__staff_roster') }} as sr
+on hd.employee_number = sr.employee_number
