@@ -163,9 +163,47 @@ with
     )
 
 select
-    s.*,
+    s.user_id,
+    s.role_name,
+    s.internal_id,
+    s.type,
+    s.code,
+    s.name,
+    s.start_date,
+    s.end_date,
+    s.academic_year,
+    s.employee_number,
+    s.preferred_name_lastfirst,
+    s.business_unit_home_name,
+    s.home_work_location_name,
+    s.home_work_location_grade_band,
+    s.home_work_location_powerschool_school_id,
+    s.department_home_name,
+    s.primary_grade_level_taught,
+    s.job_title,
+    s.report_to_preferred_name_lastfirst,
+    s.worker_original_hire_date,
+    s.assignment_status,
 
-    o.*,
+    o.observation_id,
+    o.teacher_id,
+    o.rubric_name,
+    o.created,
+    o.observed_at,
+    o.observer_name,
+    o.overall_score,
+    o.glows,
+    o.grows,
+    o.score_measurement_id,
+    o.score_percentage,
+    o.row_score_value,
+    o.measurement_name,
+    o.measurement_scale_min,
+    o.measurement_scale_max,
+    o.reporting_term_type,
+    o.tier,
+    o.reporting_term_name,
+    o.text_box,
 
     row_number() over (
         partition by s.type, s.name, s.internal_id, o.score_measurement_id
@@ -176,14 +214,68 @@ left join
     observations as o
     on cast(o.observed_at as date) between s.start_date and s.end_date
     /*
-        Matches on name for PM Rounds to distinguish Self and Coach,
-        matches only on type and date for weekly forms
+    Matches on name for PM Rounds to distinguish Self and Coach,
     */
-    and (
-        (s.type = 'PM' and s.name = o.reporting_term_name and s.user_id = o.teacher_id)
-        or (
-            s.type in ('WT', 'O3')
-            and s.type = o.reporting_term_type
-            and s.user_id = o.teacher_id
-        )
-    )
+    and s.type = 'PM'
+    and s.name = o.reporting_term_name
+    and s.user_id = o.teacher_id
+
+union all
+
+select
+    s.user_id,
+    s.role_name,
+    s.internal_id,
+    s.type,
+    s.code,
+    s.name,
+    s.start_date,
+    s.end_date,
+    s.academic_year,
+    s.employee_number,
+    s.preferred_name_lastfirst,
+    s.business_unit_home_name,
+    s.home_work_location_name,
+    s.home_work_location_grade_band,
+    s.home_work_location_powerschool_school_id,
+    s.department_home_name,
+    s.primary_grade_level_taught,
+    s.job_title,
+    s.report_to_preferred_name_lastfirst,
+    s.worker_original_hire_date,
+    s.assignment_status,
+
+    o.observation_id,
+    o.teacher_id,
+    o.rubric_name,
+    o.created,
+    o.observed_at,
+    o.observer_name,
+    o.overall_score,
+    o.glows,
+    o.grows,
+    o.score_measurement_id,
+    o.score_percentage,
+    o.row_score_value,
+    o.measurement_name,
+    o.measurement_scale_min,
+    o.measurement_scale_max,
+    o.reporting_term_type,
+    o.tier,
+    o.reporting_term_name,
+    o.text_box,
+
+    row_number() over (
+        partition by s.type, s.name, s.internal_id, o.score_measurement_id
+        order by o.observed_at desc
+    ) as rn_submission,
+from scaffold as s
+left join
+    observations as o
+    on cast(o.observed_at as date) between s.start_date and s.end_date
+    /*
+    matches only on type and date for weekly forms
+    */
+    and s.type in ('WT', 'O3')
+    and s.type = o.reporting_term_type
+    and s.user_id = o.teacher_id
