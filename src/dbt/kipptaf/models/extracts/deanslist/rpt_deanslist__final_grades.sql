@@ -98,11 +98,9 @@ with
                 fg.term_letter_grade_adjusted_rt4
             ) as term_letter_grade_adjusted_rt4,
             if(
-                enr.code_location = 'kippmiami'
-                and enr.grade_level = 0
-                and fg.y1_letter_grade = 'F*',
-                'U',
-                fg.y1_letter_grade
+                enr.code_location = 'kippmiami' and enr.grade_level = 0,
+                fg.y1_letter_grade,
+                fg.y1_letter_grade_adjusted
             ) as y1_letter_grade,
         from enr_deduplicate as enr
         left join
