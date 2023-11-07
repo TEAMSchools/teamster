@@ -14,3 +14,16 @@ sources:
               - https://docs.google.com/spreadsheets/d/1XCOY8t6dlSaS8NKdZCKCwdMmp_0FRTrBih3a-wyROm4
             sheet_range: src_surveys__staff_info_archive
             skip_leading_rows: 1
+      - name: src_surveys__cmo_engagement_regional_survey_detail_archive
+        external:
+          location:
+            "{{ var('couchdrop_cloud_storage_uri_base')
+            }}/surveys/cmo_engagement_regional_survey_detail_archive.csv"
+          options:
+            format: CSV
+      - name: src_surveys__manager_survey_detail_archive
+        external:
+          location:
+            "{{ var('couchdrop_cloud_storage_uri_base') }}/surveys/manager_survey_detail_archive.csv"
+          options:
+            format: CSV
