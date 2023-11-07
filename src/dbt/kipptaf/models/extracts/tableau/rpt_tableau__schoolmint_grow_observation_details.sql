@@ -121,7 +121,7 @@ with
                     and date(
                         o.observed_at
                     ) between date({{ var("current_academic_year") }}, 11, 1) and date(
-                        {{ var("current_academic_year") }}, 2, 29
+                        {{ var("current_academic_year")+1 }}, 2, 29
                     )
                 then 'MOY (Self)'
                 when
