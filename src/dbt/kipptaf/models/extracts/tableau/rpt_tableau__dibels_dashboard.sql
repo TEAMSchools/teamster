@@ -429,6 +429,23 @@ with
             probe_eligible_tag as p
             on s.academic_year = p.academic_year
             and s.student_number = p.student_number
+    ),
+
+    expanded_terms as (
+        select
+            academic_year,
+            name,
+            start_date,
+            region,
+            coalesce(
+                lead(start_date, 1) over (
+                    partition by academic_year, region order by code asc
+                )
+                - 1,
+                date({{ var("current_academic_year") }} + 1, 06, 30)
+            ) as end_date,
+        from {{ ref("stg_reporting__terms") }}
+        where type = 'LIT' and academic_year = {{ var("current_academic_year") }}
     )
 
 select
@@ -491,8 +508,7 @@ select
     t.end_date,
 from base_roster as b
 left join
-    {{ ref("stg_reporting__terms") }} as t
+    expanded_terms as t
     on cast(b.academic_year as int) = t.academic_year
     and b.expected_test = t.name
     and b.region = t.region
-    and t.type = 'LIT'
