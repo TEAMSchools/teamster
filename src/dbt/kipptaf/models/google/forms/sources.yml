@@ -41,9 +41,9 @@ sources:
             data_type: STRING
           - name: question_id
             data_type: STRING
-          - name: url_id
+          - name: title
             data_type: STRING
           - name: abbreviation
             data_type: STRING
-          - name: title
+          - name: url_id
             data_type: STRING
