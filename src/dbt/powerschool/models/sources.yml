@@ -45,12 +45,16 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentcategoryassoc/"
       - name: src_powerschool__assignmentsection
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentsection/*"
           options:
             format: AVRO
             enable_logical_types: true
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentsection/"
       - name: src_powerschool__cc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/cc/*"
