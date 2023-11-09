@@ -142,35 +142,67 @@ select
     null as e2_pct,
 
     max(enr.term_percent_grade_adjusted_rt1) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q1_pct`,
     max(enr.term_letter_grade_adjusted_rt1) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q1_letter`,
     max(enr.term_percent_grade_adjusted_rt2) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q2_pct`,
     max(enr.term_letter_grade_adjusted_rt2) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q2_letter`,
     max(enr.term_percent_grade_adjusted_rt3) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q3_pct`,
     max(enr.term_letter_grade_adjusted_rt3) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q3_letter`,
     max(enr.term_percent_grade_adjusted_rt4) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q4_pct`,
     max(enr.term_letter_grade_adjusted_rt4) over (
-        partition by enr.cc_studentid, enr.cc_yearid, enr.cc_course_number
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
         order by enr.term_name asc
     ) as `Q4_letter`,
 
