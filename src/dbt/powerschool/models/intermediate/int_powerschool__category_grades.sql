@@ -26,8 +26,10 @@ with
                 else false
             end as is_current,
 
-            if(pgf.grade = '--', null, pgf.percent) as percent_grade,
-            nullif(pgf.citizenship, '') as citizenship_grade,
+            coalesce(
+                sg.percent, if(pgf.grade = '--', null, pgf.percent)
+            ) as percent_grade,
+            coalesce(sg.behavior, nullif(pgf.citizenship, '')) as citizenship_grade,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
@@ -38,6 +40,12 @@ with
             on enr.cc_studentid = pgf.studentid
             and enr.cc_sectionid = pgf.sectionid
             and tb.storecode = pgf.finalgradename
+        left join
+            {{ ref("stg_powerschool__storedgrades") }} as sg
+            on enr.cc_studentid = sg.studentid
+            and enr.cc_course_number = sg.course_number
+            and tb.yearid = sg.yearid
+            and tb.storecode = sg.storecode
         where not enr.is_dropped_course
     ),
 
@@ -46,7 +54,7 @@ with
             dbt_utils.deduplicate(
                 relation="enr_gr",
                 partition_by="studentid, yearid, course_number, storecode",
-                order_by="is_dropped_section desc, percent_grade desc",
+                order_by="is_dropped_section asc, percent_grade desc",
             )
         }}
     )
