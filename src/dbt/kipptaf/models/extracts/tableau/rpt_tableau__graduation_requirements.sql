@@ -189,6 +189,7 @@ select
     r.last_name,
     r.enroll_status,
     r.cohort,
+    r.ktc_cohort,
     r.grade_level,
     r.iep_status,
     r.is_504,
