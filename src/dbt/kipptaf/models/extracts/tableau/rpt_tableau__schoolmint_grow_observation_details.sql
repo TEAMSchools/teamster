@@ -49,7 +49,6 @@ with
                 )
             }}
     ),
-
     observations as (
         select
             o.observation_id,
@@ -113,7 +112,7 @@ with
                     and date(
                         o.observed_at
                     ) between date({{ var("current_academic_year") }}, 11, 1) and date(
-                        {{ var("current_academic_year") + 1 }}, 2, 29
+                        {{ var("current_academic_year") }} + 1, 2, 29
                     )
                 then 'MOY (Coach)'
                 when
@@ -121,25 +120,24 @@ with
                     and date(
                         o.observed_at
                     ) between date({{ var("current_academic_year") }}, 11, 1) and date(
-                        {{ var("current_academic_year") + 1 }}, 2, 29
+                        {{ var("current_academic_year") }} + 1, 2, 29
                     )
                 then 'MOY (Self)'
                 when
                     o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and date(o.observed_at)
-                    between date({{ var("current_academic_year") + 1 }}, 3, 1) and date(
-                        {{ var("current_academic_year") + 1 }}, 6, 30
+                    between date({{ var("current_academic_year") }} + 1, 3, 1) and date(
+                        {{ var("current_academic_year") }} + 1, 6, 30
                     )
                 then 'EOY (Coach)'
                 when
                     o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and date(o.observed_at)
-                    between date({{ var("current_academic_year") + 1 }}, 3, 1) and date(
-                        {{ var("current_academic_year") + 1 }}, 6, 30
+                    between date({{ var("current_academic_year") }} + 1, 3, 1) and date(
+                        {{ var("current_academic_year") }} + 1, 6, 30
                     )
                 then 'EOY (Self)'
             end as reporting_term_name,
-
             regexp_replace(
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
@@ -159,6 +157,7 @@ with
             and o.observed_at
             >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
     ),
+
     observation_details as (
         select
             s.user_id,
@@ -212,9 +211,7 @@ with
         left join
             observations as o
             on cast(o.observed_at as date) between s.start_date and s.end_date
-            /*
-    Matches on name for PM Rounds to distinguish Self and Coach,
-    */
+            /* Matches on name for PM Rounds to distinguish Self and Coach */
             and s.type = 'PM'
             and s.name = o.reporting_term_name
             and s.user_id = o.teacher_id
@@ -273,9 +270,7 @@ with
         left join
             observations as o
             on cast(o.observed_at as date) between s.start_date and s.end_date
-            /*
-    matches only on type and date for weekly forms
-    */
+            /* matches only on type and date for weekly forms */
             and s.type in ('WT', 'O3')
             and s.type = o.reporting_term_type
             and s.user_id = o.teacher_id
