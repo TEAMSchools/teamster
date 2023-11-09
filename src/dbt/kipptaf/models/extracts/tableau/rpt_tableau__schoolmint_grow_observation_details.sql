@@ -166,6 +166,7 @@ with
             s.internal_id,
             s.type,
             s.code,
+            'ETR + S&O' as score_type,
             s.name,
             s.start_date,
             s.end_date,
@@ -226,6 +227,7 @@ with
             s.internal_id,
             s.type,
             s.code,
+            '' as score_type,
             s.name,
             s.start_date,
             s.end_date,
@@ -339,7 +341,7 @@ with
             employee_number,
             academic_year,
             code,
-            null as score_type,
+            score_type,
             null as observer_employee_number,
             observer_name,
             observed_at,
@@ -354,6 +356,14 @@ with
             ds.employee_number,
             ds.academic_year,
             ds.code,
+            case
+                when ds.code = 'PM1'
+                then 'BOY'
+                when ds.code = 'PM2'
+                then 'MOY'
+                when ds.code = 'PM3'
+                then 'EOY'
+            end as name,
             ds.score_type,
             ds.observer_employee_number,
             ds.observer_name,
@@ -374,13 +384,13 @@ with
             and ds.academic_year = os.academic_year
             and ds.code = os.code
     )
-
 select
     user_id,
     role_name,
     internal_id,
     type,
     code,
+    score_type,
     name,
     start_date,
     end_date,
@@ -403,18 +413,18 @@ select
     created,
     observed_at,
     observer_name,
+    null as etr_score,
+    null as so_score,
     overall_score,
+    null as etr_tier,
+    null as so_tier,
+    tier,
     glows,
     grows,
     score_measurement_id,
     score_percentage,
     row_score_value,
     measurement_name,
-    measurement_scale_min,
-    measurement_scale_max,
-    reporting_term_type,
-    tier,
-    reporting_term_name,
     text_box,
     rn_submission,
 
@@ -424,14 +434,15 @@ where rn_submission = 1
 union all
 
 select
-    NULL AS user_id,
-    NULL AS role_name,
-    NULL AS internal_id,
-    'PM' AS type,
+    null as user_id,
+    null as role_name,
+    null as internal_id,
+    'PM' as type,
     hd.code,
-    NULL AS name,
-    NULL AS start_date,
-    NULL AS end_date,
+    hd.score_type,
+    hd.name,
+    null as start_date,
+    null as end_date,
     hd.academic_year,
     hd.employee_number,
     sr.preferred_name_lastfirst,
@@ -446,26 +457,27 @@ select
     sr.worker_original_hire_date,
     sr.assignment_status,
 
-    NULL AS observation_id,
-    NULL AS teacher_id,
-    NULL AS rubric_name,
-    NULL AS created,
+    null as observation_id,
+    null as teacher_id,
+    null as rubric_name,
+    null as created,
     hd.observed_at,
     hd.observer_name,
+    hd.etr_score,
+    hd.so_score,
     hd.overall_score,
-    NULL AS glows,
-    NULL AS grows,
-    NULL AS score_measurement_id,
-    NULL AS score_percentage,
+    hd.etr_tier,
+    hd.so_tier,
+    hd.tier,
+    null as glows,
+    null as grows,
+    null as score_measurement_id,
+    null as score_percentage,
     hd.row_score_value,
     hd.measurement_name,
-    NULL AS measurement_scale_min,
-    NULL AS measurement_scale_max,
-    NULL AS reporting_term_type,
-    hd.tier,
-    NULL AS reporting_term_name,
-    NULL AS text_box,
+    null as text_box,
     1 as rn_submission,
 from historical_data as hd
-left join {{ ref('base_people__staff_roster') }} as sr
-on hd.employee_number = sr.employee_number
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on hd.employee_number = sr.employee_number
