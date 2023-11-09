@@ -157,7 +157,8 @@ with
             and os.measurement = b.measurement
         where
             o.is_published
-            and o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
+            and o.observed_at
+            >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
     ),
 
     observation_details as (
