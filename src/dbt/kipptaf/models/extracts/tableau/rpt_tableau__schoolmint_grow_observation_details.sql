@@ -49,6 +49,7 @@ with
                 )
             }}
     ),
+
     observations as (
         select
             o.observation_id,
@@ -95,46 +96,48 @@ with
                     o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
-                        {{ var("current_academic_year") }}, 10, 31
+                    ) between date({{ var("current_fiscal_year") }}, 7, 1) and date(
+                        {{ var("current_fiscal_year") }}, 10, 31
                     )
                 then 'BOY (Coach)'
                 when
                     o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
-                        {{ var("current_academic_year") }}, 10, 31
+                    ) between date({{ var("current_fiscal_year") }}, 7, 1) and date(
+                        {{ var("current_fiscal_year") }}, 10, 31
                     )
                 then 'BOY (Self)'
                 when
                     o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 11, 1) and date(
-                        {{ var("current_academic_year") }} + 1, 2, 29
+                    ) between date({{ var("current_fiscal_year") }}, 11, 1) and (
+                        date({{ var("current_fiscal_year") }}, 3, 1) - 1
                     )
                 then 'MOY (Coach)'
                 when
                     o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 11, 1) and date(
-                        {{ var("current_academic_year") }} + 1, 2, 29
+                    ) between date({{ var("current_fiscal_year") }}, 11, 1) and (
+                        date({{ var("current_fiscal_year") }}, 3, 1) - 1
                     )
                 then 'MOY (Self)'
                 when
                     o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-                    and date(o.observed_at)
-                    between date({{ var("current_academic_year") }} + 1, 3, 1) and date(
-                        {{ var("current_academic_year") }} + 1, 6, 30
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
+                        {{ var("current_fiscal_year") }}, 6, 30
                     )
                 then 'EOY (Coach)'
                 when
                     o.rubric_name = 'Coaching Tool: Teacher Reflection'
-                    and date(o.observed_at)
-                    between date({{ var("current_academic_year") }} + 1, 3, 1) and date(
-                        {{ var("current_academic_year") }} + 1, 6, 30
+                    and date(
+                        o.observed_at
+                    ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
+                        {{ var("current_fiscal_year") }}, 6, 30
                     )
                 then 'EOY (Self)'
             end as reporting_term_name,
@@ -154,8 +157,7 @@ with
             and os.measurement = b.measurement
         where
             o.is_published
-            and o.observed_at
-            >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
+            and o.observed_at >= timestamp(date({{ var("current_fiscal_year") }}, 7, 1))
     ),
 
     observation_details as (
@@ -275,6 +277,7 @@ with
             and s.type = o.reporting_term_type
             and s.user_id = o.teacher_id
     ),
+
     historical_overall_scores as (
         select
             employee_number,
@@ -285,7 +288,7 @@ with
             overall_score,
             etr_tier,
             so_tier,
-            overall_tier as tier
+            overall_tier as tier,
         from
             {{
                 source(
@@ -346,19 +349,13 @@ with
         from observation_details
         where type = 'PM' and overall_score is not null
     ),
+
     historical_data as (
         select
             ds.employee_number,
             ds.academic_year,
             ds.code,
-            case
-                when ds.code = 'PM1'
-                then 'BOY'
-                when ds.code = 'PM2'
-                then 'MOY'
-                when ds.code = 'PM3'
-                then 'EOY'
-            end as name,
+            null as name,
             ds.score_type,
             ds.observer_employee_number,
             ds.observer_name,
@@ -379,6 +376,7 @@ with
             and ds.academic_year = os.academic_year
             and ds.code = os.code
     )
+
 select
     user_id,
     role_name,
@@ -423,7 +421,7 @@ select
     text_box,
     rn_submission,
 
-from observation_details as od
+from observation_details
 where rn_submission = 1
 
 union all
@@ -432,7 +430,7 @@ select
     null as user_id,
     null as role_name,
     null as internal_id,
-    'PM' as type,
+    'PM' as [type],
     hd.code,
     hd.score_type,
     hd.name,
