@@ -4,7 +4,7 @@ from teamster.kipptaf.fivetran import assets
 from .. import CODE_LOCATION
 
 fivetran_sync_status_sensor = build_fivetran_sync_status_sensor(
-    code_location=CODE_LOCATION, asset_defs=assets
+    code_location=CODE_LOCATION, asset_defs=assets, minimum_interval_seconds=(60 * 1)
 )
 
 __all__ = [

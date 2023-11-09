@@ -16,10 +16,6 @@ assets:
     partition_column: transaction_date
   - asset_name: terms
     partition_column: transaction_date
-  - asset_name: assignmentcategoryassoc
-    partition_column: whenmodified
-  - asset_name: assignmentsection
-    partition_column: whenmodified
   - asset_name: codeset
     partition_column: whenmodified
   - asset_name: districtteachercategory

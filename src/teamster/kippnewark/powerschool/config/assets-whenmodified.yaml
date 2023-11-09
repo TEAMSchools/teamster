@@ -1,3 +1,5 @@
 partition_column: whenmodified
 assets:
   - asset_name: assignmentscore
+  - asset_name: assignmentcategoryassoc
+  - asset_name: assignmentsection
