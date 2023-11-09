@@ -213,7 +213,7 @@ select
         then 'Off-Track'
         when
             grade_level >= 9
-            and (academic_status = 'At-Risk' or attendance_status = 'At-Risk')
+            and (academic_status = 'Off-Track' or attendance_status = 'Off-Track')
         then 'Off-Track'
         else 'On-Track'
     end as overall_status,
