@@ -96,23 +96,23 @@ with
                     o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_fiscal_year") }}, 7, 1) and date(
-                        {{ var("current_fiscal_year") }}, 10, 31
+                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
+                        {{ var("current_academic_year") }}, 10, 31
                     )
                 then 'BOY (Coach)'
                 when
                     o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_fiscal_year") }}, 7, 1) and date(
-                        {{ var("current_fiscal_year") }}, 10, 31
+                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
+                        {{ var("current_academic_year") }}, 10, 31
                     )
                 then 'BOY (Self)'
                 when
                     o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_fiscal_year") }}, 11, 1) and (
+                    ) between date({{ var("current_academic_year") }}, 11, 1) and (
                         date({{ var("current_fiscal_year") }}, 3, 1) - 1
                     )
                 then 'MOY (Coach)'
@@ -120,7 +120,7 @@ with
                     o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and date(
                         o.observed_at
-                    ) between date({{ var("current_fiscal_year") }}, 11, 1) and (
+                    ) between date({{ var("current_academic_year") }}, 11, 1) and (
                         date({{ var("current_fiscal_year") }}, 3, 1) - 1
                     )
                 then 'MOY (Self)'
@@ -157,7 +157,7 @@ with
             and os.measurement = b.measurement
         where
             o.is_published
-            and o.observed_at >= timestamp(date({{ var("current_fiscal_year") }}, 7, 1))
+            and o.observed_at >= timestamp(date({{ var("current_academic_year") }}, 7, 1))
     ),
 
     observation_details as (
