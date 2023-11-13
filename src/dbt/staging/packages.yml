@@ -1,6 +1,0 @@
-packages:
-  - local: ../deanslist
-  - local: ../edplan
-  - local: ../powerschool
-  - local: ../teamster_utils
-  - local: ../titan
