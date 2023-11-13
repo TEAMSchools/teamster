@@ -12,18 +12,14 @@ with
             e.cohort,
             e.entrydate,
             e.exitdate,
-
-            if(e.spedlep in ('No IEP', null), 0, 1) as sped,
             e.is_504 as c_504_status,
             e.advisor_lastfirst,
-
             adb.contact_id,
             adb.ktc_cohort,
-
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
-
+            if(e.spedlep in ('No IEP', null), 0, 1) as sped,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -52,11 +48,13 @@ with
         select
             contact,  -- ID from ADB for the student
             'Official' as test_type,
+            date as test_date,
             test_type as scope,
+            score as scale_score,
+            rn_highest,
             concat(
                 format_date('%b', date), ' ', format_date('%g', date)
             ) as administration_round,
-            date as test_date,
             case
                 -- Need to verify all of these are accurately tagged to match NJ's
                 -- grad requirements
@@ -80,8 +78,6 @@ with
                 when 'act_science'
                 then 'Science'
             end as subject_area,
-            score as scale_score,
-            rn_highest,
         from {{ ref("int_kippadb__standardized_test_unpivot") }}  -- ADB scores data
         where
             score_type in (
@@ -110,18 +106,14 @@ select
     e.cohort,
     e.entrydate,
     e.exitdate,
-
     e.sped,
     e.c_504_status,
     e.advisor_lastfirst,
-
     e.contact_id,
     e.ktc_cohort,
-
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
-
     o.test_type,
     o.scope,
     'NA' as scope_round,
@@ -130,24 +122,17 @@ select
     o.administration_round,
     o.subject_area,
     o.test_date,
-
     'NA' as response_type,
     'NA' as response_type_description,
-
     null as points,
     null as percent_correct,
     null as total_subjects_tested,
-
     null as raw_score,
     scale_score,
-
     rn_highest
-
 from roster as e
 left join act_sat_official as o on e.contact_id = o.contact
--- and o.test_date between e.entrydate and e.exitdate
 union all
-
 select
     e.academic_year,
     e.region,
@@ -160,18 +145,14 @@ select
     e.cohort,
     e.entrydate,
     e.exitdate,
-
     e.sped,
     e.c_504_status,
     e.advisor_lastfirst,
-
     e.contact_id,
     e.ktc_cohort,
-
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
-
     'Practice' as test_type,
     p.scope,
     p.scope_round,
@@ -180,17 +161,13 @@ select
     p.administration_round,
     p.subject_area,
     p.test_date,
-
     p.response_type,
     p.response_type_description,
-
     p.points,
     p.percent_correct,
     p.total_subjects_tested,
-
     p.raw_score,
     p.scale_score,
-
     row_number() over (
         partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
