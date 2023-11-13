@@ -19,6 +19,65 @@ with
 
             sum(if(is_submitted, 1, 0)) as n_submitted,
             sum(if(is_accepted, 1, 0)) as n_accepted,
+
+            round(
+                avg(
+                    case
+                        when application_submission_status = 'Wishlist'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_wishlist_avg,
+            round(
+                min(
+                    case
+                        when application_submission_status = 'Wishlist'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_wishlist_min,
+            round(
+                avg(
+                    case
+                        when application_submission_status = 'Submitted'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_submitted_avg,
+            round(
+                min(
+                    case
+                        when application_submission_status = 'Submitted'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_submitted_min,
+            round(
+                avg(
+                    case
+                        when
+                            matriculation_decision = 'Matriculated (Intent to Enroll)'
+                            and transfer_application = false
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_matriculated_avg,
+            round(
+                min(
+                    case
+                        when
+                            matriculation_decision = 'Matriculated (Intent to Enroll)'
+                            and transfer_application = false
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_matriculated_min,
         from {{ ref("base_kippadb__application") }}
         group by applicant
     ),
@@ -215,6 +274,12 @@ select
     ar.n_submitted,
     ar.n_accepted,
     ar.is_matriculated,
+    ar.ecc_submitted_avg,
+    ar.ecc_wishlist_avg,
+    ar.ecc_submitted_min,
+    ar.ecc_wishlist_min,
+    ar.ecc_matriculated_avg,
+    ar.ecc_matriculated_min,
 
     cnr.as1,
     cnr.as2,
