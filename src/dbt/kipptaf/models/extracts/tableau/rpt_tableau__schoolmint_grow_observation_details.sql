@@ -480,4 +480,8 @@ from historical_data as hd
 left join
     {{ ref("base_people__staff_roster_history") }} as sr
     on hd.employee_number = sr.employee_number
-    and cast(hd.observed_at as date) between cast(sr.work_assignment__fivetran_start as date) and cast(sr.work_assignment__fivetran_end as date)
+    and cast(
+        hd.observed_at as date
+    ) between cast(sr.work_assignment__fivetran_start as date) and cast(
+        sr.work_assignment__fivetran_end as date
+    )
