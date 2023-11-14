@@ -17,7 +17,7 @@ select
         then 'currently enrolled'
         when co.enroll_status = 2
         then 'transferred out'
-    end as enroll_status
+    end as enroll_status,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
