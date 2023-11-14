@@ -6,23 +6,23 @@ with
 
             u.internal_id,
 
-            rt.type,
-            rt.code,
-            rt.name,
+            rt.type as form_type,
+            rt.code as form_term,
+            rt.name as form_short_name,
             rt.start_date,
             rt.end_date,
             rt.academic_year,
 
             sr.employee_number,
-            sr.preferred_name_lastfirst,
-            sr.business_unit_home_name,
-            sr.home_work_location_name,
-            sr.home_work_location_grade_band,
+            sr.preferred_name_lastfirst as teammate,
+            sr.business_unit_home_name as entity,
+            sr.home_work_location_name as location,
+            sr.home_work_location_grade_band as grade_band,
             sr.home_work_location_powerschool_school_id,
-            sr.department_home_name,
-            sr.primary_grade_level_taught,
+            sr.department_home_name as department,
+            sr.primary_grade_level_taught as grade_taught,
             sr.job_title,
-            sr.report_to_preferred_name_lastfirst,
+            sr.report_to_preferred_name_lastfirst as manager,
             sr.worker_original_hire_date,
             sr.assignment_status,
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
@@ -54,7 +54,7 @@ with
         select
             o.observation_id,
             o.teacher_id,
-            o.rubric_name,
+            o.rubric_name as form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
@@ -78,7 +78,7 @@ with
                 then 'WT'
                 when o.rubric_name like '%O3%'
                 then 'O3'
-            end as reporting_term_type,
+            end as form_type,
             case
                 when lower(o.rubric_name) not like '%etr%'
                 then null
@@ -140,7 +140,7 @@ with
                         {{ var("current_fiscal_year") }}, 6, 30
                     )
                 then 'EOY (Self)'
-            end as reporting_term_name,
+            end as form_short_name,
             regexp_replace(
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
@@ -166,29 +166,29 @@ with
             s.user_id,
             s.role_name,
             s.internal_id,
-            s.type,
-            s.code,
+            s.form_type,
+            s.form_term,
             'ETR + S&O' as score_type,
-            s.name,
+            s.form_short_name,
             s.start_date,
             s.end_date,
             s.academic_year,
             s.employee_number,
-            s.preferred_name_lastfirst,
-            s.business_unit_home_name,
-            s.home_work_location_name,
-            s.home_work_location_grade_band,
+            s.preferred_name_lastfirst as teammate,
+            s.business_unit_home_name as entity,
+            s.home_work_location_name as location,
+            s.home_work_location_grade_band as grade_band,
             s.home_work_location_powerschool_school_id,
-            s.department_home_name,
-            s.primary_grade_level_taught,
+            s.department_home_name as department,
+            s.primary_grade_level_taught as grade_taught,
             s.job_title,
-            s.report_to_preferred_name_lastfirst,
+            s.report_to_preferred_name_lastfirst as manager,
             s.worker_original_hire_date,
             s.assignment_status,
 
             o.observation_id,
             o.teacher_id,
-            o.rubric_name,
+            o.form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
@@ -201,13 +201,13 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-            o.reporting_term_type,
+            o.form_type,
             o.tier,
-            o.reporting_term_name,
+            o.form_short_name,
             o.text_box,
 
             row_number() over (
-                partition by s.type, s.name, s.internal_id, o.score_measurement_id
+                partition by s.form_type, s.form_short_name, s.internal_id, o.score_measurement_id
                 order by o.observed_at desc
             ) as rn_submission,
         from scaffold as s
@@ -215,8 +215,8 @@ with
             observations as o
             on cast(o.observed_at as date) between s.start_date and s.end_date
             /* Matches on name for PM Rounds to distinguish Self and Coach */
-            and s.type = 'PM'
-            and s.name = o.reporting_term_name
+            and s.form_type = 'PM'
+            and s.form_short_name = o.form_short_name
             and s.user_id = o.teacher_id
 
         union all
@@ -225,29 +225,29 @@ with
             s.user_id,
             s.role_name,
             s.internal_id,
-            s.type,
-            s.code,
-            '' as score_type,
-            s.name,
+            s.form_type,
+            s.form_term,
+            'ETR + S&O' as score_type,
+            s.form_short_name,
             s.start_date,
             s.end_date,
             s.academic_year,
             s.employee_number,
-            s.preferred_name_lastfirst,
-            s.business_unit_home_name,
-            s.home_work_location_name,
-            s.home_work_location_grade_band,
+            s.preferred_name_lastfirst as teammate,
+            s.business_unit_home_name as entity,
+            s.home_work_location_name as location,
+            s.home_work_location_grade_band as grade_band,
             s.home_work_location_powerschool_school_id,
-            s.department_home_name,
-            s.primary_grade_level_taught,
+            s.department_home_name as department,
+            s.primary_grade_level_taught as grade_taught,
             s.job_title,
-            s.report_to_preferred_name_lastfirst,
+            s.report_to_preferred_name_lastfirst as manager,
             s.worker_original_hire_date,
             s.assignment_status,
 
             o.observation_id,
             o.teacher_id,
-            o.rubric_name,
+            o.form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
@@ -260,22 +260,23 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-            o.reporting_term_type,
+            o.form_type,
             o.tier,
-            o.reporting_term_name,
+            o.form_short_name,
             o.text_box,
 
             row_number() over (
-                partition by s.type, s.name, s.internal_id, o.score_measurement_id
+                partition by s.form_type, s.form_short_name, s.internal_id, o.score_measurement_id
                 order by o.observed_at desc
             ) as rn_submission,
+
         from scaffold as s
         left join
             observations as o
             on cast(o.observed_at as date) between s.start_date and s.end_date
             /* matches only on type and date for weekly forms */
-            and s.type in ('WT', 'O3')
-            and s.type = o.reporting_term_type
+            and s.form_type in ('WT', 'O3')
+            and s.form_type = o.form_type
             and s.user_id = o.teacher_id
     ),
 
