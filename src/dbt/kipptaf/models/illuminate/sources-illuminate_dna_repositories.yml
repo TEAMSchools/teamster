@@ -32,6 +32,7 @@ sources:
               - dna_repositories
               - repository_grade_levels
       - name: repository_fields
+        identifier: fields
         meta:
           dagster:
             group: illuminate
@@ -39,5 +40,4 @@ sources:
               - kipptaf
               - illuminate
               - dna_repositories
-              - repository_fields
-        identifier: fields
+              - fields

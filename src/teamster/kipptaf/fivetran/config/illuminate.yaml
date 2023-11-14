@@ -22,7 +22,6 @@ schemas:
       - subjects
   - name: dna_assessments
     destination_tables:
-      - assessment_fields
       - assessment_grade_levels
       - assessment_standards
       - assessments
@@ -40,7 +39,6 @@ schemas:
       - expressions
       - fields
       - repositories
-      - repository_fields
       - repository_grade_levels
       - repository_1
       - repository_10
