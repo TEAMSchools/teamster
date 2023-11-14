@@ -5,5 +5,8 @@ max_line_length = 88
 exclude_rules = layout.indent, layout.select_targets, layout.end_of_file
 ignore = templating, parsing
 
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+
 [sqlfluff:rules:convention.select_trailing_comma]
 select_clause_trailing_comma = require
