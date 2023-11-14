@@ -174,15 +174,15 @@ with
             s.end_date,
             s.academic_year,
             s.employee_number,
-            s.preferred_name_lastfirst as teammate,
-            s.business_unit_home_name as entity,
-            s.home_work_location_name as location,
-            s.home_work_location_grade_band as grade_band,
+            s.teammate,
+            s.entity,
+            s.location,
+            s.grade_band,
             s.home_work_location_powerschool_school_id,
-            s.department_home_name as department,
-            s.primary_grade_level_taught as grade_taught,
+            s.department,
+            s.grade_taught,
             s.job_title,
-            s.report_to_preferred_name_lastfirst as manager,
+            s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
 
@@ -201,13 +201,15 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-            o.form_type,
             o.tier,
-            o.form_short_name,
             o.text_box,
 
             row_number() over (
-                partition by s.form_type, s.form_short_name, s.internal_id, o.score_measurement_id
+                partition by
+                    s.form_type,
+                    s.form_short_name,
+                    s.internal_id,
+                    o.score_measurement_id
                 order by o.observed_at desc
             ) as rn_submission,
         from scaffold as s
@@ -233,15 +235,15 @@ with
             s.end_date,
             s.academic_year,
             s.employee_number,
-            s.preferred_name_lastfirst as teammate,
-            s.business_unit_home_name as entity,
-            s.home_work_location_name as location,
-            s.home_work_location_grade_band as grade_band,
+            s.teammate,
+            s.entity,
+            s.location,
+            s.grade_band,
             s.home_work_location_powerschool_school_id,
-            s.department_home_name as department,
-            s.primary_grade_level_taught as grade_taught,
+            s.department,
+            s.grade_taught,
             s.job_title,
-            s.report_to_preferred_name_lastfirst as manager,
+            s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
 
@@ -260,13 +262,15 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-            o.form_type,
             o.tier,
-            o.form_short_name,
             o.text_box,
 
             row_number() over (
-                partition by s.form_type, s.form_short_name, s.internal_id, o.score_measurement_id
+                partition by
+                    s.form_type,
+                    s.form_short_name,
+                    s.internal_id,
+                    o.score_measurement_id
                 order by o.observed_at desc
             ) as rn_submission,
 
@@ -284,7 +288,7 @@ with
         select
             employee_number,
             academic_year,
-            pm_term as code,
+            pm_term as form_term,
             etr_score,
             so_score,
             overall_score,
@@ -304,7 +308,7 @@ with
         select
             employee_number,
             academic_year,
-            code,
+            form_term,
             null as etr_score,
             null as so_score,
             overall_score,
@@ -312,14 +316,14 @@ with
             null as so_tier,
             tier,
         from observation_details
-        where type = 'PM' and overall_score is not null
+        where form_type = 'PM' and overall_score is not null
     ),
 
     historical_detail_scores as (
         select
             subject_employee_number as employee_number,
             academic_year,
-            pm_term as code,
+            pm_term as form_term,
             score_type,
             observer_employee_number,
             null as observer_name,
@@ -340,7 +344,7 @@ with
         select
             employee_number,
             academic_year,
-            code,
+            form_term,
             score_type,
             null as observer_employee_number,
             observer_name,
@@ -349,15 +353,16 @@ with
             row_score_value,
 
         from observation_details
-        where type = 'PM' and overall_score is not null
+        where form_type = 'PM' and overall_score is not null
     ),
 
     historical_data as (
         select
             ds.employee_number,
             ds.academic_year,
-            ds.code,
-            '' as `name`,
+            ds.form_term,
+            concat(ds.form_term, ' (Coach)') as form_short_name,
+            'Coaching Tools: Coach ETR and Reflection' as form_long_name,
             ds.score_type,
             ds.observer_employee_number,
             ds.observer_name,
@@ -376,35 +381,35 @@ with
             historical_overall_scores as os
             on ds.employee_number = os.employee_number
             and ds.academic_year = os.academic_year
-            and ds.code = os.code
+            and ds.form_term = os.form_term
     )
 
 select
     user_id,
     role_name,
     internal_id,
-    type,
-    code,
+    form_type,
+    form_term,
+    form_short_name,
+    form_long_name,
     score_type,
-    name,
     start_date,
     end_date,
     academic_year,
     employee_number,
-    preferred_name_lastfirst,
-    business_unit_home_name,
-    home_work_location_name,
-    home_work_location_grade_band,
+    teammate,
+    entity,
+    location,
+    grade_band,
     home_work_location_powerschool_school_id,
-    department_home_name,
-    primary_grade_level_taught,
+    department,
+    grade_taught,
     job_title,
-    report_to_preferred_name_lastfirst,
+    manager,
     worker_original_hire_date,
     assignment_status,
     observation_id,
     teacher_id,
-    rubric_name,
     created,
     observed_at,
     observer_name,
@@ -432,29 +437,28 @@ select
     null as user_id,
     null as role_name,
     null as internal_id,
-    'PM' as `type`,
-    hd.code,
+    'PM' as form_type,
+    hd.form_term,
+    hd.form_short_name,
+    hd.form_long_name,
     hd.score_type,
-    hd.name,
     null as start_date,
     null as end_date,
     hd.academic_year,
     hd.employee_number,
-    sr.preferred_name_lastfirst,
-    sr.business_unit_home_name,
-    sr.home_work_location_name,
-    sr.home_work_location_grade_band,
+    sr.preferred_name_lastfirst as teammate,
+    sr.business_unit_home_name as entity,
+    sr.home_work_location_name as location,
+    sr.home_work_location_grade_band as grade_band,
     sr.home_work_location_powerschool_school_id,
-    sr.department_home_name,
-    sr.primary_grade_level_taught,
+    sr.department_home_name as department,
+    sr.primary_grade_level_taught as grade_taught,
     sr.job_title,
-    sr.report_to_preferred_name_lastfirst,
+    sr.report_to_preferred_name_lastfirst as manager,
     sr.worker_original_hire_date,
     sr.assignment_status,
-
     null as observation_id,
     null as teacher_id,
-    null as rubric_name,
     null as created,
     hd.observed_at,
     hd.observer_name,
@@ -474,5 +478,6 @@ select
     1 as rn_submission,
 from historical_data as hd
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("base_people__staff_roster_history") }} as sr
     on hd.employee_number = sr.employee_number
+    and cast(hd.observed_at as date) between cast(sr.work_assignment__fivetran_start as date) and cast(sr.work_assignment__fivetran_end as date)
