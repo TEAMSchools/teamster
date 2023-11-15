@@ -27,6 +27,7 @@ with
         where
             fr.question_item__question__question_id = '55f7fb30'
             and fr.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
+            and fr.rn_form_item_respondent_submitted_desc = 1
     )
 
 select
@@ -74,6 +75,7 @@ inner join
     on ri.respondent_df_employee_number = eh.employee_number
     and ri.date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
+where fi.abbreviation != 'respondent_name'
 
 union all
 
