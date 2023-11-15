@@ -1,10 +1,4 @@
-from dagster import (
-    AutoMaterializePolicy,
-    Definitions,
-    EnvVar,
-    config_from_files,
-    load_assets_from_modules,
-)
+from dagster import AutoMaterializePolicy, Definitions, EnvVar, load_assets_from_modules
 from dagster_dbt import DbtCliResource
 from dagster_gcp import (
     BigQueryResource,
@@ -68,10 +62,16 @@ defs = Definitions(
             gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kippnewark"
         ),
         "io_manager_gcs_avro": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_avro.yaml"])
+            config_or_config_fn={
+                "gcs_bucket": f"teamster-{CODE_LOCATION}",
+                "io_format": "avro",
+            }
         ),
         "io_manager_gcs_file": gcs_io_manager.configured(
-            config_from_files([f"{resource_config_dir}/io_filepath.yaml"])
+            config_or_config_fn={
+                "gcs_bucket": f"teamster-{CODE_LOCATION}",
+                "io_format": "filepath",
+            }
         ),
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
