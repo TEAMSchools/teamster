@@ -5,11 +5,15 @@ select
     co.region,
     co.advisor_lastfirst as advisor,
     co.gender,
+    co.student_email_google,
+
     ce.teacher_lastfirst as ccr_teacher,
     ce.sections_external_expression as ccr_period,
+
     kt.contact_owner_name as counselor_name,
     kt.contact_college_match_display_gpa,
     kt.contact_highest_act_score,
+
     coalesce(kt.contact_id, 'not in salesforce') as sf_id,
     case when co.spedlep like 'SPED%' then 'Has IEP' else 'No IEP' end as iep_status,
     case
@@ -18,6 +22,7 @@ select
         when co.enroll_status = 2
         then 'transferred out'
     end as enroll_status,
+    concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
