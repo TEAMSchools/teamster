@@ -135,12 +135,7 @@ select
     eh.race_ethnicity_reporting,
     eh.gender_identity as gender,
 
-from
-    {{
-        source(
-            "surveys", "src_surveys__cmo_engagement_regional_survey_detail_archive"
-        )
-    }} as sda
+from {{ ref("stg_surveys__cmo_engagement_regional_survey_detail_archive") }} as sda
 inner join
     {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
     on fi.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
