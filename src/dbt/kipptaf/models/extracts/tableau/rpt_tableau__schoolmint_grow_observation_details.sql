@@ -320,14 +320,7 @@ with
         select
             subject_employee_number as employee_number,
             academic_year,
-            case
-                when pm_term = 'PM1'
-                then 'BOY'
-                when pm_term = 'PM2'
-                then 'MOY'
-                when pm_term = 'PM3'
-                then 'EOY'
-            end as form_term,
+            pm_term as form_term,
             score_type,
             observer_employee_number,
             null as observer_name,
