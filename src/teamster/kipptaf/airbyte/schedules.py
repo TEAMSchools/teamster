@@ -1,13 +1,12 @@
 from dagster import ScheduleDefinition
 
 from .. import LOCAL_TIMEZONE
-from .jobs import airbyte_start_sync_jobs
+from .jobs import kipptaf_airbyte_start_syncs_job
 
-__all__ = []
-
-for job in airbyte_start_sync_jobs:
-    __all__.append(
-        ScheduleDefinition(
-            cron_schedule="0 0 * * *", job=job, execution_timezone=LOCAL_TIMEZONE.name
-        )
+__all__ = [
+    ScheduleDefinition(
+        cron_schedule="0 0 * * *",
+        job=kipptaf_airbyte_start_syncs_job,
+        execution_timezone=LOCAL_TIMEZONE.name,
     )
+]
