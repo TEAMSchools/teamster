@@ -74,7 +74,7 @@ select
     fi.title as question_title,
 
     fr.text_value as answer,
-    safe_cast(fr.text_value as integer) as answer_value,
+    safe_cast(fr.text_value as numeric) as answer_value,
     case
         when safe_cast(fr.text_value as integer) is null then 1 else 0
     end as is_open_ended,
@@ -122,7 +122,7 @@ select
     coalesce(fi.title, sda.question_shortname) as question_title,
 
     sda.answer,
-    sda.answer_value,
+    safe_cast(sda.answer_value as numeric) as answer_value,
     case when sda.answer_value is null then 1 else 0 end as is_open_ended,
 
     eh.preferred_name_lastfirst,
