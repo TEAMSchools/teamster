@@ -32,7 +32,7 @@ with
         left join
             {{ ref("base_people__staff_roster") }} as sr
             on u.internal_id = safe_cast(sr.employee_number as string)
-        where ur.role_name LIKE '%Teacher%'
+        where ur.role_name like '%Teacher%'
     ),
 
     boxes as (
@@ -155,10 +155,7 @@ with
             boxes as b
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
-        where
-            o.is_published
-            and o.observed_at
-            >= timestamp(date(2023, 7, 1))
+        where o.is_published and o.observed_at >= timestamp(date(2023, 7, 1))
     ),
 
     observation_details as (
