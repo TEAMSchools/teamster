@@ -75,6 +75,7 @@ inner join
     on ri.respondent_df_employee_number = eh.employee_number
     and ri.date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
+where fi.abbreviation <> 'respondent_name'
 
 union all
 
