@@ -27,6 +27,7 @@ with
         where
             fr.question_item__question__question_id = '55f7fb30'
             and fr.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
+            and rn_form_item_respondent_submitted_desc = 1
     )
 
 select
