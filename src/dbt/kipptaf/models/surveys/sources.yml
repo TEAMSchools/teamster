@@ -16,14 +16,31 @@ sources:
             skip_leading_rows: 1
       - name: src_surveys__cmo_engagement_regional_survey_detail_archive
         external:
-          location:
-            "{{ var('couchdrop_cloud_storage_uri_base')
+          location: "{{ var('couchdrop_cloud_storage_uri_base')
             }}/surveys/cmo_engagement_regional_survey_detail_archive.csv"
           options:
             format: CSV
+        columns:
+          - name: respondent_df_employee_number
+            data_type: STRING
+          - name: respondent_legal_entity_name
+            data_type: STRING
+          - name: respondent_primary_site
+            data_type: STRING
+          - name: date_submitted
+            data_type: STRING
+          - name: campaign_academic_year
+            data_type: STRING
+          - name: campaign_reporting_term
+            data_type: STRING
+          - name: question_shortname
+            data_type: STRING
+          - name: answer
+            data_type: STRING
+          - name: answer_value
+            data_type: STRING
       - name: src_surveys__manager_survey_detail_archive
         external:
-          location:
-            "{{ var('couchdrop_cloud_storage_uri_base') }}/surveys/manager_survey_detail_archive.csv"
+          location: "{{ var('couchdrop_cloud_storage_uri_base') }}/surveys/manager_survey_detail_archive.csv"
           options:
             format: CSV
