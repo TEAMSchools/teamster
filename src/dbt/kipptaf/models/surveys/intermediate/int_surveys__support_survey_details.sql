@@ -80,9 +80,15 @@ select
     ri.respondent_df_employee_number,
     eh.preferred_name_lastfirst,
     ri.respondent_email,
+    eh.management_position_indicator as is_manager,
+    eh.department_home_name as respondent_department_name,
+    eh.business_unit_home_name as respondent_legal_entity_name,
+    eh.report_to_preferred_name_lastfirst as respondent_manager_name,
+    eh.job_title as respondent_primary_job,
+    eh.home_work_location_name as respondent_primary_site,
+    eh.race_ethnicity_reporting,
+    eh.gender_identity as gender,
 
--- fill out with remaining fields from:
--- https://github.com/TEAMSchools/mssql-warehouse/blob/f32a07eedc29a622e90b1175ff3b5848a01eb91b/gabby/surveys/view/cmo_engagement_regional_survey_detail.sql#L2
 from response_identifiers as ri
 inner join
     {{ ref("base_google_forms__form_responses") }} as fr
