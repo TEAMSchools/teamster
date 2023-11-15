@@ -137,7 +137,9 @@ with
             array_to_string(list_two_column_a, '|') as glows,
             array_to_string(list_two_column_b, '|') as grows,
         from {{ ref("stg_schoolmint_grow__observations") }}
-        where is_published and observed_at >= timestamp(date(2023, 7, 1))  -- 2023 is start year
+        where is_published 
+        /* 2023 is first year with new rubric */
+        and observed_at >= timestamp(date(2023, 7, 1))  
     ),
 
     observation_measurements as (
