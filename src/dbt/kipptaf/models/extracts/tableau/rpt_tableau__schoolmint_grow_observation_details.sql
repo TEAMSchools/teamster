@@ -32,7 +32,7 @@ with
         left join
             {{ ref("base_people__staff_roster") }} as sr
             on u.internal_id = safe_cast(sr.employee_number as string)
-        where ur.role_name != 'Whetstone'
+        where ur.role_name LIKE '%Teacher%'
     ),
 
     boxes as (
