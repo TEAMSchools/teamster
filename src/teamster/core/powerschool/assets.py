@@ -1,5 +1,11 @@
 import pendulum
-from dagster import AssetExecutionContext, AssetsDefinition, Output, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetsDefinition,
+    MonthlyPartitionsDefinition,
+    Output,
+    asset,
+)
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
@@ -11,14 +17,13 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 def build_powerschool_table_asset(
     asset_name,
     code_location,
-    partitions_def: FiscalYearPartitionsDefinition = None,
+    partitions_def: FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition = None,
     select_columns=["*"],
     partition_column=None,
     op_tags={},
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name,
-        key_prefix=[code_location, "powerschool"],
+        key=[code_location, "powerschool", asset_name],
         partitions_def=partitions_def,
         metadata={"partition_column": partition_column},
         op_tags=op_tags,
@@ -49,9 +54,19 @@ def build_powerschool_table_asset(
 
             window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
-            window_end = (
-                window_start.add(years=1)
+            if isinstance(
+                context.assets_def.partitions_def, FiscalYearPartitionsDefinition
+            ):
+                date_add_kwargs = {"years": 1}
+            elif isinstance(
+                context.assets_def.partitions_def, MonthlyPartitionsDefinition
+            ):
+                date_add_kwargs = {"months": 1}
+
+            window_end_fmt = (
+                window_start.add(**date_add_kwargs)
                 .subtract(days=1)
+                .end_of("day")
                 .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
             )
 
@@ -59,7 +74,7 @@ def build_powerschool_table_asset(
                 f"{partition_column} BETWEEN "
                 f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
                 "AND "
-                f"TO_TIMESTAMP('{window_end}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
 
         sql = (
