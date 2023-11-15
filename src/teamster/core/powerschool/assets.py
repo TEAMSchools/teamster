@@ -57,21 +57,24 @@ def build_powerschool_table_asset(
             if isinstance(
                 context.assets_def.partitions_def, FiscalYearPartitionsDefinition
             ):
-                window_end = window_start.add(years=1)
+                date_add_kwargs = {"years": 1}
             elif isinstance(
                 context.assets_def.partitions_def, MonthlyPartitionsDefinition
             ):
-                window_end = window_start.add(months=1)
+                date_add_kwargs = {"months": 1}
 
-            window_end = window_end.subtract(days=1).format(
-                "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+            window_end_fmt = (
+                window_start.add(**date_add_kwargs)
+                .subtract(days=1)
+                .end_of("day")
+                .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
             )
 
             constructed_where = (
                 f"{partition_column} BETWEEN "
                 f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
                 "AND "
-                f"TO_TIMESTAMP('{window_end}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
 
         sql = (
