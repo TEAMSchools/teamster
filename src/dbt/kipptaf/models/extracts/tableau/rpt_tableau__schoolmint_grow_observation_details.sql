@@ -52,18 +52,112 @@ with
 
     observations as (
         select
+            observation_id,
+            teacher_id,
+            rubric_name as form_long_name,
+            created,
+            observer_name,
+            observer_email,
+            score as overall_score,
+            safe_cast(observed_at as date) as observed_at,
+
+            case
+                when rubric_name like '%Coaching%'
+                then 'PM'
+                when rubric_name like '%Walkthrough%'
+                then 'WT'
+                when rubric_name like '%O3%'
+                then 'O3'
+            end as form_type,
+
+            case
+                when lower(rubric_name) not like '%etr%'
+                then null
+                when score < 1.75
+                then 1
+                when score >= 1.75 and score < 2.75
+                then 2
+                when score >= 2.75 and score < 3.5
+                then 3
+                when score > 3.5
+                then 4
+            end as tier,
+
+            case
+                when
+                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and safe_cast(
+                        observed_at as date
+                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
+                        {{ var("current_academic_year") }}, 10, 31
+                    )
+                then 'BOY (Coach)'
+                when
+                    rubric_name = 'Coaching Tool: Teacher Reflection'
+                    and safe_cast(
+                        observed_at as date
+                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
+                        {{ var("current_academic_year") }}, 10, 31
+                    )
+                then 'BOY (Self)'
+                when
+                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and safe_cast(
+                        observed_at as date
+                    ) between date({{ var("current_academic_year") }}, 11, 1) and (
+                        date({{ var("current_fiscal_year") }}, 3, 1) - 1
+                    )
+                then 'MOY (Coach)'
+                when
+                    rubric_name = 'Coaching Tool: Teacher Reflection'
+                    and safe_cast(
+                        observed_at as date
+                    ) between date({{ var("current_academic_year") }}, 11, 1) and (
+                        date({{ var("current_fiscal_year") }}, 3, 1) - 1
+                    )
+                then 'MOY (Self)'
+                when
+                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and safe_cast(
+                        observed_at as date
+                    ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
+                        {{ var("current_fiscal_year") }}, 6, 30
+                    )
+                then 'EOY (Coach)'
+                when
+                    rubric_name = 'Coaching Tool: Teacher Reflection'
+                    and safe_cast(
+                        observed_at as date
+                    ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
+                        {{ var("current_fiscal_year") }}, 6, 30
+                    )
+                then 'EOY (Self)'
+            end as form_short_name,
+
+            array_to_string(list_two_column_a, '|') as glows,
+            array_to_string(list_two_column_b, '|') as grows,
+        from {{ ref("stg_schoolmint_grow__observations") }}
+        where is_published and observed_at >= timestamp(date(2023, 7, 1))  -- 2023 is start year
+    ),
+
+    observation_measurements as (
+        select
             o.observation_id,
             o.teacher_id,
-            o.rubric_name as form_long_name,
+            o.form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
             o.observer_email,
-            o.score as overall_score,
-            array_to_string(o.list_two_column_a, '|') as glows,
-            array_to_string(o.list_two_column_b, '|') as grows,
+            o.overall_score,
+            o.form_short_name,
+            o.form_type,
+            o.tier,
+            o.glows,
+            o.grows,
 
             os.measurement as score_measurement_id,
+
             os.percentage as score_percentage,
             os.value_score as row_score_value,
 
@@ -71,80 +165,10 @@ with
             m.scale_min as measurement_scale_min,
             m.scale_max as measurement_scale_max,
 
-            case
-                when o.rubric_name like '%Coaching%'
-                then 'PM'
-                when o.rubric_name like '%Walkthrough%'
-                then 'WT'
-                when o.rubric_name like '%O3%'
-                then 'O3'
-            end as form_type,
-            case
-                when lower(o.rubric_name) not like '%etr%'
-                then null
-                when o.score < 1.75
-                then 1
-                when o.score >= 1.75 and o.score < 2.75
-                then 2
-                when o.score >= 2.75 and o.score < 3.5
-                then 3
-                when o.score > 3.5
-                then 4
-            end as tier,
-            case
-                when
-                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
-                        {{ var("current_academic_year") }}, 10, 31
-                    )
-                then 'BOY (Coach)'
-                when
-                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 7, 1) and date(
-                        {{ var("current_academic_year") }}, 10, 31
-                    )
-                then 'BOY (Self)'
-                when
-                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 11, 1) and (
-                        date({{ var("current_fiscal_year") }}, 3, 1) - 1
-                    )
-                then 'MOY (Coach)'
-                when
-                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_academic_year") }}, 11, 1) and (
-                        date({{ var("current_fiscal_year") }}, 3, 1) - 1
-                    )
-                then 'MOY (Self)'
-                when
-                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
-                        {{ var("current_fiscal_year") }}, 6, 30
-                    )
-                then 'EOY (Coach)'
-                when
-                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
-                    and date(
-                        o.observed_at
-                    ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
-                        {{ var("current_fiscal_year") }}, 6, 30
-                    )
-                then 'EOY (Self)'
-            end as form_short_name,
             regexp_replace(
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
-        from {{ ref("stg_schoolmint_grow__observations") }} as o
+        from observations as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
             on o.observation_id = os.observation_id
@@ -155,7 +179,6 @@ with
             boxes as b
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
-        where o.is_published and o.observed_at >= timestamp(date(2023, 7, 1))
     ),
 
     observation_details as (
@@ -211,12 +234,12 @@ with
             ) as rn_submission,
         from scaffold as s
         left join
-            observations as o
-            on cast(o.observed_at as date) between s.start_date and s.end_date
+            observation_measurements as o
+            on o.observed_at between s.start_date and s.end_date
             /* Matches on name for PM Rounds to distinguish Self and Coach */
-            and s.form_type = 'PM'
             and s.form_short_name = o.form_short_name
             and s.user_id = o.teacher_id
+            and s.form_type = 'PM'
 
         union all
 
@@ -226,7 +249,7 @@ with
             s.internal_id,
             s.form_type,
             s.form_term,
-            'ETR + S&O' as score_type,
+            safe_cast(null as string) as score_type,
             s.form_short_name,
             s.start_date,
             s.end_date,
@@ -270,18 +293,38 @@ with
                     o.score_measurement_id
                 order by o.observed_at desc
             ) as rn_submission,
-
         from scaffold as s
         left join
-            observations as o
-            on cast(o.observed_at as date) between s.start_date and s.end_date
+            observation_measurements as o
+            on o.observed_at between s.start_date and s.end_date
             /* matches only on type and date for weekly forms */
-            and s.form_type in ('WT', 'O3')
             and s.form_type = o.form_type
             and s.user_id = o.teacher_id
+            and s.form_type in ('WT', 'O3')
     ),
 
     historical_overall_scores as (
+        select
+            s.employee_number,
+            s.academic_year,
+            s.form_term,
+            null as etr_score,
+            null as so_score,
+            o.overall_score,
+            null as etr_tier,
+            null as so_tier,
+            o.tier,
+        from scaffold as s
+        left join
+            observations as o
+            on o.observed_at between s.start_date and s.end_date
+            /* Matches on name for PM Rounds to distinguish Self and Coach */
+            and s.form_short_name = o.form_short_name
+            and s.user_id = o.teacher_id
+        where s.form_type = 'PM'
+
+        union all
+
         select
             employee_number,
             academic_year,
@@ -299,45 +342,9 @@ with
                     "src_performance_management__scores_overall_archive",
                 )
             }}
-
-        union distinct
-
-        select
-            employee_number,
-            academic_year,
-            form_term,
-            null as etr_score,
-            null as so_score,
-            overall_score,
-            null as etr_tier,
-            null as so_tier,
-            tier,
-        from observation_details
-        where form_type = 'PM' and overall_score is not null
     ),
 
     historical_detail_scores as (
-        select
-            subject_employee_number as employee_number,
-            academic_year,
-            pm_term as form_term,
-            score_type,
-            observer_employee_number,
-            null as observer_name,
-            observed_at,
-            measurement_name,
-            score_value as row_score_value,
-
-        from
-            {{
-                source(
-                    "performance_management",
-                    "src_performance_management__scores_detail_archive",
-                )
-            }}
-
-        union all
-
         select
             employee_number,
             academic_year,
@@ -348,37 +355,58 @@ with
             observed_at,
             measurement_name,
             row_score_value,
-
         from observation_details
         where form_type = 'PM' and overall_score is not null
+
+        union all
+
+        select
+            subject_employee_number as employee_number,
+            academic_year,
+            pm_term as form_term,
+            score_type,
+            observer_employee_number,
+            null as observer_name,
+            safe_cast(observed_at as date) as observed_at,
+            measurement_name,
+            score_value as row_score_value,
+        from
+            {{
+                source(
+                    "performance_management",
+                    "src_performance_management__scores_detail_archive",
+                )
+            }}
     ),
 
     historical_data as (
         select
-            ds.employee_number,
-            ds.academic_year,
-            ds.form_term,
-            ds.score_type,
-            ds.observer_employee_number,
-            ds.observer_name,
-            ds.observed_at,
-            ds.measurement_name,
-            ds.row_score_value,
-            'Coaching Tools: Coach ETR and Reflection' as form_long_name,
-
+            os.employee_number,
+            os.academic_year,
+            os.form_term,
             os.etr_score,
             os.so_score,
             os.overall_score,
             os.etr_tier,
             os.so_tier,
             os.tier,
+
+            ds.score_type,
+            ds.observer_employee_number,
+            ds.observer_name,
+            ds.observed_at,
+            ds.measurement_name,
+            ds.row_score_value,
+
+            'Coaching Tools: Coach ETR and Reflection' as form_long_name,
+
             concat(ds.form_term, ' (Coach)') as form_short_name,
-        from historical_detail_scores as ds
-        left join
-            historical_overall_scores as os
-            on ds.employee_number = os.employee_number
-            and ds.academic_year = os.academic_year
-            and ds.form_term = os.form_term
+        from historical_overall_scores as os
+        inner join
+            historical_detail_scores as ds
+            on os.employee_number = ds.employee_number
+            and os.academic_year = ds.academic_year
+            and os.form_term = ds.form_term
     )
 
 select
@@ -424,7 +452,6 @@ select
     measurement_name,
     text_box,
     rn_submission,
-
 from observation_details
 where rn_submission = 1
 
@@ -477,8 +504,7 @@ from historical_data as hd
 left join
     {{ ref("base_people__staff_roster_history") }} as sr
     on hd.employee_number = sr.employee_number
-    and cast(
-        hd.observed_at as date
-    ) between cast(sr.work_assignment__fivetran_start as date) and cast(
+    and hd.observed_at
+    between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
         sr.work_assignment__fivetran_end as date
     )
