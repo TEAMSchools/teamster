@@ -15,11 +15,14 @@ defs = Definitions(
     resources={
         "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "io_manager_gcs_avro": gcs_io_manager.configured(
-            config_or_config_fn={"gcs_bucket": "teamster-staging", "io_format": "avro"}
+            config_or_config_fn={
+                "gcs_bucket": f"teamster-{CODE_LOCATION}",
+                "io_format": "avro",
+            }
         ),
         "io_manager_gcs_file": gcs_io_manager.configured(
             config_or_config_fn={
-                "gcs_bucket": "teamster-staging",
+                "gcs_bucket": f"teamster-{CODE_LOCATION}",
                 "io_format": "filepath",
             }
         ),
@@ -39,10 +42,10 @@ defs = Definitions(
         ),
         "ssh_powerschool": SSHConfigurableResource(
             remote_host="psteam.kippnj.org",
-            remote_port=EnvVar("KIPPNEWARK_PS_SSH_PORT"),
-            username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
-            password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
-            tunnel_remote_host=EnvVar("KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST"),
+            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
+            username=EnvVar("STAGING_PS_SSH_USERNAME"),
+            password=EnvVar("STAGING_PS_SSH_PASSWORD"),
+            tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
         ),
     },
 )
