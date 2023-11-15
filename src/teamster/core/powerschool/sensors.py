@@ -4,6 +4,7 @@ import pendulum
 from dagster import (
     AssetsDefinition,
     AssetSelection,
+    MonthlyPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -13,6 +14,7 @@ from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_partition_sensor(
@@ -64,17 +66,27 @@ def build_partition_sensor(
                     elif partition_key != last_partition_key:
                         continue
                     else:
-                        window_start = last_updated.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-
                         context.log.info(partition_key)
-                        window_end = (
-                            pendulum.from_format(
-                                string=partition_key,
-                                fmt="YYYY-MM-DDTHH:mm:ssZZ",
-                                tz=timezone,
-                            )
-                            .add(years=1)
+
+                        window_start_fmt = last_updated.format(
+                            "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+                        )
+
+                        if isinstance(
+                            asset.partitions_def,
+                            FiscalYearPartitionsDefinition,
+                        ):
+                            date_add_kwargs = {"years": 1}
+                        elif isinstance(
+                            asset.partitions_def,
+                            MonthlyPartitionsDefinition,
+                        ):
+                            date_add_kwargs = {"months": 1}
+
+                        window_end_fmt = (
+                            last_updated.add(**date_add_kwargs)
                             .subtract(days=1)
+                            .end_of("day")
                             .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                         )
 
@@ -83,9 +95,9 @@ def build_partition_sensor(
                                 "SELECT COUNT(*) "
                                 f"FROM {table_name} "
                                 f"WHERE {partition_column} BETWEEN "
-                                f"TO_TIMESTAMP('{window_start}', "
+                                f"TO_TIMESTAMP('{window_start_fmt}', "
                                 "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
-                                f"TO_TIMESTAMP('{window_end}', "
+                                f"TO_TIMESTAMP('{window_end_fmt}', "
                                 "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
                             ),
                             partition_size=1,
@@ -109,7 +121,6 @@ def build_partition_sensor(
                         )
 
                         cursor[cursor_key] = hour_ts
-
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()
