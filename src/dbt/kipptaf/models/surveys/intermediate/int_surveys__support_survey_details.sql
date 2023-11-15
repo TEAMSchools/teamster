@@ -10,35 +10,6 @@ with
             rt.name as campaign_name,
             rt.code as campaign_reporting_term,
 
-            safe_cast(
-                regexp_extract(fr.text_value, r'\((\d{6})\)') as integer
-            ) as respondent_df_employee_number,
-
-            timestamp(fr.create_time) as date_started,
-            timestamp(fr.last_submitted_time) as date_submitted,
-
-        from {{ ref("base_google_forms__form_responses") }} as fr
-        left join
-            {{ ref("stg_reporting__terms") }} as rt
-            on date(fr.last_submitted_time) between rt.start_date and rt.end_date
-            and rt.type = 'SURVEY'
-            and rt.code in ('SUP1', 'SUP2')
-        where
-            fr.question_item__question__question_id = '55f7fb30'
-            and fr.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
-
-        union distinct
-
-        select
-            fr.form_id as survey_id,
-            fr.info_title as survey_title,
-            fr.response_id as survey_response_id,
-            fr.respondent_email,
-
-            rt.academic_year as campaign_academic_year,
-            rt.name as campaign_name,
-            rt.code as campaign_reporting_term,
-
             up.employee_number as respondent_df_employee_number,
 
             timestamp(fr.create_time) as date_started,
