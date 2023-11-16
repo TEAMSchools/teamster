@@ -57,7 +57,25 @@ select
             e.actual_end_date is null and eis.ugrad_status in ('Graduated', 'Attending')
         then 1
         else 0
-    end as is_persisting,
+    end as is_persisting_fall,
+
+    case
+        when
+            date(r.academic_year + 1, 3, 31)
+            > current_date('{{ var("local_timezone") }}')
+        then null
+        when e.actual_end_date >= date(r.academic_year + 1, 3, 31)
+        then 1
+        when
+            e.actual_end_date < date(r.academic_year + 1, 3, 31)
+            and e.status = 'Graduated'
+        then 1
+        when
+            e.actual_end_date is null and eis.ugrad_status in ('Graduated', 'Attending')
+        then 1
+        else 0
+    end as is_persisting_spring,
+
 from roster_scaffold as r
 left join
     {{ ref("stg_kippadb__enrollment") }} as e
