@@ -13,8 +13,6 @@ theme:
 
 nav:
   - Home: README.md
-  - Getting Started:
-      - Installation: getting-started.md
   - Contributing: CONTRIBUTING.md
 
 markdown_extensions:
