@@ -6,7 +6,7 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 dependencies = [
-  "dagster>=1.5.5",
+  "dagster>=1.5.5,<1.5.9",
   "dagster-cloud>=1.5.5",
   "dagster-graphql>=1.5.5",
   "dagster-dbt>=0.21.5",
