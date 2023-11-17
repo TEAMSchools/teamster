@@ -214,10 +214,10 @@ If there are any issues with your code, the check will fail, and you can find th
 
 ## Your PR is merged
 
-Congratulations :tada::tada: The GitHub team thanks you :sparkles:.
+Congratulations :tada::tada: :sparkles:
 
-Once your PR is merged, your contributions will...
+Once your PR is merged...
 
-- deploy to Dagster
-- SQL updates will take effect whenever the next update is triggered. The lag can vary significantly
-  depending on the source of the data.
+- GitHub updates Dagster
+- Dagster scans for code changes every 5 minutes
+- Dagster will launch a run to update all changed models
