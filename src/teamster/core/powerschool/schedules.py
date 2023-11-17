@@ -9,10 +9,10 @@ from dagster import (
     define_asset_job,
     schedule,
 )
+from dagster_ssh import SSHResource
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
-from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def build_last_modified_schedule(
@@ -32,7 +32,7 @@ def build_last_modified_schedule(
     )
     def _schedule(
         context: ScheduleEvaluationContext,
-        ssh_powerschool: SSHConfigurableResource,
+        ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ):
         ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)

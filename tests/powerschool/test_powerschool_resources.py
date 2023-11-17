@@ -1,14 +1,14 @@
 import pendulum
 from dagster import EnvVar, build_op_context, build_resources
+from dagster_ssh import SSHResource
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
-from teamster.core.ssh.resources import SSHConfigurableResource
 
 with build_resources(
     resources={
-        "ssh_powerschool": SSHConfigurableResource(
+        "ssh_powerschool": SSHResource(
             remote_host="teamacademy.clgpstest.com",
             remote_port=EnvVar("STAGING_PS_SSH_PORT"),
             username=EnvVar("STAGING_PS_SSH_USERNAME"),
@@ -31,7 +31,7 @@ with build_resources(
         ),
     }
 ) as resources:
-    SSH_POWERSCHOOL: SSHConfigurableResource = resources.ssh_powerschool
+    SSH_POWERSCHOOL: SSHResource = resources.ssh_powerschool
     DB_POWERSCHOOL: OracleResource = resources.db_powerschool
 
 

@@ -8,6 +8,7 @@ from dagster_gcp import (
     GCSResource,
 )
 from dagster_k8s import k8s_job_executor
+from dagster_ssh import SSHResource
 
 from teamster.core.adp.resources import (
     AdpWorkforceManagerResource,
@@ -22,7 +23,6 @@ from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.ldap.resources import LdapResource
 from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
-from teamster.core.ssh.resources import SSHConfigurableResource
 from teamster.core.utils.jobs import asset_observation_job
 from teamster.kipptaf import (
     CODE_LOCATION,
@@ -164,91 +164,91 @@ defs = Definitions(
         "smartrecruiters": SmartRecruitersResource(
             smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
         ),
-        "ssh_achieve3k": SSHConfigurableResource(
+        "ssh_achieve3k": SSHResource(
             remote_host="xfer.achieve3000.com",
             username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
-        "ssh_adp_workforce_now": SSHConfigurableResource(
+        "ssh_adp_workforce_now": SSHResource(
             remote_host="sftp.kippnj.org",
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
         ),
-        "ssh_blissbook": SSHConfigurableResource(
+        "ssh_blissbook": SSHResource(
             remote_host="sftp.blissbook.com",
             remote_port="3022",
             username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
             password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
         ),
-        "ssh_clever": SSHConfigurableResource(
+        "ssh_clever": SSHResource(
             remote_host="sftp.clever.com",
             username=EnvVar("CLEVER_SFTP_USERNAME"),
             password=EnvVar("CLEVER_SFTP_PASSWORD"),
         ),
-        "ssh_clever_reports": SSHConfigurableResource(
+        "ssh_clever_reports": SSHResource(
             remote_host="reports-sftp.clever.com",
             username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
             password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
         ),
-        "ssh_couchdrop": SSHConfigurableResource(
+        "ssh_couchdrop": SSHResource(
             remote_host="kipptaf.couchdrop.io",
             username=EnvVar("COUCHDROP_SFTP_USERNAME"),
             password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
-        "ssh_coupa": SSHConfigurableResource(
+        "ssh_coupa": SSHResource(
             remote_host="fileshare.coupahost.com",
             username=EnvVar("COUPA_SFTP_USERNAME"),
             password=EnvVar("COUPA_SFTP_PASSWORD"),
         ),
-        "ssh_deanslist": SSHConfigurableResource(
+        "ssh_deanslist": SSHResource(
             remote_host="sftp.deanslistsoftware.com",
             username=EnvVar("DEANSLIST_SFTP_USERNAME"),
             password=EnvVar("DEANSLIST_SFTP_PASSWORD"),
         ),
-        "ssh_egencia": SSHConfigurableResource(
+        "ssh_egencia": SSHResource(
             remote_host="eusftp.egencia.com",
             username=EnvVar("EGENCIA_SFTP_USERNAME"),
             key_file="/etc/secret-volume/id_rsa_egencia",
         ),
-        "ssh_illuminate": SSHConfigurableResource(
+        "ssh_illuminate": SSHResource(
             remote_host="sftp.illuminateed.com",
             username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
             password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
         ),
-        "ssh_kipptaf": SSHConfigurableResource(
+        "ssh_kipptaf": SSHResource(
             remote_host="sftp.kippnj.org",
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
-        "ssh_idauto": SSHConfigurableResource(
+        "ssh_idauto": SSHResource(
             remote_host="sftp.kippnj.org",
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
-        "ssh_littlesis": SSHConfigurableResource(
+        "ssh_littlesis": SSHResource(
             remote_host="upload.littlesis.app",
             username=EnvVar("LITTLESIS_SFTP_USERNAME"),
             password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
         ),
-        "ssh_powerschool": SSHConfigurableResource(
+        "ssh_powerschool": SSHResource(
             remote_host="teamacademy.clgpstest.com",
             remote_port=EnvVar("STAGING_PS_SSH_PORT"),
             username=EnvVar("STAGING_PS_SSH_USERNAME"),
             password=EnvVar("STAGING_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
         ),
-        "ssh_pythonanywhere": SSHConfigurableResource(
+        "ssh_pythonanywhere": SSHResource(
             remote_host="ssh.pythonanywhere.com",
             username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
             password=EnvVar("PYTHONANYWHERE_SFTP_PASSWORD"),
         ),
-        "ssh_razkids": SSHConfigurableResource(
+        "ssh_razkids": SSHResource(
             remote_host="sftp.learninga-z.com",
             remote_port="22224",
             username=EnvVar("RAZKIDS_SFTP_USERNAME"),
             password=EnvVar("RAZKIDS_SFTP_PASSWORD"),
         ),
-        "ssh_read180": SSHConfigurableResource(
+        "ssh_read180": SSHResource(
             remote_host="imports.education.scholastic.com",
             username=EnvVar("READ180_SFTP_USERNAME"),
             password=EnvVar("READ180_SFTP_PASSWORD"),
