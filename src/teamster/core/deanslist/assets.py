@@ -87,6 +87,8 @@ def build_multi_partition_asset(
         else:
             is_time_bound = False
 
+        # TODO: date_partition == inception_date for first partition
+
         # determine start and end dates
         partition_fy = FiscalYear(datetime=date_partition, start_month=7)
 

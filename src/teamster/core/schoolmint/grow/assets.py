@@ -82,6 +82,8 @@ def build_multi_partition_asset(
             .timestamp()
         )
 
+        # TODO: lastModified == None for first partition
+
         endpoint_content = schoolmint_grow.get(
             endpoint=asset_name,
             lastModified=last_modified_partition,
