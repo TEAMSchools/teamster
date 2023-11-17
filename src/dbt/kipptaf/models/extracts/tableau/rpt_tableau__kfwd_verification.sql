@@ -5,12 +5,16 @@ select
     ar.ktc_status as status,
     ar.contact_currently_enrolled_school as currently_enrolled_school,
     ar.contact_owner_name,
+
     enr.ugrad_account_type,
     enr.ugrad_account_name,
     enr.ugrad_date_last_verified,
     enr.ugrad_anticipated_graduation,
     enr.ugrad_status,
+
     t.term_season as semester,
+    t.term_verification_status as verification_status_src,
+
     left(t.year, 4) as year,
     concat(upper(left(t.term_season, 2)), ' ', right(left(t.year, 4), 2)) as term,
     case
@@ -20,7 +24,6 @@ select
         then 'Verified by NSC'
         else 'Unverified'
     end as verification_status,
-    t.term_verification_status as verification_status_src,
     coalesce(t.verified_by_advisor, t.verified_by_nsc) as verification_date,
     row_number() over (
         partition by ar.contact_id, t.term_season, t.year
