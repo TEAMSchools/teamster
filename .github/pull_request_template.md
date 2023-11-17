@@ -13,5 +13,5 @@
 
 ## Troubleshooting
 - [SqlFluff Rules Reference](https://docs.sqlfluff.com/en/stable/rules.html)
-- [Trunk]()
-- [dbt]()
+- [Trunk](https://teamschools.github.io/teamster/CONTRIBUTING/#trunk)
+- [dbt](https://teamschools.github.io/teamster/CONTRIBUTING/#dbt-cloud_1)
