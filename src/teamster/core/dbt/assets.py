@@ -31,7 +31,7 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
         if asset_key_config:
             return AssetKey(asset_key_config)
         else:
-            super().get_asset_key(dbt_resource_props)
+            return super().get_asset_key(dbt_resource_props)
 
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
