@@ -8,11 +8,11 @@ import pendulum
 import requests
 from dagster import AssetExecutionContext, AssetKey, asset
 from dagster_gcp import BigQueryResource, GCSResource
-from dagster_ssh import SSHResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
 
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 

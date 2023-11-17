@@ -8,7 +8,6 @@ from dagster_gcp import (
     GCSResource,
 )
 from dagster_k8s import k8s_job_executor
-from dagster_ssh import SSHResource
 
 from teamster.core.adp.resources import (
     AdpWorkforceManagerResource,
@@ -23,6 +22,7 @@ from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.ldap.resources import LdapResource
 from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.jobs import asset_observation_job
 from teamster.kipptaf import (
     CODE_LOCATION,
@@ -176,7 +176,7 @@ defs = Definitions(
         ),
         "ssh_blissbook": SSHResource(
             remote_host="sftp.blissbook.com",
-            remote_port="3022",
+            remote_port=3022,
             username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
             password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
         ),
@@ -232,7 +232,7 @@ defs = Definitions(
         ),
         "ssh_powerschool": SSHResource(
             remote_host="teamacademy.clgpstest.com",
-            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
+            remote_port=EnvVar("STAGING_PS_SSH_PORT").get_value(),
             username=EnvVar("STAGING_PS_SSH_USERNAME"),
             password=EnvVar("STAGING_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
@@ -244,7 +244,7 @@ defs = Definitions(
         ),
         "ssh_razkids": SSHResource(
             remote_host="sftp.learninga-z.com",
-            remote_port="22224",
+            remote_port=22224,
             username=EnvVar("RAZKIDS_SFTP_USERNAME"),
             password=EnvVar("RAZKIDS_SFTP_PASSWORD"),
         ),
