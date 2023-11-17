@@ -10,7 +10,7 @@ from dagster_k8s import k8s_job_executor
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
 
 from . import (
     CODE_LOCATION,
@@ -84,29 +84,29 @@ defs = Definitions(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
         ),
-        "ssh_couchdrop": SSHConfigurableResource(
+        "ssh_couchdrop": SSHResource(
             remote_host="kipptaf.couchdrop.io",
             username=EnvVar("COUCHDROP_SFTP_USERNAME"),
             password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
-        "ssh_iready": SSHConfigurableResource(
+        "ssh_iready": SSHResource(
             remote_host="prod-sftp-1.aws.cainc.com",
             username=EnvVar("IREADY_SFTP_USERNAME"),
             password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
-        "ssh_powerschool": SSHConfigurableResource(
+        "ssh_powerschool": SSHResource(
             remote_host="ps.kippmiami.org",
-            remote_port=EnvVar("KIPPMIAMI_PS_SSH_PORT"),
+            remote_port=EnvVar("KIPPMIAMI_PS_SSH_PORT").get_value(),
             username=EnvVar("KIPPMIAMI_PS_SSH_USERNAME"),
             password=EnvVar("KIPPMIAMI_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("KIPPMIAMI_PS_SSH_REMOTE_BIND_HOST"),
         ),
-        "ssh_pythonanywhere": SSHConfigurableResource(
+        "ssh_pythonanywhere": SSHResource(
             remote_host="ssh.pythonanywhere.com",
             username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
             password=EnvVar("PYTHONANYWHERE_SFTP_PASSWORD"),
         ),
-        "ssh_renlearn": SSHConfigurableResource(
+        "ssh_renlearn": SSHResource(
             remote_host="sftp.renaissance.com",
             username=EnvVar("KIPPMIAMI_RENLEARN_SFTP_USERNAME"),
             password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
