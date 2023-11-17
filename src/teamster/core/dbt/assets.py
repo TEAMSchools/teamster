@@ -24,49 +24,33 @@ from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
 class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
-
-        asset_key_config = dagster_metadata.get("asset_key", [])
+        asset_key_config = (
+            dbt_resource_props.get("meta", {}).get("dagster", {}).get("asset_key", [])
+        )
 
         if asset_key_config:
             return AssetKey(asset_key_config)
-
-        if dbt_resource_props["resource_type"] == "source":
-            return AssetKey(
-                [dbt_resource_props["source_name"], dbt_resource_props["name"]]
-            ).with_prefix(self._source_asset_key_prefix)
         else:
-            configured_schema = dbt_resource_props["config"].get("schema")
-
-            if configured_schema is not None:
-                components = [configured_schema, dbt_resource_props["name"]]
-            else:
-                components = [dbt_resource_props["name"]]
-
-            return AssetKey(components).with_prefix(self._asset_key_prefix)
+            super().get_asset_key(dbt_resource_props)
 
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
-        dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
-
-        auto_materialize_policy_config = dagster_metadata.get(
-            "auto_materialize_policy", {}
-        )
-
         auto_materialize_policy = _auto_materialize_policy_fn(
-            auto_materialize_policy_config
+            dbt_resource_props.get("meta", {})
+            .get("dagster", {})
+            .get("auto_materialize_policy", {})
         )
 
         if auto_materialize_policy:
             return auto_materialize_policy
+
+        if dbt_resource_props["config"].get("materialized") == "view":
+            return AutoMaterializePolicy.eager().without_rules(
+                AutoMaterializeRule.materialize_on_parent_updated()
+            )
         else:
-            if dbt_resource_props["config"].get("materialized") == "view":
-                return AutoMaterializePolicy.eager().without_rules(
-                    AutoMaterializeRule.materialize_on_parent_updated()
-                )
-            else:
-                return AutoMaterializePolicy.eager()
+            return AutoMaterializePolicy.eager()
 
 
 def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
