@@ -230,13 +230,6 @@ defs = Definitions(
             username=EnvVar("LITTLESIS_SFTP_USERNAME"),
             password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
         ),
-        "ssh_powerschool": SSHResource(
-            remote_host="teamacademy.clgpstest.com",
-            remote_port=EnvVar("STAGING_PS_SSH_PORT").get_value(),
-            username=EnvVar("STAGING_PS_SSH_USERNAME"),
-            password=EnvVar("STAGING_PS_SSH_PASSWORD"),
-            tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
-        ),
         "ssh_pythonanywhere": SSHResource(
             remote_host="ssh.pythonanywhere.com",
             username=EnvVar("PYTHONANYWHERE_SFTP_USERNAME"),
