@@ -126,23 +126,21 @@ entities we want
 bringing together our modular pieces into a wide, rich vision of the entities our organization cares
 about
 
-### Make changes in dbt Cloud
+### Create a branch
 
 [Version control basics](https://docs.getdbt.com/docs/collaborate/git/version-control-basics)
 
-#### Create a branch
-
 ![Alt text](images/dbt_cloud/create_branch.png)
 
-#### Make your changes
+### Make your changes
 
 ...
 
-#### Commit your changes
+### Commit your changes
 
 ![Alt text](images/dbt_cloud/commit_sync.png)
 
-### Pull request
+## Pull request
 
 When you're finished making changes, create a
 [Pull Request](https://docs.github.com/en/pull-requests) ("PR").
@@ -153,7 +151,7 @@ When you're finished making changes, create a
 3. Fill in the "Summary & Motivation" section of the pull request template and click "Create pull
    request".
 
-### Code review
+## Code review
 
 Once created, [Zapier](https://zapier.com/) will create a task for your pull request in our
 [Teamster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838).
@@ -174,7 +172,7 @@ submitted:
 
 A series of automatic checks will then run on the code that you submitted.
 
-#### Trunk
+### Trunk
 
 [Trunk](https://trunk.io/) is a tool that runs multiple "linters" that check for common errors and
 enforces style.
@@ -186,7 +184,7 @@ If there
 | SQL      | [SQLFluff](https://docs.sqlfluff.com/en/stable/rules.html) |
 | Python   | [Ruff](https://docs.astral.sh/ruff/rules/)                 |
 
-#### dbt Cloud
+### dbt Cloud
 
 dbt Cloud will create branch a dataset for your pull request on BigQuery and attempt to build the
 modified files.
@@ -211,7 +209,7 @@ If there are any issues with your code, the check will fail, and you can find th
   [git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
   conflicts and other issues.
 
-### Your PR is merged
+## Your PR is merged
 
 Congratulations :tada::tada: The GitHub team thanks you :sparkles:.
 
