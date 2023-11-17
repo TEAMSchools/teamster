@@ -12,7 +12,7 @@ from google.cloud import bigquery, storage
 from pandas import DataFrame
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
@@ -74,7 +74,7 @@ def transform_data(data, file_suffix, file_encoding=None, file_format=None):
 
 def load_sftp(
     context: AssetExecutionContext,
-    ssh: SSHConfigurableResource,
+    ssh: SSHResource,
     data,
     file_name,
     destination_path,

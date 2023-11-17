@@ -4,13 +4,13 @@ from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
 
 with build_resources(
     resources={
-        "ssh_powerschool": SSHConfigurableResource(
+        "ssh_powerschool": SSHResource(
             remote_host="teamacademy.clgpstest.com",
-            remote_port=EnvVar("STAGING_PS_SSH_PORT"),
+            remote_port=EnvVar("STAGING_PS_SSH_PORT").get_value(),
             username=EnvVar("STAGING_PS_SSH_USERNAME"),
             password=EnvVar("STAGING_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
@@ -31,7 +31,7 @@ with build_resources(
         ),
     }
 ) as resources:
-    SSH_POWERSCHOOL: SSHConfigurableResource = resources.ssh_powerschool
+    SSH_POWERSCHOOL: SSHResource = resources.ssh_powerschool
     DB_POWERSCHOOL: OracleResource = resources.db_powerschool
 
 
