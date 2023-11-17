@@ -1,7 +1,8 @@
 import json
 
 from dagster import EnvVar, SensorResult, build_sensor_context
-from dagster_ssh import SSHResource
+
+from teamster.core.ssh.resources import SSHResource
 
 
 def _test_sensor(sftp_sensor, **kwargs):
@@ -137,6 +138,7 @@ def test_sensor_clever_reports():
     )
 
 
+"""
 # ip restricted
 def test_sensor_adp():
     from teamster.kipptaf.adp.sensors import sftp_sensor
@@ -149,3 +151,4 @@ def test_sensor_adp():
             password=EnvVar("ADP_SFTP_PASSWORD"),
         ),
     )
+"""

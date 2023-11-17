@@ -9,10 +9,10 @@ from dagster import (
     define_asset_job,
     schedule,
 )
-from dagster_ssh import SSHResource
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHResource
 
 
 def build_last_modified_schedule(

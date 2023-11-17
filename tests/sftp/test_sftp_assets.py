@@ -1,11 +1,11 @@
 import random
 import shutil
 
-from dagster import EnvVar, config_from_files, materialize
+from dagster import EnvVar, materialize
 from dagster_gcp import GCSResource
-from dagster_ssh import SSHResource
 
 from teamster.core.google.io.resources import gcs_io_manager
+from teamster.core.ssh.resources import SSHResource
 from teamster.staging import GCS_PROJECT_NAME
 
 
@@ -20,9 +20,10 @@ def _test_assets(asset, ssh_resource):
         resources={
             "gcs": GCSResource(project=GCS_PROJECT_NAME),
             "io_manager_gcs_avro": gcs_io_manager.configured(
-                config_from_files(
-                    ["src/teamster/staging/config/resources/io_avro.yaml"]
-                )
+                config_or_config_fn={
+                    "gcs_bucket": "teamster-staging",
+                    "io_format": "avro",
+                }
             ),
             **ssh_resource,
         },

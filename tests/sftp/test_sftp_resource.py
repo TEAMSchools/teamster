@@ -1,7 +1,7 @@
 from dagster import EnvVar, build_asset_context, build_resources
-from dagster_ssh import SSHResource
 
 from teamster.core.sftp.assets import match_sftp_files
+from teamster.core.ssh.resources import SSHResource
 
 
 def _test(ssh_configurable_resource, remote_file_regex_composed, remote_dir="."):

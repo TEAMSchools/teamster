@@ -10,10 +10,10 @@ from dagster import (
     SensorResult,
     sensor,
 )
-from dagster_ssh import SSHResource
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 

@@ -6,11 +6,11 @@ from dagster import (
     Output,
     asset,
 )
-from dagster_ssh import SSHResource
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.sqlalchemy.resources import OracleResource
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 

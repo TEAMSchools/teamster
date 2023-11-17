@@ -12,12 +12,12 @@ from dagster import (
     Output,
     asset,
 )
-from dagster_ssh import SSHResource
 from numpy import nan
 from pandas import read_csv
 from paramiko import SFTPClient
 from slugify import slugify
 
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.functions import regex_pattern_replace
 
 

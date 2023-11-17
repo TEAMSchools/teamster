@@ -6,11 +6,11 @@ from dagster_gcp import (
     GCSResource,
 )
 from dagster_k8s import k8s_job_executor
-from dagster_ssh import SSHResource
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
+from teamster.core.ssh.resources import SSHResource
 
 from . import (
     CODE_LOCATION,
@@ -101,7 +101,7 @@ defs = Definitions(
         ),
         "ssh_powerschool": SSHResource(
             remote_host="pskcna.kippnj.org",
-            remote_port=EnvVar("KIPPCAMDEN_PS_SSH_PORT"),
+            remote_port=EnvVar("KIPPCAMDEN_PS_SSH_PORT").get_value(),
             username=EnvVar("KIPPCAMDEN_PS_SSH_USERNAME"),
             password=EnvVar("KIPPCAMDEN_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("KIPPCAMDEN_PS_SSH_REMOTE_BIND_HOST"),
