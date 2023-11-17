@@ -140,7 +140,7 @@ about
 
 ![Alt text](images/dbt_cloud/commit_sync.png)
 
-### Pull request
+### Open a pull request
 
 When you're finished making changes, create a
 [Pull Request](https://docs.github.com/en/pull-requests) ("PR").
@@ -150,12 +150,6 @@ When you're finished making changes, create a
    ![Alt text](images/github/create_pull_request.png)
 3. Fill in the "Summary & Motivation" section of the pull request template and click "Create pull
    request".
-
-### Resolving merge confilcts
-
-If you run into any merge issues, checkout this
-[git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
-conflicts and other issues.
 
 ## Code review
 
@@ -177,6 +171,12 @@ submitted:
 | All other directories              | [Admins](https://github.com/orgs/TEAMSchools/teams/admins)                           |
 
 A series of automatic checks will then run on the code that you submitted.
+
+### Resolving merge confilcts
+
+If you run into any merge issues, checkout this
+[git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
+conflicts and other issues.
 
 ### Trunk
 
