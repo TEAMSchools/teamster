@@ -151,6 +151,12 @@ When you're finished making changes, create a
 3. Fill in the "Summary & Motivation" section of the pull request template and click "Create pull
    request".
 
+### Resolving merge confilcts
+
+If you run into any merge issues, checkout this
+[git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
+conflicts and other issues.
+
 ## Code review
 
 Once created, [Zapier](https://zapier.com/) will create a task for your pull request in our
@@ -205,9 +211,6 @@ If there are any issues with your code, the check will fail, and you can find th
   any other changes in your fork, then commit them to your branch.
 - As you update your PR and apply changes, mark each conversation as
   [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations).
-- If you run into any merge issues, checkout this
-  [git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
-  conflicts and other issues.
 
 ## Your PR is merged
 
