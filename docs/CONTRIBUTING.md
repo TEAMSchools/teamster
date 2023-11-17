@@ -140,7 +140,7 @@ about
 
 ![Alt text](images/dbt_cloud/commit_sync.png)
 
-## Pull request
+### Pull request
 
 When you're finished making changes, create a
 [Pull Request](https://docs.github.com/en/pull-requests) ("PR").
