@@ -183,12 +183,14 @@ conflicts and other issues.
 [Trunk](https://trunk.io/) is a tool that runs multiple "linters" that check for common errors and
 enforces style.
 
-If there
-
 | Language | Linter(s)                                                  |
 | -------- | ---------------------------------------------------------- |
 | SQL      | [SQLFluff](https://docs.sqlfluff.com/en/stable/rules.html) |
 | Python   | [Ruff](https://docs.astral.sh/ruff/rules/)                 |
+
+??? question "What if I can't fix the issue?"
+
+    Find another place to work!
 
 ### dbt Cloud
 
