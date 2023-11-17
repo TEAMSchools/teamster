@@ -13,7 +13,7 @@ with
         }}
     )
 
-select
+select  -- noqa: AM04
     * except (statestudentidentifier),
     safe_cast(statestudentidentifier as string) as statestudentidentifier,
     upper(regexp_extract(_dbt_source_relation, r'__(\w+)`$')) as assessment_name,
@@ -39,6 +39,10 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
     case
+        when subject = 'Science' and testperformancelevel >= 3
+        then true
+        when testcode in ('MATGP', 'ELAGP') and testperformancelevel = 2
+        then true
         when testperformancelevel >= 4
         then true
         when testperformancelevel < 4

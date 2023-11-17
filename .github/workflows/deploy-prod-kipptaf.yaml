@@ -1,4 +1,4 @@
-name: kipptaf - Hybrid Prod Deployment
+name: kipptaf
 
 on:
   workflow_dispatch: null
@@ -14,93 +14,9 @@ on:
       - src/dbt/kipptaf/**
       - src/dbt/teamster_utils/**
 
-env:
-  CODE_LOCATION: kipptaf
-
-concurrency:
-  # Cancel in-progress runs on same branch
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  parse_workspace:
-    runs-on: ubuntu-latest
-
-    outputs:
-      build_info: ${{ steps.parse-workspace.outputs.build_info }}
-
-    steps:
-      # https://github.com/actions/checkout
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      # https://github.com/dagster-io/dagster-cloud-action
-      - name: Parse cloud workspace
-        id: parse-workspace
-        uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
-        with:
-          dagster_cloud_file: .dagster/dagster-cloud-kipptaf.yaml
-
-  dagster_cloud_build_push:
-    name: Dagster Hybrid Deploy
-    runs-on: ubuntu-latest
-    needs: parse_workspace
-
-    strategy:
-      fail-fast: false
-      matrix:
-        location: ${{ fromJSON(needs.parse_workspace.outputs.build_info) }}
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      # https://github.com/actions/checkout
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
-          submodules: true
-
-      - name: Copy Dockerfile to root dir
-        run: cp "./src/teamster/${CODE_LOCATION}/Dockerfile" ./Dockerfile
-
-      # https://github.com/google-github-actions/auth
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          token_format: access_token
-          workload_identity_provider:
-            projects/${{ secrets.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account:
-            ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}@${{ secrets.GCP_PROJECT_ID
-            }}.iam.gserviceaccount.com
-
-      # https://github.com/docker/login-action
-      - name: Login to GAR
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
-
-      # https://github.com/dagster-io/dagster-cloud-action
-      - name: Build and deploy to Dagster Cloud hybrid
-        uses: dagster-io/dagster-cloud-action/actions/hybrid_prod_deploy@v0.1
-        with:
-          organization_id: ${{ secrets.DAGSTER_ORGANIZATION_ID }}
-          dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
-          location: ${{ toJson(matrix.location) }}
-          checkout_repo: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # https://github.com/GoogleCloudPlatform/gcr-cleaner/blob/main/docs/deploy-github-actions.md
-      - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
-        with:
-          args: >-
-            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf -recursive -keep=1
-            -tag-filter-any=.* -grace=48h
+  dagster-cloud-deploy:
+    uses: ./.github/workflows/dagster-cloud-deploy.yaml
+    with:
+      code-location: kipptaf
+    secrets: inherit

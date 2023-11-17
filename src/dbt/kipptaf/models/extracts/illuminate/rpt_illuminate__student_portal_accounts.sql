@@ -1,4 +1,5 @@
 select
+    -- noqa: disable=RF05
     s.student_number as `01 Student ID`,
 
     sl.username as `02 Username`,
@@ -6,7 +7,7 @@ select
 
     1 as `04 Enable Portal`,
 
-    sl.default_password as `05 Temporary Password`
+    sl.default_password as `05 Temporary Password`,
 from {{ ref("stg_powerschool__students") }} as s
 inner join
     {{ ref("stg_people__student_logins") }} as sl

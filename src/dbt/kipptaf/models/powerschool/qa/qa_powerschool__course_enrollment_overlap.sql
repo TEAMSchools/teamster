@@ -8,7 +8,7 @@ with
             lag(dateleft) over (
                 partition by _dbt_source_relation, studyear, course_number
                 order by dateleft asc
-            ) as dateleft_prev
+            ) as dateleft_prev,
         from {{ ref("stg_powerschool__cc") }}
     ),
 

@@ -1,5 +1,5 @@
 with
-    enr_gr as (
+    enr_gr as (  -- noqa: ST03
         select
             enr.cc_abs_sectionid as sectionid,
             enr.cc_studentid as studentid,
@@ -26,8 +26,10 @@ with
                 else false
             end as is_current,
 
-            if(pgf.grade = '--', null, pgf.percent) as percent_grade,
-            nullif(pgf.citizenship, '') as citizenship_grade,
+            coalesce(
+                sg.percent, if(pgf.grade = '--', null, pgf.percent)
+            ) as percent_grade,
+            coalesce(sg.behavior, nullif(pgf.citizenship, '')) as citizenship_grade,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
@@ -38,6 +40,12 @@ with
             on enr.cc_studentid = pgf.studentid
             and enr.cc_sectionid = pgf.sectionid
             and tb.storecode = pgf.finalgradename
+        left join
+            {{ ref("stg_powerschool__storedgrades") }} as sg
+            on enr.cc_studentid = sg.studentid
+            and enr.cc_course_number = sg.course_number
+            and tb.yearid = sg.yearid
+            and tb.storecode = sg.storecode
         where not enr.is_dropped_course
     ),
 
@@ -46,13 +54,27 @@ with
             dbt_utils.deduplicate(
                 relation="enr_gr",
                 partition_by="studentid, yearid, course_number, storecode",
-                order_by="is_dropped_section desc, percent_grade desc",
+                order_by="is_dropped_section asc, percent_grade desc",
             )
         }}
     )
 
 select
-    *,
+    sectionid,
+    studentid,
+    schoolid,
+    course_number,
+    credittype,
+    is_dropped_section,
+    yearid,
+    storecode,
+    termbin_start_date,
+    termbin_end_date,
+    storecode_type,
+    reporting_term,
+    is_current,
+    percent_grade,
+    citizenship_grade,
     round(
         avg(percent_grade) over (
             partition by studentid, yearid, course_number, storecode_type

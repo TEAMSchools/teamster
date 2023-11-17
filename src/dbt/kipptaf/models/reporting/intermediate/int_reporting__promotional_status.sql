@@ -4,8 +4,20 @@ with
             mem._dbt_source_relation,
             mem.studentid,
             mem.yearid,
+
+            rt.name as term_name,
+
             round(avg(mem.attendancevalue), 2) as ada_term_running,
             coalesce(sum(abs(mem.attendancevalue - 1)), 0) as n_absences_y1_running,
+            coalesce(
+                sum(
+                    case
+                        when ac.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI')
+                        then abs(mem.attendancevalue - 1)
+                    end
+                ),
+                0
+            ) as n_absences_y1_running_non_susp,
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
                 when 'kippnewark'
@@ -13,8 +25,6 @@ with
                 when 'kippcamden'
                 then 36
             end as hs_at_risk_absences,
-
-            rt.name as term_name,
 
             case
                 when
@@ -33,6 +43,17 @@ with
             and mem.yearid = rt.powerschool_year_id
             and mem.calendardate <= rt.end_date  -- join to all terms after calendardate
             and rt.type = 'RT'
+        left join
+            {{ ref("stg_powerschool__attendance") }} as att
+            on mem.studentid = att.studentid
+            and mem.calendardate = att.att_date
+            and {{ union_dataset_join_clause(left_alias="mem", right_alias="att") }}
+        left join
+            {{ ref("stg_powerschool__attendance_code") }} as ac
+            on att.attendance_codeid = ac.id
+            and att.yearid = ac.yearid
+            and att.schoolid = ac.schoolid
+            and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
         where
             mem.membershipvalue = 1
             and mem.calendardate <= current_date('{{ var("local_timezone") }}')
@@ -109,6 +130,7 @@ with
 
             att.ada_term_running,
             att.n_absences_y1_running,
+            att.n_absences_y1_running_non_susp,
 
             ir.iready_reading_recent,
             ir.iready_math_recent,
@@ -120,30 +142,24 @@ with
             case
                 /* Gr K-8 */
                 when co.grade_level <= 8 and att.ada_term_running is null
-                then 'At-Risk'
+                then 'Off-Track'
                 /* Gr K */
                 when co.grade_level = 0 and att.ada_term_running < 0.75
-                then 'At-Risk'
-                when co.grade_level = 0 and att.ada_term_running < 0.85
                 then 'Off-Track'
                 /* Gr 1-2 */
                 when co.grade_level between 1 and 2 and att.ada_term_running < 0.80
-                then 'At-Risk'
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.90
                 then 'Off-Track'
                 /* Gr3-8 */
                 when co.grade_level between 3 and 8 and att.ada_term_running < 0.85
-                then 'At-Risk'
-                when co.grade_level between 3 and 8 and att.ada_term_running < 0.90
                 then 'Off-Track'
                 /* HS */
                 when
                     co.grade_level >= 9
-                    and att.n_absences_y1_running >= att.hs_at_risk_absences
-                then 'At-Risk'
+                    and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
+                then 'Off-Track'
                 when
                     co.grade_level >= 9
-                    and att.n_absences_y1_running >= att.hs_off_track_absences
+                    and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
                 then 'Off-Track'
                 else 'On-Track'
             end as attendance_status,
@@ -154,10 +170,6 @@ with
                     co.grade_level between 1 and 2
                     and coalesce(ir.iready_reading_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                then 'At-Risk'
-                when
-                    co.grade_level between 1 and 2
-                    and ir.iready_reading_recent = '1 Grade Level Below'
                 then 'Off-Track'
                 /* Gr3-8 */
                 when
@@ -166,20 +178,20 @@ with
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                     and coalesce(ir.iready_math_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                then 'At-Risk'
+                then 'Off-Track'
                 /* HS */
                 when co.grade_level = 9 and c.projected_credits_cum < 25
-                then 'At-Risk'
+                then 'Off-Track'
                 when co.grade_level = 10 and c.projected_credits_cum < 50
-                then 'At-Risk'
+                then 'Off-Track'
                 when co.grade_level = 11 and c.projected_credits_cum < 85
-                then 'At-Risk'
+                then 'Off-Track'
                 when co.grade_level = 12 and c.projected_credits_cum < 120
-                then 'At-Risk'
+                then 'Off-Track'
                 else 'On-Track'
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join (select * from unnest(["Q1", "Q2", "Q3", "Q4"]) as term_name) as rt
+        cross join (select *, from unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name) as rt
         left join
             attendance as att
             on co.studentid = att.studentid
@@ -205,6 +217,7 @@ select
     term_name,
     ada_term_running,
     n_absences_y1_running,
+    n_absences_y1_running_non_susp,
     iready_reading_recent,
     iready_math_recent,
     n_failing,
@@ -217,18 +230,12 @@ select
         then attendance_status
         when
             grade_level between 1 and 8
-            and academic_status = 'At-Risk'
-            and attendance_status = 'At-Risk'
-        then 'At-Risk'
-        when
-            grade_level between 1 and 8
-            and (academic_status != 'On-Track' or attendance_status != 'On-Track')
+            and academic_status = 'Off-Track'
+            and attendance_status = 'Off-Track'
         then 'Off-Track'
         when
             grade_level >= 9
-            and (academic_status = 'At-Risk' or attendance_status = 'At-Risk')
-        then 'At-Risk'
-        when grade_level >= 9 and attendance_status = 'Off-Track'
+            and (academic_status = 'Off-Track' or attendance_status = 'Off-Track')
         then 'Off-Track'
         else 'On-Track'
     end as overall_status,

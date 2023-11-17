@@ -1,4 +1,5 @@
-select
+select  -- noqa: disable=ST06
+    -- noqa: disable=RF05
     powerschool_teacher_number as `01 User ID`,
     preferred_name_family_name as `02 User Last Name`,
     preferred_name_given_name as `03 User First Name`,
@@ -40,5 +41,5 @@ select
     null as `28 Total Year In District`,
     null as `29 Email2`,
     null as `30 Phone1`,
-    null as `31 Phone2`
+    null as `31 Phone2`,
 from {{ ref("base_people__staff_roster") }}

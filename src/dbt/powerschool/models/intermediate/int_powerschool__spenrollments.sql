@@ -1,5 +1,5 @@
 with
-    spenrollments_gen as (
+    spenrollments_gen as (  -- noqa: ST03
         select
             sp.dcid,
             sp.id,
@@ -34,5 +34,16 @@ with
         }}
     )
 
-select *
+select
+    dcid,
+    id,
+    studentid,
+    programid,
+    gradelevel,
+    sp_comment,
+    enter_date,
+    exit_date,
+    exitcode,
+    academic_year,
+    specprog_name,
 from deuplicate

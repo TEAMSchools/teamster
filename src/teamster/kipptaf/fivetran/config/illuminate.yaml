@@ -12,6 +12,7 @@ schemas:
   - name: public
     destination_tables:
       - grade_levels
+      - sessions
       - student_session_aff
       - students
       - users
@@ -38,6 +39,7 @@ schemas:
       - expressions
       - fields
       - repositories
+      - repository_grade_levels
       - repository_1
       - repository_10
       - repository_100
@@ -46,14 +48,9 @@ schemas:
       - repository_103
       - repository_104
       - repository_105
-      - repository_106
-      - repository_107
-      - repository_108
-      - repository_109
       - repository_11
       - repository_110
       - repository_111
-      - repository_112
       - repository_113
       - repository_114
       - repository_115
@@ -110,32 +107,21 @@ schemas:
       - repository_161
       - repository_162
       - repository_163
-      - repository_164
-      - repository_165
-      - repository_166
-      - repository_167
       - repository_168
       - repository_169
       - repository_17
       - repository_170
-      - repository_171
       - repository_172
-      - repository_173
       - repository_174
       - repository_175
       - repository_176
       - repository_177
       - repository_178
       - repository_179
-      - repository_18
       - repository_180
       - repository_181
       - repository_182
-      - repository_183
       - repository_184
-      - repository_185
-      - repository_186
-      - repository_187
       - repository_188
       - repository_189
       - repository_19
@@ -156,24 +142,17 @@ schemas:
       - repository_202
       - repository_203
       - repository_204
-      - repository_205
       - repository_206
       - repository_207
       - repository_208
       - repository_209
       - repository_21
-      - repository_210
-      - repository_211
-      - repository_212
       - repository_213
       - repository_214
       - repository_215
       - repository_216
       - repository_217
-      - repository_218
-      - repository_219
       - repository_22
-      - repository_220
       - repository_221
       - repository_222
       - repository_223
@@ -238,7 +217,6 @@ schemas:
       - repository_277
       - repository_278
       - repository_279
-      - repository_28
       - repository_280
       - repository_281
       - repository_282
@@ -254,14 +232,9 @@ schemas:
       - repository_291
       - repository_292
       - repository_293
-      - repository_294
       - repository_295
-      - repository_296
-      - repository_297
-      - repository_298
       - repository_299
       - repository_3
-      - repository_30
       - repository_300
       - repository_301
       - repository_302
@@ -281,7 +254,6 @@ schemas:
       - repository_315
       - repository_316
       - repository_317
-      - repository_318
       - repository_319
       - repository_32
       - repository_320
@@ -299,8 +271,6 @@ schemas:
       - repository_331
       - repository_332
       - repository_333
-      - repository_334
-      - repository_335
       - repository_336
       - repository_337
       - repository_338
@@ -324,10 +294,7 @@ schemas:
       - repository_354
       - repository_355
       - repository_356
-      - repository_357
-      - repository_358
       - repository_359
-      - repository_36
       - repository_360
       - repository_361
       - repository_362
@@ -399,10 +366,26 @@ schemas:
       - repository_421
       - repository_422
       - repository_423
-      - repository_424
       - repository_425
+      - repository_426
+      - repository_427
+      - repository_428
+      - repository_429
       - repository_43
-      - repository_44
+      - repository_430
+      - repository_431
+      - repository_432
+      - repository_433
+      - repository_434
+      - repository_435
+      - repository_436
+      - repository_437
+      - repository_438
+      - repository_439
+      - repository_440
+      - repository_441
+      - repository_442
+      - repository_443
       - repository_45
       - repository_46
       - repository_47
@@ -445,12 +428,9 @@ schemas:
       - repository_80
       - repository_81
       - repository_82
-      - repository_83
       - repository_84
       - repository_85
       - repository_86
-      - repository_87
-      - repository_88
       - repository_89
       - repository_9
       - repository_90
@@ -463,4 +443,3 @@ schemas:
       - repository_97
       - repository_98
       - repository_99
-      - repository_grade_levels

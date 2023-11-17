@@ -1,18 +1,12 @@
 [sqlfluff]
-dialect = tsql
-processes = -1
-exclude_rules = L003, L022, L017, L031, L059, L067, L041, L036, L034
-
-[sqlfluff:rules]
+dialect = bigquery
+templater = jinja
 max_line_length = 88
-capitalisation_policy = upper
-extended_capitalisation_policy = upper
+exclude_rules = layout.indent, layout.select_targets, layout.end_of_file
+ignore = templating, parsing
 
-[sqlfluff:rules:L036]
-wildcard_policy = multiple
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
 
-[sqlfluff:rules:L057]
-quoted_identifiers_policy = none
-
-[sqlfluff:rules:L059]
-ignore_words = subject, value, name, type, start_date
+[sqlfluff:rules:convention.select_trailing_comma]
+select_clause_trailing_comma = require

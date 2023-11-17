@@ -19,6 +19,65 @@ with
 
             sum(if(is_submitted, 1, 0)) as n_submitted,
             sum(if(is_accepted, 1, 0)) as n_accepted,
+
+            round(
+                avg(
+                    case
+                        when application_submission_status = 'Wishlist'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_wishlist_avg,
+            round(
+                min(
+                    case
+                        when application_submission_status = 'Wishlist'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_wishlist_min,
+            round(
+                avg(
+                    case
+                        when application_submission_status = 'Submitted'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_submitted_avg,
+            round(
+                min(
+                    case
+                        when application_submission_status = 'Submitted'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_submitted_min,
+            round(
+                avg(
+                    case
+                        when
+                            matriculation_decision = 'Matriculated (Intent to Enroll)'
+                            and transfer_application = false
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_matriculated_avg,
+            round(
+                min(
+                    case
+                        when
+                            matriculation_decision = 'Matriculated (Intent to Enroll)'
+                            and transfer_application = false
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_matriculated_min,
         from {{ ref("base_kippadb__application") }}
         group by applicant
     ),
@@ -41,7 +100,7 @@ with
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
-                select id
+                select id,
                 from {{ ref("stg_kippadb__record_type") }}
                 where name = 'Cumulative College'
             )
@@ -110,6 +169,26 @@ with
             on e.id = fa.enrollment
             and fa.status = 'Offered'
         where e.rn_matric = 1
+    ),
+
+    benchmark as (
+        select
+            contact,
+            academic_year,
+            benchmark_date,
+            benchmark_path,
+            enrollment as benchmark_school_enrolled,
+            date_completed as benchmark_completion_date,
+            benchmark_status as benchmark_status,
+            benchmark_period as benchmark_semester,
+            overall_score as benchmark_overall_color,
+            academic_color as benchmark_academic_color,
+            financial_color as benchmark_financial_color,
+            passion_purpose_plan_score as benchmark_ppp_color,
+            row_number() over (
+                partition by contact, academic_year order by benchmark_date desc
+            ) as rn_benchmark,
+        from {{ ref("stg_kippadb__college_persistence") }}
     )
 
 select
@@ -185,20 +264,22 @@ select
     ei.cte_status,
     ei.cte_actual_end_date,
     ei.hs_account_name,
+    ei.ugrad_adjusted_6_year_minority_graduation_rate,
+    ei.ugrad_act_composite_25_75,
+    ei.ugrad_competitiveness_ranking,
 
     apps.name as application_name,
     apps.account_type as application_account_type,
 
     ar.n_submitted,
-    ar.is_submitted_aa,
-    ar.is_submitted_ba,
-    ar.is_submitted_certificate as is_submitted_cert,
     ar.n_accepted,
-    ar.is_accepted_aa,
-    ar.is_accepted_ba,
-    ar.is_accepted_certificate as is_accepted_cert,
-    ar.is_eof_applicant,
     ar.is_matriculated,
+    ar.ecc_submitted_avg,
+    ar.ecc_wishlist_avg,
+    ar.ecc_submitted_min,
+    ar.ecc_wishlist_min,
+    ar.ecc_matriculated_avg,
+    ar.ecc_matriculated_min,
 
     cnr.as1,
     cnr.as2,
@@ -278,6 +359,95 @@ select
     gpa_spr.semester_gpa as spr_semester_gpa,
     gpa_spr.cumulative_gpa as spr_cumulative_gpa,
     gpa_spr.semester_credits_earned as spr_semester_credits_earned,
+
+    ln.comments as latest_as_comments,
+    ln.next_steps as latest_as_next_steps,
+
+    tier.tier,
+
+    gp.grad_plan_year as most_recent_grad_plan_year,
+
+    fa.unmet_need as unmet_need,
+
+    b.benchmark_school_enrolled,
+    b.benchmark_path,
+    b.benchmark_date,
+    b.benchmark_status,
+    b.benchmark_semester,
+    b.benchmark_overall_color,
+    b.benchmark_academic_color,
+    b.benchmark_financial_color,
+    b.benchmark_ppp_color,
+
+    case
+        when c.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when c.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when c.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when c.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when c.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
+
+    case
+        when
+            ei.ba_status = 'Graduated'
+            and ei.ba_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_ba_grad_int,
+
+    case
+        when
+            ei.ba_status = 'Graduated'
+            and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_ba_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
+        then 1
+        else 0
+    end as is_2yr_aa_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31)
+        then 1
+        else 0
+    end as is_3yr_aa_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31)
+        then 1
+        else 0
+    end as is_1yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
+        then 1
+        else 0
+    end as is_2yr_cte_grad_int,
+
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date <= current_date('America/New_York')
+        then 1
+        else 0
+    end as is_grad_ever,
+
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
@@ -306,15 +476,13 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
-
-    ln.comments as latest_as_comments,
-    ln.next_steps as latest_as_next_steps,
-
-    tier.tier,
-
-    gp.grad_plan_year as most_recent_grad_plan_year,
-
-    fa.unmet_need as unmet_need,
+    coalesce(ar.is_submitted_aa, false) as is_submitted_aa,
+    coalesce(ar.is_submitted_ba, false) as is_submitted_ba,
+    coalesce(ar.is_submitted_certificate, false) as is_submitted_cert,
+    coalesce(ar.is_accepted_aa, false) as is_accepted_aa,
+    coalesce(ar.is_accepted_ba, false) as is_accepted_ba,
+    coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
+    coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -353,6 +521,11 @@ left join
     and tier.rn_contact_year_desc = 1
 left join grad_plan as gp on c.contact_id = gp.contact and gp.rn_contact_desc = 1
 left join finaid as fa on c.contact_id = fa.student and fa.rn_finaid = 1
+left join
+    benchmark as b
+    on c.contact_id = b.contact
+    and ay.academic_year = b.academic_year
+    and b.rn_benchmark = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

@@ -7,7 +7,7 @@ from teamster.core.google.directory.assets import (
 from teamster.core.google.forms.assets import build_google_forms_assets
 from teamster.core.google.sheets.assets import build_gsheet_asset
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.dbt.assets import DBT_MANIFEST
+from teamster.kipptaf.dbt.assets import dbt_manifest
 
 # google sheets
 google_sheets_assets = [
@@ -18,14 +18,16 @@ google_sheets_assets = [
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
-    for source in DBT_MANIFEST["sources"].values()
+    for source in dbt_manifest["sources"].values()
     if source.get("external")
     and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
 ]
 
 # google forms
 FORM_IDS = [
-    "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",
+    "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",  # staff info
+    "1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0",  # manager
+    "1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI",  # support
 ]
 
 google_forms_assets = build_google_forms_assets(

@@ -1,15 +1,13 @@
 select
-    rr.powerschool_student_number as student_number,
-    rr.assessment_id,
-    rr.title,
-    rr.term_administered as term,
-    rr.administered_at,
-    rr.subject_area,
-    rr.scope,
-    rr.module_type,
-    rr.module_number,
-    null as is_replacement,
-    rr.percent_correct,
+    s.powerschool_student_number as student_number,
+    s.assessment_id,
+    s.title,
+    s.scope,
+    s.subject_area,
+    s.academic_year,
+    s.administered_at,
+    s.module_type,
+    s.module_number,
 
     co.lastfirst,
     co.enroll_status,
@@ -17,12 +15,29 @@ select
     co.reporting_schoolid,
     co.grade_level,
     co.advisory_name as team,
-from {{ ref("int_assessments__response_rollup") }} as rr
+
+    rta.name as term,
+
+    asr.percent_correct,
+
+    null as is_replacement,
+from {{ ref("int_assessments__scaffold") }} as s
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
-    on rr.powerschool_student_number = co.student_number
-    and rr.academic_year = co.academic_year
+    on s.powerschool_student_number = co.student_number
+    and s.academic_year = co.academic_year
     and co.rn_year = 1
     and co.enroll_status = 0
+left join
+    {{ ref("stg_reporting__terms") }} as rta
+    on s.administered_at between rta.start_date and rta.end_date
+    and s.powerschool_school_id = rta.school_id
+    and rta.type = 'RT'
+left join
+    {{ ref("int_illuminate__agg_student_responses") }} as asr
+    on s.student_assessment_id = asr.student_assessment_id
+    and asr.response_type = 'overall'
 where
-    rr.is_internal_assessment and not rr.is_replacement and rr.response_type = 'overall'
+    s.academic_year = {{ var("current_academic_year") }}
+    and s.is_internal_assessment
+    and not s.is_replacement

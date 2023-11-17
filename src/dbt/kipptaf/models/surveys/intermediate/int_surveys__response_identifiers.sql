@@ -13,7 +13,7 @@ with
             campaign_name,
             campaign_link_close_date,
             regexp_extract(campaign_name, r'\d+s+(\w+)') as campaign_reporting_term,
-        from {{ ref("base_alchemer__survey_results") }} as sq
+        from {{ ref("base_alchemer__survey_results") }}
         where
             response_status = 'Complete'
             and is_identifier_question
@@ -39,23 +39,23 @@ with
                 respondent_adp_associate_id as string
             ) as respondent_adp_worker_id,
             safe_cast(
-                lower(ifnull(respondent_userprincipalname, email)) as string
+                lower(coalesce(respondent_userprincipalname, email)) as string
             ) as respondent_user_principal_name,
 
-            if
-            (
+            if(
                 safe_cast(respondent_df_employee_number as int) is not null,
                 safe_cast(respondent_df_employee_number as int),
                 safe_cast(
                     regexp_extract(
-                        ifnull(respondent_df_employee_number, employee_preferred_name),
+                        coalesce(
+                            respondent_df_employee_number, employee_preferred_name
+                        ),
                         r'\[(\d+)\]'
                     ) as int
                 )
             ) as respondent_employee_number,
 
-            if
-            (
+            if(
                 safe_cast(subject_df_employee_number as int) is not null,
                 safe_cast(subject_df_employee_number as int),
                 safe_cast(
@@ -83,7 +83,7 @@ with
         from
             identifier_responses pivot (
                 max(response_string_value) for question_short_name in (
-                    '{{ var("alchemer_survey_identifier_short_names") | join("', '") }}'
+                    '{{ var("alchemer_survey_identifier_short_names") | join("', '") }}'  -- noqa: LT05
                 )
             )
     ),
@@ -104,11 +104,11 @@ with
             rp.respondent_is_manager,
             rp.respondent_user_principal_name,
 
-            ifnull(
+            coalesce(
                 rp.subject_employee_number, ab.subject_employee_number
             ) as subject_employee_number,
 
-            ifnull(
+            coalesce(
                 rp.respondent_employee_number, ab.respondent_employee_number
             ) as respondent_employee_number,
 
@@ -184,12 +184,12 @@ select
     seh.report_to_user_principal_name as subject_report_to_user_principal_name,
     seh.report_to_sam_account_name as subject_report_to_sam_account_name,
 
-    ifnull(
+    coalesce(
         rc.respondent_is_manager,
         if(rc.respondent_employee_number = seh.report_to_employee_number, true, false)
     ) as is_manager,
 
-    ifnull(
+    coalesce(
         resp.user_principal_name, rc.respondent_user_principal_name
     ) as respondent_user_principal_name,
 from response_clean as rc

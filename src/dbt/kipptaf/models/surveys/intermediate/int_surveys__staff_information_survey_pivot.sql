@@ -3,8 +3,8 @@ with
         select
             response_id,
             respondent_email,
-            safe_cast(last_submitted_time as timestamp) as last_submitted_time,
             item_abbreviation,
+            safe_cast(last_submitted_time as timestamp) as last_submitted_time,
             coalesce(text_value, file_upload_file_id) as pivot_column_value,
         from {{ ref("base_google_forms__form_responses") }}
         where form_id = '1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA'
@@ -159,7 +159,7 @@ with
         group by response_id
     ),
 
-    response_union as (
+    response_union as (  -- noqa: ST03
         select
             rp.response_id,
             rp.respondent_email,
@@ -307,9 +307,8 @@ with
         }}
     )
 
-select
+select  -- noqa: AM04
     *,
-
     case
         when regexp_contains(race_ethnicity, 'I decline to state')
         then 'Decline to State'
@@ -326,5 +325,5 @@ select
 
     row_number() over (
         partition by employee_number order by last_submitted_time desc
-    ) as rn_submission
+    ) as rn_submission,
 from deduplicate

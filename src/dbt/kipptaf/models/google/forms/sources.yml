@@ -28,6 +28,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw
             sheet_range: src_google_forms__form_items_extension
             skip_leading_rows: 1
+        meta:
+          dagster:
+            dep_key:
+              - kipptaf
+              - google_forms
+              - form_items_extension
         columns:
           - name: form_id
             data_type: STRING
@@ -35,9 +41,9 @@ sources:
             data_type: STRING
           - name: question_id
             data_type: STRING
-          - name: url_id
+          - name: title
             data_type: STRING
           - name: abbreviation
             data_type: STRING
-          - name: title
+          - name: url_id
             data_type: STRING

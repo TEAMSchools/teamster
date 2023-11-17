@@ -13,10 +13,14 @@ from dagster import (
 from dagster_airbyte import AirbyteCloudResource
 
 
-def build_airbyte_job_status_sensor(asset_defs):
+def build_airbyte_job_status_sensor(asset_defs, minimum_interval_seconds):
     sensor_asset_selection = AssetSelection.assets(*asset_defs)
 
-    @sensor(name="airbyte_job_status_sensor", asset_selection=sensor_asset_selection)
+    @sensor(
+        name="airbyte_job_status_sensor",
+        minimum_interval_seconds=minimum_interval_seconds,
+        asset_selection=sensor_asset_selection,
+    )
     def _sensor(context: SensorEvaluationContext, airbyte: AirbyteCloudResource):
         now_timestamp = pendulum.now().timestamp()
 
