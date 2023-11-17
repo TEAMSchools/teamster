@@ -13,7 +13,7 @@ from dagster import (
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
@@ -27,7 +27,7 @@ def build_partition_sensor(
     )
     def _sensor(
         context: SensorEvaluationContext,
-        ssh_powerschool: SSHConfigurableResource,
+        ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ):
         now = pendulum.now(timezone).start_of("minute")

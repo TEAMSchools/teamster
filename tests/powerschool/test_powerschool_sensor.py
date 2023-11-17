@@ -4,7 +4,7 @@ from dagster import EnvVar, build_sensor_context, instance_for_test
 
 from teamster.core.powerschool.sensors import build_partition_sensor
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
 from teamster.kippnewark import LOCAL_TIMEZONE
 from teamster.kippnewark.powerschool.assets import partition_assets
 
@@ -28,9 +28,9 @@ def test_sensor():
 
         sensor_results = dynamic_partition_sensor(
             context=context,
-            ssh_powerschool=SSHConfigurableResource(
+            ssh_powerschool=SSHResource(
                 remote_host="psteam.kippnj.org",
-                remote_port=EnvVar("KIPPNEWARK_PS_SSH_PORT"),
+                remote_port=EnvVar("KIPPNEWARK_PS_SSH_PORT").get_value(),
                 username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
                 password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
                 tunnel_remote_host=EnvVar("KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST"),
