@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, Definitions, EnvVar, load_assets_from_modules
+from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_dbt import DbtCliResource
 from dagster_gcp import (
     BigQueryResource,
@@ -30,14 +30,12 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=[
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
+        *load_assets_from_modules(modules=[dbt]),
         *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
         *load_assets_from_modules(modules=[edplan], group_name="edplan"),
         *load_assets_from_modules(modules=[pearson], group_name="pearson"),
         *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
         *load_assets_from_modules(modules=[titan], group_name="titan"),
-        *load_assets_from_modules(
-            modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
-        ),
     ],
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[
