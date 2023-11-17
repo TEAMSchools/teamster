@@ -72,7 +72,6 @@ def build_multi_partition_asset(
         io_manager_key="io_manager_gcs_avro",
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
-        asset_key = context.asset_key_for_output()
         archived_partition = context.partition_key.keys_by_dimension["archived"]
         last_modified_partition = (
             pendulum.from_format(
@@ -83,23 +82,7 @@ def build_multi_partition_asset(
             .timestamp()
         )
 
-        # check if static paritition has ever been materialized
-        static_materialization_count = 0
-        asset_materialization_counts = (
-            context.instance.get_materialization_count_by_partition([asset_key]).get(
-                asset_key, {}
-            )
-        )
-
-        for partition_key, count in asset_materialization_counts.items():
-            if archived_partition == partition_key.split("|")[0]:
-                static_materialization_count += count
-
-        if (
-            static_materialization_count == 0
-            or static_materialization_count == context.retry_number
-        ):
-            last_modified_partition = None
+        # TODO: lastModified == None for first partition
 
         endpoint_content = schoolmint_grow.get(
             endpoint=asset_name,

@@ -2,7 +2,7 @@ import json
 
 from dagster import EnvVar, SensorResult, build_sensor_context
 
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
 
 
 def _test_sensor(sftp_sensor, **kwargs):
@@ -29,7 +29,7 @@ def test_sensor_edplan():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_edplan=SSHConfigurableResource(
+        ssh_edplan=SSHResource(
             remote_host="secureftp.easyiep.com",
             username=EnvVar("KIPPCAMDEN_EDPLAN_SFTP_USERNAME"),
             password=EnvVar("KIPPCAMDEN_EDPLAN_SFTP_PASSWORD"),
@@ -40,7 +40,7 @@ def test_sensor_edplan():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_edplan=SSHConfigurableResource(
+        ssh_edplan=SSHResource(
             remote_host="secureftp.easyiep.com",
             username=EnvVar("KIPPNEWARK_EDPLAN_SFTP_USERNAME"),
             password=EnvVar("KIPPNEWARK_EDPLAN_SFTP_PASSWORD"),
@@ -53,7 +53,7 @@ def test_sensor_titan():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_titan=SSHConfigurableResource(
+        ssh_titan=SSHResource(
             remote_host="sftp.titank12.com",
             username=EnvVar("KIPPCAMDEN_TITAN_SFTP_USERNAME"),
             password=EnvVar("KIPPCAMDEN_TITAN_SFTP_PASSWORD"),
@@ -64,7 +64,7 @@ def test_sensor_titan():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_titan=SSHConfigurableResource(
+        ssh_titan=SSHResource(
             remote_host="sftp.titank12.com",
             username=EnvVar("KIPPNEWARK_TITAN_SFTP_USERNAME"),
             password=EnvVar("KIPPNEWARK_TITAN_SFTP_PASSWORD"),
@@ -73,7 +73,7 @@ def test_sensor_titan():
 
 
 def test_sensor_iready():
-    ssh_iready = SSHConfigurableResource(
+    ssh_iready = SSHResource(
         remote_host="prod-sftp-1.aws.cainc.com",
         username=EnvVar("IREADY_SFTP_USERNAME"),
         password=EnvVar("IREADY_SFTP_PASSWORD"),
@@ -93,7 +93,7 @@ def test_sensor_renlearn():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_renlearn=SSHConfigurableResource(
+        ssh_renlearn=SSHResource(
             remote_host="sftp.renaissance.com",
             username=EnvVar("KIPPMIAMI_RENLEARN_SFTP_USERNAME"),
             password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
@@ -104,7 +104,7 @@ def test_sensor_renlearn():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_renlearn=SSHConfigurableResource(
+        ssh_renlearn=SSHResource(
             remote_host="sftp.renaissance.com",
             username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
             password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
@@ -117,7 +117,7 @@ def test_sensor_achieve3k():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_achieve3k=SSHConfigurableResource(
+        ssh_achieve3k=SSHResource(
             remote_host="xfer.achieve3000.com",
             username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
@@ -130,7 +130,7 @@ def test_sensor_clever_reports():
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_clever_reports=SSHConfigurableResource(
+        ssh_clever_reports=SSHResource(
             remote_host="reports-sftp.clever.com",
             username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
             password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
@@ -138,15 +138,17 @@ def test_sensor_clever_reports():
     )
 
 
+"""
 # ip restricted
 def test_sensor_adp():
     from teamster.kipptaf.adp.sensors import sftp_sensor
 
     _test_sensor(
         sftp_sensor=sftp_sensor,
-        ssh_adp_workforce_now=SSHConfigurableResource(
+        ssh_adp_workforce_now=SSHResource(
             remote_host="sftp.kippnj.org",
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
         ),
     )
+"""
