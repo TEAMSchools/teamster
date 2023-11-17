@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, Definitions, EnvVar, load_assets_from_modules
+from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_airbyte import AirbyteCloudResource
 from dagster_dbt import DbtCliResource
 from dagster_fivetran import FivetranResource
@@ -55,6 +55,7 @@ defs = Definitions(
         *load_assets_from_modules(modules=[clever], group_name="clever"),
         *load_assets_from_modules(modules=[datagun], group_name="datagun"),
         *load_assets_from_modules(modules=[dayforce], group_name="dayforce"),
+        *load_assets_from_modules(modules=[dbt]),
         *load_assets_from_modules(modules=[google], group_name="google"),
         *load_assets_from_modules(modules=[ldap], group_name="ldap"),
         *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
@@ -63,9 +64,6 @@ defs = Definitions(
         ),
         *load_assets_from_modules(modules=[airbyte]),
         *load_assets_from_modules(modules=[fivetran]),
-        *load_assets_from_modules(
-            modules=[dbt], auto_materialize_policy=AutoMaterializePolicy.eager()
-        ),
     ],
     jobs=[
         *adp.jobs,
