@@ -6,11 +6,11 @@ from dagster_gcp import (
     GCSResource,
 )
 from dagster_k8s import k8s_job_executor
+from dagster_ssh import SSHResource
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
-from teamster.core.ssh.resources import SSHConfigurableResource
 
 from . import (
     CODE_LOCATION,
@@ -94,34 +94,34 @@ defs = Definitions(
             subdomain="kippnj",
             api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
         ),
-        "ssh_couchdrop": SSHConfigurableResource(
+        "ssh_couchdrop": SSHResource(
             remote_host="kipptaf.couchdrop.io",
             username=EnvVar("COUCHDROP_SFTP_USERNAME"),
             password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
         ),
-        "ssh_edplan": SSHConfigurableResource(
+        "ssh_edplan": SSHResource(
             remote_host="secureftp.easyiep.com",
             username=EnvVar("KIPPNEWARK_EDPLAN_SFTP_USERNAME"),
             password=EnvVar("KIPPNEWARK_EDPLAN_SFTP_PASSWORD"),
         ),
-        "ssh_iready": SSHConfigurableResource(
+        "ssh_iready": SSHResource(
             remote_host="prod-sftp-1.aws.cainc.com",
             username=EnvVar("IREADY_SFTP_USERNAME"),
             password=EnvVar("IREADY_SFTP_PASSWORD"),
         ),
-        "ssh_powerschool": SSHConfigurableResource(
+        "ssh_powerschool": SSHResource(
             remote_host="psteam.kippnj.org",
             remote_port=EnvVar("KIPPNEWARK_PS_SSH_PORT"),
             username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
             password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST"),
         ),
-        "ssh_renlearn": SSHConfigurableResource(
+        "ssh_renlearn": SSHResource(
             remote_host="sftp.renaissance.com",
             username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
             password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
         ),
-        "ssh_titan": SSHConfigurableResource(
+        "ssh_titan": SSHResource(
             remote_host="sftp.titank12.com",
             username=EnvVar("KIPPNEWARK_TITAN_SFTP_USERNAME"),
             password=EnvVar("KIPPNEWARK_TITAN_SFTP_PASSWORD"),

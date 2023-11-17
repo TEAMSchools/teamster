@@ -12,10 +12,10 @@ from dagster import (
     SkipReason,
     sensor,
 )
+from dagster_ssh import SSHResource
 from paramiko.ssh_exception import SSHException
 
 from teamster.core.sftp.assets import listdir_attr_r
-from teamster.core.ssh.resources import SSHConfigurableResource
 
 
 def build_sftp_sensor(
@@ -30,7 +30,7 @@ def build_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
-    def _sensor(context: SensorEvaluationContext, ssh_iready: SSHConfigurableResource):
+    def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
         cursor: dict = json.loads(context.cursor or "{}")
         now = pendulum.now(tz=timezone)
 
