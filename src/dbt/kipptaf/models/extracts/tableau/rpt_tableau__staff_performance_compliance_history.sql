@@ -36,8 +36,6 @@ select
     s.sam_account_name as samaccountname,
     s.report_to_preferred_name_lastfirst as current_manager,
     s.report_to_sam_account_name as manager_samaccountname,
-    ifnull(s.worker_rehire_date, s.worker_original_hire_date) as hire_date,
-    if(s.ethnicity_long_name = 'Hispanic or Latino', true, false) as is_hispanic,
 
     y.academic_year,
 
@@ -74,6 +72,9 @@ select
     null as ay_unapproved_tardies,
     null as ay_approved_left_early,
     null as ay_unapproved_left_early,
+
+    coalesce(s.worker_rehire_date, s.worker_original_hire_date) as hire_date,
+    if(s.ethnicity_long_name = 'Hispanic or Latino', true, false) as is_hispanic,
 from {{ ref("base_people__staff_roster") }} as s
 inner join
     years as y
@@ -114,4 +115,5 @@ left join
     on s.df_employee_number = a.df_employee_number
     and y.academic_year = a.academic_year
 #}
+    -- noqa: disable=LT01
     

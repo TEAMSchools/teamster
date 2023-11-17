@@ -1,6 +1,6 @@
 with
     date_range as (
-        select safe_cast(date_day as date) as date_day
+        select safe_cast(date_day as date) as date_day,
         from {{ ref("utils__date_spine") }}
         where
             date_day
@@ -23,7 +23,8 @@ with
                 when 'KIPP Cooper Norcross Academy'
                 then 'Camden'
             end as region,
-            -- TODO: why???
+            -- end_date contains test window end date
+            -- this needs continuous dates
             coalesce(
                 lead(start_date, 1) over (
                     partition by academic_year, region order by code asc
@@ -76,9 +77,12 @@ select
     iu.last_week_end_date,
     iu.last_week_time_on_task_min,
 
-    if(sp.specprog_name is not null, true, false) as is_tutoring,
+    f.tutoring_nj as is_tutoring,
+    f.state_test_proficiency,
+    f.bucket_two as is_bucket_2,
+    f.bucket_one,
 from {{ ref("base_powerschool__student_enrollments") }} as co
-cross join unnest(["Reading", "Math"]) as subj
+cross join unnest(['Reading', 'Math']) as subj
 cross join date_range as w
 left join
     expanded_terms as rt
@@ -121,6 +125,11 @@ left join
     and current_date('{{ var("local_timezone") }}')
     between sp.enter_date and sp.exit_date
     and sp.specprog_name = 'Tutoring'
+left join
+    {{ ref("int_reporting__student_filters") }} as f
+    on co.student_number = f.student_number
+    and co.academic_year = f.academic_year
+    and subj = f.iready_subject
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1

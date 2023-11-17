@@ -25,7 +25,7 @@ with
             {# import terminated staff up to a week after termination date #}
             date_diff(
                 current_date('{{ var("local_timezone") }}'),
-                ifnull(
+                coalesce(
                     sr.worker_termination_date,
                     current_date('{{ var("local_timezone") }}')
                 ),
@@ -60,7 +60,7 @@ with
             {# import terminated staff up to a week after termination date #}
             date_diff(
                 current_date('{{ var("local_timezone") }}'),
-                ifnull(
+                coalesce(
                     sr.worker_termination_date,
                     current_date('{{ var("local_timezone") }}')
                 ),
@@ -85,7 +85,7 @@ with
                 when
                     date_diff(
                         current_date('{{ var("local_timezone") }}'),
-                        ifnull(
+                        coalesce(
                             worker_termination_date,
                             current_date('{{ var("local_timezone") }}')
                         ),
@@ -104,7 +104,7 @@ with
         from users_union
     )
 
-select
+select  -- noqa: disable=ST06
     powerschool_teacher_number as teachernumber,
     preferred_name_given_name as first_name,
     preferred_name_family_name as last_name,

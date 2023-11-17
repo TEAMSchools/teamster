@@ -19,7 +19,7 @@ select
     percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
-    'Test Rounds' as domain,
+    'Test Rounds' as `domain`,
 from {{ ref("base_iready__diagnostic_results") }}
 where
     rn_subj_round = 1
@@ -40,7 +40,7 @@ select
     ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
-    'YTD Growth' as domain,
+    'YTD Growth' as `domain`,
 from {{ ref("base_iready__diagnostic_results") }} as ir
 inner join
     max_completion_date as mcd
@@ -48,4 +48,4 @@ inner join
     and ir.academic_year = mcd.academic_year
     and ir.subject = mcd.subject
     and ir.completion_date = mcd.completion_date
-where academic_year_int = {{ var("current_academic_year") }}
+where ir.academic_year_int = {{ var("current_academic_year") }}

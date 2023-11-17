@@ -1,4 +1,4 @@
-select
+select  -- noqa: disable=ST06
     student_number,
     format_date('%m/%d/%Y', nj_se_referraldate) as s_nj_stu_x__referral_date,
     format_date(

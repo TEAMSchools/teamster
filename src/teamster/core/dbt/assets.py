@@ -1,47 +1,59 @@
 import json
-from typing import Any, Mapping
 
 from dagster import (
+    Any,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
+    AutoMaterializePolicy,
+    AutoMaterializeRule,
+    Mapping,
     Nothing,
+    Optional,
     Output,
     multi_asset,
 )
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource
+from dagster_dbt import DbtCliResource, KeyPrefixDagsterDbtTranslator
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     MANIFEST_METADATA_KEY,
+    _auto_materialize_policy_fn,
 )
 from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
 
-def get_custom_dagster_dbt_translator(code_location):
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-            node_info = dbt_resource_props
+class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        asset_key_config = (
+            dbt_resource_props.get("meta", {}).get("dagster", {}).get("asset_key", [])
+        )
 
-            dagster_metadata = node_info.get("meta", {}).get("dagster", {})
-            asset_key_config = dagster_metadata.get("asset_key", [])
-            if asset_key_config:
-                return AssetKey(asset_key_config)
+        if asset_key_config:
+            return AssetKey(asset_key_config)
+        else:
+            return super().get_asset_key(dbt_resource_props)
 
-            if node_info["resource_type"] == "source":
-                components = [node_info["source_name"], node_info["name"]]
-            else:
-                configured_schema = node_info["config"].get("schema")
-                if configured_schema is not None:
-                    components = [configured_schema, node_info["name"]]
-                else:
-                    components = [node_info["name"]]
+    def get_auto_materialize_policy(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[AutoMaterializePolicy]:
+        materialized_config = dbt_resource_props["config"].get("materialized")
+        auto_materialize_policy = _auto_materialize_policy_fn(
+            dbt_resource_props.get("meta", {})
+            .get("dagster", {})
+            .get("auto_materialize_policy", {})
+        )
 
-            components.insert(0, code_location)
+        if auto_materialize_policy:
+            return auto_materialize_policy
 
-            return AssetKey(components)
-
-    return CustomDagsterDbtTranslator
+        if materialized_config == "view":
+            return AutoMaterializePolicy.eager().without_rules(
+                AutoMaterializeRule.materialize_on_parent_updated()
+            )
+        elif materialized_config == "table":
+            return AutoMaterializePolicy.eager()
+        else:
+            return None
 
 
 def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
@@ -72,19 +84,25 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
     for source in external_sources:
         source_name = source["source_name"]
         table_name = source["name"]
-        dep_key_prefix = source["fqn"][1:-2]
 
-        if not dep_key_prefix:
-            dep_key_prefix = [source_name]
+        dep_key = source["meta"].get("dagster", {}).get("dep_key")
 
-        identifier = source["identifier"]
+        if dep_key is None:
+            dep_key_prefix = source["fqn"][1:-2]
 
-        if identifier[-3:].lower() == "__c":
-            dep_name = identifier
+            if not dep_key_prefix:
+                dep_key_prefix = [source_name]
+
+            identifier = source["identifier"]
+
+            if identifier[-3:].lower() == "__c":
+                dep_name = identifier
+            else:
+                dep_name = identifier.split("__")[-1]
+
+            dep_key = AssetKey([code_location, *dep_key_prefix, dep_name])
         else:
-            dep_name = identifier.split("__")[-1]
-
-        dep_key = AssetKey([code_location, *dep_key_prefix, dep_name])
+            dep_key = AssetKey(dep_key)
 
         deps.append(dep_key)
 

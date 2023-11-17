@@ -311,6 +311,14 @@ computeLogs:
   # Specifies if compute logs will be forwarded to dagster cloud
   enabled: true
 
+  # For custom configuration of compute log manager, Example:
+  # custom:
+  #   module: dagster_cloud
+  #   class: CloudComputeLogManager
+  #   config:
+  #     upload_interval: 60
+
+
 ####################################################################################################
 # Python Logs (Optional) settings for configuring Python logging behavior in your jobs.
 ####################################################################################################

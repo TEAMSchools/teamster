@@ -52,7 +52,7 @@ select
         )
     }},
 from {{ ref_person_history }} as ph
-left join {{ ref_person_preferred_salutation }} pps on ph.worker_id = pps.worker_id
-left join {{ ref_person_communication }} pc on ph.worker_id = pc.worker_id
-left join {{ src_other_personal_address }} opa on ph.worker_id = opa.worker_id
-left join {{ src_person_disability }} pd on ph.worker_id = pd.worker_id
+left join {{ ref_person_preferred_salutation }} as pps on ph.worker_id = pps.worker_id
+left join {{ ref_person_communication }} as pc on ph.worker_id = pc.worker_id
+left join {{ src_other_personal_address }} as opa on ph.worker_id = opa.worker_id
+left join {{ src_person_disability }} as pd on ph.worker_id = pd.worker_id

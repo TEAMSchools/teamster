@@ -44,13 +44,13 @@ with
             a.creator_id,
             a.creator_name,
 
-            regexp_extract(a.name, r'(\d[A-Z]\.\d\d)') as tag_name_short,
-
             'O3' as reporting_term_type,
+
+            regexp_extract(a.name, r'(\d[A-Z]\.\d\d)') as tag_name_short,
         from {{ ref("stg_schoolmint_grow__assignments") }} as a
     )
 
-select s.*, m.*
+select s.*, m.*,
 from scaffold as s
 left join
     microgoals as m

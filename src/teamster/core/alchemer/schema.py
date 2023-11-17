@@ -35,14 +35,12 @@ SURVEY_OPTION_PROPERTY_FIELDS = [
     # {
     #     "name": "left_label",
     #     "aliases": ["left-label"],
-    # trunk-ignore(ruff/E501)
     #     "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
     #     "default": None,
     # },
     # {
     #     "name": "right_label",
     #     "aliases": ["right-label"],
-    # trunk-ignore(ruff/E501)
     #     "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
     #     "default": None,
     # },
@@ -785,7 +783,7 @@ SURVEY_RESPONSE_FIELDS = [
                     },
                 ],
                 "default": {},
-            }
+            },
             # get_avro_record_schema(name="data_quality", fields=DATA_QUALITY_FIELDS),
         ],
         "default": None,

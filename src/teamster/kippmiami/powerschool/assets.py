@@ -1,5 +1,5 @@
 import pendulum
-from dagster import config_from_files
+from dagster import MonthlyPartitionsDefinition, config_from_files
 
 from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
@@ -35,15 +35,15 @@ transaction_date_partition_assets = [
     ]
 ]
 
-whenmodified_partition_assets = [
+assignment_assets = [
     build_powerschool_table_asset(
         **asset,
         code_location=CODE_LOCATION,
-        partitions_def=FiscalYearPartitionsDefinition(
+        partitions_def=MonthlyPartitionsDefinition(
             start_date=pendulum.datetime(year=2018, month=7, day=1),
-            start_month=7,
             timezone=LOCAL_TIMEZONE.name,
             fmt="%Y-%m-%dT%H:%M:%S%z",
+            end_offset=1,
         ),
         partition_column="whenmodified",
     )
@@ -51,13 +51,13 @@ whenmodified_partition_assets = [
 ]
 
 partition_assets = [
+    *assignment_assets,
     *transaction_date_partition_assets,
-    *whenmodified_partition_assets,
 ]
 
 __all__ = [
+    *assignment_assets,
     *full_assets,
-    *transaction_date_partition_assets,
-    *whenmodified_partition_assets,
     *nonpartition_assets,
+    *transaction_date_partition_assets,
 ]

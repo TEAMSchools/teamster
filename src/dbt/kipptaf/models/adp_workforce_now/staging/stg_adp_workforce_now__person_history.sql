@@ -11,5 +11,5 @@ with
         }}
     )
 
-select *
+select *,  -- noqa: AM04
 from deduplicate

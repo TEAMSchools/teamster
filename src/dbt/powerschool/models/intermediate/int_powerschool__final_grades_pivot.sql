@@ -6,8 +6,9 @@ with
             course_number,
             sectionid,
             storecode,
-            y1_percent_grade_adjusted,
             y1_letter_grade,
+            y1_percent_grade_adjusted,
+            y1_letter_grade_adjusted,
             need_90,
             need_80,
             need_70,
@@ -27,8 +28,9 @@ with
             course_number,
             sectionid,
             storecode,
-            y1_percent_grade_adjusted,
             y1_letter_grade,
+            y1_percent_grade_adjusted,
+            y1_letter_grade_adjusted,
             need_90,
             need_80,
             need_70,
@@ -45,7 +47,7 @@ with
     ),
 
     grades_pivot as (
-        select *
+        select *,
         from
             grades_union pivot (
                 max(term_letter_grade) as term_letter_grade,
@@ -66,6 +68,7 @@ select
     storecode,
     y1_letter_grade,
     y1_percent_grade_adjusted,
+    y1_letter_grade_adjusted,
     need_90,
     need_80,
     need_70,

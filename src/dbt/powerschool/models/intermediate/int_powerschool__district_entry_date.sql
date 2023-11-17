@@ -8,7 +8,7 @@ with
             exitdate,
             lag(exitcode, 1) over (
                 partition by student_number order by entrydate asc
-            ) as exitcode_prev
+            ) as exitcode_prev,
         from {{ ref("base_powerschool__student_enrollments") }}
         where schoolid != 999999
     )

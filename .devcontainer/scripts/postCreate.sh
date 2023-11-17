@@ -3,9 +3,7 @@
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install \
-    bash-completion \
-    google-cloud-sdk-gke-gcloud-auth-plugin &&
+  sudo apt-get -y --no-install-recommends install bash-completion &&
   sudo apt-get -y autoremove &&
   sudo apt-get -y clean
 
@@ -25,15 +23,6 @@ echo "${DEANSLIST_API_KEY_MAP}" |
 echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" |
   sudo tee /etc/secret-volume/gcloud_service_account_json >/dev/null
 
-# update pip
-python -m pip install --no-cache-dir --upgrade pip
-
-# update pdm
-sudo /usr/local/py-utils/bin/pdm self update
-
-# install pdm dependencies
-pdm install --no-lock
-
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
 
@@ -42,7 +31,7 @@ gcloud config set project teamster-332318
 gcloud config set compute/region us-central1
 
 # update the kubectl configuration to use the plugin
-gcloud container clusters get-credentials dagster-cloud
+gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid
 
 # install dbt deps and generate manifests
 # trunk-ignore(shellcheck/SC2312)
@@ -53,3 +42,6 @@ find ./src/dbt -maxdepth 2 -name "dbt_project.yml" -print0 |
 
     pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" parse
   done
+
+# install pdm dependencies
+pdm install --no-lock

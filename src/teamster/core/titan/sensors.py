@@ -13,8 +13,8 @@ from dagster import (
 )
 from paramiko.ssh_exception import SSHException
 
-from teamster.core.sftp.sensors import get_sftp_ls
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.sftp.assets import listdir_attr_r
+from teamster.core.ssh.resources import SSHResource
 
 
 def build_sftp_sensor(
@@ -29,31 +29,36 @@ def build_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         asset_selection=AssetSelection.assets(*asset_defs),
     )
-    def _sensor(context: SensorEvaluationContext, ssh_titan: SSHConfigurableResource):
+    def _sensor(context: SensorEvaluationContext, ssh_titan: SSHResource):
         cursor: dict = json.loads(context.cursor or "{}")
-
-        try:
-            ls = get_sftp_ls(ssh=ssh_titan, asset_defs=asset_defs)
-        except SSHException as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
-        except ConnectionResetError as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+        now = pendulum.now(tz=timezone)
 
         run_requests = []
-        for asset_identifier, asset_dict in ls.items():
+        for asset in asset_defs:
+            asset_metadata = asset.metadata_by_key[asset.key]
+            asset_identifier = asset.key.to_python_identifier()
             context.log.info(asset_identifier)
-
-            asset = asset_dict["asset"]
-            files = asset_dict["files"]
 
             last_run = cursor.get(asset_identifier, 0)
 
+            try:
+                with ssh_titan.get_connection() as conn:
+                    with conn.open_sftp() as sftp_client:
+                        files = listdir_attr_r(
+                            sftp_client=sftp_client,
+                            remote_dir=asset_metadata["remote_dir"],
+                            files=[],
+                        )
+            except SSHException as e:
+                context.log.error(e)
+                return SensorResult(skip_reason=SkipReason(str(e)))
+            except ConnectionResetError as e:
+                context.log.error(e)
+                return SensorResult(skip_reason=SkipReason(str(e)))
+
             for f in files:
                 match = re.match(
-                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                    string=f.filename,
+                    pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
                 if match is not None:
@@ -67,7 +72,7 @@ def build_sftp_sensor(
                             )
                         )
 
-                cursor[asset_identifier] = pendulum.now(tz=timezone).timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

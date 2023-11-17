@@ -64,6 +64,10 @@ models:
       +schema: assessments
       staging:
         +materialized: table
+    coupa:
+      +schema: coupa
+      staging:
+        +materialized: table
     dayforce:
       +schema: dayforce
       staging:
@@ -75,6 +79,8 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+      deanslist:
+        +materialized: view
       google:
         sheets:
           +materialized: view
@@ -83,9 +89,6 @@ models:
       tableau:
         +schema: tableau
         +materialized: view
-    facebook:
-      pages:
-        +schema: facebook_pages
     finance:
       +schema: finance
       staging:
