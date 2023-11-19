@@ -35,7 +35,7 @@ select
     ) as is_college_cohort,
     if(
         p.academic_year = {{ var("current_academic_year") }}, true, false
-    ) is_current_academic_year,
+    ) as is_current_academic_year,
     if(r.contact_most_recent_iep_date is not null, true, false) as is_iep,
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
     case
