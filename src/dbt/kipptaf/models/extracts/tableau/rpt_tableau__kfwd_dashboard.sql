@@ -379,6 +379,9 @@ select
     b.benchmark_financial_color,
     b.benchmark_ppp_color,
 
+    p.is_persisting_int as is_persisting_fall_yr1,
+    p.is_retained_int as is_retained_fall_yr1,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -526,6 +529,11 @@ left join
     on c.contact_id = b.contact
     and ay.academic_year = b.academic_year
     and b.rn_benchmark = 1
+left join
+    {{ ref("int_kippadb__persistence") }} as p
+    on c.contact_id = p.sf_contact_id
+    and p.semester = 'Fall'
+    and p.persistence_year = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
