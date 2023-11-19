@@ -26,6 +26,16 @@ select
     r.contact_actual_college_graduation_date as actual_college_graduation_date,
     r.contact_expected_college_graduation as expected_college_graduation_date,
 
+    if(
+        r.ktc_cohort
+        between {{ var("current_academic_year") }}
+        - 5 and {{ var("current_academic_year") }},
+        true,
+        false
+    ) as is_college_cohort,
+    if(
+        p.academic_year = {{ var("current_academic_year") }}, true, false
+    ) is_current_academic_year,
     if(r.contact_most_recent_iep_date is not null, true, false) as is_iep,
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
     case
