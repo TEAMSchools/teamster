@@ -15,6 +15,8 @@ with
             r.contact_highest_act_score,
             r.contact_middle_school_attended,
 
+            n as persistence_year,
+
             r.ktc_cohort + n as academic_year,
         from {{ ref("int_kippadb__roster") }} as r
         cross join unnest([0, 1, 2, 3, 4, 5]) as n
@@ -35,6 +37,7 @@ select
     r.contact_current_college_semester_gpa as current_college_semester_gpa,
     r.contact_highest_act_score as highest_act_score,
     r.contact_middle_school_attended as middle_school_attended,
+    r.persistence_year,
 
     e.id as enrollment_id,
     e.pursuing_degree_type as pursuing_degree_type,
@@ -46,6 +49,10 @@ select
     a.type as account_type,
 
     'Fall' as semester,
+
+    if(eis.ecc_pursuing_degree_type is not null, true, false) as is_ecc,
+
+    if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
     case
         when date(r.academic_year, 10, 31) > current_date('{{ var("local_timezone") }}')
@@ -59,7 +66,7 @@ select
             e.actual_end_date is null and eis.ugrad_status in ('Graduated', 'Attending')
         then 1
         else 0
-    end as is_persisting,
+    end as is_persisting_int,
 
     case
         when date(r.academic_year, 10, 31) > current_date('{{ var("local_timezone") }}')
@@ -79,7 +86,35 @@ select
             and eis.ecc_enrollment_id = e.id
         then 1
         else 0
-    end as is_retained,
+    end as is_retained_int,
+
+    case
+        when date(r.academic_year, 10, 31) > current_date('America/New_York')
+        then null
+        when
+            e.actual_end_date >= date(r.academic_year, 10, 31)
+            and eis.ecc_enrollment_id = e.id
+        then 'Retained'
+        when e.actual_end_date >= date(r.academic_year, 10, 31)
+        then 'Persisted'
+        when
+            e.actual_end_date < date(r.academic_year, 10, 31) and e.status = 'Graduated'
+        then 'Graduated'
+        when e.actual_end_date is null and eis.ugrad_status = 'Graduated'
+        then 'Graduated'
+        when
+            e.actual_end_date is null
+            and eis.ugrad_status = 'Attending'
+            and eis.ecc_enrollment_id = e.id
+        then 'Retained'
+        when e.actual_end_date is null and eis.ugrad_status = 'Attending'
+        then 'Persisted'
+        else 'Did not persist'
+    end as persistence_status,
+
+    row_number() over (
+        partition by r.student_number, r.academic_year order by e.start_date desc
+    ) as rn_enrollment_year,
 
 from roster_scaffold as r
 left join
@@ -111,6 +146,7 @@ select
     r.contact_current_college_semester_gpa as current_college_semester_gpa,
     r.contact_highest_act_score as highest_act_score,
     r.contact_middle_school_attended as middle_school_attended,
+    r.persistence_year,
 
     e.id as enrollment_id,
     e.pursuing_degree_type as pursuing_degree_type,
@@ -122,6 +158,10 @@ select
     a.type as account_type,
 
     'Spring' as semester,
+
+    if(eis.ecc_pursuing_degree_type is not null, true, false) as is_ecc,
+
+    if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
     case
         when
@@ -138,7 +178,7 @@ select
             e.actual_end_date is null and eis.ugrad_status in ('Graduated', 'Attending')
         then 1
         else 0
-    end as is_persisting,
+    end as is_persisting_int,
 
     case
         when
@@ -160,13 +200,42 @@ select
             and eis.ecc_enrollment_id = e.id
         then 1
         else 0
-    end as is_retained,
+    end as is_retained_int,
+
+    case
+        when date(r.academic_year + 1, 3, 31) > current_date('America/New_York')
+        then null
+        when
+            e.actual_end_date >= date(r.academic_year + 1, 3, 31)
+            and eis.ecc_enrollment_id = e.id
+        then 'Retained'
+        when e.actual_end_date >= date(r.academic_year + 1, 3, 31)
+        then 'Persisted'
+        when
+            e.actual_end_date < date(r.academic_year + 1, 3, 31)
+            and e.status = 'Graduated'
+        then 'Graduated'
+        when e.actual_end_date is null and eis.ugrad_status = 'Graduated'
+        then 'Graduated'
+        when
+            e.actual_end_date is null
+            and eis.ugrad_status = 'Attending'
+            and eis.ecc_enrollment_id = e.id
+        then 'Retained'
+        when e.actual_end_date is null and eis.ugrad_status = 'Attending'
+        then 'Persisted'
+        else 'Did not persist'
+    end as persistence_status,
+
+    row_number() over (
+        partition by r.student_number, r.academic_year order by e.start_date desc
+    ) as rn_enrollment_year,
 
 from roster_scaffold as r
 left join
     {{ ref("stg_kippadb__enrollment") }} as e
     on r.contact_id = e.student
-    and date(r.academic_year, 10, 31) between e.start_date and coalesce(
+    and date(r.academic_year + 1, 3, 31) between e.start_date and coalesce(
         e.actual_end_date, date(({{ var("current_academic_year") }} + 1), 6, 30)
     )
     and e.pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)")
