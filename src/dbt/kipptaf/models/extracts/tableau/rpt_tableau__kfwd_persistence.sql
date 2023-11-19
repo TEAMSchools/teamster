@@ -1,6 +1,9 @@
 select
     p.*,
 
+    r.lastfirst as student_name,
+    r.last_name as student_last_name,
+    r.first_name as student_first_name,
     r.record_type_name as record_type_name,
     r.contact_owner_name as counselor_name,
     r.contact_kipp_ms_graduate as is_kipp_ms_graduate,
