@@ -31,8 +31,6 @@ def _test_assets(asset, ssh_resource):
 
     assert result.success
 
-    shutil.rmtree("/workspaces/teamster/dagster")
-
 
 def test_assets_renlearn():
     from teamster.kippmiami.renlearn import assets
@@ -78,6 +76,10 @@ def test_assets_fldoe():
                 ),
             },
         )
+
+    shutil.move(
+        src="/workspaces/teamster/dagster", dst="/workspaces/teamster/env/dagster"
+    )
 
 
 def test_assets_iready():
