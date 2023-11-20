@@ -13,3 +13,10 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
             format: AVRO
             enable_logical_types: true
+      - name: src_fldoe__fsa
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/"
+            format: AVRO
+            enable_logical_types: true
