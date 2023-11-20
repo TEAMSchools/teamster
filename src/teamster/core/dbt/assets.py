@@ -6,7 +6,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    AutoMaterializeRule,
     Mapping,
     Nothing,
     Optional,
