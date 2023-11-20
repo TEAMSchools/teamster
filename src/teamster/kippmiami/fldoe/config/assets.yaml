@@ -25,7 +25,7 @@ assets:
         - 8\w*Mathematics
   - asset_name: fsa
     remote_dir: /teamster-kippmiami/couchdrop/fldoe/fsa/student_scores
-    remote_file_regex: \w+(?P<school_year_term>)\w+-\w+(?P<grade_level_subject>)\w+\.csv
+    remote_file_regex: FSA_(?P<school_year_term>)SPR_132332_SRS-E_(?P<grade_level_subject>)\.csv
     partition_keys:
       school_year_term:
         - "22"
