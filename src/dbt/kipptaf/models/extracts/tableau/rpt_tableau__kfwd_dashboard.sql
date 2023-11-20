@@ -534,6 +534,7 @@ left join
     on c.contact_id = p.sf_contact_id
     and p.semester = 'Fall'
     and p.persistence_year = 1
+    and p.rn_enrollment_year = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
