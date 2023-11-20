@@ -14,7 +14,6 @@ with
     ),
 
     with_translations as (
-
         select  -- noqa: AM04
             * except (statestudentidentifier),
             safe_cast(statestudentidentifier as string) as statestudentidentifier,
@@ -54,9 +53,7 @@ with
                 when testperformancelevel < 4
                 then false
             end as is_proficient,
-
         from union_relations
-
     )
 
 select
