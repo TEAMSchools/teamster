@@ -53,17 +53,17 @@ select
         then null
         when
             e.actual_end_date >= date(r.academic_year, 10, 31)
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 1
         when
             e.actual_end_date < date(r.academic_year, 10, 31)
             and e.status = 'Graduated'
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 1
         when
             e.actual_end_date is null
             and eis.ugrad_status in ('Graduated', 'Attending')
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 1
         else 0
     end as is_retained_int,
@@ -73,7 +73,7 @@ select
         then null
         when
             e.actual_end_date >= date(r.academic_year, 10, 31)
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 'Retained'
         when e.actual_end_date >= date(r.academic_year, 10, 31)
         then 'Persisted'
@@ -85,7 +85,7 @@ select
         when
             e.actual_end_date is null
             and eis.ugrad_status = 'Attending'
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 'Retained'
         when e.actual_end_date is null and eis.ugrad_status = 'Attending'
         then 'Persisted'
@@ -157,17 +157,17 @@ select
         then null
         when
             e.actual_end_date >= date(r.academic_year + 1, 3, 31)
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 1
         when
             e.actual_end_date < date(r.academic_year + 1, 3, 31)
             and e.status = 'Graduated'
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 1
         when
             e.actual_end_date is null
             and eis.ugrad_status in ('Graduated', 'Attending')
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 1
         else 0
     end as is_retained_int,
@@ -177,7 +177,7 @@ select
         then null
         when
             e.actual_end_date >= date(r.academic_year + 1, 3, 31)
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 'Retained'
         when e.actual_end_date >= date(r.academic_year + 1, 3, 31)
         then 'Persisted'
@@ -190,7 +190,7 @@ select
         when
             e.actual_end_date is null
             and eis.ugrad_status = 'Attending'
-            and eis.ecc_enrollment_id = e.id
+            and eis.ecc_account_id = e.school
         then 'Retained'
         when e.actual_end_date is null and eis.ugrad_status = 'Attending'
         then 'Persisted'
