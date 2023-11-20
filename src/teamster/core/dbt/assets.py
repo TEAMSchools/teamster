@@ -44,17 +44,8 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
 
         if auto_materialize_policy:
             return auto_materialize_policy
-
-        materialized_config = dbt_resource_props["config"].get("materialized")
-
-        if materialized_config == "view":
-            return AutoMaterializePolicy.eager().without_rules(
-                AutoMaterializeRule.materialize_on_parent_updated()
-            )
-        elif materialized_config == "table":
-            return AutoMaterializePolicy.eager()
         else:
-            return None
+            return AutoMaterializePolicy.eager()
 
 
 def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
