@@ -8,6 +8,8 @@ with
             n as persistence_year,
 
             r.ktc_cohort + n as academic_year,
+            date(r.ktc_cohort + n, 10, 31) as persistence_date_fall,
+            date(r.ktc_cohort + n + 1, 3, 31) as persistence_date_spring,
         from {{ ref("int_kippadb__roster") }} as r
         cross join unnest([0, 1, 2, 3, 4, 5]) as n
     )
@@ -37,12 +39,11 @@ select
     if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
     case
-        when date(r.academic_year, 10, 31) > current_date('{{ var("local_timezone") }}')
+        when r.persistence_date_fall > current_date('{{ var("local_timezone") }}')
         then null
-        when e.actual_end_date >= date(r.academic_year, 10, 31)
+        when e.actual_end_date >= r.persistence_date_fall
         then 1
-        when
-            e.actual_end_date < date(r.academic_year, 10, 31) and e.status = 'Graduated'
+        when e.actual_end_date < r.persistence_date_fall and e.status = 'Graduated'
         then 1
         when
             e.actual_end_date is null and eis.ugrad_status in ('Graduated', 'Attending')
@@ -51,14 +52,14 @@ select
     end as is_persisting_int,
 
     case
-        when date(r.academic_year, 10, 31) > current_date('{{ var("local_timezone") }}')
+        when r.persistence_date_fall > current_date('{{ var("local_timezone") }}')
         then null
         when
-            e.actual_end_date >= date(r.academic_year, 10, 31)
+            e.actual_end_date >= r.persistence_date_fall
             and eis.ecc_account_id = e.school
         then 1
         when
-            e.actual_end_date < date(r.academic_year, 10, 31)
+            e.actual_end_date < r.persistence_date_fall
             and e.status = 'Graduated'
             and eis.ecc_account_id = e.school
         then 1
@@ -71,16 +72,15 @@ select
     end as is_retained_int,
 
     case
-        when date(r.academic_year, 10, 31) > current_date('America/New_York')
+        when r.persistence_date_fall > current_date('America/New_York')
         then null
         when
-            e.actual_end_date >= date(r.academic_year, 10, 31)
+            e.actual_end_date >= r.persistence_date_fall
             and eis.ecc_account_id = e.school
         then 'Retained'
-        when e.actual_end_date >= date(r.academic_year, 10, 31)
+        when e.actual_end_date >= r.persistence_date_fall
         then 'Persisted'
-        when
-            e.actual_end_date < date(r.academic_year, 10, 31) and e.status = 'Graduated'
+        when e.actual_end_date < r.persistence_date_fall and e.status = 'Graduated'
         then 'Graduated'
         when e.actual_end_date is null and eis.ugrad_status = 'Graduated'
         then 'Graduated'
@@ -102,7 +102,7 @@ from roster_scaffold as r
 left join
     {{ ref("stg_kippadb__enrollment") }} as e
     on r.contact_id = e.student
-    and date(r.academic_year, 10, 31) between e.start_date and coalesce(
+    and r.persistence_date_fall between e.start_date and coalesce(
         e.actual_end_date, date(({{ var("current_academic_year") }} + 1), 6, 30)
     )
     and e.pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)")
@@ -138,15 +138,11 @@ select
     if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
     case
-        when
-            date(r.academic_year + 1, 3, 31)
-            > current_date('{{ var("local_timezone") }}')
+        when r.persistence_date_spring > current_date('{{ var("local_timezone") }}')
         then null
-        when e.actual_end_date >= date(r.academic_year + 1, 3, 31)
+        when e.actual_end_date >= r.persistence_date_spring
         then 1
-        when
-            e.actual_end_date < date(r.academic_year + 1, 3, 31)
-            and e.status = 'Graduated'
+        when e.actual_end_date < r.persistence_date_spring and e.status = 'Graduated'
         then 1
         when
             e.actual_end_date is null and eis.ugrad_status in ('Graduated', 'Attending')
@@ -155,16 +151,14 @@ select
     end as is_persisting_int,
 
     case
-        when
-            date(r.academic_year + 1, 3, 31)
-            > current_date('{{ var("local_timezone") }}')
+        when r.persistence_date_spring > current_date('{{ var("local_timezone") }}')
         then null
         when
-            e.actual_end_date >= date(r.academic_year + 1, 3, 31)
+            e.actual_end_date >= r.persistence_date_spring
             and eis.ecc_account_id = e.school
         then 1
         when
-            e.actual_end_date < date(r.academic_year + 1, 3, 31)
+            e.actual_end_date < r.persistence_date_spring
             and e.status = 'Graduated'
             and eis.ecc_account_id = e.school
         then 1
@@ -177,17 +171,15 @@ select
     end as is_retained_int,
 
     case
-        when date(r.academic_year + 1, 3, 31) > current_date('America/New_York')
+        when r.persistence_date_spring > current_date('America/New_York')
         then null
         when
-            e.actual_end_date >= date(r.academic_year + 1, 3, 31)
+            e.actual_end_date >= r.persistence_date_spring
             and eis.ecc_account_id = e.school
         then 'Retained'
-        when e.actual_end_date >= date(r.academic_year + 1, 3, 31)
+        when e.actual_end_date >= r.persistence_date_spring
         then 'Persisted'
-        when
-            e.actual_end_date < date(r.academic_year + 1, 3, 31)
-            and e.status = 'Graduated'
+        when e.actual_end_date < r.persistence_date_spring and e.status = 'Graduated'
         then 'Graduated'
         when e.actual_end_date is null and eis.ugrad_status = 'Graduated'
         then 'Graduated'
@@ -209,7 +201,7 @@ from roster_scaffold as r
 left join
     {{ ref("stg_kippadb__enrollment") }} as e
     on r.contact_id = e.student
-    and date(r.academic_year + 1, 3, 31) between e.start_date and coalesce(
+    and r.persistence_date_spring between e.start_date and coalesce(
         e.actual_end_date, date(({{ var("current_academic_year") }} + 1), 6, 30)
     )
     and e.pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)")
