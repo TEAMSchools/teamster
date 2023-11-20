@@ -28,6 +28,8 @@ select
     a.name as account_name,
     a.type as account_type,
 
+    eis.hs_account_name,
+
     'Fall' as semester,
 
     if(eis.ecc_pursuing_degree_type is not null, true, false) as is_ecc,
@@ -126,6 +128,8 @@ select
 
     a.name as account_name,
     a.type as account_type,
+
+    eis.hs_account_name,
 
     'Spring' as semester,
 
