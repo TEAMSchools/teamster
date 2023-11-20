@@ -24,7 +24,7 @@ def build_last_modified_schedule(
     job = define_asset_job(
         name=job_name,
         selection=AssetSelection.assets(*asset_defs),
-        tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+        tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
     )
 
     schedule_name = f"{job_name}_schedule"
