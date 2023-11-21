@@ -25,7 +25,7 @@ with
                         then employee_number
                     end
                 )
-            ) as sl_employee_number
+            ) as sl_employee_number,
         from {{ ref("base_people__staff_roster") }}
         where
             job_title in (
