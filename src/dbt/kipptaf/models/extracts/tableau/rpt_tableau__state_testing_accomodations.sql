@@ -13,7 +13,8 @@ with
             accommodation,
             accommodation_value,
         from
-            {{ ref("stg_powerschool__s_nj_stu_x") }} unpivot (
+            {{ ref("stg_powerschool__s_nj_stu_x") }} unpivot include nulls
+            (
                 accommodation_value for accommodation in (
                     access_test_format_override,
                     alternate_access,

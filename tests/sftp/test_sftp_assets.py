@@ -74,6 +74,10 @@ def test_assets_fldoe():
             },
         )
 
+    shutil.move(
+        src="/workspaces/teamster/dagster", dst="/workspaces/teamster/env/dagster"
+    )
+
 
 def test_assets_iready():
     from teamster.kippmiami.iready import assets
