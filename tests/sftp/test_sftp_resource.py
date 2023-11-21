@@ -33,6 +33,8 @@ def _test(ssh_configurable_resource, remote_file_regex_composed, remote_dir=".")
 
     context.log.info(file_match)
 
+    ssh.sftp_get(remote_filepath=file_match, local_filepath=f"./env/{file_match}")
+
 
 def test_iready_nj():
     _test(
@@ -58,12 +60,34 @@ def test_renlearn_miami():
 
 
 def test_fldoe():
-    _test(
-        ssh_configurable_resource=SSHResource(
-            remote_host="kipptaf.couchdrop.io",
-            username=EnvVar("COUCHDROP_SFTP_USERNAME"),
-            password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
-        ),
-        remote_dir="/teamster-kippmiami/couchdrop/fldoe/fast",
-        remote_file_regex_composed="2022/PM1/.*3\w*ELAReading.*\.csv",
-    )
+    # _test(
+    #     ssh_configurable_resource=SSHResource(
+    #         remote_host="kipptaf.couchdrop.io",
+    #         username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+    #         password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
+    #     ),
+    #     remote_dir="/teamster-kippmiami/couchdrop/fldoe/fast",
+    #     remote_file_regex_composed="2022/PM1/.*3\w*ELAReading.*\.csv",
+    # )
+
+    filenames = [
+        "FSA_21SPR_132332_SRS-E_MATH_SCHL.csv",
+        "FSA_21SPR_132332_SRS-E_ELA_GR04_10_SCHL.csv",
+        "FSA_21SPR_132332_SRS-E_ELA_GR03_SCHL.csv",
+        "FSA_21SPR_132332_SRS-E_SCI_SCHL.csv",
+        "FSA_22SPR_132332_SRS-E_ELA_GR03_SCHL.csv",
+        "FSA_22SPR_132332_SRS-E_SCI_SCHL.csv",
+        "FSA_22SPR_132332_SRS-E_MATH_SCHL.csv",
+        "FSA_22SPR_132332_SRS-E_ELA_GR04_10_SCHL.csv",
+    ]
+
+    for filename in filenames:
+        _test(
+            ssh_configurable_resource=SSHResource(
+                remote_host="kipptaf.couchdrop.io",
+                username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+                password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
+            ),
+            remote_dir="/teamster-kippmiami/couchdrop/fldoe/fsa/student_scores",
+            remote_file_regex_composed=filename,
+        )

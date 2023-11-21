@@ -25,6 +25,7 @@ vars:
   current_academic_year: 2023
   current_fiscal_year: 2024
   cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
+  couchdrop_cloud_storage_uri_base: gs://teamster-kippmiami/couchdrop
   deanslist_schema: kippmiami_deanslist
   iready_schema: kippmiami_iready
   powerschool_schema: kippmiami_powerschool

@@ -8,23 +8,6 @@ from slugify import slugify
 from teamster.core.fldoe.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
-SCHOOL_YEAR_TERM = "SY24PM1"
-
-LOCAL_FILEPATHS = [
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade3FASTELAReading_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade3FASTMathematics_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade4FASTELAReading_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade4FASTMathematics_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade5FASTELAReading_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade5FASTMathematics_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade6FASTELAReading_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade6FASTMathematics_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade7FASTELAReading_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade7FASTMathematics_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade8FASTELAReading_StudentData_{SCHOOL_YEAR_TERM}.csv",
-    f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade8FASTMathematics_StudentData_{SCHOOL_YEAR_TERM}.csv",
-]
-
 
 def _test_schema(local_filepath, asset_name):
     df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
@@ -32,7 +15,7 @@ def _test_schema(local_filepath, asset_name):
     df.replace({nan: None}, inplace=True)
     df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 
-    # print(df.dtypes.to_dict())
+    print(df.dtypes.to_dict())
 
     count = df.shape[0]
     records = df.to_dict(orient="records")
@@ -60,5 +43,39 @@ def _test_schema(local_filepath, asset_name):
 
 
 def test_fast():
-    for local_filepath in LOCAL_FILEPATHS:
+    school_year_term = "SY24PM1"
+
+    local_filepaths = [
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade3FASTELAReading_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade3FASTMathematics_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade4FASTELAReading_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade4FASTMathematics_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade5FASTELAReading_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade5FASTMathematics_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade6FASTELAReading_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade6FASTMathematics_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade7FASTELAReading_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade7FASTMathematics_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade8FASTELAReading_StudentData_{school_year_term}.csv",
+        f"env/fldoe/KIPPMIAMI-LIBERTYCITY_Grade8FASTMathematics_StudentData_{school_year_term}.csv",
+    ]
+
+    for local_filepath in local_filepaths:
         _test_schema(asset_name="fast", local_filepath=local_filepath)
+
+
+def test_fsa():
+    filedir = "env/teamster-kippmiami/couchdrop/fldoe/fsa/student_scores"
+    local_filepaths = [
+        f"{filedir}/FSA_21SPR_132332_SRS-E_MATH_SCHL.csv",
+        f"{filedir}/FSA_21SPR_132332_SRS-E_ELA_GR04_10_SCHL.csv",
+        f"{filedir}/FSA_21SPR_132332_SRS-E_ELA_GR03_SCHL.csv",
+        f"{filedir}/FSA_21SPR_132332_SRS-E_SCI_SCHL.csv",
+        f"{filedir}/FSA_22SPR_132332_SRS-E_ELA_GR03_SCHL.csv",
+        f"{filedir}/FSA_22SPR_132332_SRS-E_SCI_SCHL.csv",
+        f"{filedir}/FSA_22SPR_132332_SRS-E_MATH_SCHL.csv",
+        f"{filedir}/FSA_22SPR_132332_SRS-E_ELA_GR04_10_SCHL.csv",
+    ]
+
+    for local_filepath in local_filepaths:
+        _test_schema(asset_name="fsa", local_filepath=local_filepath)

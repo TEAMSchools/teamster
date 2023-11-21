@@ -23,3 +23,15 @@ assets:
         - 7\w*Mathematics
         - 8\w*ELAReading
         - 8\w*Mathematics
+  - asset_name: fsa
+    remote_dir: /teamster-kippmiami/couchdrop/fldoe/fsa/student_scores
+    remote_file_regex: FSA_(?P<school_year_term>)SPR_132332_SRS-E_(?P<grade_level_subject>)_SCHL\.csv
+    partition_keys:
+      school_year_term:
+        - "22"
+        - "21"
+      grade_level_subject:
+        - ELA_GR03
+        - SCI
+        - MATH
+        - ELA_GR04_10
