@@ -9,6 +9,7 @@ from dagster_gcp import (
 )
 from dagster_k8s import k8s_job_executor
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.adp.resources import (
     AdpWorkforceManagerResource,
     AdpWorkforceNowResource,
@@ -26,7 +27,6 @@ from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.jobs import asset_observation_job
 from teamster.kipptaf import (
     CODE_LOCATION,
-    GCS_PROJECT_NAME,
     achieve3k,
     adp,
     airbyte,
