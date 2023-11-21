@@ -7,6 +7,7 @@ from dagster_gcp import (
 )
 from dagster_k8s import k8s_job_executor
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
@@ -14,7 +15,6 @@ from teamster.core.ssh.resources import SSHResource
 
 from . import (
     CODE_LOCATION,
-    GCS_PROJECT_NAME,
     datagun,
     dbt,
     deanslist,
