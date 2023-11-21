@@ -1,4 +1,5 @@
 import random
+import shutil
 
 from dagster import EnvVar, materialize
 from dagster_gcp import GCSResource
