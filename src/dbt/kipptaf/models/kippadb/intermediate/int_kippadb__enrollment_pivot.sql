@@ -209,6 +209,7 @@ with
             ecc.actual_end_date as ecc_actual_end_date,
             ecc.anticipated_graduation as ecc_anticipated_graduation,
             ecc.account_type as ecc_account_type,
+            ecc.school as ecc_account_id,
             ecc.of_credits_required_for_graduation
             as ecc_credits_required_for_graduation,
             ecc.date_last_verified as ecc_date_last_verified,
@@ -355,6 +356,7 @@ select
     ew.ecc_actual_end_date,
     ew.ecc_anticipated_graduation,
     ew.ecc_account_type,
+    ew.ecc_account_id,
     ew.ecc_credits_required_for_graduation,
     ew.ecc_account_name,
     ew.ecc_adjusted_6_year_minority_graduation_rate,

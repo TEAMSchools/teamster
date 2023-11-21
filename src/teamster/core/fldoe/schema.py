@@ -506,6 +506,37 @@ FAST_FIELDS = [
     },
 ]
 
+FSA_FIELDS = [
+    {"name": "schoolyear", "type": ["null", "long"], "default": None},
+    {"name": "testname", "type": ["null", "string"], "default": None},
+    {"name": "dis", "type": ["null", "long"], "default": None},
+    {"name": "disname", "type": ["null", "string"], "default": None},
+    {"name": "sch", "type": ["null", "long"], "default": None},
+    {"name": "schname", "type": ["null", "string"], "default": None},
+    {"name": "tgrade", "type": ["null", "long"], "default": None},
+    {"name": "lastname", "type": ["null", "string"], "default": None},
+    {"name": "firstname", "type": ["null", "string"], "default": None},
+    {"name": "mi", "type": ["null", "string"], "default": None},
+    {"name": "fleid", "type": ["null", "string"], "default": None},
+    {"name": "scalescore", "type": ["null", "long", "string"], "default": None},
+    {"name": "pass", "type": ["null", "string"], "default": None},
+    {"name": "scoreflag_r", "type": ["null", "long", "string"], "default": None},
+    {"name": "scoreflag_w", "type": ["null", "string"], "default": None},
+    {"name": "scoreflag", "type": ["null", "long"], "default": None},
+    {"name": "rptstatus", "type": ["null", "string"], "default": None},
+    {"name": "conditioncode", "type": ["null", "string"], "default": None},
+    {"name": "performancelevel", "type": ["null", "long", "string"], "default": None},
+    {"name": "earn1_ptpos1", "type": ["null", "string"], "default": None},
+    {"name": "earn2_ptpos2", "type": ["null", "string"], "default": None},
+    {"name": "earn3_ptpos3", "type": ["null", "string"], "default": None},
+    {"name": "earn4_ptpos4", "type": ["null", "string"], "default": None},
+    {"name": "earn5_ptpos5", "type": ["null", "string"], "default": None},
+    {"name": "earn_wd1_ptpos_wd1", "type": ["null", "string"], "default": None},
+    {"name": "earn_wd2_ptpos_wd2", "type": ["null", "string"], "default": None},
+    {"name": "earn_wd3_ptpos_wd3", "type": ["null", "string"], "default": None},
+]
+
 ASSET_FIELDS = {
     "fast": FAST_FIELDS,
+    "fsa": FSA_FIELDS,
 }

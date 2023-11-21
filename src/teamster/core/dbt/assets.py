@@ -6,7 +6,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    AutoMaterializeRule,
     Mapping,
     Nothing,
     Optional,
@@ -36,7 +35,6 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
-        materialized_config = dbt_resource_props["config"].get("materialized")
         auto_materialize_policy = _auto_materialize_policy_fn(
             dbt_resource_props.get("meta", {})
             .get("dagster", {})
@@ -45,15 +43,8 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
 
         if auto_materialize_policy:
             return auto_materialize_policy
-
-        if materialized_config == "view":
-            return AutoMaterializePolicy.eager().without_rules(
-                AutoMaterializeRule.materialize_on_parent_updated()
-            )
-        elif materialized_config == "table":
-            return AutoMaterializePolicy.eager()
         else:
-            return None
+            return AutoMaterializePolicy.eager()
 
 
 def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
@@ -75,6 +66,7 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
+            auto_materialize_policy=AutoMaterializePolicy.eager(),
         )
         for source in external_sources
     }
@@ -134,7 +126,7 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
                 json.dumps({"ext_full_refresh": True}),
             ],
             manifest=manifest,
-            dagster_dbt_translator=dagster_dbt_translator(),
+            dagster_dbt_translator=dagster_dbt_translator,
         )
 
         for event in dbt_run_operation.stream_raw_events():
