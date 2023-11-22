@@ -8,19 +8,27 @@ from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage
-from pendulum.parsing.exceptions import ParserError
 from upath import UPath
 
 from teamster.core.utils.classes import FiscalYear
 
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):
+    def _parse_datetime_partition_value(self, partition_value):
+        datetime_formats = iter(["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ssZZ"])
+        while True:
+            try:
+                return pendulum.from_format(
+                    string=partition_value, fmt=next(datetime_formats)
+                )
+            except ValueError:
+                pass
+
     def _get_hive_partition(
         self, partition_value: str, partition_key: str = "key"
     ) -> list:
         try:
-            datetime = pendulum.parser.parse(partition_value)
-
+            datetime = self._parse_datetime_partition_value(partition_value)
             return "/".join(
                 [
                     (
@@ -28,11 +36,11 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
                         + str(FiscalYear(datetime=datetime, start_month=7).fiscal_year)
                     ),
                     f"_dagster_partition_date={datetime.to_date_string()}",
-                    f"_dagster_partition_hour={datetime.format('HH')}",
-                    f"_dagster_partition_minute={datetime.format('mm')}",
+                    f"_dagster_partition_hour={datetime.format(fmt='HH')}",
+                    f"_dagster_partition_minute={datetime.format(fmt='mm')}",
                 ]
             )
-        except ParserError:
+        except StopIteration:
             return f"_dagster_partition_{partition_key}={partition_value}"
 
     def _formatted_multipartitioned_path(self, partition_key: MultiPartitionKey) -> str:
@@ -68,20 +76,24 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
         return {
             partition_key: self._with_extension(
                 self.get_path_for_partition(
-                    context,
-                    self._get_path_without_extension(context),
-                    f"{partition}/data",
+                    context=context,
+                    path=self._get_path_without_extension(context),
+                    partition=partition,
                 )
             )
+            / "data"
             for partition_key, partition in formatted_partition_keys.items()
         }
+
+    def _get_path(self, context: InputContext | OutputContext) -> UPath:
+        return super()._get_path(context) / "data"
 
 
 class AvroGCSIOManager(GCSUPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         bucket_obj: storage.Bucket = self.bucket_obj
 
-        return fastavro.reader(fo=bucket_obj.blob(str(path)).open("wb"))
+        return fastavro.reader(fo=bucket_obj.blob(blob_name=str(path)).open("wb"))
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         bucket_obj: storage.Bucket = self.bucket_obj
@@ -95,7 +107,9 @@ class AvroGCSIOManager(GCSUPathIOManager):
             fn=fastavro.writer,
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
             kwargs={
-                "fo": bucket_obj.blob(str(path)).open(mode="wb", ignore_flush=True),
+                "fo": bucket_obj.blob(blob_name=str(path)).open(
+                    mode="wb", ignore_flush=True
+                ),
                 "schema": fastavro.parse_schema(schema),
                 "records": records,
                 "codec": "snappy",
@@ -115,7 +129,7 @@ class FileGCSIOManager(GCSUPathIOManager):
             self.unlink(path)
 
         backoff(
-            fn=bucket_obj.blob(path).upload_from_filename,
+            fn=bucket_obj.blob(blob_name=str(path)).upload_from_filename,
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
             kwargs={"filename": obj},
         )
@@ -126,9 +140,15 @@ class GCSIOManager(GCSPickleIOManager):
 
     @property
     @cached_method
-    def _internal_io_manager(self) -> PickledObjectGCSIOManager:
+    def _internal_io_manager(self) -> AvroGCSIOManager | PickledObjectGCSIOManager:
         if self.object_type == "avro":
             return AvroGCSIOManager(
+                bucket=self.gcs_bucket,
+                client=self.gcs.get_client(),
+                prefix=self.gcs_prefix,
+            )
+        if self.object_type == "file":
+            return FileGCSIOManager(
                 bucket=self.gcs_bucket,
                 client=self.gcs.get_client(),
                 prefix=self.gcs_prefix,

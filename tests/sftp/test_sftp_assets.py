@@ -4,9 +4,9 @@ import shutil
 from dagster import EnvVar, materialize
 from dagster_gcp import GCSResource
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.ssh.resources import SSHResource
-from teamster.staging import GCS_PROJECT_NAME
 
 
 def _test_assets(asset, ssh_resource):
