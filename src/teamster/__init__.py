@@ -1,1 +1,1 @@
-# just here to let pip know this is a module
+GCS_PROJECT_NAME = "teamster-332318"
