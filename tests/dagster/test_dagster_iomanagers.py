@@ -92,8 +92,8 @@ def test_avro_handle_asset():
     )
 
 
-def test_avro_handle_multipartition_with_date_asset():
-    asset_name = "avro_multipartition_with_date_asset"
+def test_avro_handle_asset_multipartition_with_date():
+    asset_name = "avro_asset_multipartition_with_date"
     partitions_def = MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition(start_date="2023-01-01"),
@@ -108,8 +108,8 @@ def test_avro_handle_multipartition_with_date_asset():
     )
 
 
-def test_avro_handle_multipartition_asset():
-    asset_name = "avro_multipartition_asset"
+def test_avro_handle_asset_multipartition():
+    asset_name = "avro_asset_multipartition"
     partitions_def = MultiPartitionsDefinition(
         {
             "foo": StaticPartitionsDefinition(["bar"]),
@@ -124,8 +124,8 @@ def test_avro_handle_multipartition_asset():
     )
 
 
-def test_avro_handle_datetime_partition_asset():
-    asset_name = "avro_datetime_partition_asset"
+def test_avro_handle_asset_datetime_partition():
+    asset_name = "avro_asset_datetime_partition"
 
     _test(
         asset_def=build_test_asset_avro(
@@ -137,8 +137,8 @@ def test_avro_handle_datetime_partition_asset():
     )
 
 
-def test_avro_handle_static_partition_asset():
-    asset_name = "avro_static_partition_asset"
+def test_avro_handle_asset_static_partition():
+    asset_name = "avro_asset_static_partition"
 
     _test(
         asset_def=build_test_asset_avro(
@@ -158,8 +158,8 @@ def test_file_handle_asset():
     )
 
 
-def test_file_handle_multipartition_with_date_asset():
-    asset_name = "file_multipartition_with_date_asset"
+def test_file_handle_asset_multipartition_with_date():
+    asset_name = "file_asset_multipartition_with_date"
     partitions_def = MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition(start_date="2023-01-01"),
@@ -174,8 +174,8 @@ def test_file_handle_multipartition_with_date_asset():
     )
 
 
-def test_file_handle_multipartition_asset():
-    asset_name = "file_multipartition_asset"
+def test_file_handle_asset_multipartition():
+    asset_name = "file_asset_multipartition"
     partitions_def = MultiPartitionsDefinition(
         {
             "foo": StaticPartitionsDefinition(["bar"]),
@@ -190,8 +190,8 @@ def test_file_handle_multipartition_asset():
     )
 
 
-def test_file_handle_datetime_partition_asset():
-    asset_name = "file_datetime_partition_asset"
+def test_file_handle_asset_datetime_partition():
+    asset_name = "file_asset_datetime_partition"
 
     _test(
         asset_def=build_test_asset_file(
@@ -203,8 +203,8 @@ def test_file_handle_datetime_partition_asset():
     )
 
 
-def test_file_handle_static_partition_asset():
-    asset_name = "file_static_partition_asset"
+def test_file_handle_asset_static_partition():
+    asset_name = "file_asset_static_partition"
 
     _test(
         asset_def=build_test_asset_file(
