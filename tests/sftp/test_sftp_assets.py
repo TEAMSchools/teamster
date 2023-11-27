@@ -1,9 +1,9 @@
 import random
 import shutil
 
-from dagster import EnvVar, materialize
 from dagster_gcp import GCSResource
 
+from dagster import EnvVar, materialize
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.ssh.resources import SSHResource
 from teamster.staging import GCS_PROJECT_NAME
@@ -29,7 +29,27 @@ def _test_assets(asset, ssh_resource):
         },
     )
 
+    shutil.move(
+        src="/workspaces/teamster/dagster", dst="/workspaces/teamster/env/dagster"
+    )
+
     assert result.success
+
+
+def test_assets_pearson():
+    from teamster.kippnewark.pearson import assets
+
+    for asset in assets:
+        _test_assets(
+            asset=asset,
+            ssh_resource={
+                "ssh_couchdrop": SSHResource(
+                    remote_host="kipptaf.couchdrop.io",
+                    username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+                    password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
+                ),
+            },
+        )
 
 
 def test_assets_renlearn():
@@ -76,10 +96,6 @@ def test_assets_fldoe():
                 ),
             },
         )
-
-    shutil.move(
-        src="/workspaces/teamster/dagster", dst="/workspaces/teamster/env/dagster"
-    )
 
 
 def test_assets_iready():

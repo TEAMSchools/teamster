@@ -2,8 +2,8 @@ import os
 import pathlib
 
 import pendulum
-from dagster import DagsterInstance, MultiPartitionKey
 
+from dagster import DagsterInstance, MultiPartitionKey
 from teamster.core.utils.classes import FiscalYear
 
 
@@ -23,7 +23,7 @@ def regex_pattern_replace(pattern: str, replacements: dict):
     pattern = pattern.replace(")?", "")
 
     # replace escaped chars
-    pattern = pattern.replace("\\", "")
+    # pattern = pattern.replace("\\", "")
 
     return pattern
 
