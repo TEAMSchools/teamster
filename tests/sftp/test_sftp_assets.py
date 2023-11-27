@@ -1,9 +1,8 @@
 import random
-import shutil
-
-from dagster_gcp import GCSResource
 
 from dagster import EnvVar, materialize
+from dagster_gcp import GCSResource
+
 from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.ssh.resources import SSHResource
@@ -25,10 +24,6 @@ def _test_assets(asset, ssh_resource):
             ),
             **ssh_resource,
         },
-    )
-
-    shutil.move(
-        src="/workspaces/teamster/dagster", dst="/workspaces/teamster/env/dagster"
     )
 
     assert result.success
