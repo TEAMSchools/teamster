@@ -2,11 +2,7 @@ from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_airbyte import AirbyteCloudResource
 from dagster_dbt import DbtCliResource
 from dagster_fivetran import FivetranResource
-from dagster_gcp import (
-    BigQueryResource,
-    ConfigurablePickledObjectGCSIOManager,
-    GCSResource,
-)
+from dagster_gcp import BigQueryResource, GCSResource
 from dagster_k8s import k8s_job_executor
 
 from teamster import GCS_PROJECT_NAME
@@ -18,8 +14,8 @@ from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
 from teamster.core.google.directory.resources import GoogleDirectoryResource
 from teamster.core.google.forms.resources import GoogleFormsResource
-from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.google.sheets.resources import GoogleSheetsResource
+from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.ldap.resources import LdapResource
 from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.core.smartrecruiters.resources import SmartRecruitersResource
@@ -43,7 +39,7 @@ from teamster.kipptaf import (
     smartrecruiters,
 )
 
-resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
+GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -98,16 +94,14 @@ defs = Definitions(
         *google.sensors,
     ],
     resources={
-        "io_manager": ConfigurablePickledObjectGCSIOManager(
-            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kipptaf"
+        "io_manager": GCSIOManager(
+            gcs=GCS_RESOURCE,
+            gcs_bucket=f"teamster-{CODE_LOCATION}",
+            object_type="pickle",
         ),
-        "io_manager_gcs_avro": gcs_io_manager.configured(
-            config_or_config_fn={
-                "gcs_bucket": f"teamster-{CODE_LOCATION}",
-                "io_format": "avro",
-            }
+        "io_manager_gcs_avro": GCSIOManager(
+            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}", object_type="avro"
         ),
-        "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "adp_wfm": AdpWorkforceManagerResource(
