@@ -39,8 +39,6 @@ from teamster.kipptaf import (
     smartrecruiters,
 )
 
-GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
-
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
@@ -94,13 +92,13 @@ defs = Definitions(
         *google.sensors,
     ],
     resources={
+        "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "io_manager": GCSIOManager(
-            gcs=GCS_RESOURCE,
             gcs_bucket=f"teamster-{CODE_LOCATION}",
             object_type="pickle",
         ),
         "io_manager_gcs_avro": GCSIOManager(
-            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}", object_type="avro"
+            gcs_bucket=f"teamster-{CODE_LOCATION}", object_type="avro"
         ),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
