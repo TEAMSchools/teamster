@@ -26,12 +26,12 @@ def build_static_partition_asset(
     params={},
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name.replace("-", "_"),
-        key_prefix=[code_location, "deanslist"],
+        key=[code_location, "deanslist", asset_name.replace("-", "_")],
         metadata=params,
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
-        io_manager_key="io_manager_gcs_avro",
+        group_name="deanslist",
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
@@ -66,12 +66,12 @@ def build_multi_partition_asset(
     params={},
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name.replace("-", "_"),
-        key_prefix=[code_location, "deanslist"],
+        key=[code_location, "deanslist", asset_name.replace("-", "_")],
         metadata=params,
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
-        io_manager_key="io_manager_gcs_avro",
+        group_name="deanslist",
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         school_partition = context.partition_key.keys_by_dimension["school"]
