@@ -17,15 +17,15 @@ from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.utils.functions import get_avro_record_schema
 
+GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
+
 
 def build_test_asset_avro(name, partitions_def=None):
     @asset(
         key=["staging", "test", name],
         partitions_def=partitions_def,
         io_manager_def=GCSIOManager(
-            gcs=GCSResource(project=GCS_PROJECT_NAME),
-            gcs_bucket="teamster-staging",
-            object_type="avro",
+            gcs=GCS_RESOURCE, gcs_bucket="teamster-staging", object_type="avro"
         ),
     )
     def _asset():
@@ -49,9 +49,7 @@ def build_test_asset_file(name, partitions_def=None):
         key=["staging", "test", name],
         partitions_def=partitions_def,
         io_manager_def=GCSIOManager(
-            gcs=GCSResource(project=GCS_PROJECT_NAME),
-            gcs_bucket="teamster-staging",
-            object_type="file",
+            gcs=GCS_RESOURCE, gcs_bucket="teamster-staging", object_type="file"
         ),
     )
     def _asset():
