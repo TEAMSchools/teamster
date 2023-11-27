@@ -1,20 +1,15 @@
 from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_dbt import DbtCliResource
-from dagster_gcp import (
-    BigQueryResource,
-    ConfigurablePickledObjectGCSIOManager,
-    GCSResource,
-)
+from dagster_gcp import BigQueryResource, GCSPickleIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHResource
-
-from . import (
+from teamster.kippnewark import (
     CODE_LOCATION,
-    GCS_PROJECT_NAME,
     datagun,
     dbt,
     deanslist,
@@ -26,7 +21,7 @@ from . import (
     titan,
 )
 
-resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
+GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -56,8 +51,9 @@ defs = Definitions(
         *titan.sensors,
     ],
     resources={
-        "io_manager": ConfigurablePickledObjectGCSIOManager(
-            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kippnewark"
+        "gcs": GCS_RESOURCE,
+        "io_manager": GCSPickleIOManager(
+            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}"
         ),
         "io_manager_gcs_avro": gcs_io_manager.configured(
             config_or_config_fn={
@@ -71,7 +67,6 @@ defs = Definitions(
                 "io_format": "filepath",
             }
         ),
-        "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_powerschool": OracleResource(
