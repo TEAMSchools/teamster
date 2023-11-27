@@ -1,11 +1,11 @@
 from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_dbt import DbtCliResource
-from dagster_gcp import BigQueryResource, GCSPickleIOManager, GCSResource
+from dagster_gcp import BigQueryResource, GCSResource
 from dagster_k8s import k8s_job_executor
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.deanslist.resources import DeansListResource
-from teamster.core.google.io.resources import gcs_io_manager
+from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHResource
 from teamster.kippnewark import (
@@ -52,20 +52,16 @@ defs = Definitions(
     ],
     resources={
         "gcs": GCS_RESOURCE,
-        "io_manager": GCSPickleIOManager(
-            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}"
+        "io_manager": GCSIOManager(
+            gcs=GCS_RESOURCE,
+            gcs_bucket=f"teamster-{CODE_LOCATION}",
+            object_type="pickle",
         ),
-        "io_manager_gcs_avro": gcs_io_manager.configured(
-            config_or_config_fn={
-                "gcs_bucket": f"teamster-{CODE_LOCATION}",
-                "io_format": "avro",
-            }
+        "io_manager_gcs_avro": GCSIOManager(
+            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}", object_type="avro"
         ),
-        "io_manager_gcs_file": gcs_io_manager.configured(
-            config_or_config_fn={
-                "gcs_bucket": f"teamster-{CODE_LOCATION}",
-                "io_format": "filepath",
-            }
+        "io_manager_gcs_file": GCSIOManager(
+            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}", object_type="file"
         ),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
