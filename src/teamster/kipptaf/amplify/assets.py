@@ -9,7 +9,6 @@ config_dir = f"src/teamster/{CODE_LOCATION}/amplify/config"
 mclass_assets = [
     build_mclass_asset(
         code_location=CODE_LOCATION,
-        source_system="amplify",
         timezone=LOCAL_TIMEZONE,
         freshness_policy=FreshnessPolicy(
             maximum_lag_minutes=(60 * 24),

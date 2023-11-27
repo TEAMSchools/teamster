@@ -23,15 +23,9 @@ GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=[
-        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
-        *load_assets_from_modules(modules=[dbt]),
-        *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
-        *load_assets_from_modules(modules=[edplan], group_name="edplan"),
-        *load_assets_from_modules(modules=[pearson], group_name="pearson"),
-        *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
-        *load_assets_from_modules(modules=[titan], group_name="titan"),
-    ],
+    assets=load_assets_from_modules(
+        modules=[datagun, dbt, deanslist, edplan, pearson, powerschool, titan]
+    ),
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[
         *datagun.schedules,

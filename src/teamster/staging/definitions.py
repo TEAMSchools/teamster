@@ -10,9 +10,7 @@ from teamster.staging import CODE_LOCATION, powerschool
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
-    assets=[
-        *load_assets_from_modules(modules=[powerschool]),
-    ],
+    assets=load_assets_from_modules(modules=[powerschool]),
     resources={
         "gcs": GCS_RESOURCE,
         "io_manager_gcs_avro": gcs_io_manager.configured(

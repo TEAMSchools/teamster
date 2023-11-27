@@ -91,8 +91,12 @@ def build_sftp_asset(
     slugify_cols=True,
     slugify_replacements=(),
     op_tags={},
+    group_name=None,
     **kwargs,
 ):
+    if group_name is None:
+        group_name = asset_key[1]
+
     @asset(
         key=asset_key,
         metadata={"remote_dir": remote_dir, "remote_file_regex": remote_file_regex},
@@ -100,6 +104,7 @@ def build_sftp_asset(
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
+        group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: AssetExecutionContext):

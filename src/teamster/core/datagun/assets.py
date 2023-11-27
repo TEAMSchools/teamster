@@ -298,6 +298,7 @@ def build_bigquery_extract_asset(
         key=[code_location, "extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
+        group_name="datagun",
     )
     def _asset(
         context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource
