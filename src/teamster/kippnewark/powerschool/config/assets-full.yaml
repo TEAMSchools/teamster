@@ -60,12 +60,6 @@ assets:
     partition_column: whenmodified
   - asset_name: s_nj_stu_x
     partition_column: whenmodified
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              memory: 1.0Gi
   - asset_name: s_nj_usr_x
     partition_column: whenmodified
   - asset_name: schoolstaff
@@ -90,11 +84,5 @@ assets:
     partition_column: whenmodified
   - asset_name: u_studentsuserfields
     partition_column: whenmodified
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              memory: 1.0Gi
   - asset_name: users
     partition_column: whenmodified
