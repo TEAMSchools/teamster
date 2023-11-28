@@ -33,14 +33,15 @@ def build_wfm_asset(
     @asset(
         key=[code_location, "adp_workforce_manager", asset_name],
         metadata={"hyperfind": hyperfind, "report_name": report_name},
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=MultiPartitionsDefinition(
             {
                 "symbolic_id": StaticPartitionsDefinition(symbolic_ids),
                 "date": date_partitions_def,
             }
         ),
-        io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
+        group_name="adp_workforce_manager",
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):

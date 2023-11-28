@@ -18,13 +18,6 @@ def regex_pattern_replace(pattern: str, replacements: dict):
 
         pattern = pattern[:start_index] + replacement + pattern[end_index + 1 :]
 
-    # replace non-capture group
-    pattern = pattern.replace("(?:", "")
-    pattern = pattern.replace(")?", "")
-
-    # replace escaped chars
-    pattern = pattern.replace("\\", "")
-
     return pattern
 
 

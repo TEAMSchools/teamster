@@ -1,20 +1,15 @@
 from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_dbt import DbtCliResource
-from dagster_gcp import (
-    BigQueryResource,
-    ConfigurablePickledObjectGCSIOManager,
-    GCSResource,
-)
+from dagster_gcp import BigQueryResource, GCSPickleIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHResource
-
-from . import (
+from teamster.kippcamden import (
     CODE_LOCATION,
-    GCS_PROJECT_NAME,
     datagun,
     dbt,
     deanslist,
@@ -24,19 +19,13 @@ from . import (
     titan,
 )
 
-resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
+GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=[
-        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
-        *load_assets_from_modules(modules=[dbt]),
-        *load_assets_from_modules(modules=[deanslist], group_name="deanslist"),
-        *load_assets_from_modules(modules=[edplan], group_name="edplan"),
-        *load_assets_from_modules(modules=[pearson], group_name="pearson"),
-        *load_assets_from_modules(modules=[powerschool], group_name="powerschool"),
-        *load_assets_from_modules(modules=[titan], group_name="titan"),
-    ],
+    assets=load_assets_from_modules(
+        modules=[datagun, dbt, deanslist, edplan, pearson, powerschool, titan]
+    ),
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[
         *datagun.schedules,
@@ -46,8 +35,9 @@ defs = Definitions(
     ],
     sensors=[*powerschool.sensors, *edplan.sensors, *titan.sensors],
     resources={
-        "io_manager": ConfigurablePickledObjectGCSIOManager(
-            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kippcamden"
+        "gcs": GCS_RESOURCE,
+        "io_manager": GCSPickleIOManager(
+            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}"
         ),
         "io_manager_gcs_avro": gcs_io_manager.configured(
             config_or_config_fn={
@@ -61,7 +51,6 @@ defs = Definitions(
                 "io_format": "filepath",
             }
         ),
-        "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "db_powerschool": OracleResource(

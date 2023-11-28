@@ -2,13 +2,10 @@ from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_airbyte import AirbyteCloudResource
 from dagster_dbt import DbtCliResource
 from dagster_fivetran import FivetranResource
-from dagster_gcp import (
-    BigQueryResource,
-    ConfigurablePickledObjectGCSIOManager,
-    GCSResource,
-)
+from dagster_gcp import BigQueryResource, GCSPickleIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.adp.resources import (
     AdpWorkforceManagerResource,
     AdpWorkforceNowResource,
@@ -26,7 +23,6 @@ from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.jobs import asset_observation_job
 from teamster.kipptaf import (
     CODE_LOCATION,
-    GCS_PROJECT_NAME,
     achieve3k,
     adp,
     airbyte,
@@ -43,28 +39,28 @@ from teamster.kipptaf import (
     smartrecruiters,
 )
 
-resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
+GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=[
-        *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
-        *load_assets_from_modules(modules=[adp], group_name="adp"),
-        *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
-        *load_assets_from_modules(modules=[amplify], group_name="amplify"),
-        *load_assets_from_modules(modules=[clever], group_name="clever"),
-        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
-        *load_assets_from_modules(modules=[dayforce], group_name="dayforce"),
-        *load_assets_from_modules(modules=[dbt]),
-        *load_assets_from_modules(modules=[google], group_name="google"),
-        *load_assets_from_modules(modules=[ldap], group_name="ldap"),
-        *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
-        *load_assets_from_modules(
-            modules=[smartrecruiters], group_name="smartrecruiters"
-        ),
-        *load_assets_from_modules(modules=[airbyte]),
-        *load_assets_from_modules(modules=[fivetran]),
-    ],
+    assets=load_assets_from_modules(
+        modules=[
+            achieve3k,
+            adp,
+            airbyte,
+            alchemer,
+            amplify,
+            clever,
+            datagun,
+            dayforce,
+            dbt,
+            fivetran,
+            google,
+            ldap,
+            schoolmint,
+            smartrecruiters,
+        ]
+    ),
     jobs=[
         *adp.jobs,
         *airbyte.jobs,
@@ -98,8 +94,9 @@ defs = Definitions(
         *google.sensors,
     ],
     resources={
-        "io_manager": ConfigurablePickledObjectGCSIOManager(
-            gcs=GCSResource(project=GCS_PROJECT_NAME), gcs_bucket="teamster-kipptaf"
+        "gcs": GCS_RESOURCE,
+        "io_manager": GCSPickleIOManager(
+            gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}"
         ),
         "io_manager_gcs_avro": gcs_io_manager.configured(
             config_or_config_fn={
@@ -107,7 +104,6 @@ defs = Definitions(
                 "io_format": "avro",
             }
         ),
-        "gcs": GCSResource(project=GCS_PROJECT_NAME),
         "dbt_cli": DbtCliResource(project_dir=f"src/dbt/{CODE_LOCATION}"),
         "db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME),
         "adp_wfm": AdpWorkforceManagerResource(
