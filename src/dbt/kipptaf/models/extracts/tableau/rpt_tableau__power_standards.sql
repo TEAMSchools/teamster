@@ -303,7 +303,7 @@ with
                     academic_year,
                     term_administered,
                     subject_area,
-                    max(administered_at) as max_administration_at
+                    max(administered_at) as max_administration_at,
                 from {{ ref("int_assessments__response_rollup") }}
                 where scope in ('HS Unit Quiz', 'Midterm or Final')
                 group by
@@ -325,6 +325,7 @@ with
             and co.region != 'Miami'
             and not co.is_self_contained
     ),
+
     ps_data as (
         select
             academic_year,
@@ -400,7 +401,7 @@ select
 
     case
         when
-            max(case when p.rn_subj_term_desc = 1 then growth_band end) over (
+            max(case when p.rn_subj_term_desc = 1 then p.growth_band end) over (
                 partition by
                     p.academic_year,
                     p.student_number,
@@ -408,54 +409,83 @@ select
                     p.term_administered
             ) > max(case when rn_subj_term_asc = 1 then growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
             )
         then 'Grew'
         when
             max(case when rn_subj_term_desc = 1 then growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
-            ) = max(case when rn_subj_term_asc = 1 then growth_band end) over (
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
+            ) = max(case when p.rn_subj_term_asc = 1 then p.growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
             )
         then 'Maintained'
         when
-            max(case when rn_subj_term_desc = 1 then growth_band end) over (
+            max(case when p.rn_subj_term_desc = 1 then p.growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
-            ) < max(case when rn_subj_term_asc = 1 then growth_band end) over (
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
+            ) < max(case when rn_subj_term_asc = 1 then p.growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
             )
         then 'Regressed'
     end as growth_status,
-    max(case when rn_subj_term_desc = 1 then growth_band end) over (
-        partition by p.academic_year, p.student_number, subject_area, term_administered
+    max(case when p.rn_subj_term_desc = 1 then p.growth_band end) over (
+        partition by
+            p.academic_year, p.student_number, p.subject_area, p.term_administered
     ) as growth_band_recent,
-    max(case when rn_subj_term_desc = 1 then is_mastery end) over (
-        partition by p.academic_year, p.student_number, subject_area, term_administered
+    max(case when p.rn_subj_term_desc = 1 then p.is_mastery end) over (
+        partition by
+            p.academic_year, p.student_number, p.subject_area, p.term_administered
     ) as mastery_recent,
     case
         when
-            max(case when rn_subj_term_desc = 1 then growth_band end) over (
+            max(case when p.rn_subj_term_desc = 1 then p.growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
-            ) > max(case when rn_subj_term_asc = 1 then growth_band end) over (
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
+            ) > max(case when p.rn_subj_term_asc = 1 then p.growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
             )
         then 1
         else 0
     end as is_growth,
     case
         when
-            max(case when rn_subj_term_desc = 1 then growth_band end) over (
+            max(case when p.rn_subj_term_desc = 1 then p.growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
-            ) < max(case when rn_subj_term_asc = 1 then growth_band end) over (
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
+            ) < max(case when p.rn_subj_term_asc = 1 then p.growth_band end) over (
                 partition by
-                    p.academic_year, p.student_number, subject_area, term_administered
+                    p.academic_year,
+                    p.student_number,
+                    p.subject_area,
+                    p.term_administered
             )
         then 1
         else 0
