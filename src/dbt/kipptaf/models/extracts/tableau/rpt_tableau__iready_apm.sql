@@ -81,6 +81,9 @@ select
     f.state_test_proficiency,
     f.bucket_two as is_bucket_2,
     f.bucket_one,
+    f.nj_student_tier,
+
+    lc.head_of_school_preferred_name_lastfirst as head_of_school,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join unnest(['Reading', 'Math']) as subj
 cross join date_range as w
@@ -118,18 +121,13 @@ left join
     and hr.cc_course_number = 'HR'
     and hr.rn_course_number_year = 1
 left join
-    {{ ref("int_powerschool__spenrollments") }} as sp
-    on co.studentid = sp.studentid
-    and co.academic_year = sp.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
-    and current_date('{{ var("local_timezone") }}')
-    between sp.enter_date and sp.exit_date
-    and sp.specprog_name = 'Tutoring'
-left join
     {{ ref("int_reporting__student_filters") }} as f
     on co.student_number = f.student_number
     and co.academic_year = f.academic_year
     and subj = f.iready_subject
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as lc
+    on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
