@@ -407,7 +407,7 @@ select
                     p.student_number,
                     p.subject_area,
                     p.term_administered
-            ) > max(case when rn_subj_term_asc = 1 then growth_band end) over (
+            ) > max(case when p.rn_subj_term_asc = 1 then p.growth_band end) over (
                 partition by
                     p.academic_year,
                     p.student_number,
@@ -416,7 +416,7 @@ select
             )
         then 'Grew'
         when
-            max(case when rn_subj_term_desc = 1 then growth_band end) over (
+            max(case when p.rn_subj_term_desc = 1 then p.growth_band end) over (
                 partition by
                     p.academic_year,
                     p.student_number,
@@ -437,7 +437,7 @@ select
                     p.student_number,
                     p.subject_area,
                     p.term_administered
-            ) < max(case when rn_subj_term_asc = 1 then p.growth_band end) over (
+            ) < max(case when p.rn_subj_term_asc = 1 then p.growth_band end) over (
                 partition by
                     p.academic_year,
                     p.student_number,
