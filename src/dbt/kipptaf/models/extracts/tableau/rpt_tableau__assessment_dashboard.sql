@@ -43,6 +43,11 @@ select
     enr.sections_section_number as section_number,
     enr.is_foundations,
 
+    sf.nj_student_tier,
+    sf.tutoring_nj,
+
+    lc.head_of_school_preferred_name_lastfirst as head_of_school,
+
     {# retired fields kept for tableau compatibility #}
     null as power_standard_goal,
     null as is_power_standard,
@@ -69,6 +74,14 @@ left join
     and hr.cc_course_number = 'HR'
     and not hr.is_dropped_section
     and hr.rn_course_number_year = 1
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on co.student_number = sf.student_number
+    and co.academic_year = sf.academic_year
+    and asr.subject_area = sf.illuminate_subject_area
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as lc
+    on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.rn_year = 1
