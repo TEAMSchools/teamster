@@ -171,6 +171,47 @@ with
             regexp_replace(
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
+
+            case
+                when
+                    os.measurement in (
+                        '6484981d725ca60011b15280',
+                        '648499ab0b57a8001189bea8',
+                        '64849b290bd6de00117a7dc9',
+                        '64849b7f725ca60011b15ea8',
+                        '64849f0bad931f00112e4a46',
+                        '6484a223ca819d0011f10745',
+                        '6484a22aca819d0011f10776',
+                        '6484a230725ca60011b17262',
+                        '6484a240ca819d0011f107aa',
+                        '6484a2458b403e0011ff4317',
+                        '6484a24a0bd6de00117a8fe9',
+                        '6484a2580bd6de00117a8ff3',
+                        '6484a25dad931f00112e51ae',
+                        '6484a2648b403e0011ff437a',
+                        '6484a26f0bd6de00117a905c',
+                        '6484a2778b403e0011ff43b9',
+                        '6484a2a98b403e0011ff4488',
+                        '6484a2b08b403e0011ff44aa',
+                        '64c951fef1e9ad0011f4fd03'
+                    )
+                then 'ETR'
+                when
+                    os.measurement in (
+                        '6484c4fb725ca60011b1bc92',
+                        '6484c500725ca60011b1bc98',
+                        '64a7237b0c348e0011c51727',
+                        '64a7238955032e001180cbc0',
+                        '64a720f6f27af600114e0046',
+                        '64a7233fc3a17300119ca37b',
+                        '64be9eea9c918a001163ffd0',
+                        '64be9d7dff1c61001190d165',
+                        '64a7236d353ba70011ce2c43',
+                        '64a722ca7ee3cf001117edef'
+                    )
+                then 'SO'
+                else null
+            end as score_measurement_type,
         from observations as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
@@ -184,6 +225,27 @@ with
             and os.measurement = b.measurement
     ),
 
+    overall_scores_long as (
+        select
+            observation_id,
+            score_measurement_type,
+            avg(row_score_value) as score_measurement_score
+        from observation_measurements
+        group by observation_id, score_measurement_type
+    ),
+    overall_scores as (
+        select
+            p.observation_id,
+            p.ETR as etr_score,
+            p.SO as so_score,
+            0.8 * coalesce(p.ETR, p.SO)
+            + 0.2 * coalesce(p.SO, p.ETR) as overall_score
+        from
+            overall_scores_long pivot (
+                avg(score_measurement_score) for score_measurement_type
+                in ('ETR', 'SO')
+            ) as p
+    ), 
     observation_details as (
         select
             s.user_id,
@@ -208,14 +270,12 @@ with
             s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
-
             o.observation_id,
             o.teacher_id,
             o.form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
-            o.overall_score,
             o.glows,
             o.grows,
             o.score_measurement_id,
@@ -226,7 +286,11 @@ with
             o.measurement_scale_max,
             o.tier,
             o.text_box,
-
+            case
+                when s.academic_year <= 2024
+                then os.overall_score
+                else o.overall_score
+            end as overall_score,
             row_number() over (
                 partition by
                     s.form_type,
@@ -243,9 +307,10 @@ with
             and s.form_short_name = o.form_short_name
             and s.user_id = o.teacher_id
             and s.form_type = 'PM'
-
+        left join 
+            overall_scores as os
+            on o.observation_id = os.observation_id
         union all
-
         select
             s.user_id,
             s.role_name,
@@ -269,14 +334,12 @@ with
             s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
-
             o.observation_id,
             o.teacher_id,
             o.form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
-            o.overall_score,
             o.glows,
             o.grows,
             o.score_measurement_id,
@@ -287,7 +350,7 @@ with
             o.measurement_scale_max,
             o.tier,
             o.text_box,
-
+            o.overall_score,
             row_number() over (
                 partition by
                     s.form_type,
@@ -304,8 +367,7 @@ with
             and s.form_type = o.form_type
             and s.user_id = o.teacher_id
             and s.form_type in ('WT', 'O3')
-    ),
-
+     ),
     historical_overall_scores as (
         select
             s.employee_number,
@@ -325,9 +387,7 @@ with
             and s.form_short_name = o.form_short_name
             and s.user_id = o.teacher_id
         where s.form_type = 'PM'
-
         union all
-
         select
             employee_number,
             academic_year,
@@ -346,7 +406,6 @@ with
                 )
             }}
     ),
-
     historical_detail_scores as (
         select
             employee_number,
@@ -360,9 +419,7 @@ with
             row_score_value,
         from observation_details
         where form_type = 'PM' and overall_score is not null
-
         union all
-
         select
             subject_employee_number as employee_number,
             academic_year,
@@ -381,7 +438,6 @@ with
                 )
             }}
     ),
-
     historical_data as (
         select
             os.employee_number,
@@ -393,16 +449,13 @@ with
             os.etr_tier,
             os.so_tier,
             os.tier,
-
             ds.score_type,
             ds.observer_employee_number,
             ds.observer_name,
             ds.observed_at,
             ds.measurement_name,
             ds.row_score_value,
-
             'Coaching Tools: Coach ETR and Reflection' as form_long_name,
-
             concat(ds.form_term, ' (Coach)') as form_short_name,
         from historical_overall_scores as os
         inner join
@@ -411,7 +464,6 @@ with
             and os.academic_year = ds.academic_year
             and os.form_term = ds.form_term
     )
-
 select
     user_id,
     role_name,
@@ -457,9 +509,7 @@ select
     rn_submission,
 from observation_details
 where rn_submission = 1
-
 union all
-
 select
     null as user_id,
     null as role_name,
