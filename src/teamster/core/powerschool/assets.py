@@ -24,10 +24,11 @@ def build_powerschool_table_asset(
 ) -> AssetsDefinition:
     @asset(
         key=[code_location, "powerschool", asset_name],
-        partitions_def=partitions_def,
         metadata={"partition_column": partition_column},
-        op_tags=op_tags,
         io_manager_key="io_manager_gcs_file",
+        partitions_def=partitions_def,
+        op_tags=op_tags,
+        group_name="powerschool",
     )
     def _asset(
         context: AssetExecutionContext,

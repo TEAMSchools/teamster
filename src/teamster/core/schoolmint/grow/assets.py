@@ -26,9 +26,10 @@ def build_static_partition_asset(
             "grow",
             asset_name.replace("-", "_").replace("/", "_"),
         ],
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=STATIC_PARTITONS_DEF,
         op_tags=op_tags,
-        io_manager_key="io_manager_gcs_avro",
+        group_name="schoolmint_grow",
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         response = schoolmint_grow.get(
@@ -60,6 +61,7 @@ def build_multi_partition_asset(
             "grow",
             asset_name.replace("-", "_").replace("/", "_"),
         ],
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "archived": STATIC_PARTITONS_DEF,
@@ -69,7 +71,7 @@ def build_multi_partition_asset(
             }
         ),
         op_tags=op_tags,
-        io_manager_key="io_manager_gcs_avro",
+        group_name="schoolmint_grow",
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         archived_partition = context.partition_key.keys_by_dimension["archived"]

@@ -1,19 +1,18 @@
 from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_gcp import GCSResource
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.google.io.resources import gcs_io_manager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHResource
-from teamster.staging import CODE_LOCATION, GCS_PROJECT_NAME, powerschool
+from teamster.staging import CODE_LOCATION, powerschool
 
-resource_config_dir = f"src/teamster/{CODE_LOCATION}/config/resources"
+GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
-    assets=[
-        *load_assets_from_modules(modules=[powerschool]),
-    ],
+    assets=load_assets_from_modules(modules=[powerschool]),
     resources={
-        "gcs": GCSResource(project=GCS_PROJECT_NAME),
+        "gcs": GCS_RESOURCE,
         "io_manager_gcs_avro": gcs_io_manager.configured(
             config_or_config_fn={
                 "gcs_bucket": f"teamster-{CODE_LOCATION}",
