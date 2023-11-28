@@ -13,18 +13,22 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
+
             asr.subject_area,
             asr.title as assessment_name,
             asr.scope,
-            coalesce(asr.module_type, 'PSP') as test_number,
             asr.administered_at,
             asr.term_administered,
             asr.date_taken,
             asr.response_type_code as standard_code,
             asr.response_type_description as standard_description,
             asr.performance_band_label_number,
+            asr.is_mastery,
+
+            coalesce(asr.module_type, 'PSP') as test_number,
             (
                 case
                     when asr.performance_band_label_number < 3
@@ -35,7 +39,6 @@ with
                     then 3
                 end
             ) as growth_band,
-            asr.is_mastery,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
@@ -54,8 +57,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on co.studentid = enr.cc_studentid
             and co.yearid = enr.cc_yearid
-            and regexp_extract(co._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_')
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
@@ -90,18 +92,22 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
+
             asr.subject_area,
             asr.title as assessment_name,
             asr.scope,
-            coalesce(asr.module_type, 'PSP') as test_number,
             asr.administered_at,
             asr.term_administered,
             asr.date_taken,
             asr.response_type_code as standard_code,
             asr.response_type_description as standard_description,
             asr.performance_band_label_number,
+            asr.is_mastery,
+
+            coalesce(asr.module_type, 'PSP') as test_number,
             (
                 case
                     when asr.performance_band_label_number = 1
@@ -112,7 +118,6 @@ with
                     then 3
                 end
             ) as growth_band,
-            asr.is_mastery,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
@@ -127,8 +132,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on co.studentid = enr.cc_studentid
             and co.yearid = enr.cc_yearid
-            and regexp_extract(co._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_')
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
@@ -162,12 +166,13 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
+
             asr.subject_area,
             asr.title as assessment_name,
             asr.scope,
-            asr.module_type as test_number,
             asr.administered_at,
             concat(
                 'Q', cast(right(asr.term_administered, 1) as int64) + 1
@@ -176,6 +181,9 @@ with
             asr.response_type_code as standard_code,
             asr.response_type_description as standard_description,
             asr.performance_band_label_number,
+            asr.is_mastery,
+
+            asr.module_type as test_number,
             (
                 case
                     when asr.performance_band_label_number < 3
@@ -186,7 +194,6 @@ with
                     then 3
                 end
             ) as growth_band,
-            asr.is_mastery,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
@@ -199,8 +206,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on co.studentid = enr.cc_studentid
             and co.yearid = enr.cc_yearid
-            and regexp_extract(co._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_')
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
@@ -236,12 +242,13 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
+
             asr.subject_area,
             asr.title as assessment_name,
             asr.scope,
-            coalesce(asr.module_type, 'PSP') as test_number,
             asr.administered_at,
             concat(
                 'Q', cast(right(asr.term_administered, 1) as int64) + 1
@@ -250,6 +257,9 @@ with
             asr.response_type_code as standard_code,
             asr.response_type_description as standard_description,
             asr.performance_band_label_number,
+            asr.is_mastery,
+
+            coalesce(asr.module_type, 'PSP') as test_number,
             (
                 case
                     when asr.performance_band_label_number = 1
@@ -260,7 +270,6 @@ with
                     then 3
                 end
             ) as growth_band,
-            asr.is_mastery,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
@@ -273,8 +282,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on co.studentid = enr.cc_studentid
             and co.yearid = enr.cc_yearid
-            and regexp_extract(co._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_')
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
@@ -343,6 +351,7 @@ with
             performance_band_label_number,
             growth_band,
             is_mastery,
+
             row_number() over (
                 partition by
                     academic_year, student_number, subject_area, term_administered
