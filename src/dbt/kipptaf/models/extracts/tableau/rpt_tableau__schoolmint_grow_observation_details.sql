@@ -463,7 +463,8 @@ with
             on os.employee_number = ds.employee_number
             and os.academic_year = ds.academic_year
             and os.form_term = ds.form_term
-    )
+    ),
+query as (
 select
     user_id,
     role_name,
@@ -561,3 +562,6 @@ left join
     between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
         sr.work_assignment__fivetran_end as date
     )
+)
+
+select distinct form_term from query where observation_id is not null
