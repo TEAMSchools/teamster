@@ -1,5 +1,5 @@
 # Debian
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # update system pip
 # trunk-ignore(hadolint/DL3013)
