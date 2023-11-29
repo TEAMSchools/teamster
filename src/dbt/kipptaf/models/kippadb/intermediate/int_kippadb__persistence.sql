@@ -34,7 +34,11 @@ select
 
     'Fall' as semester,
 
-    if(eis.ecc_pursuing_degree_type is not null, true, false) as is_ecc,
+    if(
+        eis.ecc_pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)"),
+        true,
+        false
+    ) as is_ecc,
 
     if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
@@ -133,7 +137,11 @@ select
 
     'Spring' as semester,
 
-    if(eis.ecc_pursuing_degree_type is not null, true, false) as is_ecc,
+    if(
+        eis.ecc_pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)"),
+        true,
+        false
+    ) as is_ecc,
 
     if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
