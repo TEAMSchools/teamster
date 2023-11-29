@@ -6,12 +6,6 @@ with
             sr.response_id,
             sr.response_string_value,
             sr.question_id,
-            concat(
-                sr.survey_link_default,
-                '?snc=',
-                sr.response_session_id,
-                '&sg_navigate=start'
-            ) as edit_link,
 
             ri.respondent_employee_number,
             ri.respondent_user_principal_name,
@@ -19,12 +13,20 @@ with
             ri.respondent_preferred_name_lastfirst,
             ri.respondent_work_location,
             ri.respondent_job_title,
+
+            concat(
+                sr.survey_link_default,
+                '?snc=',
+                sr.response_session_id,
+                '&sg_navigate=start'
+            ) as edit_link,
         from {{ ref("base_alchemer__survey_results") }} as sr
         inner join
             {{ ref("int_surveys__response_identifiers") }} as ri
             on sr.survey_id = ri.survey_id
             and sr.response_id = ri.response_id
-            -- and ri.respondent_employee_number is not null -- TODO: why are these all null?
+        -- and ri.respondent_employee_number is not null -- TODO: why are these all
+        -- null?
         where
             sr.survey_title in (
                 'Federally Funded Staff Semi-Annual Certification',
