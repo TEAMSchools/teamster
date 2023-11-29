@@ -25,6 +25,8 @@ with
             sr.report_to_preferred_name_lastfirst as manager,
             sr.worker_original_hire_date,
             sr.assignment_status,
+            sr.mail,
+            sr.report_to_mail,
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
         left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
         left join
@@ -273,6 +275,8 @@ with
             s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
+            s.mail,
+            s.report_to_mail,
 
             o.observation_id,
             o.teacher_id,
@@ -334,6 +338,8 @@ with
             s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
+            s.mail,
+            s.report_to_mail,
 
             o.observation_id,
             o.teacher_id,
@@ -523,6 +529,8 @@ select
     od.measurement_name,
     od.text_box,
     od.rn_submission,
+    od.mail,
+    od.report_to_mail,
 from observation_details as od
 left join pm_overall_scores as os on od.observation_id = os.observation_id
 where od.rn_submission = 1
@@ -572,6 +580,8 @@ select
     hd.measurement_name,
     null as text_box,
     1 as rn_submission,
+    r.mail,
+    r.report_to_mail,
 from historical_data as hd
 left join
     {{ ref("base_people__staff_roster_history") }} as sr
@@ -580,3 +590,6 @@ left join
     between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
         sr.work_assignment__fivetran_end as date
     )
+left join
+    {{ ref("base_people__staff_roster") }} as r
+    on hd.employee_number = r.employee_number
