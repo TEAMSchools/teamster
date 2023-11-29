@@ -211,7 +211,6 @@ with
                         '64a722ca7ee3cf001117edef'
                     )
                 then 'SO'
-                else null
             end as score_measurement_type,
 
         from observations as o
@@ -226,22 +225,24 @@ with
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
     ),
+
     pm_overall_scores_long as (
         select
             om.observation_id,
             om.score_measurement_type,
-            avg(om.row_score_value) as score_measurement_score
+            avg(om.row_score_value) as score_measurement_score,
         from observation_measurements as om
         where om.score_measurement_type in ('ETR', 'SO')
         group by om.observation_id, om.score_measurement_type
 
     ),
+
     pm_overall_scores as (
         select
             p.observation_id,
             p.etr as etr_score,
             p.so as so_score,
-            coalesce((0.8 * p.etr) + (0.2 * p.so), p.etr, p.so) as overall_score
+            coalesce((0.8 * p.etr) + (0.2 * p.so), p.etr, p.so) as overall_score,
         from
             pm_overall_scores_long pivot (
                 avg(score_measurement_score) for score_measurement_type in ('ETR', 'SO')
@@ -478,7 +479,7 @@ with
     )
 
 select
-    user_id,
+    od.user_id,
     od.role_name,
     od.internal_id,
     od.form_type,
