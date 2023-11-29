@@ -14,6 +14,7 @@ with
         from {{ ref("utils__date_spine") }}
         where extract(month from date_day) = 7 and extract(day from date_day) = 1
     ),
+
     denom as (
         select distinct
             d.academic_year, d.attrition_date, d.effective_date, srh.employee_number,
@@ -39,6 +40,7 @@ with
             and coalesce(srh.assignment_status_reason, 'Missing/no Reason')
             != 'Internship Ended'
     ),
+
     pm_scores as (
         select
             employee_number,
@@ -58,6 +60,7 @@ with
         where form_type = 'PM' and form_term in ('PM2', 'PM3')
         group by employee_number, academic_year
     ),
+
     core_attrition_table as (
         select
             dc.academic_year,
@@ -67,7 +70,7 @@ with
             case
                 when srh.assignment_status in ('Terminated', 'Deceased')
                 then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
-            end as termination_reason,  -- pulling assignment status reason as of 9/1 of next year
+            end as termination_reason,
             case
                 when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
             end as is_attrition,
@@ -107,6 +110,7 @@ with
             )
             and dc.employee_number = srh.employee_number
     )
+
 select
     cat.academic_year,
     cat.employee_number,
