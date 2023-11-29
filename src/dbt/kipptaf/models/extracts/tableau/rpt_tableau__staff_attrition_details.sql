@@ -134,6 +134,8 @@ select
     srh.primary_grade_level_taught,
     srh.level_of_education,
     srh.alumni_status,
+    srh.worker_termination_date as termination_date,
+    srh.worker_original_hire_date as original_hire_date,
     pm.overall_tier,
     coalesce(srh.years_exp_outside_kipp, 0)
     + cat.years_teaching_at_kipp as total_years_teaching,
