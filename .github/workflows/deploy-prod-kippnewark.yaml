@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - pdm.lock
+      - .github/workflows/deploy-branch-staging.yaml
       - .github/workflows/deploy-prod-kippnewark.yaml
       - .dagster/dagster-cloud-kippnewark.yaml
       - src/teamster/core/**
