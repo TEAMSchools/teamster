@@ -32,8 +32,8 @@ select
         modified_on as timestamp format 'YYYY-MM-DD HH24:MI:SS'
         at time zone '{{ var("local_timezone") }}'
     ) as modified_on,
-    (select `value` from unnest(links) where `key` = 'default') as link_default,
-    (select `value` from unnest(links) where `key` = 'campaign') as link_campaign,
+    (select `value`, from unnest(links) where `key` = 'default') as link_default,
+    (select `value`, from unnest(links) where `key` = 'campaign') as link_campaign,
     {{
         dbt_utils.star(
             from=source_model_ref,
