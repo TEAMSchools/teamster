@@ -226,28 +226,27 @@ with
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
     ),
-     pm_overall_scores_long as (
+    pm_overall_scores_long as (
         select
             om.observation_id,
             om.score_measurement_type,
             avg(om.row_score_value) as score_measurement_score
         from observation_measurements as om
-        WHERE om.score_measurement_type IN ('ETR','SO')
+        where om.score_measurement_type in ('ETR', 'SO')
         group by om.observation_id, om.score_measurement_type
 
-     ),
-     pm_overall_scores as (
+    ),
+    pm_overall_scores as (
         select
             p.observation_id,
-            p.ETR as etr_score,
-            p.SO as so_score,
-            coalesce((0.8 * p.ETR) + (0.2 * p.SO), p.ETR, p.SO) as overall_score
+            p.etr as etr_score,
+            p.so as so_score,
+            coalesce((0.8 * p.etr) + (0.2 * p.so), p.etr, p.so) as overall_score
         from
             pm_overall_scores_long pivot (
-                avg(score_measurement_score) for score_measurement_type
-                in ('ETR', 'SO')
+                avg(score_measurement_score) for score_measurement_type in ('ETR', 'SO')
             ) as p
-    ), 
+    ),
 
     observation_details as (
         select
@@ -389,9 +388,7 @@ with
             /* Matches on name for PM Rounds to distinguish Self and Coach */
             and s.form_short_name = o.form_short_name
             and s.user_id = o.teacher_id
-        left join 
-            pm_overall_scores as os
-            on o.observation_id = os.observation_id
+        left join pm_overall_scores as os on o.observation_id = os.observation_id
         where s.form_type = 'PM'
 
         union all
@@ -511,10 +508,9 @@ select
     od.observer_name,
     os.etr_score as etr_score,
     os.so_score as so_score,
-    CASE 
-      WHEN od.academic_year <= 2024 THEN os.overall_score
-      ELSE od.overall_score
-    END AS overall_score,
+    case
+        when od.academic_year <= 2024 then os.overall_score else od.overall_score
+    end as overall_score,
     null as etr_tier,
     null as so_tier,
     od.tier,
@@ -527,8 +523,7 @@ select
     od.text_box,
     od.rn_submission,
 from observation_details as od
-LEFT JOIN pm_overall_scores as os
-  on od.observation_id = os.observation_id
+left join pm_overall_scores as os on od.observation_id = os.observation_id
 where od.rn_submission = 1
 
 union all
