@@ -8,7 +8,6 @@ select
     assessmentnumber as `assessment_number`,
     assessmentstatus as `assessment_status`,
     assessmenttype as `assessment_type`,
-    audio as `audio`,
     birthdate as `birth_date`,
     blackorafricanamerican as `black_or_african_american`,
     classcode as `class_code`,
@@ -124,6 +123,7 @@ select
     upperlexilezoneofproximaldevelopment as `upper_lexile_zone_of_proximal_development`,
     upperzoneofproximaldevelopment as `upper_zone_of_proximal_development`,
     white as `white`,
+    coalesce(audio.string_value, safe_cast(audio.long_value as string)) as `audio`,
     coalesce(
         currentgrade.string_value, safe_cast(currentgrade.long_value as string)
     ) as `current_grade`,

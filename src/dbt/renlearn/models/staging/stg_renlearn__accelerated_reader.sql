@@ -3,7 +3,6 @@ select
     _dagster_partition_subject as `_dagster_partition_subject`,
     americanindianoralaskanative as `american_indian_or_alaska_native`,
     asian as `asian`,
-    audioused as `audio_used`,
     author as `author`,
     birthdate as `birth_date`,
     blackorafricanamerican as `black_or_african_american`,
@@ -67,6 +66,9 @@ select
     twi as `twi`,
     white as `white`,
     wordcount as `word_count`,
+    coalesce(
+        audioused.string_value, safe_cast(audioused.long_value as string)
+    ) as `audio_used`,
     coalesce(
         currentgrade.string_value, safe_cast(currentgrade.long_value as string)
     ) as `current_grade`,

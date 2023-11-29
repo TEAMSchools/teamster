@@ -93,7 +93,7 @@ ACCELERATED_READER_FIELDS = [
     {"name": "Passed", "type": ["null", "boolean"], "default": None},
     {"name": "TWI", "type": ["null", "string"], "default": None},
     {"name": "BookRating", "type": ["null", "double"], "default": None},
-    {"name": "AudioUsed", "type": ["null", "double"], "default": None},
+    {"name": "AudioUsed", "type": ["null", "double", "string"], "default": None},
     {"name": "QuizDeleted", "type": ["null", "long"], "default": None},
     {"name": "WordCount", "type": ["null", "double"], "default": None},
     {"name": "QuizType", "type": ["null", "string"], "default": None},
@@ -317,7 +317,7 @@ STAR_FIELDS = [
         "default": None,
     },
     # Math
-    {"name": "Audio", "type": ["null", "double"], "default": None},
+    {"name": "Audio", "type": ["null", "double", "string"], "default": None},
     {"name": "Quantile", "type": ["null", "string"], "default": None},
     # Reading
     {"name": "InstructionalReadingLevel", "type": ["null", "string"], "default": None},
