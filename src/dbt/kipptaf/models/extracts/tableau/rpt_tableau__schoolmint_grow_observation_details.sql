@@ -136,6 +136,7 @@ with
 
             array_to_string(list_two_column_a, '|') as glows,
             array_to_string(list_two_column_b, '|') as grows,
+
         from {{ ref("stg_schoolmint_grow__observations") }}
         where
             is_published
@@ -212,6 +213,7 @@ with
                 then 'SO'
                 else null
             end as score_measurement_type,
+
         from observations as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
@@ -224,28 +226,29 @@ with
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
     ),
-
-    overall_scores_long as (
+     pm_overall_scores_long as (
         select
-            observation_id,
-            score_measurement_type,
-            avg(row_score_value) as score_measurement_score
-        from observation_measurements
-        group by observation_id, score_measurement_type
-    ),
-    overall_scores as (
+            om.observation_id,
+            om.score_measurement_type,
+            avg(om.row_score_value) as score_measurement_score
+        from observation_measurements as om
+        WHERE om.score_measurement_type IN ('ETR','SO')
+        group by om.observation_id, om.score_measurement_type
+
+     ),
+     pm_overall_scores as (
         select
             p.observation_id,
             p.ETR as etr_score,
             p.SO as so_score,
-            0.8 * coalesce(p.ETR, p.SO)
-            + 0.2 * coalesce(p.SO, p.ETR) as overall_score
+            coalesce((0.8 * p.ETR) + (0.2 * p.SO), p.ETR, p.SO) as overall_score
         from
-            overall_scores_long pivot (
+            pm_overall_scores_long pivot (
                 avg(score_measurement_score) for score_measurement_type
                 in ('ETR', 'SO')
             ) as p
     ), 
+
     observation_details as (
         select
             s.user_id,
@@ -270,12 +273,14 @@ with
             s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
+
             o.observation_id,
             o.teacher_id,
             o.form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
+            o.overall_score,
             o.glows,
             o.grows,
             o.score_measurement_id,
@@ -286,11 +291,7 @@ with
             o.measurement_scale_max,
             o.tier,
             o.text_box,
-            case
-                when s.academic_year <= 2024
-                then os.overall_score
-                else o.overall_score
-            end as overall_score,
+
             row_number() over (
                 partition by
                     s.form_type,
@@ -306,11 +307,10 @@ with
             /* Matches on name for PM Rounds to distinguish Self and Coach */
             and s.form_short_name = o.form_short_name
             and s.user_id = o.teacher_id
-            and s.form_type = 'PM'
-        left join 
-            overall_scores as os
-            on o.observation_id = os.observation_id
+        where s.form_type = 'PM'
+
         union all
+
         select
             s.user_id,
             s.role_name,
@@ -334,12 +334,14 @@ with
             s.manager,
             s.worker_original_hire_date,
             s.assignment_status,
+
             o.observation_id,
             o.teacher_id,
             o.form_long_name,
             o.created,
             o.observed_at,
             o.observer_name,
+            o.overall_score,
             o.glows,
             o.grows,
             o.score_measurement_id,
@@ -350,7 +352,7 @@ with
             o.measurement_scale_max,
             o.tier,
             o.text_box,
-            o.overall_score,
+
             row_number() over (
                 partition by
                     s.form_type,
@@ -366,16 +368,17 @@ with
             /* matches only on type and date for weekly forms */
             and s.form_type = o.form_type
             and s.user_id = o.teacher_id
-            and s.form_type in ('WT', 'O3')
-     ),
+        where s.form_type in ('WT', 'O3')
+    ),
+
     historical_overall_scores as (
         select
             s.employee_number,
             s.academic_year,
             s.form_term,
-            null as etr_score,
-            null as so_score,
-            o.overall_score,
+            os.etr_score,
+            os.so_score,
+            os.overall_score,
             null as etr_tier,
             null as so_tier,
             o.tier,
@@ -386,8 +389,13 @@ with
             /* Matches on name for PM Rounds to distinguish Self and Coach */
             and s.form_short_name = o.form_short_name
             and s.user_id = o.teacher_id
+        left join 
+            pm_overall_scores as os
+            on o.observation_id = os.observation_id
         where s.form_type = 'PM'
+
         union all
+
         select
             employee_number,
             academic_year,
@@ -406,6 +414,7 @@ with
                 )
             }}
     ),
+
     historical_detail_scores as (
         select
             employee_number,
@@ -419,7 +428,9 @@ with
             row_score_value,
         from observation_details
         where form_type = 'PM' and overall_score is not null
+
         union all
+
         select
             subject_employee_number as employee_number,
             academic_year,
@@ -438,6 +449,7 @@ with
                 )
             }}
     ),
+
     historical_data as (
         select
             os.employee_number,
@@ -449,13 +461,16 @@ with
             os.etr_tier,
             os.so_tier,
             os.tier,
+
             ds.score_type,
             ds.observer_employee_number,
             ds.observer_name,
             ds.observed_at,
             ds.measurement_name,
             ds.row_score_value,
+
             'Coaching Tools: Coach ETR and Reflection' as form_long_name,
+
             concat(ds.form_term, ' (Coach)') as form_short_name,
         from historical_overall_scores as os
         inner join
@@ -463,54 +478,61 @@ with
             on os.employee_number = ds.employee_number
             and os.academic_year = ds.academic_year
             and os.form_term = ds.form_term
-    ),
-query as (
+    )
+
 select
     user_id,
-    role_name,
-    internal_id,
-    form_type,
-    form_term,
-    form_short_name,
-    form_long_name,
-    score_type,
-    start_date,
-    end_date,
-    academic_year,
-    employee_number,
-    teammate,
-    entity,
-    location,
-    grade_band,
-    home_work_location_powerschool_school_id,
-    department,
-    grade_taught,
-    job_title,
-    manager,
-    worker_original_hire_date,
-    assignment_status,
-    observation_id,
-    teacher_id,
-    created,
-    observed_at,
-    observer_name,
-    null as etr_score,
-    null as so_score,
-    overall_score,
+    od.role_name,
+    od.internal_id,
+    od.form_type,
+    od.form_term,
+    od.form_short_name,
+    od.form_long_name,
+    od.score_type,
+    od.start_date,
+    od.end_date,
+    od.academic_year,
+    od.employee_number,
+    od.teammate,
+    od.entity,
+    od.location,
+    od.grade_band,
+    od.home_work_location_powerschool_school_id,
+    od.department,
+    od.grade_taught,
+    od.job_title,
+    od.manager,
+    od.worker_original_hire_date,
+    od.assignment_status,
+    od.observation_id,
+    od.teacher_id,
+    od.created,
+    od.observed_at,
+    od.observer_name,
+    os.etr_score as etr_score,
+    os.so_score as so_score,
+    CASE 
+      WHEN od.academic_year <= 2024 THEN os.overall_score
+      ELSE od.overall_score
+    END AS overall_score,
     null as etr_tier,
     null as so_tier,
-    tier,
-    glows,
-    grows,
-    score_measurement_id,
-    score_percentage,
-    row_score_value,
-    measurement_name,
-    text_box,
-    rn_submission,
-from observation_details
-where rn_submission = 1
+    od.tier,
+    od.glows,
+    od.grows,
+    od.score_measurement_id,
+    od.score_percentage,
+    od.row_score_value,
+    od.measurement_name,
+    od.text_box,
+    od.rn_submission,
+from observation_details as od
+LEFT JOIN pm_overall_scores as os
+  on od.observation_id = os.observation_id
+where od.rn_submission = 1
+
 union all
+
 select
     null as user_id,
     null as role_name,
@@ -562,6 +584,3 @@ left join
     between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
         sr.work_assignment__fivetran_end as date
     )
-)
-
-select distinct form_term from query where observation_id is not null
