@@ -18,7 +18,7 @@ with
         select distinct
             d.academic_year, d.attrition_date, d.effective_date, srh.employee_number,
         from {{ ref("base_people__staff_roster_history") }} as srh
-        join
+        inner join
             dates as d
             on (
                 date(srh.work_assignment__fivetran_start) <= d.denominator_start_date
@@ -35,9 +35,9 @@ with
         where
             srh.primary_indicator = true
             and srh.assignment_status not in ('Terminated', 'Deceased')
-            and srh.job_title <> 'Intern'
+            and srh.job_title != 'Intern'
             and coalesce(srh.assignment_status_reason, 'Missing/no Reason')
-            <> 'Internship Ended'
+            != 'Internship Ended'
     ),
     pm_scores as (
         select
@@ -67,7 +67,6 @@ with
             case
                 when srh.assignment_status in ('Terminated', 'Deceased')
                 then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
-                else null
             end as termination_reason,  -- pulling assignment status reason as of 9/1 of next year
             case
                 when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
@@ -100,7 +99,7 @@ with
             ) over (partition by dc.employee_number order by dc.academic_year)
             as years_teaching_at_kipp,  -- Counting year as the year a person is in.
         from denom as dc
-        join
+        inner join
             {{ ref("base_people__staff_roster_history") }} as srh
             on dc.attrition_date
             between date(srh.work_assignment__fivetran_start) and date(
@@ -108,7 +107,6 @@ with
             )
             and dc.employee_number = srh.employee_number
     )
-
 select
     cat.academic_year,
     cat.employee_number,
