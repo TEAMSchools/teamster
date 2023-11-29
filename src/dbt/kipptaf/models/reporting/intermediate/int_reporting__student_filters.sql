@@ -96,6 +96,15 @@ select
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
     if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+
+    case
+        when co.grade_level < 4 and pr.iready_proficiency = 'At/Above'
+        then 'Bucket 1'
+        when co.grade_level >= 4 and py.njsla_proficiency = 'At/Above'
+        then 'Bucket 1'
+        when nj.subject is not null
+        then 'Bucket 2'
+    end as nj_student_tier,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
