@@ -67,7 +67,7 @@ select
     white as `white`,
     wordcount as `word_count`,
     coalesce(
-        audioused.string_value, safe_cast(audioused.long_value as string)
+        audioused.string_value, safe_cast(audioused.double_value as string)
     ) as `audio_used`,
     coalesce(
         currentgrade.string_value, safe_cast(currentgrade.long_value as string)
