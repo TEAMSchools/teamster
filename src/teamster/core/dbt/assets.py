@@ -47,7 +47,7 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
             return AutoMaterializePolicy.eager()
 
 
-def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
+def build_dbt_external_source_assets(manifest, dagster_dbt_translator):
     external_sources = [
         source
         for source in manifest["sources"].values()
