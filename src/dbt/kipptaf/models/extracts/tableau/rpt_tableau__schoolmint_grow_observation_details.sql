@@ -586,7 +586,7 @@ from historical_data as hd
 left join
     {{ ref("base_people__staff_roster_history") }} as sr
     on hd.employee_number = sr.employee_number
-    and sr.assignment_status NOT IN ('Terminated','Deceased')
+    and sr.assignment_status not in ('Terminated', 'Deceased')
     and hd.observed_at
     between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
         sr.work_assignment__fivetran_end as date
