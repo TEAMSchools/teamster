@@ -116,8 +116,8 @@ select
     cat.employee_number,
     cat.is_attrition,
     cat.year_at_kipp,
-    srh.preferred_name_lastfirst,
     cat.termination_reason as termination_reason,
+    srh.preferred_name_lastfirst,
     srh.business_unit_home_name,
     srh.home_work_location_name,
     srh.home_work_location_abbreviation,
@@ -134,6 +134,8 @@ select
     srh.primary_grade_level_taught,
     srh.level_of_education,
     srh.alumni_status,
+    srh.worker_termination_date as termination_date,
+    srh.worker_original_hire_date as original_hire_date,
     pm.overall_tier,
     coalesce(srh.years_exp_outside_kipp, 0)
     + cat.years_teaching_at_kipp as total_years_teaching,
