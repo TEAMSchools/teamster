@@ -73,19 +73,6 @@ with
             end as form_type,
 
             case
-                when lower(rubric_name) not like '%etr%'
-                then null
-                when score < 1.75
-                then 1
-                when score >= 1.75 and score < 2.75
-                then 2
-                when score >= 2.75 and score < 3.5
-                then 3
-                when score > 3.5
-                then 4
-            end as tier,
-
-            case
                 when
                     rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and safe_cast(
@@ -158,7 +145,7 @@ with
             o.overall_score,
             o.form_short_name,
             o.form_type,
-            o.tier,
+
             o.glows,
             o.grows,
 
@@ -293,7 +280,7 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-            o.tier,
+
             o.text_box,
 
             row_number() over (
@@ -356,7 +343,7 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-            o.tier,
+
             o.text_box,
 
             row_number() over (
@@ -385,9 +372,6 @@ with
             os.etr_score,
             os.so_score,
             os.overall_score,
-            null as etr_tier,
-            null as so_tier,
-            o.tier,
         from scaffold as s
         left join
             observations as o
@@ -407,9 +391,6 @@ with
             etr_score,
             so_score,
             overall_score,
-            etr_tier,
-            so_tier,
-            overall_tier as tier,
         from
             {{
                 source(
@@ -462,9 +443,6 @@ with
             os.etr_score,
             os.so_score,
             os.overall_score,
-            os.etr_tier,
-            os.so_tier,
-            os.tier,
 
             ds.score_type,
             ds.observer_employee_number,
@@ -473,7 +451,7 @@ with
             ds.measurement_name,
             ds.row_score_value,
 
-            'Coaching Tools: Coach ETR and Reflection' as form_long_name,
+            'Coaching Tool: Coach ETR and Reflection' as form_long_name,
 
             concat(ds.form_term, ' (Coach)') as form_short_name,
         from historical_overall_scores as os
@@ -482,115 +460,188 @@ with
             on os.employee_number = ds.employee_number
             and os.academic_year = ds.academic_year
             and os.form_term = ds.form_term
+    ),
+
+    all_data as (
+        select
+            od.user_id,
+            od.role_name,
+            od.internal_id,
+            od.form_type,
+            od.form_term,
+            od.form_short_name,
+            od.form_long_name,
+            od.score_type,
+            od.start_date,
+            od.end_date,
+            od.academic_year,
+            od.employee_number,
+            od.teammate,
+            od.entity,
+            od.location,
+            od.grade_band,
+            od.home_work_location_powerschool_school_id,
+            od.department,
+            od.grade_taught,
+            od.job_title,
+            od.manager,
+            od.worker_original_hire_date,
+            od.assignment_status,
+            od.observation_id,
+            od.teacher_id,
+            od.created,
+            od.observed_at,
+            od.observer_name,
+            os.etr_score as etr_score,
+            os.so_score as so_score,
+            case
+                when od.academic_year <= 2024
+                then os.overall_score
+                else od.overall_score
+            end as overall_score,
+            od.glows,
+            od.grows,
+            od.score_measurement_id,
+            od.score_percentage,
+            od.row_score_value,
+            od.measurement_name,
+            od.text_box,
+            od.rn_submission,
+            od.mail,
+            od.report_to_mail,
+        from observation_details as od
+        left join pm_overall_scores as os on od.observation_id = os.observation_id
+        where od.rn_submission = 1
+
+        union all
+
+        select
+            null as user_id,
+            null as role_name,
+            null as internal_id,
+            'PM' as form_type,
+            hd.form_term,
+            hd.form_short_name,
+            hd.form_long_name,
+            hd.score_type,
+            null as start_date,
+            null as end_date,
+            hd.academic_year,
+            hd.employee_number,
+            sr.preferred_name_lastfirst as teammate,
+            sr.business_unit_home_name as entity,
+            sr.home_work_location_name as location,
+            sr.home_work_location_grade_band as grade_band,
+            sr.home_work_location_powerschool_school_id,
+            sr.department_home_name as department,
+            sr.primary_grade_level_taught as grade_taught,
+            sr.job_title,
+            sr.report_to_preferred_name_lastfirst as manager,
+            sr.worker_original_hire_date,
+            sr.assignment_status,
+            null as observation_id,
+            null as teacher_id,
+            null as created,
+            hd.observed_at,
+            hd.observer_name,
+            hd.etr_score,
+            hd.so_score,
+            hd.overall_score,
+            null as glows,
+            null as grows,
+            null as score_measurement_id,
+            null as score_percentage,
+            hd.row_score_value,
+            hd.measurement_name,
+            null as text_box,
+            1 as rn_submission,
+            r.mail,
+            r.report_to_mail,
+        from historical_data as hd
+        left join
+            {{ ref("base_people__staff_roster_history") }} as sr
+            on hd.employee_number = sr.employee_number
+            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and hd.observed_at
+            between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
+                sr.work_assignment__fivetran_end as date
+            )
+        left join
+            {{ ref("base_people__staff_roster") }} as r
+            on hd.employee_number = r.employee_number
+
     )
 
 select
-    od.user_id,
-    od.role_name,
-    od.internal_id,
-    od.form_type,
-    od.form_term,
-    od.form_short_name,
-    od.form_long_name,
-    od.score_type,
-    od.start_date,
-    od.end_date,
-    od.academic_year,
-    od.employee_number,
-    od.teammate,
-    od.entity,
-    od.location,
-    od.grade_band,
-    od.home_work_location_powerschool_school_id,
-    od.department,
-    od.grade_taught,
-    od.job_title,
-    od.manager,
-    od.worker_original_hire_date,
-    od.assignment_status,
-    od.observation_id,
-    od.teacher_id,
-    od.created,
-    od.observed_at,
-    od.observer_name,
-    os.etr_score as etr_score,
-    os.so_score as so_score,
+    user_id,
+    role_name,
+    internal_id,
+    form_type,
+    form_term,
+    form_short_name,
+    form_long_name,
+    score_type,
+    start_date,
+    end_date,
+    academic_year,
+    employee_number,
+    teammate,
+    entity,
+    location,
+    grade_band,
+    home_work_location_powerschool_school_id,
+    department,
+    grade_taught,
+    job_title,
+    manager,
+    worker_original_hire_date,
+    assignment_status,
+    observation_id,
+    teacher_id,
+    created,
+    observed_at,
+    observer_name,
+    etr_score,
     case
-        when od.academic_year <= 2024 then os.overall_score else od.overall_score
-    end as overall_score,
-    null as etr_tier,
-    null as so_tier,
-    od.tier,
-    od.glows,
-    od.grows,
-    od.score_measurement_id,
-    od.score_percentage,
-    od.row_score_value,
-    od.measurement_name,
-    od.text_box,
-    od.rn_submission,
-    od.mail,
-    od.report_to_mail,
-from observation_details as od
-left join pm_overall_scores as os on od.observation_id = os.observation_id
-where od.rn_submission = 1
-
-union all
-
-select
-    null as user_id,
-    null as role_name,
-    null as internal_id,
-    'PM' as form_type,
-    hd.form_term,
-    hd.form_short_name,
-    hd.form_long_name,
-    hd.score_type,
-    null as start_date,
-    null as end_date,
-    hd.academic_year,
-    hd.employee_number,
-    sr.preferred_name_lastfirst as teammate,
-    sr.business_unit_home_name as entity,
-    sr.home_work_location_name as location,
-    sr.home_work_location_grade_band as grade_band,
-    sr.home_work_location_powerschool_school_id,
-    sr.department_home_name as department,
-    sr.primary_grade_level_taught as grade_taught,
-    sr.job_title,
-    sr.report_to_preferred_name_lastfirst as manager,
-    sr.worker_original_hire_date,
-    sr.assignment_status,
-    null as observation_id,
-    null as teacher_id,
-    null as created,
-    hd.observed_at,
-    hd.observer_name,
-    hd.etr_score,
-    hd.so_score,
-    hd.overall_score,
-    hd.etr_tier,
-    hd.so_tier,
-    hd.tier,
-    null as glows,
-    null as grows,
-    null as score_measurement_id,
-    null as score_percentage,
-    hd.row_score_value,
-    hd.measurement_name,
-    null as text_box,
-    1 as rn_submission,
-    r.mail,
-    r.report_to_mail,
-from historical_data as hd
-left join
-    {{ ref("base_people__staff_roster_history") }} as sr
-    on hd.employee_number = sr.employee_number
-    and sr.assignment_status not in ('Terminated', 'Deceased')
-    and hd.observed_at
-    between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
-        sr.work_assignment__fivetran_end as date
-    )
-left join
-    {{ ref("base_people__staff_roster") }} as r
-    on hd.employee_number = r.employee_number
+        when avg(etr_score) >= 3.5
+        then 4
+        when avg(etr_score) >= 2.745
+        then 3
+        when avg(etr_score) >= 1.745
+        then 2
+        when avg(etr_score) < 1.75
+        then 1
+    end as etr_tier,
+    so_score,
+    case
+        when avg(so_score) >= 3.5
+        then 4
+        when avg(so_score) >= 2.945
+        then 3
+        when avg(so_score) >= 1.945
+        then 2
+        when avg(so_score) < 0.95
+        then 1
+    end as so_tier,
+    overall_score,
+    case
+        when avg(overall_score) >= 3.5
+        then 4
+        when avg(overall_score) >= 2.745
+        then 3
+        when avg(overall_score) >= 1.745
+        then 2
+        when avg(overall_score) < 1.75
+        then 1
+    end as overall_tier,
+    glows,
+    grows,
+    score_measurement_id,
+    score_percentage,
+    row_score_value,
+    measurement_name,
+    text_box,
+    rn_submission,
+    mail,
+    report_to_mail,
+from all_data
