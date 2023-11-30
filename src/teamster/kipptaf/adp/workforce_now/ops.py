@@ -1,6 +1,6 @@
 from dagster import OpExecutionContext, op
 
-from teamster.core.adp.resources import AdpWorkforceNowResource
+from teamster.core.adp.workforce_now.resources import AdpWorkforceNowResource
 
 
 def get_base_payload(associate_oid):
@@ -131,8 +131,3 @@ def adp_wfn_update_workers_op(
                     ]
                 },
             )
-
-
-__all__ = [
-    adp_wfn_update_workers_op,
-]
