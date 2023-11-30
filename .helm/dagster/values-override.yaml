@@ -32,7 +32,7 @@ workspace:
   serverTTL:
     fullDeployments:
       enabled: true
-      ttlSeconds: 300
+      ttlSeconds: 900
     branchDeployments:
       ttlSeconds: 300
 
