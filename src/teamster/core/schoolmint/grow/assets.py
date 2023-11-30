@@ -16,16 +16,12 @@ from teamster.core.utils.functions import get_avro_record_schema
 STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
 
 
-def build_static_partition_asset(
-    asset_name, code_location, op_tags={}
+# TODO: combine with partition type logic
+def build_schoolmint_grow_static_partition_asset(
+    asset_name, op_tags={}
 ) -> AssetsDefinition:
     @asset(
-        key=[
-            code_location,
-            "schoolmint",
-            "grow",
-            asset_name.replace("-", "_").replace("/", "_"),
-        ],
+        key=["schoolmint", "grow", asset_name.replace("-", "_").replace("/", "_")],
         io_manager_key="io_manager_gcs_avro",
         partitions_def=STATIC_PARTITONS_DEF,
         op_tags=op_tags,
@@ -51,16 +47,11 @@ def build_static_partition_asset(
     return _asset
 
 
-def build_multi_partition_asset(
-    asset_name, code_location, start_date, timezone, op_tags={}
+def build_schoolmint_grow_multi_partition_asset(
+    asset_name, start_date, timezone, op_tags={}
 ) -> AssetsDefinition:
     @asset(
-        key=[
-            code_location,
-            "schoolmint",
-            "grow",
-            asset_name.replace("-", "_").replace("/", "_"),
-        ],
+        key=["schoolmint", "grow", asset_name.replace("-", "_").replace("/", "_")],
         io_manager_key="io_manager_gcs_avro",
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={

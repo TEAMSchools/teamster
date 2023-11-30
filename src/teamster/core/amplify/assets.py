@@ -7,27 +7,26 @@ from slugify import slugify
 
 from teamster.core.amplify.resources import MClassResource
 from teamster.core.amplify.schema import ASSET_FIELDS
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import get_avro_record_schema
+
+# FiscalYearPartitionsDefinition(
+#     start_date=partition_start_date, timezone=timezone.name, start_month=7
+# )
 
 
 def build_mclass_asset(
     name,
-    code_location,
-    partition_start_date,
-    timezone,
+    partitions_def,
     dyd_payload,
     freshness_policy=None,
     auto_materialize_policy=None,
     op_tags={},
 ):
     @asset(
-        key=[code_location, "amplify", name],
+        key=["amplify", name],
         metadata={"dyd_payload": dyd_payload},
         io_manager_key="io_manager_gcs_avro",
-        partitions_def=FiscalYearPartitionsDefinition(
-            start_date=partition_start_date, timezone=timezone.name, start_month=7
-        ),
+        partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="amplify",
         freshness_policy=freshness_policy,

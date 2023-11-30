@@ -7,6 +7,7 @@ from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema
 
 
+# TODO: completely refactor
 def build_titan_sftp_assets(code_location, fiscal_year, timezone):
     sftp_assets = []
 
