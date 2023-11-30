@@ -14,8 +14,8 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.adp.resources import AdpWorkforceManagerResource
-from teamster.core.adp.schema import ASSET_FIELDS
+from teamster.core.adp.workforce_manager.resources import AdpWorkforceManagerResource
+from teamster.core.adp.workforce_manager.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
