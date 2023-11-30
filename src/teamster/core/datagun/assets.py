@@ -16,13 +16,14 @@ from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
-def construct_query(query_type, query_value, now):
+def construct_query(query_type, query_value, timezone):
+    now = pendulum.now(tz=timezone)
+
     if query_type == "text":
         return text(query_value)
     elif query_type == "file":
         sql_file = pathlib.Path(query_value).absolute()
-        with sql_file.open(mode="r") as f:
-            return text(f.read())
+        return text(sql_file.read_text())
     elif query_type == "schema":
         return (
             select(*[literal_column(col) for col in query_value.get("select", ["*"])])
@@ -122,14 +123,11 @@ def load_sftp(
 
 
 def build_bigquery_query_sftp_asset(
-    code_location,
-    timezone,
-    query_config,
-    file_config,
-    destination_config,
-    op_tags={},
+    query_config, file_config, destination_config, op_tags={}
 ):
-    now = pendulum.now(tz=timezone)
+    # file_stem_fmt = file_stem.format(
+    #     today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    # )
 
     destination_name = destination_config["name"]
     destination_path = destination_config.get("path", "")
@@ -137,17 +135,13 @@ def build_bigquery_query_sftp_asset(
     file_suffix = file_config["suffix"]
     file_stem = file_config["stem"]
 
-    file_stem_fmt = file_stem.format(
-        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    )
-
-    file_name = f"{file_stem_fmt}.{file_suffix}"
+    file_name = f"{file_stem}.{file_suffix}"
     asset_name = (
         re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
     )
 
     @asset(
-        key=[code_location, "extracts", destination_name, asset_name],
+        key=["extracts", destination_name, asset_name],
         deps=[
             AssetKey(
                 [code_location, "extracts", query_config["value"]["table"]["name"]]
@@ -159,7 +153,9 @@ def build_bigquery_query_sftp_asset(
     )
     def _asset(context: AssetExecutionContext):
         query = construct_query(
-            query_type=query_config["type"], query_value=query_config["value"], now=now
+            query_type=query_config["type"],
+            query_value=query_config["value"],
+            timezone=query_config["timezone"],
         )
 
         db_bigquery: bigquery.Client = next(context.resources.db_bigquery)
@@ -192,15 +188,15 @@ def build_bigquery_query_sftp_asset(
 
 
 def build_bigquery_extract_sftp_asset(
-    code_location,
-    timezone,
     dataset_config,
     file_config,
     destination_config,
     extract_job_config={},
     op_tags={},
 ):
-    now = pendulum.now(tz=timezone)
+    # file_stem_fmt = file_stem.format(
+    #     today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    # )
 
     dataset_id = dataset_config["dataset_id"]
     table_id = dataset_config["table_id"]
@@ -211,17 +207,13 @@ def build_bigquery_extract_sftp_asset(
     file_suffix = file_config["suffix"]
     file_stem = file_config["stem"]
 
-    file_stem_fmt = file_stem.format(
-        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    )
-
-    file_name = f"{file_stem_fmt}.{file_suffix}"
+    file_name = f"{file_stem}.{file_suffix}"
     asset_name = (
         re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
     )
 
     @asset(
-        key=[code_location, "extracts", destination_name, asset_name],
+        key=["extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
@@ -266,15 +258,15 @@ def build_bigquery_extract_sftp_asset(
 
 
 def build_bigquery_extract_asset(
-    code_location,
-    timezone,
     dataset_config,
     file_config,
     destination_config,
     extract_job_config={},
     op_tags={},
 ):
-    now = pendulum.now(tz=timezone)
+    # file_stem_fmt = file_stem.format(
+    #     today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    # )
 
     dataset_id = dataset_config["dataset_id"]
     table_id = dataset_config["table_id"]
@@ -285,17 +277,13 @@ def build_bigquery_extract_asset(
     file_suffix = file_config["suffix"]
     file_stem = file_config["stem"]
 
-    file_stem_fmt = file_stem.format(
-        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    )
-
-    file_name = f"{file_stem_fmt}.{file_suffix}"
+    file_name = f"{file_stem}.{file_suffix}"
     asset_name = (
         re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
     )
 
     @asset(
-        key=[code_location, "extracts", destination_name, asset_name],
+        key=["extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
         group_name="datagun",

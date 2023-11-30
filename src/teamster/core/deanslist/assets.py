@@ -17,16 +17,15 @@ from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_static_partition_asset(
-    asset_name,
-    code_location,
+def build_deanslist_static_partition_asset(
+    name,
     api_version,
     partitions_def: StaticPartitionsDefinition = None,
     op_tags={},
     params={},
 ) -> AssetsDefinition:
     @asset(
-        key=[code_location, "deanslist", asset_name.replace("-", "_")],
+        key=["deanslist", name.replace("-", "_")],
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
@@ -36,7 +35,7 @@ def build_static_partition_asset(
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
             api_version=api_version,
-            endpoint=asset_name,
+            endpoint=name,
             school_id=int(context.partition_key),
             params=params,
         )
@@ -47,7 +46,7 @@ def build_static_partition_asset(
             value=(
                 endpoint_content["data"],
                 get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+                    name=name, fields=ASSET_FIELDS[name][api_version]
                 ),
             ),
             metadata={"records": row_count},
@@ -56,17 +55,15 @@ def build_static_partition_asset(
     return _asset
 
 
-def build_multi_partition_asset(
-    asset_name,
-    code_location,
+def build_deanslist_multi_partition_asset(
+    name,
     api_version,
     partitions_def: MultiPartitionsDefinition,
-    inception_date=None,
     op_tags={},
     params={},
 ) -> AssetsDefinition:
     @asset(
-        key=[code_location, "deanslist", asset_name.replace("-", "_")],
+        key=["deanslist", name.replace("-", "_")],
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
@@ -109,7 +106,7 @@ def build_multi_partition_asset(
 
             endpoint_content = deanslist.get(
                 api_version=api_version,
-                endpoint=asset_name,
+                endpoint=name,
                 school_id=int(school_partition),
                 params={
                     "UpdatedSince": date_partition.to_date_string(),
@@ -138,7 +135,7 @@ def build_multi_partition_asset(
             value=(
                 all_data,
                 get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+                    name=name, fields=ASSET_FIELDS[name][api_version]
                 ),
             ),
             metadata={"records": total_row_count},

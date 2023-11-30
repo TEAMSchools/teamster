@@ -19,8 +19,7 @@ from teamster.core.adp.workforce_manager.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_wfm_asset(
-    code_location,
+def build_adp_wfm_asset(
     asset_name,
     report_name,
     hyperfind,
@@ -31,7 +30,7 @@ def build_wfm_asset(
     **kwargs,
 ) -> AssetsDefinition:
     @asset(
-        key=[code_location, "adp_workforce_manager", asset_name],
+        key=["adp_workforce_manager", asset_name],
         metadata={"hyperfind": hyperfind, "report_name": report_name},
         io_manager_key="io_manager_gcs_avro",
         partitions_def=MultiPartitionsDefinition(
