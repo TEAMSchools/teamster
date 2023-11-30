@@ -451,7 +451,7 @@ with
             ds.measurement_name,
             ds.row_score_value,
 
-            'Coaching Tools: Coach ETR and Reflection' as form_long_name,
+            'Coaching Tool: Coach ETR and Reflection' as form_long_name,
 
             concat(ds.form_term, ' (Coach)') as form_short_name,
         from historical_overall_scores as os
