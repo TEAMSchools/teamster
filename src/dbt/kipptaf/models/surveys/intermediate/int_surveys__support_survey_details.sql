@@ -73,6 +73,7 @@ inner join
 inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_df_employee_number = eh.employee_number
+    and eh.assignment_status not in ('Terminated', 'Deceased')
     and ri.date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
 where fi.abbreviation != 'respondent_name'
@@ -116,5 +117,6 @@ inner join
 left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on sda.respondent_df_employee_number = eh.employee_number
+    and eh.assignment_status not in ('Terminated', 'Deceased')
     and timestamp(sda.date_submitted)
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
