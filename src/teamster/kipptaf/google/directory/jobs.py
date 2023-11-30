@@ -5,7 +5,8 @@ from teamster.core.google.bigquery.ops import (
     bigquery_get_table_op,
 )
 
-from .assets import google_directory_nonpartitioned_assets, google_forms_assets
+from ... import CODE_LOCATION
+from .assets import google_directory_nonpartitioned_assets
 from .ops import (
     google_directory_member_create_op,
     google_directory_role_assignment_create_op,
@@ -13,17 +14,14 @@ from .ops import (
     google_directory_user_update_op,
 )
 
-google_forms_asset_job = define_asset_job(
-    name="google_forms_asset_job", selection=[a.key for a in google_forms_assets]
-)
-
 google_directory_nonpartitioned_asset_job = define_asset_job(
-    name="google_directory_nonpartitioned_asset_job",
+    name=f"{CODE_LOCATION}_google_directory_nonpartitioned_asset_job",
     selection=[a.key for a in google_directory_nonpartitioned_assets],
 )
 
 
 @job(
+    name=f"{CODE_LOCATION}_google_directory_user_sync_job",
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
@@ -31,7 +29,7 @@ google_directory_nonpartitioned_asset_job = define_asset_job(
                 table_id="rpt_google_directory__users_import",
             )
         }
-    )
+    ),
 )
 def google_directory_user_sync_job():
     users = bigquery_get_table_op()
@@ -43,6 +41,7 @@ def google_directory_user_sync_job():
 
 
 @job(
+    name=f"{CODE_LOCATION}_google_directory_role_assignments_sync_job",
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
@@ -50,17 +49,9 @@ def google_directory_user_sync_job():
                 table_id="rpt_google_directory__admin_import",
             )
         }
-    )
+    ),
 )
 def google_directory_role_assignments_sync_job():
     role_assignments = bigquery_get_table_op()
 
     google_directory_role_assignment_create_op(role_assignments=role_assignments)
-
-
-__all__ = [
-    google_directory_nonpartitioned_asset_job,
-    google_directory_role_assignments_sync_job,
-    google_directory_user_sync_job,
-    google_forms_asset_job,
-]

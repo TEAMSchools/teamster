@@ -17,7 +17,7 @@ from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHResource
 
 
-def build_sftp_sensor(
+def build_adp_wfn_sftp_sensor(
     code_location,
     asset_defs: list[AssetsDefinition],
     timezone,
