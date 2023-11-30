@@ -7,7 +7,7 @@ from dagster import (
     schedule,
 )
 
-from teamster.core.adp.resources import AdpWorkforceManagerResource
+from teamster.core.adp.workforce_manager.resources import AdpWorkforceManagerResource
 
 
 def build_dynamic_partition_schedule(
