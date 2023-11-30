@@ -8,6 +8,7 @@ from teamster.core.iready.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
 
 
+# TODO: completely refactor
 def build_iready_sftp_asset(config_dir, code_location, timezone):
     sftp_assets = []
 

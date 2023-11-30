@@ -5,9 +5,9 @@ from teamster.core.google.directory.schema import ASSET_FIELDS
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_google_directory_assets(code_location):
+def build_google_directory_assets():
     @asset(
-        key=[code_location, "google", "directory", "orgunits"],
+        key=["google", "directory", "orgunits"],
         io_manager_key="io_manager_gcs_avro",
         group_name="google_directory",
     )
@@ -22,7 +22,7 @@ def build_google_directory_assets(code_location):
         yield Output(value=([data], schema), metadata={"record_count": len(data)})
 
     @asset(
-        key=[code_location, "google", "directory", "users"],
+        key=["google", "directory", "users"],
         io_manager_key="io_manager_gcs_avro",
         group_name="google_directory",
     )
@@ -35,7 +35,7 @@ def build_google_directory_assets(code_location):
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
     @asset(
-        key=[code_location, "google", "directory", "groups"],
+        key=["google", "directory", "groups"],
         io_manager_key="io_manager_gcs_avro",
         group_name="google_directory",
     )
@@ -48,7 +48,7 @@ def build_google_directory_assets(code_location):
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
     @asset(
-        key=[code_location, "google", "directory", "roles"],
+        key=["google", "directory", "roles"],
         io_manager_key="io_manager_gcs_avro",
         group_name="google_directory",
     )
@@ -61,7 +61,7 @@ def build_google_directory_assets(code_location):
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
     @asset(
-        key=[code_location, "google", "directory", "role_assignments"],
+        key=["google", "directory", "role_assignments"],
         io_manager_key="io_manager_gcs_avro",
         group_name="google_directory",
     )
@@ -78,9 +78,9 @@ def build_google_directory_assets(code_location):
     return [orgunits, users, groups, roles, role_assignments]
 
 
-def build_google_directory_partitioned_assets(code_location, partitions_def):
+def build_google_directory_partitioned_assets(partitions_def):
     @asset(
-        key=[code_location, "google", "directory", "members"],
+        key=["google", "directory", "members"],
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         group_name="google_directory",

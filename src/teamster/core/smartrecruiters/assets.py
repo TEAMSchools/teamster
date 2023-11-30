@@ -12,13 +12,10 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 def build_smartrecruiters_report_asset(
-    asset_name,
-    code_location,
-    report_id,
-    op_tags={},
+    asset_name, report_id, op_tags={}
 ) -> AssetsDefinition:
     @asset(
-        key=[code_location, "smartrecruiters", asset_name],
+        key=["smartrecruiters", asset_name],
         metadata={"report_id": report_id},
         io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
