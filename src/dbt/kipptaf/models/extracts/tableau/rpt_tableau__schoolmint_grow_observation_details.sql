@@ -516,7 +516,7 @@ with
         union all
 
         select
-            null as user_id,
+            null as `user_id`,
             null as role_name,
             null as internal_id,
             'PM' as form_type,
@@ -602,38 +602,11 @@ select
     observed_at,
     observer_name,
     etr_score,
-    case
-        when avg(etr_score) >= 3.5
-        then 4
-        when avg(etr_score) >= 2.745
-        then 3
-        when avg(etr_score) >= 1.745
-        then 2
-        when avg(etr_score) < 1.75
-        then 1
-    end as etr_tier,
+
     so_score,
-    case
-        when avg(so_score) >= 3.5
-        then 4
-        when avg(so_score) >= 2.945
-        then 3
-        when avg(so_score) >= 1.945
-        then 2
-        when avg(so_score) < 0.95
-        then 1
-    end as so_tier,
+
     overall_score,
-    case
-        when avg(overall_score) >= 3.5
-        then 4
-        when avg(overall_score) >= 2.745
-        then 3
-        when avg(overall_score) >= 1.745
-        then 2
-        when avg(overall_score) < 1.75
-        then 1
-    end as overall_tier,
+
     glows,
     grows,
     score_measurement_id,
@@ -644,4 +617,35 @@ select
     rn_submission,
     mail,
     report_to_mail,
+    case
+        when etr_score >= 3.5
+        then 4
+        when etr_score >= 2.745
+        then 3
+        when etr_score >= 1.745
+        then 2
+        when etr_score < 1.75
+        then 1
+    end as etr_tier,
+    case
+        when so_score >= 3.5
+        then 4
+        when so_score >= 2.945
+        then 3
+        when so_score >= 1.945
+        then 2
+        when so_score < 0.95
+        then 1
+    end as so_tier,
+    case
+        when overall_score >= 3.5
+        then 4
+        when overall_score >= 2.745
+        then 3
+        when overall_score >= 1.745
+        then 2
+        when overall_score < 1.75
+        then 1
+    end as overall_tier,
 from all_data
+where overall_score is not null
