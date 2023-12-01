@@ -648,4 +648,3 @@ select
         then 1
     end as overall_tier,
 from all_data
-where overall_score is not null
