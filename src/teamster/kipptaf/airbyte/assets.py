@@ -15,7 +15,6 @@ from dagster import (
     Set,
     SourceAsset,
     TableSchema,
-    Union,
 )
 from dagster import _check as check
 from dagster import config_from_files, multi_asset
@@ -27,14 +26,12 @@ from .. import CODE_LOCATION
 def build_airbyte_cloud_assets(
     connection_id: str,
     destination_tables: Sequence[str],
-    asset_key_prefix: Optional[Sequence[str]] = None,
+    asset_key_prefix: Sequence[str] = None,
     group_name: Optional[str] = None,
-    normalization_tables: Optional[Mapping[str, Set[str]]] = None,
-    deps: Optional[
-        Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
-    ] = None,
-    upstream_assets: Optional[Set[AssetKey]] = None,
-    schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
+    normalization_tables: Mapping[str, Set[str]] = None,
+    deps: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset] = None,
+    upstream_assets: Set[AssetKey] = None,
+    schema_by_table_name: Mapping[str, TableSchema] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[AssetsDefinition]:
     if upstream_assets is not None and deps is not None:

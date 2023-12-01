@@ -30,6 +30,7 @@ def build_adp_wfm_asset(
     hyperfind,
     symbolic_ids,
     date_partitions_def: DailyPartitionsDefinition | DynamicPartitionsDefinition,
+    partition_start_date=None,
 ) -> AssetsDefinition:
     @asset(
         key=[CODE_LOCATION, "adp_workforce_manager", asset_name],

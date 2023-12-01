@@ -13,7 +13,6 @@ from dagster import (
 )
 from paramiko.ssh_exception import SSHException
 
-from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHResource
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
@@ -39,13 +38,9 @@ def achieve3k_sftp_sensor(context: SensorEvaluationContext, ssh_achieve3k: SSHRe
         last_run = cursor.get(asset_identifier, 0)
 
         try:
-            with ssh_achieve3k.get_connection() as conn:
-                with conn.open_sftp() as sftp_client:
-                    files = listdir_attr_r(
-                        sftp_client=sftp_client,
-                        remote_dir=asset_metadata["remote_dir"],
-                        files=[],
-                    )
+            files = ssh_achieve3k.listdir_attr_r(
+                remote_dir=asset_metadata["remote_dir"], files=[]
+            )
         except SSHException as e:
             context.log.exception(e)
             return SensorResult(skip_reason=SkipReason(str(e)))

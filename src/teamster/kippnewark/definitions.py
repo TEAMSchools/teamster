@@ -36,11 +36,12 @@ defs = Definitions(
             powerschool,
             renlearn,
             titan,
-        ],
-        key_prefix=CODE_LOCATION,
-        source_key_prefix=CODE_LOCATION,
+        ]
     ),
-    jobs=[*datagun.jobs, *deanslist.jobs],
+    jobs=[
+        *datagun.jobs,
+        *deanslist.jobs,
+    ],
     schedules=[
         *datagun.schedules,
         *dbt.schedules,

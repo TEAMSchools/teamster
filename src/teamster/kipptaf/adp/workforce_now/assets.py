@@ -1,10 +1,10 @@
 from dagster import config_from_files
 
-from teamster.core.adp.workforce_now.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.functions import get_avro_record_schema
 
 from ... import CODE_LOCATION
+from .schema import ASSET_FIELDS
 
 adp_wfn_sftp_assets = [
     build_sftp_asset(

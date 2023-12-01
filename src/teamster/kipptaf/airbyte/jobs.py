@@ -5,7 +5,7 @@ from .. import CODE_LOCATION
 from .ops import airbyte_start_sync_op
 
 asset_config = config_from_files(
-    ["src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
+    [f"src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
 )["assets"]
 
 
@@ -25,3 +25,8 @@ def airbyte_start_syncs_job():
         airbyte_sync_op_aliased = airbyte_start_sync_op.alias(asset["group_name"])
 
         airbyte_sync_op_aliased()
+
+
+__all__ = [
+    airbyte_start_syncs_job,
+]

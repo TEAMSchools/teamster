@@ -85,7 +85,7 @@ def build_smartrecruiters_report_asset(asset_name, report_id) -> AssetsDefinitio
 
 
 smartrecruiters_report_assets = [
-    build_smartrecruiters_report_asset(code_location=CODE_LOCATION, **a)
+    build_smartrecruiters_report_asset(**a)
     for a in config_from_files(
         [f"src/teamster/{CODE_LOCATION}/smartrecruiters/config/assets.yaml"]
     )["assets"]

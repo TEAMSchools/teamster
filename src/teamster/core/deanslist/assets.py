@@ -18,6 +18,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 
 def build_deanslist_static_partition_asset(
+    code_location,
     asset_name,
     api_version,
     partitions_def: StaticPartitionsDefinition = None,
@@ -25,7 +26,7 @@ def build_deanslist_static_partition_asset(
     params={},
 ) -> AssetsDefinition:
     @asset(
-        key=["deanslist", asset_name.replace("-", "_")],
+        key=[code_location, "deanslist", asset_name.replace("-", "_")],
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
@@ -56,6 +57,7 @@ def build_deanslist_static_partition_asset(
 
 
 def build_deanslist_multi_partition_asset(
+    code_location,
     asset_name,
     api_version,
     partitions_def: MultiPartitionsDefinition,
@@ -63,7 +65,7 @@ def build_deanslist_multi_partition_asset(
     params={},
 ) -> AssetsDefinition:
     @asset(
-        key=["deanslist", asset_name.replace("-", "_")],
+        key=[code_location, "deanslist", asset_name.replace("-", "_")],
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,

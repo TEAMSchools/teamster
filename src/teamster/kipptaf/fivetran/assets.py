@@ -1,4 +1,5 @@
 import pathlib
+from typing import Iterator
 
 import yaml
 from dagster import (
@@ -7,7 +8,6 @@ from dagster import (
     AssetMaterialization,
     AssetOut,
     AssetsDefinition,
-    Iterator,
     Mapping,
     Nothing,
     OpExecutionContext,
@@ -36,12 +36,12 @@ def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
     io_manager_key: Optional[str] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
-    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    asset_key_prefix: Sequence[str] = None,
+    metadata_by_table_name: Mapping[str, MetadataUserInput] = None,
+    table_to_asset_key_map: Mapping[str, AssetKey] = None,
+    resource_defs: Mapping[str, ResourceDefinition] = None,
     group_name: Optional[str] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
+    op_tags: Mapping[str, Any] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(
         asset_key_prefix, "asset_key_prefix", of_type=str

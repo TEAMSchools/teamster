@@ -54,12 +54,13 @@ def build_mclass_asset(name, partitions_def, dyd_payload):
 
 mclass_assets = [
     build_mclass_asset(
+        name=a["name"],
+        dyd_payload=a["dyd_payload"],
         partitions_def=FiscalYearPartitionsDefinition(
             start_date=a["partition_start_date"],
             timezone=LOCAL_TIMEZONE.name,
             start_month=7,
         ),
-        **a,
     )
     for a in config_from_files(
         [f"src/teamster/{CODE_LOCATION}/amplify/config/assets.yaml"]
