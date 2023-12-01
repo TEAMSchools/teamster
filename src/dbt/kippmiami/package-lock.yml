@@ -1,0 +1,11 @@
+packages:
+  - local: ../deanslist
+  - local: ../iready
+  - local: ../powerschool
+  - local: ../renlearn
+  - local: ../teamster_utils
+  - package: dbt-labs/dbt_external_tables
+    version: 0.8.7
+  - package: dbt-labs/dbt_utils
+    version: 1.1.1
+sha1_hash: 685d746c06e9183adce8a0a6ce07f62672f81166
