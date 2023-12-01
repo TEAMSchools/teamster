@@ -1,6 +1,6 @@
 from dagster import OpExecutionContext, op
 
-from teamster.core.google.directory.resources import GoogleDirectoryResource
+from .resources import GoogleDirectoryResource
 
 
 @op

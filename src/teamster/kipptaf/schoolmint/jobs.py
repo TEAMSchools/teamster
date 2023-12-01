@@ -1,10 +1,6 @@
 from dagster import AssetSelection, RunConfig, define_asset_job, job
 
-from teamster.core.google.bigquery.ops import (
-    BigQueryGetTableOpConfig,
-    bigquery_get_table_op,
-)
-
+from ..google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
 from .assets import multi_partition_assets, static_partition_assets
 from .ops import schoolmint_grow_school_update_op, schoolmint_grow_user_update_op
 

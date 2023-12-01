@@ -1,8 +1,6 @@
 import os
-import pathlib
 import re
 import zipfile
-from stat import S_ISDIR, S_ISREG
 
 import requests
 from dagster import (
@@ -14,34 +12,17 @@ from dagster import (
 )
 from numpy import nan
 from pandas import read_csv
-from paramiko import SFTPClient
 from slugify import slugify
 
 from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.functions import regex_pattern_replace
 
 
-def listdir_attr_r(sftp_client: SFTPClient, remote_dir: str, files: list = []):
-    for file in sftp_client.listdir_attr(remote_dir):
-        try:
-            filepath = str(pathlib.Path(remote_dir) / file.filepath)
-        except AttributeError:
-            filepath = str(pathlib.Path(remote_dir) / file.filename)
-
-        if S_ISDIR(file.st_mode):
-            listdir_attr_r(sftp_client=sftp_client, remote_dir=filepath, files=files)
-        elif S_ISREG(file.st_mode):
-            file.filepath = filepath
-            files.append(file)
-
-    return files
-
-
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
     # list files remote filepath
     with ssh.get_connection() as conn:
         with conn.open_sftp() as sftp_client:
-            files = listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
+            files = ssh.listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
 
     if remote_dir == ".":
         pattern = remote_file_regex

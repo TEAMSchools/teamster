@@ -25,7 +25,7 @@ class SmartRecruitersResource(ConfigurableResource):
         except exceptions.HTTPError as e:
             context = self.get_resource_context()
 
-            context.log.error(e)
+            context.log.exception(e)
 
             raise exceptions.HTTPError(response.text) from e
 
