@@ -57,7 +57,9 @@ defs = Definitions(
             ldap,
             schoolmint,
             smartrecruiters,
-        ]
+        ],
+        key_prefix=CODE_LOCATION,
+        source_key_prefix=CODE_LOCATION,
     ),
     jobs=[
         *adp.jobs,
