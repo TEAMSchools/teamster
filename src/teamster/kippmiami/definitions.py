@@ -24,7 +24,9 @@ GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
-        modules=[datagun, dbt, deanslist, fldoe, renlearn, iready, powerschool]
+        modules=[datagun, dbt, deanslist, fldoe, renlearn, iready, powerschool],
+        key_prefix=CODE_LOCATION,
+        source_key_prefix=CODE_LOCATION,
     ),
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[

@@ -16,17 +16,25 @@ from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
-def construct_query(query_type, query_value, timezone):
-    now = pendulum.now(tz=timezone)
+def construct_file_name(file_stem: str, file_suffix: str, now: pendulum.DateTime):
+    file_stem_fmt = file_stem.format(
+        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
+    )
 
+    return f"{file_stem_fmt}.{file_suffix}"
+
+
+def construct_query(query_type, query_value, now):
     if query_type == "text":
-        return text(query_value)
+        return query_value
     elif query_type == "file":
         sql_file = pathlib.Path(query_value).absolute()
-        return text(sql_file.read_text())
+        return sql_file.read_text()
     elif query_type == "schema":
-        return (
-            select(*[literal_column(col) for col in query_value.get("select", ["*"])])
+        return str(
+            select(
+                *[literal_column(text=col) for col in query_value.get("select", ["*"])]
+            )
             .select_from(table(**query_value["table"]))
             .where(
                 text(query_value.get("where", "").format(today=now.to_date_string()))
@@ -39,36 +47,19 @@ def transform_data(data, file_suffix, file_encoding=None, file_format=None):
         transformed_data = json.dumps(obj=data, cls=CustomJSONEncoder).encode(
             file_encoding
         )
-        del data
-        gc.collect()
     elif file_suffix == "json.gz":
         transformed_data = gzip.compress(
             json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
-        del data
-        gc.collect()
     elif file_suffix in ["csv", "txt", "tsv"]:
         transformed_data = (
             DataFrame(data=data)
             .to_csv(index=False, encoding=file_encoding, **file_format)
             .encode(file_encoding)
         )
-        del data
-        gc.collect()
-    elif file_suffix == "gsheet":
-        df = DataFrame(data=data)
-        del data
-        gc.collect()
 
-        df_json = df.to_json(orient="split", date_format="iso", index=False)
-        del df
-        gc.collect()
-
-        transformed_data = json.loads(df_json)
-        del df_json
-        gc.collect()
-
-        transformed_data["shape"] = df.shape
+    del data
+    gc.collect()
 
     return transformed_data
 
@@ -123,44 +114,46 @@ def load_sftp(
 
 
 def build_bigquery_query_sftp_asset(
-    query_config, file_config, destination_config, op_tags={}
+    code_location,
+    timezone,
+    query_config,
+    file_config,
+    destination_config,
+    op_tags={},
 ):
-    # file_stem_fmt = file_stem.format(
-    #     today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    # )
+    query_type = query_config["type"]
+    query_value = query_config["value"]
+
+    file_suffix = file_config["suffix"]
+    file_stem = file_config["stem"]
+    file_encoding = file_config.get("encoding", "utf-8")
+    file_format = file_config.get("format", {})
 
     destination_name = destination_config["name"]
     destination_path = destination_config.get("path", "")
 
-    file_suffix = file_config["suffix"]
-    file_stem = file_config["stem"]
-
-    file_name = f"{file_stem}.{file_suffix}"
     asset_name = (
         re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
     )
 
     @asset(
         key=["extracts", destination_name, asset_name],
-        deps=[
-            AssetKey(
-                [code_location, "extracts", query_config["value"]["table"]["name"]]
-            )
-        ],
+        deps=[AssetKey([code_location, "extracts", query_value["table"]["name"]])],
         metadata={**query_config, **file_config},
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
     )
     def _asset(context: AssetExecutionContext):
-        query = construct_query(
-            query_type=query_config["type"],
-            query_value=query_config["value"],
-            timezone=query_config["timezone"],
+        now = pendulum.now(tz=timezone)
+
+        file_name = construct_file_name(
+            file_stem=file_stem, file_suffix=file_suffix, now=now
         )
+        query = construct_query(query_type=query_type, query_value=query_value, now=now)
 
         db_bigquery: bigquery.Client = next(context.resources.db_bigquery)
 
-        query_job = db_bigquery.query(query=str(query))
+        query_job = db_bigquery.query(query=query)
 
         data = [dict(row) for row in query_job.result()]
 
@@ -170,9 +163,10 @@ def build_bigquery_query_sftp_asset(
         transformed_data = transform_data(
             data=data,
             file_suffix=file_suffix,
-            file_encoding=file_config.get("encoding", "utf-8"),
-            file_format=file_config.get("format", {}),
+            file_encoding=file_encoding,
+            file_format=file_format,
         )
+
         del data
         gc.collect()
 
@@ -188,16 +182,14 @@ def build_bigquery_query_sftp_asset(
 
 
 def build_bigquery_extract_sftp_asset(
+    code_location,
+    timezone,
     dataset_config,
     file_config,
     destination_config,
     extract_job_config={},
     op_tags={},
 ):
-    # file_stem_fmt = file_stem.format(
-    #     today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    # )
-
     dataset_id = dataset_config["dataset_id"]
     table_id = dataset_config["table_id"]
 
@@ -207,7 +199,6 @@ def build_bigquery_extract_sftp_asset(
     file_suffix = file_config["suffix"]
     file_stem = file_config["stem"]
 
-    file_name = f"{file_stem}.{file_suffix}"
     asset_name = (
         re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
     )
@@ -219,6 +210,10 @@ def build_bigquery_extract_sftp_asset(
         op_tags=op_tags,
     )
     def _asset(context: AssetExecutionContext):
+        file_name = construct_file_name(
+            file_stem=file_stem, file_suffix=file_suffix, now=pendulum.now(tz=timezone)
+        )
+
         # establish gcs blob
         gcs: storage.Client = context.resources.gcs
 
@@ -258,16 +253,14 @@ def build_bigquery_extract_sftp_asset(
 
 
 def build_bigquery_extract_asset(
+    code_location,
+    timezone,
     dataset_config,
     file_config,
     destination_config,
     extract_job_config={},
     op_tags={},
 ):
-    # file_stem_fmt = file_stem.format(
-    #     today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    # )
-
     dataset_id = dataset_config["dataset_id"]
     table_id = dataset_config["table_id"]
 
@@ -277,7 +270,6 @@ def build_bigquery_extract_asset(
     file_suffix = file_config["suffix"]
     file_stem = file_config["stem"]
 
-    file_name = f"{file_stem}.{file_suffix}"
     asset_name = (
         re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
     )
@@ -291,6 +283,10 @@ def build_bigquery_extract_asset(
     def _asset(
         context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource
     ):
+        file_name = construct_file_name(
+            file_stem=file_stem, file_suffix=file_suffix, now=pendulum.now(tz=timezone)
+        )
+
         # establish gcs blob
         gcs_client = gcs.get_client()
 

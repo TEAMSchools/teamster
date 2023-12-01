@@ -37,6 +37,8 @@ defs = Definitions(
             renlearn,
             titan,
         ],
+        key_prefix=CODE_LOCATION,
+        source_key_prefix=CODE_LOCATION,
     ),
     jobs=[*datagun.jobs, *deanslist.jobs],
     schedules=[
