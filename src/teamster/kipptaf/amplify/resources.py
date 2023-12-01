@@ -41,7 +41,7 @@ class MClassResource(ConfigurableResource):
 
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.error(e)
+            self.get_resource_context().log.exception(e)
 
             raise exceptions.HTTPError(response.text) from e
 

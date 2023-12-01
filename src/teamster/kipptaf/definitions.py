@@ -6,7 +6,6 @@ from dagster_gcp import BigQueryResource, GCSPickleIOManager, GCSResource
 from dagster_k8s import k8s_job_executor
 
 from teamster import GCS_PROJECT_NAME
-from teamster.core.adp.workforce_manager.resources import AdpWorkforceManagerResource
 from teamster.core.adp.workforce_now.resources import AdpWorkforceNowResource
 from teamster.core.alchemer.resources import AlchemerResource
 from teamster.core.amplify.resources import MClassResource
@@ -36,6 +35,8 @@ from teamster.kipptaf import (
     schoolmint,
     smartrecruiters,
 )
+
+from .adp.workforce_manager.resources import AdpWorkforceManagerResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 

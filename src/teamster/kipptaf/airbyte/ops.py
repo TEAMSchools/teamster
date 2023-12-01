@@ -1,7 +1,5 @@
 # forked from dagster_airbyte.ops and dagster_airbyte.resources
-from typing import Any, Dict, Iterable, cast
-
-from dagster import In, Nothing, OpExecutionContext, Out, op
+from dagster import Any, Dict, In, Iterable, Nothing, OpExecutionContext, Out, cast, op
 from dagster_airbyte import AirbyteOutput
 from dagster_airbyte.ops import AirbyteSyncConfig
 from dagster_airbyte.resources import BaseAirbyteResource

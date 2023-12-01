@@ -1,7 +1,5 @@
 # forked from dagster_fivetran/ops.py
-from typing import Any
-
-from dagster import In, Nothing, Out, Output, op
+from dagster import Any, In, Nothing, Out, Output, op
 from dagster_fivetran import FivetranResource
 from dagster_fivetran.ops import FivetranResyncConfig, SyncConfig
 

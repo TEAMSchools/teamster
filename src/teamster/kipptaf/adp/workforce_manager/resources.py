@@ -66,7 +66,7 @@ class AdpWorkforceManagerResource(ConfigurableResource):
 
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.error(e)
+            self.get_resource_context().log.exception(e)
 
             if response.status_code == 401:
                 self._authenticate(grant_type="refresh_token")

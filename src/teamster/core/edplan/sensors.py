@@ -49,10 +49,10 @@ def build_sftp_sensor(
                             files=[],
                         )
             except SSHException as e:
-                context.log.error(e)
+                context.log.exception(e)
                 return SensorResult(skip_reason=SkipReason(str(e)))
             except ConnectionResetError as e:
-                context.log.error(e)
+                context.log.exception(e)
                 return SensorResult(skip_reason=SkipReason(str(e)))
 
             for f in files:
