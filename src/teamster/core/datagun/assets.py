@@ -137,7 +137,7 @@ def build_bigquery_query_sftp_asset(
     )
 
     @asset(
-        key=["extracts", destination_name, asset_name],
+        key=[code_location, "extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", query_value["table"]["name"]])],
         metadata={**query_config, **file_config},
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
@@ -204,7 +204,7 @@ def build_bigquery_extract_sftp_asset(
     )
 
     @asset(
-        key=["extracts", destination_name, asset_name],
+        key=[code_location, "extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
@@ -275,7 +275,7 @@ def build_bigquery_extract_asset(
     )
 
     @asset(
-        key=["extracts", destination_name, asset_name],
+        key=[code_location, "extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
         group_name="datagun",

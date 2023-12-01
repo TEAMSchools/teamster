@@ -12,7 +12,7 @@ from dagster import (
 
 from teamster.core.utils.functions import get_avro_record_schema
 
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
+from ... import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import SchoolMintGrowResource
 from .schema import ASSET_FIELDS
 
@@ -67,7 +67,7 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
 
 STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
 
-config_dir = f"src/teamster/{CODE_LOCATION}/schoolmint/config"
+config_dir = f"src/teamster/{CODE_LOCATION}/schoolmint/grow/config"
 
 static_partition_assets = [
     build_schoolmint_grow_asset(

@@ -5,7 +5,7 @@ from dagster import (
     schedule,
 )
 
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
+from ... import CODE_LOCATION, LOCAL_TIMEZONE
 from .jobs import (
     multi_partition_asset_job,
     schoolmint_grow_user_update_job,

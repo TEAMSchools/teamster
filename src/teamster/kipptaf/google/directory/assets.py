@@ -97,3 +97,7 @@ google_directory_nonpartitioned_assets = [
     roles,
     users,
 ]
+
+google_directory_partitioned_assets = [
+    members,
+]

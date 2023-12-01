@@ -41,3 +41,9 @@ def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource)
     yield Output(
         value=([data], schema), metadata={"record_count": len(data.get("responses"))}
     )
+
+
+__all__ = [
+    form,
+    responses,
+]

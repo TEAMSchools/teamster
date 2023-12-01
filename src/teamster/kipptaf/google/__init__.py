@@ -12,11 +12,11 @@ from .directory.schedules import (
     google_directory_role_assignments_sync_schedule,
     google_directory_user_sync_schedule,
 )
-from .forms.assets import google_forms_assets
+from .forms.assets import __all__ as google_forms_assets
 from .forms.jobs import google_forms_asset_job
 from .forms.schedules import google_forms_asset_job_schedule
 from .sheets.assets import google_sheets_assets
-from .sheets.sensors import google_sheets_sensor
+from .sheets.sensors import google_sheets_asset_sensor
 
 assets = [
     google_directory_nonpartitioned_assets,
@@ -40,7 +40,7 @@ schedules = [
 ]
 
 sensors = [
-    google_sheets_sensor,
+    google_sheets_asset_sensor,
 ]
 
 __all__ = [

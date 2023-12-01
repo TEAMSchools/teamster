@@ -5,7 +5,7 @@ from .workforce_manager.jobs import (
 )
 from .workforce_manager.schedules import (
     adp_wfm_daily_partition_asset_job_schedule,
-    adp_wfm_dynamic_partition_asset_job_schedule,
+    adp_wfm_dynamic_partition_schedule,
 )
 from .workforce_now.assets import adp_wfn_sftp_assets
 from .workforce_now.jobs import adp_wfn_update_workers_job
@@ -27,8 +27,8 @@ jobs = [
 
 schedules = [
     adp_wfm_daily_partition_asset_job_schedule,
-    adp_wfm_dynamic_partition_asset_job_schedule,
     adp_wfn_worker_fields_update_schedule,
+    adp_wfm_dynamic_partition_schedule,
 ]
 
 ops = [
