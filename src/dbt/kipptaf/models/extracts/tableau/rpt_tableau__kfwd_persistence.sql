@@ -14,6 +14,8 @@ select
     p.hs_account_name,
     p.semester,
     p.is_ecc,
+    p.is_ecc_aa,
+    p.is_ecc_ba,
     p.is_first_year,
     p.is_persisting_int,
     p.is_retained_int,
