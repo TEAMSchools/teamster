@@ -87,7 +87,7 @@ select
     concat(b.candidate_last_name, ', ', b.candidate_first_name) as candidate_last_first,
     coalesce(
         b.application_field_school_shared_with_nj,
-        application_field_school_shared_with_mia
+        b.application_field_school_shared_with_mia
     ) as school_shared_with,
     coalesce(b.nj_undergrad_gpa, b.mia_undergrad_gpa) as undergrad_gpa,
     coalesce(b.nj_grad_gpa, b.mia_grad_gpa) as grad_gpa,
