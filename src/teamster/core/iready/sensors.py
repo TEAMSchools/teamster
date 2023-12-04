@@ -14,7 +14,6 @@ from dagster import (
 )
 from paramiko.ssh_exception import SSHException
 
-from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHResource
 
 

@@ -1,4 +1,3 @@
-import pendulum
 from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -41,7 +40,7 @@ multi_partition_assets = [
     build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
         partitions_def=multi_partitions_def,
-        inception_date=pendulum.date(2018, 7, 1),
+        # inception_date=pendulum.date(2018, 7, 1),
         **endpoint,
     )
     for endpoint in config_from_files([f"{config_dir}/multi-partition-assets.yaml"])[
