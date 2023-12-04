@@ -40,6 +40,9 @@ select
         false
     ) as is_ecc,
 
+    if(eis.ecc_pursuing_degree_type = "Bachelor's (4-year)", true, false) as is_ecc_ba,
+    if(eis.ecc_pursuing_degree_type = "Associate's (2 year)", true, false) as is_ecc_aa,
+
     if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
     case
@@ -142,6 +145,8 @@ select
         true,
         false
     ) as is_ecc,
+    if(eis.ecc_pursuing_degree_type = "Bachelor's (4-year)", true, false) as is_ecc_ba,
+    if(eis.ecc_pursuing_degree_type = "Associate's (2 year)", true, false) as is_ecc_aa,
 
     if(r.academic_year = r.ktc_cohort + 1, true, false) as is_first_year,
 
