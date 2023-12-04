@@ -1,45 +1,39 @@
 import time
 from io import StringIO
 
-from dagster import (
-    AssetsDefinition,
-    OpExecutionContext,
-    Output,
-    asset,
-    config_from_files,
-)
+from dagster import AssetExecutionContext, AssetsDefinition, Output, asset
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
 from teamster.core.utils.functions import get_avro_record_schema
 
-from .. import CODE_LOCATION
 from .resources import SmartRecruitersResource
 from .schema import ASSET_FIELDS
 
 
-def build_smartrecruiters_report_asset(asset_name, report_id) -> AssetsDefinition:
+def build_smartrecruiters_report_asset(
+    asset_name, code_location, report_id
+) -> AssetsDefinition:
     @asset(
-        key=[CODE_LOCATION, "smartrecruiters", asset_name],
+        key=[code_location, "smartrecruiters", asset_name],
         metadata={"report_id": report_id},
         io_manager_key="io_manager_gcs_avro",
         group_name="smartrecruiters",
     )
-    def _asset(context: OpExecutionContext, smartrecruiters: SmartRecruitersResource):
-        asset = context.assets_def
-
-        report_name = asset.key.path[-1]
+    def _asset(
+        context: AssetExecutionContext, smartrecruiters: SmartRecruitersResource
+    ):
+        report_name = context.asset_key.path[-1]
         report_endpoint = (
             "reporting-api/v201804/reports/"
-            + asset.metadata_by_key[asset.key]["report_id"]
+            + context.assets_def.metadata_by_key[context.asset_key]["report_id"]
             + "/files"
         )
 
         context.log.info(f"Executing {report_name}")
         report_execution_data = smartrecruiters.post(endpoint=report_endpoint).json()
 
-        context.log.info(report_execution_data)
         report_file_id = report_execution_data["reportFileId"]
         report_file_status = report_execution_data["reportFileStatus"]
 
@@ -70,6 +64,7 @@ def build_smartrecruiters_report_asset(asset_name, report_id) -> AssetsDefinitio
 
         df.replace({nan: None}, inplace=True)
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
+        # context.log.debug(df.dtypes)
 
         yield Output(
             value=(
@@ -82,15 +77,3 @@ def build_smartrecruiters_report_asset(asset_name, report_id) -> AssetsDefinitio
         )
 
     return _asset
-
-
-smartrecruiters_report_assets = [
-    build_smartrecruiters_report_asset(**a)
-    for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/smartrecruiters/config/assets.yaml"]
-    )["assets"]
-]
-
-__all__ = [
-    *smartrecruiters_report_assets,
-]
