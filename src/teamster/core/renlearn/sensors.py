@@ -15,7 +15,6 @@ from dagster import (
 )
 from paramiko.ssh_exception import SSHException
 
-from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHResource
 
 
@@ -47,13 +46,9 @@ def build_sftp_sensor(
             last_run = cursor.get(asset_identifier, 0)
 
             try:
-                with ssh_renlearn.get_connection() as conn:
-                    with conn.open_sftp() as sftp_client:
-                        files = listdir_attr_r(
-                            sftp_client=sftp_client,
-                            remote_dir=asset_metadata["remote_dir"],
-                            files=[],
-                        )
+                files = ssh_renlearn.listdir_attr_r(
+                    remote_dir=asset_metadata["remote_dir"], files=[]
+                )
             except SSHException as e:
                 context.log.exception(e)
                 return SensorResult(skip_reason=SkipReason(str(e)))

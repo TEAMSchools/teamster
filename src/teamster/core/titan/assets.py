@@ -7,7 +7,9 @@ from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_titan_sftp_asset(config, current_fiscal_year: FiscalYear, timezone):
+def build_titan_sftp_asset(
+    code_location, config, current_fiscal_year: FiscalYear, timezone
+):
     asset_name = config["asset_name"]
     partition_start_date = config["partition_start_date"]
 
@@ -26,7 +28,7 @@ def build_titan_sftp_asset(config, current_fiscal_year: FiscalYear, timezone):
     )
 
     return build_sftp_asset(
-        asset_key=["titan", asset_name],
+        asset_key=[code_location, "titan", asset_name],
         ssh_resource_key="ssh_titan",
         avro_schema=get_avro_record_schema(
             name=asset_name, fields=ASSET_FIELDS[asset_name]
