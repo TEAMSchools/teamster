@@ -15,6 +15,7 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_powerschool_table_asset(
+    code_location,
     asset_name,
     partitions_def: FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition = None,
     select_columns=["*"],
@@ -22,7 +23,7 @@ def build_powerschool_table_asset(
     op_tags={},
 ) -> AssetsDefinition:
     @asset(
-        key=["powerschool", asset_name],
+        key=[code_location, "powerschool", asset_name],
         metadata={"partition_column": partition_column},
         io_manager_key="io_manager_gcs_file",
         partitions_def=partitions_def,
