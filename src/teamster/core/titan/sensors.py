@@ -29,8 +29,9 @@ def build_sftp_sensor(
         asset_selection=AssetSelection.assets(*asset_defs),
     )
     def _sensor(context: SensorEvaluationContext, ssh_titan: SSHResource):
-        cursor: dict = json.loads(context.cursor or "{}")
         now = pendulum.now(tz=timezone)
+
+        cursor: dict = json.loads(context.cursor or "{}")
 
         run_requests = []
         for asset in asset_defs:
