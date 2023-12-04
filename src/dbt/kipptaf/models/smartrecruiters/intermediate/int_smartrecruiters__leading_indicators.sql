@@ -10,6 +10,7 @@ with
             source,
             source_type,
             source_subtype,
+            application_reason_for_rejection as rejection_reason,
             application_state_new_date as application_date,
             application_state_in_review_date as review_date,
             application_state_interview_date as interview_date,
@@ -20,6 +21,7 @@ with
             application_status_interview_demo_date as final_interview_demo,
             application_state_offer_date as offer_date,
             application_state_hired_date as hired_date,
+
         from {{ source("smartrecruiters", "src_smartrecruiters__applications") }}
     ),
 
@@ -34,6 +36,7 @@ with
             source,
             source_type,
             source_subtype,
+            rejection_reason,
             name_column,
             values_column,
         from
@@ -61,6 +64,7 @@ select
     a.source_type,
     a.source_subtype,
     a.department_internal,
+    a.rejection_reason,
     a.name_column as status_type,
     a.values_column as date_val,
 
@@ -81,6 +85,10 @@ select
     b.nj_out_of_state_teacher_certification_sped_credits as nj_sped_credits,
     b.taf_current_or_former_kipp_nj_mia_employee as former_kippnjmia,
     concat(b.candidate_last_name, ', ', b.candidate_first_name) as candidate_last_first,
+    coalesce(
+        b.application_field_school_shared_with_nj,
+        application_field_school_shared_with_mia
+    ) as school_shared_with,
     coalesce(b.nj_undergrad_gpa, b.mia_undergrad_gpa) as undergrad_gpa,
     coalesce(b.nj_grad_gpa, b.mia_grad_gpa) as grad_gpa,
     coalesce(
