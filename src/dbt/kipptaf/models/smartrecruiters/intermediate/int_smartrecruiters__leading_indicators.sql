@@ -87,6 +87,7 @@ select
     b.screening_question_answer_national_in_which_regions_alumnus
     as kf_in_which_regions_alumnus,
     b.screening_question_answer_new_jersey_out_of_state_sped_credits as nj_sped_credits,
+    -- trunk-ignore(sqlfluff/LT05)
     b.screening_question_answer_new_jersey_miami_current_or_former_kipp_nj_miami_employee
     as former_kippnjmia,
     concat(b.candidate_last_name, ', ', b.candidate_first_name) as candidate_last_first,
@@ -107,6 +108,7 @@ select
         b.screening_question_answer_miami_teacher_certification_question
     ) as certification_instate,
     coalesce(
+        -- trunk-ignore(sqlfluff/LT05)
         b.screening_question_answer_new_jersey_out_of_state_teacher_certification_details,
         b.screening_question_answer_miami_out_of_state_teaching_certification_details
     ) as certification_outstate,
