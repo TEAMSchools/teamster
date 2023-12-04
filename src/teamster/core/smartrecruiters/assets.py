@@ -37,7 +37,6 @@ def build_smartrecruiters_report_asset(
         context.log.info(f"Executing {report_name}")
         report_execution_data = smartrecruiters.post(endpoint=report_endpoint).json()
 
-        context.log.info(report_execution_data)
         report_file_id = report_execution_data["reportFileId"]
         report_file_status = report_execution_data["reportFileStatus"]
 
@@ -68,8 +67,7 @@ def build_smartrecruiters_report_asset(
 
         df.replace({nan: None}, inplace=True)
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
-
-        row_count = df.shape[0]
+        # context.log.debug(df.dtypes)
 
         yield Output(
             value=(
@@ -78,7 +76,7 @@ def build_smartrecruiters_report_asset(
                     name=asset_name, fields=ASSET_FIELDS[asset_name]
                 ),
             ),
-            metadata={"records": row_count},
+            metadata={"records": df.shape[0]},
         )
 
     return _asset
