@@ -29,18 +29,27 @@ class SSHResource(SSHResource):
 
             sftp_client = conn.open_sftp()
 
-            for file in sftp_client.listdir_attr(remote_dir):
-                try:
-                    filepath = str(pathlib.Path(remote_dir) / file.filepath)
-                except AttributeError:
-                    filepath = str(pathlib.Path(remote_dir) / file.filename)
-
-                if S_ISDIR(file.st_mode):
-                    self.listdir_attr_r(remote_dir=filepath, files=files)
-                elif S_ISREG(file.st_mode):
-                    file.filepath = filepath
-                    files.append(file)
+            files = self._listdir_attr_r(
+                sftp_client=sftp_client, remote_dir=remote_dir, files=files
+            )
         finally:
             sftp_client.close()
             conn.close()
             return files
+
+    def _listdir_attr_r(self, sftp_client, remote_dir: str, files: list = []):
+        for file in sftp_client.listdir_attr(remote_dir):
+            try:
+                filepath = str(pathlib.Path(remote_dir) / file.filepath)
+            except AttributeError:
+                filepath = str(pathlib.Path(remote_dir) / file.filename)
+
+            if S_ISDIR(file.st_mode):
+                self._listdir_attr_r(
+                    sftp_client=sftp_client, remote_dir=filepath, files=files
+                )
+            elif S_ISREG(file.st_mode):
+                file.filepath = filepath
+                files.append(file)
+
+        return files
