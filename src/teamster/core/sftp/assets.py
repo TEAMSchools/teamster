@@ -17,7 +17,7 @@ from pandas import read_csv
 from paramiko import SFTPClient
 from slugify import slugify
 
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.functions import regex_pattern_replace
 
 
@@ -37,7 +37,7 @@ def listdir_attr_r(sftp_client: SFTPClient, remote_dir: str, files: list = []):
     return files
 
 
-def match_sftp_files(ssh: SSHConfigurableResource, remote_dir, remote_file_regex):
+def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
     # list files remote filepath
     with ssh.get_connection() as conn:
         with conn.open_sftp() as sftp_client:
@@ -91,8 +91,12 @@ def build_sftp_asset(
     slugify_cols=True,
     slugify_replacements=(),
     op_tags={},
+    group_name=None,
     **kwargs,
 ):
+    if group_name is None:
+        group_name = asset_key[1]
+
     @asset(
         key=asset_key,
         metadata={"remote_dir": remote_dir, "remote_file_regex": remote_file_regex},
@@ -100,12 +104,13 @@ def build_sftp_asset(
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
+        group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: AssetExecutionContext):
         context.log.debug(requests.get(url="https://api.ipify.org").text)
 
-        ssh: SSHConfigurableResource = getattr(context.resources, ssh_resource_key)
+        ssh: SSHResource = getattr(context.resources, ssh_resource_key)
 
         # find matching file for partition
         remote_file_regex_composed = compose_regex(

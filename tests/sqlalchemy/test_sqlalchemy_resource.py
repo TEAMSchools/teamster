@@ -3,8 +3,8 @@ from dagster import build_resources
 from dagster_gcp import BigQueryResource
 from google.cloud import bigquery
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.datagun.assets import construct_query
-from teamster.kipptaf import GCS_PROJECT_NAME
 
 
 def _test(query_type, query_value):

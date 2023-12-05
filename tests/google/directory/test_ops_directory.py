@@ -1,12 +1,12 @@
 from dagster import build_op_context
 from dagster_gcp import BigQueryResource
 
+from teamster import GCS_PROJECT_NAME
 from teamster.core.google.bigquery.ops import (
     BigQueryGetTableOpConfig,
     bigquery_get_table_op,
 )
 from teamster.core.google.directory.resources import GoogleDirectoryResource
-from teamster.kipptaf import GCS_PROJECT_NAME
 from teamster.kipptaf.google.ops import (
     google_directory_role_assignment_create_op,
     google_directory_user_create_op,

@@ -14,16 +14,15 @@ from teamster.core.utils.functions import get_avro_record_schema
 def build_smartrecruiters_report_asset(
     asset_name,
     code_location,
-    source_system,
     report_id,
     op_tags={},
 ) -> AssetsDefinition:
     @asset(
-        name=asset_name,
-        key_prefix=[code_location, source_system],
+        key=[code_location, "smartrecruiters", asset_name],
         metadata={"report_id": report_id},
         io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
+        group_name="smartrecruiters",
     )
     def _asset(context: OpExecutionContext, smartrecruiters: SmartRecruitersResource):
         asset = context.assets_def
@@ -38,7 +37,6 @@ def build_smartrecruiters_report_asset(
         context.log.info(f"Executing {report_name}")
         report_execution_data = smartrecruiters.post(endpoint=report_endpoint).json()
 
-        context.log.info(report_execution_data)
         report_file_id = report_execution_data["reportFileId"]
         report_file_status = report_execution_data["reportFileStatus"]
 
@@ -69,8 +67,7 @@ def build_smartrecruiters_report_asset(
 
         df.replace({nan: None}, inplace=True)
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
-
-        row_count = df.shape[0]
+        # context.log.debug(df.dtypes)
 
         yield Output(
             value=(
@@ -79,7 +76,7 @@ def build_smartrecruiters_report_asset(
                     name=asset_name, fields=ASSET_FIELDS[asset_name]
                 ),
             ),
-            metadata={"records": row_count},
+            metadata={"records": df.shape[0]},
         )
 
     return _asset

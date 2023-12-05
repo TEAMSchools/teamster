@@ -1,47 +1,50 @@
 import json
-from typing import Any, Mapping
 
 from dagster import (
+    Any,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
+    AutoMaterializePolicy,
+    Mapping,
     Nothing,
+    Optional,
     Output,
     multi_asset,
 )
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource
+from dagster_dbt import DbtCliResource, KeyPrefixDagsterDbtTranslator
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     MANIFEST_METADATA_KEY,
+    _auto_materialize_policy_fn,
 )
 from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
 
-def get_custom_dagster_dbt_translator(code_location):
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-            node_info = dbt_resource_props
+class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        asset_key_config = (
+            dbt_resource_props.get("meta", {}).get("dagster", {}).get("asset_key", [])
+        )
 
-            dagster_metadata = node_info.get("meta", {}).get("dagster", {})
-            asset_key_config = dagster_metadata.get("asset_key", [])
-            if asset_key_config:
-                return AssetKey(asset_key_config)
+        if asset_key_config:
+            return AssetKey(asset_key_config)
+        else:
+            return super().get_asset_key(dbt_resource_props)
 
-            if node_info["resource_type"] == "source":
-                components = [node_info["source_name"], node_info["name"]]
-            else:
-                configured_schema = node_info["config"].get("schema")
-                if configured_schema is not None:
-                    components = [configured_schema, node_info["name"]]
-                else:
-                    components = [node_info["name"]]
+    def get_auto_materialize_policy(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[AutoMaterializePolicy]:
+        auto_materialize_policy = _auto_materialize_policy_fn(
+            dbt_resource_props.get("meta", {})
+            .get("dagster", {})
+            .get("auto_materialize_policy", {})
+        )
 
-            components.insert(0, code_location)
-
-            return AssetKey(components)
-
-    return CustomDagsterDbtTranslator
+        if auto_materialize_policy:
+            return auto_materialize_policy
+        else:
+            return AutoMaterializePolicy.eager()
 
 
 def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
@@ -63,6 +66,7 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
+            auto_materialize_policy=AutoMaterializePolicy.eager(),
         )
         for source in external_sources
     }
@@ -122,7 +126,7 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
                 json.dumps({"ext_full_refresh": True}),
             ],
             manifest=manifest,
-            dagster_dbt_translator=dagster_dbt_translator(),
+            dagster_dbt_translator=dagster_dbt_translator,
         )
 
         for event in dbt_run_operation.stream_raw_events():

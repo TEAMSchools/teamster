@@ -9,6 +9,15 @@ with
 
             round(avg(mem.attendancevalue), 2) as ada_term_running,
             coalesce(sum(abs(mem.attendancevalue - 1)), 0) as n_absences_y1_running,
+            coalesce(
+                sum(
+                    case
+                        when ac.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI')
+                        then abs(mem.attendancevalue - 1)
+                    end
+                ),
+                0
+            ) as n_absences_y1_running_non_susp,
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
                 when 'kippnewark'
@@ -34,6 +43,17 @@ with
             and mem.yearid = rt.powerschool_year_id
             and mem.calendardate <= rt.end_date  -- join to all terms after calendardate
             and rt.type = 'RT'
+        left join
+            {{ ref("stg_powerschool__attendance") }} as att
+            on mem.studentid = att.studentid
+            and mem.calendardate = att.att_date
+            and {{ union_dataset_join_clause(left_alias="mem", right_alias="att") }}
+        left join
+            {{ ref("stg_powerschool__attendance_code") }} as ac
+            on att.attendance_codeid = ac.id
+            and att.yearid = ac.yearid
+            and att.schoolid = ac.schoolid
+            and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
         where
             mem.membershipvalue = 1
             and mem.calendardate <= current_date('{{ var("local_timezone") }}')
@@ -110,6 +130,7 @@ with
 
             att.ada_term_running,
             att.n_absences_y1_running,
+            att.n_absences_y1_running_non_susp,
 
             ir.iready_reading_recent,
             ir.iready_math_recent,
@@ -134,11 +155,11 @@ with
                 /* HS */
                 when
                     co.grade_level >= 9
-                    and att.n_absences_y1_running >= att.hs_at_risk_absences
+                    and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
                 then 'Off-Track'
                 when
                     co.grade_level >= 9
-                    and att.n_absences_y1_running >= att.hs_off_track_absences
+                    and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
                 then 'Off-Track'
                 else 'On-Track'
             end as attendance_status,
@@ -196,6 +217,7 @@ select
     term_name,
     ada_term_running,
     n_absences_y1_running,
+    n_absences_y1_running_non_susp,
     iready_reading_recent,
     iready_math_recent,
     n_failing,

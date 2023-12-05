@@ -7,7 +7,7 @@ from teamster.core.google.directory.assets import (
 from teamster.core.google.forms.assets import build_google_forms_assets
 from teamster.core.google.sheets.assets import build_gsheet_asset
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.dbt.assets import DBT_MANIFEST
+from teamster.kipptaf.dbt.assets import dbt_manifest
 
 # google sheets
 google_sheets_assets = [
@@ -18,7 +18,7 @@ google_sheets_assets = [
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
-    for source in DBT_MANIFEST["sources"].values()
+    for source in dbt_manifest["sources"].values()
     if source.get("external")
     and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
 ]

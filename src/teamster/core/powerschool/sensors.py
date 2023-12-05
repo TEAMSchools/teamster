@@ -4,6 +4,7 @@ import pendulum
 from dagster import (
     AssetsDefinition,
     AssetSelection,
+    MonthlyPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -12,7 +13,8 @@ from dagster import (
 from sqlalchemy import text
 
 from teamster.core.sqlalchemy.resources import OracleResource
-from teamster.core.ssh.resources import SSHConfigurableResource
+from teamster.core.ssh.resources import SSHResource
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_partition_sensor(
@@ -25,12 +27,11 @@ def build_partition_sensor(
     )
     def _sensor(
         context: SensorEvaluationContext,
-        ssh_powerschool: SSHConfigurableResource,
+        ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ):
-        cursor = json.loads(context.cursor or "{}")
-
         now = pendulum.now(timezone).start_of("minute")
+        cursor = json.loads(context.cursor or "{}")
 
         ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
@@ -40,76 +41,74 @@ def build_partition_sensor(
 
             run_requests = []
             for asset in asset_defs:
-                asset_key = asset.key
-                last_partition_key = asset.partitions_def.get_last_partition_key()
+                is_requested = False
 
-                partition_column = asset.metadata_by_key[asset_key]["partition_column"]
+                asset_key_string = asset.key.to_python_identifier()
+                partition_key = asset.partitions_def.get_last_partition_key()
+                partition_column = asset.metadata_by_key[asset.key]["partition_column"]
 
-                asset_key_string = asset_key.to_python_identifier()
                 context.log.info(asset_key_string)
 
-                table_name = asset_key.path[-1]
+                last_updated = pendulum.from_timestamp(
+                    cursor.get(asset_key_string, 0), tz=timezone
+                )
 
-                for partition_key in asset.partitions_def.get_partition_keys():
-                    is_requested = False
-                    cursor_key = f"{asset_key_string}__{partition_key}"
+                if last_updated.timestamp() == 0:
+                    is_requested = True
+                else:
+                    context.log.info(partition_key)
 
-                    last_updated = pendulum.from_timestamp(
-                        cursor.get(cursor_key, 0), tz=timezone
-                    )
+                    window_start_fmt = last_updated.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
-                    asset.partitions_def.get_last_partition_key()
-                    if last_updated.timestamp() == 0:
-                        is_requested = True
-                    elif partition_key != last_partition_key:
-                        continue
-                    else:
-                        window_start = last_updated.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-
-                        context.log.info(partition_key)
-                        window_end = (
-                            pendulum.from_format(
-                                string=partition_key,
-                                fmt="YYYY-MM-DDTHH:mm:ssZZ",
-                                tz=timezone,
-                            )
-                            .add(years=1)
+                    if isinstance(
+                        asset.partitions_def,
+                        FiscalYearPartitionsDefinition,
+                    ):
+                        window_end_fmt = (
+                            last_updated.add(years=1)
                             .subtract(days=1)
+                            .end_of("day")
                             .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                         )
-
-                        [(count,)] = db_powerschool.engine.execute_query(
-                            query=text(
-                                "SELECT COUNT(*) "
-                                f"FROM {table_name} "
-                                f"WHERE {partition_column} BETWEEN "
-                                f"TO_TIMESTAMP('{window_start}', "
-                                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
-                                f"TO_TIMESTAMP('{window_end}', "
-                                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-                            ),
-                            partition_size=1,
-                            output_format=None,
+                    elif isinstance(
+                        asset.partitions_def,
+                        MonthlyPartitionsDefinition,
+                    ):
+                        window_end_fmt = last_updated.end_of("month").format(
+                            "YYYY-MM-DDTHH:mm:ss.SSSSSS"
                         )
 
-                        context.log.info(f"count: {count}")
+                    [(count,)] = db_powerschool.engine.execute_query(
+                        query=text(
+                            "SELECT COUNT(*) "
+                            f"FROM {asset.key.path[-1]} "
+                            f"WHERE {partition_column} BETWEEN "
+                            f"TO_TIMESTAMP('{window_start_fmt}', "
+                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
+                            f"TO_TIMESTAMP('{window_end_fmt}', "
+                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                        ),
+                        partition_size=1,
+                        output_format=None,
+                    )
 
-                        if count > 0:
-                            is_requested = True
+                    context.log.info(f"count: {count}")
 
-                    if is_requested:
-                        hour_ts = now.start_of("hour").timestamp()
+                    if count > 0:
+                        is_requested = True
 
-                        run_requests.append(
-                            RunRequest(
-                                run_key=f"{asset_key_string}_{partition_key}_{hour_ts}",
-                                asset_selection=[asset_key],
-                                partition_key=partition_key,
-                            )
+                if is_requested:
+                    hour_ts = now.start_of("hour").timestamp()
+
+                    run_requests.append(
+                        RunRequest(
+                            run_key=f"{asset_key_string}_{hour_ts}",
+                            asset_selection=[asset.key],
+                            partition_key=partition_key,
                         )
+                    )
 
-                        cursor[cursor_key] = hour_ts
-
+                    cursor[asset_key_string] = hour_ts
         finally:
             context.log.info("Stopping SSH tunnel")
             ssh_tunnel.stop()

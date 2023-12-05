@@ -70,12 +70,13 @@ with
             enr.currentabsences,
             enr.currenttardies,
 
-            fg.need_60,
             fg.term_percent_grade_adjusted_rt1,
             fg.term_percent_grade_adjusted_rt2,
             fg.term_percent_grade_adjusted_rt3,
             fg.term_percent_grade_adjusted_rt4,
             fg.y1_percent_grade_adjusted,
+
+            round(fg.need_60, 0) as need_60,
 
             if(
                 enr.code_location = 'kippmiami' and enr.grade_level = 0,
