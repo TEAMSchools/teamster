@@ -105,10 +105,10 @@ with
             active_next_year as an
             on an.academic_year = dc.academic_year
             and an.employee_number = srh.employee_number
-        where an.employee_number is null 
-        -- removing duplicate rows - entity changers and rehires have ongoing term rows
-    ),
+        /* removing duplicate rows - entity changers and rehires have ongoing term rows*/
+        where an.employee_number is null
 
+    ),
     core_attrition_table as (
         select
             academic_year,
@@ -123,7 +123,7 @@ with
                     else 0
                 end
             ) over (partition by employee_number order by academic_year)
-            as year_at_kipp,  -- Counting year as the year a person is in.
+            as year_at_kipp,  /* Counting year as the year a person is in*/
             sum(
                 case
                     when
@@ -142,7 +142,7 @@ with
                     else 0
                 end
             ) over (partition by employee_number order by academic_year)
-            as years_teaching_at_kipp,  -- Counting year as the year a person is in.
+            as years_teaching_at_kipp,  /* Counting year as the year a person is in.*/
         from combined_statuses
     ),
 
@@ -180,7 +180,7 @@ with
             on cat.effective_date
             between date(srh.work_assignment__fivetran_start) and date(
                 srh.work_assignment__fivetran_end
-            )  -- where you worked on 4/30 is the reporting data
+            )  /* where you worked on 4/30 is the reporting data*/
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
@@ -250,7 +250,7 @@ with
             on cat.effective_date
             between date(srh.work_assignment__fivetran_start) and date(
                 srh.work_assignment__fivetran_end
-            )  -- where you worked on 4/30 is the reporting data
+            )  /* where you worked on 4/30 is the reporting data*/
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status in ('Terminated', 'Deceased')
