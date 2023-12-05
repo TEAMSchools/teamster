@@ -260,6 +260,47 @@ with
         where lya.employee_number is null
     ),
 
+    ly_deduped as (
+        select
+            academic_year,
+            employee_number,
+            is_attrition,
+            year_at_kipp,
+            termination_reason,
+            preferred_name_lastfirst,
+            business_unit_home_name,
+            home_work_location_name,
+            home_work_location_abbreviation,
+            home_work_location_grade_band,
+            department_home_name,
+            job_title,
+            base_remuneration_annual_rate_amount_amount_value,
+            additional_remuneration_rate_amount_value,
+            report_to_employee_number,
+            gender_identity,
+            race_ethnicity_reporting,
+            community_grew_up,
+            community_professional_exp,
+            primary_grade_level_taught,
+            level_of_education,
+            alumni_status,
+            termination_date,
+            original_hire_date,
+            total_years_teaching,
+            case
+                when
+                    count(employee_number) over (
+                        partition by employee_number, academic_year
+                    )
+                    > 1
+                    and termination_reason
+                    in ('Import Created Action', 'Upgrade Created Action')
+                then 'dupe'
+                else 'not dupe'
+            end as dupe_check
+        from ly_combined
+    ),
+
     pm_scores as (
         select
             employee_number,
@@ -280,7 +321,7 @@ with
         group by employee_number, academic_year
     )
 
-select
+select distinct
     l.academic_year,
     l.employee_number,
     l.is_attrition,
@@ -307,8 +348,9 @@ select
     l.original_hire_date,
     l.total_years_teaching,
     pm.overall_tier,
-from ly_combined as l
+from ly_deduped as l
 left join
     pm_scores as pm
     on l.employee_number = pm.employee_number
     and l.academic_year = pm.academic_year
+where l.dupe_check != 'dupe'
