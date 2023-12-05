@@ -105,10 +105,10 @@ with
             active_next_year as an
             on an.academic_year = dc.academic_year
             and an.employee_number = srh.employee_number
-        /* removing duplicate rows - entity changers and rehires have ongoing term rows*/
+        /* removing duplicate rows - entity changers + rehires have ongoing term rows*/
         where an.employee_number is null
-
     ),
+
     core_attrition_table as (
         select
             academic_year,
@@ -142,7 +142,7 @@ with
                     else 0
                 end
             ) over (partition by employee_number order by academic_year)
-            as years_teaching_at_kipp,  /* Counting year as the year a person is in.*/
+            as years_teaching_at_kipp,  /* Counting year as the year a person is in*/
         from combined_statuses
     ),
 
