@@ -92,5 +92,5 @@ select
         when 5
         then 'Mastery'
     end as achievement_level,
-    if(performance_level >= 3, 'true', 'false') as is_proficient,
+    if(performance_level >= 3, true, false) as is_proficient,
 from fsa
