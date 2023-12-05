@@ -143,7 +143,6 @@ with
             on te.cc_studentid = sg.studentid
             and te.cc_course_number = sg.course_number
             and te.cc_termid = sg.termid
-            and te.cc_sectionid = sg.sectionid
             and te.storecode = sg.storecode
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as sgs
