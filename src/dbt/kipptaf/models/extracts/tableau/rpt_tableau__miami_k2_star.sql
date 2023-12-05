@@ -125,6 +125,18 @@ select
     ir.percent_progress_to_annual_typical_growth_percent as progress_to_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as progress_to_stretch,
 
+    s.district_benchmark_category_level as star_category_level,
+    s.district_benchmark_category_name as star_category_name,
+    s.district_benchmark_proficient as star_proficient,
+    s.scaled_score,
+    s.current_sgp,
+    s.completed_date,
+    s.standard_name,
+    s.standard_description,
+    s.standard_mastery_level,
+    s.standard_percent_mastery,
+    s.rn_subject_round,
+
     up.domain_name,
     up.relative_placement,
 
@@ -155,7 +167,6 @@ left join
     on co.student_number = s.student_number
     and subj.iready_subject = s.subject
     and ar = s.administration_window
-    and s.rn_subject_round = 1
 left join
     {{ ref("base_powerschool__course_enrollments") }} as e
     on co.student_number = e.students_student_number
