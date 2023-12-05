@@ -1,11 +1,14 @@
 import random
 
-from dagster import EnvVar, materialize
+from dagster import DailyPartitionsDefinition, EnvVar, materialize
 from dagster_gcp import GCSResource
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.ssh.resources import SSHResource
+from teamster.core.utils.functions import get_avro_record_schema
+from teamster.staging import LOCAL_TIMEZONE
 
 SSH_IREADY = SSHResource(
     remote_host="prod-sftp-1.aws.cainc.com",
@@ -23,11 +26,9 @@ SSH_COUCHDROP = SSHResource(
 def _test_asset(asset, ssh_resource):
     partition_keys = asset.partitions_def.get_partition_keys()
 
-    partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
-
     result = materialize(
         assets=[asset],
-        partition_key=partition_key,
+        partition_key=partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
         resources={
             "io_manager_gcs_avro": GCSIOManager(
                 gcs=GCSResource(project=GCS_PROJECT_NAME),
@@ -101,36 +102,37 @@ def test_assets_iready_kippnewark():
         _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
-def test_assets_edplan_kippcamden():
-    from teamster.kippcamden.edplan import assets
+def test_assets_edplan():
+    from teamster.core.edplan.schema import ASSET_FIELDS
 
-    for asset in assets:
-        _test_asset(
-            asset=asset,
-            ssh_resource={
-                "ssh_edplan": SSHResource(
-                    remote_host="secureftp.easyiep.com",
-                    username=EnvVar("KIPPCAMDEN_EDPLAN_SFTP_USERNAME"),
-                    password=EnvVar("KIPPCAMDEN_EDPLAN_SFTP_PASSWORD"),
-                )
-            },
-        )
+    asset_name = "njsmart_powerschool"
 
+    asset = build_sftp_asset(
+        asset_key=["staging", "edplan", asset_name],
+        ssh_resource_key="ssh_edplan",
+        avro_schema=get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        ),
+        partitions_def=DailyPartitionsDefinition(
+            start_date="2023-05-08",
+            timezone=LOCAL_TIMEZONE.name,
+            fmt="%Y-%m-%d",
+            end_offset=1,
+        ),
+        remote_dir="Reports",
+        remote_file_regex=r"NJSMART-Power[Ss]chool\.txt",
+    )
 
-def test_assets_edplan_kippnewark():
-    from teamster.kippnewark.edplan import assets
-
-    for asset in assets:
-        _test_asset(
-            asset=asset,
-            ssh_resource={
-                "ssh_edplan": SSHResource(
-                    remote_host="secureftp.easyiep.com",
-                    username=EnvVar("KIPPNEWARK_EDPLAN_SFTP_USERNAME"),
-                    password=EnvVar("KIPPNEWARK_EDPLAN_SFTP_PASSWORD"),
-                )
-            },
-        )
+    _test_asset(
+        asset=asset,
+        ssh_resource={
+            "ssh_edplan": SSHResource(
+                remote_host="secureftp.easyiep.com",
+                username=EnvVar("KIPPCAMDEN_EDPLAN_SFTP_USERNAME"),
+                password=EnvVar("KIPPCAMDEN_EDPLAN_SFTP_PASSWORD"),
+            )
+        },
+    )
 
 
 def test_assets_titan_kippcamden():

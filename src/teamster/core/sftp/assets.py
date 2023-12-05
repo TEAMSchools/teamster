@@ -20,9 +20,7 @@ from teamster.core.utils.functions import regex_pattern_replace
 
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
     # list files remote filepath
-    with ssh.get_connection() as conn:
-        with conn.open_sftp() as sftp_client:
-            files = ssh.listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
+    files = ssh.listdir_attr_r(remote_dir=remote_dir, files=[])
 
     if remote_dir == ".":
         pattern = remote_file_regex
