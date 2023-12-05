@@ -2,7 +2,7 @@ import pathlib
 
 from dagster import EnvVar, build_resources
 
-from teamster.core.amplify.resources import MClassResource
+from teamster.kipptaf.amplify.resources import MClassResource
 
 
 def _test(dyd_results, years):

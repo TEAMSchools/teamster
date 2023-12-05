@@ -1,27 +1,20 @@
 from dagster import build_sensor_context, instance_for_test
 
-from teamster.core.google.sheets.assets import build_gsheet_asset
-from teamster.core.google.sheets.resources import GoogleSheetsResource
-from teamster.core.google.sheets.sensors import build_gsheet_sensor
-
-CODE_LOCATION = "kipptaf"
+from teamster.kipptaf.google.sheets.assets import build_gsheet_asset
+from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
+from teamster.kipptaf.google.sheets.sensors import google_sheets_asset_sensor
 
 test_asset = build_gsheet_asset(
-    code_location=CODE_LOCATION,
     source_name="",
     name="standards_translation",
     uri="https://docs.google.com/spreadsheets/d/1EwHv7MajgHTq-HphLpwrS0KG_2Y_FXlPuPvj98YuFS8",
     range_name="standards_translation",
 )
 
-gsheets_sensor = build_gsheet_sensor(
-    code_location=CODE_LOCATION, asset_defs=[test_asset]
-)
-
 
 def test_sensor():
     with instance_for_test() as instance:
-        gsheets_sensor(
+        google_sheets_asset_sensor(
             build_sensor_context(
                 instance=instance,
                 resources={

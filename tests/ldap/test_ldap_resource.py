@@ -2,7 +2,7 @@ import pickle
 
 from dagster import EnvVar, build_resources
 
-from teamster.core.ldap.resources import LdapResource
+from teamster.kipptaf.ldap.resources import LdapResource
 
 # via http://www.phpldaptools.com/reference/Default-Schema-Attributes
 ARRAY_ATTRIBUTES = [

@@ -6,7 +6,7 @@ from dagster_gcp import GCSPickleIOManager, GCSResource
 from teamster import GCS_PROJECT_NAME
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHResource
-from teamster.staging.powerschool.assets import (
+from teamster.kippnewark.powerschool.assets import (
     full_assets,
     transaction_date_partition_assets,
 )
