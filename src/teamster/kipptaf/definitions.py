@@ -43,24 +43,24 @@ GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=[
-        *load_assets_from_modules(modules=[achieve3k], group_name="achieve3k"),
-        *load_assets_from_modules(modules=[adp], group_name="adp"),
-        *load_assets_from_modules(modules=[alchemer], group_name="alchemer"),
-        *load_assets_from_modules(modules=[amplify], group_name="amplify"),
-        *load_assets_from_modules(modules=[clever], group_name="clever"),
-        *load_assets_from_modules(modules=[datagun], group_name="datagun"),
-        *load_assets_from_modules(modules=[dayforce], group_name="dayforce"),
-        *load_assets_from_modules(modules=[dbt]),
-        *load_assets_from_modules(modules=[google], group_name="google"),
-        *load_assets_from_modules(modules=[ldap], group_name="ldap"),
-        *load_assets_from_modules(modules=[schoolmint], group_name="schoolmint_grow"),
-        *load_assets_from_modules(
-            modules=[smartrecruiters], group_name="smartrecruiters"
-        ),
-        *load_assets_from_modules(modules=[airbyte]),
-        *load_assets_from_modules(modules=[fivetran]),
-    ],
+    assets=load_assets_from_modules(
+        modules=[
+            achieve3k,
+            adp,
+            airbyte,
+            alchemer,
+            amplify,
+            clever,
+            datagun,
+            dayforce,
+            dbt,
+            fivetran,
+            google,
+            ldap,
+            schoolmint,
+            smartrecruiters,
+        ]
+    ),
     jobs=[
         *adp.jobs,
         *airbyte.jobs,

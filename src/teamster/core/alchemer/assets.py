@@ -20,6 +20,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         io_manager_key=io_manager_key,
         partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
+        group_name="alchemer",
     )
     def survey(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -38,6 +39,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         io_manager_key=io_manager_key,
         partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
+        group_name="alchemer",
     )
     def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -55,6 +57,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
         io_manager_key=io_manager_key,
         partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
         op_tags=op_tags,
+        group_name="alchemer",
     )
     def survey_campaign(context: OpExecutionContext, alchemer: AlchemerResource):
         asset_name = context.assets_def.key[-1]
@@ -77,6 +80,7 @@ def build_partition_assets(code_location, op_tags={}) -> list:
             name=f"{code_location}_alchemer_survey_response"
         ),
         op_tags=op_tags,
+        group_name="alchemer",
     )
     def survey_response(context: OpExecutionContext, alchemer: AlchemerResource):
         partition_key_split = context.partition_key.split("_")

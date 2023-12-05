@@ -90,3 +90,11 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__state_test_comparison
             skip_leading_rows: 1
+      - name: src_assessments__college_readiness_expected_tests
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__college_readiness_expected_tests
+            skip_leading_rows: 1
