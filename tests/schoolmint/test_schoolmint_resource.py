@@ -3,7 +3,7 @@ import pathlib
 
 from dagster import EnvVar, build_resources
 
-from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
 
 with build_resources(
     resources={

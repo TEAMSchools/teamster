@@ -3,8 +3,8 @@ from dagster_gcp import GCSResource
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
-from teamster.core.smartrecruiters.assets import build_smartrecruiters_report_asset
-from teamster.core.smartrecruiters.resources import SmartRecruitersResource
+from teamster.kipptaf.smartrecruiters.assets import build_smartrecruiters_report_asset
+from teamster.kipptaf.smartrecruiters.resources import SmartRecruitersResource
 
 
 def _test_asset(asset_name, report_id):

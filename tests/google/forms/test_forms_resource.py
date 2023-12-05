@@ -2,7 +2,7 @@ import json
 
 from dagster import build_resources
 
-from teamster.core.google.forms.resources import GoogleFormsResource
+from teamster.kipptaf.google.forms.resources import GoogleFormsResource
 
 
 def _test_resource(form_id):

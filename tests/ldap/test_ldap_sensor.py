@@ -1,6 +1,6 @@
 from dagster import EnvVar, build_resources
 
-from teamster.core.ldap.resources import LdapResource
+from teamster.kipptaf.ldap.resources import LdapResource
 
 SEARCH_BASE = "dc=teamschools,dc=kipp,dc=org"
 TESTS = [
