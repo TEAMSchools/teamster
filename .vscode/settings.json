@@ -39,5 +39,8 @@
   "testing.showAllMessages": true,
   "python.testing.pytestArgs": ["tests", "--capture=no"],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "trunk.numJobs": 1,
+  "python.createEnvironment.trigger": "off",
+  "python.terminal.activateEnvironment": false
 }
