@@ -41,8 +41,6 @@ def build_deanslist_static_partition_asset(
             params=params,
         )
 
-        row_count = endpoint_content["row_count"]
-
         yield Output(
             value=(
                 endpoint_content["data"],
@@ -50,7 +48,7 @@ def build_deanslist_static_partition_asset(
                     name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
                 ),
             ),
-            metadata={"records": row_count},
+            metadata={"records": endpoint_content["row_count"]},
         )
 
     return _asset
