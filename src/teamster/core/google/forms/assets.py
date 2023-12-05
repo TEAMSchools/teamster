@@ -10,6 +10,7 @@ def build_google_forms_assets(code_location, partitions_def):
         key=[code_location, "google", "forms", "form"],
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
+        group_name="google_forms",
     )
     def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
         data = google_forms.get_form(form_id=context.partition_key)
@@ -21,6 +22,7 @@ def build_google_forms_assets(code_location, partitions_def):
         key=[code_location, "google", "forms", "responses"],
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
+        group_name="google_forms",
     )
     def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):
         data = google_forms.list_responses(form_id=context.partition_key)

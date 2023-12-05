@@ -14,96 +14,23 @@ Here are some resources to help you get started with open source contributions:
 
 All of our source code is located under the `src/` directory.
 
-`teamster/` contains all of our Dagster code, which powers our data orchestration, and `dbt/`
-contains all of our dbt SQL, which is organized by
-[project](https://docs.getdbt.com/docs/build/projects)
+`src/teamster/` contains all of our Dagster code, which powers our data orchestration.
+
+`src/dbt/` contains all of our dbt SQL, which is organized by
+[project](https://docs.getdbt.com/docs/build/projects).
 
 ### dbt Projects
 
-`kipptaf` is the home for all CMO-level reporting. This project contains views that aggregate
-regional tables as well as data for CMO-specific systems. This is the only project that dbt Cloud is
+`kipptaf` is the homebase for all CMO-level reporting. This project contains views that aggregate
+regional tables as well as CMO-specific data. This is the **only** project that dbt Cloud is
 configured to work with.
 
-`kippnewark`, `kippcamden`, and `kippmiami` contain region-specific configurations that ensure data
-is loaded into respective datasets
+`kippnewark`, `kippcamden`, and `kippmiami` contain region-specific configurations that ensure their
+data is loaded into their respective datasets.
 
-Miscellaneous projects, such as `powerschool`, `deanslist`, and `iready` contain code for systems
-that are used across two or more regions. Keeping them as installable dependencies allows us to
-maintain the core code in one place but use it across as many projects as we need.
-
-### Naming conventions
-
-Dig into how we structure the files, folders, and models for our three primary layers in the models
-directory, which build on each other:
-
-#### Staging
-
-creating our atoms, our initial modular building blocks, from source data
-
-##### Folder structure
-
-Folder structure is extremely important in dbt. Not only do we need a consistent structure to find
-our way around the codebase, as with any software project, but our folder structure is also one of
-the key interfaces for understanding the knowledge graph encoded in our project (alongside the DAG
-and the data output into our warehouse).
-
-It should reflect how the data flows, step-by-step, from a wide variety of source-conformed models
-into fewer, richer business-conformed models.
-
-Subdirectories based on the source system. Our internal transactional database is one system, the
-data we get from Stripe's API is another, and lastly the events from our Snowplow instrumentation.
-We've found this to be the best grouping for most companies, as source systems tend to share similar
-loading methods and properties between tables, and this allows us to operate on those similar sets
-easily.
-
-##### File names
-
-Creating a consistent pattern of file naming is crucial in dbt.
-
-File names must be unique and correspond to the name of the model when selected and created in the
-warehouse.
-
-We recommend putting as much clear information into the file name as possible, including a prefix
-for the layer the model exists in, important grouping information, and specific information about
-the entity or transformation in the model.
-
-✅ stg\_[source]\_\_[entity]s.sql - the double underscore between source system and entity helps
-visually distinguish the separate parts in the case of a source name having multiple words. Think of
-it like an oxford comma, the extra clarity is very much worth the extra punctuation.
-
-#### Intermediate
-
-stacking layers of logic with clear and specific purposes to prepare our staging models to join into
-the entities we want
-
-##### Folders
-
-✅ Subdirectories based on business groupings. Much like the staging layer, we’ll house this layer
-of models inside their own intermediate subfolder. Unlike the staging layer, here we shift towards
-being business-conformed, splitting our models up into subdirectories not by their source system,
-but by their area of business concern.
-
-##### File names
-
-✅ int\_[source]\_\_[entity]s\_[verb]s.sql - the variety of transformations that can happen inside
-of the intermediate layer makes it harder to dictate strictly how to name them. The best guiding
-principle is to think about verbs (e.g. pivoted, aggregated_to_user, joined, fanned_out_by_quantity,
-funnel_created, etc.) in the intermediate layer. In our example project, we use an intermediate
-model to pivot payments out to the order grain, so we name our model int_payments_pivoted_to_orders.
-It’s easy for anybody to quickly understand what’s happening in that model, even if they don’t know
-SQL. That clarity is worth the long file name. It’s important to note that we’ve dropped the double
-underscores at this layer. In moving towards business-conformed concepts, we no longer need to
-separate a system and an entity and simply reference the unified entity if possible. In cases where
-you need intermediate models to operate at the source system level (e.g. int_shopify**orders_summed,
-int_core**orders_summed which you would later union), you’d preserve the double underscores. Some
-people like to separate the entity and verbs with double underscores as well. That’s a matter of
-preference, but in our experience, there is often an intrinsic connection between entities and verbs
-in this layer that make that difficult to maintain.
-
-#### Marts
-
-bringing together our modular pieces into a wide, rich vision of the entities our organization cares
-about
+Other projects (e.g. `powerschool`, `deanslist`, `iready`) contain code for systems that is used
+across multiple regions. Keeping these projects as installable dependencies allows us to maintain
+the code in one place and use it across as many projects as needed.
 
 ## Account setup
 
@@ -135,7 +62,7 @@ By default, this is your username, but please prefix it with an underscore ( `_`
 cluttering up our BigQuery navigation. BigQuery will hide any datasets that begin with an underscore
 from the left nav.
 
-![Alt text](images/dbt-cloud/settings_profile_credentials.png)
+![Alt text](images/dbt_cloud/development_credentials.png)
 
 #### sqlfmt
 
@@ -159,66 +86,140 @@ To confirm that dbt Cloud is set up to use sqlfmt:
 
 ## Make Changes
 
-### Make changes in dbt Cloud
+### Folder structure & file names
 
-#### Create a branch
+Folder structure is extremely important in dbt. It should reflect how the data flows, step-by-step,
+from a wide variety of source-conformed models into fewer, richer business-conformed models.
 
-https://docs.getdbt.com/docs/collaborate/git/version-control-basics
+Creating a consistent pattern of file naming is crucial in dbt. File names **must be unique** and
+correspond to the name of the model when selected and created in the warehouse.
 
-![Alt text](images/dbt-cloud/version-control.png)
+We recommend putting as much clear information into the file name as possible, including a prefix
+for the layer the model exists in, important grouping information, and specific information about
+the entity or transformation in the model.
 
-#### Make your changes
+#### Staging
+
+Modular building blocks from source data
+
+- Folder structure: ...
+- File naming convention: `stg_{source}__{entity}.sql`
+
+#### Intermediate
+
+Layers of logic with clear and specific purposes, preparing our staging models to join into the
+entities we want
+
+- Folder structure: subdirectories by area of business concern
+- File naming: `int_{business concern}__{entity}_{verb}.sql`
+  - business concerns:
+    - `assessments`
+    - `surveys`
+    - `people`
+  - verbs:
+    - `pivot`
+    - `unpivot`
+    - `rollup`
+
+#### Marts
+
+bringing together our modular pieces into a wide, rich vision of the entities our organization cares
+about
+
+### Create a branch
+
+[Version control basics](https://docs.getdbt.com/docs/collaborate/git/version-control-basics)
+
+![Alt text](images/dbt_cloud/create_branch.png)
+
+### Make your changes
 
 ...
 
-#### Commit your changes
+### Commit your changes
 
-...
+![Alt text](images/dbt_cloud/commit_sync.png)
 
-### Pull request
+### Open a pull request
 
-When you're finished with the changes, create a **Pull Request** ("PR").
+When you're finished making changes, create a
+[Pull Request](https://docs.github.com/en/pull-requests) ("PR").
 
-1. On dbt Cloud, click "Create a pull request on GitHub"
+1. On dbt Cloud, click ![Create a pull request on GitHub](images/dbt_cloud/create_pull_request.png)
 2. On the GitHub page that pops up, click "Create pull request"
+   ![Alt text](images/github/create_pull_request.png)
+3. Fill in the "Summary & Motivation" section of the pull request template and click "Create pull
+   request".
 
-- Fill the "Ready for review" template so that we can review your PR. This template helps reviewers
-  understand your changes as well as the purpose of your pull request.
-- Asana
+## Code review
+
+Once created, [Zapier](https://zapier.com/) will create a task for your pull request in our
+[Teamster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838).
+
+- [x] Find yours by the **title** or **number**
+- [x] Update the **due date** and **assignee**
+- [x] Ensure that you are a **follower** on the task
+
+GitHub will automatically assign default reviewers based on the location of the code changes
+submitted:
+
+| Filepath                           | Default Approvers                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| `src/dbt/kipptaf/models/extracts/` | [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers) |
+| `src/teamster/`                    | [Data Engineers](https://github.com/orgs/TEAMSchools/teams/data-engineers)           |
+| `docs/`                            | [Data Team](https://github.com/orgs/TEAMSchools/teams/data-team)                     |
+| All other directories              | [Admins](https://github.com/orgs/TEAMSchools/teams/admins)                           |
+
+A series of automatic checks will then run on the code that you submitted.
+
+### Resolving merge confilcts
+
+If you run into any merge issues, checkout this
+[git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
+conflicts and other issues.
+
+### Trunk
+
+[Trunk](https://trunk.io/) is a tool that runs multiple "linters" that check for common errors and
+enforces style.
+
+| Language | Linter(s)                                                  |
+| -------- | ---------------------------------------------------------- |
+| SQL      | [SQLFluff](https://docs.sqlfluff.com/en/stable/rules.html) |
+| Python   | [Ruff](https://docs.astral.sh/ruff/rules/)                 |
+
+??? question "What if I can't fix the issue?"
+
+    Find another place to work!
+
+### dbt Cloud
+
+dbt Cloud will create branch a dataset for your pull request on BigQuery and attempt to build the
+modified files.
+
+If there are any issues with your code, the check will fail, and you can find the reasons by:
+
+1. Clicking on the `Details` link
+2. Expanding the **Invoke `dbt build ...`** section
+3. Selecting **Debug Logs**
+
+![Alt text](images/github/dbt_cloud_check.png)
+
+![Alt text](images/dbt_cloud/deploy_run_build.png)
+
 - We may ask for changes to be made before a PR can be merged, either using
   [suggested changes](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/incorporating-feedback-in-your-pull-request)
   or pull request comments. You can apply suggested changes directly through the UI. You can make
   any other changes in your fork, then commit them to your branch.
 - As you update your PR and apply changes, mark each conversation as
   [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations).
-- If you run into any merge issues, checkout this
-  [git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge
-  conflicts and other issues.
 
-You should always review your own PR first. For content changes, make sure that you:
+## Your PR is merged
 
-- [ ] Confirm that the changes meet the user experience and goals outlined in the content design
-      plan (if there is one).
-- [ ] Compare your pull request's source changes to staging to confirm that the output matches the
-      source and that everything is rendering as expected. This helps spot issues like typos,
-      content that doesn't follow the style guide, or content that isn't rendering due to versioning
-      problems. Remember that lists and tables can be tricky.
-- [ ] Review the content for technical accuracy.
-- [ ] Copy-edit the changes for grammar, spelling, and adherence to the
-      [style guide](https://github.com/github/docs/blob/main/contributing/content-style-guide.md).
-- [ ] If there are any failing checks in your PR, troubleshoot them until they're all passing.
+Congratulations :tada::tada: :sparkles:
 
-- dbt action
-- trunk action, sqlfluff style guide
+Once your PR is merged...
 
-### Your PR is merged
-
-Congratulations :tada::tada: The GitHub team thanks you :sparkles:.
-
-Once your PR is merged, your contributions will...
-
-- deploy to Dagster
-- SQL updates will take effect whenever the next update is triggered. The lag can vary significantly
-  depending on the source of the data.
-- If you need changes to appear immediately, we can force an update via Dagster. [how to communicate
-  that?]
+- GitHub updates Dagster
+- Dagster scans for code changes every 5 minutes
+- Dagster will launch a run to update all changed models

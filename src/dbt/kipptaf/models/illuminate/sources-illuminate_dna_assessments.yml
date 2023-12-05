@@ -101,7 +101,8 @@ sources:
             asset_key:
               - kipptaf
               - illuminate
-              - standardna_assessments  - subjects
+              - dna_assessments
+              - tags
       - name: assessment_fields
         identifier: fields
         meta:
@@ -111,4 +112,4 @@ sources:
               - kipptaf
               - illuminate
               - dna_assessments
-              - assessment_fields
+              - fields

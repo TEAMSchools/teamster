@@ -1,32 +1,30 @@
-from dagster import AssetSelection, define_asset_job
+from dagster import RunConfig, config_from_files, job
+from dagster_airbyte.ops import AirbyteSyncConfig
 
-from teamster.core.airbyte.jobs import build_airbyte_start_sync_job
-from teamster.kipptaf import CODE_LOCATION, airbyte
+from teamster.core.airbyte.ops import airbyte_start_sync_op
 
-airbyte_materialization_jobs = []
-airbyte_start_sync_jobs = []
-for asset in airbyte.assets:
-    connection_name = list(asset.group_names_by_key.values())[0]
-    connection_id = list(
-        set([m["connection_id"] for m in asset.metadata_by_key.values()])
-    )[0]
+asset_config = config_from_files(["src/teamster/kipptaf/airbyte/config/assets.yaml"])[
+    "assets"
+]
 
-    airbyte_materialization_jobs.append(
-        define_asset_job(
-            name=(f"{CODE_LOCATION}_airbyte_{connection_name}_asset_job"),
-            selection=AssetSelection.keys(*list(asset.keys)),
-        )
-    )
 
-    airbyte_start_sync_jobs.append(
-        build_airbyte_start_sync_job(
-            code_location=CODE_LOCATION,
-            connection_id=connection_id,
-            connection_name=connection_name,
-        )
-    )
+@job(
+    config=RunConfig(
+        ops={
+            asset["group_name"]: AirbyteSyncConfig(
+                connection_id=asset["connection_id"], yield_materializations=False
+            )
+            for asset in asset_config
+        }
+    ),
+)
+def kipptaf_airbyte_start_syncs_job():
+    for asset in asset_config:
+        airbyte_sync_op_aliased = airbyte_start_sync_op.alias(asset["group_name"])
+
+        airbyte_sync_op_aliased()
+
 
 __all__ = [
-    *airbyte_materialization_jobs,
-    *airbyte_start_sync_jobs,
+    kipptaf_airbyte_start_syncs_job,
 ]

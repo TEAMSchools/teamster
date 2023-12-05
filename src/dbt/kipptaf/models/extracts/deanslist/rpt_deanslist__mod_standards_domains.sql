@@ -20,7 +20,7 @@ with
             and sr.is_internal_assessment
             and sr.academic_year = {{ var("current_academic_year") }}
             and sr.subject_area in ('Text Study', 'Mathematics', 'Writing')
-            and sr.module_type in ('QA', 'MQQ')
+            and sr.module_type in ('QA', 'MQQ', 'GWT')
             and sr.powerschool_student_number in (
                 select student_number,
                 from {{ ref("stg_powerschool__students") }}

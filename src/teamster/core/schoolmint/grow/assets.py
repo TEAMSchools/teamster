@@ -26,9 +26,10 @@ def build_static_partition_asset(
             "grow",
             asset_name.replace("-", "_").replace("/", "_"),
         ],
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=STATIC_PARTITONS_DEF,
         op_tags=op_tags,
-        io_manager_key="io_manager_gcs_avro",
+        group_name="schoolmint_grow",
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         response = schoolmint_grow.get(
@@ -60,6 +61,7 @@ def build_multi_partition_asset(
             "grow",
             asset_name.replace("-", "_").replace("/", "_"),
         ],
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "archived": STATIC_PARTITONS_DEF,
@@ -69,10 +71,9 @@ def build_multi_partition_asset(
             }
         ),
         op_tags=op_tags,
-        io_manager_key="io_manager_gcs_avro",
+        group_name="schoolmint_grow",
     )
     def _asset(context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource):
-        asset_key = context.asset_key_for_output()
         archived_partition = context.partition_key.keys_by_dimension["archived"]
         last_modified_partition = (
             pendulum.from_format(
@@ -83,23 +84,7 @@ def build_multi_partition_asset(
             .timestamp()
         )
 
-        # check if static paritition has ever been materialized
-        static_materialization_count = 0
-        asset_materialization_counts = (
-            context.instance.get_materialization_count_by_partition([asset_key]).get(
-                asset_key, {}
-            )
-        )
-
-        for partition_key, count in asset_materialization_counts.items():
-            if archived_partition == partition_key.split("|")[0]:
-                static_materialization_count += count
-
-        if (
-            static_materialization_count == 0
-            or static_materialization_count == context.retry_number
-        ):
-            last_modified_partition = None
+        # TODO: lastModified == None for first partition
 
         endpoint_content = schoolmint_grow.get(
             endpoint=asset_name,

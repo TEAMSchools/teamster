@@ -1,6 +1,6 @@
 from io import StringIO
 
-from dagster import OpExecutionContext, Output, asset
+from dagster import AssetExecutionContext, Output, asset
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -14,7 +14,6 @@ from teamster.core.utils.functions import get_avro_record_schema
 def build_mclass_asset(
     name,
     code_location,
-    source_system,
     partition_start_date,
     timezone,
     dyd_payload,
@@ -23,19 +22,19 @@ def build_mclass_asset(
     op_tags={},
 ):
     @asset(
-        name=name,
-        key_prefix=[code_location, source_system],
+        key=[code_location, "amplify", name],
         metadata={"dyd_payload": dyd_payload},
+        io_manager_key="io_manager_gcs_avro",
         partitions_def=FiscalYearPartitionsDefinition(
             start_date=partition_start_date, timezone=timezone.name, start_month=7
         ),
-        io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
+        group_name="amplify",
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
     )
-    def _asset(context: OpExecutionContext, mclass: MClassResource):
-        asset_name = context.assets_def.key.path[-1]
+    def _asset(context: AssetExecutionContext, mclass: MClassResource):
+        asset_name = context.asset_key.path[-1]
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         response = mclass.post(
