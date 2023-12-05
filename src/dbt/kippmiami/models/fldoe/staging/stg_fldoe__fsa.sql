@@ -79,4 +79,19 @@ select
     safe_cast(split(earn_wd2_ptpos_wd2, '/')[1] as int) as ptpos_wd2,
     safe_cast(split(earn_wd3_ptpos_wd3, '/')[0] as int) as earn_wd3,
     safe_cast(split(earn_wd3_ptpos_wd3, '/')[1] as int) as ptpos_wd3,
+    case
+        performance_level
+        when 1
+        then 'Inadequate'
+        when 2
+        then 'Below Satisfactory'
+        when 3
+        then 'Satisfactory'
+        when 4
+        then 'Proficient'
+        when 5
+        then 'Mastery'
+    end as achievement_level,
+    if performance_level >= 3
+then true end as is_proficient,
 from fsa
