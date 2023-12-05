@@ -403,6 +403,15 @@ STAR_SKILL_AREA_FIELDS = [
 ]
 
 FAST_STAR_CORE_FIELDS = [
+    {"name": "AchievementLevel", "type": ["null", "string"], "default": None},
+    {"name": "AssessmentName", "type": ["null", "string"], "default": None},
+    {"name": "FAST_Equivalent_Score", "type": ["null", "long"], "default": None},
+    {"name": "FAST_ES_Max", "type": ["null", "double"], "default": None},
+    {"name": "FAST_ES_Min", "type": ["null", "double"], "default": None},
+    {"name": "FAST_NOL", "type": ["null", "double"], "default": None},
+    {"name": "FileDate", "type": ["null", "string"], "default": None},
+    {"name": "Level3_or_Above", "type": ["null", "string"], "default": None},
+    {"name": "SchoolType", "type": ["null", "string"], "default": None},
     {"name": "Assess_Num", "type": ["null", "long"], "default": None},
     {"name": "Assess_Status", "type": ["null", "string"], "default": None},
     {"name": "CBTFlag", "type": ["null", "string"], "default": None},
