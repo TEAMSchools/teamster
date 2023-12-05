@@ -113,6 +113,7 @@ class AvroGCSIOManager(GCSUPathIOManager):
                 "schema": fastavro.parse_schema(schema),
                 "records": records,
                 "codec": "snappy",
+                # "strict_allow_default": True,
             },
         )
 

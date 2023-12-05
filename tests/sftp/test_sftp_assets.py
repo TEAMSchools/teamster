@@ -7,8 +7,20 @@ from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.ssh.resources import SSHResource
 
+SSH_IREADY = SSHResource(
+    remote_host="prod-sftp-1.aws.cainc.com",
+    username=EnvVar("IREADY_SFTP_USERNAME"),
+    password=EnvVar("IREADY_SFTP_PASSWORD"),
+)
 
-def _test_assets(asset, ssh_resource):
+SSH_COUCHDROP = SSHResource(
+    remote_host="kipptaf.couchdrop.io",
+    username=EnvVar("COUCHDROP_SFTP_USERNAME"),
+    password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
+)
+
+
+def _test_asset(asset, ssh_resource):
     partition_keys = asset.partitions_def.get_partition_keys()
 
     partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
@@ -33,23 +45,14 @@ def test_assets_pearson():
     from teamster.kippnewark.pearson import assets
 
     for asset in assets:
-        _test_assets(
-            asset=asset,
-            ssh_resource={
-                "ssh_couchdrop": SSHResource(
-                    remote_host="kipptaf.couchdrop.io",
-                    username=EnvVar("COUCHDROP_SFTP_USERNAME"),
-                    password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
-                ),
-            },
-        )
+        _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
-def test_assets_renlearn():
+def test_assets_renlearn_kippmiami():
     from teamster.kippmiami.renlearn import assets
 
     for asset in assets:
-        _test_assets(
+        _test_asset(
             asset=asset,
             ssh_resource={
                 "ssh_renlearn": SSHResource(
@@ -60,10 +63,12 @@ def test_assets_renlearn():
             },
         )
 
+
+def test_assets_renlearn_kippnewark():
     from teamster.kippnewark.renlearn import assets
 
     for asset in assets:
-        _test_assets(
+        _test_asset(
             asset=asset,
             ssh_resource={
                 "ssh_renlearn": SSHResource(
@@ -79,41 +84,28 @@ def test_assets_fldoe():
     from teamster.kippmiami.fldoe import assets
 
     for asset in assets:
-        _test_assets(
-            asset=asset,
-            ssh_resource={
-                "ssh_couchdrop": SSHResource(
-                    remote_host="kipptaf.couchdrop.io",
-                    username=EnvVar("COUCHDROP_SFTP_USERNAME"),
-                    password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
-                ),
-            },
-        )
+        _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
-def test_assets_iready():
+def test_assets_iready_kippmiami():
     from teamster.kippmiami.iready import assets
 
-    ssh_iready = SSHResource(
-        remote_host="prod-sftp-1.aws.cainc.com",
-        username=EnvVar("IREADY_SFTP_USERNAME"),
-        password=EnvVar("IREADY_SFTP_PASSWORD"),
-    )
-
     for asset in assets:
-        _test_assets(asset=asset, ssh_resource={"ssh_iready": ssh_iready})
+        _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
+
+def test_assets_iready_kippnewark():
     from teamster.kippnewark.iready import assets
 
     for asset in assets:
-        _test_assets(asset=asset, ssh_resource={"ssh_iready": ssh_iready})
+        _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
-def test_assets_edplan():
+def test_assets_edplan_kippcamden():
     from teamster.kippcamden.edplan import assets
 
     for asset in assets:
-        _test_assets(
+        _test_asset(
             asset=asset,
             ssh_resource={
                 "ssh_edplan": SSHResource(
@@ -124,10 +116,12 @@ def test_assets_edplan():
             },
         )
 
+
+def test_assets_edplan_kippnewark():
     from teamster.kippnewark.edplan import assets
 
     for asset in assets:
-        _test_assets(
+        _test_asset(
             asset=asset,
             ssh_resource={
                 "ssh_edplan": SSHResource(
@@ -139,11 +133,11 @@ def test_assets_edplan():
         )
 
 
-def test_assets_titan():
+def test_assets_titan_kippcamden():
     from teamster.kippcamden.titan import assets
 
     for asset in assets:
-        _test_assets(
+        _test_asset(
             asset=asset,
             ssh_resource={
                 "ssh_titan": SSHResource(
@@ -154,10 +148,12 @@ def test_assets_titan():
             },
         )
 
+
+def test_assets_titan_kippnewark():
     from teamster.kippnewark.titan import assets
 
     for asset in assets:
-        _test_assets(
+        _test_asset(
             asset=asset,
             ssh_resource={
                 "ssh_titan": SSHResource(
@@ -173,7 +169,7 @@ def test_assets_titan():
 def test_assets_achieve3k():
     from teamster.kipptaf.achieve3k import assets
 
-    _test_assets(
+    _test_asset(
         asset=assets,
         ssh_resource={
             "ssh_achieve3k": SSHResource(
@@ -188,7 +184,7 @@ def test_assets_achieve3k():
 def test_assets_clever():
     from teamster.kipptaf.clever import assets
 
-    _test_assets(
+    _test_asset(
         asset=assets,
         ssh_resource={
             "ssh_clever_reports": SSHResource(

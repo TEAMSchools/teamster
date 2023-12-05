@@ -42,8 +42,7 @@ def build_ldap_asset(
     name, code_location, search_base, search_filter, attributes=["*"], op_tags={}
 ):
     @asset(
-        name=name,
-        key_prefix=[code_location, "ldap"],
+        key=[code_location, "ldap", name],
         metadata={
             "search_base": search_base,
             "search_filter": search_filter,
@@ -51,9 +50,10 @@ def build_ldap_asset(
         },
         io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
+        group_name="ldap",
     )
     def _asset(context: AssetExecutionContext, ldap: LdapResource):
-        asset_name = context.assets_def.key.path[-1]
+        asset_name = context.asset_key.path[-1]
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
         ldap._connection.search(

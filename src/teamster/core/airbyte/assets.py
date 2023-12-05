@@ -62,6 +62,7 @@ def build_airbyte_cloud_assets(
                 ),
             },
             freshness_policy=freshness_policy,
+            is_required=False,
         )
         for table in tables
     }

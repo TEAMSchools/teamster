@@ -87,6 +87,7 @@ inner join
 inner join
     {{ ref("base_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
+    and reh.assignment_status not in ('Terminated', 'Deceased')
     and ri.date_submitted
     between reh.work_assignment__fivetran_start and reh.work_assignment__fivetran_end
 inner join
@@ -140,6 +141,7 @@ inner join
 left join
     {{ ref("base_people__staff_roster_history") }} as reh
     on sda.respondent_df_employee_number = reh.employee_number
+    and reh.assignment_status not in ('Terminated', 'Deceased')
     and sda.date_submitted
     between reh.work_assignment__fivetran_start and reh.work_assignment__fivetran_end
 inner join

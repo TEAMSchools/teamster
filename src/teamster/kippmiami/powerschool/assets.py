@@ -1,5 +1,9 @@
 import pendulum
-from dagster import MonthlyPartitionsDefinition, config_from_files
+from dagster import (
+    MAX_RUNTIME_SECONDS_TAG,
+    MonthlyPartitionsDefinition,
+    config_from_files,
+)
 
 from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
@@ -14,7 +18,9 @@ full_assets = [
 ]
 
 nonpartition_assets = [
-    build_powerschool_table_asset(**cfg, code_location=CODE_LOCATION)
+    build_powerschool_table_asset(
+        **cfg, code_location=CODE_LOCATION, op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)}
+    )
     for cfg in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
 ]
 
@@ -29,6 +35,7 @@ transaction_date_partition_assets = [
             fmt="%Y-%m-%dT%H:%M:%S%z",
         ),
         partition_column="transaction_date",
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
     )
     for asset in config_from_files([f"{config_dir}/assets-transactiondate.yaml"])[
         "assets"
@@ -46,6 +53,7 @@ assignment_assets = [
             end_offset=1,
         ),
         partition_column="whenmodified",
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
     )
     for asset in config_from_files([f"{config_dir}/assets-whenmodified.yaml"])["assets"]
 ]
