@@ -1,9 +1,10 @@
 with
     subjects as (
-        select 'Reading' as iready_subject, 'ENG' as ps_credittype
+        select 'Reading' as iready_subject, 'ENG' as ps_credittype,
         union all
-        select 'Math' as iready_subject, 'MATH' as ps_credittype
+        select 'Math' as iready_subject, 'MATH' as ps_credittype,
     ),
+    
     star as (
         select
             s.student_identifier as student_number,
