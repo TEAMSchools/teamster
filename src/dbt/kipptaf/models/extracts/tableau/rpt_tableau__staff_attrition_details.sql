@@ -105,7 +105,8 @@ with
             active_next_year as an
             on an.academic_year = dc.academic_year
             and an.employee_number = srh.employee_number
-        where an.employee_number is null  -- removing duplicate rows - entity changers and rehires have ongoing term rows
+        where an.employee_number is null 
+        -- removing duplicate rows - entity changers and rehires have ongoing term rows
     ),
 
     core_attrition_table as (
@@ -297,7 +298,7 @@ with
                     in ('Import Created Action', 'Upgrade Created Action')
                 then 'dupe'
                 else 'not dupe'
-            end as dupe_check
+            end as dupe_check,
         from ly_combined
     ),
 
