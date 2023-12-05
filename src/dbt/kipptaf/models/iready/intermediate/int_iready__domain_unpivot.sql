@@ -14,7 +14,6 @@ from
             academic_year_int,
             start_date,
             completion_date,
-            overall_relative_placement,
             phonics_relative_placement,
             algebra_and_algebraic_thinking_relative_placement,
             geometry_relative_placement,
@@ -32,7 +31,6 @@ from
         from {{ ref("stg_iready__diagnostic_results") }}
     ) unpivot (
         relative_placement for domain_name in (
-            overall_relative_placement,
             phonics_relative_placement,
             algebra_and_algebraic_thinking_relative_placement,
             geometry_relative_placement,
