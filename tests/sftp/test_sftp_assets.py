@@ -2,9 +2,11 @@ import random
 
 from dagster import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     EnvVar,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
+    instance_for_test,
     materialize,
 )
 from dagster_gcp import GCSResource
@@ -52,6 +54,13 @@ SSH_ADP_WORKFORCE_NOW = SSHResource(
 )
 
 
+SSH_CLEVER_REPORTS = SSHResource(
+    remote_host="reports-sftp.clever.com",
+    username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
+    password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
+)
+
+
 def _test_asset(
     asset_key: list,
     remote_dir: str,
@@ -59,6 +68,7 @@ def _test_asset(
     asset_fields: dict,
     ssh_resource: dict,
     partitions_def=None,
+    instance=None,
     **kwargs,
 ):
     asset_name = asset_key[-1]
@@ -76,7 +86,9 @@ def _test_asset(
     )
 
     if partitions_def is not None:
-        partition_keys = asset.partitions_def.get_partition_keys()
+        partition_keys = asset.partitions_def.get_partition_keys(
+            dynamic_partitions_store=instance
+        )
 
         partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
     else:
@@ -84,6 +96,7 @@ def _test_asset(
 
     result = materialize(
         assets=[asset],
+        instance=instance,
         partition_key=partition_key,
         resources={
             "io_manager_gcs_avro": GCSIOManager(
@@ -468,6 +481,97 @@ def test_assets_titan_income_form_data():
     )
 
 
+def test_asset_achieve3k_students():
+    from teamster.kipptaf.achieve3k.schema import ASSET_FIELDS
+
+    partitions_def_name = "staging__achieve3k__students"
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name, partition_keys=["2023-12-06"]
+        )
+
+        _test_asset(
+            asset_key=["achieve3k", "students"],
+            remote_dir="outgoing",
+            remote_file_regex=r"(?P<date>\d{4}[-\d{2}]+)-\d+_D[\d+_]+(\w\d{4}[-\d{2}]+_){2}student\.\w+",
+            asset_fields=ASSET_FIELDS,
+            ssh_resource={
+                "ssh_achieve3k": SSHResource(
+                    remote_host="xfer.achieve3000.com",
+                    username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
+                    password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
+                )
+            },
+            partitions_def=DynamicPartitionsDefinition(name=partitions_def_name),
+            instance=instance,
+        )
+
+
+def test_asset_clever_daily_participation():
+    from teamster.kipptaf.clever.schema import ASSET_FIELDS
+
+    remote_dir = "daily-participation"
+
+    asset_name = remote_dir.replace("-", "_")
+
+    partitions_def_name = f"staging__clever_reports__date__{asset_name}"
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name, partition_keys=["2023-12-05"]
+        )
+
+        _test_asset(
+            asset_key=["clever_reports", asset_name],
+            remote_dir=remote_dir,
+            remote_file_regex=rf"(?P<date>\d{4}-\d{2}-\d{2})-{remote_dir}-(?P<type>\w+)\.csv",
+            asset_fields=ASSET_FIELDS,
+            ssh_resource={"ssh_clever_reports": SSH_CLEVER_REPORTS},
+            partitions_def=MultiPartitionsDefinition(
+                {
+                    "date": DynamicPartitionsDefinition(name=partitions_def_name),
+                    "type": StaticPartitionsDefinition(
+                        ["staff", "students", "teachers"]
+                    ),
+                }
+            ),
+            instance=instance,
+        )
+
+
+def test_asset_clever_resource_usage():
+    from teamster.kipptaf.clever.schema import ASSET_FIELDS
+
+    remote_dir = "resource-usage"
+
+    asset_name = remote_dir.replace("-", "_")
+
+    partitions_def_name = f"staging__clever_reports__date__{asset_name}"
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name, partition_keys=["2023-12-05"]
+        )
+
+        _test_asset(
+            asset_key=["clever_reports", asset_name],
+            remote_dir=remote_dir,
+            remote_file_regex=rf"(?P<date>\d{4}-\d{2}-\d{2})-{remote_dir}-(?P<type>\w+)\.csv",
+            asset_fields=ASSET_FIELDS,
+            ssh_resource={"ssh_clever_reports": SSH_CLEVER_REPORTS},
+            partitions_def=MultiPartitionsDefinition(
+                {
+                    "date": DynamicPartitionsDefinition(name=partitions_def_name),
+                    "type": StaticPartitionsDefinition(
+                        ["staff", "students", "teachers"]
+                    ),
+                }
+            ),
+            instance=instance,
+        )
+
+
 """ cannot test IP restricted sftp
 def test_assets_adp_workforce_now_pension_and_benefits_enrollments():
     from teamster.kipptaf.adp.workforce_now.schema import ASSET_FIELDS
@@ -502,37 +606,5 @@ def test_assets_adp_workforce_now_additional_earnings_report():
         remote_file_regex=r"additional_earnings_report\.csv",
         asset_fields=ASSET_FIELDS,
         ssh_resource={"ssh_adp_workforce_now": SSH_ADP_WORKFORCE_NOW},
-    )
-"""
-
-""" can't test dynamic partitions
-def test_assets_achieve3k():
-    from teamster.kipptaf.achieve3k import assets
-
-    _test_asset(
-        asset=assets,
-        ssh_resource={
-            "ssh_achieve3k": SSHResource(
-                remote_host="xfer.achieve3000.com",
-                username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
-                password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
-            )
-        },
-    )
-
-
-def test_assets_clever():
-    from teamster.kipptaf.clever import assets
-
-    _test_asset(
-        asset=assets,
-        ssh_resource={
-            "ssh_clever_reports": SSHResource(
-                remote_host="reports-sftp.clever.com",
-                username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
-                password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
-            )
-        },
-        partition_key="",
     )
 """

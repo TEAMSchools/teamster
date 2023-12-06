@@ -17,6 +17,7 @@ RESOURCE_USAGE_FIELDS = [
     {"name": "resource_name", "type": ["null", "string"], "default": None},
     {"name": "resource_id", "type": ["null", "string"], "default": None},
     {"name": "num_access", "type": ["null", "long"], "default": None},
+    {"name": "staff_id", "type": ["null", "long"], "default": None},
 ]
 
 DAILY_PARTICIPATION_FIELDS = [
