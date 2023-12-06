@@ -6,22 +6,11 @@ from dagster_gcp import BigQueryResource, GCSResource
 from dagster_k8s import k8s_job_executor
 
 from teamster import GCS_PROJECT_NAME
-from teamster.core.adp.resources import (
-    AdpWorkforceManagerResource,
-    AdpWorkforceNowResource,
-)
-from teamster.core.alchemer.resources import AlchemerResource
-from teamster.core.amplify.resources import MClassResource
-from teamster.core.google.directory.resources import GoogleDirectoryResource
-from teamster.core.google.forms.resources import GoogleFormsResource
-from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.google.storage.io_manager import GCSIOManager
-from teamster.core.ldap.resources import LdapResource
-from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
-from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.jobs import asset_observation_job
-from teamster.kipptaf import (
+
+from . import (
     CODE_LOCATION,
     achieve3k,
     adp,
@@ -38,6 +27,16 @@ from teamster.kipptaf import (
     schoolmint,
     smartrecruiters,
 )
+from .adp.workforce_manager.resources import AdpWorkforceManagerResource
+from .adp.workforce_now.resources import AdpWorkforceNowResource
+from .alchemer.resources import AlchemerResource
+from .amplify.resources import MClassResource
+from .google.directory.resources import GoogleDirectoryResource
+from .google.forms.resources import GoogleFormsResource
+from .google.sheets.resources import GoogleSheetsResource
+from .ldap.resources import LdapResource
+from .schoolmint.grow.resources import SchoolMintGrowResource
+from .smartrecruiters.resources import SmartRecruitersResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
