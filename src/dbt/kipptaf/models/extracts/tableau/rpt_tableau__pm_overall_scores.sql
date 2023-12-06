@@ -54,7 +54,7 @@ with
 
         union all
 
-        select distinct
+        select
             employee_number,
             academic_year,
             'PM4' as form_term,
@@ -180,4 +180,4 @@ inner join
 inner join
     {{ ref("int_people__years_experience") }} as y
     on s.employee_number = y.employee_number
-where overall_score is not null
+where s.overall_score is not null
