@@ -15,8 +15,8 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_powerschool_table_asset(
-    asset_name,
     code_location,
+    asset_name,
     partitions_def: FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition = None,
     select_columns=["*"],
     partition_column=None,

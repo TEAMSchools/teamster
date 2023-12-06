@@ -1,14 +1,97 @@
-from dagster import config_from_files
+from dagster import AssetExecutionContext, Output, asset, config_from_files
 
-from teamster.core.ldap.assets import build_ldap_asset
+from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION
+from .resources import LdapResource
+from .schema import ASSET_FIELDS
 
-config_dir = f"src/teamster/{CODE_LOCATION}/ldap/config"
+# via http://www.phpldaptools.com/reference/Default-Schema-Attributes
+ARRAY_ATTRIBUTES = [
+    "member",
+    "memberOf",
+    "otherFacsimileTelephoneNumber",
+    "otherHomePhone",
+    "otherIpPhone",
+    "otherPager",
+    "otherTelephoneNumber",
+    "proxyAddresses",
+    "publicDelegates",
+    "servicePrincipalName",
+    "userWorkstations",
+]
+
+DATETIME_ATTRIBUTES = [
+    "accountExpires",
+    "badPasswordTime",
+    "dSCorePropagationData",
+    "idautoChallengeSetTimestamp",
+    "idautoGroupLastSynced",
+    "idautoPersonEndDate",
+    "lastLogoff",
+    "lastLogon",
+    "lastLogonTimestamp",
+    "lockoutTime",
+    "msExchWhenMailboxCreated",
+    "msTSExpireDate",
+    "pwdLastSet",
+    "whenChanged",
+    "whenCreated",
+]
+
+
+def build_ldap_asset(name, search_base, search_filter, attributes=["*"], op_tags={}):
+    @asset(
+        key=[CODE_LOCATION, "ldap", name],
+        metadata={
+            "search_base": search_base,
+            "search_filter": search_filter,
+            "attributes": attributes,
+        },
+        io_manager_key="io_manager_gcs_avro",
+        op_tags=op_tags,
+        group_name="ldap",
+    )
+    def _asset(context: AssetExecutionContext, ldap: LdapResource):
+        asset_name = context.asset_key.path[-1]
+
+        ldap._connection.search(**context.assets_def.metadata_by_key[context.asset_key])
+
+        entries = []
+        for entry in ldap._connection.entries:
+            primitive_items = {
+                key.replace("-", "_"): values[0]
+                if key not in DATETIME_ATTRIBUTES
+                else values[0].timestamp()
+                for key, values in entry.entry_attributes_as_dict.items()
+            }
+
+            array_items = {
+                key.replace("-", "_"): values
+                for key, values in entry.entry_attributes_as_dict.items()
+                if key in ARRAY_ATTRIBUTES
+            }
+
+            entries.append({**primitive_items, **array_items})
+
+        yield Output(
+            value=(
+                entries,
+                get_avro_record_schema(
+                    name=asset_name, fields=ASSET_FIELDS[asset_name]
+                ),
+            ),
+            metadata={"records": len(entries)},
+        )
+
+    return _asset
+
 
 ldap_assets = [
-    build_ldap_asset(code_location=CODE_LOCATION, **asset)
-    for asset in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
+    build_ldap_asset(**asset)
+    for asset in config_from_files(
+        [f"src/teamster/{CODE_LOCATION}/ldap/config/assets.yaml"]
+    )["assets"]
 ]
 
 __all__ = [

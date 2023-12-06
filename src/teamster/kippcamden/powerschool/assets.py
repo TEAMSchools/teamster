@@ -14,16 +14,22 @@ config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
 
 full_assets = [
     build_powerschool_table_asset(
-        **cfg, code_location=CODE_LOCATION, op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)}
+        **asset,
+        code_location=CODE_LOCATION,
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
     )
-    for cfg in config_from_files([(f"{config_dir}/assets-full.yaml")])["assets"]
+    for asset in config_from_files([(f"{config_dir}/assets-full.yaml")])["assets"]
 ]
 
 nonpartition_assets = [
     build_powerschool_table_asset(
-        **cfg, code_location=CODE_LOCATION, op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)}
+        **asset,
+        code_location=CODE_LOCATION,
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
     )
-    for cfg in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
+    for asset in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])[
+        "assets"
+    ]
 ]
 
 transaction_date_partition_assets = [

@@ -126,8 +126,13 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         context.log.info(f"Saving results to {data_filepath}")
         data_filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        with data_filepath.open("wb") as fo:
-            writer(fo=fo, schema=schema, records=[], codec="snappy")
+        writer(
+            fo=data_filepath.open("wb"),
+            schema=schema,
+            records=[],
+            codec="snappy",
+            strict_allow_default=True,
+        )
 
         len_data = 0
         fo = data_filepath.open("a+b")
@@ -142,7 +147,13 @@ class SqlAlchemyEngineResource(ConfigurableResource):
             len_data += len(data)
 
             context.log.debug(f"Saving partition {i}")
-            writer(fo=fo, schema=schema, records=data, codec="snappy")
+            writer(
+                fo=fo,
+                schema=schema,
+                records=data,
+                codec="snappy",
+                strict_allow_default=True,
+            )
 
             del data
             gc.collect()
