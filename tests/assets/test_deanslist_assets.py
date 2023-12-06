@@ -96,21 +96,21 @@ def _test_asset(partition_type, asset_name, api_version, params={}):
     )
 
 
-def test_deanslist_asset_lists():
+def test_asset_deanslist_lists():
     _test_asset(partition_type="static", asset_name="lists", api_version="v1")
 
 
-def test_deanslist_asset_terms():
+def test_asset_deanslist_terms():
     _test_asset(partition_type="static", asset_name="terms", api_version="v1")
 
 
-def test_deanslist_asset_roster_assignments():
+def test_asset_deanslist_roster_assignments():
     _test_asset(
         partition_type="static", asset_name="roster-assignments", api_version="beta"
     )
 
 
-def test_deanslist_asset_users():
+def test_asset_deanslist_users():
     _test_asset(
         partition_type="static",
         asset_name="users",
@@ -119,7 +119,7 @@ def test_deanslist_asset_users():
     )
 
 
-def test_deanslist_asset_rosters():
+def test_asset_deanslist_rosters():
     _test_asset(
         partition_type="static",
         asset_name="rosters",
@@ -137,11 +137,11 @@ def test_deanslist_asset_rosters():
 """
 
 
-def test_deanslist_asset_followups():
+def test_asset_deanslist_followups():
     _test_asset(partition_type="multi", asset_name="followups", api_version="v1")
 
 
-def test_deanslist_asset_behavior():
+def test_asset_deanslist_behavior():
     _test_asset(
         partition_type="multi",
         asset_name="behavior",
@@ -154,7 +154,7 @@ def test_deanslist_asset_behavior():
     )
 
 
-def test_deanslist_asset_homework():
+def test_asset_deanslist_homework():
     _test_asset(
         partition_type="multi",
         asset_name="homework",
@@ -167,7 +167,7 @@ def test_deanslist_asset_homework():
     )
 
 
-def test_deanslist_asset_comm_log():
+def test_asset_deanslist_comm_log():
     _test_asset(
         partition_type="multi",
         asset_name="comm-log",
@@ -176,7 +176,7 @@ def test_deanslist_asset_comm_log():
     )
 
 
-def test_deanslist_asset_incidents():
+def test_asset_deanslist_incidents():
     _test_asset(
         partition_type="multi",
         asset_name="incidents",

@@ -66,7 +66,7 @@ def _test_asset(asset_name, partition_start_date=None):
     )
 
 
-def test_schoolmint_grow_asset_generic_tags():
+def test_asset_schoolmint_grow_generic_tags():
     assets = [
         "generic-tags/assignmentpresets",
         "generic-tags/courses",
@@ -86,41 +86,41 @@ def test_schoolmint_grow_asset_generic_tags():
     _test_asset(asset_name=assets[random.randint(a=0, b=(len(assets) - 1))])
 
 
-def test_schoolmint_grow_asset_informals():
+def test_asset_schoolmint_grow_informals():
     _test_asset(asset_name="informals")
 
 
-def test_schoolmint_grow_asset_measurements():
+def test_asset_schoolmint_grow_measurements():
     _test_asset(asset_name="measurements")
 
 
-def test_schoolmint_grow_asset_meetings():
+def test_asset_schoolmint_grow_meetings():
     _test_asset(asset_name="meetings")
 
 
-def test_schoolmint_grow_asset_roles():
+def test_asset_schoolmint_grow_roles():
     _test_asset(asset_name="roles")
 
 
-def test_schoolmint_grow_asset_rubrics():
+def test_asset_schoolmint_grow_rubrics():
     _test_asset(asset_name="rubrics")
 
 
-def test_schoolmint_grow_asset_schools():
+def test_asset_schoolmint_grow_schools():
     _test_asset(asset_name="schools")
 
 
-def test_schoolmint_grow_asset_users():
+def test_asset_schoolmint_grow_users():
     _test_asset(asset_name="users")
 
 
-def test_schoolmint_grow_asset_videos():
+def test_asset_schoolmint_grow_videos():
     _test_asset(asset_name="videos")
 
 
-def test_schoolmint_grow_asset_observations():
+def test_asset_schoolmint_grow_observations():
     _test_asset(asset_name="observations", partition_start_date="2023-07-31")
 
 
-def test_schoolmint_grow_asset_assignments():
+def test_asset_schoolmint_grow_assignments():
     _test_asset(asset_name="assignments", partition_start_date="2023-07-31")
