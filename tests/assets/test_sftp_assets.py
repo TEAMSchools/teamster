@@ -315,7 +315,7 @@ def test_asset_renlearn_fast_star():
     )
 
 
-def test_assets_fldoe_fast():
+def test_asset_fldoe_fast():
     from teamster.kippmiami.fldoe.schema import ASSET_FIELDS
 
     _test_asset(
@@ -357,7 +357,7 @@ def test_assets_fldoe_fast():
     )
 
 
-def test_assets_fldoe_fsa():
+def test_asset_fldoe_fsa():
     from teamster.kippmiami.fldoe.schema import ASSET_FIELDS
 
     _test_asset(
@@ -379,7 +379,7 @@ def test_assets_fldoe_fsa():
     )
 
 
-def test_assets_iready_diagnostic_results():
+def test_asset_iready_diagnostic_results():
     from teamster.core.iready.schema import ASSET_FIELDS
 
     _test_asset(
@@ -398,7 +398,7 @@ def test_assets_iready_diagnostic_results():
     )
 
 
-def test_assets_iready_personalized_instruction_by_lesson():
+def test_asset_iready_personalized_instruction_by_lesson():
     from teamster.core.iready.schema import ASSET_FIELDS
 
     _test_asset(
@@ -417,7 +417,7 @@ def test_assets_iready_personalized_instruction_by_lesson():
     )
 
 
-def test_assets_iready_instructional_usage_data():
+def test_asset_iready_instructional_usage_data():
     from teamster.core.iready.schema import ASSET_FIELDS
 
     _test_asset(
@@ -436,7 +436,7 @@ def test_assets_iready_instructional_usage_data():
     )
 
 
-def test_assets_iready_diagnostic_and_instruction():
+def test_asset_iready_diagnostic_and_instruction():
     from teamster.core.iready.schema import ASSET_FIELDS
 
     _test_asset(
@@ -455,7 +455,7 @@ def test_assets_iready_diagnostic_and_instruction():
     )
 
 
-def test_assets_titan_person_data():
+def test_asset_titan_person_data():
     from teamster.core.titan.schema import ASSET_FIELDS
 
     _test_asset(
@@ -468,7 +468,7 @@ def test_assets_titan_person_data():
     )
 
 
-def test_assets_titan_income_form_data():
+def test_asset_titan_income_form_data():
     from teamster.core.titan.schema import ASSET_FIELDS
 
     _test_asset(
@@ -573,7 +573,7 @@ def test_asset_clever_resource_usage():
 
 
 """ cannot test IP restricted sftp
-def test_assets_adp_workforce_now_pension_and_benefits_enrollments():
+def test_asset_adp_workforce_now_pension_and_benefits_enrollments():
     from teamster.kipptaf.adp.workforce_now.schema import ASSET_FIELDS
 
     _test_asset(
@@ -585,7 +585,7 @@ def test_assets_adp_workforce_now_pension_and_benefits_enrollments():
     )
 
 
-def test_assets_adp_workforce_now_comprehensive_benefits_report():
+def test_asset_adp_workforce_now_comprehensive_benefits_report():
     from teamster.kipptaf.adp.workforce_now.schema import ASSET_FIELDS
 
     _test_asset(
@@ -597,7 +597,7 @@ def test_assets_adp_workforce_now_comprehensive_benefits_report():
     )
 
 
-def test_assets_adp_workforce_now_additional_earnings_report():
+def test_asset_adp_workforce_now_additional_earnings_report():
     from teamster.kipptaf.adp.workforce_now.schema import ASSET_FIELDS
 
     _test_asset(

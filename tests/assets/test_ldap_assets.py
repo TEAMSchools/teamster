@@ -40,7 +40,7 @@ def _test_ldap_asset(name, search_base, search_filter):
     )
 
 
-def test_ldap_asset_user_person():
+def test_asset_ldap_user_person():
     _test_ldap_asset(
         name="user_person",
         search_base="dc=teamschools,dc=kipp,dc=org",
@@ -48,7 +48,7 @@ def test_ldap_asset_user_person():
     )
 
 
-def test_ldap_asset_group():
+def test_asset_ldap_group():
     _test_ldap_asset(
         name="group",
         search_base="dc=teamschools,dc=kipp,dc=org",

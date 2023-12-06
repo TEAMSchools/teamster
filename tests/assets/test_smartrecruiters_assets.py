@@ -35,13 +35,13 @@ def _test_asset(asset_name, report_id):
     )
 
 
-def test_applicants():
+def test_asset_smartrecruiters_applicants():
     _test_asset(
         asset_name="applicants", report_id="e841aa3f-b037-4976-b75f-8ef43e177a45"
     )
 
 
-def test_applications():
+def test_asset_smartrecruiters_applications():
     _test_asset(
         asset_name="applications", report_id="878d114e-8e48-4ffe-a81b-cb3c92ee653f"
     )
