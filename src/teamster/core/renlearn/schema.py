@@ -532,7 +532,7 @@ FAST_STAR_FIELDS = [
     # Math
     {"name": "Quantile", "type": ["null", "string"], "default": None},
     # Reading
-    {"name": "Attempts_G3", "type": ["null", "string"], "default": None},
+    {"name": "Attempts_G3", "type": ["null", "string", "long"], "default": None},
     {"name": "IRL", "type": ["null", "string"], "default": None},
     {"name": "Lexile", "type": ["null", "string"], "default": None},
     {"name": "PassingScore_G3", "type": ["null", "string"], "default": None},
