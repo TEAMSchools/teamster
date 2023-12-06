@@ -43,9 +43,9 @@ select
     respondent_job_title as respondent_primary_job,
 
     /* pivot cols */
-    teammate_signature,
-    approver_signature,
     approver_email,
+    parse_date('%m/%d/%Y', teammate_signature) as teammate_signature,
+    parse_date('%m/%d/%Y', approver_signature) as approver_signature,
 from
     sub pivot (
         max(response_string_value) for question_id
