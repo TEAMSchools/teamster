@@ -3,6 +3,7 @@ CORE_FIELDS = [
     {"name": "clever_user_id", "type": ["null", "string"], "default": None},
     {"name": "clever_school_id", "type": ["null", "string"], "default": None},
     {"name": "school_name", "type": ["null", "string"], "default": None},
+    {"name": "staff_id", "type": ["null", "string"], "default": None},
     {
         "name": "date",
         "type": ["null", "string"],
@@ -17,7 +18,6 @@ RESOURCE_USAGE_FIELDS = [
     {"name": "resource_name", "type": ["null", "string"], "default": None},
     {"name": "resource_id", "type": ["null", "string"], "default": None},
     {"name": "num_access", "type": ["null", "long"], "default": None},
-    {"name": "staff_id", "type": ["null", "long"], "default": None},
 ]
 
 DAILY_PARTICIPATION_FIELDS = [

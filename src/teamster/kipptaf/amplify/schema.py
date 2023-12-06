@@ -341,7 +341,11 @@ PM_STUDENT_SUMMARY_FIELDS = [
         "type": ["null", "long"],
         "default": None,
     },
-    {"name": "student_id_state_id", "type": ["null", "long"], "default": None},
+    {
+        "name": "student_id_state_id",
+        "type": ["null", "long", "string"],
+        "default": None,
+    },
     {
         "name": "client_date",
         "type": ["null", "string"],
