@@ -88,6 +88,12 @@ def _test_asset(partition_type, asset_name, api_version, params={}):
     )
 
     assert result.success
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["records"]
+        .value
+        > 0
+    )
 
 
 def test_deanslist_asset_lists():

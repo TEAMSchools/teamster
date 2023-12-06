@@ -1,5 +1,6 @@
 import random
 
+import pendulum
 from dagster import AssetsDefinition, EnvVar, instance_for_test, materialize
 from dagster_gcp import GCSResource
 
@@ -44,6 +45,10 @@ def _test_asset(asset: AssetsDefinition, partition_keys):
 
     assert result.success
 
+    event = result.get_asset_materialization_events()[0]
+
+    assert event.event_specific_data.materialization.metadata["record_count"].value > 0
+
 
 def test_alchemer_asset_survey():
     _test_asset(asset=survey, partition_keys=SURVEY_IDS)
@@ -58,4 +63,10 @@ def test_alchemer_asset_survey_question():
 
 
 def test_alchemer_asset_survey_response():
-    _test_asset(asset=survey_response, partition_keys=SURVEY_IDS)
+    _test_asset(
+        asset=survey_response,
+        partition_keys=[
+            f"{s}_{pendulum.datetime(year=2023, month=7, day=1).timestamp()}"
+            for s in SURVEY_IDS
+        ],
+    )

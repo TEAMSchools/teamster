@@ -1,0 +1,126 @@
+import random
+
+from dagster import (
+    DailyPartitionsDefinition,
+    EnvVar,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    materialize,
+)
+from dagster_gcp import GCSResource
+
+from teamster import GCS_PROJECT_NAME
+from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.kipptaf.schoolmint.grow.assets import build_schoolmint_grow_asset
+from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.staging import LOCAL_TIMEZONE
+
+STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
+
+
+def _test_asset(asset_name, partition_start_date=None):
+    if partition_start_date is not None:
+        partitions_def = MultiPartitionsDefinition(
+            {
+                "archived": STATIC_PARTITONS_DEF,
+                "last_modified": DailyPartitionsDefinition(
+                    start_date=partition_start_date,
+                    timezone=LOCAL_TIMEZONE.name,
+                    end_offset=1,
+                ),
+            }
+        )
+    else:
+        partitions_def = STATIC_PARTITONS_DEF
+
+    asset = build_schoolmint_grow_asset(
+        asset_name=asset_name, partitions_def=partitions_def
+    )
+
+    partition_keys = asset.partitions_def.get_partition_keys()
+
+    result = materialize(
+        assets=[asset],
+        partition_key=partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
+        resources={
+            "io_manager_gcs_avro": GCSIOManager(
+                gcs=GCSResource(project=GCS_PROJECT_NAME),
+                gcs_bucket="teamster-staging",
+                object_type="avro",
+            ),
+            "schoolmint_grow": SchoolMintGrowResource(
+                client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
+                client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
+                district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
+                api_response_limit=3200,
+            ),
+        },
+    )
+
+    assert result.success
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["records"]
+        .value
+        > 0
+    )
+
+
+def test_schoolmint_grow_asset_generic_tags():
+    assets = [
+        "generic-tags/assignmentpresets",
+        "generic-tags/courses",
+        "generic-tags/eventtag1",
+        "generic-tags/goaltypes",
+        "generic-tags/grades",
+        "generic-tags/measurementgroups",
+        "generic-tags/meetingtypes",
+        "generic-tags/observationtypes",
+        "generic-tags/rubrictag1",
+        "generic-tags/schooltag1",
+        "generic-tags/tags",
+        "generic-tags/usertag1",
+        "generic-tags/usertypes",
+    ]
+
+    _test_asset(asset_name=assets[random.randint(a=0, b=(len(assets) - 1))])
+
+
+def test_schoolmint_grow_asset_informals():
+    _test_asset(asset_name="informals")
+
+
+def test_schoolmint_grow_asset_measurements():
+    _test_asset(asset_name="measurements")
+
+
+def test_schoolmint_grow_asset_meetings():
+    _test_asset(asset_name="meetings")
+
+
+def test_schoolmint_grow_asset_roles():
+    _test_asset(asset_name="roles")
+
+
+def test_schoolmint_grow_asset_rubrics():
+    _test_asset(asset_name="rubrics")
+
+
+def test_schoolmint_grow_asset_schools():
+    _test_asset(asset_name="schools")
+
+
+def test_schoolmint_grow_asset_users():
+    _test_asset(asset_name="users")
+
+
+def test_schoolmint_grow_asset_videos():
+    _test_asset(asset_name="videos")
+
+
+def test_schoolmint_grow_asset_observations():
+    _test_asset(asset_name="observations", partition_start_date="2023-07-31")
+
+
+def test_schoolmint_grow_asset_assignments():
+    _test_asset(asset_name="assignments", partition_start_date="2023-07-31")

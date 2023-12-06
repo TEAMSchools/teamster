@@ -27,6 +27,12 @@ def _test_asset(asset_name, report_id):
     )
 
     assert result.success
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["records"]
+        .value
+        > 0
+    )
 
 
 def test_applicants():

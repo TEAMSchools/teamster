@@ -84,12 +84,7 @@ SURVEY_QUESTION_PROPERTY_FIELDS = [
     {"name": "required", "type": ["null", "boolean"], "default": None},
     {"name": "show_title", "type": ["null", "boolean"], "default": None},
     {"name": "sizelimit", "type": ["null", "int"], "default": None},
-    # {
-    #     "name": "soft_required",
-    #     "aliases": ["soft-required"],
-    #     "type": ["null", "boolean"],
-    #     "default": None,
-    # },
+    {"name": "soft_required", "type": ["null", "boolean"], "default": None},
     {"name": "sub_questions", "type": ["null", "int"], "default": None},
     {"name": "subtype", "type": ["null", "string"], "default": None},
     {"name": "url", "type": ["null", "string"], "default": None},
