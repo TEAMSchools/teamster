@@ -20,11 +20,11 @@ def test_resource():
     ) as resources:
         db_bigquery: Client = next(resources.db_bigquery)
 
-        query_job = db_bigquery.query(
-            query=render_fivetran_audit_query(
-                dataset="coupa", done=today.to_iso8601_string()
-            )
+    query_job = db_bigquery.query(
+        query=render_fivetran_audit_query(
+            dataset="coupa", done=today.to_iso8601_string()
         )
+    )
 
-        for row in query_job.result():
-            print(row.table)
+    for row in query_job.result():
+        print(row.table)
