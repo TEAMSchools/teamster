@@ -31,18 +31,18 @@ SSH_COUCHDROP = SSHResource(
 
 SSH_RENLEARN = SSHResource(
     remote_host="sftp.renaissance.com",
-    username=EnvVar("KIPPMIAMI_RENLEARN_SFTP_USERNAME"),
-    password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
-    # username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
-    # password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
+    # username=EnvVar("KIPPMIAMI_RENLEARN_SFTP_USERNAME"),
+    # password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
+    username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
+    password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
 )
 
 SSH_TITAN = SSHResource(
     remote_host="sftp.titank12.com",
-    username=EnvVar("KIPPCAMDEN_TITAN_SFTP_USERNAME"),
-    password=EnvVar("KIPPCAMDEN_TITAN_SFTP_PASSWORD"),
-    # username=EnvVar("KIPPNEWARK_TITAN_SFTP_USERNAME"),
-    # password=EnvVar("KIPPNEWARK_TITAN_SFTP_PASSWORD"),
+    # username=EnvVar("KIPPCAMDEN_TITAN_SFTP_USERNAME"),
+    # password=EnvVar("KIPPCAMDEN_TITAN_SFTP_PASSWORD"),
+    username=EnvVar("KIPPNEWARK_TITAN_SFTP_USERNAME"),
+    password=EnvVar("KIPPNEWARK_TITAN_SFTP_PASSWORD"),
 )
 
 SSH_ADP_WORKFORCE_NOW = SSHResource(
@@ -96,6 +96,12 @@ def _test_asset(
     )
 
     assert result.success
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["records"]
+        .value
+        > 0
+    )
 
 
 def test_asset_edplan():
@@ -189,7 +195,8 @@ def test_asset_renlearn_accelerated_reader():
     _test_asset(
         asset_key=["renlearn", "accelerated_reader"],
         remote_dir=".",
-        remote_file_regex=r"KIPP Miami\.zip",
+        # remote_file_regex=r"KIPP Miami\.zip",
+        remote_file_regex=r"KIPP TEAM & Family\.zip",
         asset_fields=ASSET_FIELDS,
         partitions_def=MultiPartitionsDefinition(
             {

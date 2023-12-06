@@ -1,3 +1,4 @@
+import json
 import time
 
 import pendulum
@@ -26,9 +27,11 @@ PARTITIONS_DEF = DynamicPartitionsDefinition(name=f"{CODE_LOCATION}_alchemer_sur
 def survey(context: OpExecutionContext, alchemer: AlchemerResource):
     survey = alchemer._client.survey.get(id=context.partition_key)
 
+    data_str = json.dumps(obj=survey.data).replace("soft-required", "soft_required")
+
     yield Output(
         value=(
-            [survey.data],
+            [json.loads(s=data_str)],
             get_avro_record_schema(name="survey", fields=ASSET_FIELDS["survey"]),
         ),
         metadata={"record_count": 1},
@@ -45,11 +48,18 @@ def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
     survey = alchemer._client.survey.get(id=context.partition_key)
 
     data = survey.question.list(params={"resultsperpage": 500})
-    schema = get_avro_record_schema(
-        name="survey_question", fields=ASSET_FIELDS["survey_question"]
-    )
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    data_str = json.dumps(obj=data).replace("soft-required", "soft_required")
+
+    yield Output(
+        value=(
+            json.loads(s=data_str),
+            get_avro_record_schema(
+                name="survey_question", fields=ASSET_FIELDS["survey_question"]
+            ),
+        ),
+        metadata={"record_count": len(data)},
+    )
 
 
 @asset(

@@ -62,6 +62,7 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     {"name": "student_last_name", "type": ["null", "string"], "default": None},
     {"name": "student_middle_name", "type": ["null", "string"], "default": None},
     {"name": "student_primary_id", "type": ["null", "long"], "default": None},
+    {"name": "student_id_state_id", "type": ["null", "string"], "default": None},
     {"name": "title_1", "type": ["null", "string"], "default": None},
     {"name": "vocabulary_level", "type": ["null", "string"], "default": None},
     {"name": "vocabulary_score", "type": ["null", "double"], "default": None},
@@ -340,6 +341,7 @@ PM_STUDENT_SUMMARY_FIELDS = [
         "type": ["null", "long"],
         "default": None,
     },
+    {"name": "student_id_state_id", "type": ["null", "long"], "default": None},
     {
         "name": "client_date",
         "type": ["null", "string"],

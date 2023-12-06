@@ -39,6 +39,10 @@ def _test_asset(asset_name, dyd_payload, partition_start_date):
 
     assert result.success
 
+    event = result.get_asset_materialization_events()[0]
+
+    assert event.event_specific_data.materialization.metadata["record_count"].value > 0
+
 
 def test_mclass_asset_benchmark_student_summary():
     _test_asset(
