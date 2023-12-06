@@ -521,3 +521,4 @@ left join
     on cast(b.academic_year as int) = f.academic_year
     and b.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="b", right_alias="f") }}
+    and f.iready_subject = 'Reading'
