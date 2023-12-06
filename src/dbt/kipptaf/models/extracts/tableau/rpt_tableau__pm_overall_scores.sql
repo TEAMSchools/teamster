@@ -180,3 +180,4 @@ inner join
 inner join
     {{ ref("int_people__years_experience") }} as y
     on s.employee_number = y.employee_number
+where overall_score is not null
