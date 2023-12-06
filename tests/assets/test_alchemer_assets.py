@@ -44,25 +44,27 @@ def _test_asset(asset: AssetsDefinition, partition_keys):
         )
 
     assert result.success
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["record_count"]
+        .value
+        > 0
+    )
 
-    event = result.get_asset_materialization_events()[0]
 
-    assert event.event_specific_data.materialization.metadata["record_count"].value > 0
-
-
-def test_alchemer_asset_survey():
+def test_asset_alchemer_survey():
     _test_asset(asset=survey, partition_keys=SURVEY_IDS)
 
 
-def test_alchemer_asset_survey_campaign():
+def test_asset_alchemer_survey_campaign():
     _test_asset(asset=survey_campaign, partition_keys=SURVEY_IDS)
 
 
-def test_alchemer_asset_survey_question():
+def test_asset_alchemer_survey_question():
     _test_asset(asset=survey_question, partition_keys=SURVEY_IDS)
 
 
-def test_alchemer_asset_survey_response():
+def test_asset_alchemer_survey_response():
     _test_asset(
         asset=survey_response,
         partition_keys=[
