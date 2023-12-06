@@ -21,17 +21,12 @@ with
                 '&sg_navigate=start'
             ) as edit_link,
         from {{ ref("base_alchemer__survey_results") }} as sr
-        inner join
+        left join
             {{ ref("int_surveys__response_identifiers") }} as ri
             on sr.survey_id = ri.survey_id
             and sr.response_id = ri.response_id
-        -- and ri.respondent_employee_number is not null -- TODO: why are these all
-        -- null?
         where
-            sr.survey_title in (
-                'Federally Funded Staff Semi-Annual Certification',
-                'Federally Funded Staff Semi-Annual Certification: Multiple Grants'
-            )
+            sr.survey_title = 'Federally Funded Staff Semi-Annual Certification'
             and sr.question_id in (20, 94, 72)
     )
 
