@@ -31,18 +31,26 @@ SSH_COUCHDROP = SSHResource(
     password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
 )
 
-SSH_RENLEARN = SSHResource(
+SSH_RENLEARN_KIPPNJ = SSHResource(
     remote_host="sftp.renaissance.com",
-    # username=EnvVar("KIPPMIAMI_RENLEARN_SFTP_USERNAME"),
-    # password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
     username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
     password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
 )
 
-SSH_TITAN = SSHResource(
+SSH_RENLEARN_KIPPMIAMI = SSHResource(
+    remote_host="sftp.renaissance.com",
+    username=EnvVar("KIPPMIAMI_RENLEARN_SFTP_USERNAME"),
+    password=EnvVar("KIPPMIAMI_RENLEARN_SFTP_PASSWORD"),
+)
+
+SSH_TITAN_KIPPCAMDEN = SSHResource(
     remote_host="sftp.titank12.com",
-    # username=EnvVar("KIPPCAMDEN_TITAN_SFTP_USERNAME"),
-    # password=EnvVar("KIPPCAMDEN_TITAN_SFTP_PASSWORD"),
+    username=EnvVar("KIPPCAMDEN_TITAN_SFTP_USERNAME"),
+    password=EnvVar("KIPPCAMDEN_TITAN_SFTP_PASSWORD"),
+)
+
+SSH_TITAN_KIPPNEWARK = SSHResource(
+    remote_host="sftp.titank12.com",
     username=EnvVar("KIPPNEWARK_TITAN_SFTP_USERNAME"),
     password=EnvVar("KIPPNEWARK_TITAN_SFTP_PASSWORD"),
 )
@@ -52,7 +60,6 @@ SSH_ADP_WORKFORCE_NOW = SSHResource(
     username=EnvVar("ADP_SFTP_USERNAME"),
     password=EnvVar("ADP_SFTP_PASSWORD"),
 )
-
 
 SSH_CLEVER_REPORTS = SSHResource(
     remote_host="reports-sftp.clever.com",
@@ -219,7 +226,7 @@ def test_asset_renlearn_accelerated_reader():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI},
         archive_filepath=r"(?P<subject>).csv",
         slugify_cols=False,
     )
@@ -241,7 +248,7 @@ def test_asset_renlearn_star():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI},
         archive_filepath=r"(?P<subject>).csv",
         slugify_cols=False,
     )
@@ -263,7 +270,7 @@ def test_asset_renlearn_star_skill_area():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI},
         archive_filepath=r"(?P<subject>)_SkillArea_v1.csv",
         slugify_cols=False,
     )
@@ -285,7 +292,7 @@ def test_asset_renlearn_star_dashboard_standards():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI},
         archive_filepath=r"(?P<subject>)_Dashboard_Standards_v2.csv",
         slugify_cols=False,
     )
@@ -309,7 +316,7 @@ def test_asset_renlearn_fast_star():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI},
         archive_filepath=r"FL_FAST_(?P<subject>)_K-2.csv",
         slugify_cols=False,
     )
@@ -464,7 +471,7 @@ def test_asset_titan_person_data():
         remote_file_regex=r"persondata(?P<fiscal_year>\d{4})\.csv",
         asset_fields=ASSET_FIELDS,
         partitions_def=StaticPartitionsDefinition(["2021", "2022", "2023"]),
-        ssh_resource={"ssh_titan": SSH_TITAN},
+        ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK},
     )
 
 
@@ -477,7 +484,7 @@ def test_asset_titan_income_form_data():
         remote_file_regex=r"incomeformdata(?P<fiscal_year>\d{4})\.csv",
         asset_fields=ASSET_FIELDS,
         partitions_def=StaticPartitionsDefinition(["2021", "2022", "2023"]),
-        ssh_resource={"ssh_titan": SSH_TITAN},
+        ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK},
     )
 
 
