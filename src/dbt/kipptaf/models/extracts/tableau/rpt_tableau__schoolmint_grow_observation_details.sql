@@ -634,7 +634,7 @@ select
         then 3
         when so_score >= 1.945
         then 2
-        when so_score < 0.95
+        when so_score < 1.95
         then 1
     end as so_tier,
     case

@@ -44,6 +44,9 @@ with
             gpa.`GPA_Y1`,
             gpa.gpa_term,
 
+            sch.principal,
+            sch.schoolphone,
+
             co.student_web_id || '.fam' as family_access_id,
             co.student_web_id || '@teamstudents.org' as student_email,
             concat(co.student_web_password, 'kipp') as student_web_password,
@@ -83,6 +86,10 @@ with
             and co.yearid = gpa.yearid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
             and gpa.is_current
+        left join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on co.schoolid = sch.school_number
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="sch") }}
         where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1
     )
 
