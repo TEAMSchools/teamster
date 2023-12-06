@@ -27,6 +27,7 @@ vars:
   current_academic_year: 2023
   current_fiscal_year: 2024
   alchemer_survey_identifier_short_names:
+    - respondent_employee_number
     - respondent_df_employee_number
     - respondent_userprincipalname
     - respondent_adp_associate_id
