@@ -140,7 +140,8 @@ defs = Definitions(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
         ),
         "ldap": LdapResource(
-            host="ldap1.kippnj.org",
+            # host="ldap1.kippnj.org",
+            host="204.8.89.213",
             port=636,
             user=EnvVar("LDAP_USER"),
             password=EnvVar("LDAP_PASSWORD"),
@@ -163,7 +164,8 @@ defs = Definitions(
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
         "ssh_adp_workforce_now": SSHResource(
-            remote_host="sftp.kippnj.org",
+            # remote_host="sftp.kippnj.org",
+            remote_host="204.8.89.221",
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
         ),
@@ -209,12 +211,14 @@ defs = Definitions(
             password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
         ),
         "ssh_kipptaf": SSHResource(
-            remote_host="sftp.kippnj.org",
+            # remote_host="sftp.kippnj.org",
+            remote_host="204.8.89.221",
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
         "ssh_idauto": SSHResource(
-            remote_host="sftp.kippnj.org",
+            # remote_host="sftp.kippnj.org",
+            remote_host="204.8.89.221",
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
