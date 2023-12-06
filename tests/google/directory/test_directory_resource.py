@@ -75,6 +75,7 @@ def test_batch_insert_users():
                 "primaryEmail": "datarobot_test_1@apps.teamschools.org",
                 "name": {"givenName": "Terius", "familyName": "Gray"},
                 "orgUnitPath": "/Service Accounts/Test",
+                # trunk-ignore(gitleaks/generic-api-key)
                 "password": "5c69881e9835ae7f5eb11f4cc26f0a0085509bdb",
                 "hashFunction": "SHA-1",
                 "changePasswordAtNextLogin": False,
@@ -84,6 +85,7 @@ def test_batch_insert_users():
                 "primaryEmail": "datarobot_test_2@apps.teamschools.org",
                 "name": {"givenName": "Byron", "familyName": "Thomas"},
                 "orgUnitPath": "/Service Accounts/Test",
+                # trunk-ignore(gitleaks/generic-api-key)
                 "password": "5c69881e9835ae7f5eb11f4cc26f0a0085509bdb",
                 "hashFunction": "SHA-1",
                 "changePasswordAtNextLogin": False,

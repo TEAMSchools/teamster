@@ -24,14 +24,14 @@ def test_gsheet_resource():
     ) as resources:
         gsheets: GoogleSheetsResource = resources.gsheets
 
-        for asset in asset_defs:
-            sheet_id = asset.metadata["sheet_id"].value
+    for asset in asset_defs:
+        sheet_id = asset.metadata["sheet_id"].value
 
-            print(sheet_id)
-            spreadsheet = gsheets.open(sheet_id=sheet_id)
+        print(sheet_id)
+        spreadsheet = gsheets.open(sheet_id=sheet_id)
 
-            last_update_timestamp = pendulum.parser.parse(
-                text=spreadsheet.lastUpdateTime
-            ).timestamp()
+        last_update_timestamp = pendulum.parser.parse(
+            text=spreadsheet.lastUpdateTime
+        ).timestamp()
 
-            print(f"\t{last_update_timestamp}")
+        print(f"\t{last_update_timestamp}")
