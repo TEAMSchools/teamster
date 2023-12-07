@@ -27,6 +27,8 @@ with
             sr.assignment_status,
             sr.mail,
             sr.report_to_mail,
+            sr.sam_account_name,
+            sr.report_to_sam_account_name,
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
         left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
         left join
@@ -264,6 +266,8 @@ with
             s.assignment_status,
             s.mail,
             s.report_to_mail,
+            s.sam_account_name,
+            s.report_to_sam_account_name,
 
             o.observation_id,
             o.teacher_id,
@@ -327,6 +331,8 @@ with
             s.assignment_status,
             s.mail,
             s.report_to_mail,
+            s.sam_account_name,
+            s.report_to_sam_account_name,
 
             o.observation_id,
             o.teacher_id,
@@ -509,6 +515,8 @@ with
             od.rn_submission,
             od.mail,
             od.report_to_mail,
+            od.sam_account_name,
+            od.report_to_sam_account_name,
         from observation_details as od
         left join pm_overall_scores as os on od.observation_id = os.observation_id
         where od.rn_submission = 1
@@ -557,6 +565,8 @@ with
             1 as rn_submission,
             r.mail,
             r.report_to_mail,
+            r.sam_account_name,
+            r.report_to_sam_account_name,
         from historical_data as hd
         left join
             {{ ref("base_people__staff_roster_history") }} as sr
@@ -617,6 +627,8 @@ select
     rn_submission,
     mail,
     report_to_mail,
+    sam_account_name,
+    report_to_sam_account_name,
     case
         when etr_score >= 3.5
         then 4
@@ -648,3 +660,4 @@ select
         then 1
     end as overall_tier,
 from all_data
+where employee_number = 101522
