@@ -15,7 +15,7 @@ from teamster.kipptaf.schoolmint.grow.assets import build_schoolmint_grow_asset
 from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.staging import LOCAL_TIMEZONE
 
-STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
+STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["f"])
 
 
 def _test_asset(asset_name, partition_start_date=None):

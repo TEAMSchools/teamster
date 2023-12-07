@@ -272,6 +272,7 @@ MEASUREMENT_OPTION_FIELDS = [
     {"name": "_id", "type": ["null", "string"], "default": None},
     {"name": "value", "type": ["null", "long"], "default": None},
     {"name": "percentage", "type": ["null", "double"], "default": None},
+    {"name": "booleanValue", "type": ["null", "boolean"], "default": None},
     {
         "name": "created",
         "type": ["null", "string"],
@@ -1025,6 +1026,7 @@ DISTRICT_DATA_FIELDS = [
     {"name": "showOnDashboards", "type": ["null", "boolean"], "default": None},
     {"name": "usertag1", "type": ["null", "string"], "default": None},
     {"name": "videoLicense", "type": ["null", "boolean"], "default": None},
+    {"name": "evaluator", "type": ["null", "string"], "default": None},
     {
         "name": "archivedAt",
         "type": ["null", "string"],
