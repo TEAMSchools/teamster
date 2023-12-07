@@ -4,14 +4,12 @@ endpoints:
     params:
       StartDate: "{start_date}"
       EndDate: "{end_date}"
-
       IncludeDeleted: Y
   - asset_name: homework
     api_version: v1
     params:
       StartDate: "{start_date}"
       EndDate: "{end_date}"
-
       IncludeDeleted: Y
   - asset_name: comm-log
     api_version: v1
@@ -23,7 +21,6 @@ endpoints:
     params:
       StartDate: "{start_date}"
       EndDate: "{end_date}"
-
       IncludeDeleted: Y
       cf: Y
   - asset_name: followups

@@ -99,6 +99,11 @@ DIAGNOSTIC_INSTRUCTION_FIELDS = [
         "default": None,
     },
     {
+        "name": "instruction_overall_pass_rate_percent",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
         "name": "diagnostic_overall_placement_1",
         "type": ["null", "string"],
         "default": None,

@@ -17,9 +17,9 @@ from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import get_avro_record_schema
 
 
-def build_static_partition_asset(
-    asset_name,
+def build_deanslist_static_partition_asset(
     code_location,
+    asset_name,
     api_version,
     partitions_def: StaticPartitionsDefinition = None,
     op_tags={},
@@ -41,8 +41,6 @@ def build_static_partition_asset(
             params=params,
         )
 
-        row_count = endpoint_content["row_count"]
-
         yield Output(
             value=(
                 endpoint_content["data"],
@@ -50,18 +48,17 @@ def build_static_partition_asset(
                     name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
                 ),
             ),
-            metadata={"records": row_count},
+            metadata={"records": endpoint_content["row_count"]},
         )
 
     return _asset
 
 
-def build_multi_partition_asset(
-    asset_name,
+def build_deanslist_multi_partition_asset(
     code_location,
+    asset_name,
     api_version,
     partitions_def: MultiPartitionsDefinition,
-    inception_date=None,
     op_tags={},
     params={},
 ) -> AssetsDefinition:

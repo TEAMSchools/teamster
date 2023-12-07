@@ -100,8 +100,8 @@ class AvroGCSIOManager(GCSUPathIOManager):
         records, schema = obj
 
         if self.path_exists(path):
-            context.log.warning(f"Removing existing GCS key: {path}")
-            self.unlink(path)
+            context.log.warning(f"Existing GCS key: {path}")
+            # self.unlink(path)
 
         backoff(
             fn=fastavro.writer,
