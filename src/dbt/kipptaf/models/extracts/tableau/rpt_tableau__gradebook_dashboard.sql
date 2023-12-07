@@ -55,11 +55,20 @@ with
             sec.courses_credittype as credittype,
             sec.courses_course_name as course_name,
             sec.teacher_lastfirst as teacher_name,
+
+            f.tutoring_nj,
+            f.nj_student_tier,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         left join
             {{ ref("base_powerschool__sections") }} as sec
             on enr.cc_sectionid = sec.sections_id
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="sec") }}
+        left join
+            {{ ref("int_reporting__student_filters") }} as f
+            on enr.cc_studentid = f.studentid
+            and enr.cc_academic_year = f.academic_year
+            and sec.courses_credittype = f.powerschool_credittype
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="f") }}
         where
             not enr.is_dropped_course
             and not enr.is_dropped_section
@@ -148,6 +157,10 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
+    st.tutoring_nj,
+    st.nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
 
     max(case when gr.is_curterm = 1 then gr.need_60 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
@@ -186,6 +199,9 @@ left join
     on co.yearid = ada.yearid
     and co.studentid = ada.studentid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -237,6 +253,10 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
+    st.tutoring_nj,
+    st.nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
 
     max(case when gr.is_curterm = 1 then gr.need_60 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
@@ -277,6 +297,9 @@ left join
     on co.yearid = ada.yearid
     and co.studentid = ada.studentid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -338,6 +361,11 @@ select
     st.section_number as `period`,
     st.external_expression,
 
+    st.tutoring_nj,
+    st.nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
     null as need_65,
     null as need_70,
     null as need_80,
@@ -362,6 +390,9 @@ left join
     on co.yearid = ada.yearid
     and co.studentid = ada.studentid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -419,6 +450,11 @@ select
     st.section_number as `period`,
     st.external_expression,
 
+    st.tutoring_nj,
+    st.nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
     null as need_65,
     null as need_70,
     null as need_80,
@@ -445,6 +481,9 @@ left join
     on co.yearid = ada.yearid
     and co.studentid = ada.studentid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -497,6 +536,10 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
+    st.tutoring_nj,
+    st.nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
 
     null as need_65,
     null as need_70,
@@ -523,6 +566,9 @@ left join
     on co.yearid = ada.yearid
     and co.studentid = ada.studentid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year < {{ var("current_academic_year") }}
 
 union all
@@ -583,6 +629,11 @@ select
     'TRANSFER' as section_number,
     null as `period`,
     null as external_expression,
+    null as tutoring_nj,
+    null as nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
     null as need_65,
     null as need_70,
     null as need_80,
@@ -621,4 +672,7 @@ left join
     on co.yearid = ada.yearid
     and co.studentid = ada.studentid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
 where tr.storecode = 'Y1' and tr.course_number is null
