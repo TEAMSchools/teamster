@@ -660,4 +660,3 @@ select
         then 1
     end as overall_tier,
 from all_data
-where employee_number = 101522
