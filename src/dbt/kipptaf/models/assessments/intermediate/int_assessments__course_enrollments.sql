@@ -19,7 +19,11 @@ with
             co.grade_level + 1 as illuminate_grade_level_id,
 
             max(ns.is_advanced_math) over (
-                partition by ce._dbt_source_relation, ce.cc_studentid, ce.cc_academic_year, ce.courses_credittype
+                partition by
+                    ce._dbt_source_relation,
+                    ce.cc_studentid,
+                    ce.cc_academic_year,
+                    ce.courses_credittype
             ) as is_advanced_math_student,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
