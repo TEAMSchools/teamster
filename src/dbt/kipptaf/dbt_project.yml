@@ -132,16 +132,14 @@ models:
       +schema: pearson
     people:
       +schema: people
-      staging:
-        +materialized: table
+      +materialized: table
     powerschool:
       +schema: powerschool
     renlearn:
       +schema: renlearn
     reporting:
       +schema: reporting
-      staging:
-        +materialized: table
+      +materialized: table
     schoolmint:
       grow:
         +schema: schoolmint_grow
