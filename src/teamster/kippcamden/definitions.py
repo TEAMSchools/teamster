@@ -8,7 +8,8 @@ from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHResource
-from teamster.kippcamden import (
+
+from . import (
     CODE_LOCATION,
     datagun,
     dbt,
@@ -24,16 +25,31 @@ GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
-        modules=[datagun, dbt, deanslist, edplan, pearson, powerschool, titan]
+        modules=[
+            datagun,
+            dbt,
+            deanslist,
+            edplan,
+            pearson,
+            powerschool,
+            titan,
+        ]
     ),
-    jobs=[*datagun.jobs, *deanslist.jobs],
+    jobs=[
+        *datagun.jobs,
+        *deanslist.jobs,
+    ],
     schedules=[
         *datagun.schedules,
         *dbt.schedules,
-        *powerschool.schedules,
         *deanslist.schedules,
+        *powerschool.schedules,
     ],
-    sensors=[*powerschool.sensors, *edplan.sensors, *titan.sensors],
+    sensors=[
+        *edplan.sensors,
+        *powerschool.sensors,
+        *titan.sensors,
+    ],
     resources={
         "gcs": GCS_RESOURCE,
         "io_manager": GCSIOManager(

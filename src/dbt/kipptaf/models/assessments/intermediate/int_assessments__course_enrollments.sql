@@ -4,20 +4,26 @@ with
     enrollments_union as (
         /* K-12 enrollments */
         select
+            ce.students_student_number as powerschool_student_number,
+            ce.courses_credittype,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
-            ce.courses_credittype,
-            ce.cc_academic_year + 1 as illuminate_academic_year,
 
-            co.student_number as powerschool_student_number,
             co.schoolid as powerschool_school_id,
-            co.grade_level + 1 as illuminate_grade_level_id,
 
             ns.illuminate_subject_area,
             ns.is_foundations,
 
+            ce.cc_academic_year + 1 as illuminate_academic_year,
+
+            co.grade_level + 1 as illuminate_grade_level_id,
+
             max(ns.is_advanced_math) over (
-                partition by ce.cc_studentid, ce.cc_academic_year, ce.courses_credittype
+                partition by
+                    ce._dbt_source_relation,
+                    ce.cc_studentid,
+                    ce.cc_academic_year,
+                    ce.courses_credittype
             ) as is_advanced_math_student,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
@@ -35,18 +41,20 @@ with
 
         /* ES Writing */
         select
-            co.entrydate as cc_dateenrolled,
-            co.exitdate as cc_dateleft,
+            co.student_number as powerschool_student_number,
 
             'RHET' as courses_credittype,
 
-            co.academic_year + 1 as illuminate_academic_year,
-            co.student_number as powerschool_student_number,
+            co.entrydate as cc_dateenrolled,
+            co.exitdate as cc_dateleft,
             co.schoolid as powerschool_school_id,
-            co.grade_level + 1 as illuminate_grade_level_id,
 
             'Writing' as illuminate_subject_area,
             false as is_foundations,
+
+            co.academic_year + 1 as illuminate_academic_year,
+            co.grade_level + 1 as illuminate_grade_level_id,
+
             false as is_advanced_math,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         where co.code_location in ('kippnewark', 'kippcamden') and co.grade_level <= 4
