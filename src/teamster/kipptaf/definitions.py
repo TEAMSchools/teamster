@@ -6,22 +6,11 @@ from dagster_gcp import BigQueryResource, GCSResource
 from dagster_k8s import k8s_job_executor
 
 from teamster import GCS_PROJECT_NAME
-from teamster.core.adp.resources import (
-    AdpWorkforceManagerResource,
-    AdpWorkforceNowResource,
-)
-from teamster.core.alchemer.resources import AlchemerResource
-from teamster.core.amplify.resources import MClassResource
-from teamster.core.google.directory.resources import GoogleDirectoryResource
-from teamster.core.google.forms.resources import GoogleFormsResource
-from teamster.core.google.sheets.resources import GoogleSheetsResource
 from teamster.core.google.storage.io_manager import GCSIOManager
-from teamster.core.ldap.resources import LdapResource
-from teamster.core.schoolmint.grow.resources import SchoolMintGrowResource
-from teamster.core.smartrecruiters.resources import SmartRecruitersResource
 from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.jobs import asset_observation_job
-from teamster.kipptaf import (
+
+from . import (
     CODE_LOCATION,
     achieve3k,
     adp,
@@ -38,6 +27,16 @@ from teamster.kipptaf import (
     schoolmint,
     smartrecruiters,
 )
+from .adp.workforce_manager.resources import AdpWorkforceManagerResource
+from .adp.workforce_now.resources import AdpWorkforceNowResource
+from .alchemer.resources import AlchemerResource
+from .amplify.resources import MClassResource
+from .google.directory.resources import GoogleDirectoryResource
+from .google.forms.resources import GoogleFormsResource
+from .google.sheets.resources import GoogleSheetsResource
+from .ldap.resources import LdapResource
+from .schoolmint.grow.resources import SchoolMintGrowResource
+from .smartrecruiters.resources import SmartRecruitersResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
@@ -140,7 +139,8 @@ defs = Definitions(
             service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
         ),
         "ldap": LdapResource(
-            host="ldap1.kippnj.org",
+            # host="ldap1.kippnj.org",
+            host="204.8.89.213",
             port=636,
             user=EnvVar("LDAP_USER"),
             password=EnvVar("LDAP_PASSWORD"),
@@ -163,7 +163,8 @@ defs = Definitions(
             password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
         ),
         "ssh_adp_workforce_now": SSHResource(
-            remote_host="sftp.kippnj.org",
+            # remote_host="sftp.kippnj.org",
+            remote_host="204.8.89.221",
             username=EnvVar("ADP_SFTP_USERNAME"),
             password=EnvVar("ADP_SFTP_PASSWORD"),
         ),
@@ -209,12 +210,14 @@ defs = Definitions(
             password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
         ),
         "ssh_kipptaf": SSHResource(
-            remote_host="sftp.kippnj.org",
+            # remote_host="sftp.kippnj.org",
+            remote_host="204.8.89.221",
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),
         "ssh_idauto": SSHResource(
-            remote_host="sftp.kippnj.org",
+            # remote_host="sftp.kippnj.org",
+            remote_host="204.8.89.221",
             username=EnvVar("KTAF_SFTP_USERNAME"),
             password=EnvVar("KTAF_SFTP_PASSWORD"),
         ),

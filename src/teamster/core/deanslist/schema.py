@@ -622,6 +622,11 @@ LIST_FIELDS = {
         {"name": "IsDated", "type": ["null", "boolean"], "default": None},
         {"name": "ListID", "type": ["null", "string"], "default": None},
         {"name": "ListName", "type": ["null", "string"], "default": None},
+        {"name": "Show", "type": ["null", "boolean"], "default": None},
+        {"name": "IsAccumulation", "type": ["null", "boolean"], "default": None},
+        {"name": "Sort", "type": ["null", "string"], "default": None},
+        {"name": "IsClearable", "type": ["null", "boolean"], "default": None},
+        {"name": "IsSystem", "type": ["null", "boolean"], "default": None},
     ]
 }
 
@@ -691,6 +696,7 @@ ROSTER_FIELDS = {
         {"name": "SubjectName", "type": ["null", "string"], "default": None},
         {"name": "TakeAttendance", "type": ["null", "string"], "default": None},
         {"name": "TakeClassAttendance", "type": ["null", "string"], "default": None},
+        {"name": "StudentIDs", "type": ["null", "string"], "default": None},
         {
             "name": "LastSynced",
             "type": ["null", "string"],
