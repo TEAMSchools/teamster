@@ -46,6 +46,8 @@ locations:
           - ktaf-sftp-username
           - littlesis-sftp-password
           - littlesis-sftp-username
+          - ldap-password
+          - ldap-user
           - mssql-password
           - mssql-username
           - pythonanywhere-sftp-password
