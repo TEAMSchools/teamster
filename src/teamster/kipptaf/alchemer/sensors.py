@@ -1,4 +1,5 @@
 import json
+import time
 
 import pendulum
 from dagster import (
@@ -90,7 +91,7 @@ def alchemer_survey_metadata_asset_sensor(
 
 @sensor(
     name=f"{CODE_LOCATION}_alchemer_survey_response_asset_sensor",
-    minimum_interval_seconds=(60 * 10),
+    minimum_interval_seconds=(60 * 15),
     asset_selection=AssetSelection.assets(survey_response),
 )
 def alchemer_survey_response_asset_sensor(
@@ -109,7 +110,7 @@ def alchemer_survey_response_asset_sensor(
     try:
         surveys = alchemer._client.survey.list()
     except HTTPError as e:
-        context.log.exception(e)
+        context.log.error(e)
         return
 
     run_requests = []
@@ -164,6 +165,8 @@ def alchemer_survey_response_asset_sensor(
             )
 
             cursor[survey_id] = now.timestamp()
+
+        time.sleep(0.5)  # rate limit = 240 requests/min
 
     return SensorResult(
         run_requests=run_requests,

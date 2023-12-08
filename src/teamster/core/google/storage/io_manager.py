@@ -103,6 +103,23 @@ class AvroGCSIOManager(GCSUPathIOManager):
             context.log.warning(f"Existing GCS key: {path}")
             # self.unlink(path)
 
+        # try:
+        #     backoff(
+        #         fn=fastavro.writer,
+        #         retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
+        #         kwargs={
+        #             "fo": bucket_obj.blob(blob_name=str(path)).open(
+        #                 mode="wb", ignore_flush=True
+        #             ),
+        #             "schema": fastavro.parse_schema(schema),
+        #             "records": records,
+        #             "codec": "snappy",
+        #             "strict_allow_default": True,
+        #         },
+        #     )
+        # except ValueError as e:
+        #     context.log.warning(e)
+
         backoff(
             fn=fastavro.writer,
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
@@ -113,7 +130,6 @@ class AvroGCSIOManager(GCSUPathIOManager):
                 "schema": fastavro.parse_schema(schema),
                 "records": records,
                 "codec": "snappy",
-                # "strict_allow_default": True,
             },
         )
 

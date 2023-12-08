@@ -40,8 +40,8 @@ files = [
 
 [[package]]
 name = "alembic"
-version = "1.12.1"
-requires_python = ">=3.7"
+version = "1.13.0"
+requires_python = ">=3.8"
 summary = "A database migration tool for SQLAlchemy."
 dependencies = [
     "Mako",
@@ -49,8 +49,8 @@ dependencies = [
     "typing-extensions>=4",
 ]
 files = [
-    {file = "alembic-1.12.1-py3-none-any.whl", hash = "sha256:47d52e3dfb03666ed945becb723d6482e52190917fdb47071440cfdba05d92cb"},
-    {file = "alembic-1.12.1.tar.gz", hash = "sha256:bca5877e9678b454706347bc10b97cb7d67f300320fa5c3a94423e8266e2823f"},
+    {file = "alembic-1.13.0-py3-none-any.whl", hash = "sha256:a23974ea301c3ee52705db809c7413cecd165290c6679b9998dd6c74342ca23a"},
+    {file = "alembic-1.13.0.tar.gz", hash = "sha256:ab4b3b94d2e1e5f81e34be8a9b7b7575fc9dd5398fccb0bef351ec9b14872623"},
 ]
 
 [[package]]
@@ -293,7 +293,7 @@ files = [
 
 [[package]]
 name = "dagster"
-version = "1.5.10"
+version = "1.5.11"
 summary = "Dagster is an orchestration platform for the development, production, and observation of data assets."
 dependencies = [
     "Jinja2",
@@ -302,7 +302,7 @@ dependencies = [
     "click>=5.0",
     "coloredlogs<=14.0,>=6.1",
     "croniter>=0.3.34",
-    "dagster-pipes==1.5.10",
+    "dagster-pipes==1.5.11",
     "docstring-parser",
     "grpcio-health-checking>=1.44.0",
     "grpcio>=1.44.0",
@@ -327,43 +327,43 @@ dependencies = [
     "watchdog>=0.8.3",
 ]
 files = [
-    {file = "dagster-1.5.10-py3-none-any.whl", hash = "sha256:6fb1a26bc4b345c3b71aea7f629656f9f37b578bce11293b554fbaa9d655c6b9"},
-    {file = "dagster-1.5.10.tar.gz", hash = "sha256:80f7f90e54893573b3939562f7282cb6ddfa3ad033a5c09c286819f9d7f95907"},
+    {file = "dagster-1.5.11-py3-none-any.whl", hash = "sha256:a206a04955251ce3a76556639114924f432a5c9fc3eec3e2772569bc0fb0691d"},
+    {file = "dagster-1.5.11.tar.gz", hash = "sha256:b0edcbe1190a77c7118f5009062d5fd27f75327417213c6725d158531ea7f0ae"},
 ]
 
 [[package]]
 name = "dagster-airbyte"
-version = "0.21.10"
+version = "0.21.11"
 summary = "Package for integrating Airbyte with Dagster."
 dependencies = [
-    "dagster==1.5.10",
+    "dagster==1.5.11",
     "requests",
 ]
 files = [
-    {file = "dagster-airbyte-0.21.10.tar.gz", hash = "sha256:564dd539901711a67ca8aeba6012bd0cae00372682545b3f243b568f526c9601"},
-    {file = "dagster_airbyte-0.21.10-py3-none-any.whl", hash = "sha256:057a05d715de7545d32f638e604eacda3a3615491497762978d7b52a0c3f9e75"},
+    {file = "dagster-airbyte-0.21.11.tar.gz", hash = "sha256:a514560a977c4a785b783d3ada7e63ae7c538e0be49c1c76f4e6d999c2af8aeb"},
+    {file = "dagster_airbyte-0.21.11-py3-none-any.whl", hash = "sha256:e6d7d886dbb42b2cd83c4488e2ba1969aaaaab628317c820c359bdcdbbbd1c78"},
 ]
 
 [[package]]
 name = "dagster-cloud"
-version = "1.5.10"
+version = "1.5.11"
 summary = ""
 dependencies = [
-    "dagster-cloud-cli==1.5.10",
-    "dagster==1.5.10",
+    "dagster-cloud-cli==1.5.11",
+    "dagster==1.5.11",
     "pex>=2.1.132",
     "questionary",
     "requests",
     "typer[all]",
 ]
 files = [
-    {file = "dagster_cloud-1.5.10-py3-none-any.whl", hash = "sha256:24c55873e72a4c00d9d2e860452a9c0c09a96f9fbc858b6f93304fe6bfedbd11"},
-    {file = "dagster_cloud-1.5.10.tar.gz", hash = "sha256:a2de714528dcee6f37b8e1ae59af0a77827e2aff19def5225e708a48cd187f70"},
+    {file = "dagster_cloud-1.5.11-py3-none-any.whl", hash = "sha256:3899360e223cfb7060f785f5a4c0f6064e796d243006e0bdfa558a00fbbf6258"},
+    {file = "dagster_cloud-1.5.11.tar.gz", hash = "sha256:12fa7b5646634dfd050f75b2dff98a428e1b068c18e51ad3df149c5744fa870d"},
 ]
 
 [[package]]
 name = "dagster-cloud-cli"
-version = "1.5.10"
+version = "1.5.11"
 summary = ""
 dependencies = [
     "PyYAML>=5.1",
@@ -374,17 +374,17 @@ dependencies = [
     "typer[all]>=0.4.1",
 ]
 files = [
-    {file = "dagster_cloud_cli-1.5.10-py3-none-any.whl", hash = "sha256:5ccbccacd894fa33ba63ac41044f0aef242483eb500aeb878b30e76ae266f761"},
-    {file = "dagster_cloud_cli-1.5.10.tar.gz", hash = "sha256:4ac10fba72faa00ec01b928b246288a7e70cb5543d4c7e6a812d66f204b27220"},
+    {file = "dagster_cloud_cli-1.5.11-py3-none-any.whl", hash = "sha256:9eb628570779e102cfb75096bfd4e77e36ca055dba21bead18c3da7b750d0d6c"},
+    {file = "dagster_cloud_cli-1.5.11.tar.gz", hash = "sha256:cabb17981ed9b7f93a9724060b868049b00606138c74ca1587e0c2507164d683"},
 ]
 
 [[package]]
 name = "dagster-dbt"
-version = "0.21.10"
+version = "0.21.11"
 summary = "A Dagster integration for dbt"
 dependencies = [
     "Jinja2",
-    "dagster==1.5.10",
+    "dagster==1.5.11",
     "dbt-core<1.8",
     "networkx",
     "orjson",
@@ -394,29 +394,29 @@ dependencies = [
     "typer>=0.9.0",
 ]
 files = [
-    {file = "dagster-dbt-0.21.10.tar.gz", hash = "sha256:c5796d90d6dd4ca10e5af72c389e223622bdbddabf11d7f6283f20d63f64007c"},
-    {file = "dagster_dbt-0.21.10-py3-none-any.whl", hash = "sha256:07e7642534bca87e316fdac282d2176616b3bb6ade66be7f95a513c5a9b3fb21"},
+    {file = "dagster-dbt-0.21.11.tar.gz", hash = "sha256:13421bc1bbc8ed29d6c324d54faf99375091432acfcb1255e74fdc1dd02f54ae"},
+    {file = "dagster_dbt-0.21.11-py3-none-any.whl", hash = "sha256:2daf6e92a8549e04c2dc436e54f962f054d5225c9e10ce17a720190f513392c6"},
 ]
 
 [[package]]
 name = "dagster-fivetran"
-version = "0.21.10"
+version = "0.21.11"
 summary = "Package for integrating Fivetran with Dagster."
 dependencies = [
-    "dagster==1.5.10",
+    "dagster==1.5.11",
 ]
 files = [
-    {file = "dagster-fivetran-0.21.10.tar.gz", hash = "sha256:bd80731b01d7bf55f9735d9ddaf3b9942820b6eaa8932080d6aeb6cb0dc90957"},
-    {file = "dagster_fivetran-0.21.10-py3-none-any.whl", hash = "sha256:b90228780d40b503edefdd737e72779d6caaf7c4ae587d482491652dbb9c3087"},
+    {file = "dagster-fivetran-0.21.11.tar.gz", hash = "sha256:28e47ea9a711a3d776973acbaf507f5e17e8c5b3245b99385ab0d07af5e1c75f"},
+    {file = "dagster_fivetran-0.21.11-py3-none-any.whl", hash = "sha256:5fc896394b824c04e06bfe06e4ddbf24fe2feea31aa68f8aa13a28719a8d55d5"},
 ]
 
 [[package]]
 name = "dagster-gcp"
-version = "0.21.10"
+version = "0.21.11"
 summary = "Package for GCP-specific Dagster framework op and resource components."
 dependencies = [
-    "dagster-pandas==0.21.10",
-    "dagster==1.5.10",
+    "dagster-pandas==0.21.11",
+    "dagster==1.5.11",
     "db-dtypes",
     "google-api-python-client",
     "google-cloud-bigquery",
@@ -424,58 +424,58 @@ dependencies = [
     "oauth2client",
 ]
 files = [
-    {file = "dagster-gcp-0.21.10.tar.gz", hash = "sha256:592fdbed8b88127cf69bd29db64401129beac76705863e18d7c56b383856b17d"},
-    {file = "dagster_gcp-0.21.10-py3-none-any.whl", hash = "sha256:8d1fa4f016aafd76d7d811a9e2ba6ef260563151fc577d71964bd014aafa4c26"},
+    {file = "dagster-gcp-0.21.11.tar.gz", hash = "sha256:aa4498e8eb2c07fd94c35db08ddfda19bfef07bc16dd03bdc8b820e9147d5b05"},
+    {file = "dagster_gcp-0.21.11-py3-none-any.whl", hash = "sha256:a8618de38ed249498531f872cba050a7f573ea710487956375324f209ac44d05"},
 ]
 
 [[package]]
 name = "dagster-k8s"
-version = "0.21.10"
+version = "0.21.11"
 summary = "A Dagster integration for k8s"
 dependencies = [
-    "dagster==1.5.10",
+    "dagster==1.5.11",
     "google-auth!=2.23.1",
     "kubernetes",
 ]
 files = [
-    {file = "dagster-k8s-0.21.10.tar.gz", hash = "sha256:1f506f2efa07cf6b16e1f8d97d8e2241cda5280a8c63c0185c23fdd5c5f53776"},
-    {file = "dagster_k8s-0.21.10-py3-none-any.whl", hash = "sha256:16e9d684c5fedbc1f6ed475506fe3a8e5ce5cd49290a01cdb28696763eb67271"},
+    {file = "dagster-k8s-0.21.11.tar.gz", hash = "sha256:8d8965abe99f719acf3833d519f78d25052b4266964fb933d08cb47514f467d3"},
+    {file = "dagster_k8s-0.21.11-py3-none-any.whl", hash = "sha256:2d6582efcbd29fd7b0edde96a900588ae298fcb87fe47a0da695ef1e15aeaccc"},
 ]
 
 [[package]]
 name = "dagster-pandas"
-version = "0.21.10"
+version = "0.21.11"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 dependencies = [
-    "dagster==1.5.10",
+    "dagster==1.5.11",
     "pandas",
 ]
 files = [
-    {file = "dagster-pandas-0.21.10.tar.gz", hash = "sha256:2ea533a4441f5fc5bbee2e14869af6403f3e9db9d5458a2f1b4d1c3780b68388"},
-    {file = "dagster_pandas-0.21.10-py3-none-any.whl", hash = "sha256:0b138bd486d8fabd0be5c803f3a035c541ad4942564485a3e0f04faf7d2ec978"},
+    {file = "dagster-pandas-0.21.11.tar.gz", hash = "sha256:8296392e2df32ff07e46a372a71acb7a88aef6025ea1e708e9888ab054fde137"},
+    {file = "dagster_pandas-0.21.11-py3-none-any.whl", hash = "sha256:4d6ab729313f03a56d349ae2e43826a686d1dcb6339ea4adcb5680d10c2110a7"},
 ]
 
 [[package]]
 name = "dagster-pipes"
-version = "1.5.10"
+version = "1.5.11"
 summary = "Toolkit for Dagster integrations with transform logic outside of Dagster"
 files = [
-    {file = "dagster-pipes-1.5.10.tar.gz", hash = "sha256:c305e09de6b467394c9c2d5977fa66ded2cf3d7d41a297fd316db3bcb8200c37"},
-    {file = "dagster_pipes-1.5.10-py3-none-any.whl", hash = "sha256:5c34c7788b29414d1d855125a122a6c3e2d5af7af17f542bd9e53bd1b46aef2e"},
+    {file = "dagster-pipes-1.5.11.tar.gz", hash = "sha256:aae0b8883d9337c35e7c28f20ef89a994986209606c48954e47074319335d34d"},
+    {file = "dagster_pipes-1.5.11-py3-none-any.whl", hash = "sha256:9bc904f9a82b3f96350752d75d69c0195c577c854bccc96890f121a3a0e15090"},
 ]
 
 [[package]]
 name = "dagster-ssh"
-version = "0.21.10"
+version = "0.21.11"
 summary = "Package for ssh Dagster framework components."
 dependencies = [
-    "dagster==1.5.10",
+    "dagster==1.5.11",
     "paramiko",
     "sshtunnel",
 ]
 files = [
-    {file = "dagster-ssh-0.21.10.tar.gz", hash = "sha256:44ab1f1f25ad5e7ad4257e431fe8f84f919dc0a015bf6bef155eae3b51258a4e"},
-    {file = "dagster_ssh-0.21.10-py3-none-any.whl", hash = "sha256:30f93c77dbdd769fe7ef1505b2bacb1f54697623d3d352ba5a822b83f9a03b88"},
+    {file = "dagster-ssh-0.21.11.tar.gz", hash = "sha256:703977a258d73578d40c4a03dbd88b3c752deb40eba76011d1500149b1e1f398"},
+    {file = "dagster_ssh-0.21.11-py3-none-any.whl", hash = "sha256:2a9c5c932caa2c04917ca61587c5fdceb184e99450d98df024f150a72f00ea56"},
 ]
 
 [[package]]
@@ -572,7 +572,7 @@ files = [
 
 [[package]]
 name = "dbt-semantic-interfaces"
-version = "0.4.1"
+version = "0.4.2"
 requires_python = ">=3.8"
 summary = "The shared semantic layer definitions that dbt-core and MetricFlow use"
 dependencies = [
@@ -587,8 +587,8 @@ dependencies = [
     "typing-extensions~=4.4",
 ]
 files = [
-    {file = "dbt_semantic_interfaces-0.4.1-py3-none-any.whl", hash = "sha256:68da17a75591d5557d46ffbe88e919d0f1eb9bd262b48026a9fd9d8334d10f8b"},
-    {file = "dbt_semantic_interfaces-0.4.1.tar.gz", hash = "sha256:d79cb4b5e5103099874530735a117db61f7dcbb1a774f9ce65068c24cb7e874e"},
+    {file = "dbt_semantic_interfaces-0.4.2-py3-none-any.whl", hash = "sha256:feee60eed3b4601ca92f541ed9337c6c1077cf97b10374848d7f4f6d33c358e2"},
+    {file = "dbt_semantic_interfaces-0.4.2.tar.gz", hash = "sha256:7b222719cb57e77b2570033cd258b8e3e1ed575cdc1864ff74be97ba9c3394b9"},
 ]
 
 [[package]]
@@ -603,27 +603,27 @@ files = [
 
 [[package]]
 name = "fastavro"
-version = "1.9.0"
+version = "1.9.1"
 requires_python = ">=3.8"
 summary = "Fast read/write of AVRO files"
 files = [
-    {file = "fastavro-1.9.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:0f044b71d8b0ba6bbd6166be6836c3caeadd26eeaabee70b6ac7c6a9b884f6bf"},
-    {file = "fastavro-1.9.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:172d6d5c186ba51ec6eaa98eaaadc8e859b5a56862ae724413424a858619da7f"},
-    {file = "fastavro-1.9.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:07dee19dcc2797a8cb1b410d9e65febb55af2a18d9a7b85465b039d4276b9a29"},
-    {file = "fastavro-1.9.0-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:83402b450f718b690ebd88f1df2ea70609f1192bed1498308d29ac737e992391"},
-    {file = "fastavro-1.9.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:b3704847d79377a5b4252ccf6d3a391497cdb8f57017cde2613f92f5274d6261"},
-    {file = "fastavro-1.9.0-cp311-cp311-win_amd64.whl", hash = "sha256:602492ea0c458020cd19138ff2b9e97aa187ae01c290183dd9bbb7ff2d2e83c4"},
-    {file = "fastavro-1.9.0.tar.gz", hash = "sha256:71aad82b17442dc41223f8351b9f28a60dd877a8e5a7525eaf6342f45f6d23e1"},
+    {file = "fastavro-1.9.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:cd00aa7a7e463538b3930b27ea98270af11de3a6436b658086802964ae53cfc7"},
+    {file = "fastavro-1.9.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3d8037a800914acfd2d17894accfdd9ba96e316bce173e3ac2bc36c9d6f91adb"},
+    {file = "fastavro-1.9.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f5a6d15fd3783165113b8292058f06c555fecb7b0bbc0dfd391dc6f320675157"},
+    {file = "fastavro-1.9.1-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:46e69d9fe30ccba8a1a22c2ed2e88deb4ae1ce42f47495f59bd1cac60c3f3e75"},
+    {file = "fastavro-1.9.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:a06ae6b12b4dfe8fa6c84019a949b44067bf5d7fb051f7101a9093dc2c8c7631"},
+    {file = "fastavro-1.9.1-cp311-cp311-win_amd64.whl", hash = "sha256:47f18c4f3f5a945c32d386402cf007f700433fd1b9b6af78eb35ee09a29ba8ad"},
+    {file = "fastavro-1.9.1.tar.gz", hash = "sha256:f37011d66de8ba81b26760db0478009a14c08ebfd34269b3390abfd4616b308f"},
 ]
 
 [[package]]
 name = "fsspec"
-version = "2023.10.0"
+version = "2023.12.1"
 requires_python = ">=3.8"
 summary = "File-system specification"
 files = [
-    {file = "fsspec-2023.10.0-py3-none-any.whl", hash = "sha256:346a8f024efeb749d2a5fca7ba8854474b1ff9af7c3faaf636a4548781136529"},
-    {file = "fsspec-2023.10.0.tar.gz", hash = "sha256:330c66757591df346ad3091a53bd907e15348c2ba17d63fd54f5c39c4457d2a5"},
+    {file = "fsspec-2023.12.1-py3-none-any.whl", hash = "sha256:6271f1d3075a378bfe432f6f42bf7e1d2a6ba74f78dd9b512385474c579146a0"},
+    {file = "fsspec-2023.12.1.tar.gz", hash = "sha256:c4da01a35ac65c853f833e43f67802c25213f560820d54ddf248f92eddd5e990"},
 ]
 
 [[package]]
@@ -644,7 +644,7 @@ files = [
 
 [[package]]
 name = "google-api-core"
-version = "2.14.0"
+version = "2.15.0"
 requires_python = ">=3.7"
 summary = "Google API client core library"
 dependencies = [
@@ -654,31 +654,31 @@ dependencies = [
     "requests<3.0.0.dev0,>=2.18.0",
 ]
 files = [
-    {file = "google-api-core-2.14.0.tar.gz", hash = "sha256:5368a4502b793d9bbf812a5912e13e4e69f9bd87f6efb508460c43f5bbd1ce41"},
-    {file = "google_api_core-2.14.0-py3-none-any.whl", hash = "sha256:de2fb50ed34d47ddbb2bd2dcf680ee8fead46279f4ed6b16de362aca23a18952"},
+    {file = "google-api-core-2.15.0.tar.gz", hash = "sha256:abc978a72658f14a2df1e5e12532effe40f94f868f6e23d95133bd6abcca35ca"},
+    {file = "google_api_core-2.15.0-py3-none-any.whl", hash = "sha256:2aa56d2be495551e66bbff7f729b790546f87d5c90e74781aa77233bcb395a8a"},
 ]
 
 [[package]]
 name = "google-api-core"
-version = "2.14.0"
+version = "2.15.0"
 extras = ["grpc"]
 requires_python = ">=3.7"
 summary = "Google API client core library"
 dependencies = [
-    "google-api-core==2.14.0",
+    "google-api-core==2.15.0",
     "grpcio-status<2.0.dev0,>=1.33.2",
     "grpcio-status<2.0.dev0,>=1.49.1; python_version >= \"3.11\"",
     "grpcio<2.0dev,>=1.33.2",
     "grpcio<2.0dev,>=1.49.1; python_version >= \"3.11\"",
 ]
 files = [
-    {file = "google-api-core-2.14.0.tar.gz", hash = "sha256:5368a4502b793d9bbf812a5912e13e4e69f9bd87f6efb508460c43f5bbd1ce41"},
-    {file = "google_api_core-2.14.0-py3-none-any.whl", hash = "sha256:de2fb50ed34d47ddbb2bd2dcf680ee8fead46279f4ed6b16de362aca23a18952"},
+    {file = "google-api-core-2.15.0.tar.gz", hash = "sha256:abc978a72658f14a2df1e5e12532effe40f94f868f6e23d95133bd6abcca35ca"},
+    {file = "google_api_core-2.15.0-py3-none-any.whl", hash = "sha256:2aa56d2be495551e66bbff7f729b790546f87d5c90e74781aa77233bcb395a8a"},
 ]
 
 [[package]]
 name = "google-api-python-client"
-version = "2.109.0"
+version = "2.110.0"
 requires_python = ">=3.7"
 summary = "Google API Client Library for Python"
 dependencies = [
@@ -689,13 +689,13 @@ dependencies = [
     "uritemplate<5,>=3.0.1",
 ]
 files = [
-    {file = "google-api-python-client-2.109.0.tar.gz", hash = "sha256:d06390c25477c361d52639fe00ef912c3fab8dafc7fbf29580c1144e92523a79"},
-    {file = "google_api_python_client-2.109.0-py2.py3-none-any.whl", hash = "sha256:72e7d46cc70908d808e29f16d983b441783fe56b694cec132db9af9fb991daa2"},
+    {file = "google-api-python-client-2.110.0.tar.gz", hash = "sha256:1f825e48c7fdc3c96ad6aac179cb73c3755dfff41d16487fa7130e5efcfe7b76"},
+    {file = "google_api_python_client-2.110.0-py2.py3-none-any.whl", hash = "sha256:55e7ebd6079e34934b6751537eb13447110351ae3792a724a33825d7b671ba13"},
 ]
 
 [[package]]
 name = "google-auth"
-version = "2.24.0"
+version = "2.25.1"
 requires_python = ">=3.7"
 summary = "Google Authentication Library"
 dependencies = [
@@ -704,8 +704,8 @@ dependencies = [
     "rsa<5,>=3.1.4",
 ]
 files = [
-    {file = "google-auth-2.24.0.tar.gz", hash = "sha256:2ec7b2a506989d7dbfdbe81cb8d0ead8876caaed14f86d29d34483cbe99c57af"},
-    {file = "google_auth-2.24.0-py2.py3-none-any.whl", hash = "sha256:9b82d5c8d3479a5391ea0a46d81cca698d328459da31d4a459d4e901a5d927e0"},
+    {file = "google-auth-2.25.1.tar.gz", hash = "sha256:d5d66b8f4f6e3273740d7bb73ddefa6c2d1ff691704bd407d51c6b5800e7c97b"},
+    {file = "google_auth-2.25.1-py2.py3-none-any.whl", hash = "sha256:dfd7b44935d498e106c08883b2dac0ad36d8aa10402a6412e9a1c9d74b4773f1"},
 ]
 
 [[package]]
@@ -759,7 +759,7 @@ files = [
 
 [[package]]
 name = "google-cloud-core"
-version = "2.3.3"
+version = "2.4.1"
 requires_python = ">=3.7"
 summary = "Google Cloud API client core library"
 dependencies = [
@@ -767,25 +767,24 @@ dependencies = [
     "google-auth<3.0dev,>=1.25.0",
 ]
 files = [
-    {file = "google-cloud-core-2.3.3.tar.gz", hash = "sha256:37b80273c8d7eee1ae816b3a20ae43585ea50506cb0e60f3cf5be5f87f1373cb"},
-    {file = "google_cloud_core-2.3.3-py2.py3-none-any.whl", hash = "sha256:fbd11cad3e98a7e5b0343dc07cb1039a5ffd7a5bb96e1f1e27cee4bda4a90863"},
+    {file = "google-cloud-core-2.4.1.tar.gz", hash = "sha256:9b7749272a812bde58fff28868d0c5e2f585b82f37e09a1f6ed2d4d10f134073"},
+    {file = "google_cloud_core-2.4.1-py2.py3-none-any.whl", hash = "sha256:a9e6a4422b9ac5c29f79a0ede9485473338e2ce78d91f2370c01e730eab22e61"},
 ]
 
 [[package]]
 name = "google-cloud-dataproc"
-version = "5.7.0"
+version = "5.8.0"
 requires_python = ">=3.7"
 summary = "Google Cloud Dataproc API client library"
 dependencies = [
     "google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0dev,>=1.34.0",
     "grpc-google-iam-v1<1.0.0dev,>=0.12.4",
-    "proto-plus<2.0.0dev,>=1.22.0",
-    "proto-plus<2.0.0dev,>=1.22.2; python_version >= \"3.11\"",
+    "proto-plus<2.0.0dev,>=1.22.3",
     "protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.19.5",
 ]
 files = [
-    {file = "google-cloud-dataproc-5.7.0.tar.gz", hash = "sha256:086229a0f987448bb92029e166212acef85d4e8e5d94f2822add21b382bf1c04"},
-    {file = "google_cloud_dataproc-5.7.0-py2.py3-none-any.whl", hash = "sha256:599436545f7091eda2fafe194ca657d302512064009d685c2ff3f0cd7c08deaf"},
+    {file = "google-cloud-dataproc-5.8.0.tar.gz", hash = "sha256:b03412dd63cb84dc0bb0844cd9e9a9eef40e1d0d719649659052cccf0d3e95d7"},
+    {file = "google_cloud_dataproc-5.8.0-py2.py3-none-any.whl", hash = "sha256:1b3dd086d8ee7d1055b93230338a93091e77aca167cf7e32edc0b92e8288667d"},
 ]
 
 [[package]]
@@ -855,30 +854,30 @@ files = [
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.61.0"
+version = "1.62.0"
 requires_python = ">=3.7"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
     "protobuf!=3.20.0,!=3.20.1,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0.dev0,>=3.19.5",
 ]
 files = [
-    {file = "googleapis-common-protos-1.61.0.tar.gz", hash = "sha256:8a64866a97f6304a7179873a465d6eee97b7a24ec6cfd78e0f575e96b821240b"},
-    {file = "googleapis_common_protos-1.61.0-py2.py3-none-any.whl", hash = "sha256:22f1915393bb3245343f6efe87f6fe868532efc12aa26b391b15132e1279f1c0"},
+    {file = "googleapis-common-protos-1.62.0.tar.gz", hash = "sha256:83f0ece9f94e5672cced82f592d2a5edf527a96ed1794f0bab36d5735c996277"},
+    {file = "googleapis_common_protos-1.62.0-py2.py3-none-any.whl", hash = "sha256:4750113612205514f9f6aa4cb00d523a94f3e8c06c5ad2fee466387dc4875f07"},
 ]
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.61.0"
+version = "1.62.0"
 extras = ["grpc"]
 requires_python = ">=3.7"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
-    "googleapis-common-protos==1.61.0",
+    "googleapis-common-protos==1.62.0",
     "grpcio<2.0.0.dev0,>=1.44.0",
 ]
 files = [
-    {file = "googleapis-common-protos-1.61.0.tar.gz", hash = "sha256:8a64866a97f6304a7179873a465d6eee97b7a24ec6cfd78e0f575e96b821240b"},
-    {file = "googleapis_common_protos-1.61.0-py2.py3-none-any.whl", hash = "sha256:22f1915393bb3245343f6efe87f6fe868532efc12aa26b391b15132e1279f1c0"},
+    {file = "googleapis-common-protos-1.62.0.tar.gz", hash = "sha256:83f0ece9f94e5672cced82f592d2a5edf527a96ed1794f0bab36d5735c996277"},
+    {file = "googleapis_common_protos-1.62.0-py2.py3-none-any.whl", hash = "sha256:4750113612205514f9f6aa4cb00d523a94f3e8c06c5ad2fee466387dc4875f07"},
 ]
 
 [[package]]
@@ -901,7 +900,7 @@ files = [
 
 [[package]]
 name = "grpc-google-iam-v1"
-version = "0.12.7"
+version = "0.13.0"
 requires_python = ">=3.7"
 summary = "IAM API client library"
 dependencies = [
@@ -910,40 +909,40 @@ dependencies = [
     "protobuf!=3.20.0,!=3.20.1,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.19.5",
 ]
 files = [
-    {file = "grpc-google-iam-v1-0.12.7.tar.gz", hash = "sha256:009197a7f1eaaa22149c96e5e054ac5934ba7241974e92663d8d3528a21203d1"},
-    {file = "grpc_google_iam_v1-0.12.7-py2.py3-none-any.whl", hash = "sha256:834da89f4c4a2abbe842a793ed20fc6d9a77011ef2626755b1b89116fb9596d7"},
+    {file = "grpc-google-iam-v1-0.13.0.tar.gz", hash = "sha256:fad318608b9e093258fbf12529180f400d1c44453698a33509cc6ecf005b294e"},
+    {file = "grpc_google_iam_v1-0.13.0-py2.py3-none-any.whl", hash = "sha256:53902e2af7de8df8c1bd91373d9be55b0743ec267a7428ea638db3775becae89"},
 ]
 
 [[package]]
 name = "grpcio"
-version = "1.59.3"
+version = "1.60.0"
 requires_python = ">=3.7"
 summary = "HTTP/2-based RPC framework"
 files = [
-    {file = "grpcio-1.59.3-cp311-cp311-linux_armv7l.whl", hash = "sha256:3996aaa21231451161dc29df6a43fcaa8b332042b6150482c119a678d007dd86"},
-    {file = "grpcio-1.59.3-cp311-cp311-macosx_10_10_universal2.whl", hash = "sha256:cb4e9cbd9b7388fcb06412da9f188c7803742d06d6f626304eb838d1707ec7e3"},
-    {file = "grpcio-1.59.3-cp311-cp311-manylinux_2_17_aarch64.whl", hash = "sha256:8022ca303d6c694a0d7acfb2b472add920217618d3a99eb4b14edc7c6a7e8fcf"},
-    {file = "grpcio-1.59.3-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b36683fad5664283755a7f4e2e804e243633634e93cd798a46247b8e54e3cb0d"},
-    {file = "grpcio-1.59.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8239b853226e4824e769517e1b5232e7c4dda3815b200534500338960fcc6118"},
-    {file = "grpcio-1.59.3-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:0511af8653fbda489ff11d542a08505d56023e63cafbda60e6e00d4e0bae86ea"},
-    {file = "grpcio-1.59.3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:e78dc982bda74cef2ddfce1c91d29b96864c4c680c634e279ed204d51e227473"},
-    {file = "grpcio-1.59.3-cp311-cp311-win32.whl", hash = "sha256:6a5c3a96405966c023e139c3bcccb2c7c776a6f256ac6d70f8558c9041bdccc3"},
-    {file = "grpcio-1.59.3-cp311-cp311-win_amd64.whl", hash = "sha256:ed26826ee423b11477297b187371cdf4fa1eca874eb1156422ef3c9a60590dd9"},
-    {file = "grpcio-1.59.3.tar.gz", hash = "sha256:7800f99568a74a06ebdccd419dd1b6e639b477dcaf6da77ea702f8fb14ce5f80"},
+    {file = "grpcio-1.60.0-cp311-cp311-linux_armv7l.whl", hash = "sha256:fb464479934778d7cc5baf463d959d361954d6533ad34c3a4f1d267e86ee25fd"},
+    {file = "grpcio-1.60.0-cp311-cp311-macosx_10_10_universal2.whl", hash = "sha256:4b44d7e39964e808b071714666a812049765b26b3ea48c4434a3b317bac82f14"},
+    {file = "grpcio-1.60.0-cp311-cp311-manylinux_2_17_aarch64.whl", hash = "sha256:90bdd76b3f04bdb21de5398b8a7c629676c81dfac290f5f19883857e9371d28c"},
+    {file = "grpcio-1.60.0-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:91229d7203f1ef0ab420c9b53fe2ca5c1fbeb34f69b3bc1b5089466237a4a134"},
+    {file = "grpcio-1.60.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3b36a2c6d4920ba88fa98075fdd58ff94ebeb8acc1215ae07d01a418af4c0253"},
+    {file = "grpcio-1.60.0-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:297eef542156d6b15174a1231c2493ea9ea54af8d016b8ca7d5d9cc65cfcc444"},
+    {file = "grpcio-1.60.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:87c9224acba0ad8bacddf427a1c2772e17ce50b3042a789547af27099c5f751d"},
+    {file = "grpcio-1.60.0-cp311-cp311-win32.whl", hash = "sha256:95ae3e8e2c1b9bf671817f86f155c5da7d49a2289c5cf27a319458c3e025c320"},
+    {file = "grpcio-1.60.0-cp311-cp311-win_amd64.whl", hash = "sha256:467a7d31554892eed2aa6c2d47ded1079fc40ea0b9601d9f79204afa8902274b"},
+    {file = "grpcio-1.60.0.tar.gz", hash = "sha256:2199165a1affb666aa24adf0c97436686d0a61bc5fc113c037701fb7c7fceb96"},
 ]
 
 [[package]]
 name = "grpcio-health-checking"
-version = "1.59.3"
+version = "1.60.0"
 requires_python = ">=3.6"
 summary = "Standard Health Checking Service for gRPC"
 dependencies = [
-    "grpcio>=1.59.3",
+    "grpcio>=1.60.0",
     "protobuf>=4.21.6",
 ]
 files = [
-    {file = "grpcio-health-checking-1.59.3.tar.gz", hash = "sha256:015017ce4164fc7dce81da3a1718a4b3153230e481b2cdebf392468b613f0766"},
-    {file = "grpcio_health_checking-1.59.3-py3-none-any.whl", hash = "sha256:30b0184173d5a7a48788b1643968a9f75154b2bf8d47baf795c03402727a84cf"},
+    {file = "grpcio-health-checking-1.60.0.tar.gz", hash = "sha256:478b5300778120fed9f6d134d72b157a59f9c06689789218cbff47fafca2f119"},
+    {file = "grpcio_health_checking-1.60.0-py3-none-any.whl", hash = "sha256:13caf28bc93795bd6bdb580b21832ebdd1aa3f5b648ea47ed17362d85bed96d3"},
 ]
 
 [[package]]
@@ -963,7 +962,7 @@ files = [
 
 [[package]]
 name = "gspread"
-version = "5.12.1"
+version = "5.12.2"
 requires_python = ">=3.7"
 summary = "Google Spreadsheets Python API"
 dependencies = [
@@ -971,8 +970,8 @@ dependencies = [
     "google-auth>=1.12.0",
 ]
 files = [
-    {file = "gspread-5.12.1-py3-none-any.whl", hash = "sha256:0de00abef97d75c0a128a0d87ca570b5ff26edc8a9fa9e3351582de7d0e0e408"},
-    {file = "gspread-5.12.1.tar.gz", hash = "sha256:eb1e657fe27869fb8a75ba71a88adb69285be9c6ed9a8fabd4386b059ada69d9"},
+    {file = "gspread-5.12.2-py3-none-any.whl", hash = "sha256:4241af683242d5bcb87d611044a96ba47a572815b622613a0050cec48bb5b78e"},
+    {file = "gspread-5.12.2.tar.gz", hash = "sha256:e14e4392ef380fe9c6a768b971de4d9451a9a707904208e91c4fddd4228c6cc5"},
 ]
 
 [[package]]
@@ -1013,15 +1012,15 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "6.8.0"
+version = "6.11.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
 dependencies = [
     "zipp>=0.5",
 ]
 files = [
-    {file = "importlib_metadata-6.8.0-py3-none-any.whl", hash = "sha256:3ebb78df84a805d7698245025b975d9d67053cd94c79245ba4b3eb694abe68bb"},
-    {file = "importlib_metadata-6.8.0.tar.gz", hash = "sha256:dbace7892d8c0c4ac1ad096662232f831d4e64f4c4545bd53016a3e9d4654743"},
+    {file = "importlib_metadata-6.11.0-py3-none-any.whl", hash = "sha256:f0afba6205ad8f8947c7d338b5342d5db2afbfd82f9cbef7879a9539cc12eb9b"},
+    {file = "importlib_metadata-6.11.0.tar.gz", hash = "sha256:1231cf92d825c9e03cfc4da076a16de6422c863558229ea0b22b675657463443"},
 ]
 
 [[package]]
@@ -1471,15 +1470,15 @@ files = [
 
 [[package]]
 name = "proto-plus"
-version = "1.22.3"
+version = "1.23.0"
 requires_python = ">=3.6"
 summary = "Beautiful, Pythonic protocol buffers."
 dependencies = [
     "protobuf<5.0.0dev,>=3.19.0",
 ]
 files = [
-    {file = "proto-plus-1.22.3.tar.gz", hash = "sha256:fdcd09713cbd42480740d2fe29c990f7fbd885a67efc328aa8be6ee3e9f76a6b"},
-    {file = "proto_plus-1.22.3-py3-none-any.whl", hash = "sha256:a49cd903bc0b6ab41f76bf65510439d56ca76f868adf0274e738bfdd096894df"},
+    {file = "proto-plus-1.23.0.tar.gz", hash = "sha256:89075171ef11988b3fa157f5dbd8b9cf09d65fffee97e29ce403cd8defba19d2"},
+    {file = "proto_plus-1.23.0-py3-none-any.whl", hash = "sha256:a829c79e619e1cf632de091013a4173deed13a55f326ef84f05af6f50ff4c82c"},
 ]
 
 [[package]]
@@ -1810,7 +1809,7 @@ files = [
 
 [[package]]
 name = "referencing"
-version = "0.31.1"
+version = "0.32.0"
 requires_python = ">=3.8"
 summary = "JSON Referencing + Python"
 dependencies = [
@@ -1818,8 +1817,8 @@ dependencies = [
     "rpds-py>=0.7.0",
 ]
 files = [
-    {file = "referencing-0.31.1-py3-none-any.whl", hash = "sha256:c19c4d006f1757e3dd75c4f784d38f8698d87b649c54f9ace14e5e8c9667c01d"},
-    {file = "referencing-0.31.1.tar.gz", hash = "sha256:81a1471c68c9d5e3831c30ad1dd9815c45b558e596653db751a2bfdd17b3b9ec"},
+    {file = "referencing-0.32.0-py3-none-any.whl", hash = "sha256:bdcd3efb936f82ff86f993093f6da7435c7de69a3b3a5a06678a6050184bee99"},
+    {file = "referencing-0.32.0.tar.gz", hash = "sha256:689e64fe121843dcfd57b71933318ef1f91188ffb45367332700a86ac8fd6161"},
 ]
 
 [[package]]
@@ -2199,12 +2198,12 @@ files = [
 
 [[package]]
 name = "websocket-client"
-version = "1.6.4"
+version = "1.7.0"
 requires_python = ">=3.8"
 summary = "WebSocket client for Python with low level API options"
 files = [
-    {file = "websocket-client-1.6.4.tar.gz", hash = "sha256:b3324019b3c28572086c4a319f91d1dcd44e6e11cd340232978c684a7650d0df"},
-    {file = "websocket_client-1.6.4-py3-none-any.whl", hash = "sha256:084072e0a7f5f347ef2ac3d8698a5e0b4ffbfcab607628cadabc650fc9a83a24"},
+    {file = "websocket-client-1.7.0.tar.gz", hash = "sha256:10e511ea3a8c744631d3bd77e61eb17ed09304c413ad42cf6ddfa4c7787e8fe6"},
+    {file = "websocket_client-1.7.0-py3-none-any.whl", hash = "sha256:f4c3d22fec12a2461427a29957ff07d35098ee2d976d3ba244e688b8b4057588"},
 ]
 
 [[package]]
