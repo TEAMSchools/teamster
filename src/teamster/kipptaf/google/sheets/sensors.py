@@ -22,20 +22,27 @@ def google_sheets_asset_sensor(
 ):
     cursor: dict = json.loads(context.cursor or "{}")
 
-    asset_keys = []
-    for asset in google_sheets_assets:
-        asset_key_str = asset.key.to_user_string()
+    asset_keys_by_sheet_id = {
+        a.metadata["sheet_id"].value: [
+            b.key.to_user_string()
+            for b in google_sheets_assets
+            if b.metadata["sheet_id"].value == a.metadata["sheet_id"].value
+        ]
+        for a in google_sheets_assets
+    }
 
-        context.log.info(f"{asset_key_str}:\t" + asset.metadata["sheet_id"].value)
+    asset_keys = []
+    for sheet_id, asset_keys in asset_keys_by_sheet_id.items():
+        context.log.info(f"{sheet_id}: {asset_keys}")
 
         try:
-            spreadsheet = gsheets.open(sheet_id=asset.metadata["sheet_id"].value)
+            spreadsheet = gsheets.open(sheet_id=sheet_id)
 
             last_update_timestamp = pendulum.parser.parse(
                 text=spreadsheet.lastUpdateTime
             ).timestamp()
 
-            latest_observation_timestamp = cursor.get(asset_key_str, 0)
+            latest_observation_timestamp = cursor.get(sheet_id, 0)
 
             if last_update_timestamp > latest_observation_timestamp:
                 context.log.debug(f"last_update_time:\t{last_update_timestamp}")
@@ -43,22 +50,24 @@ def google_sheets_asset_sensor(
                     f"last_observation_timestamp:\t{latest_observation_timestamp}"
                 )
 
-                asset_keys.append(asset_key_str)
+                asset_keys.extend(asset_keys)
 
-                cursor[asset_key_str] = last_update_timestamp
+                cursor[sheet_id] = last_update_timestamp
         except APIError as e:
             context.log.exception(e)
 
     if asset_keys:
-        run_config = RunConfig(
-            ops={"asset_observation_op": ObservationOpConfig(asset_keys=asset_keys)}
-        )
-
         return SensorResult(
             run_requests=[
                 RunRequest(
-                    run_key=f"{context._sensor_name}_{pendulum.now().timestamp()}",
-                    run_config=run_config,
+                    run_key=f"{context.sensor_name}_{pendulum.now().timestamp()}",
+                    run_config=RunConfig(
+                        ops={
+                            "asset_observation_op": ObservationOpConfig(
+                                asset_keys=asset_keys
+                            )
+                        }
+                    ),
                 )
             ],
             cursor=json.dumps(obj=cursor),
