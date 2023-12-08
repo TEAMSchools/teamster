@@ -133,6 +133,14 @@ with
             is_published
             /* 2023 is first year with new rubric */
             and observed_at >= timestamp(date(2023, 7, 1))
+            /* remove self coaching observations*/
+            and case
+                when
+                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and teacher_id = observer_id
+                then false
+                else true
+            end
     ),
 
     observation_measurements as (
@@ -371,25 +379,6 @@ with
     ),
 
     historical_overall_scores as (
-        select
-            s.employee_number,
-            s.academic_year,
-            s.form_term,
-            os.etr_score,
-            os.so_score,
-            os.overall_score,
-        from scaffold as s
-        left join
-            observations as o
-            on o.observed_at between s.start_date and s.end_date
-            /* Matches on name for PM Rounds to distinguish Self and Coach */
-            and s.form_short_name = o.form_short_name
-            and s.user_id = o.teacher_id
-        left join pm_overall_scores as os on o.observation_id = os.observation_id
-        where s.form_type = 'PM'
-
-        union all
-
         select
             employee_number,
             academic_year,
