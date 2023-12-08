@@ -24,7 +24,8 @@ env:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster-${{
     inputs.code-location }}/teamster-${{ inputs.code-location }}
   DAGSTER_PROJECT_DIR: .
-  DAGSTER_CLOUD_YAML_PATH: .dagster/dagster-cloud-${{ inputs.code-location }}.yaml
+  DAGSTER_CLOUD_YAML_PATH:
+    src/teamster/${{ inputs.code-location }}/dagster-cloud-${{ inputs.code-location }}.yaml
 
 jobs:
   dagster-cloud-deploy:
