@@ -26,14 +26,14 @@ class SSHResource(SSHResource):
     def listdir_attr_r(self, remote_dir: str, files: list = []):
         try:
             conn = self.get_connection()
-
-            sftp_client = conn.open_sftp()
-
-            files = self._listdir_attr_r(
-                sftp_client=sftp_client, remote_dir=remote_dir, files=files
-            )
+            try:
+                sftp_client = conn.open_sftp()
+                files = self._listdir_attr_r(
+                    sftp_client=sftp_client, remote_dir=remote_dir, files=files
+                )
+            finally:
+                sftp_client.close()
         finally:
-            sftp_client.close()
             conn.close()
             return files
 

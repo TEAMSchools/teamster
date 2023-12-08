@@ -52,3 +52,11 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+
+  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  serverK8sConfig:
+    containerConfig: # raw config for the pod's main container
+      resources:
+        limits:
+          cpu: 750m
+          memory: 1.0Gi
