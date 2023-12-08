@@ -50,7 +50,9 @@ def fivetran_sync_status_sensor(
     db_bigquery: BigQueryResource,
 ):
     cursor: dict = json.loads(s=(context.cursor or "{}"))
-    bq = next(db_bigquery)
+
+    with db_bigquery.get_client() as bq:
+        bq = bq
 
     asset_keys = []
     for connector_id, connector_schemas in CONNECTORS.items():
