@@ -10,7 +10,11 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 from ... import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import SchoolMintGrowResource
@@ -18,16 +22,19 @@ from .schema import ASSET_FIELDS
 
 
 def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
+    asset_key = [
+        CODE_LOCATION,
+        "schoolmint",
+        "grow",
+        asset_name.replace("-", "_").replace("/", "_"),
+    ]
+
     @asset(
-        key=[
-            CODE_LOCATION,
-            "schoolmint",
-            "grow",
-            asset_name.replace("-", "_").replace("/", "_"),
-        ],
+        key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         group_name="schoolmint_grow",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         if isinstance(context.assets_def.partitions_def, MultiPartitionsDefinition):
@@ -52,14 +59,17 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
             lastModified=last_modified_partition,
         )
 
+        records = (endpoint_content["data"],)
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
+
         yield Output(
-            value=(
-                endpoint_content["data"],
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name]
-                ),
-            ),
-            metadata={"records": endpoint_content["count"]},
+            value=(records, schema), metadata={"records": endpoint_content["count"]}
+        )
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=schema
         )
 
     return _asset
