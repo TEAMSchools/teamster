@@ -18,3 +18,8 @@ def adp_wfn_update_workers_job():
     worker_data = bigquery_get_table_op()
 
     adp_wfn_update_workers_op(worker_data)
+
+
+__all__ = [
+    adp_wfn_update_workers_job,
+]

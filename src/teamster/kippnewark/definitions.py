@@ -38,10 +38,6 @@ defs = Definitions(
             titan,
         ]
     ),
-    jobs=[
-        *datagun.jobs,
-        *deanslist.jobs,
-    ],
     schedules=[
         *datagun.schedules,
         *dbt.schedules,

@@ -154,3 +154,8 @@ adp_wfm_assets_dynamic = [
     )
     for a in config_from_files([f"{config_dir}/wfm-assets-dynamic.yaml"])["assets"]
 ]
+
+__all__ = [
+    *adp_wfm_assets_daily,
+    *adp_wfm_assets_dynamic,
+]

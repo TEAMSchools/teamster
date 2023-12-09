@@ -35,10 +35,6 @@ defs = Definitions(
             renlearn,
         ]
     ),
-    jobs=[
-        *datagun.jobs,
-        *deanslist.jobs,
-    ],
     schedules=[
         *datagun.schedules,
         *dbt.schedules,

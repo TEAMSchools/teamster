@@ -8,7 +8,7 @@ from teamster.core.utils.jobs import asset_observation_job
 from teamster.core.utils.ops import ObservationOpConfig
 
 from ... import CODE_LOCATION
-from .assets import google_sheets_assets
+from .assets import __all__ as google_sheets_assets
 from .resources import GoogleSheetsResource
 
 
@@ -72,3 +72,8 @@ def google_sheets_asset_sensor(
             ],
             cursor=json.dumps(obj=cursor),
         )
+
+
+__all__ = [
+    google_sheets_asset_sensor,
+]
