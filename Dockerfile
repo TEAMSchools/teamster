@@ -7,7 +7,7 @@ ARG CODE_LOCATION
 ENV DBT_PROFILES_DIR=/root/app/src/dbt/${CODE_LOCATION}
 
 # update system pip
-# trunk-ignore(hadolint/DL3013)
+# hadolint ignore=DL3013
 RUN python -m pip install --no-cache-dir --upgrade pip
 
 WORKDIR /root/app

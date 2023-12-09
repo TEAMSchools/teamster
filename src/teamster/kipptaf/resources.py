@@ -4,20 +4,27 @@ from dagster_fivetran import FivetranResource
 
 from teamster.core.ssh.resources import SSHResource
 
-from . import adp, alchemer, amplify, google, ldap, schoolmint, smartrecruiters
+from .adp.workforce_manager.resources import AdpWorkforceManagerResource
+from .adp.workforce_now.resources import AdpWorkforceNowResource
+from .alchemer.resources import AlchemerResource
+from .amplify.resources import MClassResource
+from .google.directory.resources import GoogleDirectoryResource
+from .google.forms.resources import GoogleFormsResource
+from .google.sheets.resources import GoogleSheetsResource
+from .ldap.resources import LdapResource
+from .schoolmint.grow.resources import SchoolMintGrowResource
+from .smartrecruiters.resources import SmartRecruitersResource
 
-ADP_WORKFORCE_MANAGER_RESOURCE = (
-    adp.workforce_manager.resources.AdpWorkforceManagerResource(
-        subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
-        app_key=EnvVar("ADP_WFM_APP_KEY"),
-        client_id=EnvVar("ADP_WFM_CLIENT_ID"),
-        client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
-        username=EnvVar("ADP_WFM_USERNAME"),
-        password=EnvVar("ADP_WFM_PASSWORD"),
-    )
+ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
+    subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
+    app_key=EnvVar("ADP_WFM_APP_KEY"),
+    client_id=EnvVar("ADP_WFM_CLIENT_ID"),
+    client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
+    username=EnvVar("ADP_WFM_USERNAME"),
+    password=EnvVar("ADP_WFM_PASSWORD"),
 )
 
-ADP_WORKFORCE_NOW_RESOURCE = adp.workforce_now.resources.AdpWorkforceNowResource(
+ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_id=EnvVar("ADP_WFN_CLIENT_ID"),
     client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
     cert_filepath="/etc/secret-volume/adp_wfn_cert",
@@ -26,7 +33,7 @@ ADP_WORKFORCE_NOW_RESOURCE = adp.workforce_now.resources.AdpWorkforceNowResource
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(api_key=EnvVar("AIRBYTE_API_KEY"))
 
-ALCHEMER_RESOURCE = alchemer.resources.AlchemerResource(
+ALCHEMER_RESOURCE = AlchemerResource(
     api_token=EnvVar("ALCHEMER_API_TOKEN"),
     api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
     api_version="v5",
@@ -36,21 +43,21 @@ FIVETRAN_RESOURCE = FivetranResource(
     api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
 )
 
-GOOGLE_FORMS_RESOURCE = google.forms.resources.GoogleFormsResource(
+GOOGLE_FORMS_RESOURCE = GoogleFormsResource(
     service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
 )
 
-GOOGLE_DIRECTORY_RESOURCE = google.directory.resources.GoogleDirectoryResource(
+GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
     customer_id="C029u7m0n",
     service_account_file_path="/etc/secret-volume/gcloud_service_account_json",
     delegated_account="dagster@apps.teamschools.org",
 )
 
-GOOGLE_SHEETS_RESOURCE = google.sheets.resources.GoogleSheetsResource(
+GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource(
     service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
 )
 
-LDAP_RESOURCE = ldap.resources.LdapResource(
+LDAP_RESOURCE = LdapResource(
     # host="ldap1.kippnj.org",
     host="204.8.89.213",
     port=636,
@@ -58,18 +65,18 @@ LDAP_RESOURCE = ldap.resources.LdapResource(
     password=EnvVar("LDAP_PASSWORD"),
 )
 
-MCLASS_RESOURCE = amplify.resources.MClassResource(
+MCLASS_RESOURCE = MClassResource(
     username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
 )
 
-SCHOOLMINT_GROW_RESOURCE = schoolmint.grow.resources.SchoolMintGrowResource(
+SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
     client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
     client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
     district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
     api_response_limit=3200,
 )
 
-SMARTRECRUITERS_RESOURCE = smartrecruiters.resources.SmartRecruitersResource(
+SMARTRECRUITERS_RESOURCE = SmartRecruitersResource(
     smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
 )
 
