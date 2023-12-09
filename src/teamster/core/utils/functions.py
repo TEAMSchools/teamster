@@ -7,6 +7,7 @@ from dagster import (
     AssetCheckSeverity,
     AssetCheckSpec,
     DagsterInstance,
+    MetadataValue,
     MultiPartitionKey,
 )
 
@@ -162,6 +163,6 @@ def check_avro_schema_valid(asset_key, records, schema):
         passed=len(extras) == 0,
         asset_key=asset_key,
         check_name="avro_schema_valid",
-        metadata={"extras": extras},
+        metadata={"extras": MetadataValue.json(list(extras))},
         severity=AssetCheckSeverity.WARN,
     )
