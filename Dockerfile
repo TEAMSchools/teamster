@@ -1,9 +1,9 @@
 ARG PYTHON_VERSION
-ARG CODE_LOCATION
 
 # Debian
 FROM python:${PYTHON_VERSION}-slim
 
+ARG CODE_LOCATION
 ENV DBT_PROFILES_DIR=/root/app/src/dbt/${CODE_LOCATION}
 
 # update system pip
