@@ -59,7 +59,7 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
             lastModified=last_modified_partition,
         )
 
-        records = (endpoint_content["data"],)
+        records = endpoint_content["data"]
         schema = get_avro_record_schema(
             name=asset_name, fields=ASSET_FIELDS[asset_name]
         )
