@@ -23,7 +23,7 @@ defs = Definitions(
         "io_manager_gcs_avro": GCSIOManager(
             gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{CODE_LOCATION}", object_type="avro"
         ),
-        "ldap": ldap.LdapResource(
+        "ldap": ldap.resources.LdapResource(
             # host="ldap1.kippnj.org",
             host="204.8.89.213",
             port=636,
