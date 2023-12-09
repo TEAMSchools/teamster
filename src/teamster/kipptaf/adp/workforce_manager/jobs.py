@@ -14,3 +14,8 @@ adp_wfm_dynamic_partition_asset_job = define_asset_job(
     selection=AssetSelection.assets(*adp_wfm_assets_dynamic),
     partitions_def=adp_wfm_assets_dynamic[0].partitions_def,
 )
+
+__all__ = [
+    adp_wfm_daily_partition_asset_job,
+    adp_wfm_dynamic_partition_asset_job,
+]

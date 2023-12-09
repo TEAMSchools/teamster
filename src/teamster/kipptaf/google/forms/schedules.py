@@ -18,3 +18,8 @@ def google_forms_asset_job_schedule():
             ),
             partition_key=form_id,
         )
+
+
+__all__ = [
+    google_forms_asset_job_schedule,
+]

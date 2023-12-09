@@ -55,3 +55,9 @@ def adp_wfm_dynamic_partition_schedule(
                 asset_selection=[asset.key],
                 partition_key=partition_key,
             )
+
+
+__all__ = [
+    adp_wfm_daily_partition_asset_job_schedule,
+    adp_wfm_dynamic_partition_schedule,
+]

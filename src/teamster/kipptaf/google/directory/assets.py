@@ -101,3 +101,12 @@ google_directory_nonpartitioned_assets = [
 google_directory_partitioned_assets = [
     members,
 ]
+
+__all__ = [
+    groups,
+    members,
+    orgunits,
+    role_assignments,
+    roles,
+    users,
+]
