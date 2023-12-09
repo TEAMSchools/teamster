@@ -121,7 +121,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: src/teamster/${{ env.CODE_LOCATION }}/Dockerfile
+          build-args: |
+            PYTHON_VERSION=3.11
+            CODE_LOCATION=${{ env.CODE_LOCATION }}
           push: true
           tags: ${{ env.IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-${{ env.CODE_LOCATION }}
 
