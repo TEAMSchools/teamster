@@ -2,7 +2,7 @@
 
 # https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to
 # Get credentials for your cluster:
-gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid
+gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
 
 # Create an IAM service account for your application
 # or use an existing IAM service account instead.
