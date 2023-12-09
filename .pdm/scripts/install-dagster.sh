@@ -1,5 +1,7 @@
 #!/bin/bash
 
+kubectl create namespace dagster-cloud
+
 kubectl create secret generic dagster-cloud-agent-token \
   --save-config \
   --dry-run=client \
@@ -8,6 +10,8 @@ kubectl create secret generic dagster-cloud-agent-token \
   --output=yaml |
   kubectl apply -f - ||
   true
+
+bash .pdm/scripts/secrets.sh
 
 helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
 helm repo update
