@@ -18,7 +18,7 @@ COPY pyproject.toml ./pyproject.toml
 RUN pip install --no-cache-dir .
 
 # install dbt
-WORKDIR /root/app/src/dbt/${CODE_LOCATION}
+WORKDIR ${DBT_PROFILES_DIR}
 RUN dbt clean && dbt deps && dbt parse
 
 WORKDIR /root/app
