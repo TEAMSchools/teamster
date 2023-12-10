@@ -2,7 +2,7 @@ import json
 
 from dagster import build_sensor_context
 
-from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
+from teamster.kipptaf.google.resources import GoogleSheetsResource
 from teamster.kipptaf.google.sheets.sensors import google_sheets_asset_sensor
 
 
