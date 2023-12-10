@@ -1,6 +1,6 @@
 from dagster import OpExecutionContext, op
 
-from .resources import GoogleDirectoryResource
+from ..resources import GoogleDirectoryResource
 
 
 @op

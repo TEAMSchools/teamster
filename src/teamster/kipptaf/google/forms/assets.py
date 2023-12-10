@@ -3,7 +3,7 @@ from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, a
 from teamster.core.utils.functions import get_avro_record_schema
 
 from ... import CODE_LOCATION
-from .resources import GoogleFormsResource
+from ..resources import GoogleFormsResource
 from .schema import ASSET_FIELDS
 
 FORM_IDS = [
