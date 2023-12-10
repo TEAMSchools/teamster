@@ -8,8 +8,8 @@ from teamster.core.utils.jobs import asset_observation_job
 from teamster.core.utils.ops import ObservationOpConfig
 
 from ... import CODE_LOCATION
+from ..resources import GoogleSheetsResource
 from .assets import __all__ as google_sheets_assets
-from .resources import GoogleSheetsResource
 
 
 @sensor(
