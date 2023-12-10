@@ -15,7 +15,11 @@ from pandas import read_csv
 from slugify import slugify
 
 from teamster.core.ssh.resources import SSHResource
-from teamster.core.utils.functions import regex_pattern_replace
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_schema_valid_check_spec,
+    regex_pattern_replace,
+)
 
 
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
@@ -85,6 +89,7 @@ def build_sftp_asset(
         op_tags=op_tags,
         group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext):
         context.log.debug(requests.get(url="https://api.ipify.org").text)
@@ -159,9 +164,12 @@ def build_sftp_asset(
                 inplace=True,
             )
 
-        yield Output(
-            value=(df.to_dict(orient="records"), avro_schema),
-            metadata={"records": df.shape[0]},
+        records = df.to_dict(orient="records")
+
+        yield Output(value=(records, avro_schema), metadata={"records": df.shape[0]})
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=avro_schema
         )
 
     return _asset

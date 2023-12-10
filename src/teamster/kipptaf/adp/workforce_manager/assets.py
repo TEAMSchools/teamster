@@ -17,7 +17,11 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 from ... import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import AdpWorkforceManagerResource
@@ -32,8 +36,10 @@ def build_adp_wfm_asset(
     date_partitions_def: DailyPartitionsDefinition | DynamicPartitionsDefinition,
     partition_start_date=None,
 ) -> AssetsDefinition:
+    asset_key = [CODE_LOCATION, "adp_workforce_manager", asset_name]
+
     @asset(
-        key=[CODE_LOCATION, "adp_workforce_manager", asset_name],
+        key=asset_key,
         metadata={"hyperfind": hyperfind, "report_name": report_name},
         io_manager_key="io_manager_gcs_avro",
         partitions_def=MultiPartitionsDefinition(
@@ -44,6 +50,7 @@ def build_adp_wfm_asset(
         ),
         group_name="adp_workforce_manager",
         auto_materialize_policy=AutoMaterializePolicy.eager(),
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
@@ -117,14 +124,15 @@ def build_adp_wfm_asset(
 
         row_count = df.shape[0]
 
-        yield Output(
-            value=(
-                df.to_dict(orient="records"),
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name]
-                ),
-            ),
-            metadata={"records": row_count},
+        records = df.to_dict(orient="records")
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
+
+        yield Output(value=(records, schema), metadata={"records": row_count})
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=schema
         )
 
     return _asset
