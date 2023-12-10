@@ -13,7 +13,7 @@ from teamster.kipptaf.google.directory.assets import (
     roles,
     users,
 )
-from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
+from teamster.kipptaf.google.resources import GoogleDirectoryResource
 
 
 def _test_asset(asset: AssetsDefinition):

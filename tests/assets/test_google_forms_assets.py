@@ -6,7 +6,7 @@ from dagster_gcp import GCSResource
 from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.kipptaf.google.forms.assets import form, responses
-from teamster.kipptaf.google.forms.resources import GoogleFormsResource
+from teamster.kipptaf.google.resources import GoogleFormsResource
 
 
 def _test_asset(asset: AssetsDefinition):
