@@ -8,9 +8,11 @@ from .adp.workforce_manager.resources import AdpWorkforceManagerResource
 from .adp.workforce_now.resources import AdpWorkforceNowResource
 from .alchemer.resources import AlchemerResource
 from .amplify.resources import MClassResource
-from .google.directory.resources import GoogleDirectoryResource
-from .google.forms.resources import GoogleFormsResource
-from .google.resources import GoogleSheetsResource
+from .google.resources import (
+    GoogleDirectoryResource,
+    GoogleFormsResource,
+    GoogleSheetsResource,
+)
 from .ldap.resources import LdapResource
 from .schoolmint.grow.resources import SchoolMintGrowResource
 from .smartrecruiters.resources import SmartRecruitersResource
