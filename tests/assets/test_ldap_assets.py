@@ -1,5 +1,3 @@
-# does not work everywhere due to IP filter
-
 from dagster import EnvVar, materialize
 from dagster_gcp import GCSResource
 
@@ -40,6 +38,7 @@ def _test_ldap_asset(name, search_base, search_filter):
     )
 
 
+""" does not work in dev: IP filter
 def test_asset_ldap_user_person():
     _test_ldap_asset(
         name="user_person",
@@ -54,3 +53,4 @@ def test_asset_ldap_group():
         search_base="dc=teamschools,dc=kipp,dc=org",
         search_filter="(objectClass=group)",
     )
+"""

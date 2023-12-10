@@ -579,7 +579,7 @@ def test_asset_clever_resource_usage():
         )
 
 
-""" cannot test IP restricted sftp
+""" cannot test in dev: IP filter
 def test_asset_adp_workforce_now_pension_and_benefits_enrollments():
     from teamster.kipptaf.adp.workforce_now.schema import ASSET_FIELDS
 
