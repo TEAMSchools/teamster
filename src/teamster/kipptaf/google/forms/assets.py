@@ -1,6 +1,10 @@
 from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
 
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 from ... import CODE_LOCATION
 from ..resources import GoogleFormsResource
@@ -20,6 +24,9 @@ PARTITIONS_DEF = StaticPartitionsDefinition(FORM_IDS)
     io_manager_key="io_manager_gcs_avro",
     partitions_def=PARTITIONS_DEF,
     group_name="google_forms",
+    check_specs=[
+        get_avro_schema_valid_check_spec([CODE_LOCATION, "google", "forms", "form"])
+    ],
 )
 def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.get_form(form_id=context.partition_key)
@@ -27,12 +34,21 @@ def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
 
     yield Output(value=([data], schema), metadata={"record_count": len(data)})
 
+    yield check_avro_schema_valid(
+        asset_key=context.asset_key, records=[data], schema=schema
+    )
+
 
 @asset(
     key=[CODE_LOCATION, "google", "forms", "responses"],
     io_manager_key="io_manager_gcs_avro",
     partitions_def=PARTITIONS_DEF,
     group_name="google_forms",
+    check_specs=[
+        get_avro_schema_valid_check_spec(
+            [CODE_LOCATION, "google", "forms", "responses"]
+        )
+    ],
 )
 def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.list_responses(form_id=context.partition_key)
@@ -40,6 +56,10 @@ def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource)
 
     yield Output(
         value=([data], schema), metadata={"record_count": len(data.get("responses"))}
+    )
+
+    yield check_avro_schema_valid(
+        asset_key=context.asset_key, records=[data], schema=schema
     )
 
 
