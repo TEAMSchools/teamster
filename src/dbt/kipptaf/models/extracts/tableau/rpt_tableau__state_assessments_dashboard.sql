@@ -322,7 +322,7 @@ with
             a.lep_status,
             s.ms_attended,
             s.advisory,
-            
+
             a.assessment_name,
             a.discipline,
             a.subject,
