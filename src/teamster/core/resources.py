@@ -97,6 +97,6 @@ def get_ssh_resource_titan(code_location):
 def get_ssh_resource_renlearn(code_location):
     return SSHResource(
         remote_host="sftp.renaissance.com",
-        username=EnvVar("KIPPNJ_RENLEARN_SFTP_USERNAME"),
-        password=EnvVar("KIPPNJ_RENLEARN_SFTP_PASSWORD"),
+        username=EnvVar(f"{code_location}_RENLEARN_SFTP_USERNAME"),
+        password=EnvVar(f"{code_location}_RENLEARN_SFTP_PASSWORD"),
     )
