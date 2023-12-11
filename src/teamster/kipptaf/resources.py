@@ -1,12 +1,13 @@
+from alchemer import AlchemerSession
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 from dagster_fivetran import FivetranResource
+from zenpy import Zenpy
 
 from teamster.core.ssh.resources import SSHResource
 
 from .adp.workforce_manager.resources import AdpWorkforceManagerResource
 from .adp.workforce_now.resources import AdpWorkforceNowResource
-from .alchemer.resources import AlchemerResource
 from .amplify.resources import MClassResource
 from .google.resources import (
     GoogleDirectoryResource,
@@ -35,10 +36,11 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(api_key=EnvVar("AIRBYTE_API_KEY"))
 
-ALCHEMER_RESOURCE = AlchemerResource(
-    api_token=EnvVar("ALCHEMER_API_TOKEN"),
-    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
+ALCHEMER_RESOURCE = AlchemerSession(
+    api_token=EnvVar("ALCHEMER_API_TOKEN").get_value(),
+    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET").get_value(),
     api_version="v5",
+    time_zone="America/New_York",  # determined by Alchemer
 )
 
 FIVETRAN_RESOURCE = FivetranResource(
@@ -80,6 +82,12 @@ SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
 
 SMARTRECRUITERS_RESOURCE = SmartRecruitersResource(
     smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
+)
+
+ZENDESK_RESOURCE = Zenpy(
+    subdomain="teamschools",
+    email=EnvVar("ZENDESK_EMAIL").get_value(),
+    token=EnvVar("ZENDESK_TOKEN").get_value(),
 )
 
 SSH_RESOURCE_ACHIEVE3K = SSHResource(

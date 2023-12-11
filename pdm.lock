@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:c072958d7e226ae11a8833f0cb78258a318efe3a0b492b44f907ab5dd62c11a7"
+content_hash = "sha256:abe84d112f666453d54945d58648da4f711179aaa877beb243a05d3f79b802e5"
 
 [[package]]
 name = "agate"
@@ -2204,6 +2204,21 @@ summary = "WebSocket client for Python with low level API options"
 files = [
     {file = "websocket-client-1.7.0.tar.gz", hash = "sha256:10e511ea3a8c744631d3bd77e61eb17ed09304c413ad42cf6ddfa4c7787e8fe6"},
     {file = "websocket_client-1.7.0-py3-none-any.whl", hash = "sha256:f4c3d22fec12a2461427a29957ff07d35098ee2d976d3ba244e688b8b4057588"},
+]
+
+[[package]]
+name = "zenpy"
+version = "2.0.42"
+summary = "Python wrapper for the Zendesk API"
+dependencies = [
+    "cachetools>=3.1.0",
+    "python-dateutil>=2.7.5",
+    "pytz>=2018.9",
+    "requests>=2.14.2",
+    "six>=1.14.0",
+]
+files = [
+    {file = "zenpy-2.0.42.tar.gz", hash = "sha256:9e43f679c41b0f6096e375bee0878c6b21a4222982fdf8a3d32407a5542e8a2f"},
 ]
 
 [[package]]

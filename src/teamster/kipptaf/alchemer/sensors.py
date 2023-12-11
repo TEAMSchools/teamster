@@ -2,9 +2,11 @@ import json
 import time
 
 import pendulum
+from alchemer import AlchemerSession
 from dagster import (
     AddDynamicPartitionsRequest,
     AssetSelection,
+    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -15,7 +17,6 @@ from requests.exceptions import HTTPError
 
 from .. import CODE_LOCATION
 from .assets import survey, survey_metadata_assets, survey_response
-from .resources import AlchemerResource
 
 
 @sensor(
@@ -24,13 +25,13 @@ from .resources import AlchemerResource
     asset_selection=AssetSelection.assets(*survey_metadata_assets),
 )
 def alchemer_survey_metadata_asset_sensor(
-    context: SensorEvaluationContext, alchemer: AlchemerResource
+    context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
 ):
     now = pendulum.now(tz="America/New_York").start_of("minute")
     cursor: dict = json.loads(context.cursor or "{}")
 
     try:
-        survey_list = alchemer._client.survey.list()
+        survey_list = alchemer.survey.list()
     except HTTPError as e:
         return SensorResult(skip_reason=SkipReason(e.strerror))
 
@@ -95,7 +96,7 @@ def alchemer_survey_metadata_asset_sensor(
     asset_selection=AssetSelection.assets(survey_response),
 )
 def alchemer_survey_response_asset_sensor(
-    context: SensorEvaluationContext, alchemer: AlchemerResource
+    context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
 ):
     """https://apihelp.alchemer.com/help/api-response-time
     Response data is subject to response processing, which can vary based on server
@@ -108,7 +109,7 @@ def alchemer_survey_response_asset_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
 
     try:
-        surveys = alchemer._client.survey.list()
+        surveys = alchemer.survey.list()
     except HTTPError as e:
         context.log.error(e)
         return
@@ -131,7 +132,7 @@ def alchemer_survey_response_asset_sensor(
             }
         else:
             try:
-                survey_obj = alchemer._client.survey.get(id=survey_id)
+                survey_obj = alchemer.survey.get(id=survey_id)
 
                 date_submitted = pendulum.from_timestamp(
                     timestamp=survey_cursor_timestamp, tz="America/New_York"
