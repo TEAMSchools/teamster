@@ -4,7 +4,7 @@ with
             enr.cc_studentid,
             enr.cc_sectionid,
             enr.cc_yearid,
-            enr.cc_termid,
+            enr.cc_abs_termid,
             enr.cc_academic_year,
             enr.cc_dateenrolled,
             enr.cc_dateleft,
@@ -47,7 +47,7 @@ with
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
             on enr.cc_schoolid = tb.schoolid
-            and enr.cc_termid = tb.termid
+            and enr.cc_abs_termid = tb.termid
             and left(tb.storecode, 1) in ('Q', 'E')
         where
             enr.cc_academic_year = {{ var("current_academic_year") }}
@@ -64,7 +64,7 @@ with
             te.cc_dateleft,
             te.cc_sectionid,
             te.cc_course_number,
-            te.cc_termid,
+            te.cc_abs_termid,
             te.courses_excludefromgpa,
             te.courses_gradescaleid,
             te.courses_credit_hours,
@@ -142,7 +142,7 @@ with
             {{ ref("stg_powerschool__storedgrades") }} as sg
             on te.cc_studentid = sg.studentid
             and te.cc_course_number = sg.course_number
-            and te.cc_termid = sg.termid
+            and te.cc_abs_termid = sg.termid
             and te.storecode = sg.storecode
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as sgs
@@ -169,7 +169,7 @@ with
             cc_dateleft,
             cc_sectionid,
             cc_course_number,
-            cc_termid,
+            cc_abs_termid,
             courses_excludefromgpa,
             courses_gradescaleid,
             courses_credit_hours,
@@ -225,7 +225,7 @@ with
             cc_dateleft,
             cc_sectionid,
             cc_course_number,
-            cc_termid,
+            cc_abs_termid,
             courses_excludefromgpa,
             courses_gradescaleid,
             courses_credit_hours,
@@ -296,7 +296,7 @@ with
             cc_dateleft,
             cc_sectionid,
             cc_course_number,
-            cc_termid,
+            cc_abs_termid,
             courses_excludefromgpa,
             courses_gradescaleid,
             courses_credit_hours,
@@ -387,7 +387,7 @@ select
     y1.cc_course_number as course_number,
     y1.cc_yearid as yearid,
     y1.cc_academic_year as academic_year,
-    y1.cc_termid as termid,
+    y1.cc_abs_termid as termid,
     y1.cc_dateenrolled as dateenrolled,
     y1.cc_dateleft as dateleft,
     y1.cc_schoolid as schoolid,
