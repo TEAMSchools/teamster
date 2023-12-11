@@ -26,6 +26,7 @@ google_directory_nonpartitioned_asset_job = define_asset_job(
             )
         }
     ),
+    tags={"job_type": "op"},
 )
 def google_directory_user_sync_job():
     users = bigquery_get_table_op()
@@ -46,6 +47,7 @@ def google_directory_user_sync_job():
             )
         }
     ),
+    tags={"job_type": "op"},
 )
 def google_directory_role_assignments_sync_job():
     role_assignments = bigquery_get_table_op()

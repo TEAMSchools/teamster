@@ -12,7 +12,8 @@ from .ops import schoolmint_grow_school_update_op, schoolmint_grow_user_update_o
                 dataset_id="kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
             )
         }
-    )
+    ),
+    tags={"job_type": "op"},
 )
 def schoolmint_grow_user_update_job():
     users = bigquery_get_table_op()

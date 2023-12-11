@@ -20,6 +20,7 @@ from .ops import (
             )
         }
     ),
+    tags={"job_type": "op"},
 )
 def fivetran_adp_workforce_now_start_resync_job():
     fivetran_start_resync_op()
@@ -34,6 +35,7 @@ def fivetran_adp_workforce_now_start_resync_job():
             )
         }
     ),
+    tags={"job_type": "op"},
 )
 def fivetran_adp_workforce_now_start_sync_job():
     fivetran_start_sync_op()
@@ -48,6 +50,7 @@ def fivetran_adp_workforce_now_start_sync_job():
             )
         }
     ),
+    tags={"job_type": "op"},
 )
 def fivetran_illuminate_start_sync_job():
     fivetran_start_sync_op()
@@ -70,6 +73,7 @@ asset_configs = [
             if config["connector_name"] not in ["adp_workforce_now", "illuminate"]
         }
     ),
+    tags={"job_type": "op"},
 )
 def fivetran_start_syncs_job():
     for config in asset_configs:
