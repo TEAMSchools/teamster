@@ -267,7 +267,7 @@ with
             fleid as state_id,
             'FSA' as assessment_name,
             cast(test_grade as string) as test_grade,
-            'Spring' as admin,
+            'Spring' as `admin`,
             scale_score as score,
             achievement_level as performance_band,
             performance_level as performance_band_level,
@@ -373,7 +373,7 @@ with
             a.score,
             a.performance_band,
             a.performance_band_level,
-            a.is_proficient
+            a.is_proficient,
         from assessments_fl as a
         inner join
             students_fl as s
