@@ -6,15 +6,12 @@ from dagster import (
     StaticPartitionsDefinition,
     materialize,
 )
-from dagster_gcp import GCSResource
 
-from teamster import GCS_PROJECT_NAME
 from teamster.core.deanslist.assets import (
     build_deanslist_multi_partition_asset,
     build_deanslist_static_partition_asset,
 )
-from teamster.core.deanslist.resources import DeansListResource
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.resources import DEANSLIST_RESOURCE, get_io_manager_gcs_avro
 from teamster.staging import LOCAL_TIMEZONE
 
 STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(
@@ -75,15 +72,8 @@ def _test_asset(partition_type, asset_name, api_version, params={}):
         assets=[asset],
         partition_key=partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
         resources={
-            "io_manager_gcs_avro": GCSIOManager(
-                gcs=GCSResource(project=GCS_PROJECT_NAME),
-                gcs_bucket="teamster-staging",
-                object_type="avro",
-            ),
-            "deanslist": DeansListResource(
-                subdomain="kippnj",
-                api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
-            ),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "deanslist": DEANSLIST_RESOURCE,
         },
     )
 

@@ -2,17 +2,14 @@ import random
 
 from dagster import (
     DailyPartitionsDefinition,
-    EnvVar,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     materialize,
 )
-from dagster_gcp import GCSResource
 
-from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.resources import get_io_manager_gcs_avro
+from teamster.kipptaf.resources import SCHOOLMINT_GROW_RESOURCE
 from teamster.kipptaf.schoolmint.grow.assets import build_schoolmint_grow_asset
-from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.staging import LOCAL_TIMEZONE
 
 STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["f"])
@@ -43,17 +40,8 @@ def _test_asset(asset_name, partition_start_date=None):
         assets=[asset],
         partition_key=partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
         resources={
-            "io_manager_gcs_avro": GCSIOManager(
-                gcs=GCSResource(project=GCS_PROJECT_NAME),
-                gcs_bucket="teamster-staging",
-                object_type="avro",
-            ),
-            "schoolmint_grow": SchoolMintGrowResource(
-                client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
-                client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
-                district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
-                api_response_limit=3200,
-            ),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "schoolmint_grow": SCHOOLMINT_GROW_RESOURCE,
         },
     )
 
