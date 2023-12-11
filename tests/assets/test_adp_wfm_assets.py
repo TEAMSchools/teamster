@@ -3,16 +3,13 @@ import random
 from dagster import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
-    EnvVar,
     instance_for_test,
     materialize,
 )
-from dagster_gcp import GCSResource
 
-from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.adp.workforce_manager.assets import build_adp_wfm_asset
-from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
+from teamster.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
 from teamster.staging import LOCAL_TIMEZONE
 
 
@@ -44,19 +41,8 @@ def _test_asset(asset_name, report_name, hyperfind, symbolic_ids, date_partition
                 random.randint(a=0, b=(len(partition_keys) - 1))
             ],
             resources={
-                "io_manager_gcs_avro": GCSIOManager(
-                    gcs=GCSResource(project=GCS_PROJECT_NAME),
-                    gcs_bucket="teamster-staging",
-                    object_type="avro",
-                ),
-                "adp_wfm": AdpWorkforceManagerResource(
-                    subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
-                    app_key=EnvVar("ADP_WFM_APP_KEY"),
-                    client_id=EnvVar("ADP_WFM_CLIENT_ID"),
-                    client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
-                    username=EnvVar("ADP_WFM_USERNAME"),
-                    password=EnvVar("ADP_WFM_PASSWORD"),
-                ),
+                "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+                "adp_wfm": ADP_WORKFORCE_MANAGER_RESOURCE,
             },
         )
 

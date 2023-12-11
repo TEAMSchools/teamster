@@ -3,13 +3,12 @@ import pathlib
 from dagster import (
     AssetsDefinition,
     DailyPartitionsDefinition,
-    Definitions,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
     asset,
-    define_asset_job,
+    materialize,
 )
 from dagster_gcp import GCSResource
 
@@ -20,7 +19,17 @@ from teamster.core.utils.functions import get_avro_record_schema
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 
-def build_test_asset_avro(name, partitions_def=None):
+def build_test_asset_avro(
+    name, partitions_def=None, output_schema_fields=None, output_data=None
+):
+    if output_schema_fields is None:
+        output_schema_fields = [
+            {"name": "foo", "type": ["null", "string"], "default": None}
+        ]
+
+    if output_data is None:
+        output_data = [{"foo": "bar"}]
+
     @asset(
         key=["staging", "test", name],
         partitions_def=partitions_def,
@@ -31,13 +40,8 @@ def build_test_asset_avro(name, partitions_def=None):
     def _asset():
         yield Output(
             value=(
-                [{"foo": "bar"}],
-                get_avro_record_schema(
-                    name="test",
-                    fields=[
-                        {"name": "foo", "type": ["null", "string"], "default": None}
-                    ],
-                ),
+                output_data,
+                get_avro_record_schema(name="test", fields=output_schema_fields),
             )
         )
 
@@ -62,15 +66,10 @@ def build_test_asset_file(name, partitions_def=None):
     return _asset
 
 
-def _test(asset_def: AssetsDefinition, expected_path, partition_key=None):
-    job_name = asset_def.key.to_python_identifier(suffix="job")
-
-    defs = Definitions(
-        assets=[asset_def],
-        jobs=[define_asset_job(name=job_name, selection=[asset_def])],
-    )
-
-    result = defs.get_job_def(job_name).execute_in_process(partition_key=partition_key)
+def _test_asset_handle_output_path(
+    asset_def: AssetsDefinition, expected_path, partition_key=None
+):
+    result = materialize(assets=[asset_def], partition_key=partition_key)
 
     handled_output_event = [
         e for e in result.all_node_events if e.event_type_value == "HANDLED_OUTPUT"
@@ -84,7 +83,7 @@ def _test(asset_def: AssetsDefinition, expected_path, partition_key=None):
 def test_avro_handle_asset():
     asset_name = "avro_asset"
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_avro(name=asset_name),
         expected_path=f"dagster/staging/test/{asset_name}/data",
     )
@@ -99,7 +98,7 @@ def test_avro_handle_asset_multipartition_with_date():
         }
     )
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_avro(name=asset_name, partitions_def=partitions_def),
         partition_key=MultiPartitionKey({"date": "2023-11-01", "spam": "eggs"}),
         expected_path=f"dagster/staging/test/{asset_name}/_dagster_partition_fiscal_year=2024/_dagster_partition_date=2023-11-01/_dagster_partition_hour=00/_dagster_partition_minute=00/_dagster_partition_spam=eggs/data",
@@ -115,7 +114,7 @@ def test_avro_handle_asset_multipartition():
         }
     )
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_avro(name=asset_name, partitions_def=partitions_def),
         partition_key=MultiPartitionKey({"foo": "bar", "spam": "eggs"}),
         expected_path=f"dagster/staging/test/{asset_name}/_dagster_partition_foo=bar/_dagster_partition_spam=eggs/data",
@@ -125,7 +124,7 @@ def test_avro_handle_asset_multipartition():
 def test_avro_handle_asset_datetime_partition():
     asset_name = "avro_asset_datetime_partition"
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_avro(
             name=asset_name,
             partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
@@ -138,7 +137,7 @@ def test_avro_handle_asset_datetime_partition():
 def test_avro_handle_asset_static_partition():
     asset_name = "avro_asset_static_partition"
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_avro(
             name=asset_name, partitions_def=StaticPartitionsDefinition(["2020"])
         ),
@@ -150,7 +149,7 @@ def test_avro_handle_asset_static_partition():
 def test_file_handle_asset():
     asset_name = "file_asset"
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_file(name=asset_name),
         expected_path=f"dagster/staging/test/{asset_name}/data",
     )
@@ -165,7 +164,7 @@ def test_file_handle_asset_multipartition_with_date():
         }
     )
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_file(name=asset_name, partitions_def=partitions_def),
         partition_key=MultiPartitionKey({"date": "2023-11-01", "spam": "eggs"}),
         expected_path=f"dagster/staging/test/{asset_name}/_dagster_partition_fiscal_year=2024/_dagster_partition_date=2023-11-01/_dagster_partition_hour=00/_dagster_partition_minute=00/_dagster_partition_spam=eggs/data",
@@ -181,7 +180,7 @@ def test_file_handle_asset_multipartition():
         }
     )
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_file(name=asset_name, partitions_def=partitions_def),
         partition_key=MultiPartitionKey({"foo": "bar", "spam": "eggs"}),
         expected_path=f"dagster/staging/test/{asset_name}/_dagster_partition_foo=bar/_dagster_partition_spam=eggs/data",
@@ -191,7 +190,7 @@ def test_file_handle_asset_multipartition():
 def test_file_handle_asset_datetime_partition():
     asset_name = "file_asset_datetime_partition"
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_file(
             name=asset_name,
             partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
@@ -204,10 +203,20 @@ def test_file_handle_asset_datetime_partition():
 def test_file_handle_asset_static_partition():
     asset_name = "file_asset_static_partition"
 
-    _test(
+    _test_asset_handle_output_path(
         asset_def=build_test_asset_file(
             name=asset_name, partitions_def=StaticPartitionsDefinition(["2020"])
         ),
         partition_key="2020",
         expected_path=f"dagster/staging/test/{asset_name}/_dagster_partition_key=2020/data",
     )
+
+
+def test_asset_handle_output_schema():
+    asset_def = build_test_asset_avro(
+        name="test", output_data=[{"foo": "bar", "spam": "eggs"}]
+    )
+
+    result = materialize(assets=[asset_def])
+
+    assert result.success
