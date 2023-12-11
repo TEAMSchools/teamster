@@ -74,7 +74,7 @@ defs = Definitions(
         "db_powerschool": get_oracle_resource_powerschool(CODE_LOCATION_UPPER),
         "ssh_edplan": get_ssh_resource_edplan(CODE_LOCATION_UPPER),
         "ssh_powerschool": get_ssh_resource_powerschool(CODE_LOCATION_UPPER),
-        "ssh_renlearn": get_ssh_resource_renlearn(CODE_LOCATION_UPPER),
+        "ssh_renlearn": get_ssh_resource_renlearn("KIPPNJ"),
         "ssh_titan": get_ssh_resource_titan(CODE_LOCATION_UPPER),
     },
 )
