@@ -1,6 +1,7 @@
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 from dagster_fivetran import FivetranResource
+from zenpy import Zenpy
 
 from teamster.core.ssh.resources import SSHResource
 
@@ -80,6 +81,12 @@ SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
 
 SMARTRECRUITERS_RESOURCE = SmartRecruitersResource(
     smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
+)
+
+ZENDESK_RESOURCE = Zenpy(
+    subdomain="teamschools",
+    email=EnvVar("ZENDESK_EMAIL").get_value(),
+    token=EnvVar("ZENDESK_TOKEN").get_value(),
 )
 
 SSH_RESOURCE_ACHIEVE3K = SSHResource(
