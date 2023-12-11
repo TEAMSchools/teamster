@@ -258,7 +258,7 @@ with
                 then concat('ELA0', assessment_grade)
                 else concat('MAT0', assessment_grade)
             end as test_code,
-        from `teamster-332318.kipptaf_fldoe.stg_fldoe__fast`
+        from {{ ref("stg_fldoe__fast") }}
         where achievement_level not in ('Insufficient to score', 'Invalidated')
         union all
         select
@@ -297,6 +297,232 @@ with
                 then concat('SCI0', test_grade)
                 else concat('MAT0', test_grade)
             end as test_code,
-        from `teamster-332318.kippmiami_fldoe.stg_fldoe__fsa`
+        from {{ ref("stg_fldoe__fsa") }}
         where performance_level is not null
     ),
+
+    nj_final as (
+        select
+            s._dbt_source_relation,
+            cast(a.academic_year as string) as academic_year,
+            s.region,
+            s.schoolid,
+            s.school,
+            s.student_number,
+            s.state_studentnumber,
+            a.state_id,
+            s.student_name,
+            s.grade_level,
+            s.enroll_status,
+            s.gender,
+            a.race_ethnicity,
+            a.iep_status,
+            a.is_504,
+            s.lunch_status,
+            a.lep_status,
+            s.ms_attended,
+            s.advisory,
+            
+            a.assessment_name,
+            a.discipline,
+            a.subject,
+            a.test_code,
+            a.test_grade,
+            a.admin,
+            a.season,
+            a.score,
+            a.performance_band,
+            a.performance_band_level,
+            a.is_proficient,
+        from assessments_nj as a
+        inner join
+            students_nj as s
+            on a.academic_year = s.academic_year
+            and a.state_id = s.state_studentnumber
+    ),
+
+    fl_final as (
+        select
+            s._dbt_source_relation,
+            cast(a.academic_year as string) as academic_year,
+            s.region,
+            s.schoolid,
+            s.school,
+            s.student_number,
+            s.fleid as state_studentnumber,
+            a.state_id,
+            s.student_name,
+            s.grade_level,
+            s.enroll_status,
+            s.gender,
+            s.race_ethnicity,
+            s.iep_status,
+            s.is_504,
+            s.lunch_status,
+            s.lep_status,
+            s.advisory,
+
+            a.assessment_name,
+            a.discipline,
+            a.subject,
+            a.test_code,
+            a.test_grade,
+            a.admin,
+            a.season,
+            a.score,
+            a.performance_band,
+            a.performance_band_level,
+            a.is_proficient
+        from assessments_fl as a
+        inner join
+            students_fl as s
+            on a.academic_year = s.academic_year
+            and a.state_id = s.fleid
+    ),
+
+    state_comps as (
+        select academic_year, test_name, test_code, region, city, state,
+        from
+            {{ ref("stg_assessments__state_test_comparison") }}
+            pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
+    ),
+
+    goals as (
+        select
+            academic_year,
+            school_id,
+            state_assessment_code,
+            grade_level,
+            grade_goal,
+            school_goal,
+            region_goal,
+            organization_goal,
+        from {{ ref("stg_assessments__academic_goals") }}
+        where state_assessment_code is not null
+    )
+
+select
+    s.academic_year,
+    s.region,
+    s.schoolid,
+    s.school,
+    s.student_number,
+    s.state_studentnumber,
+    s.state_id,
+    s.student_name,
+    s.grade_level,
+    s.enroll_status,
+    s.gender,
+    s.race_ethnicity,
+    s.iep_status,
+    s.is_504,
+    s.lunch_status,
+    s.ms_attended,
+    s.lep_status,
+    s.advisory,
+    s.assessment_name,
+    s.discipline,
+    s.subject,
+    s.test_code,
+    s.test_grade,
+    s.admin,
+    s.season,
+    s.score,
+    s.performance_band,
+    s.performance_band_level,
+    s.is_proficient,
+
+    c.city as proficiency_city,
+    c.state as proficiency_state,
+
+    g.grade_level as assessment_grade_level,
+    g.grade_goal,
+    g.school_goal,
+    g.region_goal,
+    g.organization_goal,
+
+    m.teacher_name,
+    m.course_number,
+    m.course_name,
+    m.teacher_name_current,
+from nj_final as s
+left join
+    state_comps as c
+    on cast(s.academic_year as int) = c.academic_year
+    and s.assessment_name = c.test_name
+    and s.test_code = c.test_code
+    and s.region = c.region
+left join
+    goals as g
+    on cast(s.academic_year as int) = g.academic_year
+    and s.schoolid = g.school_id
+    and s.test_code = g.state_assessment_code
+left join
+    schedules as m
+    on s.academic_year = cast(m.cc_academic_year as string)
+    and s.student_number = m.students_student_number
+    and s.discipline = m.discipline
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+union all
+select
+    s.academic_year,
+    s.region,
+    s.schoolid,
+    s.school,
+    s.student_number,
+    s.state_studentnumber,
+    s.state_id,
+    s.student_name,
+    s.grade_level,
+    s.enroll_status,
+    s.gender,
+    s.race_ethnicity,
+    s.iep_status,
+    s.is_504,
+    s.lunch_status,
+    null as ms_attended,
+    s.lep_status,
+    s.advisory,
+    s.assessment_name,
+    s.discipline,
+    s.subject,
+    s.test_code,
+    s.test_grade,
+    s.admin,
+    s.season,
+    s.score,
+    s.performance_band,
+    s.performance_band_level,
+    s.is_proficient,
+
+    c.city as proficiency_city,
+    c.state as proficiency_state,
+
+    g.grade_level as assessment_grade_level,
+    g.grade_goal,
+    g.school_goal,
+    g.region_goal,
+    g.organization_goal,
+
+    m.teacher_name,
+    m.course_number,
+    m.course_name,
+    m.teacher_name_current,
+from fl_final as s
+left join
+    state_comps as c
+    on cast(s.academic_year as int) = c.academic_year
+    and s.assessment_name = c.test_name
+    and s.test_code = c.test_code
+    and s.region = c.region
+left join
+    goals as g
+    on cast(s.academic_year as int) = g.academic_year
+    and s.schoolid = g.school_id
+    and s.test_code = g.state_assessment_code
+left join
+    schedules as m
+    on s.academic_year = cast(m.cc_academic_year as string)
+    and s.student_number = m.students_student_number
+    and s.discipline = m.discipline
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
