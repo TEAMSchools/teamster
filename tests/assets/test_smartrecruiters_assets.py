@@ -1,10 +1,8 @@
-from dagster import EnvVar, materialize
-from dagster_gcp import GCSResource
+from dagster import materialize
 
-from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.resources import get_io_manager_gcs_avro
+from teamster.kipptaf.resources import SMARTRECRUITERS_RESOURCE
 from teamster.kipptaf.smartrecruiters.assets import build_smartrecruiters_report_asset
-from teamster.kipptaf.smartrecruiters.resources import SmartRecruitersResource
 
 
 def _test_asset(asset_name, report_id):
@@ -15,14 +13,8 @@ def _test_asset(asset_name, report_id):
     result = materialize(
         assets=[asset],
         resources={
-            "io_manager_gcs_avro": GCSIOManager(
-                gcs=GCSResource(project=GCS_PROJECT_NAME),
-                gcs_bucket="teamster-staging",
-                object_type="avro",
-            ),
-            "smartrecruiters": SmartRecruitersResource(
-                smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
-            ),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "smartrecruiters": SMARTRECRUITERS_RESOURCE,
         },
     )
 

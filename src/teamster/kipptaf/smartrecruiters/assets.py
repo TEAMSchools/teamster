@@ -80,7 +80,7 @@ def build_smartrecruiters_report_asset(
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
         # context.log.debug(df.dtypes)
 
-        records = (df.to_dict(orient="records"),)
+        records = df.to_dict(orient="records")
         schema = get_avro_record_schema(
             name=asset_name, fields=ASSET_FIELDS[asset_name]
         )
