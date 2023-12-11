@@ -1,18 +1,19 @@
 with
+    ms_grad_sub as (
+        select
+            _dbt_source_relation,
+            student_number,
+            school_abbreviation as ms_attended,
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where school_level = 'MS'
+    ),
+
     ms_grad as (
         select _dbt_source_relation, student_number, ms_attended,
-        from
-            (
-                select
-                    _dbt_source_relation,
-                    student_number,
-                    school_abbreviation as ms_attended,
-                    row_number() over (
-                        partition by student_number order by exitdate desc
-                    ) as rn,
-                from {{ ref("base_powerschool__student_enrollments") }}
-                where school_level = 'MS'
-            ) as sub
+        from ms_grad_sub
         where rn = 1
     ),
 
