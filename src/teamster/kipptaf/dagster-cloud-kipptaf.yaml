@@ -55,8 +55,8 @@ locations:
           - schoolmint-grow-client-secret
           - schoolmint-grow-district-id
           - smartrecruiters-smarttoken
-          - zendesk-email created
-          - zendesk-token created
+          - zendesk-email
+          - zendesk-token
         volumes:
           - name: secret-volume
             secret:
