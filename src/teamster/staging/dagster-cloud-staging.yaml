@@ -29,8 +29,6 @@ locations:
           - clever-sftp-username
           - coupa-sftp-password
           - coupa-sftp-username
-          - cpn-sftp-password
-          - cpn-sftp-username
           - dagster-cloud-agent-token
           - dagster-cloud-user-token
           - deanslist-sftp-password
@@ -57,6 +55,8 @@ locations:
           - staging-ps-ssh-port
           - staging-ps-ssh-remote-bind-host
           - staging-ps-ssh-username
+          - zendesk-email
+          - zendesk-token
         volumes:
           - name: secret-volume
             secret:
