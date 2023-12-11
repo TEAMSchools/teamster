@@ -6,7 +6,11 @@ from pandas import read_csv
 from slugify import slugify
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import MClassResource
@@ -14,12 +18,15 @@ from .schema import ASSET_FIELDS
 
 
 def build_mclass_asset(name, partitions_def, dyd_payload):
+    asset_key = [CODE_LOCATION, "amplify", name]
+
     @asset(
         key=[CODE_LOCATION, "amplify", name],
         metadata={"dyd_payload": dyd_payload},
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         group_name="amplify",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, mclass: MClassResource):
         asset_name = context.asset_key.path[-1]
@@ -39,14 +46,15 @@ def build_mclass_asset(name, partitions_def, dyd_payload):
         df.replace({nan: None}, inplace=True)
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 
-        yield Output(
-            value=(
-                df.to_dict(orient="records"),
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name]
-                ),
-            ),
-            metadata={"records": df.shape[0]},
+        records = df.to_dict(orient="records")
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
+
+        yield Output(value=(records, schema), metadata={"records": df.shape[0]})
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=schema
         )
 
     return _asset

@@ -23,7 +23,7 @@ def build_gsheet_asset(source_name, name, uri, range_name):
     return _asset
 
 
-google_sheets_assets = [
+__all__ = [
     build_gsheet_asset(
         name=source["name"].split("__")[-1],
         source_name=source["source_name"],

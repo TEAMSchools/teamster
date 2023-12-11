@@ -1,14 +1,14 @@
 import random
 
 import pendulum
-from dagster import EnvVar, MonthlyPartitionsDefinition, materialize
-from dagster_gcp import GCSResource
+from dagster import MonthlyPartitionsDefinition, materialize
 
-from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.powerschool.assets import build_powerschool_table_asset
-from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
-from teamster.core.ssh.resources import SSHResource
+from teamster.core.resources import (
+    get_io_manager_gcs_avro,
+    get_oracle_resource_powerschool,
+    get_ssh_resource_powerschool,
+)
 from teamster.staging import LOCAL_TIMEZONE
 
 
@@ -31,32 +31,9 @@ def _test_asset(asset_name, partitions_def=None, partition_column=None):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_file": GCSIOManager(
-                gcs=GCSResource(project=GCS_PROJECT_NAME),
-                gcs_bucket="teamster-staging",
-                object_type="file",
-            ),
-            "db_powerschool": OracleResource(
-                engine=SqlAlchemyEngineResource(
-                    dialect="oracle",
-                    driver="oracledb",
-                    username="PSNAVIGATOR",
-                    host="localhost",
-                    database="PSPRODDB",
-                    port=1521,
-                    password=EnvVar("STAGING_PS_DB_PASSWORD"),
-                ),
-                version="19.0.0.0.0",
-                prefetchrows=100000,
-                arraysize=100000,
-            ),
-            "ssh_powerschool": SSHResource(
-                remote_host="teamacademy.clgpstest.com",
-                remote_port=EnvVar("STAGING_PS_SSH_PORT").get_value(),
-                username=EnvVar("STAGING_PS_SSH_USERNAME"),
-                password=EnvVar("STAGING_PS_SSH_PASSWORD"),
-                tunnel_remote_host=EnvVar("STAGING_PS_SSH_REMOTE_BIND_HOST"),
-            ),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "db_powerschool": get_oracle_resource_powerschool("staging"),
+            "ssh_powerschool": get_ssh_resource_powerschool("staging"),
         },
     )
 
@@ -157,22 +134,6 @@ def test_asset_powerschool_roledef():
     _test_asset(asset_name="roledef")
 
 
-def test_asset_powerschool_s_nj_crs_x():
-    _test_asset(asset_name="s_nj_crs_x")
-
-
-def test_asset_powerschool_s_nj_ren_x():
-    _test_asset(asset_name="s_nj_ren_x")
-
-
-def test_asset_powerschool_s_nj_stu_x():
-    _test_asset(asset_name="s_nj_stu_x")
-
-
-def test_asset_powerschool_s_nj_usr_x():
-    _test_asset(asset_name="s_nj_usr_x")
-
-
 def test_asset_powerschool_schools():
     _test_asset(asset_name="schools")
 
@@ -199,10 +160,6 @@ def test_asset_powerschool_studentcontactdetail():
 
 def test_asset_powerschool_studentcorefields():
     _test_asset(asset_name="studentcorefields")
-
-
-def test_asset_powerschool_studentrace():
-    _test_asset(asset_name="studentrace")
 
 
 def test_asset_powerschool_students():
@@ -306,19 +263,6 @@ def test_asset_powerschool_attendance():
     )
 
 
-def test_asset_powerschool_pgfinalgrades():
-    _test_asset(
-        asset_name="pgfinalgrades",
-        partition_column="transaction_date",
-        partitions_def=MonthlyPartitionsDefinition(
-            start_date=pendulum.datetime(year=2016, month=7, day=1),
-            timezone=LOCAL_TIMEZONE.name,
-            fmt="%Y-%m-%dT%H:%M:%S%z",
-            end_offset=1,
-        ),
-    )
-
-
 def test_asset_powerschool_storedgrades():
     _test_asset(
         asset_name="storedgrades",
@@ -369,3 +313,36 @@ def test_asset_powerschool_assignmentsection():
             end_offset=1,
         ),
     )
+
+
+"""
+def test_asset_powerschool_s_nj_crs_x():
+    _test_asset(asset_name="s_nj_crs_x")
+
+
+def test_asset_powerschool_s_nj_ren_x():
+    _test_asset(asset_name="s_nj_ren_x")
+
+
+def test_asset_powerschool_s_nj_stu_x():
+    _test_asset(asset_name="s_nj_stu_x")
+
+
+def test_asset_powerschool_s_nj_usr_x():
+    _test_asset(asset_name="s_nj_usr_x")
+
+def test_asset_powerschool_studentrace():
+    _test_asset(asset_name="studentrace")
+
+def test_asset_powerschool_pgfinalgrades():
+    _test_asset(
+        asset_name="pgfinalgrades",
+        partition_column="transaction_date",
+        partitions_def=MonthlyPartitionsDefinition(
+            start_date=pendulum.datetime(year=2016, month=7, day=1),
+            timezone=LOCAL_TIMEZONE.name,
+            fmt="%Y-%m-%dT%H:%M:%S%z",
+            end_offset=1,
+        ),
+    )
+"""

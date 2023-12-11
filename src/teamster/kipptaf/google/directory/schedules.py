@@ -24,3 +24,9 @@ google_directory_user_sync_schedule = ScheduleDefinition(
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
+
+__all__ = [
+    google_directory_nonpartitioned_asset_schedule,
+    google_directory_role_assignments_sync_schedule,
+    google_directory_user_sync_schedule,
+]

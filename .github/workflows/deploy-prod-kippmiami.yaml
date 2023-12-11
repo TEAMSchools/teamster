@@ -9,7 +9,6 @@ on:
       - pdm.lock
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippmiami.yaml
-      - .dagster/dagster-cloud-kippmiami.yaml
       - src/teamster/core/**
       - src/teamster/kippmiami/**
       - src/dbt/kippmiami/**
