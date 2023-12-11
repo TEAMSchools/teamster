@@ -37,7 +37,7 @@ with
 
             case
                 when e.school_level in ('ES', 'MS')
-                then advisory_name
+                then e.advisory_name
                 when e.school_level = 'HS'
                 then e.advisor_lastfirst
             end as advisory,
@@ -162,8 +162,8 @@ with
             testscalescore as score,
             testperformancelevel as performance_band_level,
             is_proficient,
-            case period when 'FallBlock' then 'Fall' else period end as admin,
-            case period when 'FallBlock' then 'Fall' else period end as season,
+            case `period` when 'FallBlock' then 'Fall' else `period` end as admin,
+            case `period` when 'FallBlock' then 'Fall' else `period` end as season,
             case
                 when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
                 then 'Graduation Ready'
