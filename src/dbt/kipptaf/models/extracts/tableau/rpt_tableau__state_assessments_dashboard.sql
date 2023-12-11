@@ -162,7 +162,7 @@ with
             testscalescore as score,
             testperformancelevel as performance_band_level,
             is_proficient,
-            case `period` when 'FallBlock' then 'Fall' else `period` end as admin,
+            case `period` when 'FallBlock' then 'Fall' else `period` end as `admin`,
             case `period` when 'FallBlock' then 'Fall' else `period` end as season,
             case
                 when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
@@ -226,7 +226,7 @@ with
             student_id as state_id,
             'FAST' as assessment_name,
             cast(assessment_grade as string) as test_grade,
-            administration_window as admin,
+            administration_window as `admin`,
             scale_score as score,
             achievement_level as performance_band,
             achievement_level_int as performance_band_level,
