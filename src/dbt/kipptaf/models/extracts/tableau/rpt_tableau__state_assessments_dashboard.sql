@@ -38,7 +38,7 @@ with
             case
                 when e.school_level in ('ES', 'MS')
                 then advisory_name
-                when school_level = 'HS'
+                when e.school_level = 'HS'
                 then e.advisor_lastfirst
             end as advisory,
         from {{ ref("base_powerschool__student_enrollments") }} as e
