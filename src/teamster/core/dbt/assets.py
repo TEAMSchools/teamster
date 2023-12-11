@@ -51,9 +51,12 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         group = default_group_from_dbt_resource_props(dbt_resource_props)
+        package_name = dbt_resource_props["package_name"]
 
         if group is not None:
             return group
+        elif package_name is not None:
+            return package_name
         else:
             return dbt_resource_props["fqn"][1]
 
