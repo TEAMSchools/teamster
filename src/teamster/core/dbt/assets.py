@@ -18,7 +18,10 @@ from dagster_dbt.asset_utils import (
     MANIFEST_METADATA_KEY,
     _auto_materialize_policy_fn,
 )
-from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
+from dagster_dbt.dagster_dbt_translator import (
+    DbtManifestWrapper,
+    default_group_from_dbt_resource_props,
+)
 
 
 class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
@@ -45,6 +48,14 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
             return auto_materialize_policy
         else:
             return AutoMaterializePolicy.eager()
+
+    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+        group = default_group_from_dbt_resource_props(dbt_resource_props)
+
+        if group is not None:
+            return group
+        else:
+            return dbt_resource_props["fqn"][1]
 
 
 def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
