@@ -1,0 +1,67 @@
+locations:
+  - location_name: kipptaf
+    code_source:
+      module_name: teamster.kipptaf.definitions
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
+    working_directory: /root/app
+    container_context:
+      k8s:
+        env_secrets:
+          - achieve3k-sftp-password
+          - achieve3k-sftp-username
+          - adp-sftp-password
+          - adp-sftp-username
+          - adp-wfm-app-key
+          - adp-wfm-client-id
+          - adp-wfm-client-secret
+          - adp-wfm-password
+          - adp-wfm-subdomain
+          - adp-wfm-username
+          - adp-wfn-client-id
+          - adp-wfn-client-secret
+          - airbyte-api-key
+          - alchemer-api-token
+          - alchemer-api-token-secret
+          - amplify-password
+          - amplify-username
+          - blissbook-sftp-password
+          - blissbook-sftp-username
+          - clever-reports-sftp-password
+          - clever-reports-sftp-username
+          - clever-sftp-password
+          - clever-sftp-username
+          - couchdrop-sftp-password
+          - couchdrop-sftp-username
+          - coupa-sftp-password
+          - coupa-sftp-username
+          - dagster-cloud-agent-token
+          - dagster-cloud-user-token
+          - deanslist-sftp-password
+          - deanslist-sftp-username
+          - egencia-sftp-username
+          - fivetran-api-key
+          - fivetran-api-secret
+          - illuminate-sftp-password
+          - illuminate-sftp-username
+          - ktaf-sftp-password
+          - ktaf-sftp-username
+          - ldap-password
+          - ldap-user
+          - littlesis-sftp-password
+          - littlesis-sftp-username
+          - schoolmint-grow-client-id
+          - schoolmint-grow-client-secret
+          - schoolmint-grow-district-id
+          - smartrecruiters-smarttoken
+          - zendesk-email
+          - zendesk-token
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: secret-files
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: /etc/secret-volume

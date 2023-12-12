@@ -1,14 +1,16 @@
 from dagster import RunConfig, config_from_files, job
 from dagster_airbyte.ops import AirbyteSyncConfig
 
-from teamster.core.airbyte.ops import airbyte_start_sync_op
+from .. import CODE_LOCATION
+from .ops import airbyte_start_sync_op
 
-asset_config = config_from_files(["src/teamster/kipptaf/airbyte/config/assets.yaml"])[
-    "assets"
-]
+asset_config = config_from_files(
+    [f"src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
+)["assets"]
 
 
 @job(
+    name=f"{CODE_LOCATION}_airbyte_start_syncs_job",
     config=RunConfig(
         ops={
             asset["group_name"]: AirbyteSyncConfig(
@@ -17,8 +19,9 @@ asset_config = config_from_files(["src/teamster/kipptaf/airbyte/config/assets.ya
             for asset in asset_config
         }
     ),
+    tags={"job_type": "op"},
 )
-def kipptaf_airbyte_start_syncs_job():
+def airbyte_start_syncs_job():
     for asset in asset_config:
         airbyte_sync_op_aliased = airbyte_start_sync_op.alias(asset["group_name"])
 
@@ -26,5 +29,5 @@ def kipptaf_airbyte_start_syncs_job():
 
 
 __all__ = [
-    kipptaf_airbyte_start_syncs_job,
+    airbyte_start_syncs_job,
 ]

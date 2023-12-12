@@ -1,4 +1,3 @@
-import pendulum
 from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -7,8 +6,8 @@ from dagster import (
 )
 
 from teamster.core.deanslist.assets import (
-    build_multi_partition_asset,
-    build_static_partition_asset,
+    build_deanslist_multi_partition_asset,
+    build_deanslist_static_partition_asset,
 )
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
@@ -29,7 +28,7 @@ multi_partitions_def = MultiPartitionsDefinition(
 )
 
 static_partition_assets = [
-    build_static_partition_asset(
+    build_deanslist_static_partition_asset(
         code_location=CODE_LOCATION, partitions_def=static_partitions_def, **endpoint
     )
     for endpoint in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
@@ -38,11 +37,11 @@ static_partition_assets = [
 ]
 
 multi_partition_assets = [
-    build_multi_partition_asset(
+    build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
         partitions_def=multi_partitions_def,
-        inception_date=pendulum.date(2016, 7, 1),
         **endpoint,
+        # inception_date=pendulum.date(2016, 7, 1),
     )
     for endpoint in config_from_files([f"{config_dir}/multi-partition-assets.yaml"])[
         "endpoints"

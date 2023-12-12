@@ -9,7 +9,6 @@ on:
       - pdm.lock
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippnewark.yaml
-      - .dagster/dagster-cloud-kippnewark.yaml
       - src/teamster/core/**
       - src/teamster/kippnewark/**
       - src/dbt/kippnewark/**
