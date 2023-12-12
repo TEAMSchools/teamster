@@ -11,7 +11,8 @@ with
             a.date_taken as test_date,
             a.response_type,  -- Group or overall
             a.response_type_description,  -- Group name
-            a.points,  -- Points earned... looks to be # of questions correct on Illuminate
+            -- Points earned... looks to be # of questions correct on Illuminate
+            a.points,
             ssk.administration_round as scope_round,
             concat(
                 format_date('%b', a.administered_at),
