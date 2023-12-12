@@ -97,6 +97,7 @@ left join
     and asr.academic_year = ps.academic_year
     and co.grade_level = ps.grade_level
     and asr.response_type_code = ps.standard_code
+    and asr.term_administered = ps.term_name
 left join
     {{ ref("stg_assessments__academic_goals") }} as ag
     on asr.academic_year = ag.academic_year
@@ -206,6 +207,7 @@ left join
     {{ ref("stg_assessments__qbls_power_standards") }} as ps
     on asr.subject_area = ps.illuminate_subject_area
     and asr.academic_year = ps.academic_year
+    and asr.term_administered = ps.term_name
     and case
         when ps.parent_standard is not null
         then asr.response_type_id = ps.parent_standard
