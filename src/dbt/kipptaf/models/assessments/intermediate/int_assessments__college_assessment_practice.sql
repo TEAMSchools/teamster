@@ -69,7 +69,7 @@ with
                     and ssk.grade_level in (9, 10)
                 then (ssk.scale_score * 10)
                 else ssk.scale_score
-            end as scale_score
+            end as scale_score,
         from responses as r
         inner join
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
@@ -95,7 +95,7 @@ select
     r.percent_correct,
     r.total_subjects_tested,
     s.raw_score,
-    s.scale_score
+    s.scale_score,
 from responses as r
 left join
     practice_scale_score_by_subject as s
