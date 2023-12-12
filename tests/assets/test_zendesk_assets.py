@@ -7,13 +7,11 @@ from teamster.kipptaf.resources import ZENDESK_RESOURCE
 from teamster.kipptaf.zendesk.assets import ticket_metrics_archive
 
 
-def _test_asset(asset: AssetsDefinition, partition_key=None):
+def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     if partition_key is None:
         partition_keys = asset.partitions_def.get_partition_keys()
 
-        partition_key = (
-            partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
-        )
+        partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
 
     result = materialize(
         assets=[asset],
