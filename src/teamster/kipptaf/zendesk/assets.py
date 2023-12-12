@@ -1,11 +1,15 @@
 import pathlib
 
 import pendulum
-from dagster import AssetExecutionContext, ResourceParam, asset
+from dagster import (
+    AssetExecutionContext,
+    MonthlyPartitionsDefinition,
+    ResourceParam,
+    asset,
+)
 from fastavro import writer
 from zenpy import Zenpy
 
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
@@ -15,9 +19,9 @@ from .schema import ASSET_FIELDS
 @asset(
     key=[CODE_LOCATION, "zendesk", "ticket_metrics_archive"],
     io_manager_key="io_manager_gcs_file",
-    partitions_def=FiscalYearPartitionsDefinition(
+    partitions_def=MonthlyPartitionsDefinition(
         start_date=pendulum.datetime(2011, 7, 1),
-        start_month=7,
+        end_date=pendulum.datetime(2023, 6, 30),
         timezone=LOCAL_TIMEZONE.name,
     ),
 )
@@ -32,7 +36,7 @@ def ticket_metrics_archive(
     partition_key = pendulum.parser.parse(context.partition_key)
 
     start_date = partition_key.subtract(seconds=1)
-    end_date = partition_key.add(years=1)
+    end_date = partition_key.add(months=1)
 
     context.log.info(
         f"Searching closed tickets: updated>{start_date} updated<{end_date}"
