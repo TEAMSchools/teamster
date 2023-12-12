@@ -15,7 +15,11 @@ from pandas import read_csv
 from slugify import slugify
 
 from teamster.core.ssh.resources import SSHResource
-from teamster.core.utils.functions import regex_pattern_replace
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_schema_valid_check_spec,
+    regex_pattern_replace,
+)
 
 
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
@@ -85,6 +89,7 @@ def build_sftp_asset(
         op_tags=op_tags,
         group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext):
         context.log.debug(requests.get(url="https://api.ipify.org").text)
@@ -105,63 +110,67 @@ def build_sftp_asset(
             context.log.warning(
                 f"Found no files matching: {remote_dir}/{remote_file_regex_composed}"
             )
-            yield Output(value=([{}], avro_schema), metadata={"records": 0})
-            return
-
-        # download file from sftp
-        if len(file_matches) > 1:
-            context.log.warning(
-                msg=(
-                    f"Found multiple files matching: {remote_file_regex_composed}\n"
-                    f"{file_matches}"
-                )
-            )
-            file_match = file_matches[0]
+            records = [{}]
+            metadata = {"records": 0}
         else:
+            # validate file match
+            if len(file_matches) > 1:
+                context.log.warning(
+                    msg=(
+                        f"Found multiple files matching: {remote_file_regex_composed}\n"
+                        f"{file_matches}"
+                    )
+                )
+
             file_match = file_matches[0]
 
-        local_filepath = ssh.sftp_get(
-            remote_filepath=file_match, local_filepath=f"./env/{file_match}"
-        )
-
-        # exit if file is empty
-        if os.path.getsize(local_filepath) == 0:
-            context.log.warning(f"File is empty: {local_filepath}")
-            yield Output(value=([{}], avro_schema), metadata={"records": 0})
-            return
-
-        # unzip file, if necessary
-        if archive_filepath is not None:
-            archive_filepath_composed = compose_regex(
-                regexp=archive_filepath, context=context
+            # download file match
+            local_filepath = ssh.sftp_get(
+                remote_filepath=file_match, local_filepath=f"./env/{file_match}"
             )
 
-            with zipfile.ZipFile(file=local_filepath) as zf:
-                zf.extract(member=archive_filepath_composed, path="./env")
-
-            local_filepath = f"./env/{archive_filepath_composed}"
-
-            # exit if extracted file is empty
+            # exit if file is empty
             if os.path.getsize(local_filepath) == 0:
                 context.log.warning(f"File is empty: {local_filepath}")
-                yield Output(value=([{}], avro_schema), metadata={"records": 0})
-                return
+                records = [{}]
+                metadata = {"records": 0}
+            else:
+                # unzip file, if necessary
+                if archive_filepath is not None:
+                    archive_filepath_composed = compose_regex(
+                        regexp=archive_filepath, context=context
+                    )
 
-        # load file into pandas and prep for output
-        df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+                    with zipfile.ZipFile(file=local_filepath) as zf:
+                        zf.extract(member=archive_filepath_composed, path="./env")
 
-        df.replace({nan: None}, inplace=True)
-        if slugify_cols:
-            df.rename(
-                columns=lambda x: slugify(
-                    text=x, separator="_", replacements=slugify_replacements
-                ),
-                inplace=True,
-            )
+                    local_filepath = f"./env/{archive_filepath_composed}"
 
-        yield Output(
-            value=(df.to_dict(orient="records"), avro_schema),
-            metadata={"records": df.shape[0]},
+                # exit if extracted file is empty
+                if os.path.getsize(local_filepath) == 0:
+                    context.log.warning(f"File is empty: {local_filepath}")
+                    records = [{}]
+                    metadata = {"records": 0}
+                else:
+                    # load file into pandas and prep for output
+                    df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+
+                    df.replace({nan: None}, inplace=True)
+                    if slugify_cols:
+                        df.rename(
+                            columns=lambda x: slugify(
+                                text=x, separator="_", replacements=slugify_replacements
+                            ),
+                            inplace=True,
+                        )
+
+                    records = df.to_dict(orient="records")
+                    metadata = {"records": df.shape[0]}
+
+        yield Output(value=(records, avro_schema), metadata=metadata)
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=avro_schema
         )
 
     return _asset

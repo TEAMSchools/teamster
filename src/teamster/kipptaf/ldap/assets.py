@@ -1,6 +1,10 @@
 from dagster import AssetExecutionContext, Output, asset, config_from_files
 
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 from .. import CODE_LOCATION
 from .resources import LdapResource
@@ -41,8 +45,10 @@ DATETIME_ATTRIBUTES = [
 
 
 def build_ldap_asset(name, search_base, search_filter, attributes=["*"], op_tags={}):
+    asset_key = [CODE_LOCATION, "ldap", name]
+
     @asset(
-        key=[CODE_LOCATION, "ldap", name],
+        key=asset_key,
         metadata={
             "search_base": search_base,
             "search_filter": search_filter,
@@ -51,6 +57,7 @@ def build_ldap_asset(name, search_base, search_filter, attributes=["*"], op_tags
         io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
         group_name="ldap",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, ldap: LdapResource):
         asset_name = context.asset_key.path[-1]
@@ -74,14 +81,17 @@ def build_ldap_asset(name, search_base, search_filter, attributes=["*"], op_tags
 
             entries.append({**primitive_items, **array_items})
 
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
+
         yield Output(
-            value=(
-                entries,
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name]
-                ),
-            ),
+            value=(entries, schema),
             metadata={"records": len(entries)},
+        )
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=entries, schema=schema
         )
 
     return _asset

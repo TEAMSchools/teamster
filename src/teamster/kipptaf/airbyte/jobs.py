@@ -19,6 +19,7 @@ asset_config = config_from_files(
             for asset in asset_config
         }
     ),
+    tags={"job_type": "op"},
 )
 def airbyte_start_syncs_job():
     for asset in asset_config:
