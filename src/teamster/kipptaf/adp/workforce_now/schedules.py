@@ -8,3 +8,7 @@ adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
     cron_schedule="30 3 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
+
+__all__ = [
+    adp_wfn_worker_fields_update_schedule,
+]

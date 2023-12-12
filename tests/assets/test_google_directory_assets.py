@@ -1,10 +1,8 @@
 import random
 
 from dagster import AssetsDefinition, materialize
-from dagster_gcp import GCSResource
 
-from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.google.directory.assets import (
     groups,
     members,
@@ -13,7 +11,7 @@ from teamster.kipptaf.google.directory.assets import (
     roles,
     users,
 )
-from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
+from teamster.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
 
 
 def _test_asset(asset: AssetsDefinition):
@@ -28,16 +26,8 @@ def _test_asset(asset: AssetsDefinition):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": GCSIOManager(
-                gcs=GCSResource(project=GCS_PROJECT_NAME),
-                gcs_bucket="teamster-staging",
-                object_type="avro",
-            ),
-            "google_directory": GoogleDirectoryResource(
-                customer_id="C029u7m0n",
-                service_account_file_path="/etc/secret-volume/gcloud_service_account_json",
-                delegated_account="dagster@apps.teamschools.org",
-            ),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "google_directory": GOOGLE_DIRECTORY_RESOURCE,
         },
     )
 
