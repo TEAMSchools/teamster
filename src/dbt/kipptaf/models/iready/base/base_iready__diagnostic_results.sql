@@ -26,6 +26,7 @@ with
             diagnostic_gain,
             annual_typical_growth_measure,
             annual_stretch_growth_measure,
+            overall_placement,
 
             max(
                 if(most_recent_diagnostic_ytd_y_n = 'Y', overall_scale_score, null)
@@ -85,6 +86,7 @@ select
     dr.most_recent_diagnostic_ytd_y_n,
     dr.overall_scale_score,
     dr.percentile,
+    dr.overall_placement,
     dr.overall_relative_placement,
     dr.overall_relative_placement_int,
     dr.placement_3_level,
@@ -130,6 +132,14 @@ select
 
     right(rt.code, 1) as round_number,
     coalesce(rt.name, 'Outside Round') as test_round,
+    case
+        when rt.name = 'BOY'
+        then 'Beginning-of-year'
+        when rt.name = 'MOY'
+        then 'Middle-of-year'
+        when rt.name = 'EOY'
+        then 'End-of-year'
+    end as test_round_display,
     case
         rt.name
         when 'BOY'
