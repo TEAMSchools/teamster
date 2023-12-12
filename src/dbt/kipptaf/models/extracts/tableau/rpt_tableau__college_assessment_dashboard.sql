@@ -12,8 +12,6 @@ with
             e.cohort,
             e.entrydate,
             e.exitdate,
-
-            if(e.spedlep in ('No IEP', null), 0, 1) as sped,
             e.is_504 as c_504_status,
             e.lep_status,
             e.advisor_lastfirst,
@@ -28,6 +26,8 @@ with
             t.test_type as expected_test_type,
             t.scope as expected_scope,
             t.subject_area as expected_subject_area,
+
+            if(e.spedlep in ('No IEP', null), 0, 1) as sped,
 
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
