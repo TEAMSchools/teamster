@@ -7,6 +7,7 @@ from teamster.core.resources import (
     SSH_COUCHDROP,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
+    get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
 )
 
@@ -25,6 +26,7 @@ from . import (
     resources,
     schoolmint,
     smartrecruiters,
+    zendesk,
 )
 from .adp import workforce_manager, workforce_now
 from .google import directory, forms, sheets
@@ -50,6 +52,7 @@ defs = Definitions(
             smartrecruiters,
             workforce_manager,
             workforce_now,
+            zendesk,
         ]
     ),
     schedules=[
@@ -76,11 +79,14 @@ defs = Definitions(
         *workforce_now.sensors,
     ],
     resources={
+        # shared
         "gcs": GCS_RESOURCE,
         "db_bigquery": BIGQUERY_RESOURCE,
         "ssh_couchdrop": SSH_COUCHDROP,
+        # regional
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
+        "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
         "adp_wfm": resources.ADP_WORKFORCE_MANAGER_RESOURCE,
         "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
@@ -94,6 +100,8 @@ defs = Definitions(
         "mclass": resources.MCLASS_RESOURCE,
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
+        "zendesk": resources.ZENDESK_RESOURCE,
+        # ssh
         "ssh_achieve3k": resources.SSH_RESOURCE_ACHIEVE3K,
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
         "ssh_blissbook": resources.SSH_RESOURCE_BLISSBOOK,

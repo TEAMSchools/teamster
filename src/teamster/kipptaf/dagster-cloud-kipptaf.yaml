@@ -51,18 +51,12 @@ locations:
           - ldap-user
           - littlesis-sftp-password
           - littlesis-sftp-username
-          - mssql-password
-          - mssql-username
-          - pythonanywhere-sftp-password
-          - pythonanywhere-sftp-username
-          - razkids-sftp-password
-          - razkids-sftp-username
-          - read180-sftp-password
-          - read180-sftp-username
           - schoolmint-grow-client-id
           - schoolmint-grow-client-secret
           - schoolmint-grow-district-id
           - smartrecruiters-smarttoken
+          - zendesk-email
+          - zendesk-token
         volumes:
           - name: secret-volume
             secret:
