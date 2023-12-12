@@ -9,7 +9,7 @@ with
             of_credits_required_for_graduation,
             row_number() over (
                 partition by ei.student order by ei.start_date desc
-            ) as rn_enrollment
+            ) as rn_enrollment,
         from {{ ref("stg_kippadb__enrollment") }} as ei
         where status = 'Withdrawn'
     ),
@@ -21,7 +21,7 @@ with
             credits_required_for_graduation,
             row_number() over (
                 partition by student order by transcript_date desc
-            ) as rn_transcript
+            ) as rn_transcript,
         from {{ ref("stg_kippadb__gpa") }}
     )
 
