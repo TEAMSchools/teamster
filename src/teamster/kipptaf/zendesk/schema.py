@@ -72,9 +72,7 @@ TICKET_METRIC_FIELDS = [
         "type": [
             "null",
             get_avro_record_schema(
-                name="agent_wait_time_in_minutes",
-                fields=MINUTE_FIELDS,
-                namespace="ticket_metric",
+                name="agent_wait_time_in_minutes", fields=MINUTE_FIELDS
             ),
         ],
         "default": None,
@@ -84,9 +82,7 @@ TICKET_METRIC_FIELDS = [
         "type": [
             "null",
             get_avro_record_schema(
-                name="first_resolution_time_in_minutes",
-                fields=MINUTE_FIELDS,
-                namespace="ticket_metric",
+                name="first_resolution_time_in_minutes", fields=MINUTE_FIELDS
             ),
         ],
         "default": None,
@@ -96,9 +92,7 @@ TICKET_METRIC_FIELDS = [
         "type": [
             "null",
             get_avro_record_schema(
-                name="full_resolution_time_in_minutes",
-                fields=MINUTE_FIELDS,
-                namespace="ticket_metric",
+                name="full_resolution_time_in_minutes", fields=MINUTE_FIELDS
             ),
         ],
         "default": None,
@@ -108,9 +102,7 @@ TICKET_METRIC_FIELDS = [
         "type": [
             "null",
             get_avro_record_schema(
-                name="on_hold_time_in_minutes",
-                fields=MINUTE_FIELDS,
-                namespace="ticket_metric",
+                name="on_hold_time_in_minutes", fields=MINUTE_FIELDS
             ),
         ],
         "default": None,
@@ -119,11 +111,7 @@ TICKET_METRIC_FIELDS = [
         "name": "reply_time_in_minutes",
         "type": [
             "null",
-            get_avro_record_schema(
-                name="reply_time_in_minutes",
-                fields=MINUTE_FIELDS,
-                namespace="ticket_metric",
-            ),
+            get_avro_record_schema(name="reply_time_in_minutes", fields=MINUTE_FIELDS),
         ],
         "default": None,
     },
@@ -132,9 +120,7 @@ TICKET_METRIC_FIELDS = [
         "type": [
             "null",
             get_avro_record_schema(
-                name="requester_wait_time_in_minutes",
-                fields=MINUTE_FIELDS,
-                namespace="ticket_metric",
+                name="requester_wait_time_in_minutes", fields=MINUTE_FIELDS
             ),
         ],
         "default": None,

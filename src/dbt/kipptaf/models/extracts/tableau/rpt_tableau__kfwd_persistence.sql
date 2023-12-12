@@ -13,6 +13,7 @@ select
     p.account_type,
     p.hs_account_name,
     p.semester,
+    p.ecc_pursuing_degree_type,
     p.is_ecc,
     p.is_ecc_aa,
     p.is_ecc_ba,
