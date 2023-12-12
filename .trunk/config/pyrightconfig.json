@@ -1,9 +1,0 @@
-{
-  "venvPath": ".venv",
-  "venv": "in-project",
-  "executionEnvironments": [
-    {
-      "root": "src"
-    }
-  ]
-}
