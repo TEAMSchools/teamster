@@ -12,6 +12,7 @@ with
             a.response_type,  -- Group or overall
             a.response_type_description,  -- Group name
             a.points,  -- Points earned... looks to be # of questions correct on Illuminate
+            ssk.administration_round as scope_round,
             concat(
                 format_date('%b', a.administered_at),
                 ' ',
@@ -28,7 +29,6 @@ with
                     ssk.administration_round
 
             ) as total_subjects_tested,
-            ssk.administration_round as scope_round,
             -- Uses the approx raw score to bring a scale score
             -- Convert the scale scores to be ready to add 
             -- for sat composite score from the gsheet
