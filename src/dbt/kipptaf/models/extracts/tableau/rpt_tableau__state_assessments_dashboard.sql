@@ -199,8 +199,7 @@ with
                 then true
                 when 'N'
                 then false
-                when null
-                then null
+                else null
             end as lep_status,
             case
                 when assessmentgrade in ('Grade 10', 'Grade 11')
