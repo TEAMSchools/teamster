@@ -192,14 +192,7 @@ with
                 then 'Has IEP'
                 else 'No IEP'
             end as iep_status,
-            case
-                studentwithdisabilities
-                when '504'
-                then true
-                when 'B'
-                then true
-                else false
-            end as is_504,
+            if(studentwithdisabilities in ('504', 'B'), true, false) as is_504,
             case
                 englishlearnerel
                 when 'Y'
