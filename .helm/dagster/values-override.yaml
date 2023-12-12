@@ -12,16 +12,6 @@ dagsterCloud:
   branchDeployments: true
 
 ########################################################################################
-# Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
-########################################################################################
-# dagsterCloudAgent:
-#   # Additional environment variables to set.
-#   # A Kubernetes ConfigMap will be created with these environment variables. See:
-#   # https://kubernetes.io/docs/concepts/configuration/configmap/
-#   env:
-#     DAGSTER_GRPC_TIMEOUT_SECONDS: "240"
-
-########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:

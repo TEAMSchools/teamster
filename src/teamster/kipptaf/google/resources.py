@@ -1,10 +1,11 @@
 import time
 
 import google.auth
+import gspread
 from dagster import ConfigurableResource, InitResourceContext
 from dagster._utils.backoff import backoff
-from googleapiclient import discovery
-from googleapiclient.errors import HttpError
+from googleapiclient import discovery, errors
+from gspread.utils import rowcol_to_a1
 from pydantic import PrivateAttr
 
 
@@ -178,7 +179,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             for user in batch:
                 batch_request.add(self._service.users().insert(body=user))
 
-            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+            backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
             time.sleep(1)
 
@@ -216,7 +217,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+            backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
             time.sleep(1)
 
@@ -252,7 +253,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-            backoff(fn=batch_request.execute, retry_on=(HttpError,))
+            backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
             time.sleep(1)
 
@@ -288,8 +289,85 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             backoff(
                 fn=batch_request.execute,
-                retry_on=(HttpError,),
+                retry_on=(errors.HttpError,),
                 delay_generator=self.backoff_delay_generator(),
             )
 
             time.sleep(1)
+
+
+class GoogleFormsResource(ConfigurableResource):
+    service_account_file_path: str = None
+    version: str = "v1"
+    scopes: list = [
+        "https://www.googleapis.com/auth/forms.body.readonly",
+        "https://www.googleapis.com/auth/forms.responses.readonly",
+    ]
+
+    _service: discovery.Resource = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        if self.service_account_file_path is not None:
+            credentials, project_id = google.auth.load_credentials_from_file(
+                filename=self.service_account_file_path, scopes=self.scopes
+            )
+        else:
+            credentials, project_id = google.auth.default(scopes=self.scopes)
+
+        self._service = discovery.build(
+            serviceName="forms", version=self.version, credentials=credentials
+        ).forms()
+
+    def get_form(self, form_id):
+        return self._service.get(formId=form_id).execute()
+
+    def list_responses(self, form_id, **kwargs):
+        return self._service.responses().list(formId=form_id, **kwargs).execute()
+
+
+class GoogleSheetsResource(ConfigurableResource):
+    service_account_file_path: str = None
+
+    _client: gspread.Client = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        if self.service_account_file_path is not None:
+            self._client = gspread.service_account(
+                filename=self.service_account_file_path
+            )
+        else:
+            credentials, project_id = google.auth.default(
+                scopes=[
+                    "https://www.googleapis.com/auth/spreadsheets",
+                    "https://www.googleapis.com/auth/drive",
+                ]
+            )
+
+            self._client = gspread.authorize(credentials=credentials)
+
+    def open(self, **kwargs):
+        kwargs_keys = kwargs.keys()
+
+        if "title" in kwargs_keys:
+            return self._client.open(**kwargs)
+        elif "sheet_id" in kwargs_keys:
+            return self._client.open_by_key(key=kwargs["sheet_id"])
+        elif "url" in kwargs_keys:
+            return self._client.open_by_url(**kwargs)
+
+    def open_or_create_sheet(self, **kwargs):
+        try:
+            spreadsheet = self.open(**kwargs)
+        except gspread.exceptions.SpreadsheetNotFound as e:
+            context = self.get_resource_context()
+
+            context.log.warning(e)
+            context.log.info("Creating new Sheet")
+
+            spreadsheet = self._client.create(**kwargs)
+
+        return spreadsheet
+
+    @staticmethod
+    def rowcol_to_a1(row, col):
+        return rowcol_to_a1(row=row, col=col)

@@ -11,7 +11,7 @@ from teamster.kipptaf.google.directory.ops import (
     google_directory_user_create_op,
     google_directory_user_update_op,
 )
-from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
+from teamster.kipptaf.google.resources import GoogleDirectoryResource
 
 GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
     customer_id="C029u7m0n",

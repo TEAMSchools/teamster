@@ -12,7 +12,11 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 from .. import CODE_LOCATION
 from .resources import SmartRecruitersResource
@@ -22,11 +26,14 @@ from .schema import ASSET_FIELDS
 def build_smartrecruiters_report_asset(
     asset_name, code_location, report_id
 ) -> AssetsDefinition:
+    asset_key = [code_location, "smartrecruiters", asset_name]
+
     @asset(
         key=[code_location, "smartrecruiters", asset_name],
         metadata={"report_id": report_id},
         io_manager_key="io_manager_gcs_avro",
         group_name="smartrecruiters",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(
         context: AssetExecutionContext, smartrecruiters: SmartRecruitersResource
@@ -73,14 +80,15 @@ def build_smartrecruiters_report_asset(
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
         # context.log.debug(df.dtypes)
 
-        yield Output(
-            value=(
-                df.to_dict(orient="records"),
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name]
-                ),
-            ),
-            metadata={"records": df.shape[0]},
+        records = df.to_dict(orient="records")
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
+
+        yield Output(value=(records, schema), metadata={"records": df.shape[0]})
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=schema
         )
 
     return _asset
