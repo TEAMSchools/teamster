@@ -22,10 +22,6 @@ locations:
           - kippmiami-ps-ssh-username
           - kippmiami-renlearn-sftp-password
           - kippmiami-renlearn-sftp-username
-          - mssql-password
-          - mssql-username
-          - pythonanywhere-sftp-password
-          - pythonanywhere-sftp-username
         volumes:
           - name: secret-volume
             secret:
