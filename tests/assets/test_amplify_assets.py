@@ -1,13 +1,11 @@
 import random
 
-from dagster import EnvVar, materialize
-from dagster_gcp import GCSResource
+from dagster import materialize
 
-from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.kipptaf.amplify.assets import build_mclass_asset
-from teamster.kipptaf.amplify.resources import MClassResource
+from teamster.kipptaf.resources import MCLASS_RESOURCE
 from teamster.staging import LOCAL_TIMEZONE
 
 
@@ -26,14 +24,8 @@ def _test_asset(asset_name, dyd_payload, partition_start_date):
         assets=[asset],
         partition_key=partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
         resources={
-            "io_manager_gcs_avro": GCSIOManager(
-                gcs=GCSResource(project=GCS_PROJECT_NAME),
-                gcs_bucket="teamster-staging",
-                object_type="avro",
-            ),
-            "mclass": MClassResource(
-                username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
-            ),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "mclass": MCLASS_RESOURCE,
         },
     )
 

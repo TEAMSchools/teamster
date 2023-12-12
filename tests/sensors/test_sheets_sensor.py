@@ -1,7 +1,7 @@
 from dagster import build_sensor_context, instance_for_test
 
+from teamster.kipptaf.google.resources import GoogleSheetsResource
 from teamster.kipptaf.google.sheets.assets import build_gsheet_asset
-from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
 from teamster.kipptaf.google.sheets.sensors import google_sheets_asset_sensor
 
 test_asset = build_gsheet_asset(

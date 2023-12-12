@@ -1,18 +1,16 @@
 import random
 
 import pendulum
-from dagster import AssetsDefinition, EnvVar, instance_for_test, materialize
-from dagster_gcp import GCSResource
+from dagster import AssetsDefinition, instance_for_test, materialize
 
-from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.alchemer.assets import (
     survey,
     survey_campaign,
     survey_question,
     survey_response,
 )
-from teamster.kipptaf.alchemer.resources import AlchemerResource
+from teamster.kipptaf.resources import ALCHEMER_RESOURCE
 
 SURVEY_IDS = ["7151740"]
 
@@ -30,16 +28,8 @@ def _test_asset(asset: AssetsDefinition, partition_keys):
                 random.randint(a=0, b=(len(partition_keys) - 1))
             ],
             resources={
-                "io_manager_gcs_avro": GCSIOManager(
-                    gcs=GCSResource(project=GCS_PROJECT_NAME),
-                    gcs_bucket="teamster-staging",
-                    object_type="avro",
-                ),
-                "alchemer": AlchemerResource(
-                    api_token=EnvVar("ALCHEMER_API_TOKEN"),
-                    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
-                    api_version="v5",
-                ),
+                "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+                "alchemer": ALCHEMER_RESOURCE,
             },
         )
 

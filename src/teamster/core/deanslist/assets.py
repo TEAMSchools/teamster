@@ -14,7 +14,11 @@ from dagster import (
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.deanslist.schema import ASSET_FIELDS
 from teamster.core.utils.classes import FiscalYear
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 
 def build_deanslist_static_partition_asset(
@@ -25,13 +29,16 @@ def build_deanslist_static_partition_asset(
     op_tags={},
     params={},
 ) -> AssetsDefinition:
+    asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
+
     @asset(
-        key=[code_location, "deanslist", asset_name.replace("-", "_")],
+        key=asset_key,
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="deanslist",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
@@ -41,14 +48,17 @@ def build_deanslist_static_partition_asset(
             params=params,
         )
 
+        data = endpoint_content["data"]
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+        )
+
         yield Output(
-            value=(
-                endpoint_content["data"],
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-                ),
-            ),
-            metadata={"records": endpoint_content["row_count"]},
+            value=(data, schema), metadata={"records": endpoint_content["row_count"]}
+        )
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=data, schema=schema
         )
 
     return _asset
@@ -62,13 +72,16 @@ def build_deanslist_multi_partition_asset(
     op_tags={},
     params={},
 ) -> AssetsDefinition:
+    asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
+
     @asset(
-        key=[code_location, "deanslist", asset_name.replace("-", "_")],
+        key=asset_key,
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="deanslist",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         school_partition = context.partition_key.keys_by_dimension["school"]
@@ -131,14 +144,14 @@ def build_deanslist_multi_partition_asset(
             if not is_time_bound:
                 break
 
-        yield Output(
-            value=(
-                all_data,
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-                ),
-            ),
-            metadata={"records": total_row_count},
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+        )
+
+        yield Output(value=(all_data, schema), metadata={"records": total_row_count})
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=all_data, schema=schema
         )
 
     return _asset
