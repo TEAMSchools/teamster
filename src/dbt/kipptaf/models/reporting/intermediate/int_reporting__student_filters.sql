@@ -75,6 +75,31 @@ with
             end as iready_proficiency,
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
+    ),
+
+    composite_only as (
+        select
+            cast(left(bss.school_year, 4) as int) as academic_year,
+            bss.student_primary_id as student_number,
+            'DIBELS Benchmark' as assessment_type,
+            bss.benchmark_period as mclass_period,
+            u.measure as mclass_measure,
+            u.level as mclass_measure_level,
+        from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
+        inner join
+            {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
+            on bss.surrogate_key = u.surrogate_key
+        where
+            cast(left(bss.school_year, 4) as int) = {{ var("current_academic_year") }}
+            and u.measure = 'Composite'
+    ),
+
+    dibels_overall_composite_by_window as (
+        select distinct academic_year, student_number, p.boy, p.moy, p.eoy,
+        from
+            composite_only pivot (
+                max(mclass_measure_level) for mclass_period in ('BOY', 'MOY', 'EOY')
+            ) as p
     )
 
 select
@@ -86,6 +111,10 @@ select
     sj.iready_subject,
     sj.illuminate_subject_area,
     sj.powerschool_credittype,
+
+    coalesce(db.boy, 'No Test') as dibels_boy_composite,
+    coalesce(db.moy, 'No Test') as dibels_moy_composite,
+    coalesce(db.eoy, 'No Test') as dibels_eoy_composite,
 
     if(nj.subject is not null, true, false) as bucket_two,
 
@@ -128,4 +157,8 @@ left join
     on co.student_number = pr.student_id
     and co.academic_year = pr.academic_year_plus
     and sj.iready_subject = pr.subject
+left join
+    dibels_overall_composite_by_window as db
+    on co.academic_year = db.academic_year
+    and co.student_number = db.student_number
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
