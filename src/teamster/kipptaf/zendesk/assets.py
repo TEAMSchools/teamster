@@ -7,7 +7,7 @@ from dagster import (
     ResourceParam,
     asset,
 )
-from fastavro import writer
+from fastavro import parse_schema, writer
 from zenpy import Zenpy
 from zenpy.lib.exception import RecordNotFoundException
 
@@ -30,8 +30,10 @@ def ticket_metrics_archive(
     context: AssetExecutionContext, zendesk: ResourceParam[Zenpy]
 ):
     data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
-    schema = get_avro_record_schema(
-        name="ticket_metrics", fields=ASSET_FIELDS["ticket_metrics"]
+    schema = parse_schema(
+        schema=get_avro_record_schema(
+            name="ticket_metrics", fields=ASSET_FIELDS["ticket_metrics"]
+        )
     )
 
     partition_key = pendulum.parser.parse(context.partition_key)

@@ -31,7 +31,7 @@ def google_sheets_asset_sensor(
         for a in google_sheets_assets
     }
 
-    asset_keys = []
+    requested_asset_keys = []
     for sheet_id, asset_keys in asset_keys_by_sheet_id.items():
         context.log.info(f"{sheet_id}: {asset_keys}")
 
@@ -50,13 +50,13 @@ def google_sheets_asset_sensor(
                     f"last_observation_timestamp:\t{latest_observation_timestamp}"
                 )
 
-                asset_keys.extend(asset_keys)
+                requested_asset_keys.extend(asset_keys)
 
                 cursor[sheet_id] = last_update_timestamp
         except APIError as e:
             context.log.exception(e)
 
-    if asset_keys:
+    if requested_asset_keys:
         return SensorResult(
             run_requests=[
                 RunRequest(
@@ -64,7 +64,7 @@ def google_sheets_asset_sensor(
                     run_config=RunConfig(
                         ops={
                             "asset_observation_op": ObservationOpConfig(
-                                asset_keys=asset_keys
+                                asset_keys=requested_asset_keys
                             )
                         }
                     ),
