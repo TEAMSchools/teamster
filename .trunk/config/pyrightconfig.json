@@ -1,4 +1,9 @@
 {
-  "venvPath": "/workspaces/teamster/.venv",
-  "venv": "in-project"
+  "venvPath": ".venv",
+  "venv": "in-project",
+  "executionEnvironments": [
+    {
+      "root": "src"
+    }
+  ]
 }
