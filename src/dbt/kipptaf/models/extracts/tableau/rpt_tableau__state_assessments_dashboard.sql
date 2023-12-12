@@ -192,14 +192,9 @@ with
                 then 'Has IEP'
                 else 'No IEP'
             end as iep_status,
-            if(studentwithdisabilities in ('504', 'B'), true, false) as is_504,
+            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
             case
-                englishlearnerel
-                when 'Y'
-                then true
-                when 'N'
-                then false
-                else null
+                englishlearnerel when 'Y' then true when 'N' then false else null
             end as lep_status,
             case
                 when assessmentgrade in ('Grade 10', 'Grade 11')
