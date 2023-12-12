@@ -51,3 +51,11 @@ stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run sta
 fivetran-schema = { shell = "python .pdm/scripts/fivetran-schema.py" }
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
+
+[tool.pyright]
+venv = ".venv"
+venvPath = "in-project"
+analyzeUnannotatedFunctions = false
+reportInvalidStringEscapeSequence = false
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportOptionalMemberAccess = false
