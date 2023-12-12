@@ -15,6 +15,7 @@ select
     test_round,
     test_round_date,
     percentile,
+    overall_placement,
     overall_scale_score,
     percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
@@ -24,7 +25,7 @@ from {{ ref("base_iready__diagnostic_results") }}
 where
     rn_subj_round = 1
     and test_round != 'Outside Round'
-    and academic_year_int = {{ var("current_academic_year") }}
+    and academic_year_int >= {{ var("current_academic_year") }} - 1
 
 union all
 
@@ -36,6 +37,7 @@ select
     ir.test_round,
     ir.test_round_date,
     ir.percentile,
+    ir.overall_placement,
     ir.overall_scale_score,
     ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
