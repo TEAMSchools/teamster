@@ -161,4 +161,5 @@ left join
     dibels_overall_composite_by_window as db
     on co.academic_year = db.academic_year
     and co.student_number = db.student_number
+    and sj.iready_subject = 'Reading'
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
