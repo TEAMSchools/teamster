@@ -38,6 +38,12 @@ NJSMART_POWERSCHOOL_FIELDS = [
         "type": ["null", "string"],
         "default": None,
     },
+    {"name": "declassificationspeddate", "type": ["null", "string"], "default": None},
+    {"name": "mddisabling_condition1", "type": ["null", "string"], "default": None},
+    {"name": "mddisabling_condition2", "type": ["null", "string"], "default": None},
+    {"name": "mddisabling_condition3", "type": ["null", "string"], "default": None},
+    {"name": "mddisabling_condition4", "type": ["null", "string"], "default": None},
+    {"name": "mddisabling_condition5", "type": ["null", "string"], "default": None},
 ]
 
 ASSET_FIELDS = {

@@ -23,8 +23,18 @@ serviceAccount:
 # Dagster Cloud: Config for Dagster Cloud's hosted resources
 ####################################################################################################
 dagsterCloud:
-  # Specify the name of the secret containing the Dagster Cloud API token.
+  # Specify the name of the secret containing a Dagster Cloud agent token. This secret will be
+  # automatically referenced in the agent pod and any pods that the agent creates to run Dagster
+  # code, ensuring that all pods can authenticate with Dagster Cloud servers. The Helm chart
+  # expects this secret to already exist when it is installed.
   agentTokenSecretName: "dagster-cloud-agent-token"
+
+  # You can also set agentTokenValue to the value of a Dagster Cloud agent token instead of using
+  # agentTokenSecretName for authentication. However, if this value is set, the agent token's will
+  # be visible in plaintext in the description of the agent pod, as well as other pods that it creates.
+  # This is primarily useful if the agent is creating pods in multiple namespaces and you don't
+  # want to have to add the secret containing the agent token to each namespace.
+  # agentTokenValue: "your-agent-token-value-here"
 
   # Specify the Dagster Cloud deployments (e.g. dev, staging, prod) that the agent should serve.
   # Example:
