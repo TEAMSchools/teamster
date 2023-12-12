@@ -22,7 +22,8 @@ with
             case
                 when a.subject_area = 'Mathematics' then 'Math' else a.subject_area
             end as subject_area,
-            round(a.percent_correct / 100, 2) as percent_correct,  -- % correct field on Illuminate
+            -- % correct field on Illuminate
+            round(a.percent_correct / 100, 2) as percent_correct,
             count(distinct a.subject_area) over (
                 partition by
                     a.academic_year,
@@ -34,7 +35,7 @@ with
             -- Convert the scale scores to be ready to add 
             -- for sat composite score from the gsheet
             if(
-                response_type = 'overall',
+                a.response_type = 'overall',
                 case
                     when
                         a.scope = 'SAT'
