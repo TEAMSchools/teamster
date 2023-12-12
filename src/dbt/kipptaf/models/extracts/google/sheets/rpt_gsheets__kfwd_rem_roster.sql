@@ -22,7 +22,7 @@ with
             row_number() over (
                 partition by student order by transcript_date desc
             ) as rn_transcript
-        from {{ ref("stg_kippadb__gpa") }} as gpa
+        from {{ ref("stg_kippadb__gpa") }}
     )
 
 select
