@@ -31,6 +31,7 @@ select
     a.type as account_type,
 
     eis.hs_account_name,
+    eis.ecc_pursuing_degree_type,
 
     'Fall' as semester,
 
@@ -137,6 +138,7 @@ select
     a.type as account_type,
 
     eis.hs_account_name,
+    eis.ecc_pursuing_degree_type,
 
     'Spring' as semester,
 
