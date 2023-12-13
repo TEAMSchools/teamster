@@ -4,7 +4,7 @@ import pathlib
 from typing import Iterator, Sequence
 
 import oracledb
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import Any, ConfigurableResource, InitResourceContext
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, Row, create_engine, result
@@ -16,13 +16,13 @@ from .schema import ORACLE_AVRO_SCHEMA_TYPES
 
 class SqlAlchemyEngineResource(ConfigurableResource):
     dialect: str
-    driver: str = None
-    username: str = None
-    password: str = None
-    host: str = None
-    port: int = None
-    database: str = None
-    query: dict = None
+    driver: str | None = None
+    username: str | None = None
+    password: str | None = None
+    host: str | None = None
+    port: int | None = None
+    database: str | None = None
+    query: dict[str, Any] = {}
 
     _engine: Engine = PrivateAttr()
 
@@ -41,15 +41,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
             context.log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
 
-            if output_format is None:
-                context.log.info("Retrieving rows from all partitions")
-
-                output = self.result_to_tuple_list(
-                    partitions=cursor_result.partitions(size=partition_size)
-                )
-
-                context.log.info(f"Retrieved {len(output)} rows")
-            elif output_format in ["dict", "json"]:
+            if output_format in ["dict", "json"]:
                 context.log.info("Retrieving rows from all partitions")
 
                 cursor_result = cursor_result.mappings()
@@ -72,7 +64,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                                 "name": col[0].lower(),
                                 "type": [
                                     "null",
-                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),
+                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),  # type: ignore
                                 ],
                                 "default": None,
                             }
@@ -86,6 +78,14 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                     schema=avro_schema,
                     data_filepath=pathlib.Path(data_filepath).absolute(),
                 )
+            else:
+                context.log.info("Retrieving rows from all partitions")
+
+                output = self.result_to_tuple_list(
+                    partitions=cursor_result.partitions(size=partition_size)
+                )
+
+                context.log.info(f"Retrieved {len(output)} rows")
 
         return output
 
