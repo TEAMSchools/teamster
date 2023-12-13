@@ -16,13 +16,13 @@ from .schema import ORACLE_AVRO_SCHEMA_TYPES
 
 class SqlAlchemyEngineResource(ConfigurableResource):
     dialect: str
-    driver: str = None
-    username: str = None
-    password: str = None
-    host: str = None
-    port: int = None
-    database: str = None
-    query: dict = None
+    driver: str | None = None
+    username: str | None = None
+    password: str | None = None
+    host: str | None = None
+    port: int | None = None
+    database: str | None = None
+    query: dict[str, list[str] | str] = {}
 
     _engine: Engine = PrivateAttr()
 
