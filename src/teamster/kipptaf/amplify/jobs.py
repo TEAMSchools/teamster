@@ -8,6 +8,6 @@ mclass_asset_job = define_asset_job(
     partitions_def=mclass_assets[0].partitions_def,
 )
 
-__all__ = [
+_all = [
     mclass_asset_job,
 ]

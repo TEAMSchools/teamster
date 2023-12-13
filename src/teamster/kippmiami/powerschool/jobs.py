@@ -7,6 +7,6 @@ powerschool_nonpartition_asset_job = define_asset_job(
     selection=AssetSelection.assets(*nonpartition_assets),
 )
 
-__all__ = [
+_all = [
     powerschool_nonpartition_asset_job,
 ]

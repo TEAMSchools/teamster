@@ -21,6 +21,6 @@ def adp_wfn_update_workers_job():
     adp_wfn_update_workers_op(worker_data)
 
 
-__all__ = [
+_all = [
     adp_wfn_update_workers_job,
 ]

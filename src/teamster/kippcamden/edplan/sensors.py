@@ -10,6 +10,6 @@ sftp_sensor = build_sftp_sensor(
     minimum_interval_seconds=(60 * 10),
 )
 
-__all__ = [
+_all = [
     sftp_sensor,
 ]

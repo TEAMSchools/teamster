@@ -10,7 +10,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 from .. import CODE_LOCATION
 from .schema import ASSET_FIELDS
 
-__all__ = [
+_all = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "fldoe", a["asset_name"]],
         ssh_resource_key="ssh_couchdrop",

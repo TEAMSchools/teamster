@@ -93,7 +93,7 @@ def build_fivetran_assets(
     return [_assets]
 
 
-__all__ = []
+_all = []
 
 config_path = pathlib.Path(__file__).parent / "config"
 
@@ -114,7 +114,7 @@ for config_file in config_path.glob("*.yaml"):
         for table in schema["destination_tables"]:
             destination_tables.append(f"{destination_table_schema_name}.{table}")
 
-    __all__.extend(
+    _all.extend(
         build_fivetran_assets(
             connector_id=config["connector_id"],
             destination_tables=destination_tables,

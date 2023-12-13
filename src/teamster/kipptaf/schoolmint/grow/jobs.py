@@ -35,7 +35,7 @@ multi_partition_asset_job = define_asset_job(
     partitions_def=multi_partition_assets[0].partitions_def,
 )
 
-__all__ = [
+_all = [
     static_partition_asset_job,
     multi_partition_asset_job,
     schoolmint_grow_user_update_job,

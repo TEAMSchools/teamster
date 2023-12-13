@@ -60,6 +60,6 @@ def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
     )
 
 
-__all__ = [
+_all = [
     ldap_asset_sensor,
 ]

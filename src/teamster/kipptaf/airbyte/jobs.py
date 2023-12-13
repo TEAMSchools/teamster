@@ -28,6 +28,6 @@ def airbyte_start_syncs_job():
         airbyte_sync_op_aliased()
 
 
-__all__ = [
+_all = [
     airbyte_start_syncs_job,
 ]

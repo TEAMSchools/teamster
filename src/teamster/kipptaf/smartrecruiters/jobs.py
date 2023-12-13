@@ -8,6 +8,6 @@ smartrecruiters_report_asset_job = define_asset_job(
     selection=AssetSelection.assets(*smartrecruiters_report_assets),
 )
 
-__all__ = [
+_all = [
     smartrecruiters_report_asset_job,
 ]
