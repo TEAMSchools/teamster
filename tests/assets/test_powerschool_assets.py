@@ -5,7 +5,7 @@ from dagster import MonthlyPartitionsDefinition, materialize
 
 from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.resources import (
-    get_io_manager_gcs_avro,
+    get_io_manager_gcs_file,
     get_oracle_resource_powerschool,
     get_ssh_resource_powerschool,
 )
@@ -31,9 +31,9 @@ def _test_asset(asset_name, partitions_def=None, partition_column=None):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
-            "db_powerschool": get_oracle_resource_powerschool("staging"),
-            "ssh_powerschool": get_ssh_resource_powerschool("staging"),
+            "io_manager_gcs_file": get_io_manager_gcs_file("staging"),
+            "db_powerschool": get_oracle_resource_powerschool("STAGING"),
+            "ssh_powerschool": get_ssh_resource_powerschool("STAGING"),
         },
     )
 

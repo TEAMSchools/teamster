@@ -55,7 +55,4 @@ dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 [tool.pyright]
 venv = ".venv"
 venvPath = "in-project"
-analyzeUnannotatedFunctions = false
-reportInvalidStringEscapeSequence = false
-reportUnnecessaryTypeIgnoreComment = "warning"
 reportOptionalMemberAccess = false
