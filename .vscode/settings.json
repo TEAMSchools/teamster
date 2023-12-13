@@ -2,7 +2,6 @@
   "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
   "dbt.prefixGenerateModel": "stg",
   "dbt.queryLimit": 500,
-  "dbt.versionCheck": "status bar",
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
@@ -11,14 +10,7 @@
   "editor.wordWrap": "bounded",
   "editor.wordWrapColumn": 88,
   "githubPullRequests.ignoredPullRequestBranches": ["main"],
-  "python.analysis.autoImportCompletions": false,
-  "python.analysis.typeCheckingMode": "off",
   "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
-  "python.terminal.activateEnvironment": false,
-  "python.testing.pytestArgs": ["tests"],
-  "python.testing.pytestEnabled": true,
-  "python.testing.unittestEnabled": false,
-  "trunk.numJobs": 1,
   "files.associations": {
     "*.toml": "toml",
     "*.env": "shellscript",
@@ -43,5 +35,13 @@
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "dbt.enableNewLineagePanel": true,
-  "dbt.enableNewQueryPanel": true
+  "dbt.enableNewQueryPanel": true,
+  "testing.showAllMessages": true,
+  "python.testing.pytestArgs": ["tests", "--capture=no"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "trunk.numJobs": 1,
+  "python.createEnvironment.trigger": "off",
+  "python.terminal.activateEnvironment": false
 }

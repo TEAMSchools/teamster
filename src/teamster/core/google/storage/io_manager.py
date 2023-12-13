@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 import fastavro
 import pendulum
-from dagster import Any, Dict, InputContext, MultiPartitionKey, OutputContext
+from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
@@ -14,7 +14,7 @@ from teamster.core.utils.classes import FiscalYear
 
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):
-    def _parse_datetime_partition_value(self, partition_value):
+    def _parse_datetime_partition_value(self, partition_value: str):
         datetime_formats = iter(["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ssZZ"])
         while True:
             try:
@@ -26,7 +26,7 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
 
     def _get_hive_partition(
         self, partition_value: str, partition_key: str = "key"
-    ) -> list:
+    ) -> str:
         try:
             datetime = self._parse_datetime_partition_value(partition_value)
             return "/".join(
@@ -57,7 +57,7 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
 
     def _get_paths_for_partitions(
         self, context: InputContext | OutputContext
-    ) -> Dict[str, UPath]:
+    ) -> dict[str, UPath]:
         if not context.has_asset_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type but the asset"
@@ -100,8 +100,7 @@ class AvroGCSIOManager(GCSUPathIOManager):
         records, schema = obj
 
         if self.path_exists(path):
-            context.log.warning(f"Removing existing GCS key: {path}")
-            self.unlink(path)
+            context.log.warning(f"Existing GCS key: {path}")
 
         backoff(
             fn=fastavro.writer,
@@ -113,7 +112,6 @@ class AvroGCSIOManager(GCSUPathIOManager):
                 "schema": fastavro.parse_schema(schema),
                 "records": records,
                 "codec": "snappy",
-                # "strict_allow_default": True,
             },
         )
 
@@ -141,7 +139,9 @@ class GCSIOManager(GCSPickleIOManager):
 
     @property
     @cached_method
-    def _internal_io_manager(self) -> AvroGCSIOManager | PickledObjectGCSIOManager:
+    def _internal_io_manager(
+        self,
+    ) -> AvroGCSIOManager | PickledObjectGCSIOManager | None:
         if self.object_type == "avro":
             return AvroGCSIOManager(
                 bucket=self.gcs_bucket,

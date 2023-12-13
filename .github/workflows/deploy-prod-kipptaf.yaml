@@ -9,7 +9,6 @@ on:
       - pdm.lock
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kipptaf.yaml
-      - .dagster/dagster-cloud-kipptaf.yaml
       - src/teamster/core/**
       - src/teamster/kipptaf/**
       - src/dbt/kipptaf/**
