@@ -43,7 +43,11 @@ USER_PERSON_FIELDS = [
     {"name": "idautoPersonPreferredName", "type": ["null", "string"], "default": None},
     {"name": "idautoPersonRehireDate", "type": ["null", "string"], "default": None},
     {"name": "idautoPersonStatusOverride", "type": ["null", "string"], "default": None},
-    {"name": "idautoPersonEnableOverride", "type": ["null", "string"], "default": None},
+    {
+        "name": "idautoPersonEnableOverride",
+        "type": ["null", "boolean"],
+        "default": None,
+    },
     {"name": "idautoPersonTermDate", "type": ["null", "string"], "default": None},
     {"name": "idautoStatus", "type": ["null", "string"], "default": None},
     {"name": "info", "type": ["null", "string"], "default": None},
