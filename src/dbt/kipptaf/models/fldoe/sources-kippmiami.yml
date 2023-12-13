@@ -11,6 +11,14 @@ sources:
               - kippmiami
               - fldoe
               - stg_fldoe__fast
+      - name: stg_fldoe__fsa
+        meta:
+          dagster:
+            group: fldoe
+            asset_key:
+              - kippmiami
+              - fldoe
+              - stg_fldoe__fsa
       - name: int_fldoe__fast_standard_performance_unpivot
         meta:
           dagster:
