@@ -79,18 +79,16 @@ with
 
     composite_only as (
         select
-            cast(left(bss.school_year, 4) as int) as academic_year,
+            bss.academic_year,
             bss.student_primary_id as student_number,
-            'DIBELS Benchmark' as assessment_type,
             bss.benchmark_period as mclass_period,
-            u.measure as mclass_measure,
             u.level as mclass_measure_level,
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         where
-            cast(left(bss.school_year, 4) as int) = {{ var("current_academic_year") }}
+            bss.academic_year = {{ var("current_academic_year") }}
             and u.measure = 'Composite'
     ),
 
