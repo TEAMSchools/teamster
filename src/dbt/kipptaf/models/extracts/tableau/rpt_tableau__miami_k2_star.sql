@@ -4,7 +4,7 @@ with
         union all
         select 'Math' as iready_subject, 'MATH' as ps_credittype,
     ),
-    
+
     star as (
         select
             s.student_identifier as student_number,
@@ -14,31 +14,30 @@ with
             s.scaled_score,
             s.current_sgp,
             s.completed_date,
+
             d.domain_name,
             d.standard_name,
             d.standard_description,
             d.standard_mastery_level,
             d.standard_percent_mastery,
-            (
-                case
-                    when s._dagster_partition_subject = 'SR'
-                    then 'Reading'
-                    when s._dagster_partition_subject = 'SM'
-                    then 'Math'
-                    when s._dagster_partition_subject = 'SEL'
-                    then 'Early Literacy'
-                end
-            ) as subject,
-            (
-                case
-                    when s.screening_period_window_name = 'Fall'
-                    then 'BOY'
-                    when s.screening_period_window_name = 'Winter'
-                    then 'MOY'
-                    when s.screening_period_window_name = 'Spring'
-                    then 'EOY'
-                end
-            ) as administration_window,
+
+            case
+                when s._dagster_partition_subject = 'SR'
+                then 'Reading'
+                when s._dagster_partition_subject = 'SM'
+                then 'Math'
+                when s._dagster_partition_subject = 'SEL'
+                then 'Early Literacy'
+            end as subject,
+            case
+                when s.screening_period_window_name = 'Fall'
+                then 'BOY'
+                when s.screening_period_window_name = 'Winter'
+                then 'MOY'
+                when s.screening_period_window_name = 'Spring'
+                then 'EOY'
+            end as administration_window,
+
             row_number() over (
                 partition by
                     s.student_identifier,
@@ -62,29 +61,7 @@ with
             domain_name,
             relative_placement,
         from
-            (
-                select
-                    student_id,
-                    subject,
-                    academic_year_int,
-                    start_date,
-                    completion_date,
-                    phonics_relative_placement,
-                    algebra_and_algebraic_thinking_relative_placement,
-                    geometry_relative_placement,
-                    measurement_and_data_relative_placement,
-                    number_and_operations_relative_placement,
-                    high_frequency_words_relative_placement,
-                    phonological_awareness_relative_placement,
-                    reading_comprehension_informational_text_relative_placement,
-                    reading_comprehension_literature_relative_placement,
-                    reading_comprehension_overall_relative_placement,
-                    vocabulary_relative_placement,
-                    comprehension_informational_text_relative_placement,
-                    comprehension_literature_relative_placement,
-                    comprehension_overall_relative_placement,
-                from {{ ref("stg_iready__diagnostic_results") }}
-            ) unpivot (
+            {{ ref("stg_iready__diagnostic_results") }} unpivot (
                 relative_placement for domain_name in (
                     phonics_relative_placement,
                     algebra_and_algebraic_thinking_relative_placement,
@@ -103,6 +80,7 @@ with
                 )
             )
     )
+
 select
     co.student_number,
     co.lastfirst as student_name,
