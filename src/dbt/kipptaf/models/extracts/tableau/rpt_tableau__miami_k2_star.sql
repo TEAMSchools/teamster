@@ -49,36 +49,6 @@ with
         left join
             {{ ref("stg_renlearn__star_dashboard_standards") }} as d
             on s.assessment_id = d.assessment_id
-    ),
-
-    iready_unpivot as (
-        select
-            student_id,
-            subject,
-            academic_year_int,
-            start_date,
-            completion_date,
-            domain_name,
-            relative_placement,
-        from
-            {{ ref("stg_iready__diagnostic_results") }} unpivot (
-                relative_placement for domain_name in (
-                    phonics_relative_placement,
-                    algebra_and_algebraic_thinking_relative_placement,
-                    geometry_relative_placement,
-                    measurement_and_data_relative_placement,
-                    number_and_operations_relative_placement,
-                    high_frequency_words_relative_placement,
-                    phonological_awareness_relative_placement,
-                    reading_comprehension_informational_text_relative_placement,
-                    reading_comprehension_literature_relative_placement,
-                    reading_comprehension_overall_relative_placement,
-                    vocabulary_relative_placement,
-                    comprehension_informational_text_relative_placement,
-                    comprehension_literature_relative_placement,
-                    comprehension_overall_relative_placement
-                )
-            )
     )
 
 select
@@ -137,7 +107,7 @@ left join
     and ar = ir.test_round
     and ir.rn_subj_round = 1
 left join
-    iready_unpivot as up
+    {{ ref("int_iready__domain_unpivot") }} as up
     on ir.student_id = up.student_id
     and ir.academic_year_int = up.academic_year_int
     and ir.subject = up.subject
@@ -156,7 +126,7 @@ left join
     and not e.is_dropped_section
     and e.rn_credittype_year = 1
 where
-    co.academic_year = 2023
+    co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
     and co.enroll_status = 0
     and co.region = 'Miami'
