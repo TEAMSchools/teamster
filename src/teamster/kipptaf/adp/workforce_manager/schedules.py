@@ -57,7 +57,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
 
-__all__ = [
+_all = [
     adp_wfm_daily_partition_asset_job_schedule,
     adp_wfm_dynamic_partition_schedule,
 ]

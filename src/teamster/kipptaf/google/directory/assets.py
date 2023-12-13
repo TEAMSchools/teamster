@@ -160,7 +160,7 @@ google_directory_partitioned_assets = [
     members,
 ]
 
-__all__ = [
+_all = [
     groups,
     members,
     orgunits,

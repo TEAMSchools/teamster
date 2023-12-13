@@ -164,7 +164,7 @@ def survey_response(
 
 survey_metadata_assets = [survey, survey_campaign, survey_question]
 
-__all__ = [
+_all = [
     survey,
     survey_question,
     survey_campaign,

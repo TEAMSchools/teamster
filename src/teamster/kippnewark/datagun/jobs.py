@@ -7,6 +7,6 @@ powerschool_extract_asset_job = define_asset_job(
     selection=AssetSelection.assets(*powerschool_extract_assets),
 )
 
-__all__ = [
+_all = [
     powerschool_extract_asset_job,
 ]

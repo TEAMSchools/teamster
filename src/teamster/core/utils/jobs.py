@@ -8,6 +8,6 @@ def asset_observation_job():
     asset_observation_op()
 
 
-__all__ = [
+_all = [
     asset_observation_job,
 ]

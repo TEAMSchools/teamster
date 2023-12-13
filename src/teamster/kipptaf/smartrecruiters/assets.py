@@ -101,6 +101,6 @@ smartrecruiters_report_assets = [
     )["assets"]
 ]
 
-__all__ = [
+_all = [
     *smartrecruiters_report_assets,
 ]

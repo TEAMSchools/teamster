@@ -181,7 +181,7 @@ def alchemer_survey_response_asset_sensor(
     )
 
 
-__all__ = [
+_all = [
     alchemer_survey_metadata_asset_sensor,
     alchemer_survey_response_asset_sensor,
 ]

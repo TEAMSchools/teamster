@@ -63,7 +63,7 @@ def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource)
     )
 
 
-__all__ = [
+_all = [
     form,
     responses,
 ]

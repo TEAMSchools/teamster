@@ -111,6 +111,6 @@ def fivetran_sync_status_sensor(
         )
 
 
-__all__ = [
+_all = [
     fivetran_sync_status_sensor,
 ]

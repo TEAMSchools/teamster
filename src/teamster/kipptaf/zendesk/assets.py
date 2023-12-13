@@ -88,6 +88,6 @@ def ticket_metrics_archive(
     return data_filepath
 
 
-__all__ = [
+_all = [
     ticket_metrics_archive,
 ]

@@ -53,7 +53,7 @@ littlesis_extract_asset_job = define_asset_job(
 )
 
 
-__all__ = [
+_all = [
     blissbook_extract_asset_job,
     clever_extract_asset_job,
     coupa_extract_asset_job,

@@ -71,7 +71,7 @@ partition_assets = [
     *transaction_date_partition_assets,
 ]
 
-__all__ = [
+_all = [
     *assignment_assets,
     *full_assets,
     *nonpartition_assets,
