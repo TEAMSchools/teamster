@@ -13,3 +13,5 @@ assets:
   - asset_name: spenrollments
   - asset_name: test
   - asset_name: testscore
+  - asset_name: u_clg_et_stu
+  - asset_name: u_clg_et_stu_alt

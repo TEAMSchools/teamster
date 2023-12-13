@@ -31,7 +31,7 @@ gcloud config set project teamster-332318
 gcloud config set compute/region us-central1
 
 # update the kubectl configuration to use the plugin
-gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid
+gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
 
 # install dbt deps and generate manifests
 # trunk-ignore(shellcheck/SC2312)

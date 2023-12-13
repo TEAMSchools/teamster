@@ -27,6 +27,8 @@ with
             sr.assignment_status,
             sr.mail,
             sr.report_to_mail,
+            sr.sam_account_name,
+            sr.report_to_sam_account_name,
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
         left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
         left join
@@ -131,6 +133,14 @@ with
             is_published
             /* 2023 is first year with new rubric */
             and observed_at >= timestamp(date(2023, 7, 1))
+            /* remove self coaching observations*/
+            and case
+                when
+                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and teacher_id = observer_id
+                then false
+                else true
+            end
     ),
 
     observation_measurements as (
@@ -264,6 +274,8 @@ with
             s.assignment_status,
             s.mail,
             s.report_to_mail,
+            s.sam_account_name,
+            s.report_to_sam_account_name,
 
             o.observation_id,
             o.teacher_id,
@@ -327,6 +339,8 @@ with
             s.assignment_status,
             s.mail,
             s.report_to_mail,
+            s.sam_account_name,
+            s.report_to_sam_account_name,
 
             o.observation_id,
             o.teacher_id,
@@ -365,25 +379,6 @@ with
     ),
 
     historical_overall_scores as (
-        select
-            s.employee_number,
-            s.academic_year,
-            s.form_term,
-            os.etr_score,
-            os.so_score,
-            os.overall_score,
-        from scaffold as s
-        left join
-            observations as o
-            on o.observed_at between s.start_date and s.end_date
-            /* Matches on name for PM Rounds to distinguish Self and Coach */
-            and s.form_short_name = o.form_short_name
-            and s.user_id = o.teacher_id
-        left join pm_overall_scores as os on o.observation_id = os.observation_id
-        where s.form_type = 'PM'
-
-        union all
-
         select
             employee_number,
             academic_year,
@@ -509,6 +504,8 @@ with
             od.rn_submission,
             od.mail,
             od.report_to_mail,
+            od.sam_account_name,
+            od.report_to_sam_account_name,
         from observation_details as od
         left join pm_overall_scores as os on od.observation_id = os.observation_id
         where od.rn_submission = 1
@@ -557,6 +554,8 @@ with
             1 as rn_submission,
             r.mail,
             r.report_to_mail,
+            r.sam_account_name,
+            r.report_to_sam_account_name,
         from historical_data as hd
         left join
             {{ ref("base_people__staff_roster_history") }} as sr
@@ -617,6 +616,8 @@ select
     rn_submission,
     mail,
     report_to_mail,
+    sam_account_name,
+    report_to_sam_account_name,
     case
         when etr_score >= 3.5
         then 4
@@ -634,7 +635,7 @@ select
         then 3
         when so_score >= 1.945
         then 2
-        when so_score < 0.95
+        when so_score < 1.95
         then 1
     end as so_tier,
     case
