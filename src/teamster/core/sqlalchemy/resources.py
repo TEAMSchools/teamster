@@ -4,7 +4,7 @@ import pathlib
 from typing import Iterator, Sequence
 
 import oracledb
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import Any, ConfigurableResource, InitResourceContext
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, Row, create_engine, result
@@ -22,7 +22,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     host: str | None = None
     port: int | None = None
     database: str | None = None
-    query: dict[str, str] = {}
+    query: dict[str, Any] = {}
 
     _engine: Engine = PrivateAttr()
 
@@ -64,7 +64,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                                 "name": col[0].lower(),
                                 "type": [
                                     "null",
-                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),
+                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),  # type: ignore
                                 ],
                                 "default": None,
                             }
