@@ -6,7 +6,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
-__all__ = [
+_all = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "edplan", a["asset_name"]],
         avro_schema=get_avro_record_schema(

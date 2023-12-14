@@ -19,7 +19,7 @@ nonpartition_asset_job_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-__all__ = [
+_all = [
     last_modified_schedule,
     nonpartition_asset_job_schedule,
 ]

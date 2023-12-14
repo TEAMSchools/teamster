@@ -42,7 +42,7 @@ all_assets = [
     )["assets"]
 ]
 
-__all__ = [
+_all = [
     *all_assets,
     *njgpa_assets,
 ]

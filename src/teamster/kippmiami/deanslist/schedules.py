@@ -56,7 +56,7 @@ def deanslist_comm_log_midday_job_schedule():
         )
 
 
-__all__ = [
+_all = [
     deanslist_comm_log_midday_job_schedule,
     deanslist_multi_partition_asset_job_schedule,
     deanslist_static_partition_asset_job_schedule,

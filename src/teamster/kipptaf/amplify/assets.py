@@ -75,6 +75,6 @@ mclass_assets = [
     )["assets"]
 ]
 
-__all__ = [
+_all = [
     *mclass_assets,
 ]

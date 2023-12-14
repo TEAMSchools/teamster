@@ -84,7 +84,7 @@ def fivetran_start_syncs_job():
             fivetran_sync_op_aliased()
 
 
-__all__ = [
+_all = [
     fivetran_adp_workforce_now_start_resync_job,
     fivetran_adp_workforce_now_start_sync_job,
     fivetran_illuminate_start_sync_job,

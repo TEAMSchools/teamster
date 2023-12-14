@@ -20,6 +20,6 @@ def google_forms_asset_job_schedule():
         )
 
 
-__all__ = [
+_all = [
     google_forms_asset_job_schedule,
 ]

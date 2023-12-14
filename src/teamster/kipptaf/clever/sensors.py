@@ -89,6 +89,6 @@ def clever_reports_sftp_sensor(
     )
 
 
-__all__ = [
+_all = [
     clever_reports_sftp_sensor,
 ]

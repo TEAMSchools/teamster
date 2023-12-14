@@ -7,6 +7,6 @@ ldap_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}_ldap_asset_job", selection=AssetSelection.assets(*assets)
 )
 
-__all__ = [
+_all = [
     ldap_asset_job,
 ]

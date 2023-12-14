@@ -9,6 +9,6 @@ ldap_asset_job_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-__all__ = [
+_all = [
     ldap_asset_job_schedule,
 ]

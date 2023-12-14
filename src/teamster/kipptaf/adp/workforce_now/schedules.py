@@ -9,6 +9,6 @@ adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-__all__ = [
+_all = [
     adp_wfn_worker_fields_update_schedule,
 ]
