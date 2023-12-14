@@ -1,20 +1,18 @@
 import json
 
 import pendulum
-from dagster import RunConfig, RunRequest, SensorEvaluationContext, SensorResult, sensor
+from dagster import AssetObservation, SensorEvaluationContext, SensorResult, sensor
 from gspread.exceptions import APIError
 
 from ... import CODE_LOCATION
 from ..resources import GoogleSheetsResource
 from .assets import google_sheets_assets
-from .jobs import asset_observation_job
-from .ops import ObservationOpConfig
 
 ASSET_KEYS_BY_SHEET_ID = {
-    a.metadata["sheet_id"].value: [
+    a.metadata_by_key[a.key]["sheet_id"]: [
         b.key
         for b in google_sheets_assets
-        if b.metadata["sheet_id"].value == a.metadata["sheet_id"].value
+        if b.metadata_by_key[b.key]["sheet_id"] == a.metadata_by_key[a.key]["sheet_id"]
     ]
     for a in google_sheets_assets
 }
@@ -23,14 +21,14 @@ ASSET_KEYS_BY_SHEET_ID = {
 @sensor(
     name=f"{CODE_LOCATION}_google_sheets_asset_sensor",
     minimum_interval_seconds=(60 * 10),
-    job=asset_observation_job,
+    asset_selection=google_sheets_assets,
 )
 def google_sheets_asset_sensor(
     context: SensorEvaluationContext, gsheets: GoogleSheetsResource
 ) -> SensorResult:
     cursor: dict = json.loads(context.cursor or "{}")
 
-    requested_asset_keys = []
+    asset_events = []
     for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID.items():
         context.log.info(sheet_id)
 
@@ -45,27 +43,15 @@ def google_sheets_asset_sensor(
 
             if last_update_timestamp > last_materialization_timestamp:
                 context.log.info(asset_keys)
-                requested_asset_keys.extend(asset_keys)
+                asset_events.extend(
+                    [AssetObservation(asset_key=asset_key) for asset_key in asset_keys]
+                )
 
                 cursor[sheet_id] = last_update_timestamp
         except APIError as e:
             context.log.exception(e)
 
-    return SensorResult(
-        run_requests=[
-            RunRequest(
-                run_key=f"{context.sensor_name}_{pendulum.now().timestamp()}",
-                run_config=RunConfig(
-                    ops={
-                        "asset_observation_op": ObservationOpConfig(
-                            asset_keys=requested_asset_keys
-                        )
-                    }
-                ),
-            )
-        ],
-        cursor=json.dumps(obj=cursor),
-    )
+    return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
 _all = [
