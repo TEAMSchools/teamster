@@ -1,6 +1,3 @@
-import json
-import pathlib
-
 from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, dbt_assets
 
@@ -10,10 +7,7 @@ from teamster.core.dbt.assets import (
 )
 
 from .. import CODE_LOCATION
-
-dbt_manifest = json.loads(
-    s=pathlib.Path(f"src/dbt/{CODE_LOCATION}/target/manifest.json").read_text()
-)
+from .manifest import dbt_manifest
 
 dagster_dbt_translator = CustomDagsterDbtTranslator(
     asset_key_prefix=CODE_LOCATION, source_asset_key_prefix=CODE_LOCATION
