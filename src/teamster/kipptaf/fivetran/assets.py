@@ -1,5 +1,5 @@
 import pathlib
-from typing import Iterator, Mapping, Optional, Sequence
+from typing import Iterator, Optional, Sequence
 
 import yaml
 from dagster import (
@@ -11,11 +11,9 @@ from dagster import (
     Nothing,
     OpExecutionContext,
     Output,
-    ResourceDefinition,
 )
 from dagster import _check as check
 from dagster import multi_asset
-from dagster._core.definitions.metadata import MetadataUserInput
 
 from .. import CODE_LOCATION
 
@@ -32,13 +30,8 @@ def generate_materializations(
 def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
-    io_manager_key: Optional[str] = None,
     asset_key_prefix: Sequence[str] = [],
-    metadata_by_table_name: Mapping[str, MetadataUserInput] = {},
-    table_to_asset_key_map: Mapping[str, AssetKey] = {},
-    resource_defs: Mapping[str, ResourceDefinition] = {},
     group_name: Optional[str] = None,
-    op_tags: Mapping[str, Any] = {},
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(
         asset_key_prefix, "asset_key_prefix", of_type=str
@@ -49,28 +42,16 @@ def build_fivetran_assets(
         for table in destination_tables
     }
 
-    user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
-
-    _metadata_by_table_name = check.opt_mapping_param(
-        metadata_by_table_name, "metadata_by_table_name", key_type=str
-    )
-
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
         outs={
             "_".join(key.path): AssetOut(
-                key=user_facing_asset_keys[table],
-                dagster_type=Nothing,
-                io_manager_key=io_manager_key,
-                metadata=_metadata_by_table_name.get(table),
-                is_required=False,
+                key=tracked_asset_keys[table], dagster_type=Nothing, is_required=False
             )
             for table, key in tracked_asset_keys.items()
         },
         compute_kind="fivetran",
-        resource_defs=resource_defs,
         group_name=group_name,
-        op_tags=op_tags,
         can_subset=True,
     )
     def _assets(context: OpExecutionContext) -> Any:
@@ -92,7 +73,7 @@ def build_fivetran_assets(
     return [_assets]
 
 
-_all = []
+_all: list[AssetsDefinition] = []
 
 config_path = pathlib.Path(__file__).parent / "config"
 

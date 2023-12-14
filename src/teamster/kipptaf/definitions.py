@@ -31,32 +31,36 @@ from .adp import workforce_manager, workforce_now
 from .dbt import assets as dbt_assets
 from .dbt.schedules import _all as dbt_schedules
 from .dbt.sensors import _all as dbt_sensors
-from .google import directory, forms, sheets
+from .google import directory, forms
+from .google.sheets.assets import google_sheets_assets
+from .google.sheets.sensors import _all as google_sheets_sensors
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            achieve3k,
-            airbyte,
-            alchemer,
-            amplify,
-            clever,
-            datagun,
-            dayforce,
-            dbt_assets,
-            directory,
-            fivetran,
-            forms,
-            ldap,
-            schoolmint,
-            sheets,
-            smartrecruiters,
-            workforce_manager,
-            workforce_now,
-            zendesk,
-        ]
-    ),
+    assets=[
+        *google_sheets_assets,
+        *load_assets_from_modules(
+            modules=[
+                achieve3k,
+                airbyte,
+                alchemer,
+                amplify,
+                clever,
+                datagun,
+                dayforce,
+                dbt_assets,
+                directory,
+                fivetran,
+                forms,
+                ldap,
+                schoolmint,
+                smartrecruiters,
+                workforce_manager,
+                workforce_now,
+                zendesk,
+            ]
+        ),
+    ],
     schedules=[
         *airbyte.schedules,
         *amplify.schedules,
@@ -78,7 +82,7 @@ defs = Definitions(
         *clever.sensors,
         *dbt_sensors,
         *fivetran.sensors,
-        *sheets.sensors,
+        *google_sheets_sensors,
         *workforce_now.sensors,
     ],
     resources={
