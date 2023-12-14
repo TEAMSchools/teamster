@@ -1,5 +1,5 @@
 import pathlib
-from typing import Iterator
+from typing import Iterator, Mapping, Optional, Sequence
 
 import yaml
 from dagster import (
@@ -8,13 +8,10 @@ from dagster import (
     AssetMaterialization,
     AssetOut,
     AssetsDefinition,
-    Mapping,
     Nothing,
     OpExecutionContext,
-    Optional,
     Output,
     ResourceDefinition,
-    Sequence,
 )
 from dagster import _check as check
 from dagster import multi_asset
@@ -36,12 +33,12 @@ def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
     io_manager_key: Optional[str] = None,
-    asset_key_prefix: Sequence[str] = None,
-    metadata_by_table_name: Mapping[str, MetadataUserInput] = None,
-    table_to_asset_key_map: Mapping[str, AssetKey] = None,
-    resource_defs: Mapping[str, ResourceDefinition] = None,
+    asset_key_prefix: Sequence[str] = [],
+    metadata_by_table_name: Mapping[str, MetadataUserInput] = {},
+    table_to_asset_key_map: Mapping[str, AssetKey] = {},
+    resource_defs: Mapping[str, ResourceDefinition] = {},
     group_name: Optional[str] = None,
-    op_tags: Mapping[str, Any] = None,
+    op_tags: Mapping[str, Any] = {},
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(
         asset_key_prefix, "asset_key_prefix", of_type=str
@@ -77,7 +74,9 @@ def build_fivetran_assets(
         can_subset=True,
     )
     def _assets(context: OpExecutionContext) -> Any:
-        for materialization in generate_materializations(context.selected_asset_keys):
+        for materialization in generate_materializations(
+            list(context.selected_asset_keys)
+        ):
             # scan through all tables actually created,
             # if it was expected then emit an Output.
             # otherwise, emit a runtime AssetMaterialization
