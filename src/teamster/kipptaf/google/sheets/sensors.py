@@ -21,6 +21,7 @@ ASSET_KEYS_BY_SHEET_ID = {
 @sensor(
     name=f"{CODE_LOCATION}_google_sheets_asset_sensor",
     minimum_interval_seconds=(60 * 10),
+    asset_selection=google_sheets_assets,
 )
 def google_sheets_asset_sensor(
     context: SensorEvaluationContext, gsheets: GoogleSheetsResource
