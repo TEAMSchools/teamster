@@ -1,4 +1,5 @@
 import json
+from typing import Mapping, Optional
 
 from dagster import (
     Any,
@@ -6,9 +7,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    Mapping,
     Nothing,
-    Optional,
     Output,
     multi_asset,
 )
@@ -17,11 +16,9 @@ from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     MANIFEST_METADATA_KEY,
     _auto_materialize_policy_fn,
-)
-from dagster_dbt.dagster_dbt_translator import (
-    DbtManifestWrapper,
     default_group_from_dbt_resource_props,
 )
+from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
 
 class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
@@ -61,7 +58,9 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
             return dbt_resource_props["fqn"][1]
 
 
-def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
+def build_dbt_external_source_assets(
+    code_location, manifest, dagster_dbt_translator: CustomDagsterDbtTranslator
+):
     external_sources = [
         source
         for source in manifest["sources"].values()
@@ -79,7 +78,7 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
                 **dagster_dbt_translator.get_metadata(source),
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
-            },
+            },  # type: ignore
             auto_materialize_policy=AutoMaterializePolicy.eager(),
         )
         for source in external_sources
