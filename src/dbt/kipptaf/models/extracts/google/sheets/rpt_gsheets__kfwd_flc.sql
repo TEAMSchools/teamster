@@ -32,7 +32,7 @@ select
         then 'transferred out'
     end as enroll_status,
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
-    act.act_count,
+    act.act_count,  -- noqa: ST06
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
