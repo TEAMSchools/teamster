@@ -25,7 +25,7 @@ google_directory_user_sync_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-__all__ = [
+_all = [
     google_directory_nonpartitioned_asset_schedule,
     google_directory_role_assignments_sync_schedule,
     google_directory_user_sync_schedule,

@@ -18,4 +18,5 @@ def test_google_sheets_asset_sensor():
         ),
     )
 
-    assert len(sensor_result.run_requests) > 0
+    # trunk-ignore(bandit/B101)
+    assert len(sensor_result.asset_events) > 0  # type: ignore

@@ -75,6 +75,6 @@ def airbyte_job_status_sensor(
         )
 
 
-__all__ = [
+_all = [
     airbyte_job_status_sensor,
 ]

@@ -19,7 +19,7 @@ multi_partition_asset_job = define_asset_job(
     partitions_def=multi_partitions_def,
 )
 
-__all__ = [
+_all = [
     static_partition_asset_job,
     multi_partition_asset_job,
 ]

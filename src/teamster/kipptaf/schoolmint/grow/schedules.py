@@ -36,7 +36,7 @@ schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
     job=schoolmint_grow_user_update_job,
 )
 
-__all__ = [
+_all = [
     schoolmint_grow_static_partition_asset_job_schedule,
     multi_partition_asset_job_schedule,
     schoolmint_grow_user_update_job_schedule,

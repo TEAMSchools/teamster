@@ -1,8 +1,8 @@
-from .grow.assets import __all__ as assets
-from .grow.jobs import __all__ as jobs
-from .grow.schedules import __all__ as schedules
+from .grow.assets import _all as assets
+from .grow.jobs import _all as jobs
+from .grow.schedules import _all as schedules
 
-__all__ = [
+_all = [
     assets,
     jobs,
     schedules,

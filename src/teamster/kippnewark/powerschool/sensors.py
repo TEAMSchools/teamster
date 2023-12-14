@@ -10,6 +10,6 @@ partition_sensor = build_partition_sensor(
     minimum_interval_seconds=(60 * 10),
 )
 
-__all__ = [
+_all = [
     partition_sensor,
 ]

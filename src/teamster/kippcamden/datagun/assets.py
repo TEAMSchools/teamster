@@ -13,6 +13,6 @@ powerschool_extract_assets = [
     )["assets"]
 ]
 
-__all__ = [
+_all = [
     *powerschool_extract_assets,
 ]
