@@ -2,27 +2,21 @@ import json
 import re
 
 import pendulum
-from dagster import (
-    AssetKey,
-    AssetSelection,
-    RunRequest,
-    SensorEvaluationContext,
-    SensorResult,
-    sensor,
-)
+from dagster import AssetKey, RunRequest, SensorEvaluationContext, SensorResult, sensor
 from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 
 from .. import CODE_LOCATION
 from . import assets
 
-SENSOR_ASSET_SELECTION = AssetSelection.assets(*assets)
-
 CONNECTORS = {}
+ASSET_KEYS = [key for a in assets for key in a.keys]
+
 for asset in assets:
-    connector_id = re.match(pattern=r"fivetran_sync_(\w+)", string=asset.op.name).group(
-        1
-    )
+    connector_id = re.match(
+        pattern=r"fivetran_sync_(\w+)",
+        string=asset.op.name,
+    ).group(1)
 
     CONNECTORS[connector_id] = set([".".join(key.path[1:-1]) for key in asset.keys])
 
@@ -42,13 +36,13 @@ def render_fivetran_audit_query(connector_id, timestamp):
 @sensor(
     name=f"{CODE_LOCATION}_fivetran_sync_status_sensor",
     minimum_interval_seconds=(60 * 1),
-    asset_selection=SENSOR_ASSET_SELECTION,
+    asset_selection=assets,
 )
 def fivetran_sync_status_sensor(
     context: SensorEvaluationContext,
     fivetran: FivetranResource,
     db_bigquery: BigQueryResource,
-):
+) -> SensorResult:
     cursor: dict = json.loads(s=(context.cursor or "{}"))
 
     with db_bigquery.get_client() as bq:
@@ -94,21 +88,22 @@ def fivetran_sync_status_sensor(
                         [CODE_LOCATION, *schema.split("."), row.table_name]
                     )
 
-                    if asset_key in SENSOR_ASSET_SELECTION._keys:
+                    if asset_key in ASSET_KEYS:
                         asset_keys.append(asset_key)
 
             cursor[connector_id] = curr_last_sync_completion_timestamp
 
     if asset_keys:
-        return SensorResult(
-            run_requests=[
-                RunRequest(
-                    run_key=f"{context.sensor_name}_{pendulum.now().timestamp()}",
-                    asset_selection=asset_keys,
-                )
-            ],
-            cursor=json.dumps(obj=cursor),
-        )
+        run_requests = [
+            RunRequest(
+                run_key=f"{context.sensor_name}_{pendulum.now().timestamp()}",
+                asset_selection=asset_keys,
+            )
+        ]
+    else:
+        run_requests = []
+
+    return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
 
 _all = [
