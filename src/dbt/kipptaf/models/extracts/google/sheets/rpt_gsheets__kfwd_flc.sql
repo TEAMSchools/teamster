@@ -1,4 +1,13 @@
-select
+with
+    act_valid as (
+        select r.student_number, r.contact_id, count(adb.score_type) as act_count,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }} as adb
+        left join {{ ref("int_kippadb__roster") }} as r on adb.contact = r.contact_id
+        where adb.score_type = 'act_composite'
+        group by r.student_number, r.contact_id
+    )
+
+select  -- noqa: ST06
     co.student_number,
     co.lastfirst as student_name,
     co.school_abbreviation as school,
@@ -23,6 +32,7 @@ select
         then 'transferred out'
     end as enroll_status,
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
+    act.act_count,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -33,6 +43,7 @@ left join
     and ce.courses_course_name like 'College and Career%'
     and ce.rn_course_number_year = 1
     and not ce.is_dropped_section
+left join act_valid as act on kt.contact_id = act.contact_id
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
