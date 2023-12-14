@@ -32,7 +32,7 @@ kipptaf_fivetran_start_syncs_schedule = ScheduleDefinition(
     job=fivetran_start_syncs_job,
 )
 
-__all__ = [
+_all = [
     kipptaf_fivetran_adp_workforce_now_start_resync_schedule,
     kipptaf_fivetran_adp_workforce_now_start_sync_schedule,
     kipptaf_fivetran_illuminate_start_sync_schedule,

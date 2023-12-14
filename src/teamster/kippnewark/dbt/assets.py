@@ -37,7 +37,7 @@ dbt_external_source_assets = build_dbt_external_source_assets(
     dagster_dbt_translator=dagster_dbt_translator,
 )
 
-__all__ = [
+_all = [
     _dbt_assets,
     dbt_external_source_assets,
 ]

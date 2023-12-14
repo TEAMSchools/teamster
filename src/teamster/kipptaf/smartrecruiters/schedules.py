@@ -9,6 +9,6 @@ smartrecruiters_report_assets_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-__all__ = [
+_all = [
     smartrecruiters_report_assets_schedule,
 ]

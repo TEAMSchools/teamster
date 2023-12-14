@@ -13,6 +13,6 @@ powerschool_extract_assets = [
     for a in config_from_files([f"{config_dir}/powerschool.yaml"])["assets"]
 ]
 
-__all__ = [
+_all = [
     *powerschool_extract_assets,
 ]

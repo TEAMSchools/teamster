@@ -27,6 +27,6 @@ def dbt_code_version_sensor(context: SensorEvaluationContext):
     return SensorResult(run_requests=[RunRequest(asset_selection=asset_selection)])
 
 
-__all__ = [
+_all = [
     dbt_code_version_sensor,
 ]
