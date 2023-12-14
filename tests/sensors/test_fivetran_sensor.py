@@ -29,4 +29,4 @@ def test_fivetran_sync_status_sensor():
         db_bigquery=BigQueryResource(project=GCS_PROJECT_NAME),
     )
 
-    assert len(sensor_result.run_requests) > 0
+    assert len(sensor_result.run_requests) > 0  # type: ignore
