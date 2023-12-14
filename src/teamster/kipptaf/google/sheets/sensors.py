@@ -6,7 +6,6 @@ from gspread.exceptions import APIError
 
 from ... import CODE_LOCATION
 from ..resources import GoogleSheetsResource
-from .assets import _all as google_sheets_assets
 
 
 def build_google_sheets_asset_sensor(asset_defs):
@@ -58,10 +57,3 @@ def build_google_sheets_asset_sensor(asset_defs):
         return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
     return _sensor
-
-
-google_sheets_asset_sensor = build_google_sheets_asset_sensor(google_sheets_assets)
-
-_all = [
-    google_sheets_asset_sensor,
-]
