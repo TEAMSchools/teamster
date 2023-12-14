@@ -29,6 +29,7 @@ select
     r.lastfirst as student_name,
     r.contact_id,
     r.ktc_cohort,
+    r.contact_owner_name,
 
     c.contact_last_outreach as last_outreach_date,
     c.contact_last_successful_contact as last_successful_contact_date,
