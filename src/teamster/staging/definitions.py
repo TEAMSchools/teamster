@@ -12,6 +12,9 @@ defs = Definitions(
             sheets,
         ]
     ),
+    sensors=[
+        *sheets.sensors,
+    ],
     resources={
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
         "ldap": resources.LDAP_RESOURCE,
