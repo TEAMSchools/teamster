@@ -51,8 +51,8 @@ def google_sheets_asset_sensor(
         except APIError as e:
             context.log.exception(e)
 
-    return SensorResult(
-        run_requests=[
+    if requested_asset_keys:
+        run_requests = [
             RunRequest(
                 run_key=f"{context.sensor_name}_{pendulum.now().timestamp()}",
                 run_config=RunConfig(
@@ -63,9 +63,11 @@ def google_sheets_asset_sensor(
                     }
                 ),
             )
-        ],
-        cursor=json.dumps(obj=cursor),
-    )
+        ]
+    else:
+        run_requests = []
+
+    return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
 
 _all = [
