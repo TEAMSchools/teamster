@@ -107,7 +107,7 @@ multi_partition_assets = [
     ]
 ]
 
-__all__ = [
+_all = [
     *static_partition_assets,
     *multi_partition_assets,
 ]

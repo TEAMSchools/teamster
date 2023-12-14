@@ -68,7 +68,7 @@ idauto_extract_assets = [
     for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
 ]
 
-__all__ = [
+_all = [
     *blissbook_extract_assets,
     *clever_extract_assets,
     *coupa_extract_assets,

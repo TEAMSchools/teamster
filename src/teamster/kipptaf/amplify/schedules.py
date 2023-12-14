@@ -19,6 +19,6 @@ def mclass_asset_job_schedule():
     )
 
 
-__all__ = [
+_all = [
     mclass_asset_job_schedule,
 ]

@@ -1,0 +1,100 @@
+version: 2
+
+sources:
+  - name: assessments
+    schema: kipptaf_assessments
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_assessments__course_subject_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__course_subject_crosswalk
+            skip_leading_rows: 1
+      - name: src_assessments__internal_assessment_scopes
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__internal_assessment_scopes
+            skip_leading_rows: 1
+      - name: src_assessments__iready_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__iready_crosswalk
+            skip_leading_rows: 1
+      - name: src_assessments__academic_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__academic_goals
+            skip_leading_rows: 1
+      - name: src_assessments__act_scale_score_key
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__act_scale_score_key
+            skip_leading_rows: 1
+      - name: src_assessments__qbls_power_standards
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__qbls_power_standards
+            skip_leading_rows: 1
+      - name: src_assessments__mclass_dibels_measures
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__mclass_dibels_measures
+            skip_leading_rows: 1
+        columns:
+          - name: grade_level
+            data_type: STRING
+          - name: name
+            data_type: STRING
+          - name: description
+            data_type: STRING
+      - name: src_assessments__standard_domains
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__standard_domains
+            skip_leading_rows: 1
+        columns:
+          - name: standard_code
+            data_type: STRING
+          - name: standard_domain
+            data_type: STRING
+      - name: src_assessments__state_test_comparison
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__state_test_comparison
+            skip_leading_rows: 1
+      - name: src_assessments__college_readiness_expected_tests
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__college_readiness_expected_tests
+            skip_leading_rows: 1

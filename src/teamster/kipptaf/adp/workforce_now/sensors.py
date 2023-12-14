@@ -15,7 +15,7 @@ from paramiko.ssh_exception import SSHException
 from teamster.core.ssh.resources import SSHResource
 
 from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import __all__ as adp_wfn_sftp_assets
+from .assets import _all as adp_wfn_sftp_assets
 
 
 @sensor(
@@ -74,6 +74,6 @@ def adp_wfn_sftp_sensor(
     return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
 
-__all__ = [
+_all = [
     adp_wfn_sftp_sensor,
 ]

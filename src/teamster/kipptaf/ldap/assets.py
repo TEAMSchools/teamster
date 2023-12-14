@@ -104,6 +104,6 @@ ldap_assets = [
     )["assets"]
 ]
 
-__all__ = [
+_all = [
     *ldap_assets,
 ]

@@ -85,6 +85,6 @@ def achieve3k_sftp_sensor(context: SensorEvaluationContext, ssh_achieve3k: SSHRe
     )
 
 
-__all__ = [
+_all = [
     achieve3k_sftp_sensor,
 ]

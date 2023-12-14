@@ -8,7 +8,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
 
-__all__ = []
+_all = []
 
 for asset in config_from_files(
     [f"src/teamster/{CODE_LOCATION}/titan/config/assets.yaml"]
@@ -27,7 +27,7 @@ for asset in config_from_files(
 
     asset_name = asset["asset_name"]
 
-    __all__.append(
+    _all.append(
         build_sftp_asset(
             asset_key=[CODE_LOCATION, "titan", asset_name],
             ssh_resource_key="ssh_titan",

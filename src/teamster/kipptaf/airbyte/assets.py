@@ -110,12 +110,12 @@ def build_airbyte_cloud_assets(
     return [_assets]
 
 
-__all__ = []
+_all = []
 
 for a in config_from_files(
     [f"src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
 )["assets"]:
-    __all__.extend(
+    _all.extend(
         build_airbyte_cloud_assets(
             **a, asset_key_prefix=[CODE_LOCATION, a["group_name"]]
         )
