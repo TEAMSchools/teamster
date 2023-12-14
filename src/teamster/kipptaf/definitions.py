@@ -30,7 +30,6 @@ from . import (
 from .adp import workforce_manager, workforce_now
 from .dbt import assets as dbt_assets
 from .dbt.schedules import _all as dbt_schedules
-from .dbt.sensors import _all as dbt_sensors
 from .google import directory, forms
 from .google.sheets.assets import google_sheets_assets
 from .google.sheets.sensors import _all as google_sheets_sensors
@@ -80,7 +79,6 @@ defs = Definitions(
         *airbyte.sensors,
         *alchemer.sensors,
         *clever.sensors,
-        *dbt_sensors,
         *fivetran.sensors,
         *google_sheets_sensors,
         *workforce_now.sensors,
