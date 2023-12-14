@@ -1,9 +1,10 @@
 with
     act_valid as (
-        select distinct r.student_number, r.contact_id, 'Yes' as valid_act,
+        select r.student_number, r.contact_id, count(adb.score_type) as act_count,
         from {{ ref("int_kippadb__standardized_test_unpivot") }} as adb
         left join {{ ref("int_kippadb__roster") }} as r on adb.contact = r.contact_id
         where adb.score_type = 'act_composite'
+        group by r.student_number, r.contact_id
     )
 
 select
@@ -31,7 +32,7 @@ select
         then 'transferred out'
     end as enroll_status,
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
-    act.valid_act,
+    act.act_count,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
