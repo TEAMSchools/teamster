@@ -1,6 +1,7 @@
 import re
 
-from dagster import AssetSpec, external_asset_from_spec
+import pendulum
+from dagster import DataVersion, observable_source_asset
 
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.dbt.manifest import dbt_manifest
@@ -11,13 +12,15 @@ def build_google_sheets_asset(source_name, name, uri, range_name):
         pattern=r"https:\/{2}docs\.google\.com\/spreadsheets\/d\/([\w-]+)", string=uri
     )
 
-    return external_asset_from_spec(
-        AssetSpec(
-            key=[CODE_LOCATION, source_name, name],
-            metadata={"sheet_id": re_match.group(1), "range_name": range_name},
-            group_name="google_sheets",
-        )
+    @observable_source_asset(
+        key=[CODE_LOCATION, source_name, name],
+        metadata={"sheet_id": re_match.group(1), "range_name": range_name},
+        group_name="google_sheets",
     )
+    def _asset():
+        return DataVersion(str(pendulum.now().timestamp()))
+
+    return _asset
 
 
 google_sheets_assets = [
