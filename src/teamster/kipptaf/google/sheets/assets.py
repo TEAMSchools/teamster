@@ -2,8 +2,8 @@ import re
 
 from dagster import AssetSpec, external_asset_from_spec
 
-from ... import CODE_LOCATION
-from ...dbt.assets import dbt_manifest
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.dbt.manifest import dbt_manifest
 
 
 def build_google_sheets_asset(source_name, name, uri, range_name):

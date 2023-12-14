@@ -20,7 +20,6 @@ from . import (
     clever,
     datagun,
     dayforce,
-    dbt,
     fivetran,
     ldap,
     resources,
@@ -29,6 +28,9 @@ from . import (
     zendesk,
 )
 from .adp import workforce_manager, workforce_now
+from .dbt import assets as dbt_assets
+from .dbt.schedules import _all as dbt_schedules
+from .dbt.sensors import _all as dbt_sensors
 from .google import directory, forms, sheets
 
 defs = Definitions(
@@ -42,7 +44,7 @@ defs = Definitions(
             clever,
             datagun,
             dayforce,
-            dbt,
+            dbt_assets,
             directory,
             fivetran,
             forms,
@@ -59,7 +61,7 @@ defs = Definitions(
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
-        *dbt.schedules,
+        *dbt_schedules,
         *directory.schedules,
         *fivetran.schedules,
         *forms.schedules,
@@ -74,6 +76,7 @@ defs = Definitions(
         *airbyte.sensors,
         *alchemer.sensors,
         *clever.sensors,
+        *dbt_sensors,
         *fivetran.sensors,
         *sheets.sensors,
         *workforce_now.sensors,
