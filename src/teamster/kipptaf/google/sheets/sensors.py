@@ -1,7 +1,7 @@
 import json
 
 import pendulum
-from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
+from dagster import AssetObservation, SensorEvaluationContext, SensorResult, sensor
 from gspread.exceptions import APIError
 
 from ... import CODE_LOCATION
@@ -44,10 +44,7 @@ def google_sheets_asset_sensor(
             if last_update_timestamp > last_materialization_timestamp:
                 context.log.info(asset_keys)
                 asset_events.extend(
-                    [
-                        AssetMaterialization(asset_key=asset_key)
-                        for asset_key in asset_keys
-                    ]
+                    [AssetObservation(asset_key=asset_key) for asset_key in asset_keys]
                 )
 
                 cursor[sheet_id] = last_update_timestamp
