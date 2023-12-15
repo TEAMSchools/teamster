@@ -1,24 +1,9 @@
 from itertools import chain
+from typing import Mapping, Optional, Sequence, Set
 
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    AssetOut,
-    AssetsDefinition,
-    DagsterInvalidDefinitionError,
-    FreshnessPolicy,
-    Mapping,
-    MetadataValue,
-    Optional,
-    Output,
-    Sequence,
-    Set,
-    SourceAsset,
-    TableSchema,
-)
+from dagster import AssetExecutionContext, AssetKey, AssetOut, AssetsDefinition, Output
 from dagster import _check as check
 from dagster import config_from_files, multi_asset
-from dagster._core.definitions.events import CoercibleToAssetKey
 
 from .. import CODE_LOCATION
 
@@ -26,20 +11,10 @@ from .. import CODE_LOCATION
 def build_airbyte_cloud_assets(
     connection_id: str,
     destination_tables: Sequence[str],
-    asset_key_prefix: Sequence[str] = None,
+    asset_key_prefix: Sequence[str] = [],
     group_name: Optional[str] = None,
-    normalization_tables: Mapping[str, Set[str]] = None,
-    deps: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset] = None,
-    upstream_assets: Set[AssetKey] = None,
-    schema_by_table_name: Mapping[str, TableSchema] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
-) -> Sequence[AssetsDefinition]:
-    if upstream_assets is not None and deps is not None:
-        raise DagsterInvalidDefinitionError(
-            "Cannot specify both deps and upstream_assets to build_airbyte_assets. "
-            "Use only deps instead."
-        )
-
+    normalization_tables: Mapping[str, Set[str]] = {},
+) -> AssetsDefinition:
     asset_key_prefix = check.opt_sequence_param(
         asset_key_prefix, "asset_key_prefix", of_type=str
     )
@@ -56,15 +31,7 @@ def build_airbyte_cloud_assets(
     outputs = {
         table: AssetOut(
             key=AssetKey([*asset_key_prefix, table]),
-            metadata={
-                "connection_id": connection_id,
-                "table_schema": (
-                    MetadataValue.table_schema(schema_by_table_name[table])
-                    if schema_by_table_name
-                    else None
-                ),
-            },
-            freshness_policy=freshness_policy,
+            metadata={"connection_id": connection_id},
             is_required=False,
         )
         for table in tables
@@ -81,17 +48,12 @@ def build_airbyte_cloud_assets(
                     AssetKey([*asset_key_prefix, base_table])
                 }
 
-    upstream_deps = deps
-    if upstream_assets is not None:
-        upstream_deps = list(upstream_assets)
-
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
-        internal_deps[table] = set(upstream_deps) if upstream_deps else set()
+        internal_deps[table] = set()
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
-        deps=upstream_deps,
         outs=outputs,
         internal_asset_deps=internal_deps,
         compute_kind="airbyte",
@@ -107,7 +69,7 @@ def build_airbyte_cloud_assets(
                 for dependent_table in normalization_tables.get(table_name, set()):
                     yield Output(value=None, output_name=dependent_table)
 
-    return [_assets]
+    return _assets
 
 
 _all = []
@@ -115,7 +77,7 @@ _all = []
 for a in config_from_files(
     [f"src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
 )["assets"]:
-    _all.extend(
+    _all.append(
         build_airbyte_cloud_assets(
             **a, asset_key_prefix=[CODE_LOCATION, a["group_name"]]
         )
