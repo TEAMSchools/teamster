@@ -447,7 +447,7 @@ FAST_STAR_CORE_FIELDS = [
     {"name": "Gender", "type": ["null", "string"], "default": None},
     {"name": "GID_RID", "type": ["null", "string"], "default": None},
     {"name": "Gname", "type": ["null", "string"], "default": None},
-    {"name": "Grade_E", "type": ["null", "double"], "default": None},
+    {"name": "Grade_E", "type": ["null", "double", "string"], "default": None},
     {"name": "Grade_P", "type": ["null", "double"], "default": None},
     {"name": "Grade_T", "type": ["null", "string"], "default": None},
     {"name": "GUID", "type": ["null", "string"], "default": None},
