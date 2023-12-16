@@ -59,6 +59,7 @@ def _test_asset(
             dynamic_partitions_store=instance
         )
 
+        # trunk-ignore(bandit/B311)
         partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
     else:
         partition_key = None
@@ -73,6 +74,7 @@ def _test_asset(
         },
     )
 
+    # trunk-ignore(bandit/B101)
     assert result.success
     # assert (
     #     result.get_asset_materialization_events()[0]
@@ -260,7 +262,10 @@ def test_asset_renlearn_fast_star():
         asset_key=["renlearn", "fast_star"],
         remote_dir=".",
         remote_file_regex=r"KIPP Miami\.zip",
+        archive_filepath=r"FL_FAST_(?P<subject>)_K-2.csv",
         asset_fields=ASSET_FIELDS,
+        slugify_cols=False,
+        ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPMIAMI")},
         partitions_def=MultiPartitionsDefinition(
             {
                 "subject": StaticPartitionsDefinition(
@@ -271,9 +276,7 @@ def test_asset_renlearn_fast_star():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPMIAMI")},
-        archive_filepath=r"FL_FAST_(?P<subject>)_K-2.csv",
-        slugify_cols=False,
+        partition_key="2023-07-01|SM",
     )
 
 

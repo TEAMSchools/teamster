@@ -56,3 +56,4 @@ dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 venv = ".venv"
 venvPath = "in-project"
 reportOptionalMemberAccess = false
+reportInvalidStringEscapeSequence = false
