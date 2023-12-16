@@ -33,6 +33,7 @@ select  -- noqa: ST06
     end as enroll_status,
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
     act.act_count,
+    co.lep_status,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
