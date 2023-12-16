@@ -104,13 +104,13 @@ with
         select
             students_student_number as student_number,
             cc_academic_year as academic_year,
-            true as value,
+            true as `value`,
             case
                 when sections_section_number = 'mgmath'
                 then 'Math'
                 when sections_section_number = 'mgela'
                 then 'Reading'
-            end as iready_subject
+            end as iready_subject,
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             courses_course_number = 'LOG300'
