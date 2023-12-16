@@ -8,6 +8,9 @@ with
             case
                 subject when 'Reading' then 'ENG' when 'Math' then 'MATH'
             end as powerschool_credittype,
+            case
+                subject when 'Reading' then 'ela' when 'Math' then 'math'
+            end as grad_unpivot_subject,
         from unnest(['Reading', 'Math']) as subject
     ),
 
@@ -128,6 +131,9 @@ select
     sj.iready_subject,
     sj.illuminate_subject_area,
     sj.powerschool_credittype,
+    sj.grad_unpivot_subject,
+
+    a.is_iep_eligible as is_grad_iep_exempt,
 
     coalesce(db.boy, 'No Test') as dibels_boy_composite,
     coalesce(db.moy, 'No Test') as dibels_moy_composite,
@@ -186,4 +192,10 @@ left join
     on co.academic_year = ie.academic_year
     and co.student_number = ie.student_number
     and sj.iready_subject = ie.iready_subject
+left join
+    {{ ref("int_powerschool__nj_graduation_pathway_unpivot") }} as a
+    on co.students_dcid = a.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+    and sj.grad_unpivot_subject = a.subject
+    and a.values_column = 'M'
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
