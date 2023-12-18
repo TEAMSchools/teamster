@@ -11,7 +11,6 @@ with
     )
 
 select
-    _dbt_source_relation,
     row_hash,
     student_number,
     state_studentnumber,
