@@ -35,7 +35,7 @@ def render_fivetran_audit_query(connector_id, timestamp):
 
 @sensor(
     name=f"{CODE_LOCATION}_fivetran_sync_status_sensor",
-    minimum_interval_seconds=(60 * 1),
+    minimum_interval_seconds=(60 * 5),
     asset_selection=assets,
 )
 def fivetran_sync_status_sensor(
