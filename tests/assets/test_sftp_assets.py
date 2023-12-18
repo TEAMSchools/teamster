@@ -102,6 +102,19 @@ def test_asset_edplan():
     )
 
 
+def test_asset_edplan_archive():
+    from teamster.core.edplan.schema import ASSET_FIELDS
+
+    _test_asset(
+        asset_key=["edplan", "njsmart_powerschool_archive"],
+        remote_dir="/teamster-kippcamden/couchdrop/edplan/njsmart_powerschool_archive",
+        # remote_dir="/teamster-kippnewark/couchdrop/edplan/njsmart_powerschool_archive",
+        remote_file_regex=r"src_edplan__njsmart_powerschool_archive\.csv",
+        asset_fields=ASSET_FIELDS,
+        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
+    )
+
+
 def test_asset_pearson_njgpa():
     from teamster.core.pearson.schema import ASSET_FIELDS
 
