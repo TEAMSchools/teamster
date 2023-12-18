@@ -2,38 +2,31 @@ import json
 from urllib.parse import urlencode
 
 import pendulum
-from dagster import (
-    AssetKey,
-    AssetSelection,
-    RunRequest,
-    SensorEvaluationContext,
-    SensorResult,
-    sensor,
-)
+from dagster import AssetKey, RunRequest, SensorEvaluationContext, SensorResult, sensor
 from dagster_airbyte import AirbyteCloudResource
 
 from .. import CODE_LOCATION
 from . import assets
 
-sensor_asset_selection = AssetSelection.assets(*assets)
+ASSET_KEYS = [key for a in assets for key in a.keys]
 
 
 @sensor(
     name=f"{CODE_LOCATION}_airbyte_job_status_sensor",
-    minimum_interval_seconds=(60 * 1),
-    asset_selection=sensor_asset_selection,
+    minimum_interval_seconds=(60 * 5),
+    asset_selection=assets,
 )
 def airbyte_job_status_sensor(
     context: SensorEvaluationContext, airbyte: AirbyteCloudResource
-):
+) -> SensorResult:
     now_timestamp = pendulum.now().timestamp()
 
     cursor = json.loads(context.cursor or "{}")
 
-    connections = airbyte.make_request(endpoint="/connections", method="GET")["data"]
+    connections = airbyte.make_request(endpoint="/connections", method="GET")
 
     asset_selection = []
-    for connection in connections:
+    for connection in connections["data"]:  # type: ignore
         connection_id = connection["connectionId"]
 
         last_updated = pendulum.from_timestamp(timestamp=cursor.get(connection_id, 0))
@@ -60,19 +53,20 @@ def airbyte_job_status_sensor(
                     [namespace_parts[0], "_".join(namespace_parts[1:]), stream["name"]]
                 )
 
-                if asset_key in sensor_asset_selection._keys:
+                if asset_key in ASSET_KEYS:
                     asset_selection.append(asset_key)
 
     if asset_selection:
-        return SensorResult(
-            run_requests=[
-                RunRequest(
-                    run_key=f"{context._sensor_name}_{now_timestamp}",
-                    asset_selection=asset_selection,
-                )
-            ],
-            cursor=json.dumps(obj=cursor),
-        )
+        run_requests = [
+            RunRequest(
+                run_key=f"{context._sensor_name}_{now_timestamp}",
+                asset_selection=asset_selection,
+            )
+        ]
+    else:
+        run_requests = []
+
+    return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
 
 _all = [
