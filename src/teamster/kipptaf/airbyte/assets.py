@@ -72,7 +72,7 @@ def build_airbyte_cloud_assets(
     return _assets
 
 
-_all = []
+_all: list[AssetsDefinition] = []
 
 for a in config_from_files(
     [f"src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
