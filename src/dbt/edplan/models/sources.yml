@@ -16,3 +16,10 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/edplan/njsmart_powerschool/"
             format: AVRO
             enable_logical_types: true
+      - name: src_edplan__njsmart_powerschool_archive
+        external:
+          location:
+            "{{ var('couchdrop_cloud_storage_uri_base') }}/edplan/njsmart_powerschool_archive/*"
+          options:
+            format: CSV
+            skip_leading_rows: 1

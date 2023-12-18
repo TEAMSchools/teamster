@@ -147,9 +147,5 @@ select
         ),
         date(fiscal_year, 6, 30)
     ) as effective_end_date,
-
-    row_number() over (
-        partition by student_number, fiscal_year order by effective_date desc
-    ) as rn_student_year_desc,
 from deduplicate
 where rn_row_year_asc = 1
