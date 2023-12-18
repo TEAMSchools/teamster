@@ -23,9 +23,19 @@ with
                 partition by student order by transcript_date desc
             ) as rn_transcript,
         from {{ ref("stg_kippadb__gpa") }}
+    ),
+
+    rem_subject as (
+        select
+            contact,
+            `date`,
+            subject,
+            row_number() over (partition by contact order by date desc) as rn_note,
+        from {{ ref("stg_kippadb__contact_note") }}
+        where subject like 'REM FY%'
     )
 
-select
+select  -- noqa: ST06
     r.lastfirst as student_name,
     r.contact_id,
     r.ktc_cohort,
@@ -47,9 +57,7 @@ select
 
     (gpa.cumulative_credits_earned / gpa.credits_required_for_graduation)
     * 100 as degree_percentage_completed,
-    case
-        when cn.subject like 'REM%FY%Q%' then cn.subject else 'other subject'
-    end as rem_status,
+    rs.subject as rem_status,
     case
         when
             date_diff(
@@ -66,12 +74,18 @@ select
         then 'Last Outreach > 30 days'
         else 'Last Outreach within 30'
     end as last_outreach_status,
+
+    r.contact_kipp_hs_graduate as is_kipp_hs_grad,
+    r.contact_expected_college_graduation as expected_college_graduation,
+    if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
+    rs.date as most_recent_rem_status,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join enrollment_status as ei on r.contact_id = ei.student and ei.rn_enrollment = 1
-left join
-    {{ ref("stg_kippadb__contact_note") }} as cn
-    on r.contact_id = cn.contact
-    and cn.subject like 'REM%'
+left join rem_subject as rs on rs.contact = r.contact_id and rs.rn_note = 1
 left join transcript_data as gpa on gpa.student = r.contact_id and gpa.rn_transcript = 1
-where r.contact_current_kipp_student = 'KIPP HS Graduate'
+inner join
+    {{ ref("int_kippadb__enrollment_pivot") }} as e
+    on r.contact_id = e.student
+    and e.cur_status not in ('Attending', 'Graduated')
+where r.contact_has_hs_graduated_enrollment = 'HS Graduate'
