@@ -297,7 +297,7 @@ select
     end as lunch_application_status,
 from all_regions as ar
 left join
-    {{ ref("stg_edplan__njsmart_powerschool") }} as sped
+    {{ ref("int_edplan__njsmart_powerschool_union") }} as sped
     on ar.student_number = sped.student_number
     and ar.academic_year = sped.academic_year
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="sped") }}
