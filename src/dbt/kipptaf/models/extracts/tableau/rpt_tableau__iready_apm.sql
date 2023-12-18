@@ -80,6 +80,7 @@ select
     f.tutoring_nj as is_tutoring,
     f.state_test_proficiency,
     f.nj_student_tier,
+    f.is_exempt_iready,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
