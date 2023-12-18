@@ -12,9 +12,11 @@ sources:
             "{{ var('couchdrop_cloud_storage_uri_base') }}/performance-management/scores-overall.csv"
           options:
             format: CSV
+            skip_leading_rows: 1
       - name: src_performance_management__scores_detail_archive
         external:
           location:
             "{{ var('couchdrop_cloud_storage_uri_base') }}/performance-management/scores-detail.csv"
           options:
             format: CSV
+            skip_leading_rows: 1
