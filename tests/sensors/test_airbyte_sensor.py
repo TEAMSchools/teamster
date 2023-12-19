@@ -16,5 +16,4 @@ def test_fivetran_sync_status_sensor():
         airbyte=AIRBYTE_CLOUD_RESOURCE,
     )
 
-    # trunk-ignore(bandit/B101)
     assert len(sensor_result.run_requests) > 0  # type: ignore
