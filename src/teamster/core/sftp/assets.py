@@ -2,7 +2,6 @@ import os
 import re
 import zipfile
 
-import requests
 from dagster import (
     AssetExecutionContext,
     DagsterInvariantViolationError,
@@ -49,7 +48,8 @@ def compose_regex(regexp, context: AssetExecutionContext):
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
         return regex_pattern_replace(
-            pattern=regexp, replacements=context.partition_key.keys_by_dimension
+            pattern=regexp,
+            replacements=context.partition_key.keys_by_dimension,  # type: ignore
         )
     else:
         compiled_regex = re.compile(pattern=regexp)
@@ -92,8 +92,6 @@ def build_sftp_asset(
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext):
-        context.log.debug(requests.get(url="https://api.ipify.org").text)
-
         ssh: SSHResource = getattr(context.resources, ssh_resource_key)
 
         # find matching file for partition
