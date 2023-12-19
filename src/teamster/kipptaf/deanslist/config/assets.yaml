@@ -1,0 +1,7 @@
+assets:
+  - asset_name: reconcile_attendance
+    remote_dir: reconcile_report_files
+    remote_file_regex: ktaf_reconcile_att\.csv
+  - asset_name: reconcile_suspensions
+    remote_dir: reconcile_report_files
+    remote_file_regex: ktaf_reconcile_susp\.csv

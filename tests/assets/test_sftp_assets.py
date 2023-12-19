@@ -23,6 +23,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 from teamster.kipptaf.resources import (
     SSH_RESOURCE_ACHIEVE3K,
     SSH_RESOURCE_CLEVER_REPORTS,
+    SSH_RESOURCE_DEANSLIST,
 )
 from teamster.staging import LOCAL_TIMEZONE
 
@@ -540,6 +541,30 @@ def test_asset_clever_resource_usage():
             ),
             instance=instance,
         )
+
+
+def test_asset_deanslist_reconcile_attendance():
+    from teamster.core.deanslist.schema import ASSET_FIELDS
+
+    _test_asset(
+        asset_key=["deanslist", "reconcile_attendance"],
+        remote_dir="reconcile_report_files",
+        remote_file_regex=r"ktaf_reconcile_att\.csv",
+        asset_fields=ASSET_FIELDS,
+        ssh_resource={"ssh_deanslist": SSH_RESOURCE_DEANSLIST},
+    )
+
+
+def test_asset_deanslist_reconcile_suspensions():
+    from teamster.core.deanslist.schema import ASSET_FIELDS
+
+    _test_asset(
+        asset_key=["deanslist", "reconcile_suspensions"],
+        remote_dir="reconcile_report_files",
+        remote_file_regex=r"ktaf_reconcile_susp\.csv",
+        asset_fields=ASSET_FIELDS,
+        ssh_resource={"ssh_deanslist": SSH_RESOURCE_DEANSLIST},
+    )
 
 
 """ cannot test in dev: IP filter
