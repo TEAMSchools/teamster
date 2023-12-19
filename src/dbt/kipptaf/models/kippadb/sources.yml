@@ -229,3 +229,12 @@ sources:
               - kipptaf
               - kippadb
               - User
+      - name: internships_programs
+        identifier: Internships_Programs__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Internships_Programs__c
