@@ -78,6 +78,12 @@ with
             debt_binary,
             debt_amount,
             annual_income,
+            finish_program,
+            complete_program,
+            reenrollment,
+            search_focus,
+            company,
+            role,
 
             safe_cast(cur_1 as numeric) as cur_1,
             safe_cast(cur_2 as numeric) as cur_2,
@@ -116,7 +122,14 @@ with
                     'linkedin_link',
                     'debt_binary',
                     'debt_amount',
-                    'annual_income'
+                    'annual_income',
+                    'finish_program',
+                    'complete_program',
+                    'reenrollment',
+                    'search_focus',
+                    'company',
+                    'role'
+
                 )
             )
     ),
