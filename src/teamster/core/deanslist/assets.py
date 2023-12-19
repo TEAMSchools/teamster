@@ -25,7 +25,7 @@ def build_deanslist_static_partition_asset(
     code_location,
     asset_name,
     api_version,
-    partitions_def: StaticPartitionsDefinition = None,
+    partitions_def: StaticPartitionsDefinition | None = None,
     op_tags={},
     params={},
 ) -> AssetsDefinition:
@@ -84,9 +84,11 @@ def build_deanslist_multi_partition_asset(
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
-        school_partition = context.partition_key.keys_by_dimension["school"]
+        keys_by_dimension: dict = context.partition_key.keys_by_dimension  # type: ignore
+
+        school_partition = keys_by_dimension["school"]
         date_partition = pendulum.from_format(
-            string=context.partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
+            string=keys_by_dimension["date"], fmt="YYYY-MM-DD"
         ).subtract(days=1)
 
         # determine if endpoint is within time-window
@@ -102,12 +104,11 @@ def build_deanslist_multi_partition_asset(
         # determine start and end dates
         partition_fy = FiscalYear(datetime=date_partition, start_month=7)
 
-        total_row_count = 0
-        all_data = []
-
         fy_period = partition_fy.end - partition_fy.start
 
-        for month in fy_period.range(unit="months"):
+        total_row_count = 0
+        all_data = []
+        for month in fy_period.range(unit="months"):  # type: ignore
             composed_params = copy.deepcopy(params)
 
             for k, v in composed_params.items():
