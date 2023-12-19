@@ -10,15 +10,11 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_attendance/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_attendance/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__reconcile_suspensions
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_suspensions/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_suspensions/"
             format: AVRO
             enable_logical_types: true
