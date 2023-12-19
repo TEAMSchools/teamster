@@ -59,7 +59,6 @@ def _test_asset(
             dynamic_partitions_store=instance
         )
 
-        # trunk-ignore(bandit/B311)
         partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
     else:
         partition_key = None
@@ -74,7 +73,6 @@ def _test_asset(
         },
     )
 
-    # trunk-ignore(bandit/B101)
     assert result.success
     # assert (
     #     result.get_asset_materialization_events()[0]
