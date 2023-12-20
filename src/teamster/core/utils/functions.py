@@ -28,7 +28,7 @@ def regex_pattern_replace(pattern: str, replacements: dict):
     return pattern
 
 
-def get_avro_record_schema(name: str, fields: list, namespace: str = None):
+def get_avro_record_schema(name: str, fields: list, namespace: str | None = None):
     return {
         "type": "record",
         "name": f"{name.replace('-', '_').replace('/', '_')}_record",

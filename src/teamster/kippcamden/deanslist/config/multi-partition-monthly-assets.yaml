@@ -1,0 +1,14 @@
+endpoints:
+  - asset_name: behavior
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+  - asset_name: homework
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+  - asset_name: incidents
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+      cf: Y
