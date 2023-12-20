@@ -1,4 +1,4 @@
-# forked from dagster_airbyte.ops and dagster_airbyte.resources
+# based on dagster_airbyte.resources.BaseAirbyteResource.sync_and_poll
 from typing import Any, Dict, Iterable, cast
 
 from dagster import In, Nothing, OpExecutionContext, Out, op
@@ -24,9 +24,7 @@ def airbyte_start_sync_op(
     context: OpExecutionContext, config: AirbyteSyncConfig, airbyte: BaseAirbyteResource
 ) -> Iterable[Any]:
     job_details = airbyte.start_sync(config.connection_id)
-
     job_info = cast(Dict[str, object], job_details.get("job", {}))
-
     job_id = cast(int, job_info.get("id"))
 
     context.log.info(
@@ -34,6 +32,6 @@ def airbyte_start_sync_op(
     )
 
     return AirbyteOutput(
-        job_details=job_details,
+        job_details=airbyte.start_sync(config.connection_id),
         connection_details=airbyte.get_connection_details(config.connection_id),
     )

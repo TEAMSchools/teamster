@@ -1,3 +1,5 @@
+import pathlib
+
 import pendulum
 from dagster import StaticPartitionsDefinition, config_from_files
 
@@ -11,7 +13,7 @@ from .. import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
 _all = []
 
 for asset in config_from_files(
-    [f"src/teamster/{CODE_LOCATION}/titan/config/assets.yaml"]
+    [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
 )["assets"]:
     start_fy = FiscalYear(
         datetime=pendulum.from_format(

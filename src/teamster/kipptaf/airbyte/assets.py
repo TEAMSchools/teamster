@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import AssetKey, AssetsDefinition, AssetSpec, config_from_files
 
 from teamster.core.definitions.external_asset import external_assets_from_specs
@@ -9,9 +11,9 @@ specs = [
         key=AssetKey([CODE_LOCATION, a["group_name"], table]),
         metadata={"connection_id": a["connection_id"]},
     )
-    for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
-    )["assets"]
+    for a in config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])[
+        "assets"
+    ]
     for table in a["destination_tables"]
 ]
 
