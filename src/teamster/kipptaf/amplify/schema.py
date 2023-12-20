@@ -36,7 +36,7 @@ COMMON_FIELDS = [
     {"name": "specific_disability", "type": ["null", "string"], "default": None},
     {"name": "state", "type": ["null", "string"], "default": None},
     {"name": "student_first_name", "type": ["null", "string"], "default": None},
-    {"name": "student_id_district_id", "type": ["null"], "default": None},
+    {"name": "student_id_district_id", "type": ["null", "double"], "default": None},
     {"name": "student_id_state_id", "type": ["null", "string"], "default": None},
     {"name": "student_last_name", "type": ["null", "string"], "default": None},
     {"name": "student_middle_name", "type": ["null", "string"], "default": None},
