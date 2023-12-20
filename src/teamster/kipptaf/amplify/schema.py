@@ -170,7 +170,7 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
     },
     {
         "name": "primary_id_student_id_district_id",
-        "type": ["null", "long"],
+        "type": ["null", "long", "double"],
         "default": None,
     },
     {
@@ -338,7 +338,7 @@ PM_STUDENT_SUMMARY_FIELDS = [
     {"name": "total_number_of_probes", "type": ["null", "long"], "default": None},
     {
         "name": "primary_id_student_id_district_id",
-        "type": ["null", "long"],
+        "type": ["null", "long", "double"],
         "default": None,
     },
     {
