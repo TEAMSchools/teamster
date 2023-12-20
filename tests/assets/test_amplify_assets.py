@@ -30,12 +30,14 @@ def _test_asset(asset_name, dyd_payload, partition_start_date):
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]
-        .value
-        > 0
-    )
+
+    for asset_materialization_event in result.get_asset_materialization_events():
+        event_specific_data = asset_materialization_event.event_specific_data
+        materialization = event_specific_data.materialization  # type: ignore
+        records = materialization.metadata["records"]
+        records_value: int = records.value  # type: ignore
+
+        assert records_value > 0
 
 
 def test_mclass_asset_benchmark_student_summary():
