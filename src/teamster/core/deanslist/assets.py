@@ -1,3 +1,5 @@
+import gc
+
 import pendulum
 from dagster import (
     AssetExecutionContext,
@@ -106,13 +108,16 @@ def build_deanslist_multi_partition_asset(
         )
 
         data = endpoint_content["data"]
+        row_count = endpoint_content["row_count"]
+
+        del endpoint_content
+        gc.collect()
+
         schema = get_avro_record_schema(
             name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
         )
 
-        yield Output(
-            value=(data, schema), metadata={"records": endpoint_content["row_count"]}
-        )
+        yield Output(value=(data, schema), metadata={"records": row_count})
 
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=data, schema=schema
