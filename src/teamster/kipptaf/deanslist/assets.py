@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import config_from_files
 
 from teamster.core.deanslist.schema import ASSET_FIELDS
@@ -16,6 +18,6 @@ _all = [
         **a,
     )
     for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/deanslist/config/assets.yaml"]
+        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
     )["assets"]
 ]

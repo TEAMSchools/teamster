@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import AssetExecutionContext, Output, asset, config_from_files
 
 from teamster.core.utils.functions import (
@@ -100,7 +102,7 @@ def build_ldap_asset(name, search_base, search_filter, attributes=["*"], op_tags
 ldap_assets = [
     build_ldap_asset(**asset)
     for asset in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/ldap/config/assets.yaml"]
+        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"]
     )["assets"]
 ]
 

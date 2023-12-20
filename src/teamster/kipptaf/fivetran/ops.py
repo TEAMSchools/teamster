@@ -1,4 +1,4 @@
-# forked from dagster_fivetran/ops.py
+# based on dagster_fivetran.resources.FivetranResource.sync_and_poll
 from dagster import Any, In, Nothing, Out, Output, op
 from dagster_fivetran import FivetranResource
 from dagster_fivetran.ops import FivetranResyncConfig, SyncConfig

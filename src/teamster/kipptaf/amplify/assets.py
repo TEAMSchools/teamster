@@ -1,3 +1,4 @@
+import pathlib
 from io import StringIO
 
 from dagster import AssetExecutionContext, Output, asset, config_from_files
@@ -71,7 +72,7 @@ mclass_assets = [
         ),
     )
     for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/amplify/config/assets.yaml"]
+        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
     )["assets"]
 ]
 

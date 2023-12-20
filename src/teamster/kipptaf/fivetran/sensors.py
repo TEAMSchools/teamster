@@ -1,27 +1,24 @@
 import json
-import re
 
 import pendulum
 from dagster import AssetKey, RunRequest, SensorEvaluationContext, SensorResult, sensor
 from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 
-from .. import CODE_LOCATION
-from . import assets
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.fivetran import assets
 
 CONNECTORS = {}
 ASSET_KEYS = [key for a in assets for key in a.keys]
 
 for asset in assets:
-    connector_id = re.match(
-        pattern=r"fivetran_sync_(\w+)",
-        string=asset.op.name,
-    ).group(1)
+    connector_id = asset.metadata_by_key[asset.key]["connector_id"]
 
     CONNECTORS[connector_id] = set([".".join(key.path[1:-1]) for key in asset.keys])
 
 
 def render_fivetran_audit_query(connector_id, timestamp):
+    # trunk-ignore(bandit/B608)
     return f"""
         select distinct
             json_extract_scalar(message_data, '$.table') as table_name,
