@@ -3,6 +3,12 @@ endpoints:
     api_version: v1
     params:
       IncludeDeleted: Y
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 1.5Gi
   - asset_name: homework
     api_version: v1
     params:
