@@ -31,6 +31,7 @@ assets:
       - Enrollment__History
       - Event
       - GPA__c
+      - Internships_Programs__c
       - KIPP_Aid__c
       - Marking_Period__c
       - RecordType
