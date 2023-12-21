@@ -13,7 +13,7 @@ COMMON_FIELDS = [
     {"name": "economically_disadvantaged", "type": ["null", "string"], "default": None},
     {"name": "ell_status", "type": ["null", "string"], "default": None},
     {"name": "english_proficiency", "type": ["null", "string"], "default": None},
-    {"name": "enrollment_grade", "type": ["null", "string"], "default": None},
+    {"name": "enrollment_grade", "type": ["null", "string", "long"], "default": None},
     {"name": "external_program", "type": ["null", "string"], "default": None},
     {"name": "gender", "type": ["null", "string"], "default": None},
     {"name": "home_language", "type": ["null", "string"], "default": None},
