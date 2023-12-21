@@ -4,7 +4,7 @@ COMMON_FIELDS = [
     {"name": "approved_accommodations", "type": ["null", "string"], "default": None},
     {"name": "assessing_teacher_name", "type": ["null", "string"], "default": None},
     {"name": "assessment_edition", "type": ["null", "string"], "default": None},
-    {"name": "assessment_grade", "type": ["null", "string"], "default": None},
+    {"name": "assessment_grade", "type": ["null", "string", "long"], "default": None},
     {"name": "assessment", "type": ["null", "string"], "default": None},
     {"name": "classed", "type": ["null", "string"], "default": None},
     {"name": "disability", "type": ["null", "string"], "default": None},
