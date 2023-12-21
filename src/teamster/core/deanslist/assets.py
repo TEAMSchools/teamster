@@ -36,6 +36,7 @@ def build_deanslist_static_partition_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="deanslist",
+        compute_kind="deanslist",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
@@ -79,6 +80,7 @@ def build_deanslist_multi_partition_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="deanslist",
+        compute_kind="deanslist",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):

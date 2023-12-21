@@ -1,3 +1,5 @@
+import pathlib
+
 import pendulum
 from dagster import (
     AssetExecutionContext,
@@ -17,7 +19,9 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 def build_powerschool_table_asset(
     code_location,
     asset_name,
-    partitions_def: FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition = None,
+    partitions_def: (
+        FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
+    ) = None,
     select_columns=["*"],
     partition_column=None,
     op_tags={},
@@ -29,6 +33,7 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="powerschool",
+        compute_kind="powerschool",
     )
     def _asset(
         context: AssetExecutionContext,
@@ -63,6 +68,8 @@ def build_powerschool_table_asset(
                 context.assets_def.partitions_def, MonthlyPartitionsDefinition
             ):
                 date_add_kwargs = {"months": 1}
+            else:
+                date_add_kwargs = {}
 
             window_end_fmt = (
                 window_start.add(**date_add_kwargs)
@@ -90,9 +97,9 @@ def build_powerschool_table_asset(
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            file_path = db_powerschool.engine.execute_query(
+            file_path: pathlib.Path = db_powerschool.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
-            )
+            )  # type: ignore
 
             try:
                 with file_path.open(mode="rb") as f:

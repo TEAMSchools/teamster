@@ -149,6 +149,7 @@ def build_bigquery_query_sftp_asset(
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
         group_name="datagun",
+        compute_kind="datagun",
     )
     def _asset(context: AssetExecutionContext):
         now = pendulum.now(tz=timezone)
@@ -216,6 +217,7 @@ def build_bigquery_extract_sftp_asset(
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
         group_name="datagun",
+        compute_kind="datagun",
     )
     def _asset(context: AssetExecutionContext):
         file_name = construct_file_name(
@@ -287,6 +289,7 @@ def build_bigquery_extract_asset(
         deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
         group_name="datagun",
+        compute_kind="datagun",
     )
     def _asset(
         context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource
