@@ -21,19 +21,21 @@ from teamster.core.utils.functions import (
 from .. import CODE_LOCATION
 from .schema import ASSET_FIELDS
 
-GROUP_NAME = "alchemer"
-IO_MANAGER_KEY = "io_manager_gcs_avro"
+key_prefix = [CODE_LOCATION, "alchemer"]
+asset_kwargs = {
+    "io_manager_key": "io_manager_gcs_avro",
+    "group_name": "alchemer",
+    "compute_kind": "alchemer",
+}
 
-KEY_PREFIX = [CODE_LOCATION, GROUP_NAME]
-PARTITIONS_DEF = DynamicPartitionsDefinition(name=f"{CODE_LOCATION}_alchemer_survey_id")
+partitions_def = DynamicPartitionsDefinition(name=f"{CODE_LOCATION}_alchemer_survey_id")
 
 
 @asset(
-    key=[*KEY_PREFIX, "survey"],
-    io_manager_key=IO_MANAGER_KEY,
-    partitions_def=PARTITIONS_DEF,
-    group_name=GROUP_NAME,
-    check_specs=[get_avro_schema_valid_check_spec([*KEY_PREFIX, "survey"])],
+    key=[*key_prefix, "survey"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey"])],
+    partitions_def=partitions_def,
+    **asset_kwargs,  # type: ignore
 )
 def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]):
     survey = alchemer.survey.get(id=context.partition_key)
@@ -51,11 +53,10 @@ def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
 
 
 @asset(
-    key=[*KEY_PREFIX, "survey_question"],
-    io_manager_key=IO_MANAGER_KEY,
-    partitions_def=PARTITIONS_DEF,
-    group_name=GROUP_NAME,
-    check_specs=[get_avro_schema_valid_check_spec([*KEY_PREFIX, "survey_question"])],
+    key=[*key_prefix, "survey_question"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_question"])],
+    partitions_def=partitions_def,
+    **asset_kwargs,  # type: ignore
 )
 def survey_question(
     context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
@@ -79,11 +80,10 @@ def survey_question(
 
 
 @asset(
-    key=[*KEY_PREFIX, "survey_campaign"],
-    io_manager_key=IO_MANAGER_KEY,
-    partitions_def=PARTITIONS_DEF,
-    group_name=GROUP_NAME,
-    check_specs=[get_avro_schema_valid_check_spec([*KEY_PREFIX, "survey_campaign"])],
+    key=[*key_prefix, "survey_campaign"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_campaign"])],
+    partitions_def=partitions_def,
+    **asset_kwargs,  # type: ignore
 )
 def survey_campaign(
     context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
@@ -106,13 +106,12 @@ def survey_campaign(
 
 
 @asset(
-    key=[*KEY_PREFIX, "survey_response"],
-    io_manager_key=IO_MANAGER_KEY,
+    key=[*key_prefix, "survey_response"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_response"])],
     partitions_def=DynamicPartitionsDefinition(
         name=f"{CODE_LOCATION}_alchemer_survey_response"
     ),
-    group_name=GROUP_NAME,
-    check_specs=[get_avro_schema_valid_check_spec([*KEY_PREFIX, "survey_response"])],
+    **asset_kwargs,  # type: ignore
 )
 def survey_response(
     context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
