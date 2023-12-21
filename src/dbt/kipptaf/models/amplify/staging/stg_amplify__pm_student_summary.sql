@@ -11,6 +11,7 @@ select
             from=src_pss,
             except=[
                 "assessing_teacher_staff_id",
+                "assessment_grade",
                 "client_date",
                 "official_teacher_staff_id",
                 "primary_id_student_id_district_id",
@@ -28,6 +29,9 @@ select
         assessing_teacher_staff_id.string_value,
         safe_cast(assessing_teacher_staff_id.double_value as string)
     ) as assessing_teacher_staff_id,
+    coalesce(
+        assessment_grade.string_value, safe_cast(assessment_grade.long_value as string)
+    ) as assessment_grade,
     coalesce(
         official_teacher_staff_id.string_value,
         safe_cast(official_teacher_staff_id.long_value as string)
