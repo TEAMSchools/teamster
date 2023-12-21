@@ -8,6 +8,7 @@ from dagster import (
     asset,
 )
 from fastavro import parse_schema, writer
+from pendulum.datetime import DateTime
 from zenpy import Zenpy
 from zenpy.lib.exception import RecordNotFoundException
 
@@ -25,6 +26,7 @@ from .schema import ASSET_FIELDS
         end_date=pendulum.datetime(2023, 6, 30),
         timezone=LOCAL_TIMEZONE.name,
     ),
+    group_name="zendesk",
 )
 def ticket_metrics_archive(
     context: AssetExecutionContext, zendesk: ResourceParam[Zenpy]
@@ -36,7 +38,7 @@ def ticket_metrics_archive(
         )
     )
 
-    partition_key = pendulum.parser.parse(context.partition_key)
+    partition_key: DateTime = pendulum.parser.parse(context.partition_key)  # type: ignore
 
     start_date = partition_key.subtract(seconds=1)
     end_date = partition_key.add(months=1)
@@ -62,8 +64,8 @@ def ticket_metrics_archive(
     fo = data_filepath.open("a+b")
 
     try:
-        for ticket in archived_tickets:
-            ticket_id = ticket.id
+        for ticket in archived_tickets:  # type:ignore
+            ticket_id = ticket.id  # type: ignore
 
             context.log.info(f"Getting metrics for ticket #{ticket_id}")
 
@@ -71,7 +73,7 @@ def ticket_metrics_archive(
                 writer(
                     fo=fo,
                     schema=schema,
-                    records=[zendesk.tickets.metrics(ticket_id).to_dict()],
+                    records=[zendesk.tickets.metrics(ticket_id).to_dict()],  # type: ignore
                     codec="snappy",
                     strict_allow_default=True,
                 )
