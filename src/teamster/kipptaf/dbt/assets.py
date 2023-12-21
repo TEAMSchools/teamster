@@ -1,10 +1,5 @@
-from dagster import AssetExecutionContext
-from dagster_dbt import DbtCliResource, dbt_assets
-
-from teamster.core.dbt.assets import (
-    CustomDagsterDbtTranslator,
-    build_dbt_external_source_assets,
-)
+from teamster.core.dbt.assets import build_dbt_assets, build_dbt_external_source_assets
+from teamster.core.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 from .. import CODE_LOCATION
 from .manifest import dbt_manifest
@@ -13,17 +8,9 @@ dagster_dbt_translator = CustomDagsterDbtTranslator(
     asset_key_prefix=CODE_LOCATION, source_asset_key_prefix=CODE_LOCATION
 )
 
-
-@dbt_assets(
-    manifest=dbt_manifest,
-    exclude="tag:stage_external_sources",
-    dagster_dbt_translator=dagster_dbt_translator,
+dbt_assets = build_dbt_assets(
+    dbt_manifest=dbt_manifest, dagster_dbt_translator=dagster_dbt_translator
 )
-def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-    dbt_build = dbt_cli.cli(args=["build"], context=context)
-
-    yield from dbt_build.stream()
-
 
 dbt_external_source_assets = build_dbt_external_source_assets(
     code_location=CODE_LOCATION,
@@ -32,6 +19,6 @@ dbt_external_source_assets = build_dbt_external_source_assets(
 )
 
 _all = [
-    _dbt_assets,
+    dbt_assets,
     dbt_external_source_assets,
 ]

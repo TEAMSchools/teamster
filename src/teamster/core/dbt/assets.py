@@ -1,8 +1,6 @@
 import json
-from typing import Mapping, Optional
 
 from dagster import (
-    Any,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
@@ -11,51 +9,28 @@ from dagster import (
     Output,
     multi_asset,
 )
-from dagster_dbt import DbtCliResource, KeyPrefixDagsterDbtTranslator
+from dagster_dbt import DbtCliResource, dbt_assets
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     MANIFEST_METADATA_KEY,
-    _auto_materialize_policy_fn,
-    default_group_from_dbt_resource_props,
 )
 from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
+from teamster.core.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
-class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
-    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        asset_key_config = (
-            dbt_resource_props.get("meta", {}).get("dagster", {}).get("asset_key", [])
-        )
 
-        if asset_key_config:
-            return AssetKey(asset_key_config)
-        else:
-            return super().get_asset_key(dbt_resource_props)
+def build_dbt_assets(dbt_manifest, dagster_dbt_translator):
+    @dbt_assets(
+        manifest=dbt_manifest,
+        exclude="tag:stage_external_sources",
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
+    def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+        dbt_build = dbt_cli.cli(args=["build"], context=context)
 
-    def get_auto_materialize_policy(
-        self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[AutoMaterializePolicy]:
-        auto_materialize_policy = _auto_materialize_policy_fn(
-            dbt_resource_props.get("meta", {})
-            .get("dagster", {})
-            .get("auto_materialize_policy", {})
-        )
+        yield from dbt_build.stream()
 
-        if auto_materialize_policy:
-            return auto_materialize_policy
-        else:
-            return AutoMaterializePolicy.eager()
-
-    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-        group = default_group_from_dbt_resource_props(dbt_resource_props)
-        package_name = dbt_resource_props["package_name"]
-
-        if group is not None:
-            return group
-        elif package_name is not None:
-            return package_name
-        else:
-            return dbt_resource_props["fqn"][1]
+    return _assets
 
 
 def build_dbt_external_source_assets(
