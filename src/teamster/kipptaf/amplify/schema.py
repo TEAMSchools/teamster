@@ -208,11 +208,6 @@ BENCHMARK_STUDENT_SUMMARY_FIELDS = [
         "default": None,
     },
     {
-        "name": "primary_id_student_id_district_id",
-        "type": ["null", "long", "double"],
-        "default": None,
-    },
-    {
         "name": "reading_accuracy_orf_accu_level",
         "type": ["null", "string"],
         "default": None,
