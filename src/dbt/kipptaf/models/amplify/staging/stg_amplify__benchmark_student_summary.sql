@@ -25,6 +25,7 @@ with
                         "decoding_nwf_wrc_score",
                         "decoding_nwf_wrc_semester_growth",
                         "decoding_nwf_wrc_year_growth",
+                        "enrollment_grade",
                         "letter_names_lnf_level",
                         "letter_names_lnf_national_norm_percentile",
                         "letter_names_lnf_score",
@@ -75,6 +76,10 @@ with
                 assessment_grade.string_value,
                 safe_cast(assessment_grade.long_value as string)
             ) as assessment_grade,
+            coalesce(
+                enrollment_grade.string_value,
+                safe_cast(enrollment_grade.long_value as string)
+            ) as enrollment_grade,
             coalesce(
                 official_teacher_staff_id.string_value,
                 safe_cast(official_teacher_staff_id.long_value as string)
