@@ -10,16 +10,18 @@ from ... import CODE_LOCATION
 from ..resources import GoogleDirectoryResource
 from .schema import ASSET_FIELDS
 
+key_prefix = [CODE_LOCATION, "google", "directory"]
+asset_kwargs = {
+    "io_manager_key": "io_manager_gcs_avro",
+    "group_name": "google_directory",
+    "compute_kind": "google_directory",
+}
+
 
 @asset(
-    key=[CODE_LOCATION, "google", "directory", "orgunits"],
-    io_manager_key="io_manager_gcs_avro",
-    group_name="google_directory",
-    check_specs=[
-        get_avro_schema_valid_check_spec(
-            [CODE_LOCATION, "google", "directory", "orgunits"]
-        )
-    ],
+    key=[*key_prefix, "orgunits"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "orgunits"])],
+    **asset_kwargs,  # type: ignore
 )
 def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_orgunits(org_unit_type="all")
@@ -33,14 +35,9 @@ def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryRe
 
 
 @asset(
-    key=[CODE_LOCATION, "google", "directory", "users"],
-    io_manager_key="io_manager_gcs_avro",
-    group_name="google_directory",
-    check_specs=[
-        get_avro_schema_valid_check_spec(
-            [CODE_LOCATION, "google", "directory", "users"]
-        )
-    ],
+    key=[*key_prefix, "users"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "users"])],
+    **asset_kwargs,  # type: ignore
 )
 def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_users(projection="full")
@@ -54,14 +51,9 @@ def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 
 
 @asset(
-    key=[CODE_LOCATION, "google", "directory", "groups"],
-    io_manager_key="io_manager_gcs_avro",
-    group_name="google_directory",
-    check_specs=[
-        get_avro_schema_valid_check_spec(
-            [CODE_LOCATION, "google", "directory", "groups"]
-        )
-    ],
+    key=[*key_prefix, "groups"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "groups"])],
+    **asset_kwargs,  # type: ignore
 )
 def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_groups()
@@ -75,14 +67,9 @@ def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryReso
 
 
 @asset(
-    key=[CODE_LOCATION, "google", "directory", "roles"],
-    io_manager_key="io_manager_gcs_avro",
-    group_name="google_directory",
-    check_specs=[
-        get_avro_schema_valid_check_spec(
-            [CODE_LOCATION, "google", "directory", "roles"]
-        )
-    ],
+    key=[*key_prefix, "roles"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "roles"])],
+    **asset_kwargs,  # type: ignore
 )
 def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_roles()
@@ -96,14 +83,9 @@ def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 
 
 @asset(
-    key=[CODE_LOCATION, "google", "directory", "role_assignments"],
-    io_manager_key="io_manager_gcs_avro",
-    group_name="google_directory",
-    check_specs=[
-        get_avro_schema_valid_check_spec(
-            [CODE_LOCATION, "google", "directory", "role_assignments"]
-        )
-    ],
+    key=[*key_prefix, "role_assignments"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "role_assignments"])],
+    **asset_kwargs,  # type: ignore
 )
 def role_assignments(
     context: AssetExecutionContext, google_directory: GoogleDirectoryResource
@@ -121,8 +103,8 @@ def role_assignments(
 
 
 @asset(
-    key=[CODE_LOCATION, "google", "directory", "members"],
-    io_manager_key="io_manager_gcs_avro",
+    key=[*key_prefix, "members"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "members"])],
     partitions_def=StaticPartitionsDefinition(
         [
             "group-students-camden@teamstudents.org",
@@ -130,12 +112,7 @@ def role_assignments(
             "group-students-newark@teamstudents.org",
         ]
     ),
-    group_name="google_directory",
-    check_specs=[
-        get_avro_schema_valid_check_spec(
-            [CODE_LOCATION, "google", "directory", "members"]
-        )
-    ],
+    **asset_kwargs,  # type: ignore
 )
 def members(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_members(group_key=context.partition_key)

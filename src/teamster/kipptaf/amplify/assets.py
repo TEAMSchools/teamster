@@ -26,6 +26,7 @@ def build_mclass_asset(name, partitions_def, dyd_payload):
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         group_name="amplify",
+        compute_kind="amplify",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, mclass: MClassResource):

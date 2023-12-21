@@ -27,6 +27,7 @@ from .schema import ASSET_FIELDS
         timezone=LOCAL_TIMEZONE.name,
     ),
     group_name="zendesk",
+    compute_kind="zendesk",
 )
 def ticket_metrics_archive(
     context: AssetExecutionContext, zendesk: ResourceParam[Zenpy]
