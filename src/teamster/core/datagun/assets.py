@@ -215,6 +215,7 @@ def build_bigquery_extract_sftp_asset(
         deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
+        group_name="datagun",
     )
     def _asset(context: AssetExecutionContext):
         file_name = construct_file_name(
