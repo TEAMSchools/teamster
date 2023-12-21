@@ -30,8 +30,6 @@ def google_sheets_asset_sensor(
 
     asset_events = []
     for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID.items():
-        context.log.info(sheet_id)
-
         try:
             spreadsheet = gsheets.open(sheet_id=sheet_id)
 
