@@ -486,7 +486,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_8_fast_ela_reading_scale_score",
-        "type": ["null", "long"],
+        "type": ["null", "long", "string"],
         "default": None,
     },
     {
