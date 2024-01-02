@@ -5,8 +5,8 @@ from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult,
 from gspread.exceptions import APIError
 
 from ... import CODE_LOCATION
-from ..resources import GoogleSheetsResource
 from .assets import google_sheets_assets
+from .resources import GoogleSheetsResource
 
 ASSET_KEYS_BY_SHEET_ID = {
     a.metadata_by_key[a.key]["sheet_id"]: [
@@ -27,9 +27,13 @@ def google_sheets_asset_sensor(
     context: SensorEvaluationContext, gsheets: GoogleSheetsResource
 ) -> SensorResult:
     cursor: dict = json.loads(context.cursor or "{}")
+    asset_events: list = []
 
-    asset_events = []
-    for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID.items():
+    assets = ASSET_KEYS_BY_SHEET_ID.items()
+
+    gsheets._client.set_timeout(60 / len(assets))
+
+    for sheet_id, asset_keys in assets:
         try:
             spreadsheet = gsheets.open(sheet_id=sheet_id)
 

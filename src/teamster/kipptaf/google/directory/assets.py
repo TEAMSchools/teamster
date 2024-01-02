@@ -7,7 +7,7 @@ from teamster.core.utils.functions import (
 )
 
 from ... import CODE_LOCATION
-from ..resources import GoogleDirectoryResource
+from .resources import GoogleDirectoryResource
 from .schema import ASSET_FIELDS
 
 key_prefix = [CODE_LOCATION, "google", "directory"]

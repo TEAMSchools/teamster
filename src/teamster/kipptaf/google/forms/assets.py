@@ -7,7 +7,7 @@ from teamster.core.utils.functions import (
 )
 
 from ... import CODE_LOCATION
-from ..resources import GoogleFormsResource
+from .resources import GoogleFormsResource
 from .schema import ASSET_FIELDS
 
 FORM_IDS = [
