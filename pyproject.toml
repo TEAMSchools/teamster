@@ -53,7 +53,6 @@ dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 
 [tool.pyright]
-venv = ".venv"
-venvPath = "in-project"
+venvPath = ".venv"
 reportOptionalMemberAccess = false
 reportInvalidStringEscapeSequence = false
