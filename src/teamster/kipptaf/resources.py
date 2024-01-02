@@ -9,11 +9,9 @@ from teamster.core.ssh.resources import SSHResource
 from .adp.workforce_manager.resources import AdpWorkforceManagerResource
 from .adp.workforce_now.resources import AdpWorkforceNowResource
 from .amplify.resources import MClassResource
-from .google.resources import (
-    GoogleDirectoryResource,
-    GoogleFormsResource,
-    GoogleSheetsResource,
-)
+from .google.directory.resources import GoogleDirectoryResource
+from .google.forms.resources import GoogleFormsResource
+from .google.sheets.resources import GoogleSheetsResource
 from .ldap.resources import LdapResource
 from .schoolmint.grow.resources import SchoolMintGrowResource
 from .smartrecruiters.resources import SmartRecruitersResource
