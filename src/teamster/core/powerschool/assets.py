@@ -40,7 +40,7 @@ def build_powerschool_table_asset(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ):
-        now = pendulum.now()
+        now = pendulum.now().start_of("minute")
 
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
