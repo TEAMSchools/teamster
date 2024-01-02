@@ -12,6 +12,8 @@ select
     co.lep_status,
     co.is_504 as c_504_status,
     co.is_self_contained as is_pathways,
+    co.school_abbreviation as school,
+    co.school_level,
 
     asr.assessment_id,
     asr.title,
