@@ -5,6 +5,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
+    AutoMaterializeRule,
     Nothing,
     Output,
     multi_asset,
@@ -54,7 +55,9 @@ def build_dbt_external_source_assets(
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },  # type: ignore
-            auto_materialize_policy=AutoMaterializePolicy.eager(),
+            auto_materialize_policy=AutoMaterializePolicy.eager().without_rules(
+                AutoMaterializeRule.skip_on_parent_missing()
+            ),
         )
         for source in external_sources
     }
