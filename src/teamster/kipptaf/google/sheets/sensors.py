@@ -53,7 +53,7 @@ def google_sheets_asset_sensor(
                 )
 
                 cursor[sheet_id] = last_update_timestamp
-        except APIError as e:
+        except [APIError, TimeoutError] as e:
             context.log.error(e)
 
     return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
