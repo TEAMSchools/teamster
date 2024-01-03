@@ -3,7 +3,6 @@ import json
 import pendulum
 from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
 from gspread.exceptions import APIError
-from requests.exceptions import ReadTimeout
 
 from ... import CODE_LOCATION
 from .assets import google_sheets_assets
@@ -16,7 +15,9 @@ ASSET_KEYS_BY_SHEET_ID = {
         if b.metadata_by_key[b.key]["sheet_id"] == a.metadata_by_key[a.key]["sheet_id"]
     ]
     for a in google_sheets_assets
-}
+}.items()
+
+TIMEOUT = 60 / len(ASSET_KEYS_BY_SHEET_ID)
 
 
 @sensor(
@@ -30,11 +31,9 @@ def google_sheets_asset_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
     asset_events: list = []
 
-    assets = ASSET_KEYS_BY_SHEET_ID.items()
+    gsheets._client.set_timeout(TIMEOUT)
 
-    gsheets._client.set_timeout(60 / len(assets))
-
-    for sheet_id, asset_keys in assets:
+    for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID:
         try:
             spreadsheet = gsheets.open(sheet_id=sheet_id)
 
@@ -54,7 +53,7 @@ def google_sheets_asset_sensor(
                 )
 
                 cursor[sheet_id] = last_update_timestamp
-        except [APIError, ReadTimeout] as e:
+        except [APIError, TimeoutError] as e:
             context.log.error(e)
 
     return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
