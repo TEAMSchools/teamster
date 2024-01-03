@@ -2,8 +2,6 @@ import json
 
 import pendulum
 from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
-from gspread.exceptions import APIError
-from requests.exceptions import ReadTimeout
 
 from ... import CODE_LOCATION
 from .assets import google_sheets_assets
@@ -54,7 +52,7 @@ def google_sheets_asset_sensor(
                 )
 
                 cursor[sheet_id] = last_update_timestamp
-        except [APIError, ReadTimeout] as e:
+        except Exception as e:
             context.log.error(e)
 
     return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
