@@ -15,7 +15,7 @@ from dagster import (
 from dagster import _check as check
 from dagster import multi_asset
 
-from .. import CODE_LOCATION
+from teamster.kipptaf import CODE_LOCATION
 
 
 def generate_materializations(
