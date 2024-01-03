@@ -262,13 +262,17 @@ with
             term_percent_grade_adjusted
             * term_weighted_points_possible as term_weighted_points_earned_adjusted,
 
+            sum(term_percent_grade_adjusted * term_weighted_points_possible) over (
+                partition by cc_course_number, cc_studentid, cc_yearid
+                order by termbin_end_date asc
+            ) as term_weighted_points_earned_adjusted_running,
             sum(term_percent_grade * term_weighted_points_possible) over (
                 partition by cc_studentid, cc_course_number, cc_yearid
-                order by storecode asc
+                order by termbin_end_date asc
             ) as y1_weighted_points_earned_running,
             sum(term_percent_grade_adjusted * term_weighted_points_possible) over (
                 partition by cc_studentid, cc_course_number, cc_yearid
-                order by storecode asc
+                order by termbin_end_date asc
             ) as y1_weighted_points_earned_adjusted_running,
             sum(
                 if(term_percent_grade is not null, term_weighted_points_possible, null)
@@ -276,13 +280,6 @@ with
                 partition by cc_course_number, cc_studentid, cc_yearid
                 order by termbin_end_date asc
             ) as y1_weighted_points_valid_running,
-            coalesce(
-                lead(y1_weighted_points_possible_running, 1) over (
-                    partition by cc_studentid, cc_yearid, cc_course_number
-                    order by storecode asc
-                ),
-                y1_weighted_points_possible
-            ) as y1_weighted_points_possible_running_lead,
         from final_grades
     ),
 
@@ -324,10 +321,10 @@ with
             y1_weighted_points_possible_running,
             term_weighted_points_earned,
             term_weighted_points_earned_adjusted,
+            term_weighted_points_earned_adjusted_running,
             y1_weighted_points_earned_running,
             y1_weighted_points_earned_adjusted_running,
             y1_weighted_points_valid_running,
-            y1_weighted_points_possible_running_lead,
 
             round(fg_percent * 100.000, 0) as fg_percent,
             round(fg_percent_adjusted * 100.000, 0) as fg_percent_adjusted,
@@ -358,24 +355,43 @@ with
                 - divided by current term weight
             #}
             (
-                (y1_weighted_points_possible_running_lead * 0.900)
-                - coalesce(term_weighted_points_earned, 0.000)
+                (y1_weighted_points_possible_running * 0.900) - coalesce(
+                    lag(term_weighted_points_earned_adjusted_running) over (
+                        partition by cc_studentid, cc_yearid, cc_course_number
+                        order by termbin_end_date asc
+                    ),
+                    0.000
+                )
             )
             / (term_weighted_points_possible / 100.000) as need_90,
             (
-                (y1_weighted_points_possible_running_lead * 0.800)
-                - coalesce(term_weighted_points_earned, 0.000)
+                (y1_weighted_points_possible_running * 0.800) - coalesce(
+                    lag(term_weighted_points_earned_adjusted_running) over (
+                        partition by cc_studentid, cc_yearid, cc_course_number
+                        order by termbin_end_date asc
+                    ),
+                    0.000
+                )
             )
             / (term_weighted_points_possible / 100.000) as need_80,
             (
-                (y1_weighted_points_possible_running_lead * 0.700)
-                - coalesce(term_weighted_points_earned, 0.000)
-
+                (y1_weighted_points_possible_running * 0.700) - coalesce(
+                    lag(term_weighted_points_earned_adjusted_running) over (
+                        partition by cc_studentid, cc_yearid, cc_course_number
+                        order by termbin_end_date asc
+                    ),
+                    0.000
+                )
             )
             / (term_weighted_points_possible / 100.000) as need_70,
             (
-                (y1_weighted_points_possible_running_lead * 0.600)
-                - coalesce(term_weighted_points_earned, 0.000)
+                (y1_weighted_points_possible_running * 0.600) - coalesce(
+                    lag(term_weighted_points_earned_adjusted_running) over (
+                        partition by cc_studentid, cc_yearid, cc_course_number
+                        order by termbin_end_date asc
+                    ),
+                    0.000
+                )
             )
             / (term_weighted_points_possible / 100.000) as need_60,
         from fg_running
@@ -427,12 +443,12 @@ select
     y1.term_weighted_points_possible,
     y1.term_weighted_points_earned,
     y1.term_weighted_points_earned_adjusted,
+    y1.term_weighted_points_earned_adjusted_running,
     y1.y1_weighted_points_possible,
     y1.y1_weighted_points_possible_running,
     y1.y1_weighted_points_earned_running,
     y1.y1_weighted_points_earned_adjusted_running,
     y1.y1_weighted_points_valid_running,
-    y1.y1_weighted_points_possible_running_lead,
 
     y1gs.grade_points as y1_grade_points,
     y1gs.letter_grade as y1_letter_grade,
