@@ -11,9 +11,16 @@ with
             enr.cc_schoolid,
             enr.cc_course_number,
             enr.courses_excludefromgpa,
-            enr.courses_gradescaleid,
+            enr.courses_course_name,
+            enr.courses_credittype,
             enr.courses_credit_hours,
+            enr.courses_gradescaleid,
             enr.is_dropped_section,
+
+            tb.storecode,
+            tb.date1 as termbin_start_date,
+            tb.date2 as termbin_end_date,
+
             {# TODO: refactor to gsheet #}
             case
                 enr.courses_gradescaleid
@@ -28,10 +35,6 @@ with
                 then 874
                 else enr.courses_gradescaleid
             end as gradescaleid_unweighted,
-
-            tb.storecode,
-            tb.date1 as termbin_start_date,
-            tb.date2 as termbin_end_date,
 
             if(
                 min(tb.storecode) over (partition by enr.cc_sectionid) like 'Q%',
@@ -65,14 +68,16 @@ with
             te.cc_sectionid,
             te.cc_course_number,
             te.cc_abs_termid,
+            te.courses_course_name,
+            te.courses_credittype,
+            te.courses_credit_hours,
             te.courses_excludefromgpa,
             te.courses_gradescaleid,
-            te.courses_credit_hours,
             te.is_dropped_section,
-            te.gradescaleid_unweighted,
             te.storecode,
             te.termbin_start_date,
             te.termbin_end_date,
+            te.gradescaleid_unweighted,
             te.term_weighted_points_possible,
 
             sg.grade as sg_letter_grade,
@@ -170,14 +175,16 @@ with
             cc_sectionid,
             cc_course_number,
             cc_abs_termid,
+            courses_course_name,
+            courses_credittype,
+            courses_credit_hours,
             courses_excludefromgpa,
             courses_gradescaleid,
-            courses_credit_hours,
             is_dropped_section,
-            gradescaleid_unweighted,
             storecode,
             termbin_start_date,
             termbin_end_date,
+            gradescaleid_unweighted,
             term_weighted_points_possible,
             sg_letter_grade,
             sg_exclude_from_gpa,
@@ -226,36 +233,38 @@ with
             cc_sectionid,
             cc_course_number,
             cc_abs_termid,
+            courses_course_name,
+            courses_credittype,
+            courses_credit_hours,
             courses_excludefromgpa,
             courses_gradescaleid,
-            courses_credit_hours,
             is_dropped_section,
-            gradescaleid_unweighted,
             storecode,
             termbin_start_date,
             termbin_end_date,
-            sg_letter_grade,
-            sg_exclude_from_gpa,
-            sg_exclude_from_graduation,
-            sg_percent,
-            sg_potential_credit_hours,
-            sg_grade_points,
-            term_weighted_points_possible,
-            fg_letter_grade,
-            fg_percent,
-            fg_letter_grade_adjusted,
-            fg_percent_adjusted,
-            fg_grade_points,
-            potential_credit_hours,
+            gradescaleid_unweighted,
             exclude_from_gpa,
             exclude_from_graduation,
-            term_letter_grade,
-            term_letter_grade_adjusted,
-            term_percent_grade,
-            term_percent_grade_adjusted,
+            potential_credit_hours,
+            fg_grade_points,
+            fg_letter_grade_adjusted,
+            fg_letter_grade,
+            fg_percent_adjusted,
+            fg_percent,
+            sg_exclude_from_gpa,
+            sg_exclude_from_graduation,
+            sg_grade_points,
+            sg_letter_grade,
+            sg_percent,
+            sg_potential_credit_hours,
             term_grade_points,
-            y1_weighted_points_possible,
+            term_letter_grade_adjusted,
+            term_letter_grade,
+            term_percent_grade_adjusted,
+            term_percent_grade,
+            term_weighted_points_possible,
             y1_weighted_points_possible_running,
+            y1_weighted_points_possible,
 
             term_percent_grade
             * term_weighted_points_possible as term_weighted_points_earned,
@@ -266,6 +275,7 @@ with
                 partition by cc_course_number, cc_studentid, cc_yearid
                 order by termbin_end_date asc
             ) as term_weighted_points_earned_adjusted_running,
+
             sum(term_percent_grade * term_weighted_points_possible) over (
                 partition by cc_studentid, cc_course_number, cc_yearid
                 order by termbin_end_date asc
@@ -294,36 +304,38 @@ with
             cc_sectionid,
             cc_course_number,
             cc_abs_termid,
+            courses_course_name,
+            courses_credittype,
+            courses_credit_hours,
             courses_excludefromgpa,
             courses_gradescaleid,
-            courses_credit_hours,
             is_dropped_section,
-            gradescaleid_unweighted,
             storecode,
             termbin_start_date,
             termbin_end_date,
-            sg_letter_grade,
-            sg_exclude_from_gpa,
-            sg_exclude_from_graduation,
-            sg_potential_credit_hours,
-            sg_grade_points,
-            term_weighted_points_possible,
-            fg_letter_grade,
-            fg_letter_grade_adjusted,
-            fg_grade_points,
-            potential_credit_hours,
+            gradescaleid_unweighted,
             exclude_from_gpa,
             exclude_from_graduation,
-            term_letter_grade,
-            term_letter_grade_adjusted,
+            potential_credit_hours,
+            fg_grade_points,
+            fg_letter_grade_adjusted,
+            fg_letter_grade,
+            sg_exclude_from_gpa,
+            sg_exclude_from_graduation,
+            sg_grade_points,
+            sg_letter_grade,
+            sg_potential_credit_hours,
             term_grade_points,
-            y1_weighted_points_possible,
-            y1_weighted_points_possible_running,
-            term_weighted_points_earned,
-            term_weighted_points_earned_adjusted,
+            term_letter_grade_adjusted,
+            term_letter_grade,
             term_weighted_points_earned_adjusted_running,
-            y1_weighted_points_earned_running,
+            term_weighted_points_earned_adjusted,
+            term_weighted_points_earned,
+            term_weighted_points_possible,
             y1_weighted_points_earned_adjusted_running,
+            y1_weighted_points_earned_running,
+            y1_weighted_points_possible_running,
+            y1_weighted_points_possible,
             y1_weighted_points_valid_running,
 
             round(fg_percent * 100.000, 0) as fg_percent,
@@ -348,52 +360,10 @@ with
                 0
             ) as y1_percent_grade_adjusted,
 
-            {#
-                need-to-get calc:
-                - target % x y1 points possible as of next term
-                - minus current term points
-                - divided by current term weight
-            #}
-            (
-                (y1_weighted_points_possible_running * 0.900) - coalesce(
-                    lag(term_weighted_points_earned_adjusted_running) over (
-                        partition by cc_studentid, cc_yearid, cc_course_number
-                        order by termbin_end_date asc
-                    ),
-                    0.000
-                )
-            )
-            / (term_weighted_points_possible / 100.000) as need_90,
-            (
-                (y1_weighted_points_possible_running * 0.800) - coalesce(
-                    lag(term_weighted_points_earned_adjusted_running) over (
-                        partition by cc_studentid, cc_yearid, cc_course_number
-                        order by termbin_end_date asc
-                    ),
-                    0.000
-                )
-            )
-            / (term_weighted_points_possible / 100.000) as need_80,
-            (
-                (y1_weighted_points_possible_running * 0.700) - coalesce(
-                    lag(term_weighted_points_earned_adjusted_running) over (
-                        partition by cc_studentid, cc_yearid, cc_course_number
-                        order by termbin_end_date asc
-                    ),
-                    0.000
-                )
-            )
-            / (term_weighted_points_possible / 100.000) as need_70,
-            (
-                (y1_weighted_points_possible_running * 0.600) - coalesce(
-                    lag(term_weighted_points_earned_adjusted_running) over (
-                        partition by cc_studentid, cc_yearid, cc_course_number
-                        order by termbin_end_date asc
-                    ),
-                    0.000
-                )
-            )
-            / (term_weighted_points_possible / 100.000) as need_60,
+            lag(term_weighted_points_earned_adjusted_running, 1, 0.000) over (
+                partition by cc_studentid, cc_yearid, cc_course_number
+                order by termbin_end_date asc
+            ) as term_weighted_points_earned_adjusted_running_lag,
         from fg_running
     )
 
@@ -407,6 +377,8 @@ select
     y1.cc_dateenrolled as dateenrolled,
     y1.cc_dateleft as dateleft,
     y1.cc_schoolid as schoolid,
+    y1.courses_course_name as course_name,
+    y1.courses_credittype as credittype,
     y1.is_dropped_section,
     y1.storecode,
     y1.term_percent_grade,
@@ -421,10 +393,6 @@ select
     y1.fg_letter_grade_adjusted,
     y1.y1_percent_grade,
     y1.y1_percent_grade_adjusted,
-    y1.need_90,
-    y1.need_80,
-    y1.need_70,
-    y1.need_60,
     y1.term_grade_points,
     y1.sg_grade_points,
     y1.fg_grade_points,
@@ -458,6 +426,33 @@ select
     if(
         y1.y1_percent_grade < 0.500, 'F*', y1gs.letter_grade
     ) as y1_letter_grade_adjusted,
+
+    /*
+        need-to-get calc:
+        - target % x y1 points possible as of next term
+        - minus current term points
+        - divided by current term weight
+    */
+    (
+        (y1.y1_weighted_points_possible_running * 0.900)
+        - y1.term_weighted_points_earned_adjusted_running_lag
+    )
+    / (y1.term_weighted_points_possible / 100.000) as need_90,
+    (
+        (y1.y1_weighted_points_possible_running * 0.800)
+        - y1.term_weighted_points_earned_adjusted_running_lag
+    )
+    / (y1.term_weighted_points_possible / 100.000) as need_80,
+    (
+        (y1.y1_weighted_points_possible_running * 0.700)
+        - y1.term_weighted_points_earned_adjusted_running_lag
+    )
+    / (y1.term_weighted_points_possible / 100.000) as need_70,
+    (
+        (y1.y1_weighted_points_possible_running * 0.600)
+        - y1.term_weighted_points_earned_adjusted_running_lag
+    )
+    / (y1.term_weighted_points_possible / 100.000) as need_60,
 from y1
 left join
     {{ ref("int_powerschool__gradescaleitem_lookup") }} as y1gs
