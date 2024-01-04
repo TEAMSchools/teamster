@@ -42,13 +42,10 @@ dev = ["pytest>=7.4.3"]
 [tool.pdm.scripts]
 _.env_file = "env/.env"
 clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
-test = { shell = "pytest --capture=no", help = "Run tests with the default Python" }
 secrets = { shell = "bash .pdm/scripts/secrets.sh", help = "Update k8s secret for branch" }
 install-dagster = { shell = "bash .pdm/scripts/install-dagster.sh", help = "Install Dagster Cloud via Helm" }
 install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "Install 1Password Connect via Helm" }
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
-stats = { shell = "python .dagster/stats/run-stats.py", help = "Generate run stats" }
-fivetran-schema = { shell = "python .pdm/scripts/fivetran-schema.py" }
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 
