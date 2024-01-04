@@ -102,6 +102,10 @@ with
             sum(
                 potential_credit_hours_default * y1_grade_points
             ) as weighted_gpa_points_y1,
+            sum(
+                potential_credit_hours_default * y1_grade_points_unweighted
+            ) as weighted_gpa_points_y1_unweighted,
+            sum(potential_credit_hours_y1) as total_credit_hours,
             round(
                 safe_divide(
                     sum(potential_credit_hours_default * y1_grade_points),
@@ -118,7 +122,6 @@ with
             ) as gpa_y1_unweighted,
 
             /* other */
-            sum(potential_credit_hours_y1) as total_credit_hours,
             sum(if(y1_letter_grade like 'F%', 1, 0)) as n_failing_y1,
         from grade_detail
         group by studentid, yearid, storecode, is_current, schoolid
@@ -137,11 +140,13 @@ select
     gpa_y1,
     gpa_y1_unweighted,
     n_failing_y1,
+    credit_hours_term,
     total_credit_hours,
-    grade_avg_term as grade_avg_term,
-    grade_avg_y1 as grade_avg_y1,
+    grade_avg_term,
+    grade_avg_y1,
     round(weighted_gpa_points_term, 2) as weighted_gpa_points_term,
     round(weighted_gpa_points_y1, 2) as weighted_gpa_points_y1,
+    round(weighted_gpa_points_y1_unweighted, 2) as weighted_gpa_points_y1_unweighted,
 
     /* gpa semester */
     sum(gpa_points_total_term) over (
