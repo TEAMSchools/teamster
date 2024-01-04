@@ -47,6 +47,8 @@ with
             {{ ref("stg_powerschool__attendance") }} as att
             on mem.studentid = att.studentid
             and mem.calendardate = att.att_date
+            and mem.schoolid = att.schoolid
+            and att.att_mode_code = 'ATT_ModeDaily'
             and {{ union_dataset_join_clause(left_alias="mem", right_alias="att") }}
         left join
             {{ ref("stg_powerschool__attendance_code") }} as ac
