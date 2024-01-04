@@ -26,9 +26,7 @@ with
                 else false
             end as is_current,
 
-            coalesce(
-                sg.percent, if(pgf.grade = '--', null, pgf.percent)
-            ) as percent_grade,
+            coalesce(sg.percent, pgf.percent) as percent_grade,
             coalesce(sg.behavior, nullif(pgf.citizenship, '')) as citizenship_grade,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         inner join
