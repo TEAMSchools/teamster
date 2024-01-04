@@ -15,26 +15,12 @@ with
             enr.courses_credittype,
             enr.courses_credit_hours,
             enr.courses_gradescaleid,
+            enr.courses_gradescaleid_unweighted,
             enr.is_dropped_section,
 
             tb.storecode,
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
-
-            {# TODO: refactor to gsheet #}
-            case
-                enr.courses_gradescaleid
-                /* unweighted 2019+ */
-                when 991
-                then 976
-                /* unweighted 2016-2018 */
-                when 712
-                then 874
-                /* MISSING GRADESCALE - default 2016+ */
-                when null
-                then 874
-                else enr.courses_gradescaleid
-            end as gradescaleid_unweighted,
 
             if(
                 min(tb.storecode) over (partition by enr.cc_sectionid) like 'Q%',
@@ -73,62 +59,43 @@ with
             te.courses_credit_hours,
             te.courses_excludefromgpa,
             te.courses_gradescaleid,
+            te.courses_gradescaleid_unweighted,
             te.is_dropped_section,
             te.storecode,
             te.termbin_start_date,
             te.termbin_end_date,
-            te.gradescaleid_unweighted,
             te.term_weighted_points_possible,
 
             sg.grade as sg_letter_grade,
+            sg.percent_decimal as sg_percent,
             sg.excludefromgpa as sg_exclude_from_gpa,
             sg.excludefromgraduation as sg_exclude_from_graduation,
 
             sgs.grade_points as sg_grade_points,
 
-            sg.percent / 100.000 as sg_percent,
             if(
                 sg.potentialcrhrs != 0.0, sg.potentialcrhrs, null
             ) as sg_potential_credit_hours,
 
-            case
-                when te.is_dropped_section and sg.percent is null
-                then null
-                when fg.grade != '--'
-                then fg.grade
-            end as fg_letter_grade,
+            if(
+                te.is_dropped_section and sg.percent is null, null, fg.grade
+            ) as fg_letter_grade,
+            if(
+                te.is_dropped_section and sg.percent is null, null, fg.grade_adjusted
+            ) as fg_letter_grade_adjusted,
+            if(
+                te.is_dropped_section and sg.percent is null, null, fg.percent_decimal
+            ) as fg_percent,
+            if(
+                te.is_dropped_section and sg.percent is null,
+                null,
+                fg.percent_decimal_adjusted
+            ) as fg_percent_adjusted,
 
             case
                 when te.is_dropped_section and sg.percent is null
                 then null
-                when fg.grade != '--'
-                then fg.percent / 100.000
-            end as fg_percent,
-
-            case
-                when te.is_dropped_section and sg.percent is null
-                then null
-                when fg.grade = '--'
-                then null
-                when fg.percent < 50.000
-                then 'F*'
-                else fg.grade
-            end as fg_letter_grade_adjusted,
-
-            case
-                when te.is_dropped_section and sg.percent is null
-                then null
-                when fg.grade = '--'
-                then null
-                when fg.percent < 50.000
-                then 0.500
-                else fg.percent / 100.000
-            end as fg_percent_adjusted,
-
-            case
-                when te.is_dropped_section and sg.percent is null
-                then null
-                when fg.grade = '--'
+                when fg.grade is null
                 then null
                 else fgs.grade_points
             end as fg_grade_points,
@@ -180,11 +147,11 @@ with
             courses_credit_hours,
             courses_excludefromgpa,
             courses_gradescaleid,
+            courses_gradescaleid_unweighted,
             is_dropped_section,
             storecode,
             termbin_start_date,
             termbin_end_date,
-            gradescaleid_unweighted,
             term_weighted_points_possible,
             sg_letter_grade,
             sg_exclude_from_gpa,
@@ -238,11 +205,11 @@ with
             courses_credit_hours,
             courses_excludefromgpa,
             courses_gradescaleid,
+            courses_gradescaleid_unweighted,
             is_dropped_section,
             storecode,
             termbin_start_date,
             termbin_end_date,
-            gradescaleid_unweighted,
             exclude_from_gpa,
             exclude_from_graduation,
             potential_credit_hours,
@@ -309,11 +276,11 @@ with
             courses_credit_hours,
             courses_excludefromgpa,
             courses_gradescaleid,
+            courses_gradescaleid_unweighted,
             is_dropped_section,
             storecode,
             termbin_start_date,
             termbin_end_date,
-            gradescaleid_unweighted,
             exclude_from_gpa,
             exclude_from_graduation,
             potential_credit_hours,
@@ -397,7 +364,7 @@ select
     y1.sg_grade_points,
     y1.fg_grade_points,
     y1.courses_gradescaleid,
-    y1.gradescaleid_unweighted,
+    y1.courses_gradescaleid_unweighted,
     y1.termbin_start_date,
     y1.termbin_end_date,
     y1.exclude_from_gpa,
@@ -461,6 +428,6 @@ left join
     between y1gs.min_cutoffpercentage and y1gs.max_cutoffpercentage
 left join
     {{ ref("int_powerschool__gradescaleitem_lookup") }} as y1gsu
-    on y1.gradescaleid_unweighted = y1gsu.gradescaleid
+    on y1.courses_gradescaleid_unweighted = y1gsu.gradescaleid
     and y1.y1_percent_grade_adjusted
     between y1gsu.min_cutoffpercentage and y1gsu.max_cutoffpercentage
