@@ -52,6 +52,7 @@ with_years as (
 
 select
     *,
+    sg.percent / 100.000 as percent_decimal,
     case
         /* unweighted pre-2016 */
         when academic_year < 2016 and gradescale_name = 'NCA Honors'
