@@ -3,7 +3,6 @@ import re
 
 import pendulum
 from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
-from paramiko.ssh_exception import SSHException
 
 from teamster.core.ssh.resources import SSHResource
 
@@ -23,24 +22,19 @@ def adp_wfn_sftp_sensor(
 
     cursor: dict = json.loads(context.cursor or "{}")
 
+    try:
+        files = ssh_adp_workforce_now.listdir_attr_r(remote_dir=".", files=[])
+    except Exception as e:
+        context.log.exception(e)
+        return SensorResult(skip_reason=str(e))
+
     run_requests = []
     for asset in adp_wfn_sftp_assets:
         asset_metadata = asset.metadata_by_key[asset.key]
         asset_identifier = asset.key.to_python_identifier()
+
         context.log.info(asset_identifier)
-
         last_run = cursor.get(asset_identifier, 0)
-
-        try:
-            files = ssh_adp_workforce_now.listdir_attr_r(
-                remote_dir=asset_metadata["remote_dir"], files=[]
-            )
-        except SSHException as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
-        except ConnectionResetError as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
 
         updates = []
         for f in files:
