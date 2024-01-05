@@ -44,7 +44,7 @@ def build_sftp_sensor(
                     remote_dir=asset_metadata["remote_dir"], files=[]
                 )
             except SSHException as e:
-                context.log.exception(e)
+                context.log.error(e)
                 return SensorResult(skip_reason=str(e))
             except ConnectionResetError as e:
                 context.log.exception(e)
