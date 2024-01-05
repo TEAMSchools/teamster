@@ -1,5 +1,6 @@
 import json
 
+import pendulum
 from dagster import build_sensor_context
 
 from teamster.core.resources import BIGQUERY_RESOURCE
@@ -9,13 +10,16 @@ from teamster.kipptaf.resources import FIVETRAN_RESOURCE
 
 def test_fivetran_sync_status_sensor():
     cursor = {
-        # "sameness_cunning": 1698296400,  # adp_workforce_now
-        # "genuine_describing": 1698296400,
-        # "muskiness_cumulative": 1698296400,
-        # "bellows_curliness": 1698296400,
-        # "jinx_credulous": 1698296400,
-        # "aspirate_uttering": 1698296400,
-        # "regency_carrying": 1698296400,
+        connector_id: pendulum.today().subtract(days=1).timestamp()
+        for connector_id in [
+            "sameness_cunning",
+            "genuine_describing",
+            "muskiness_cumulative",
+            "bellows_curliness",
+            "jinx_credulous",
+            "aspirate_uttering",
+            "regency_carrying",
+        ]
     }
 
     sensor_result = fivetran_sync_status_sensor(
