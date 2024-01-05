@@ -9,11 +9,9 @@ from teamster.core.ssh.resources import SSHResource
 from .adp.workforce_manager.resources import AdpWorkforceManagerResource
 from .adp.workforce_now.resources import AdpWorkforceNowResource
 from .amplify.resources import MClassResource
-from .google.resources import (
-    GoogleDirectoryResource,
-    GoogleFormsResource,
-    GoogleSheetsResource,
-)
+from .google.directory.resources import GoogleDirectoryResource
+from .google.forms.resources import GoogleFormsResource
+from .google.sheets.resources import GoogleSheetsResource
 from .ldap.resources import LdapResource
 from .schoolmint.grow.resources import SchoolMintGrowResource
 from .smartrecruiters.resources import SmartRecruitersResource
@@ -34,7 +32,9 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     key_filepath="/etc/secret-volume/adp_wfn_key",
 )
 
-AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(api_key=EnvVar("AIRBYTE_API_KEY"))
+AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
+    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=1, request_timeout=8
+)
 
 ALCHEMER_RESOURCE = AlchemerSession(
     api_token=EnvVar("ALCHEMER_API_TOKEN").get_value(),

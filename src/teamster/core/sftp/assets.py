@@ -90,6 +90,7 @@ def build_sftp_asset(
         group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+        compute_kind="sftp",
     )
     def _asset(context: AssetExecutionContext):
         ssh: SSHResource = getattr(context.resources, ssh_resource_key)

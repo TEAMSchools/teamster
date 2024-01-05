@@ -2,14 +2,7 @@ import json
 import re
 
 import pendulum
-from dagster import (
-    AssetSelection,
-    RunRequest,
-    SensorEvaluationContext,
-    SensorResult,
-    SkipReason,
-    sensor,
-)
+from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 from paramiko.ssh_exception import SSHException
 
 from teamster.core.ssh.resources import SSHResource
@@ -21,7 +14,7 @@ from .assets import _all as adp_wfn_sftp_assets
 @sensor(
     name=f"{CODE_LOCATION}_adp_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=AssetSelection.assets(*adp_wfn_sftp_assets),
+    asset_selection=adp_wfn_sftp_assets,
 )
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
@@ -44,10 +37,10 @@ def adp_wfn_sftp_sensor(
             )
         except SSHException as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
         except ConnectionResetError as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
 
         updates = []
         for f in files:

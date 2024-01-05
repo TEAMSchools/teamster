@@ -28,8 +28,6 @@ locations:
           - amplify-username
           - blissbook-sftp-password
           - blissbook-sftp-username
-          - clever-reports-sftp-password
-          - clever-reports-sftp-username
           - clever-sftp-password
           - clever-sftp-username
           - couchdrop-sftp-password

@@ -15,7 +15,7 @@ def test_schedule():
         context=context,
         ssh_powerschool=SSHResource(
             remote_host="psteam.kippnj.org",
-            remote_port=EnvVar("KIPPNEWARK_PS_SSH_PORT").get_value(),
+            remote_port=int(EnvVar("KIPPNEWARK_PS_SSH_PORT").get_value()),  # type: ignore
             username=EnvVar("KIPPNEWARK_PS_SSH_USERNAME"),
             password=EnvVar("KIPPNEWARK_PS_SSH_PASSWORD"),
             tunnel_remote_host=EnvVar("KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST"),

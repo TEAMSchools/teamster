@@ -1,4 +1,4 @@
-from dagster import RunRequest, schedule
+from dagster import RunRequest, ScheduleEvaluationContext, schedule
 
 from ... import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import FORM_IDS
@@ -10,7 +10,7 @@ from .jobs import google_forms_asset_job
     job=google_forms_asset_job,
     execution_timezone=LOCAL_TIMEZONE.name,
 )
-def google_forms_asset_job_schedule():
+def google_forms_asset_job_schedule(context: ScheduleEvaluationContext):
     for form_id in FORM_IDS:
         yield RunRequest(
             run_key=(

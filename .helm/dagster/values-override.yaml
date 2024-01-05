@@ -12,6 +12,13 @@ dagsterCloud:
   branchDeployments: true
 
 ########################################################################################
+# Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
+########################################################################################
+dagsterCloudAgent:
+  # Number of replicas of the agent service to keep up at a given time.
+  replicas: 2
+
+########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
@@ -22,19 +29,9 @@ workspace:
   serverTTL:
     fullDeployments:
       enabled: true
-      ttlSeconds: 900
+      ttlSeconds: 300
     branchDeployments:
       ttlSeconds: 300
-
-  # Default compute resource requirements for the pods created by the agent.
-  # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-  resources:
-    limits:
-      cpu: 500m
-      memory: 1.0Gi
-    requests:
-      cpu: 500m
-      memory: 1.0Gi
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
@@ -42,11 +39,3 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
-
-  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
-  serverK8sConfig:
-    containerConfig: # raw config for the pod's main container
-      resources:
-        limits:
-          cpu: 750m
-          memory: 1.0Gi

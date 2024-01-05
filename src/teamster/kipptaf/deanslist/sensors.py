@@ -2,13 +2,7 @@ import json
 import re
 
 import pendulum
-from dagster import (
-    RunRequest,
-    SensorEvaluationContext,
-    SensorResult,
-    SkipReason,
-    sensor,
-)
+from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 from paramiko.ssh_exception import SSHException
 
 from teamster.core.ssh.resources import SSHResource
@@ -40,10 +34,10 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
             )
         except SSHException as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
         except ConnectionResetError as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
 
         for f in files:
             match = re.match(

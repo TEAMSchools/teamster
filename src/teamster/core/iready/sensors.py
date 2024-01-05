@@ -4,12 +4,10 @@ import re
 import pendulum
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     MultiPartitionKey,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     sensor,
 )
 from paramiko.ssh_exception import SSHException
@@ -27,7 +25,7 @@ def build_sftp_sensor(
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
         now = pendulum.now(tz=timezone)
@@ -48,10 +46,10 @@ def build_sftp_sensor(
                 )
             except SSHException as e:
                 context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
+                return SensorResult(skip_reason=str(e))
             except ConnectionResetError as e:
                 context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
+                return SensorResult(skip_reason=str(e))
 
             updates = []
             for f in files:

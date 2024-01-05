@@ -3,7 +3,7 @@ CORE_FIELDS = [
     {"name": "clever_user_id", "type": ["null", "string"], "default": None},
     {"name": "clever_school_id", "type": ["null", "string"], "default": None},
     {"name": "school_name", "type": ["null", "string"], "default": None},
-    {"name": "staff_id", "type": ["null", "string"], "default": None},
+    {"name": "staff_id", "type": ["null", "string", "long"], "default": None},
     {
         "name": "date",
         "type": ["null", "string"],
