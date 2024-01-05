@@ -21,15 +21,11 @@ for asset in assets:
     CONNECTORS[connector_id] = set([".".join(key.path[1:-1]) for key in asset.keys])
 
 
-def render_fivetran_audit_query(connector_id, timestamp):
+def render_fivetran_audit_query(dataset, timestamp):
+    # trunk-ignore(bandit/B608)
     return f"""
-        select distinct
-            json_extract_scalar(message_data, '$.table') as table_name,
-        from fivetran_log.log
-        where
-            connector_id = '{connector_id}'
-            and message_event = 'records_modified'
-            and _fivetran_synced >= '{timestamp}'
+        select table_id from {dataset}.__TABLES__
+        where last_modified_time >= {timestamp}
     """
 
 
@@ -51,8 +47,6 @@ def fivetran_sync_status_sensor(
     asset_keys = []
     for connector_id, connector_schemas in CONNECTORS.items():
         # check if fivetran sync has completed
-        last_update = pendulum.from_timestamp(cursor.get(connector_id, 0))
-
         (
             curr_last_sync_completion,
             curr_last_sync_succeeded,
@@ -60,32 +54,34 @@ def fivetran_sync_status_sensor(
         ) = fivetran.get_connector_sync_status(connector_id)
 
         context.log.info(
-            (
+            msg=(
                 f"Polled '{connector_id}'. "
                 f"Status: [{curr_sync_state}] @ {curr_last_sync_completion}"
             )
         )
 
         curr_last_sync_completion_timestamp = curr_last_sync_completion.timestamp()
+        last_update_timestamp = cursor.get(connector_id, 0)
 
         if (
             curr_last_sync_succeeded
-            and curr_last_sync_completion_timestamp > last_update.timestamp()
+            and curr_last_sync_completion_timestamp > last_update_timestamp
         ):
             for schema in connector_schemas:
-                # get fivetran_audit table
+                # get BQ table metadata
                 query = render_fivetran_audit_query(
-                    connector_id=connector_id, timestamp=last_update.to_iso8601_string()
+                    dataset=schema.replace(".", "_"),
+                    timestamp=(last_update_timestamp * 1000),
                 )
-                context.log.info(query)
 
+                context.log.info(query)
                 query_job = bq.query(query=query)
 
                 for row in query_job.result():
-                    context.log.info(row)
+                    context.log.info(row.table_id)
 
                     asset_key = AssetKey(
-                        [CODE_LOCATION, *schema.split("."), row.table_name]
+                        [CODE_LOCATION, *schema.split("."), row.table_id]
                     )
 
                     if asset_key in ASSET_KEYS:
