@@ -1,4 +1,4 @@
-from dagster import AssetSelection, RunConfig, define_asset_job, job
+from dagster import RunConfig, define_asset_job, job
 
 from ...google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
 from .assets import multi_partition_assets, static_partition_assets
@@ -25,13 +25,13 @@ def schoolmint_grow_user_update_job():
 
 static_partition_asset_job = define_asset_job(
     name="schoolmint_grow_static_partition_asset_job",
-    selection=AssetSelection.assets(*static_partition_assets),
+    selection=static_partition_assets,
     partitions_def=static_partition_assets[0].partitions_def,
 )
 
 multi_partition_asset_job = define_asset_job(
     name="schoolmint_grow_multi_partition_asset_job",
-    selection=AssetSelection.assets(*multi_partition_assets),
+    selection=multi_partition_assets,
     partitions_def=multi_partition_assets[0].partitions_def,
 )
 

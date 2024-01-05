@@ -1,13 +1,7 @@
 import json
 
 import pendulum
-from dagster import (
-    AssetSelection,
-    RunRequest,
-    SensorEvaluationContext,
-    SensorResult,
-    sensor,
-)
+from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 
 from .. import CODE_LOCATION
 from . import assets
@@ -17,7 +11,7 @@ from .resources import LdapResource
 @sensor(
     name=f"{CODE_LOCATION}_ldap_asset_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=AssetSelection.assets(*assets),
+    asset_selection=assets,
 )
 def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
     now_timestamp = pendulum.now().timestamp()

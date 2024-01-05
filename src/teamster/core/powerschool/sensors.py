@@ -1,7 +1,6 @@
 import pendulum
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     MonthlyPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
@@ -21,7 +20,7 @@ def build_powerschool_sensor(
     @sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(
         context: SensorEvaluationContext,
