@@ -15,8 +15,8 @@ dagsterCloud:
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
 dagsterCloudAgent:
-  annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+  # Number of replicas of the agent service to keep up at a given time.
+  replicas: 2
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
