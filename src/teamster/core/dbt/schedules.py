@@ -1,6 +1,5 @@
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     RunRequest,
     ScheduleEvaluationContext,
     define_asset_job,
@@ -19,10 +18,8 @@ def build_dbt_code_version_schedule(
         cron_schedule=cron_schedule,
         name=schedule_name,
         execution_timezone=execution_timezone,
-        job=define_asset_job(
-            name=job_name, selection=AssetSelection.assets(dbt_assets)
-        ),
-    )
+        job=define_asset_job(name=job_name, selection=[dbt_assets]),
+    )  # type: ignore
     def _schedule(context: ScheduleEvaluationContext):
         latest_code_versions = (
             context.instance.get_latest_materialization_code_versions(
