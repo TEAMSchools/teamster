@@ -8,7 +8,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     sensor,
 )
 from paramiko.ssh_exception import SSHException
@@ -46,10 +45,10 @@ def clever_reports_sftp_sensor(
             )
         except SSHException as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
         except ConnectionResetError as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
 
         partition_keys = []
         for f in files:

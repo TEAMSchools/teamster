@@ -109,6 +109,8 @@ def build_powerschool_sensor(
                             for partition_key in partition_keys
                         ]
                     )
+        except Exception as e:
+            return SensorResult(skip_reason=str(e))
         finally:
             ssh_tunnel.stop()
 
