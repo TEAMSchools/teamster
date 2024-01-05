@@ -4,7 +4,6 @@ import re
 import pendulum
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -25,7 +24,7 @@ def build_sftp_sensor(
     @sensor(
         name=sensor_name,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHResource):
         now = pendulum.now(tz=timezone)
