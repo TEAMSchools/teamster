@@ -1,18 +1,16 @@
 import time
 
 import google.auth
-import gspread
 from dagster import ConfigurableResource, InitResourceContext
 from dagster._utils.backoff import backoff
 from googleapiclient import discovery, errors
-from gspread.utils import rowcol_to_a1
 from pydantic import PrivateAttr
 
 
 class GoogleDirectoryResource(ConfigurableResource):
     customer_id: str
-    service_account_file_path: str = None
-    delegated_account: str = None
+    service_account_file_path: str | None = None
+    delegated_account: str | None = None
     version: str = "v1"
     scopes: list = [
         "https://www.googleapis.com/auth/admin.directory.user",
@@ -30,7 +28,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                 filename=self.service_account_file_path, scopes=self.scopes
             )
 
-            credentials = credentials.with_subject(self.delegated_account)
+            credentials = credentials.with_subject(self.delegated_account)  # type: ignore
         else:
             credentials, project_id = google.auth.default(scopes=self.scopes)
 
@@ -68,7 +66,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         self, org_unit_path=None, org_unit_type=None, customer_id=None, **kwargs
     ):
         return (
-            self._service.orgunits()
+            self._service.orgunits()  # type: ignore
             .list(
                 customerId=(customer_id or self.customer_id),
                 orgUnitPath=org_unit_path,
@@ -80,7 +78,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def get_orgunit(self, org_unit_path, customer_id=None, **kwargs):
         return (
-            self._service.orgunits()
+            self._service.orgunits()  # type: ignore
             .get(
                 customerId=(customer_id or self.customer_id),
                 orgUnitPath=org_unit_path,
@@ -95,7 +93,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         )
 
     def get_user(self, user_key, **kwargs):
-        return self._service.users().get(userKey=user_key, **kwargs).execute()
+        return self._service.users().get(userKey=user_key, **kwargs).execute()  # type: ignore
 
     def list_groups(self, **kwargs):
         return self._list(
@@ -124,10 +122,10 @@ class GoogleDirectoryResource(ConfigurableResource):
         )
 
     def insert_user(self, body):
-        return self._service.users().insert(body=body).execute()
+        return self._service.users().insert(body=body).execute()  # type: ignore
 
     def update_user(self, user_key, body):
-        return self._service.users().update(userKey=user_key, body=body).execute()
+        return self._service.users().update(userKey=user_key, body=body).execute()  # type: ignore
 
     @staticmethod
     def _batch_list(list, size):
@@ -174,10 +172,10 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self.get_resource_context().log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)
+            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
 
             for user in batch:
-                batch_request.add(self._service.users().insert(body=user))
+                batch_request.add(self._service.users().insert(body=user))  # type: ignore
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
@@ -208,11 +206,11 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self.get_resource_context().log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)
+            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
 
             for user in batch:
                 batch_request.add(
-                    self._service.users().update(
+                    self._service.users().update(  # type: ignore
                         userKey=user["primaryEmail"], body=user
                     )
                 )
@@ -243,12 +241,12 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self.get_resource_context().log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)
+            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
 
             for member in batch:
                 context.log.info(f"ADDING {member['email']} to {member['groupKey']}")
                 batch_request.add(
-                    self._service.members().insert(
+                    self._service.members().insert(  # type: ignore
                         groupKey=member["groupKey"], body=member
                     )
                 )
@@ -277,11 +275,11 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self.get_resource_context().log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)
+            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
 
             for role_assignment in batch:
                 batch_request.add(
-                    self._service.roleAssignments().insert(
+                    self._service.roleAssignments().insert(  # type: ignore
                         customer=(customer or self.customer_id),
                         body=role_assignment,
                     )
@@ -294,80 +292,3 @@ class GoogleDirectoryResource(ConfigurableResource):
             )
 
             time.sleep(1)
-
-
-class GoogleFormsResource(ConfigurableResource):
-    service_account_file_path: str = None
-    version: str = "v1"
-    scopes: list = [
-        "https://www.googleapis.com/auth/forms.body.readonly",
-        "https://www.googleapis.com/auth/forms.responses.readonly",
-    ]
-
-    _service: discovery.Resource = PrivateAttr()
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        if self.service_account_file_path is not None:
-            credentials, project_id = google.auth.load_credentials_from_file(
-                filename=self.service_account_file_path, scopes=self.scopes
-            )
-        else:
-            credentials, project_id = google.auth.default(scopes=self.scopes)
-
-        self._service = discovery.build(
-            serviceName="forms", version=self.version, credentials=credentials
-        ).forms()
-
-    def get_form(self, form_id):
-        return self._service.get(formId=form_id).execute()
-
-    def list_responses(self, form_id, **kwargs):
-        return self._service.responses().list(formId=form_id, **kwargs).execute()
-
-
-class GoogleSheetsResource(ConfigurableResource):
-    service_account_file_path: str = None
-
-    _client: gspread.Client = PrivateAttr()
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        if self.service_account_file_path is not None:
-            self._client = gspread.service_account(
-                filename=self.service_account_file_path
-            )
-        else:
-            credentials, project_id = google.auth.default(
-                scopes=[
-                    "https://www.googleapis.com/auth/spreadsheets",
-                    "https://www.googleapis.com/auth/drive",
-                ]
-            )
-
-            self._client = gspread.authorize(credentials=credentials)
-
-    def open(self, **kwargs):
-        kwargs_keys = kwargs.keys()
-
-        if "title" in kwargs_keys:
-            return self._client.open(**kwargs)
-        elif "sheet_id" in kwargs_keys:
-            return self._client.open_by_key(key=kwargs["sheet_id"])
-        elif "url" in kwargs_keys:
-            return self._client.open_by_url(**kwargs)
-
-    def open_or_create_sheet(self, **kwargs):
-        try:
-            spreadsheet = self.open(**kwargs)
-        except gspread.exceptions.SpreadsheetNotFound as e:
-            context = self.get_resource_context()
-
-            context.log.warning(e)
-            context.log.info("Creating new Sheet")
-
-            spreadsheet = self._client.create(**kwargs)
-
-        return spreadsheet
-
-    @staticmethod
-    def rowcol_to_a1(row, col):
-        return rowcol_to_a1(row=row, col=col)

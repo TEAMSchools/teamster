@@ -23,7 +23,20 @@
             "_dagster_partition_minute",
         ],
     )
-}}
+}},
 
-select *
-from staging
+grade_fix as (
+    select
+        * except (grade, `percent`),
+        nullif(grade, '--') as grade,
+        if(grade = '--', null, `percent`) as `percent`,
+    from staging
+),
+
+with_percent_decimal as (select *, `percent` / 100.0 as percent_decimal, from grade_fix)
+
+select
+    *,
+    if(percent_decimal < 0.5, 0.5, percent_decimal) as percent_decimal_adjusted,
+    if(percent_decimal < 0.5, 'F*', grade) as grade_adjusted,
+from with_percent_decimal

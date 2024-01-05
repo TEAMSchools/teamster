@@ -7,7 +7,7 @@ from teamster.core.utils.functions import (
 )
 
 from ... import CODE_LOCATION
-from ..resources import GoogleFormsResource
+from .resources import GoogleFormsResource
 from .schema import ASSET_FIELDS
 
 FORM_IDS = [
@@ -16,17 +16,19 @@ FORM_IDS = [
     "1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI",  # support
 ]
 
-PARTITIONS_DEF = StaticPartitionsDefinition(FORM_IDS)
+key_prefix = [CODE_LOCATION, "google", "forms"]
+asset_kwargs = {
+    "io_manager_key": "io_manager_gcs_avro",
+    "group_name": "google_forms",
+    "compute_kind": "google_forms",
+    "partitions_def": StaticPartitionsDefinition(FORM_IDS),
+}
 
 
 @asset(
-    key=[CODE_LOCATION, "google", "forms", "form"],
-    io_manager_key="io_manager_gcs_avro",
-    partitions_def=PARTITIONS_DEF,
-    group_name="google_forms",
-    check_specs=[
-        get_avro_schema_valid_check_spec([CODE_LOCATION, "google", "forms", "form"])
-    ],
+    key=[*key_prefix, "form"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "form"])],
+    **asset_kwargs,
 )
 def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.get_form(form_id=context.partition_key)
@@ -40,15 +42,9 @@ def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
 
 
 @asset(
-    key=[CODE_LOCATION, "google", "forms", "responses"],
-    io_manager_key="io_manager_gcs_avro",
-    partitions_def=PARTITIONS_DEF,
-    group_name="google_forms",
-    check_specs=[
-        get_avro_schema_valid_check_spec(
-            [CODE_LOCATION, "google", "forms", "responses"]
-        )
-    ],
+    key=[*key_prefix, "responses"],
+    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "responses"])],
+    **asset_kwargs,
 )
 def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.list_responses(form_id=context.partition_key)

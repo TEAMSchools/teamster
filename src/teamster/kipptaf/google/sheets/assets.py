@@ -1,9 +1,11 @@
 import re
 
-from dagster import AssetSpec, external_assets_from_specs
+from dagster import AssetSpec
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.dbt.manifest import dbt_manifest
+from teamster.core.definitions.external_asset import external_assets_from_specs
+
+from ... import CODE_LOCATION
+from ...dbt.manifest import dbt_manifest
 
 
 def build_google_sheets_asset_spec(source_name, name, uri, range_name):
@@ -18,18 +20,20 @@ def build_google_sheets_asset_spec(source_name, name, uri, range_name):
     )
 
 
+specs = [
+    build_google_sheets_asset_spec(
+        source_name=source["source_name"],
+        name=source["name"].split("__")[-1],
+        uri=source["external"]["options"]["uris"][0],
+        range_name=source["external"]["options"]["sheet_range"],
+    )
+    for source in dbt_manifest["sources"].values()
+    if source.get("external")
+    and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
+]
+
 google_sheets_assets = external_assets_from_specs(
-    [
-        build_google_sheets_asset_spec(
-            source_name=source["source_name"],
-            name=source["name"].split("__")[-1],
-            uri=source["external"]["options"]["uris"][0],
-            range_name=source["external"]["options"]["sheet_range"],
-        )
-        for source in dbt_manifest["sources"].values()
-        if source.get("external")
-        and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
-    ]
+    specs=specs, compute_kind="googlesheets"
 )
 
 _all = [

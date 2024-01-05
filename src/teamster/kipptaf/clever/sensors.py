@@ -4,12 +4,10 @@ import re
 import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
-    AssetSelection,
     MultiPartitionKey,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     sensor,
 )
 from paramiko.ssh_exception import SSHException
@@ -23,7 +21,7 @@ from . import assets
 @sensor(
     name=f"{CODE_LOCATION}_clever_reports_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=AssetSelection.assets(*assets),
+    asset_selection=assets,
 )
 def clever_reports_sftp_sensor(
     context: SensorEvaluationContext, ssh_clever_reports: SSHResource
@@ -47,10 +45,10 @@ def clever_reports_sftp_sensor(
             )
         except SSHException as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
         except ConnectionResetError as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
 
         partition_keys = []
         for f in files:

@@ -5,18 +5,18 @@ import pathlib
 import re
 
 import pendulum
-import requests
 from dagster import AssetExecutionContext, AssetKey, asset
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
+from pendulum.datetime import DateTime
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
-def construct_file_name(file_stem: str, file_suffix: str, now: pendulum.DateTime):
+def construct_file_name(file_stem: str, file_suffix: str, now: DateTime):
     file_stem_fmt = file_stem.format(
         today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
     )
@@ -24,7 +24,7 @@ def construct_file_name(file_stem: str, file_suffix: str, now: pendulum.DateTime
     return f"{file_stem_fmt}.{file_suffix}"
 
 
-def construct_query(query_type, query_value, now):
+def construct_query(query_type, query_value, now) -> str:
     if query_type == "text":
         return query_value
     elif query_type == "file":
@@ -40,9 +40,15 @@ def construct_query(query_type, query_value, now):
                 text(query_value.get("where", "").format(today=now.to_date_string()))
             )
         )
+    else:
+        raise
 
 
-def transform_data(data, file_suffix, file_encoding=None, file_format=None):
+def transform_data(
+    data, file_suffix, file_encoding: str = "utf-8", file_format: dict = {}
+):
+    transformed_data = None
+
     if file_suffix == "json":
         transformed_data = json.dumps(obj=data, cls=CustomJSONEncoder).encode(
             file_encoding
@@ -71,13 +77,13 @@ def load_sftp(
     file_name,
     destination_path,
 ):
-    context.log.debug(requests.get(url="https://api.ipify.org").text)
+    # context.log.debug(requests.get(url="https://api.ipify.org").text)
 
     conn = ssh.get_connection()
 
     with conn.open_sftp() as sftp:
         sftp.chdir(".")
-        cwd_path = pathlib.Path(sftp.getcwd())
+        cwd_path = pathlib.Path(str(sftp.getcwd()))
 
         if destination_path != "":
             destination_filepath = cwd_path / destination_path / file_name
@@ -142,6 +148,8 @@ def build_bigquery_query_sftp_asset(
         metadata={**query_config, **file_config},
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
+        group_name="datagun",
+        compute_kind="datagun",
     )
     def _asset(context: AssetExecutionContext):
         now = pendulum.now(tz=timezone)
@@ -208,6 +216,8 @@ def build_bigquery_extract_sftp_asset(
         deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         op_tags=op_tags,
+        group_name="datagun",
+        compute_kind="datagun",
     )
     def _asset(context: AssetExecutionContext):
         file_name = construct_file_name(
@@ -279,6 +289,7 @@ def build_bigquery_extract_asset(
         deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
         group_name="datagun",
+        compute_kind="datagun",
     )
     def _asset(
         context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource

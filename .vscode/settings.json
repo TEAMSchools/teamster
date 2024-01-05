@@ -10,7 +10,7 @@
   "editor.wordWrap": "bounded",
   "editor.wordWrapColumn": 88,
   "githubPullRequests.ignoredPullRequestBranches": ["main"],
-  "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
+  "python.defaultInterpreterPath": ".venv/bin/python",
   "files.associations": {
     "*.toml": "toml",
     "*.env": "shellscript",

@@ -1,25 +1,31 @@
-from dagster import AssetSelection, define_asset_job
+from dagster import define_asset_job
 
 from .assets import (
-    multi_partition_assets,
-    multi_partitions_def,
+    multi_partition_fiscal_assets,
+    multi_partition_monthly_assets,
     static_partition_assets,
-    static_partitions_def,
 )
 
 static_partition_asset_job = define_asset_job(
     name="deanslist_static_partition_asset_job",
-    selection=AssetSelection.assets(*static_partition_assets),
-    partitions_def=static_partitions_def,
+    selection=static_partition_assets,
+    partitions_def=static_partition_assets[0].partitions_def,
 )
 
-multi_partition_asset_job = define_asset_job(
-    name="deanslist_multi_partition_asset_job",
-    selection=AssetSelection.assets(*multi_partition_assets),
-    partitions_def=multi_partitions_def,
+multi_partition_monthly_asset_job = define_asset_job(
+    name="deanslist_multi_partition_monthly_asset_job",
+    selection=multi_partition_monthly_assets,
+    partitions_def=multi_partition_monthly_assets[0].partitions_def,
+)
+
+multi_partition_fiscal_asset_job = define_asset_job(
+    name="deanslist_multi_partition_fiscal_asset_job",
+    selection=multi_partition_fiscal_assets,
+    partitions_def=multi_partition_fiscal_assets[0].partitions_def,
 )
 
 _all = [
     static_partition_asset_job,
-    multi_partition_asset_job,
+    multi_partition_monthly_asset_job,
+    multi_partition_fiscal_asset_job,
 ]

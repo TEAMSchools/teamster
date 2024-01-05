@@ -1,13 +1,13 @@
 import pathlib
 from stat import S_ISDIR, S_ISREG
 
-from dagster_ssh import SSHResource
+from dagster_ssh import SSHResource as DagsterSSHResource
 from sshtunnel import SSHTunnelForwarder
 
 
-class SSHResource(SSHResource):
+class SSHResource(DagsterSSHResource):
     remote_port = 22
-    tunnel_remote_host: str = None
+    tunnel_remote_host: str | None = None
 
     def get_tunnel(
         self, remote_port, remote_host=None, local_port=None
@@ -24,18 +24,18 @@ class SSHResource(SSHResource):
         )
 
     def listdir_attr_r(self, remote_dir: str, files: list = []):
-        try:
-            conn = self.get_connection()
+        with self.get_connection() as conn:
             try:
-                sftp_client = conn.open_sftp()
-                files = self._listdir_attr_r(
-                    sftp_client=sftp_client, remote_dir=remote_dir, files=files
-                )
+                with conn.open_sftp() as sftp_client:
+                    try:
+                        files = self._listdir_attr_r(
+                            sftp_client=sftp_client, remote_dir=remote_dir, files=files
+                        )
+                    finally:
+                        sftp_client.close()
             finally:
-                sftp_client.close()
-        finally:
-            conn.close()
-            return files
+                conn.close()
+                return files
 
     def _listdir_attr_r(self, sftp_client, remote_dir: str, files: list = []):
         for file in sftp_client.listdir_attr(remote_dir):

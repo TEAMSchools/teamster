@@ -4,12 +4,10 @@ import re
 import pendulum
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     MultiPartitionKey,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     StaticPartitionsDefinition,
     sensor,
 )
@@ -31,7 +29,7 @@ def build_sftp_sensor(
     @sensor(
         name=f"{code_location}_{source_system}_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_renlearn: SSHResource):
         cursor: dict = json.loads(context.cursor or "{}")
@@ -51,13 +49,13 @@ def build_sftp_sensor(
                 )
             except SSHException as e:
                 context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
+                return SensorResult(skip_reason=str(e))
             except ConnectionResetError as e:
                 context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
+                return SensorResult(skip_reason=str(e))
 
             subjects: StaticPartitionsDefinition = (
-                asset.partitions_def.get_partitions_def_for_dimension("subject")
+                asset.partitions_def.get_partitions_def_for_dimension("subject")  # type: ignore
             )
 
             for f in files:
