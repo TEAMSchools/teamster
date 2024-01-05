@@ -12,6 +12,13 @@ dagsterCloud:
   branchDeployments: true
 
 ########################################################################################
+# Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
+########################################################################################
+dagsterCloudAgent:
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+
+########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
