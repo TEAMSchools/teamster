@@ -10,7 +10,6 @@ from dagster import (
     SensorResult,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
 from teamster.core.ssh.resources import SSHResource
 
@@ -43,10 +42,7 @@ def clever_reports_sftp_sensor(
             files = ssh_clever_reports.listdir_attr_r(
                 remote_dir=asset_metadata["remote_dir"], files=[]
             )
-        except SSHException as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
-        except ConnectionResetError as e:
+        except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
 
