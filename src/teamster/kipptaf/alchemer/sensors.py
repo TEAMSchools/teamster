@@ -5,7 +5,6 @@ import pendulum
 from alchemer import AlchemerSession
 from dagster import (
     AddDynamicPartitionsRequest,
-    AssetSelection,
     ResourceParam,
     RunRequest,
     SensorEvaluationContext,
@@ -22,7 +21,7 @@ from .assets import survey, survey_metadata_assets, survey_response
 @sensor(
     name=f"{CODE_LOCATION}_alchemer_survey_metadata_asset_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=AssetSelection.assets(*survey_metadata_assets),
+    asset_selection=survey_metadata_assets,
 )
 def alchemer_survey_metadata_asset_sensor(
     context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
@@ -66,7 +65,7 @@ def alchemer_survey_metadata_asset_sensor(
         if is_run_request:
             dynamic_partitions_requests.append(
                 AddDynamicPartitionsRequest(
-                    partitions_def_name=survey.partitions_def.name,
+                    partitions_def_name=survey.partitions_def.name,  # type: ignore
                     partition_keys=[survey_id],
                 )
             )
@@ -93,8 +92,8 @@ def alchemer_survey_metadata_asset_sensor(
 @sensor(
     name=f"{CODE_LOCATION}_alchemer_survey_response_asset_sensor",
     minimum_interval_seconds=(60 * 15),
-    asset_selection=AssetSelection.assets(survey_response),
-)
+    asset_selection=[survey_response],
+)  # type: ignore
 def alchemer_survey_response_asset_sensor(
     context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
 ):
@@ -174,7 +173,7 @@ def alchemer_survey_response_asset_sensor(
         cursor=json.dumps(obj=cursor),
         dynamic_partitions_requests=[
             AddDynamicPartitionsRequest(
-                partitions_def_name=survey_response.partitions_def.name,
+                partitions_def_name=survey_response.partitions_def.name,  # type: ignore
                 partition_keys=add_partitions,
             )
         ],

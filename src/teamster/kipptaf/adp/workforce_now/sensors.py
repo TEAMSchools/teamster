@@ -3,7 +3,6 @@ import re
 
 import pendulum
 from dagster import (
-    AssetSelection,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -21,7 +20,7 @@ from .assets import _all as adp_wfn_sftp_assets
 @sensor(
     name=f"{CODE_LOCATION}_adp_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=AssetSelection.assets(*adp_wfn_sftp_assets),
+    asset_selection=adp_wfn_sftp_assets,
 )
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource

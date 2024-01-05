@@ -4,7 +4,6 @@ import re
 import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
-    AssetSelection,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -22,7 +21,7 @@ from . import assets
 @sensor(
     name=f"{CODE_LOCATION}_achieve3k_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=AssetSelection.assets(*assets),
+    asset_selection=assets,
 )
 def achieve3k_sftp_sensor(context: SensorEvaluationContext, ssh_achieve3k: SSHResource):
     cursor: dict = json.loads(context.cursor or "{}")
