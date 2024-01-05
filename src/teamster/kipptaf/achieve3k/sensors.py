@@ -7,7 +7,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     sensor,
 )
 from paramiko.ssh_exception import SSHException
@@ -42,10 +41,10 @@ def achieve3k_sftp_sensor(context: SensorEvaluationContext, ssh_achieve3k: SSHRe
             )
         except SSHException as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
         except ConnectionResetError as e:
             context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
+            return SensorResult(skip_reason=str(e))
 
         partition_keys = []
         for f in files:

@@ -8,7 +8,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     StaticPartitionsDefinition,
     sensor,
 )
@@ -50,10 +49,10 @@ def build_sftp_sensor(
                 )
             except SSHException as e:
                 context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
+                return SensorResult(skip_reason=str(e))
             except ConnectionResetError as e:
                 context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
+                return SensorResult(skip_reason=str(e))
 
             subjects: StaticPartitionsDefinition = (
                 asset.partitions_def.get_partitions_def_for_dimension("subject")  # type: ignore

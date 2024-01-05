@@ -9,7 +9,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     sensor,
 )
 from requests.exceptions import HTTPError
@@ -32,7 +31,7 @@ def alchemer_survey_metadata_asset_sensor(
     try:
         survey_list = alchemer.survey.list()
     except Exception as e:
-        return SensorResult(skip_reason=SkipReason(str(e)))
+        return SensorResult(skip_reason=str(e))
 
     run_requests = []
     dynamic_partitions_requests = []
@@ -110,7 +109,7 @@ def alchemer_survey_response_asset_sensor(
     try:
         surveys = alchemer.survey.list()
     except Exception as e:
-        return SensorResult(skip_reason=SkipReason(str(e)))
+        return SensorResult(skip_reason=str(e))
 
     run_requests = []
     add_partitions = []
