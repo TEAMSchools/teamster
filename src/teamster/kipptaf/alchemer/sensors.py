@@ -31,8 +31,8 @@ def alchemer_survey_metadata_asset_sensor(
 
     try:
         survey_list = alchemer.survey.list()
-    except HTTPError as e:
-        return SensorResult(skip_reason=SkipReason(e.strerror))
+    except Exception as e:
+        return SensorResult(skip_reason=SkipReason(str(e)))
 
     run_requests = []
     dynamic_partitions_requests = []
@@ -109,9 +109,8 @@ def alchemer_survey_response_asset_sensor(
 
     try:
         surveys = alchemer.survey.list()
-    except HTTPError as e:
-        context.log.error(e)
-        return
+    except Exception as e:
+        return SensorResult(skip_reason=SkipReason(str(e)))
 
     run_requests = []
     add_partitions = []
@@ -131,7 +130,11 @@ def alchemer_survey_response_asset_sensor(
             }
         else:
             try:
-                survey_obj = alchemer.survey.get(id=survey_id)
+                try:
+                    survey_obj = alchemer.survey.get(id=survey_id)
+                except Exception as e:
+                    context.log.exception(msg=e)
+                    continue
 
                 date_submitted = pendulum.from_timestamp(
                     timestamp=survey_cursor_timestamp, tz="America/New_York"
