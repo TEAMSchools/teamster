@@ -102,7 +102,6 @@ select
     s.current_sgp,
     s.completed_date,
     s.domain_name as star_domain,
-    s.domain
     s.standard_name,
     s.standard_description,
     s.standard_mastery_level,
