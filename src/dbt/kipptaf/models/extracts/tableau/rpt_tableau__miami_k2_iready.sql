@@ -35,6 +35,7 @@ select
 
     up.domain_name,
     up.relative_placement,
+    up.rn_subject_test,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar
