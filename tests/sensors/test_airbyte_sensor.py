@@ -6,7 +6,7 @@ from teamster.kipptaf.airbyte.sensors import airbyte_job_status_sensor
 from teamster.kipptaf.resources import AIRBYTE_CLOUD_RESOURCE
 
 
-def test_fivetran_sync_status_sensor():
+def test_airbyte_job_status_sensor():
     CURSOR = {}
 
     sensor_result = airbyte_job_status_sensor(
