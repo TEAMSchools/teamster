@@ -33,7 +33,7 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=1, request_timeout=8
+    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=1, request_timeout=6
 )
 
 ALCHEMER_RESOURCE = AlchemerSession(
