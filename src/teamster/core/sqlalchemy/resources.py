@@ -33,11 +33,14 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         connect_kwargs={},
         output_format=None,
         data_filepath="env/data.avro",
+        call_timeout=0,
     ):
         context = self.get_resource_context()
 
         context.log.info("Opening connection to engine")
         with self._engine.connect(**connect_kwargs) as conn:
+            conn.call_timeout = call_timeout  # type: ignore
+
             context.log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
 
