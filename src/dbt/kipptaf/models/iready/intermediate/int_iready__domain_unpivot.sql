@@ -28,6 +28,7 @@ with
                 )
             )
     )
+
 select
     student_id,
     subject,
