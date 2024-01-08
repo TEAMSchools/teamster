@@ -76,6 +76,7 @@ def build_powerschool_sensor(
                     ),
                     partition_size=1,
                     output_format=None,
+                    call_timeout=10000,
                 )  # type: ignore
 
                 context.log.info(f"count: {count}")
