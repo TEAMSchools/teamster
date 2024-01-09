@@ -183,11 +183,11 @@ with
                 when
                     co.grade_level >= 9
                     and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
-                then 'Off-Track (Approaching threshold)'
+                then 'Off-Track (Already reached threshold)'
                 when
                     co.grade_level >= 9
                     and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
-                then 'Off-Track (Already reached threshold)'
+                then 'Off-Track (Approaching threshold)'
                 else 'On-Track'
             end as attendance_status_hs_detail,
 
