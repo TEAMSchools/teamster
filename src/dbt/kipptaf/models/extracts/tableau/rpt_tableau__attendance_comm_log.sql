@@ -27,19 +27,8 @@ with
             on c.record_id = f.source_id
             and {{ union_dataset_join_clause(left_alias="c", right_alias="f") }}
         where c.reason like 'Att:%' and c.call_status = 'Completed'
-    ),
-    ada as (
-        select
-            studentid,
-            _dbt_source_relation,
-            yearid,
-            round(avg(cast(attendancevalue as numeric)), 2) as ada,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
-        where
-            membershipvalue = 1
-            and calendardate <= cast(current_date('America/New_York') as date)
-        group by studentid, yearid, _dbt_source_relation
     )
+
 select
     co.student_number,
     co.lastfirst,
@@ -70,52 +59,20 @@ select
     cl.followup_init_notes,
     cl.followup_close_notes,
 
-    gpa.gpa_y1,
-    gpa.n_failing_y1,
-
-    null as read_lvl,
-    null as goal_status,
-
     rt.name as term,
 
-    case
-        when co.school_level = 'HS'
-        then co.advisor_lastfirst
-        else cast(co.grade_level as string)
-    end as drill_down,
-    case
-        when
-            (
-                cl.commlog_reason is not null
-                and cl.commlog_reason not like 'Att: Unknown%'
-            )
-        then true
-        else false
-    end as is_successful,
-    count(distinct att.att_date) over (partition by co.student_number) as abs_count,
-    max(
-        case when cl.commlog_reason = 'Chronic Absence: 3' then true else false end
-    ) over (partition by co.student_number, co.academic_year) as is_chronic_3,
-    max(
-        case when cl.commlog_reason = 'Chronic Absence: 6' then true else false end
-    ) over (partition by co.student_number, co.academic_year) as is_chronic_6,
-    max(
-        case when cl.commlog_reason = 'Chronic Absence: 10' then true else false end
-    ) over (partition by co.student_number, co.academic_year) as is_chronic_10,
-    max(
-        case when cl.commlog_reason = 'Chronic Absence: 10+' then true else false end
-    ) over (partition by co.student_number, co.academic_year) as is_chronic_10_plus,
-    max(
-        case when cl.commlog_reason = 'Chronic Absence: 20' then true else false end
-    ) over (partition by co.student_number, co.academic_year) as is_chronic_20,
-    max(
-        case when cl.commlog_reason = 'Chronic Absence: 20+' then true else false end
-    ) over (partition by co.student_number, co.academic_year) as is_chronic_20_plus,
-    ada.ada,
+    a.days_absent_unexcused as abs_count,
+    a.ada,
 
-    case
-        when att.schoolid = 73253 then co.advisor_lastfirst else cc.section_number
-    end as homeroom,
+    if(
+        co.school_level = 'HS', co.advisor_lastfirst, cast(co.grade_level as string)
+    ) as drill_down,
+    if(
+        cl.commlog_reason is not null and cl.commlog_reason not like 'Att: Unknown%',
+        true,
+        false
+    ) as is_successful,
+    if(co.school_level = 'HS', co.advisor_lastfirst, cc.section_number) as homeroom,
     row_number() over (
         partition by co.studentid, att.att_date order by cl.commlog_datetime desc
     ) as rn_date,
@@ -138,21 +95,15 @@ left join
     and {{ union_dataset_join_clause(left_alias="att", right_alias="cc") }}
     and cc.course_number = 'HR'
 left join
-    {{ ref("int_powerschool__gpa_term") }} as gpa
-    on co.studentid = gpa.studentid
-    and co.yearid = gpa.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-    and gpa.is_current
-left join
     commlog as cl
     on co.student_number = cl.student_school_id
     and att.att_date = safe_cast(cl.commlog_date as date)
     and {{ union_dataset_join_clause(left_alias="co", right_alias="cl") }}
 left join
-    ada
+    {{ ref("int_powerschool__ada") }} as a
     on co.studentid = ada.studentid
     and co.yearid = ada.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on co.schoolid = rt.school_id
