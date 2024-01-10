@@ -9,7 +9,6 @@ from dagster import (
     SensorResult,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
 from teamster.core.ssh.resources import SSHResource
 
@@ -30,6 +29,12 @@ def build_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
+        try:
+            files = ssh_edplan.listdir_attr_r(remote_dir="Reports", files=[])
+        except Exception as e:
+            context.log.exception(e)
+            return SensorResult(skip_reason=str(e))
+
         run_requests = []
         for asset in asset_defs:
             asset_metadata = asset.metadata_by_key[asset.key]
@@ -37,17 +42,6 @@ def build_sftp_sensor(
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
-
-            try:
-                files = ssh_edplan.listdir_attr_r(
-                    remote_dir=asset_metadata["remote_dir"], files=[]
-                )
-            except SSHException as e:
-                context.log.exception(e)
-                return SensorResult(skip_reason=str(e))
-            except ConnectionResetError as e:
-                context.log.exception(e)
-                return SensorResult(skip_reason=str(e))
 
             for f in files:
                 match = re.match(
