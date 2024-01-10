@@ -9,7 +9,6 @@ from dagster import (
     SensorResult,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
 from teamster.core.ssh.resources import SSHResource
 
@@ -23,8 +22,14 @@ from . import assets
     asset_selection=assets,
 )
 def achieve3k_sftp_sensor(context: SensorEvaluationContext, ssh_achieve3k: SSHResource):
-    cursor: dict = json.loads(context.cursor or "{}")
     now = pendulum.now(tz=LOCAL_TIMEZONE)
+    cursor: dict = json.loads(context.cursor or "{}")
+
+    try:
+        files = ssh_achieve3k.listdir_attr_r(remote_dir="outgoing", files=[])
+    except Exception as e:
+        context.log.exception(e)
+        return SensorResult(skip_reason=str(e))
 
     run_requests = []
     dynamic_partitions_requests = []
@@ -34,17 +39,6 @@ def achieve3k_sftp_sensor(context: SensorEvaluationContext, ssh_achieve3k: SSHRe
         context.log.info(asset_identifier)
 
         last_run = cursor.get(asset_identifier, 0)
-
-        try:
-            files = ssh_achieve3k.listdir_attr_r(
-                remote_dir=asset_metadata["remote_dir"], files=[]
-            )
-        except SSHException as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
-        except ConnectionResetError as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
 
         partition_keys = []
         for f in files:

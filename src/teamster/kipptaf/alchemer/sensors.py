@@ -26,15 +26,22 @@ def alchemer_survey_metadata_asset_sensor(
     context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
 ):
     now = pendulum.now(tz="America/New_York").start_of("minute")
+
     cursor: dict = json.loads(context.cursor or "{}")
+    latest_materialization_event = context.instance.get_latest_materialization_event(
+        survey.key
+    )
+
+    survey_partitions_def_name = survey.partitions_def.name  # type: ignore
+
+    run_requests = []
+    dynamic_partitions_requests = []
 
     try:
         survey_list = alchemer.survey.list()
     except Exception as e:
         return SensorResult(skip_reason=str(e))
 
-    run_requests = []
-    dynamic_partitions_requests = []
     for survey_obj in survey_list:
         context.log.info(msg=survey_obj["title"])
 
@@ -47,10 +54,9 @@ def alchemer_survey_metadata_asset_sensor(
 
         survey_cursor_timestamp = cursor.get(survey_id)
 
-        if (
-            not context.instance.get_latest_materialization_event(survey.key)
-            or survey_cursor_timestamp is None
-        ):
+        is_run_request = False
+
+        if latest_materialization_event is None or survey_cursor_timestamp is None:
             is_run_request = True
             context.log.info("INITIAL RUN")
         elif modified_on > pendulum.from_timestamp(
@@ -58,13 +64,11 @@ def alchemer_survey_metadata_asset_sensor(
         ):
             is_run_request = True
             context.log.info(f"MODIFIED: {modified_on}")
-        else:
-            is_run_request = False
 
         if is_run_request:
             dynamic_partitions_requests.append(
                 AddDynamicPartitionsRequest(
-                    partitions_def_name=survey.partitions_def.name,  # type: ignore
+                    partitions_def_name=survey_partitions_def_name,
                     partition_keys=[survey_id],
                 )
             )
@@ -103,20 +107,23 @@ def alchemer_survey_response_asset_sensor(
     available via the API can be upwards of 5 minutes.
     """
     now = pendulum.now(tz="America/New_York").subtract(minutes=15).start_of("minute")
-
     cursor: dict = json.loads(context.cursor or "{}")
+
+    run_requests = []
+    add_partitions = []
 
     try:
         surveys = alchemer.survey.list()
     except Exception as e:
         return SensorResult(skip_reason=str(e))
 
-    run_requests = []
-    add_partitions = []
     for survey_metadata in surveys:
         survey_id = survey_metadata["id"]
 
         survey_cursor_timestamp = cursor.get(survey_id, 0)
+
+        is_run_request = False
+        run_config = None
 
         if survey_cursor_timestamp == 0:
             is_run_request = True
@@ -127,6 +134,8 @@ def alchemer_survey_response_asset_sensor(
                     }
                 }
             }
+        elif survey_metadata["status"] in ["Closed", "Archived"]:
+            continue
         else:
             try:
                 try:
@@ -145,13 +154,8 @@ def alchemer_survey_response_asset_sensor(
 
                 if survey_response_data:
                     is_run_request = True
-                else:
-                    is_run_request = False
             except HTTPError as e:
                 context.log.exception(e)
-                is_run_request = False
-            finally:
-                run_config = None
 
         if is_run_request:
             partition_key = f"{survey_id}_{survey_cursor_timestamp}"

@@ -22,20 +22,18 @@ dagsterCloudAgent:
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
-  # Specify TTL for user code servers.
-  # By default full deployment servers do not have a TTL.
-  # Branch deployments servers have a default TTL of 24 hours.
-  # The max code servers defaults to 25, and only applies to servers with TTL.
-  serverTTL:
-    fullDeployments:
-      enabled: true
-      ttlSeconds: 300
-    branchDeployments:
-      ttlSeconds: 300
-
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+
+  # # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  # serverK8sConfig:
+  #   containerConfig: # raw config for the pod's main container
+  #     resources:
+  #       requests:
+  #         cpu: 750m
+  #       limits:
+  #         cpu: 750m

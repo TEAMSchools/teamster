@@ -8,13 +8,14 @@ with
             c.call_date_time as commlog_datetime,
             c.call_date_time as commlog_date,
             c._dbt_source_relation,
+            c.call_type as commlog_type,
+            c.call_status as commlog_status,
 
             f.init_notes as followup_init_notes,
             f.followup_notes as followup_close_notes,
             f.outstanding,
 
             concat(u.first_name, ' ', u.last_name) as commlog_staff_name,
-
             concat(f.c_first, ' ', f.c_last) as followup_staff_name,
         from {{ ref("stg_deanslist__comm_log") }} as c
         inner join
@@ -25,21 +26,7 @@ with
             {{ ref("stg_deanslist__followups") }} as f
             on c.record_id = f.source_id
             and {{ union_dataset_join_clause(left_alias="c", right_alias="f") }}
-        where (c.reason like 'Att:%' or c.reason like 'Chronic%')
-    ),
-
-    ada as (
-        select
-            studentid,
-            _dbt_source_relation,
-            yearid,
-            round(avg(cast(attendancevalue as numeric)), 2) as ada,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
-        where
-            membershipvalue = 1
-            and calendardate
-            <= cast(current_date('{{ var("local_timezone") }}') as date)
-        group by studentid, yearid, _dbt_source_relation
+        where c.reason like 'Att:%' and c.call_status = 'Completed'
     )
 
 select
@@ -47,7 +34,9 @@ select
     co.lastfirst,
     co.academic_year,
     co.region,
+    co.school_level,
     co.reporting_schoolid,
+    co.school_abbreviation,
     co.grade_level,
     co.advisory_name as team,
     co.spedlep as iep_status,
@@ -64,25 +53,26 @@ select
     cl.commlog_reason,
     cl.commlog_notes,
     cl.commlog_topic,
+    cl.commlog_type,
+    cl.commlog_status,
     cl.followup_staff_name,
     cl.followup_init_notes,
     cl.followup_close_notes,
 
-    ada.ada,
-
-    gpa.gpa_y1,
-    gpa.n_failing_y1,
-
-    {# TODO #}
-    null as read_lvl,
-    null as goal_status,
-
     rt.name as term,
 
-    case
-        when att.schoolid = 73253 then co.advisor_lastfirst else cc.section_number
-    end as homeroom,
+    a.days_absent_unexcused as abs_count,
+    a.ada,
 
+    if(
+        co.school_level = 'HS', co.advisor_lastfirst, cast(co.grade_level as string)
+    ) as drill_down,
+    if(
+        cl.commlog_reason is not null and cl.commlog_reason not like 'Att: Unknown%',
+        true,
+        false
+    ) as is_successful,
+    if(co.school_level = 'HS', co.advisor_lastfirst, cc.section_number) as homeroom,
     row_number() over (
         partition by co.studentid, att.att_date order by cl.commlog_datetime desc
     ) as rn_date,
@@ -105,31 +95,20 @@ left join
     and {{ union_dataset_join_clause(left_alias="att", right_alias="cc") }}
     and cc.course_number = 'HR'
 left join
-    {{ ref("int_powerschool__gpa_term") }} as gpa
-    on co.studentid = gpa.studentid
-    and co.yearid = gpa.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-    and gpa.is_current
-left join
     commlog as cl
     on co.student_number = cl.student_school_id
-    and att.att_date = cl.commlog_date
+    and att.att_date = safe_cast(cl.commlog_date as date)
     and {{ union_dataset_join_clause(left_alias="co", right_alias="cl") }}
 left join
-    ada
-    on co.studentid = ada.studentid
-    and co.yearid = ada.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+    {{ ref("int_powerschool__ada") }} as a
+    on co.studentid = a.studentid
+    and co.yearid = a.yearid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on co.schoolid = rt.school_id
     and att.att_date between rt.start_date and rt.end_date
     and rt.type = 'RT'
-{# TODO
-left join
-    lit.achieved_by_round_static as r
-    on co.student_number = r.student_number
-    and co.academic_year = r.academic_year
-    and r.is_curterm = 1 
-#}
-where co.academic_year = {{ var("current_academic_year") }}
+where
+    co.academic_year = {{ var("current_academic_year") }}
+    and att.att_date <= current_date('America/New_York')
