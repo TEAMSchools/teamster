@@ -306,7 +306,7 @@ COMMUNICATION_FIELDS = {
         {"name": "RecordType", "type": ["null", "string"], "default": None},
         {"name": "Relationship", "type": ["null", "string"], "default": None},
         {"name": "Response", "type": ["null", "string"], "default": None},
-        {"name": "ThirdPartyName", "type": ["null"], "default": None},
+        {"name": "ThirdPartyName", "type": ["null", "string"], "default": None},
         {"name": "Topic", "type": ["null", "string"], "default": None},
         {"name": "UserID", "type": ["null", "int"], "default": None},
         {
