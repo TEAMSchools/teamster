@@ -2,7 +2,13 @@ import json
 from urllib.parse import urlencode
 
 import pendulum
-from dagster import AssetKey, RunRequest, SensorEvaluationContext, SensorResult, sensor
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    SensorEvaluationContext,
+    SensorResult,
+    sensor,
+)
 from dagster_airbyte import AirbyteCloudResource
 
 from .. import CODE_LOCATION
@@ -20,12 +26,12 @@ def airbyte_job_status_sensor(
     context: SensorEvaluationContext, airbyte: AirbyteCloudResource
 ) -> SensorResult:
     now_timestamp = pendulum.now().timestamp()
+    asset_events = []
 
     cursor = json.loads(context.cursor or "{}")
 
     connections = airbyte.make_request(endpoint="/connections", method="GET")
 
-    asset_selection = []
     for connection in connections["data"]:  # type: ignore
         connection_id = connection["connectionId"]
 
@@ -54,19 +60,10 @@ def airbyte_job_status_sensor(
                 )
 
                 if asset_key in ASSET_KEYS:
-                    asset_selection.append(asset_key)
+                    context.log.info(asset_key)
+                    asset_events.append(AssetMaterialization(asset_key=asset_key))
 
-    if asset_selection:
-        run_requests = [
-            RunRequest(
-                run_key=f"{context._sensor_name}_{now_timestamp}",
-                asset_selection=asset_selection,
-            )
-        ]
-    else:
-        run_requests = []
-
-    return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+    return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
 _all = [
