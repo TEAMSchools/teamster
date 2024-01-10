@@ -7,13 +7,17 @@ from teamster.kipptaf.resources import AIRBYTE_CLOUD_RESOURCE
 
 
 def test_airbyte_job_status_sensor():
-    CURSOR = {}
+    cursor = {}
 
-    sensor_result = airbyte_job_status_sensor(
-        context=build_sensor_context(
-            cursor=json.dumps(obj=CURSOR), sensor_name=airbyte_job_status_sensor.name
-        ),
-        airbyte=AIRBYTE_CLOUD_RESOURCE,
+    context = build_sensor_context(
+        cursor=json.dumps(obj=cursor), sensor_name=airbyte_job_status_sensor.name
     )
 
-    assert len(sensor_result.run_requests) > 0  # type: ignore
+    sensor_result = airbyte_job_status_sensor(
+        context=context, airbyte=AIRBYTE_CLOUD_RESOURCE
+    )
+
+    asset_events = sensor_result.asset_events  # type: ignore
+
+    context.log.info(msg=asset_events)
+    assert len(asset_events) > 0
