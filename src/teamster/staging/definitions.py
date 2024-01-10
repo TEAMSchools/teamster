@@ -11,6 +11,14 @@ defs = Definitions(
             fivetran,
         ]
     ),
+    sensors=[
+        *airbyte.sensors,
+        *fivetran.sensors,
+    ],
+    schedules=[
+        *airbyte.schedules,
+        *fivetran.schedules,
+    ],
     resources={
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
         "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
