@@ -39,12 +39,14 @@ def fivetran_sync_status_sensor(
     fivetran: FivetranResource,
     db_bigquery: BigQueryResource,
 ) -> SensorResult:
+    run_requests = []
+    asset_keys = []
+
     cursor: dict = json.loads(s=(context.cursor or "{}"))
 
     with db_bigquery.get_client() as bq:
         bq = bq
 
-    asset_keys = []
     for connector_id, connector_schemas in CONNECTORS.items():
         # check if fivetran sync has completed
         (
@@ -96,8 +98,6 @@ def fivetran_sync_status_sensor(
                 asset_selection=asset_keys,
             )
         ]
-    else:
-        run_requests = []
 
     return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
