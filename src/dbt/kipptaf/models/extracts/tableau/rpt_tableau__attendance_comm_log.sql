@@ -101,8 +101,8 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="cl") }}
 left join
     {{ ref("int_powerschool__ada") }} as a
-    on co.studentid = ada.studentid
-    and co.yearid = ada.yearid
+    on co.studentid = a.studentid
+    and co.yearid = a.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
 left join
     {{ ref("stg_reporting__terms") }} as rt
