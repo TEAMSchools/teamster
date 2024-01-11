@@ -111,13 +111,13 @@ with
                 )
             )
     ),
-    
+
     manager_overall as (
         select
             observer_employee_number,
             academic_year,
             form_term,
-            avg(overall_score) as overall_score
+            avg(overall_score) as overall_score,
         from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
         where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
         group by observer_employee_number, academic_year, form_term
