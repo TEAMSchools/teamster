@@ -15,7 +15,10 @@ from teamster.core.ssh.resources import SSHResource
 
 
 def build_powerschool_sensor(
-    name, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
+    name,
+    asset_defs: list[AssetsDefinition],
+    execution_timezone,
+    minimum_interval_seconds=None,
 ):
     @sensor(
         name=name,
@@ -61,8 +64,10 @@ def build_powerschool_sensor(
                     )  # type: ignore
                 )
 
-                latest_materialization_fmt = latest_materialization_datetime.format(
-                    "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+                latest_materialization_fmt = (
+                    latest_materialization_datetime.in_timezone(
+                        tz=execution_timezone
+                    ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                 )
 
                 [(count,)] = db_powerschool.engine.execute_query(
