@@ -19,6 +19,7 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 def build_powerschool_table_asset(
     code_location,
     asset_name,
+    local_timezone,
     partitions_def: (
         FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
     ) = None,
@@ -40,7 +41,7 @@ def build_powerschool_table_asset(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ):
-        now = pendulum.now().start_of("hour")
+        now = pendulum.now(tz=local_timezone).start_of("hour")
 
         asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
 
