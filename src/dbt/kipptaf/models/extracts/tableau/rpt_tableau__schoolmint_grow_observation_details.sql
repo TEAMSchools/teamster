@@ -39,6 +39,13 @@ with
         where ur.role_name like '%Teacher%'
     ),
 
+    observer_details as (
+        select ur.user_id, u.internal_id,
+        from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
+        left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
+        where ur.role_name not like '%Teacher%'
+    ),
+
     boxes as (
         select
             observation_id,
@@ -56,88 +63,91 @@ with
 
     observations as (
         select
-            observation_id,
-            teacher_id,
-            rubric_name as form_long_name,
-            created,
-            observer_name,
-            observer_email,
-            score as overall_score,
-            safe_cast(observed_at as date) as observed_at,
+            o.observation_id,
+            o.teacher_id,
+            o.rubric_name as form_long_name,
+            o.created,
+            o.observer_name,
+            o.observer_email,
+            o.score as overall_score,
+            safe_cast(o.observed_at as date) as observed_at,
 
             case
-                when rubric_name like '%Coaching%'
+                when o.rubric_name like '%Coaching%'
                 then 'PM'
-                when rubric_name like '%Walkthrough%'
+                when o.rubric_name like '%Walkthrough%'
                 then 'WT'
-                when rubric_name like '%O3%'
+                when o.rubric_name like '%O3%'
                 then 'O3'
             end as form_type,
 
             case
                 when
-                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and safe_cast(
-                        observed_at as date
+                        o.observed_at as date
                     ) between date({{ var("current_academic_year") }}, 7, 1) and date(
                         {{ var("current_academic_year") }}, 10, 31
                     )
                 then 'BOY (Coach)'
                 when
-                    rubric_name = 'Coaching Tool: Teacher Reflection'
+                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and safe_cast(
-                        observed_at as date
+                        o.observed_at as date
                     ) between date({{ var("current_academic_year") }}, 7, 1) and date(
                         {{ var("current_academic_year") }}, 10, 31
                     )
                 then 'BOY (Self)'
                 when
-                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and safe_cast(
-                        observed_at as date
+                        o.observed_at as date
                     ) between date({{ var("current_academic_year") }}, 11, 1) and (
                         date({{ var("current_fiscal_year") }}, 3, 1) - 1
                     )
                 then 'MOY (Coach)'
                 when
-                    rubric_name = 'Coaching Tool: Teacher Reflection'
+                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and safe_cast(
-                        observed_at as date
+                        o.observed_at as date
                     ) between date({{ var("current_academic_year") }}, 11, 1) and (
                         date({{ var("current_fiscal_year") }}, 3, 1) - 1
                     )
                 then 'MOY (Self)'
                 when
-                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
                     and safe_cast(
-                        observed_at as date
+                        o.observed_at as date
                     ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
                         {{ var("current_fiscal_year") }}, 6, 30
                     )
                 then 'EOY (Coach)'
                 when
-                    rubric_name = 'Coaching Tool: Teacher Reflection'
+                    o.rubric_name = 'Coaching Tool: Teacher Reflection'
                     and safe_cast(
-                        observed_at as date
+                        o.observed_at as date
                     ) between date({{ var("current_fiscal_year") }}, 3, 1) and date(
                         {{ var("current_fiscal_year") }}, 6, 30
                     )
                 then 'EOY (Self)'
             end as form_short_name,
 
-            array_to_string(list_two_column_a, '|') as glows,
-            array_to_string(list_two_column_b, '|') as grows,
+            array_to_string(o.list_two_column_a, '|') as glows,
+            array_to_string(o.list_two_column_b, '|') as grows,
 
-        from {{ ref("stg_schoolmint_grow__observations") }}
+            od.internal_id as observer_employee_number,
+
+        from {{ ref("stg_schoolmint_grow__observations") }} as o
+        inner join observer_details as od on o.observer_id = od.user_id
         where
-            is_published
+            o.is_published
             /* 2023 is first year with new rubric */
-            and observed_at >= timestamp(date(2023, 7, 1))
+            and o.observed_at >= timestamp(date(2023, 7, 1))
             /* remove self coaching observations*/
             and case
                 when
-                    rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-                    and teacher_id = observer_id
+                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                    and o.teacher_id = observer_id
                 then false
                 else true
             end
@@ -152,6 +162,7 @@ with
             o.observed_at,
             o.observer_name,
             o.observer_email,
+            o.observer_employee_number,
             o.overall_score,
             o.form_short_name,
             o.form_type,
@@ -283,6 +294,7 @@ with
             o.created,
             o.observed_at,
             o.observer_name,
+            o.observer_employee_number,
             o.overall_score,
             o.glows,
             o.grows,
@@ -348,6 +360,7 @@ with
             o.created,
             o.observed_at,
             o.observer_name,
+            o.observer_employee_number,
             o.overall_score,
             o.glows,
             o.grows,
@@ -487,6 +500,7 @@ with
             od.created,
             od.observed_at,
             od.observer_name,
+            cast(od.observer_employee_number as int64) as observer_employee_number,
             os.etr_score as etr_score,
             os.so_score as so_score,
             case
@@ -541,6 +555,7 @@ with
             null as created,
             hd.observed_at,
             hd.observer_name,
+            hd.observer_employee_number,
             hd.etr_score,
             hd.so_score,
             hd.overall_score,
@@ -600,6 +615,7 @@ select
     created,
     observed_at,
     observer_name,
+    observer_employee_number,
     etr_score,
 
     so_score,
