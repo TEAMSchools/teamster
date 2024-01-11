@@ -37,7 +37,7 @@ lint:
       paths:
         - .helm/**/values.yaml
   enabled:
-    - checkov@3.1.56
+    - checkov@3.1.57
     - terrascan@1.18.11
     - trivy@0.48.2
     - trufflehog@3.63.8

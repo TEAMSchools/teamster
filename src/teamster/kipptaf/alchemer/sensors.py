@@ -141,7 +141,7 @@ def alchemer_survey_response_asset_sensor(
                 try:
                     survey_obj = alchemer.survey.get(id=survey_id)
                 except Exception as e:
-                    context.log.exception(msg=e)
+                    context.log.error(msg=e)
                     continue
 
                 date_submitted = pendulum.from_timestamp(
@@ -155,7 +155,7 @@ def alchemer_survey_response_asset_sensor(
                 if survey_response_data:
                     is_run_request = True
             except HTTPError as e:
-                context.log.exception(e)
+                context.log.error(msg=e)
 
         if is_run_request:
             partition_key = f"{survey_id}_{survey_cursor_timestamp}"
