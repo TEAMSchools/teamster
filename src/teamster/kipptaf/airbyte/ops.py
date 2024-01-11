@@ -2,9 +2,8 @@
 from typing import Any, Dict, Iterable, cast
 
 from dagster import In, Nothing, OpExecutionContext, Out, op
-from dagster_airbyte import AirbyteOutput
+from dagster_airbyte import AirbyteCloudResource, AirbyteOutput
 from dagster_airbyte.ops import AirbyteSyncConfig
-from dagster_airbyte.resources import BaseAirbyteResource
 
 
 @op(
@@ -21,17 +20,19 @@ from dagster_airbyte.resources import BaseAirbyteResource
     tags={"kind": "airbyte"},
 )
 def airbyte_start_sync_op(
-    context: OpExecutionContext, config: AirbyteSyncConfig, airbyte: BaseAirbyteResource
+    context: OpExecutionContext,
+    config: AirbyteSyncConfig,
+    airbyte: AirbyteCloudResource,
 ) -> Iterable[Any]:
     job_details = airbyte.start_sync(config.connection_id)
+    connection_details = airbyte.get_connection_details(config.connection_id)
+
     job_info = cast(Dict[str, object], job_details.get("job", {}))
+
     job_id = cast(int, job_info.get("id"))
 
     context.log.info(
         f"Job {job_id} initialized for connection_id={config.connection_id}."
     )
 
-    return AirbyteOutput(
-        job_details=airbyte.start_sync(config.connection_id),
-        connection_details=airbyte.get_connection_details(config.connection_id),
-    )
+    return AirbyteOutput(job_details=job_details, connection_details=connection_details)
