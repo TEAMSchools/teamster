@@ -59,7 +59,7 @@ def build_powerschool_sensor(
                         if latest_materialization_timestamp is not None
                         else 0.0
                     )  # type: ignore
-                ).start_of("minute")
+                )
 
                 window_start_fmt = latest_materialization_datetime.format(
                     "YYYY-MM-DDTHH:mm:ss.SSSSSS"

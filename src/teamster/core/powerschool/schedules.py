@@ -65,7 +65,7 @@ def build_powerschool_schedule(
                         if latest_materialization_timestamp is not None
                         else 0.0
                     )  # type: ignore
-                ).start_of("minute")
+                )
 
                 if latest_materialization_datetime.timestamp() == 0:
                     is_requested = True
