@@ -5,6 +5,7 @@ with
             academic_year,
             form_term,
             row_score_value,
+            -- trunk-ignore-begin(sqlfluff)
             case
                 when
                     measurement_name
@@ -40,6 +41,7 @@ with
                 then 'SO8'
                 else concat('ETR', left(measurement_name, 2))
             end as measurement_code,
+        -- trunk-ignore-end(sqlfluff)
         from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
         where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
     ),
