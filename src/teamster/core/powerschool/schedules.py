@@ -74,10 +74,8 @@ def build_powerschool_schedule(
                         "partition_column"
                     ]
 
-                    latest_materialization_fmt = (
-                        latest_materialization_datetime.in_timezone(
-                            execution_timezone
-                        ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                    latest_materialization_fmt = latest_materialization_datetime.format(
+                        "YYYY-MM-DDTHH:mm:ss.SSSSSS"
                     )
 
                     [(count,)] = db_powerschool.engine.execute_query(

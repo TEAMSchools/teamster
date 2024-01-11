@@ -61,7 +61,7 @@ def build_powerschool_sensor(
                     )  # type: ignore
                 )
 
-                window_start_fmt = latest_materialization_datetime.format(
+                latest_materialization_fmt = latest_materialization_datetime.format(
                     "YYYY-MM-DDTHH:mm:ss.SSSSSS"
                 )
 
@@ -71,7 +71,7 @@ def build_powerschool_sensor(
                         "SELECT COUNT(*) "
                         f"FROM {asset.key.path[-1]} "
                         f"WHERE {partition_column} >= "
-                        f"TO_TIMESTAMP('{window_start_fmt}', "
+                        f"TO_TIMESTAMP('{latest_materialization_fmt}', "
                         "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
                     ),
                     partition_size=1,
