@@ -4,6 +4,7 @@ with
             observer_employee_number,
             academic_year,
             form_term,
+            row_score_value,
             case
                 when
                     measurement_name
@@ -39,7 +40,6 @@ with
                 then 'SO8'
                 else concat('ETR', left(measurement_name, 2))
             end as measurement_code,
-            row_score_value
         from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
         where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
     ),
@@ -111,6 +111,7 @@ with
                 )
             )
     ),
+    
     manager_overall as (
         select
             observer_employee_number,
@@ -155,7 +156,7 @@ select
     p.so7,
     p.so8,
 
-    m.overall_score
+    m.overall_score,
 from pivots as p
 inner join
     manager_overall as m
