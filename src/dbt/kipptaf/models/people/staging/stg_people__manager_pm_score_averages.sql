@@ -1,134 +1,164 @@
-with measures_long AS (
-SELECT observer_employee_number,
-       academic_year,
-       form_term,
-       CASE
-        WHEN measurement_name = 'This teammate addresses challenges directly and productively.' THEN 'SO1'
-        WHEN measurement_name = 'This teammate chooses to make work a positive and joyful experience for students, self, and others.' THEN 'SO2'
-        WHEN measurement_name = 'This teammate demonstrates professional responsibilities and individual commitments.' THEN 'SO3'
-        WHEN measurement_name = 'This teammate makes others feel included, loved, and valued, even across cultural differences.' THEN 'SO4'
-        WHEN measurement_name = 'This teammate meets professional expectations for presence.' THEN 'SO5'
-        WHEN measurement_name = 'This teammate meets professional expectations for punctuality.' THEN 'SO6'
-        WHEN measurement_name = 'This teammate seeks feedback and takes it seriously.' THEN 'SO7'
-        WHEN measurement_name = 'This teammate supports the collective work of the team and meets team commitments.' THEN 'SO8'
-        ELSE concat('ETR',left(measurement_name,2)) 
-      END as measurement_code,
-       row_score_value
-FROM {{ ref('rpt_tableau__schoolmint_grow_observation_details') }}
-where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
-)
+with
+    measures_long as (
+        select
+            observer_employee_number,
+            academic_year,
+            form_term,
+            case
+                when
+                    measurement_name
+                    = 'This teammate addresses challenges directly and productively.'
+                then 'SO1'
+                when
+                    measurement_name
+                    = 'This teammate chooses to make work a positive and joyful experience for students, self, and others.'
+                then 'SO2'
+                when
+                    measurement_name
+                    = 'This teammate demonstrates professional responsibilities and individual commitments.'
+                then 'SO3'
+                when
+                    measurement_name
+                    = 'This teammate makes others feel included, loved, and valued, even across cultural differences.'
+                then 'SO4'
+                when
+                    measurement_name
+                    = 'This teammate meets professional expectations for presence.'
+                then 'SO5'
+                when
+                    measurement_name
+                    = 'This teammate meets professional expectations for punctuality.'
+                then 'SO6'
+                when
+                    measurement_name
+                    = 'This teammate seeks feedback and takes it seriously.'
+                then 'SO7'
+                when
+                    measurement_name
+                    = 'This teammate supports the collective work of the team and meets team commitments.'
+                then 'SO8'
+                else concat('ETR', left(measurement_name, 2))
+            end as measurement_code,
+            row_score_value
+        from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
+        where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
+    ),
 
-pivots AS (
-SELECT p.observer_employee_number,
-       p.academic_year,
-       p.form_term,
-       cast(right(p.form_term,1) as int64) as term_num,
-       p.ETR1A,
-       p.ETR1B,
-       p.ETR2A,
-       p.ETR2B,
-       p.ETR2C,
-       p.ETR2D,
-       p.ETR3A,
-       p.ETR3B,
-       p.ETR3C,
-       p.ETR3D,
-       p.ETR4A,
-       p.ETR4B,
-       p.ETR4C,
-       p.ETR4D,
-       p.ETR4E,
-       p.ETR4F,
-       p.ETR5A,
-       p.ETR5B,
-       p.ETR5C,
-       p.SO1,
-       p.SO2,
-       p.SO3,
-       p.SO4,
-       p.SO5,
-       p.SO6,
-       p.SO7,
-       p.SO8,
-FROM measures_long
-  PIVOT(
-    avg(row_score_value)
-    for measurement_code in ('ETR1A',
-                             'ETR1B',
-                             'ETR2A',
-                             'ETR2B',
-                             'ETR2C',
-                             'ETR2D',
-                             'ETR3A',
-                             'ETR3B',
-                             'ETR3C',
-                             'ETR3D',
-                             'ETR4A',
-                             'ETR4B',
-                             'ETR4C',
-                             'ETR4D',
-                             'ETR4E',
-                             'ETR4F',
-                             'ETR5A',
-                             'ETR5B',
-                             'ETR5C',
-                             'SO1',
-                             'SO2',
-                             'SO3',
-                             'SO4',
-                             'SO5',
-                             'SO6',
-                             'SO7',
-                             'SO8'
+    pivots as (
+        select
+            observer_employee_number,
+            academic_year,
+            form_term,
+            cast(right(form_term, 1) as int64) as term_num,
+            etr1a,
+            etr1b,
+            etr2a,
+            etr2b,
+            etr2c,
+            etr2d,
+            etr3a,
+            etr3b,
+            etr3c,
+            etr3d,
+            etr4a,
+            etr4b,
+            etr4c,
+            etr4d,
+            etr4e,
+            etr4f,
+            etr5a,
+            etr5b,
+            etr5c,
+            so1,
+            so2,
+            so3,
+            so4,
+            so5,
+            so6,
+            so7,
+            so8,
+        from
+            measures_long pivot (
+                avg(row_score_value)
+                for measurement_code in (
+                    'ETR1A',
+                    'ETR1B',
+                    'ETR2A',
+                    'ETR2B',
+                    'ETR2C',
+                    'ETR2D',
+                    'ETR3A',
+                    'ETR3B',
+                    'ETR3C',
+                    'ETR3D',
+                    'ETR4A',
+                    'ETR4B',
+                    'ETR4C',
+                    'ETR4D',
+                    'ETR4E',
+                    'ETR4F',
+                    'ETR5A',
+                    'ETR5B',
+                    'ETR5C',
+                    'SO1',
+                    'SO2',
+                    'SO3',
+                    'SO4',
+                    'SO5',
+                    'SO6',
+                    'SO7',
+                    'SO8'
+                )
+            )
+    ),
+    manager_overall as (
+        select
+            observer_employee_number,
+            academic_year,
+            form_term,
+            avg(overall_score) as overall_score
+        from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
+        where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
+        group by observer_employee_number, academic_year, form_term
     )
-  ) as p
-)
 
-,manager_overall as (
-  SELECT observer_employee_number,
-         academic_year,
-         form_term,
-         avg(overall_score) as overall_score
-  FROM {{ ref('rpt_tableau__schoolmint_grow_observation_details') }}
-where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
-GROUP BY observer_employee_number, academic_year, form_term
- )
+select
+    p.observer_employee_number,
+    p.academic_year,
+    p.form_term,
+    p.term_num,
+    p.etr1a,
+    p.etr1b,
+    p.etr2a,
+    p.etr2b,
+    p.etr2c,
+    p.etr2d,
+    p.etr3a,
+    p.etr3b,
+    p.etr3c,
+    p.etr3d,
+    p.etr4a,
+    p.etr4b,
+    p.etr4c,
+    p.etr4d,
+    p.etr4e,
+    p.etr4f,
+    p.etr5a,
+    p.etr5b,
+    p.etr5c,
+    p.so1,
+    p.so2,
+    p.so3,
+    p.so4,
+    p.so5,
+    p.so6,
+    p.so7,
+    p.so8,
 
-SELECT p.observer_employee_number,
-       p.academic_year,
-       p.form_term,
-       p.term_num,
-       p.ETR1A,
-       p.ETR1B,
-       p.ETR2A,
-       p.ETR2B,
-       p.ETR2C,
-       p.ETR2D,
-       p.ETR3A,
-       p.ETR3B,
-       p.ETR3C,
-       p.ETR3D,
-       p.ETR4A,
-       p.ETR4B,
-       p.ETR4C,
-       p.ETR4D,
-       p.ETR4E,
-       p.ETR4F,
-       p.ETR5A,
-       p.ETR5B,
-       p.ETR5C,
-       p.SO1,
-       p.SO2,
-       p.SO3,
-       p.SO4,
-       p.SO5,
-       p.SO6,
-       p.SO7,
-       p.SO8,
-
-       m.overall_score
-FROM pivots as p
-inner join manager_overall as m 
-  on p.observer_employee_number = m.observer_employee_number
- and p.academic_year = m.academic_year
- and p.form_term = m.form_term
+    m.overall_score
+from pivots as p
+inner join
+    manager_overall as m
+    on p.observer_employee_number = m.observer_employee_number
+    and p.academic_year = m.academic_year
+    and p.form_term = m.form_term
