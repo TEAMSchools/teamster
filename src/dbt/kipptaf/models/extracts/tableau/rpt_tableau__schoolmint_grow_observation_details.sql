@@ -135,7 +135,7 @@ with
             array_to_string(o.list_two_column_a, '|') as glows,
             array_to_string(o.list_two_column_b, '|') as grows,
 
-            od.internal_id as observer_employee_number,
+            safe_cast(od.internal_id as int) as observer_employee_number,
 
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join observer_details as od on o.observer_id = od.user_id
@@ -144,13 +144,10 @@ with
             /* 2023 is first year with new rubric */
             and o.observed_at >= timestamp(date(2023, 7, 1))
             /* remove self coaching observations*/
-            and case
-                when
-                    o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-                    and o.teacher_id = observer_id
-                then false
-                else true
-            end
+            and not (
+                o.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+                and o.teacher_id = o.observer_id
+            )
     ),
 
     observation_measurements as (
@@ -500,7 +497,7 @@ with
             od.created,
             od.observed_at,
             od.observer_name,
-            cast(od.observer_employee_number as int64) as observer_employee_number,
+            od.observer_employee_number,
             os.etr_score as etr_score,
             os.so_score as so_score,
             case
