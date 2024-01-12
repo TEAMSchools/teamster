@@ -129,13 +129,14 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         context.log.info(f"Saving results to {data_filepath}")
         data_filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        writer(
-            fo=data_filepath.open("wb"),
-            schema=schema,
-            records=[],
-            codec="snappy",
-            strict_allow_default=True,
-        )
+        with data_filepath.open("wb") as fo:
+            writer(
+                fo=fo,
+                schema=schema,
+                records=[],
+                codec="snappy",
+                strict_allow_default=True,
+            )
 
         len_data = 0
         fo = data_filepath.open("a+b")
