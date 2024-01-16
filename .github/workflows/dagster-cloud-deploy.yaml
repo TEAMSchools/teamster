@@ -31,6 +31,7 @@ jobs:
   dagster-cloud-deploy:
     runs-on: ubuntu-20.04
 
+    # trunk-ignore(checkov/CKV2_GHA_1)
     permissions:
       contents: read
       id-token: write
@@ -51,15 +52,15 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      # # Validate dagster_cloud.yaml and the connection to dagster.cloud
-      # - name: Validate configuration
-      #   id: ci-validate
-      #   if: steps.prerun.outputs.result != 'skip'
-      #   uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
-      #   with:
-      #     command:
-      #       ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{
-      #       env.DAGSTER_CLOUD_YAML_PATH }}
+      # Validate dagster_cloud.yaml and the connection to dagster.cloud
+      - name: Validate configuration
+        id: ci-validate
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        with:
+          command:
+            ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{
+            env.DAGSTER_CLOUD_YAML_PATH }}
 
       # Parse dagster_cloud.yaml, detect if this is branch deployment and initialize
       # the build session
@@ -97,6 +98,7 @@ jobs:
         if: steps.prerun.outputs.result != 'skip'
         uses: google-github-actions/auth@v1
         with:
+          # trunk-ignore(checkov/CKV_SECRET_6)
           token_format: access_token
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
