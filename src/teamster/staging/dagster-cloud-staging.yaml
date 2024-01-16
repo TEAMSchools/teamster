@@ -1,4 +1,4 @@
-ContainerConfig: &container_config
+.ContainerConfig: &container_config
   container_config:
     env:
       - name: ONEPASSWORD_ITEM_TEST_1_USERNAME
