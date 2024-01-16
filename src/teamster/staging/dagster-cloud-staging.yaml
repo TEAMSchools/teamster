@@ -11,25 +11,25 @@ locations:
         server_k8s_config:
           container_config:
             env:
-              - name: ONE_PASSWORD_ITEM_TEST_1_USERNAME
+              - name: ONEPASSWORD_ITEM_TEST_1_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: one-password-item-test
+                    name: onepassword-item-test
                     key: username
-              - name: ONE_PASSWORD_ITEM_TEST_1_PASSWORD
+              - name: ONEPASSWORD_ITEM_TEST_1_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: one-password-item-test
+                    name: onepassword-item-test
                     key: password
-              - name: ONE_PASSWORD_ITEM_TEST_2_USERNAME
+              - name: ONEPASSWORD_ITEM_TEST_2_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: one-password-item-test-2
+                    name: onepassword-item-test-2
                     key: username
-              - name: ONE_PASSWORD_ITEM_TEST_2_PASSWORD
+              - name: ONEPASSWORD_ITEM_TEST_2_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: one-password-item-test-2
+                    name: onepassword-item-test-2
                     key: password
         volumes:
           - name: secret-volume
