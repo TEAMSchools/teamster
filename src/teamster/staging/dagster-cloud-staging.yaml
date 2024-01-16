@@ -8,55 +8,29 @@ locations:
     working_directory: /root/app
     container_context:
       k8s:
-        env_secrets:
-          - achieve3k-sftp-password
-          - achieve3k-sftp-username
-          - adp-sftp-password
-          - adp-sftp-username
-          - adp-wfm-app-key
-          - adp-wfm-client-id
-          - adp-wfm-client-secret
-          - adp-wfm-password
-          - adp-wfm-subdomain
-          - adp-wfm-username
-          - alchemer-api-token
-          - alchemer-api-token-secret
-          - blissbook-sftp-password
-          - blissbook-sftp-username
-          - clever-reports-sftp-password
-          - clever-reports-sftp-username
-          - clever-sftp-password
-          - clever-sftp-username
-          - coupa-sftp-password
-          - coupa-sftp-username
-          - dagster-cloud-agent-token
-          - dagster-cloud-user-token
-          - deanslist-sftp-password
-          - deanslist-sftp-username
-          - egencia-sftp-username
-          - illuminate-sftp-password
-          - illuminate-sftp-username
-          - iready-sftp-password
-          - iready-sftp-username
-          - kippnj-renlearn-sftp-password
-          - kippnj-renlearn-sftp-username
-          - ktaf-sftp-password
-          - ktaf-sftp-username
-          - littlesis-sftp-password
-          - littlesis-sftp-username
-          - ldap-password
-          - ldap-user
-          - schoolmint-grow-client-id
-          - schoolmint-grow-client-secret
-          - schoolmint-grow-district-id
-          - smartrecruiters-smarttoken
-          - staging-ps-db-password
-          - staging-ps-ssh-password
-          - staging-ps-ssh-port
-          - staging-ps-ssh-remote-bind-host
-          - staging-ps-ssh-username
-          - zendesk-email
-          - zendesk-token
+        server_k8s_config:
+          container_config:
+            env:
+              - name: ONE_PASSWORD_ITEM_TEST_1_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: one-password-item-test
+                    key: username
+              - name: ONE_PASSWORD_ITEM_TEST_1_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: one-password-item-test
+                    key: password
+              - name: ONE_PASSWORD_ITEM_TEST_2_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: one-password-item-test-2
+                    key: username
+              - name: ONE_PASSWORD_ITEM_TEST_2_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: one-password-item-test-2
+                    key: password
         volumes:
           - name: secret-volume
             secret:
