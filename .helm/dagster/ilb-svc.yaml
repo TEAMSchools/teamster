@@ -12,15 +12,7 @@ spec:
   selector:
     app: user-cloud-dagster-cloud-agent-agent
   ports:
-    - name: tcp-port-443
-      protocol: TCP
-      port: 443
-      targetPort: 443
     - name: tcp-port-80
       protocol: TCP
       port: 80
       targetPort: 80
-    - name: tcp-port-8080
-      protocol: TCP
-      port: 8080
-      targetPort: 8080
