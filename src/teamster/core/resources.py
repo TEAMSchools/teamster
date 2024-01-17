@@ -76,9 +76,9 @@ def get_ssh_resource_edplan(code_location):
     )
 
 
-def get_ssh_resource_powerschool(code_location):
+def get_ssh_resource_powerschool(remote_host, code_location):
     return SSHResource(
-        remote_host="psteam.kippnj.org",
+        remote_host=remote_host,
         remote_port=EnvVar(f"{code_location}_PS_SSH_PORT").get_value(),
         username=EnvVar(f"{code_location}_PS_SSH_USERNAME"),
         password=EnvVar(f"{code_location}_PS_SSH_PASSWORD"),
