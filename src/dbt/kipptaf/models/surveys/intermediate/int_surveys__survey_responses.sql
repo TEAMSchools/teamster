@@ -4,12 +4,6 @@ select
     fr.response_id as survey_response_id,
     fr.respondent_email,
     fr.text_value as answer,
-    timestamp(fr.create_time) as date_started,
-    timestamp(fr.last_submitted_time) as date_submitted,
-    safe_cast(fr.text_value as numeric) as answer_value,
-    case
-        when safe_cast(fr.text_value as integer) is null then 1 else 0
-    end as is_open_ended,
 
     rt.academic_year,
     rt.name as survey_name,
@@ -38,6 +32,12 @@ select
     eh.level_of_education,
     eh.primary_grade_level_taught,
 
+    timestamp(fr.create_time) as date_started,
+    timestamp(fr.last_submitted_time) as date_submitted,
+    safe_cast(fr.text_value as numeric) as answer_value,
+    case
+        when safe_cast(fr.text_value as integer) is null then 1 else 0
+    end as is_open_ended,
 from {{ ref("base_google_forms__form_responses") }} as fr
 left join
     {{ ref("stg_reporting__terms") }} as rt
