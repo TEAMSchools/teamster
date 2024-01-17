@@ -7,6 +7,7 @@ from teamster.core.resources import (
 )
 from teamster.core.utils.functions import get_dagster_cloud_instance
 from teamster.kippnewark.powerschool.assets import partition_assets
+from teamster.staging import LOCAL_TIMEZONE
 
 
 def test_powerschool_sensor():
@@ -15,7 +16,7 @@ def test_powerschool_sensor():
     )
 
     dynamic_partition_sensor = build_powerschool_sensor(
-        name="test", asset_defs=partition_assets
+        name="test", asset_defs=partition_assets, execution_timezone=LOCAL_TIMEZONE
     )
 
     sensor_results = dynamic_partition_sensor(

@@ -8,6 +8,14 @@ from teamster.kipptaf.amplify.assets import build_mclass_asset
 from teamster.kipptaf.resources import MCLASS_RESOURCE
 from teamster.staging import LOCAL_TIMEZONE
 
+BASE_DYD_PAYLOAD = {
+    "accounts": "1300588536",
+    "districts": "1300588535",
+    "roster_option": "2",  # On Test Day
+    "dyd_assessments": "7_D8",  # DIBELS 8th Edition
+    "tracking_id": None,
+}
+
 
 def _test_asset(asset_name, dyd_payload, partition_start_date):
     asset = build_mclass_asset(
@@ -44,14 +52,7 @@ def test_mclass_asset_benchmark_student_summary():
     _test_asset(
         asset_name="benchmark_student_summary",
         partition_start_date="2022-07-01",
-        dyd_payload={
-            "dyd_results": "BM",
-            "accounts": "1300588536",
-            "districts": "1300588535",
-            "roster_option": "2",  # On Test Day
-            "dyd_assessments": "7_D8",  # DIBELS 8th Edition
-            "tracking_id": None,
-        },
+        dyd_payload={"dyd_results": "BM", **BASE_DYD_PAYLOAD},
     )
 
 
@@ -59,12 +60,5 @@ def test_mclass_asset_pm_student_summary():
     _test_asset(
         asset_name="pm_student_summary",
         partition_start_date="2022-07-01",
-        dyd_payload={
-            "dyd_results": "PM",
-            "accounts": "1300588536",
-            "districts": "1300588535",
-            "roster_option": "2",  # On Test Day
-            "dyd_assessments": "7_D8",  # DIBELS 8th Edition
-            "tracking_id": None,
-        },
+        dyd_payload={"dyd_results": "PM", **BASE_DYD_PAYLOAD},
     )
