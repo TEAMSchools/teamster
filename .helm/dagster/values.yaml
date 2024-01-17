@@ -55,6 +55,23 @@ dagsterCloud:
   # An optional label which will identify the agent on the status page.
   agentLabel: ~
 
+  # Optionally configure the agent process requests for code locations annotated with a specific agent queue.
+  # Examples:
+  #
+  # To only process requests for code locations annotated with "foo"
+  #
+  # agentQueues:
+  #   includeDefaultQueue: false
+  #   additionalQueues:
+  #     - foo
+  #
+  # To process requests for code locations annotated with "foo" and any location that isn't annotated with an agent queue:
+  #
+  # agentQueues:
+  #   includeDefaultQueue: true
+  #   additionalQueues:
+  #     - foo
+
 ####################################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ####################################################################################################

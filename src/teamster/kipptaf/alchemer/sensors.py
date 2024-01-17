@@ -26,7 +26,13 @@ def alchemer_survey_metadata_asset_sensor(
     context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
 ):
     now = pendulum.now(tz="America/New_York").start_of("minute")
+
     cursor: dict = json.loads(context.cursor or "{}")
+    latest_materialization_event = context.instance.get_latest_materialization_event(
+        survey.key
+    )
+
+    survey_partitions_def_name = survey.partitions_def.name  # type: ignore
 
     run_requests = []
     dynamic_partitions_requests = []
@@ -35,6 +41,7 @@ def alchemer_survey_metadata_asset_sensor(
         survey_list = alchemer.survey.list()
     except Exception as e:
         return SensorResult(skip_reason=str(e))
+
     for survey_obj in survey_list:
         context.log.info(msg=survey_obj["title"])
 
@@ -49,10 +56,7 @@ def alchemer_survey_metadata_asset_sensor(
 
         is_run_request = False
 
-        if (
-            not context.instance.get_latest_materialization_event(survey.key)
-            or survey_cursor_timestamp is None
-        ):
+        if latest_materialization_event is None or survey_cursor_timestamp is None:
             is_run_request = True
             context.log.info("INITIAL RUN")
         elif modified_on > pendulum.from_timestamp(
@@ -64,7 +68,7 @@ def alchemer_survey_metadata_asset_sensor(
         if is_run_request:
             dynamic_partitions_requests.append(
                 AddDynamicPartitionsRequest(
-                    partitions_def_name=survey.partitions_def.name,  # type: ignore
+                    partitions_def_name=survey_partitions_def_name,
                     partition_keys=[survey_id],
                 )
             )
@@ -137,7 +141,7 @@ def alchemer_survey_response_asset_sensor(
                 try:
                     survey_obj = alchemer.survey.get(id=survey_id)
                 except Exception as e:
-                    context.log.exception(msg=e)
+                    context.log.error(msg=e)
                     continue
 
                 date_submitted = pendulum.from_timestamp(
@@ -151,7 +155,7 @@ def alchemer_survey_response_asset_sensor(
                 if survey_response_data:
                     is_run_request = True
             except HTTPError as e:
-                context.log.exception(e)
+                context.log.error(msg=e)
 
         if is_run_request:
             partition_key = f"{survey_id}_{survey_cursor_timestamp}"

@@ -1,10 +1,10 @@
 version: 0.1
 cli:
-  version: 1.18.1
+  version: 1.19.0
 plugins:
   sources:
     - id: trunk
-      ref: v1.4.1
+      ref: v1.4.2
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
@@ -37,23 +37,23 @@ lint:
       paths:
         - .helm/**/values.yaml
   enabled:
-    - checkov@3.1.54
+    - checkov@3.1.61
     - terrascan@1.18.11
-    - trivy@0.48.2
-    - trufflehog@3.63.7
+    - trivy@0.48.3
+    - trufflehog@3.63.9
     - bandit@1.7.6
     - oxipng@9.0.0
     - sqlfluff@2.3.5
     - svgo@3.2.0
     - sqlfmt@0.21.1
     - isort@5.13.2
-    - ruff@0.1.11
+    - ruff@0.1.13
     - actionlint@1.6.26
     - git-diff-check
     - gitleaks@8.18.1
     - hadolint@2.12.0
     - markdownlint@0.38.0
-    - prettier@3.1.1
+    - prettier@3.2.2
     - shellcheck@0.9.0
     - shfmt@3.6.0
     - taplo@0.8.1

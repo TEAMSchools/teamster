@@ -17,17 +17,19 @@ def test_fivetran_sync_status_sensor():
             "muskiness_cumulative",
             "bellows_curliness",
             "jinx_credulous",
-            "aspirate_uttering",
             "regency_carrying",
         ]
     }
 
-    sensor_result = fivetran_sync_status_sensor(
-        context=build_sensor_context(
-            cursor=json.dumps(obj=cursor), sensor_name=fivetran_sync_status_sensor.name
-        ),
-        fivetran=FIVETRAN_RESOURCE,
-        db_bigquery=BIGQUERY_RESOURCE,
+    context = build_sensor_context(
+        cursor=json.dumps(obj=cursor), sensor_name=fivetran_sync_status_sensor.name
     )
 
-    assert len(sensor_result.run_requests) > 0  # type: ignore
+    sensor_result = fivetran_sync_status_sensor(
+        context=context, fivetran=FIVETRAN_RESOURCE, db_bigquery=BIGQUERY_RESOURCE
+    )
+
+    asset_events = sensor_result.asset_events  # type: ignore
+
+    context.log.info(msg=asset_events)
+    assert len(asset_events) > 0

@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import config_from_files
 
 from teamster.core.sftp.assets import build_sftp_asset
@@ -16,6 +18,6 @@ _all = [
         **a,
     )
     for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/adp/workforce_now/config/sftp-assets.yaml"]
+        [f"{pathlib.Path(__file__).parent}/config/sftp-assets.yaml"]
     )["assets"]
 ]

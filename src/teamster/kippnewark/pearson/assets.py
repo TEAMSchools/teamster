@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import (
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -9,6 +11,8 @@ from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION
+
+config_dir = pathlib.Path(__file__).parent / "config"
 
 njgpa_assets = [
     build_sftp_asset(
@@ -22,9 +26,7 @@ njgpa_assets = [
         ),
         **a,
     )
-    for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/pearson/config/njgpa.yaml"]
-    )["assets"]
+    for a in config_from_files([f"{config_dir}/njgpa.yaml"])["assets"]
 ]
 
 all_assets = [
@@ -37,9 +39,7 @@ all_assets = [
         partitions_def=StaticPartitionsDefinition(a["partition_keys"]),
         **a,
     )
-    for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/pearson/config/assets.yaml"]
-    )["assets"]
+    for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
 ]
 
 _all = [
