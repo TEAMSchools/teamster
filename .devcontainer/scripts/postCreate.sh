@@ -24,6 +24,8 @@ echo "${GCLOUD_SERVICE_ACCOUNT_KEY}" |
   sudo tee /etc/secret-volume/gcloud_service_account_json >/dev/null
 echo "${OP_CREDENTIALS_JSON}" |
   sudo tee /etc/secret-volume/op_credentials_json >/dev/null
+echo "${EGENCIA_RSA_PRIVATE_KEY}" |
+  sudo tee /etc/secret-volume/id_rsa_egencia >/dev/null
 
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
