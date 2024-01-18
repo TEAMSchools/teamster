@@ -37,6 +37,12 @@ workspace:
     branchDeployments:
       ttlSeconds: 300
 
+  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  serverK8sConfig:
+    podTemplateSpecMetadata: # raw config for the pod's metadata
+      annotations:
+        operator.1password.io/auto-restart: "true"
+
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################

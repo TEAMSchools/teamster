@@ -19,6 +19,10 @@ operator:
   # Denotes whether the 1Password Operator will be deployed
   create: true
 
+  # Denotes whether the 1Password Operator will automatically restart deployments based
+  # on associated updated secrets.
+  autoRestart: true
+
   # The resources requests/limits for the 1Password Operator pod
   resources:
     requests:
