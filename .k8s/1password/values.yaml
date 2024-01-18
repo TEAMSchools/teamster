@@ -2,6 +2,9 @@
 # that every value "{{ .Between.Curly.Braces }}" in this file needs to be
 # explicitly interpolated on the template side by using the `tpl` function.
 
+# global common labels, applied to all ressources
+commonLabels: {}
+
 # This section of values is for 1Password Connect API and Sync Configuration
 connect:
   # Denotes whether the 1Password Connect server will be deployed
@@ -18,6 +21,26 @@ connect:
     resources: {}
     httpPort: 8080
     httpsPort: 8443
+    logLevel: info
+    # Prometheus Service Monitor
+    # ref: https://github.com/coreos/prometheus-operator
+    #
+    serviceMonitor:
+      # Create ServiceMonitor Resource for scraping metrics using PrometheusOperator
+      #
+      enabled: false
+      # Specify the interval at which metrics should be scraped
+      #
+      interval: 30s
+      # Define the path used by ServiceMonitor to scrape metrics
+      #
+      path: "/metrics"
+      # Define the HTTP URL parameters used by ServiceMonitor
+      #
+      params: {}
+      # Extra annotations for the ServiceMonitor
+      #
+      annotations: {}
 
   # The 1Password Connect Sync Specific Values
   sync:
@@ -25,9 +48,13 @@ connect:
     imageRepository: 1password/connect-sync
     resources: {}
     httpPort: 8081
+    logLevel: info
 
   # The name of 1Password Connect Application
   applicationName: onepassword-connect
+
+  # The name of 1Password Connect Host
+  host: onepassword-connect
 
   # The type of Service resource to create for the Connect API and sync services.
   # See: https://kubernetes.io/docs/concepts/services-networking/service
@@ -153,6 +180,15 @@ connect:
     #    hosts:
     #      - chart-example.local
 
+  # Optionally the internal profiler can be enabled to debug memory or performance issues.
+  # For normal operation of Connect this does not have to enabled.
+  profiler:
+    enabled: false
+    # The interval at which profiler snapshots are taken.
+    interval: 6h
+    # Number of profiler snapshots to keep.
+    keepLast: 12
+
 # This section of values is for 1Password Operator Configuration
 operator:
   # Denotes whether the 1Password Operator will be deployed
@@ -171,10 +207,10 @@ operator:
   imageRepository: 1password/onepassword-operator
 
   # How often the 1Password Operator will poll for secrets updates.
-  pollingInterval: 10
+  pollingInterval: 600
 
   # The 1Password Operator version to pull
-  version: "1.6.0"
+  version: "1.8.0"
 
   # Node selector stanza for the Operator pod
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
@@ -246,6 +282,9 @@ operator:
 
     # The name of the 1Password Operator Cluster Role
     name: onepassword-connect-operator
+
+  # 1Password Operator Log Level Configuration
+  logLevel: info
 
 # 1Password Acceptance Tests Functionality
 acceptanceTests:
