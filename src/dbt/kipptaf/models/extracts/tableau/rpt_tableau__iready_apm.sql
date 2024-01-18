@@ -72,6 +72,17 @@ select
     as percent_progress_to_annual_typical_growth,
     dr.percent_progress_to_annual_stretch_growth_percent
     as percent_progress_to_annual_stretch_growth,
+    dr.overall_relative_placement,
+    dr.overall_relative_placement_int,
+    dr.projected_sublevel,
+    dr.projected_sublevel_number,
+    dr.projected_sublevel_typical,
+    dr.projected_sublevel_number_typical,
+    dr.projected_sublevel_stretch,
+    dr.projected_sublevel_number_stretch,
+    dr.rush_flag,
+    dr.mid_on_grade_level_scale_score,
+    dr.overall_scale_score,
 
     iu.last_week_start_date,
     iu.last_week_end_date,
@@ -86,6 +97,16 @@ select
 
     cr.teacher_lastfirst as subject_teacher,
     cr.sections_section_number as subject_section,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between rt.start_date and rt.end_date,
+        true,
+        false
+    ) as is_curterm,
+    concat(left(co.first_name, 1), '. ', co.last_name) as student_name_short,
+    dr.mid_on_grade_level_scale_score
+    - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join unnest(['Reading', 'Math']) as subj
 cross join date_range as w
