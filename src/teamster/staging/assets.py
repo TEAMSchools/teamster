@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 from dagster import AssetExecutionContext, asset
 
@@ -78,6 +79,15 @@ ENVS = [
     "ZENDESK_TOKEN",
 ]
 
+FILES = [
+    "/etc/secret-volume/id_rsa_egencia",
+    "/etc/secret-volume/gcloud_service_account_json",
+    "/etc/secret-volume/adp_wfn_key",
+    "/etc/secret-volume/adp_wfn_cert",
+    "/etc/secret-volume/deanslist_api_key_map_yaml",
+    "/etc/secret-volume/dbt_user_creds_json",
+]
+
 
 @asset
 def onepassword_secret_test(context: AssetExecutionContext):
@@ -88,3 +98,13 @@ def onepassword_secret_test(context: AssetExecutionContext):
             context.log.error(msg=key)
         else:
             context.log.info(msg=value)
+
+    for file in FILES:
+        path = pathlib.Path(file)
+
+        text = path.read_text()
+
+        if text is None:
+            context.log.error(msg=path)
+        else:
+            context.log.info(msg=text)
