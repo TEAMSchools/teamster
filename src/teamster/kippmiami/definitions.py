@@ -64,7 +64,9 @@ defs = Definitions(
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
         "db_powerschool": get_oracle_resource_powerschool(CODE_LOCATION_UPPER),
-        "ssh_powerschool": get_ssh_resource_powerschool(CODE_LOCATION_UPPER),
+        "ssh_powerschool": get_ssh_resource_powerschool(
+            remote_host="ps.kippmiami.org", code_location=CODE_LOCATION_UPPER
+        ),
         "ssh_renlearn": get_ssh_resource_renlearn(CODE_LOCATION_UPPER),
     },
 )
