@@ -10,7 +10,8 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/dhoeric/features/google-cloud-cli:1": {
       "installGkeGcloudAuthPlugin": true
-    }
+    },
+    "ghcr.io/flexwie/devcontainer-features/op:1": {}
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
