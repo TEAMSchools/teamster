@@ -14,77 +14,77 @@ container_config:
     - name: ADP_SFTP_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: op-adp-sftp
+          name: op-adp-wfn-sftp
           key: password
     - name: ADP_SFTP_USERNAME
       valueFrom:
         secretKeyRef:
-          name: op-adp-sftp
+          name: op-adp-wfn-sftp
           key: username
     - name: ADP_WFM_APP_KEY
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfm
-          key:
+          name: op-adp-wfm-api
+          key: app-key
     - name: ADP_WFM_CLIENT_ID
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfm
-          key:
+          name: op-adp-wfm-api
+          key: client-id
     - name: ADP_WFM_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfm
-          key:
+          name: op-adp-wfm-api
+          key: client-secret
     - name: ADP_WFM_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfm
+          name: op-adp-wfm-api
           key: password
     - name: ADP_WFM_SUBDOMAIN
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfm
-          key:
+          name: op-adp-wfm-api
+          key: subdomain
     - name: ADP_WFM_USERNAME
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfm
+          name: op-adp-wfm-api
           key: username
     - name: ADP_WFN_CLIENT_ID
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfn
-          key:
+          name: op-adp-wfn-api
+          key: client-id
     - name: ADP_WFN_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
-          name: op-adp-wfn
-          key:
+          name: op-adp-wfn-api
+          key: client-secret
     - name: AIRBYTE_API_KEY
       valueFrom:
         secretKeyRef:
-          name: op-airbyte
-          key:
+          name: op-airbyte-api
+          key: api-key
     - name: ALCHEMER_API_TOKEN
       valueFrom:
         secretKeyRef:
-          name: op-alchemer
-          key:
+          name: op-alchemer-api
+          key: token
     - name: ALCHEMER_API_TOKEN_SECRET
       valueFrom:
         secretKeyRef:
-          name: op-alchemer
-          key:
+          name: op-alchemer-api
+          key: token-secret
     - name: AMPLIFY_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: op-amplify
+          name: op-amplify-service-account
           key: password
     - name: AMPLIFY_USERNAME
       valueFrom:
         secretKeyRef:
-          name: op-amplify
+          name: op-amplify-service-account
           key: username
     - name: BLISSBOOK_SFTP_PASSWORD
       valueFrom:
@@ -139,18 +139,18 @@ container_config:
     - name: EGENCIA_SFTP_USERNAME
       valueFrom:
         secretKeyRef:
-          name: op-egencia
+          name: op-egencia-sftp
           key: username
     - name: FIVETRAN_API_KEY
       valueFrom:
         secretKeyRef:
           name: op-fivetran-api
-          key:
+          key: api-key
     - name: FIVETRAN_API_SECRET
       valueFrom:
         secretKeyRef:
           name: op-fivetran-api
-          key:
+          key: api-secret
     - name: ILLUMINATE_SFTP_PASSWORD
       valueFrom:
         secretKeyRef:
@@ -184,12 +184,12 @@ container_config:
     - name: LDAP_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: op-ldap
+          name: op-ldap-service-account
           key: password
     - name: LDAP_USER
       valueFrom:
         secretKeyRef:
-          name: op-ldap
+          name: op-ldap-service-account
           key: username
     - name: LITTLESIS_SFTP_PASSWORD
       valueFrom:
@@ -204,32 +204,32 @@ container_config:
     - name: SCHOOLMINT_GROW_CLIENT_ID
       valueFrom:
         secretKeyRef:
-          name: op-schoolmint-grow
-          key:
+          name: op-schoolmint-grow-api
+          key: client-id
     - name: SCHOOLMINT_GROW_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
-          name: op-schoolmint-grow
-          key:
+          name: op-schoolmint-grow-api
+          key: client-secret
     - name: SCHOOLMINT_GROW_DISTRICT_ID
       valueFrom:
         secretKeyRef:
-          name: op-schoolmint-grow
-          key:
+          name: op-schoolmint-grow-api
+          key: district-id
     - name: SMARTRECRUITERS_SMARTTOKEN
       valueFrom:
         secretKeyRef:
-          name: op-smartrecruiters
+          name: op-smartrecruiters-api
           key: token
     - name: ZENDESK_EMAIL
       valueFrom:
         secretKeyRef:
-          name: op-zendesk
+          name: op-zendesk-api
           key: email
     - name: ZENDESK_TOKEN
       valueFrom:
         secretKeyRef:
-          name: op-zendesk
+          name: op-zendesk-api
           key: token
 ---
 container_config:
