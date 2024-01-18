@@ -13,29 +13,29 @@ with
             rt.end_date,
             rt.academic_year,
 
-            -- sr.employee_number,
-            -- sr.preferred_name_lastfirst as teammate,
-            -- sr.business_unit_home_name as entity,
-            -- sr.home_work_location_name as location,
-            -- sr.home_work_location_grade_band as grade_band,
-            -- sr.home_work_location_powerschool_school_id,
-            -- sr.department_home_name as department,
-            -- sr.primary_grade_level_taught as grade_taught,
-            -- sr.job_title,
-            -- sr.report_to_preferred_name_lastfirst as manager,
-            -- sr.worker_original_hire_date,
-            -- sr.assignment_status,
-            -- sr.mail,
-            -- sr.report_to_mail,
-            -- sr.sam_account_name,
-            -- sr.report_to_sam_account_name,
+        -- sr.employee_number,
+        -- sr.preferred_name_lastfirst as teammate,
+        -- sr.business_unit_home_name as entity,
+        -- sr.home_work_location_name as location,
+        -- sr.home_work_location_grade_band as grade_band,
+        -- sr.home_work_location_powerschool_school_id,
+        -- sr.department_home_name as department,
+        -- sr.primary_grade_level_taught as grade_taught,
+        -- sr.job_title,
+        -- sr.report_to_preferred_name_lastfirst as manager,
+        -- sr.worker_original_hire_date,
+        -- sr.assignment_status,
+        -- sr.mail,
+        -- sr.report_to_mail,
+        -- sr.sam_account_name,
+        -- sr.report_to_sam_account_name,
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
         left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
         left join
             {{ ref("stg_reporting__terms") }} as rt on ur.role_name = rt.grade_band
         -- left join
-        --     {{ ref("base_people__staff_roster") }} as sr
-        --     on u.internal_id = safe_cast(sr.employee_number as string)
+        -- {{ ref("base_people__staff_roster") }} as sr
+        -- on u.internal_id = safe_cast(sr.employee_number as string)
         where ur.role_name like '%Teacher%'
     ),
 
@@ -180,9 +180,9 @@ with
                 regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
 
-            regexp_extract(lower(m.name),r'^[^-]*',1,1) as score_measurement_type,
+            regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
 
-            regexp_extract(lower(m.name),r'^[^:]*',1,1) as score_measurement_shortname,
+            regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
 
         from observations as o
         left join
@@ -200,10 +200,11 @@ with
     pm_overall_scores_long as (
         select
             om.observation_id,
-            case when
-              om.score_measurement_type = 's&o' then 'so'
-              else om.score_measurement_type
-            end as om.score_measurement_type,
+            case
+                when om.score_measurement_type = 's&o'
+                then 'so'
+                else om.score_measurement_type
+            end as score_measurement_type,
             avg(om.row_score_value) as score_measurement_score,
         from observation_measurements as om
         where om.score_measurement_type in ('etr', 's&o')
@@ -228,14 +229,15 @@ with
             s.user_id,
             s.role_name,
             s.internal_id,
-            s.type as form_type,
-            s.code as form_term,
-            s.name as form_short_name,
+            s.form_type,
+            s.form_term,
+            s.form_short_name,
             s.start_date,
             s.end_date,
             s.academic_year,
             'ETR + S&O' as score_type,
-
+            o.score_measurement_type,
+            o.score_measurement_shortname,
             o.observation_id,
             o.teacher_id,
             o.form_long_name,
@@ -280,7 +282,14 @@ with
             s.internal_id,
             s.form_type,
             s.form_term,
+            s.form_short_name,
+            s.start_date,
+            s.end_date,
+            s.academic_year,
             safe_cast(null as string) as score_type,
+
+            o.score_measurement_type,
+            o.score_measurement_shortname,
 
             o.observation_id,
             o.teacher_id,
@@ -343,7 +352,7 @@ with
             pm_term as form_term,
             score_type,
             observer_employee_number,
-            null as observer_name,
+            safe_cast(null as string) as observer_name,
             safe_cast(observed_at as date) as observed_at,
             measurement_name,
             score_value as row_score_value,
@@ -393,6 +402,8 @@ with
             od.form_short_name,
             od.form_long_name,
             od.score_type,
+            od.score_measurement_type,
+            od.score_measurement_shortname,
             od.start_date,
             od.end_date,
             od.academic_year,
@@ -432,6 +443,8 @@ with
             hd.form_short_name,
             hd.form_long_name,
             hd.score_type,
+            null as score_measurement_type,
+            null as score_measurement_shortname,
             null as start_date,
             null as end_date,
             hd.academic_year,
@@ -468,6 +481,8 @@ select
     form_short_name,
     form_long_name,
     score_type,
+    score_measurement_type,
+    score_measurement_shortname,
     start_date,
     end_date,
     academic_year,
@@ -523,3 +538,4 @@ select
         then 1
     end as overall_tier,
 from all_data
+where academic_year = 2023
