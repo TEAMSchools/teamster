@@ -8,6 +8,7 @@ select
     rt.name,
     rt.code,
     rt.type,
+    rt.academic_year,
 
     fi.abbreviation as question_shortname,
     fi.title as question_title,
