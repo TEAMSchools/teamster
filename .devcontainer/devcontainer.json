@@ -4,14 +4,14 @@
     "ghcr.io/devcontainers-contrib/features/pdm:2": {},
     "ghcr.io/trunk-io/devcontainer-feature/trunk:1": {},
     "ghcr.io/devcontainers-contrib/features/mkdocs:2": {
-      "plugins": "mkdocs-material mkdocstrings[python]"
+      "plugins": "mkdocs-material mkdocstrings[python]",
     },
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/dhoeric/features/google-cloud-cli:1": {
-      "installGkeGcloudAuthPlugin": true
+      "installGkeGcloudAuthPlugin": true,
     },
-    "ghcr.io/flexwie/devcontainer-features/op:1": {}
+    "ghcr.io/flexwie/devcontainer-features/op:1": {},
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
@@ -19,6 +19,6 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "USE_GKE_GCLOUD_AUTH_PLUGIN": "True",
     "GOOGLE_APPLICATION_CREDENTIALS": "/etc/secret-volume/gcloud_service_account_json",
-    "DBT_PROFILES_DIR": "/workspaces/teamster/src/dbt"
-  }
+    "DBT_PROFILES_DIR": "/workspaces/teamster/src/dbt",
+  },
 }
