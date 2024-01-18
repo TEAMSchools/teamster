@@ -5,9 +5,9 @@ select
     fr.respondent_email,
     fr.text_value as answer,
 
-    rt.academic_year,
-    rt.name as survey_name,
-    rt.code as reporting_term,
+    rt.name,
+    rt.code,
+    rt.type,
 
     fi.abbreviation as question_shortname,
     fi.title as question_title,
@@ -41,11 +41,10 @@ select
 from {{ ref("base_google_forms__form_responses") }} as fr
 left join
     {{ ref("stg_reporting__terms") }} as rt
-    on date(fr.last_submitted_time) between rt.start_date and rt.end_date
-    and rt.name = fr.info_document_title
+    on rt.name = fr.info_title
+    and date(fr.last_submitted_time) between rt.start_date and rt.end_date
 inner join
     {{ ref("stg_ldap__user_person") }} as up on fr.respondent_email = up.google_email
-
 inner join
     {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
     on fr.form_id = fi.form_id
