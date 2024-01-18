@@ -230,7 +230,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-smartrecruiters-api
-                    key: token
+                    key: smart-token
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
