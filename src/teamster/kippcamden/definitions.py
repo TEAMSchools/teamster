@@ -64,7 +64,9 @@ defs = Definitions(
         "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
         "db_powerschool": get_oracle_resource_powerschool(CODE_LOCATION_UPPER),
         "ssh_edplan": get_ssh_resource_edplan(CODE_LOCATION_UPPER),
-        "ssh_powerschool": get_ssh_resource_powerschool(CODE_LOCATION_UPPER),
+        "ssh_powerschool": get_ssh_resource_powerschool(
+            remote_host="pskcna.kippnj.org", code_location=CODE_LOCATION_UPPER
+        ),
         "ssh_titan": get_ssh_resource_titan(CODE_LOCATION_UPPER),
     },
 )
