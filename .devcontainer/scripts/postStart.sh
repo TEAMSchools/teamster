@@ -14,3 +14,6 @@ sudo /usr/local/py-utils/bin/pdm self update
 
 # update trunk
 trunk upgrade -y --no-progress
+
+# 1password cli completions
+source <(op completion bash)
