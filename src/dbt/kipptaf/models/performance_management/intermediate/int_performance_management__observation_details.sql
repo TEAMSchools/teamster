@@ -334,10 +334,10 @@ with
             pm_term as form_term,
             score_type,
             observer_employee_number,
-            safe_cast(null as string) as observer_name,
-            safe_cast(observed_at as date) as observed_at,
             measurement_name,
             score_value as row_score_value,
+            safe_cast(null as string) as observer_name,
+            safe_cast(observed_at as date) as observed_at,
         from
             {{
                 source(
