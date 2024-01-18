@@ -48,7 +48,7 @@ select
     sr.report_to_mail,
     sr.sam_account_name,
     sr.report_to_sam_account_name,
-from {{ ref("int_schoolmint_grow__observation_details") }} as od
+from {{ ref("int_performance_management__observation_details") }} as od
 inner join
     {{ ref("base_people__staff_roster_history") }} as sr
     on od.internal_id = safe_cast(sr.employee_number as string)

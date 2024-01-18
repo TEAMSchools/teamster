@@ -8,7 +8,7 @@ with
             upper(
                 replace(replace(score_measurement_shortname, '&', ''), '-', '')
             ) as score_measurement_shortname,
-        from {{ ref("int_schoolmint_grow__observation_details") }}
+        from {{ ref("int_performance_management__observation_details") }}
         where
             form_long_name = 'Coaching Tool: Coach ETR and Reflection'
             and row_score_value is not null
@@ -88,7 +88,7 @@ with
             academic_year,
             form_term,
             avg(overall_score) as overall_score,
-        from {{ ref("int_schoolmint_grow__observation_details") }}
+        from {{ ref("int_performance_management__observation_details") }}
         where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
         group by observer_employee_number, academic_year, form_term
     )

@@ -13,29 +13,11 @@ with
             rt.end_date,
             rt.academic_year,
 
-        -- sr.employee_number,
-        -- sr.preferred_name_lastfirst as teammate,
-        -- sr.business_unit_home_name as entity,
-        -- sr.home_work_location_name as location,
-        -- sr.home_work_location_grade_band as grade_band,
-        -- sr.home_work_location_powerschool_school_id,
-        -- sr.department_home_name as department,
-        -- sr.primary_grade_level_taught as grade_taught,
-        -- sr.job_title,
-        -- sr.report_to_preferred_name_lastfirst as manager,
-        -- sr.worker_original_hire_date,
-        -- sr.assignment_status,
-        -- sr.mail,
-        -- sr.report_to_mail,
-        -- sr.sam_account_name,
-        -- sr.report_to_sam_account_name,
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
         left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
         left join
             {{ ref("stg_reporting__terms") }} as rt on ur.role_name = rt.grade_band
-        -- left join
-        -- {{ ref("base_people__staff_roster") }} as sr
-        -- on u.internal_id = safe_cast(sr.employee_number as string)
+
         where ur.role_name like '%Teacher%'
     ),
 
