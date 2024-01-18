@@ -16,4 +16,5 @@ sudo /usr/local/py-utils/bin/pdm self update
 trunk upgrade -y --no-progress
 
 # 1password cli completions
+# trunk-ignore(shellcheck/SC1090,shellcheck/SC2312)
 source <(op completion bash)
