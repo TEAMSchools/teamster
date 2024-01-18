@@ -37,6 +37,9 @@ gcloud config set compute/region us-central1
 # update the kubectl configuration to use the plugin
 gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
 
+# install pdm dependencies
+pdm install --no-lock
+
 # install dbt deps and generate manifests
 # trunk-ignore(shellcheck/SC2312)
 find ./src/dbt -maxdepth 2 -name "dbt_project.yml" -print0 |
@@ -46,6 +49,3 @@ find ./src/dbt -maxdepth 2 -name "dbt_project.yml" -print0 |
 
     pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" parse
   done
-
-# install pdm dependencies
-pdm install --no-lock
