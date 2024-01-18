@@ -8,6 +8,44 @@ locations:
     working_directory: /root/app
     container_context:
       k8s:
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: /etc/secret-volume
+        volumes:
+          - name: secret-volume
+            projected:
+              sources:
+                - secret:
+                    name: op-adp-wfn-api
+                    items:
+                      - key: KTAF_Mutual_SSL.pem
+                        path: adp_wfn_cert
+                - secret:
+                    name: op-adp-wfn-api
+                    items:
+                      - key: kipptaf_auth.key
+                        path: adp_wfn_key
+                - secret:
+                    name: op-gcp-service-account-dbt
+                    items:
+                      - key: dbt_user_credentials.json
+                        path: dbt_user_creds_json
+                - secret:
+                    name: op-deanslist-api
+                    items:
+                      - key: deanslist_api_key_map.yaml
+                        path: deanslist_api_key_map_yaml
+                - secret:
+                    name: op-gcp-service-account-teamster
+                    items:
+                      - key: service_account_gserviceaccount.json
+                        path: gcloud_service_account_json
+                - secret:
+                    name: op-egencia-sftp
+                    items:
+                      - key: id_rsa_egencia
+                        path: id_rsa_egencia
         run_k8s_config:
           container_config:
             env:

@@ -34,8 +34,6 @@ locations:
           - couchdrop-sftp-username
           - coupa-sftp-password
           - coupa-sftp-username
-          - dagster-cloud-agent-token
-          - dagster-cloud-user-token
           - deanslist-sftp-password
           - deanslist-sftp-username
           - egencia-sftp-username
