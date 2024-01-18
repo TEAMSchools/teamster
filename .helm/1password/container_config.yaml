@@ -1,0 +1,376 @@
+container_config:
+  env:
+    - name: ACHIEVE3K_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-achieve3k-sftp
+          key: password
+    - name: ACHIEVE3K_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-achieve3k-sftp
+          key: username
+    - name: ADP_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-sftp
+          key: password
+    - name: ADP_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-sftp
+          key: username
+    - name: ADP_WFM_APP_KEY
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfm
+          key:
+    - name: ADP_WFM_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfm
+          key:
+    - name: ADP_WFM_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfm
+          key:
+    - name: ADP_WFM_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfm
+          key: password
+    - name: ADP_WFM_SUBDOMAIN
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfm
+          key:
+    - name: ADP_WFM_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfm
+          key: username
+    - name: ADP_WFN_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfn
+          key:
+    - name: ADP_WFN_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: op-adp-wfn
+          key:
+    - name: AIRBYTE_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: op-airbyte
+          key:
+    - name: ALCHEMER_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: op-alchemer
+          key:
+    - name: ALCHEMER_API_TOKEN_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: op-alchemer
+          key:
+    - name: AMPLIFY_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-amplify
+          key: password
+    - name: AMPLIFY_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-amplify
+          key: username
+    - name: BLISSBOOK_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-blissbook-sftp
+          key: password
+    - name: BLISSBOOK_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-blissbook-sftp
+          key: username
+    - name: CLEVER_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-clever-sftp
+          key: password
+    - name: CLEVER_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-clever-sftp
+          key: username
+    - name: COUCHDROP_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-couchdrop-sftp
+          key: password
+    - name: COUCHDROP_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-couchdrop-sftp
+          key: username
+    - name: COUPA_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-coupa-sftp
+          key: password
+    - name: COUPA_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-coupa-sftp
+          key: username
+    - name: DEANSLIST_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-deanslist-sftp
+          key: password
+    - name: DEANSLIST_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-deanslist-sftp
+          key: username
+    - name: EGENCIA_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-egencia
+          key: username
+    - name: FIVETRAN_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: op-fivetran-api
+          key:
+    - name: FIVETRAN_API_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: op-fivetran-api
+          key:
+    - name: ILLUMINATE_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-illuminate-sftp
+          key: password
+    - name: ILLUMINATE_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-illuminate-sftp
+          key: username
+    - name: IREADY_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-iready-sftp
+          key: password
+    - name: IREADY_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-iready-sftp
+          key: username
+    - name: KTAF_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-idauto-sftp
+          key: password
+    - name: KTAF_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-idauto-sftp
+          key: username
+    - name: LDAP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-ldap
+          key: password
+    - name: LDAP_USER
+      valueFrom:
+        secretKeyRef:
+          name: op-ldap
+          key: username
+    - name: LITTLESIS_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-littlesis-sftp
+          key: password
+    - name: LITTLESIS_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-littlesis-sftp
+          key: username
+    - name: SCHOOLMINT_GROW_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: op-schoolmint-grow
+          key:
+    - name: SCHOOLMINT_GROW_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: op-schoolmint-grow
+          key:
+    - name: SCHOOLMINT_GROW_DISTRICT_ID
+      valueFrom:
+        secretKeyRef:
+          name: op-schoolmint-grow
+          key:
+    - name: SMARTRECRUITERS_SMARTTOKEN
+      valueFrom:
+        secretKeyRef:
+          name: op-smartrecruiters
+          key:
+    - name: ZENDESK_EMAIL
+      valueFrom:
+        secretKeyRef:
+          name: op-zendesk
+          key: email
+    - name: ZENDESK_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: op-zendesk
+          key: token
+---
+container_config:
+  env:
+    - name: KIPPCAMDEN_EDPLAN_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-edplan-sftp-kippcamden
+          key: password
+    - name: KIPPCAMDEN_EDPLAN_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-edplan-sftp-kippcamden
+          key: username
+    - name: KIPPCAMDEN_PS_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-db-kippcamden
+          key: password
+    - name: KIPPCAMDEN_PS_SSH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippcamden
+          key: password
+    - name: KIPPCAMDEN_PS_SSH_PORT
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippcamden
+          key: port
+    - name: KIPPCAMDEN_PS_SSH_REMOTE_BIND_HOST
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippcamden
+          key: remote-bind-host
+    - name: KIPPCAMDEN_PS_SSH_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippcamden
+          key: username
+    - name: KIPPCAMDEN_TITAN_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-titan-sftp-kippcamden
+          key: password
+    - name: KIPPCAMDEN_TITAN_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-titan-sftp-kippcamden
+          key: username
+---
+container_config:
+  env:
+    - name: KIPPMIAMI_PS_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-db-kippmiami
+          key: password
+    - name: KIPPMIAMI_PS_SSH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippmiami
+          key: password
+    - name: KIPPMIAMI_PS_SSH_PORT
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippmiami
+          key: port
+    - name: KIPPMIAMI_PS_SSH_REMOTE_BIND_HOST
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippmiami
+          key: remote-bind-host
+    - name: KIPPMIAMI_PS_SSH_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippmiami
+          key: username
+    - name: KIPPMIAMI_RENLEARN_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-renlearn-sftp-kippmiami
+          key: password
+    - name: KIPPMIAMI_RENLEARN_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-renlearn-sftp-kippmiami
+          key: username
+---
+container_config:
+  env:
+    - name: KIPPNEWARK_EDPLAN_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-edplan-sftp-kippnewark
+          key: password
+    - name: KIPPNEWARK_EDPLAN_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-edplan-sftp-kippnewark
+          key: username
+    - name: KIPPNEWARK_PS_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-db-kippnewark
+          key: password
+    - name: KIPPNEWARK_PS_SSH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippnewark
+          key: password
+    - name: KIPPNEWARK_PS_SSH_PORT
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippnewark
+          key: port
+    - name: KIPPNEWARK_PS_SSH_REMOTE_BIND_HOST
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippnewark
+          key: remote-bind-host
+    - name: KIPPNEWARK_PS_SSH_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-ps-ssh-kippnewark
+          key: username
+    - name: KIPPNEWARK_TITAN_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-titan-sftp-kippnewark
+          key: password
+    - name: KIPPNEWARK_TITAN_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-titan-sftp-kippnewark
+          key: username
+    - name: KIPPNJ_RENLEARN_SFTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: op-renlearn-sftp-kippnj
+          key: password
+    - name: KIPPNJ_RENLEARN_SFTP_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: op-renlearn-sftp-kippnj
+          key: username
