@@ -1,3 +1,4 @@
+---
 container_config:
   env:
     - name: ACHIEVE3K_SFTP_PASSWORD
@@ -219,7 +220,7 @@ container_config:
       valueFrom:
         secretKeyRef:
           name: op-smartrecruiters
-          key:
+          key: token
     - name: ZENDESK_EMAIL
       valueFrom:
         secretKeyRef:
