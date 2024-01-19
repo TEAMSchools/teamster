@@ -39,8 +39,6 @@
 #   kubectl apply -f - ||
 #   true
 
-# bash .pdm/scripts/secrets.sh
-
 helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
 helm repo update
 
