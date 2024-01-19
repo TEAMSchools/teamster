@@ -45,14 +45,12 @@ left join
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
 inner join
-    {{ ref("stg_ldap__user_person") }} as up on fr.respondent_email = up.google_email
-inner join
     {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
     on fr.form_id = fi.form_id
     and fr.question_item__question__question_id = fi.question_id
 inner join
     {{ ref("base_people__staff_roster_history") }} as eh
-    on up.employee_number = eh.employee_number
+    on fr.respondent_email = eh.google_email
     and eh.assignment_status not in ('Terminated', 'Deceased')
     and timestamp(fr.last_submitted_time)
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
