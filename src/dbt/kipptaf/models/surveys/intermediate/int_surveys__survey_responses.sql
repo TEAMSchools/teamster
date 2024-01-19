@@ -5,6 +5,12 @@ select
     fr.text_value as answer,
     fr.item_title as question_title,
     fr.item_abbreviation as question_shortname,
+    concat(
+        'https://docs.google.com/forms/d/',
+        fr.form_id,
+        '/edit#response=',
+        fr.response_id
+    ) as survey_response_link,
 
     rt.code,
     rt.type,
@@ -61,10 +67,13 @@ select
     ) as answer,
     sr.question_title_english as question_title,
     sr.question_short_name as question_shortname,
+    concat(
+        sr.survey_link_default, '?snc=', sr.response_session_id, '&sg_navigate=start'
+    ) as survey_response_link,
 
-    REGEXP_EXTRACT(sr.campaign_name, r'\s(.*)') as code,
+    regexp_extract(sr.campaign_name, r'\s(.*)') as code,
     'SURVEY' as type,
-    sr.campaign_fiscal_year -1 as academic_year,
+    sr.campaign_fiscal_year - 1 as academic_year,
 
     eh.employee_number,
     eh.preferred_name_lastfirst as respondent_name,
