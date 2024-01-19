@@ -38,14 +38,12 @@ select
         when safe_cast(fr.text_value as integer) is null then 1 else 0
     end as is_open_ended,
 from {{ ref("base_google_forms__form_responses") }} as fr
+inner join
+    {{ ref("base_people__staff_roster_history") }} as eh
+    on fr.respondent_email = eh.google_email
+    and timestamp(fr.last_submitted_time)
+    between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
-inner join
-    {{ ref("base_people__staff_roster_history") }} as eh
-    on fr.respondent_email = eh.google_email
-    and eh.assignment_status not in ('Terminated', 'Deceased')
-    and timestamp(fr.last_submitted_time)
-    between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
-where fr.item_abbreviation != 'respondent_name'
