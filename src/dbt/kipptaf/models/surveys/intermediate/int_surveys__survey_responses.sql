@@ -48,4 +48,4 @@ inner join
     and eh.assignment_status not in ('Terminated', 'Deceased')
     and timestamp(fr.last_submitted_time)
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
-where fi.abbreviation != 'respondent_name'
+where fr.item_abbreviation != 'respondent_name'
