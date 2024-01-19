@@ -29,22 +29,17 @@ with
 
             if(e.spedlep in ('No IEP', null), 0, 1) as sped,
 
-        from
-            `teamster-332318`.`kipptaf_powerschool`.`base_powerschool__student_enrollments`
-            as e
+        from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
-            `teamster-332318`.`kipptaf_powerschool`.`base_powerschool__course_enrollments`
-            as s
+            {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
             and e.academic_year = s.cc_academic_year
-            and regexp_extract(e._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(s._dbt_source_relation, r'(kipp\w+)_')
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
         left join
-            `teamster-332318`.`kipptaf_kippadb`.`int_kippadb__roster` as adb
+            {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
         left join
-            `teamster-332318`.`kipptaf_assessments`.`stg_assessments__college_readiness_expected_tests`
-            as t
+            {{ ref("stg_assessments__college_readiness_expected_tests") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
         where
@@ -85,8 +80,7 @@ with
             end as subject_area,
             score as scale_score,
             rn_highest,
-        from
-            `teamster-332318`.`kipptaf_kippadb`.`int_kippadb__standardized_test_unpivot`
+        from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             score_type in (
                 'act_composite',
@@ -204,8 +198,7 @@ select
     ) as rn_highest,
 from roster as e
 left join
-    `teamster-332318`.`kipptaf_assessments`.`int_assessments__college_assessment_practice`
-    as p
+    {{ ref("int_assessments__college_assessment_practice") }} as p
     on e.student_number = p.powerschool_student_number
     and e.academic_year = p.academic_year
     and e.expected_test_type = p.test_type
