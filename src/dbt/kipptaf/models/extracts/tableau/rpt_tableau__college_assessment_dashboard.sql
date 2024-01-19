@@ -57,7 +57,7 @@ with
             )
     ),
 
-    act_sat_official as (
+    college_assessments_official as (
         select
             contact,
             'Official' as test_type,
@@ -74,6 +74,8 @@ with
                 then 'Reading Test'
                 when 'sat_math_test_score'
                 then 'Math Test'
+                when 'ap'
+                then 'AP'
                 else test_subject
             end as subject_area,
             score as scale_score,
@@ -90,7 +92,8 @@ with
                 'sat_reading_test_score',
                 'sat_math_test_score',
                 'sat_math',
-                'sat_ebrw'
+                'sat_ebrw',
+                'ap'
             )
     )
 
@@ -142,12 +145,12 @@ select
     o.rn_highest,
 from roster as e
 left join
-    act_sat_official as o
+    college_assessments_official as o
     on e.contact_id = o.contact
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and o.subject_area != 'AP'
 union all
 select
     e.academic_year,
@@ -202,3 +205,87 @@ left join
     and e.expected_scope = p.scope
     and e.expected_subject_area = p.subject_area
 where e.expected_test_type = 'Practice'
+union all
+select
+    e.academic_year,
+    e.region,
+    e.schoolid,
+    e.school_abbreviation,
+    e.student_number,
+    e.lastfirst,
+    e.grade_level,
+    e.enroll_status,
+    e.cohort,
+    e.entrydate,
+    e.exitdate,
+    e.sped,
+    e.c_504_status,
+    e.lep_status,
+    e.advisor_lastfirst,
+    e.contact_id,
+    e.ktc_cohort,
+    e.courses_course_name,
+    e.teacher_lastfirst,
+    e.sections_external_expression,
+    'Official' as expected_test_type,
+    'AP' as expected_scope,
+    case
+        e.courses_course_name
+        when 'AP English Language and Composition'
+        then 'English Language and Composition'
+        when 'AP World History: Modern'
+        then 'World History: Modern'
+        when 'AP US History'
+        then 'US History'
+        when 'AP Psychology'
+        then 'Psychology'
+        when 'AP African American Studies'
+        then 'African American Studies'
+        when 'AP Calculus AB'
+        then 'Calculus AB'
+        when 'AP Chemistry'
+        then 'Chemistry'
+        when 'AP Computer Science Principles'
+        then 'Computer Science Principles'
+        when 'AP Physics'
+        then ''
+        when 'AP Pre-calculus'
+        then ''
+        when 'AP Seminar'
+        then 'Seminar'
+        when 'AP Statistics'
+        then 'Statistics'
+        when 'AP Computer Science A'
+        then 'Computer Science A'
+        else 'AP Expected Test Undefined'
+    end as expected_subject_area,
+
+    a.test_type,
+    a.scope,
+
+    'NA' as scope_round,
+    null as assessment_id,
+    'NA' as assessment_title,
+
+    a.administration_round,
+    a.subject_area,
+    a.test_date,
+
+    'NA' as response_type,
+    'NA' as response_type_description,
+
+    null as points,
+    null as percent_correct,
+    null as total_subjects_tested,
+    null as raw_score,
+
+    a.scale_score,
+    a.rn_highest,
+from roster as e
+left join
+    college_assessments_official as a
+    on e.contact_id = a.contact
+    and e.expected_test_type = a.test_type
+    and e.expected_scope = a.scope
+    and e.expected_subject_area = a.subject_area
+where a.subject_area = 'AP' and e.courses_course_name like '%AP %'
