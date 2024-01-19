@@ -2,7 +2,6 @@ import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
     AssetsDefinition,
-    AssetSelection,
     RunRequest,
     ScheduleEvaluationContext,
     define_asset_job,
@@ -20,9 +19,7 @@ def build_powerschool_schedule(
     job_name = f"{code_location}_powerschool_schedule_job"
 
     job = define_asset_job(
-        name=job_name,
-        selection=AssetSelection.assets(*asset_defs),
-        tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+        name=job_name, selection=asset_defs, tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)}
     )
 
     schedule_name = f"{job_name}_schedule"
@@ -68,7 +65,7 @@ def build_powerschool_schedule(
                         if latest_materialization_timestamp is not None
                         else 0.0
                     )  # type: ignore
-                ).start_of("minute")
+                )
 
                 if latest_materialization_datetime.timestamp() == 0:
                     is_requested = True
@@ -79,7 +76,7 @@ def build_powerschool_schedule(
 
                     latest_materialization_fmt = (
                         latest_materialization_datetime.in_timezone(
-                            execution_timezone
+                            tz=execution_timezone
                         ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                     )
 

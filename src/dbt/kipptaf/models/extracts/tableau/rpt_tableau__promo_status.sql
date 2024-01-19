@@ -24,6 +24,7 @@ select
     ps.projected_credits_y1_term,
     ps.projected_credits_cum,
     ps.attendance_status,
+    ps.attendance_status_hs_detail,
     ps.academic_status,
     ps.overall_status as promo_status_overall,
 

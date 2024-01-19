@@ -2,14 +2,7 @@ import json
 import re
 
 import pendulum
-from dagster import (
-    RunRequest,
-    SensorEvaluationContext,
-    SensorResult,
-    SkipReason,
-    sensor,
-)
-from paramiko.ssh_exception import SSHException
+from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 
 from teamster.core.ssh.resources import SSHResource
 
@@ -26,6 +19,14 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
     now = pendulum.now(tz=LOCAL_TIMEZONE)
     cursor: dict = json.loads(context.cursor or "{}")
 
+    try:
+        files = ssh_deanslist.listdir_attr_r(
+            remote_dir="reconcile_report_files", files=[]
+        )
+    except Exception as e:
+        context.log.exception(e)
+        return SensorResult(skip_reason=str(e))
+
     asset_selection = []
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
@@ -33,17 +34,6 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
         context.log.info(asset_identifier)
 
         last_run = cursor.get(asset_identifier, 0)
-
-        try:
-            files = ssh_deanslist.listdir_attr_r(
-                remote_dir=asset_metadata["remote_dir"], files=[]
-            )
-        except SSHException as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
-        except ConnectionResetError as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=SkipReason(str(e)))
 
         for f in files:
             match = re.match(

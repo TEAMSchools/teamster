@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import RunConfig, config_from_files, job
 from dagster_airbyte.ops import AirbyteSyncConfig
 
@@ -5,7 +7,7 @@ from .. import CODE_LOCATION
 from .ops import airbyte_start_sync_op
 
 asset_config = config_from_files(
-    [f"src/teamster/{CODE_LOCATION}/airbyte/config/assets.yaml"]
+    [f"{pathlib.Path(__file__).parent}/config/assets.yaml"]
 )["assets"]
 
 
@@ -15,7 +17,7 @@ asset_config = config_from_files(
         ops={
             asset["group_name"]: AirbyteSyncConfig(
                 connection_id=asset["connection_id"], yield_materializations=False
-            )
+            )  # type: ignore
             for asset in asset_config
         }
     ),

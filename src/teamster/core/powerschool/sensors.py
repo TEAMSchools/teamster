@@ -1,7 +1,6 @@
 import pendulum
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     MonthlyPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
@@ -16,12 +15,15 @@ from teamster.core.ssh.resources import SSHResource
 
 
 def build_powerschool_sensor(
-    name, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
+    name,
+    asset_defs: list[AssetsDefinition],
+    execution_timezone,
+    minimum_interval_seconds=None,
 ):
     @sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(
         context: SensorEvaluationContext,
@@ -60,10 +62,12 @@ def build_powerschool_sensor(
                         if latest_materialization_timestamp is not None
                         else 0.0
                     )  # type: ignore
-                ).start_of("minute")
+                )
 
-                window_start_fmt = latest_materialization_datetime.format(
-                    "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+                latest_materialization_fmt = (
+                    latest_materialization_datetime.in_timezone(
+                        tz=execution_timezone
+                    ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                 )
 
                 [(count,)] = db_powerschool.engine.execute_query(
@@ -72,11 +76,12 @@ def build_powerschool_sensor(
                         "SELECT COUNT(*) "
                         f"FROM {asset.key.path[-1]} "
                         f"WHERE {partition_column} >= "
-                        f"TO_TIMESTAMP('{window_start_fmt}', "
+                        f"TO_TIMESTAMP('{latest_materialization_fmt}', "
                         "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
                     ),
                     partition_size=1,
                     output_format=None,
+                    call_timeout=10000,
                 )  # type: ignore
 
                 context.log.info(f"count: {count}")
@@ -110,6 +115,8 @@ def build_powerschool_sensor(
                             for partition_key in partition_keys
                         ]
                     )
+        except Exception as e:
+            return SensorResult(skip_reason=str(e))
         finally:
             ssh_tunnel.stop()
 

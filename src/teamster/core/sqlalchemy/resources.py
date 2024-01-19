@@ -33,11 +33,14 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         connect_kwargs={},
         output_format=None,
         data_filepath="env/data.avro",
+        call_timeout=0,
     ):
         context = self.get_resource_context()
 
         context.log.info("Opening connection to engine")
         with self._engine.connect(**connect_kwargs) as conn:
+            conn.call_timeout = call_timeout  # type: ignore
+
             context.log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
 
@@ -126,13 +129,14 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         context.log.info(f"Saving results to {data_filepath}")
         data_filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        writer(
-            fo=data_filepath.open("wb"),
-            schema=schema,
-            records=[],
-            codec="snappy",
-            strict_allow_default=True,
-        )
+        with data_filepath.open("wb") as fo:
+            writer(
+                fo=fo,
+                schema=schema,
+                records=[],
+                codec="snappy",
+                strict_allow_default=True,
+            )
 
         len_data = 0
         fo = data_filepath.open("a+b")

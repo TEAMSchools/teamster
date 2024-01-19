@@ -1,6 +1,4 @@
-from dagster import EnvVar, build_resources
-
-from teamster.kipptaf.ldap.resources import LdapResource
+from teamster.kipptaf.resources import LDAP_RESOURCE
 
 SEARCH_BASE = "dc=teamschools,dc=kipp,dc=org"
 TESTS = [
@@ -12,29 +10,17 @@ TESTS = [
 
 
 def _test():
-    with build_resources(
-        {
-            "ldap": LdapResource(
-                host="ldap1.kippnj.org",
-                port=636,
-                user=EnvVar("LDAP_USER"),
-                password=EnvVar("LDAP_PASSWORD"),
-            )
-        }
-    ) as resources:
-        ldap: LdapResource = resources.ldap
+    for test in TESTS:
+        when_changed = test["whenChanged"]
+        search_filter = test["search_filter"]
 
-        for test in TESTS:
-            when_changed = test["whenChanged"]
-            search_filter = test["search_filter"]
+        LDAP_RESOURCE._connection.search(
+            search_base=SEARCH_BASE,
+            search_filter=(
+                f"(&(idautoChallengeSetTimestamp>={when_changed}){search_filter})"
+            ),
+            # size_limit=1,
+        )
 
-            ldap._connection.search(
-                search_base=SEARCH_BASE,
-                search_filter=(
-                    f"(&(idautoChallengeSetTimestamp>={when_changed}){search_filter})"
-                ),
-                # size_limit=1,
-            )
-
-            print(len(ldap._connection.entries))
-            print(ldap._connection.entries)
+        print(len(LDAP_RESOURCE._connection.entries))
+        print(LDAP_RESOURCE._connection.entries)
