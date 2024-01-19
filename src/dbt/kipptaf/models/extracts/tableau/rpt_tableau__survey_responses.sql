@@ -3,9 +3,6 @@ select
     survey_title,
     survey_response_id,
     survey_response_link,
-    regexp_replace(answer, r'<[^>]*>', '') as answer,
-    regexp_replace(question_title, r'<[^>]*>', '') as question_title,
-    lower(question_shortname) as question_shortname,
     code,
     type,
     academic_year,
@@ -32,4 +29,7 @@ select
     date_submitted,
     answer_value,
     is_open_ended,
+    regexp_replace(answer, r'<[^>]*>', '') as answer,
+    regexp_replace(question_title, r'<[^>]*>', '') as question_title,
+    lower(question_shortname) as question_shortname,
 from {{ ref("int_surveys__survey_responses") }}
