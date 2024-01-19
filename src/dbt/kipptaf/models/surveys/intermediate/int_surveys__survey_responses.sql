@@ -12,8 +12,8 @@ select
         fr.response_id
     ) as survey_response_link,
 
-    rt.code,
-    rt.type,
+    rt.code as survey_code,
+    rt.type as survey_type,
     rt.academic_year,
 
     eh.employee_number,
@@ -71,8 +71,8 @@ select
         sr.survey_link_default, '?snc=', sr.response_session_id, '&sg_navigate=start'
     ) as survey_response_link,
 
-    regexp_extract(sr.campaign_name, r'\s(.*)') as code,
-    'SURVEY' as type,
+    regexp_extract(sr.campaign_name, r'\s(.*)') as survey_code,
+    'SURVEY' as survey_type,
     sr.campaign_fiscal_year - 1 as academic_year,
 
     eh.employee_number,
