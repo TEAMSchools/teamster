@@ -37,7 +37,7 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
-    - checkov@3.1.65
+    - checkov@3.1.67
     - terrascan@1.18.11
     - trivy@0.48.3
     - trufflehog@3.63.10
