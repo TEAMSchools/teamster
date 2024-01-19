@@ -4,14 +4,12 @@ select
     fr.response_id as survey_response_id,
     fr.respondent_email,
     fr.text_value as answer,
+    fr.item_title as question_shortname,
+    fr.item_abbreviation as question_title,
 
-    rt.name,
     rt.code,
     rt.type,
     rt.academic_year,
-
-    fi.abbreviation as question_shortname,
-    fi.title as question_title,
 
     eh.employee_number,
     eh.preferred_name_lastfirst as respondent_name,
@@ -44,10 +42,6 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
-inner join
-    {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
-    on fr.form_id = fi.form_id
-    and fr.question_item__question__question_id = fi.question_id
 inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on fr.respondent_email = eh.google_email
