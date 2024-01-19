@@ -13,14 +13,14 @@ dagsterCloud:
 
   # Optionally specify the timeout in seconds to use when making requests to Dagster
   # Cloud servers.
-  timeout: 120
+  timeout: 30
 
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
 dagsterCloudAgent:
-  # Number of replicas of the agent service to keep up at a given time.
-  replicas: 2
+  # # Number of replicas of the agent service to keep up at a given time.
+  # replicas: 2
 
   resources:
     requests:

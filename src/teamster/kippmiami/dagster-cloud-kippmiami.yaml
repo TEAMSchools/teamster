@@ -28,11 +28,6 @@ locations:
                         path: deanslist_api_key_map_yaml
         server_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 250m
-              limits:
-                cpu: 250m
             env:
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
