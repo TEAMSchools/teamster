@@ -2,12 +2,7 @@ import json
 
 from dagster import SensorResult, build_sensor_context
 
-from teamster.core.resources import (
-    SSH_IREADY,
-    get_ssh_resource_edplan,
-    get_ssh_resource_renlearn,
-    get_ssh_resource_titan,
-)
+from teamster.core.resources import SSH_EDPLAN, SSH_IREADY, SSH_RENLEARN, SSH_TITAN
 
 
 def _test_sensor(sftp_sensor, **kwargs):
@@ -30,31 +25,15 @@ def _test_sensor(sftp_sensor, **kwargs):
 
 
 def test_sensor_edplan():
-    from teamster.kippcamden.edplan.sensors import sftp_sensor
-
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_edplan=get_ssh_resource_edplan("KIPPCAMDEN")
-    )
-
     from teamster.kippnewark.edplan.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_edplan=get_ssh_resource_edplan("KIPPNEWARK")
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_edplan=SSH_EDPLAN)
 
 
 def test_sensor_titan():
     from teamster.kippcamden.titan.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_titan=get_ssh_resource_titan("KIPPCAMDEN")
-    )
-
-    from teamster.kippnewark.titan.sensors import sftp_sensor
-
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_titan=get_ssh_resource_titan("KIPPNEWARK")
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_titan=SSH_TITAN)
 
 
 def test_sensor_iready():
@@ -62,23 +41,11 @@ def test_sensor_iready():
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=SSH_IREADY)
 
-    from teamster.kippnewark.iready.sensors import sftp_sensor
-
-    _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=SSH_IREADY)
-
 
 def test_sensor_renlearn():
-    from teamster.kippmiami.renlearn.sensors import sftp_sensor
-
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_renlearn=get_ssh_resource_renlearn("KIPPMIAMI")
-    )
-
     from teamster.kippnewark.renlearn.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_renlearn=get_ssh_resource_renlearn("KIPPNJ")
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_renlearn=SSH_RENLEARN)
 
 
 def test_sensor_achieve3k():
