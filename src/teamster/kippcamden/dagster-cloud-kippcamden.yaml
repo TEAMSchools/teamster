@@ -39,47 +39,47 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: username
-              - name: KIPPCAMDEN_EDPLAN_SFTP_PASSWORD
+              - name: EDPLAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-edplan-sftp-kippcamden
                     key: password
-              - name: KIPPCAMDEN_EDPLAN_SFTP_USERNAME
+              - name: EDPLAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-edplan-sftp-kippcamden
                     key: username
-              - name: KIPPCAMDEN_PS_DB_PASSWORD
+              - name: PS_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-db-kippcamden
                     key: password
-              - name: KIPPCAMDEN_PS_SSH_PASSWORD
+              - name: PS_SSH_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: password
-              - name: KIPPCAMDEN_PS_SSH_PORT
+              - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: port
-              - name: KIPPCAMDEN_PS_SSH_REMOTE_BIND_HOST
+              - name: PS_SSH_REMOTE_BIND_HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: remote-bind-host
-              - name: KIPPCAMDEN_PS_SSH_USERNAME
+              - name: PS_SSH_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: username
-              - name: KIPPCAMDEN_TITAN_SFTP_PASSWORD
+              - name: TITAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: password
-              - name: KIPPCAMDEN_TITAN_SFTP_USERNAME
+              - name: TITAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
@@ -97,47 +97,47 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: username
-              - name: KIPPCAMDEN_EDPLAN_SFTP_PASSWORD
+              - name: EDPLAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-edplan-sftp-kippcamden
                     key: password
-              - name: KIPPCAMDEN_EDPLAN_SFTP_USERNAME
+              - name: EDPLAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-edplan-sftp-kippcamden
                     key: username
-              - name: KIPPCAMDEN_PS_DB_PASSWORD
+              - name: PS_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-db-kippcamden
                     key: password
-              - name: KIPPCAMDEN_PS_SSH_PASSWORD
+              - name: PS_SSH_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: password
-              - name: KIPPCAMDEN_PS_SSH_PORT
+              - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: port
-              - name: KIPPCAMDEN_PS_SSH_REMOTE_BIND_HOST
+              - name: PS_SSH_REMOTE_BIND_HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: remote-bind-host
-              - name: KIPPCAMDEN_PS_SSH_USERNAME
+              - name: PS_SSH_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippcamden
                     key: username
-              - name: KIPPCAMDEN_TITAN_SFTP_PASSWORD
+              - name: TITAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: password
-              - name: KIPPCAMDEN_TITAN_SFTP_USERNAME
+              - name: TITAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
