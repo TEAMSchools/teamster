@@ -11,6 +11,10 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
+  # Optionally specify the timeout in seconds to use when making requests to Dagster
+  # Cloud servers.
+  timeout: 120
+
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
