@@ -15,6 +15,7 @@ from teamster.staging import LOCAL_TIMEZONE
 def _test_asset(asset_name, partitions_def=None, partition_column=None):
     asset = build_powerschool_table_asset(
         code_location="staging",
+        local_timezone=LOCAL_TIMEZONE,
         asset_name=asset_name,
         partitions_def=partitions_def,
         partition_column=partition_column,

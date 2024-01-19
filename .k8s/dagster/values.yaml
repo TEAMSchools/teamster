@@ -55,6 +55,34 @@ dagsterCloud:
   # An optional label which will identify the agent on the status page.
   agentLabel: ~
 
+  # Optionally specify the timeout in seconds to use when making requests to Dagster Cloud servers.
+  # timeout: 60
+
+  # Optionally specify the number of retries to use when an HTTPS request to Dagster Cloud servers
+  # fails with a retryable error.
+  # retries: 6
+
+  # Optionally specify the exponential backoff factor to use when an HTTP request to Dagster Cloud
+  # servers fails with a retryable error.
+  # backoffFactor: 0.5
+
+  # Optionally configure the agent process requests for code locations annotated with a specific agent queue.
+  # Examples:
+  #
+  # To only process requests for code locations annotated with "foo"
+  #
+  # agentQueues:
+  #   includeDefaultQueue: false
+  #   additionalQueues:
+  #     - foo
+  #
+  # To process requests for code locations annotated with "foo" and any location that isn't annotated with an agent queue:
+  #
+  # agentQueues:
+  #   includeDefaultQueue: true
+  #   additionalQueues:
+  #     - foo
+
 ####################################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ####################################################################################################

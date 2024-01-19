@@ -4,35 +4,38 @@ import re
 import pendulum
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     MultiPartitionKey,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
 from teamster.core.ssh.resources import SSHResource
 
 
-def build_sftp_sensor(
+def build_iready_sftp_sensor(
     code_location,
-    source_system,
     asset_defs: list[AssetsDefinition],
     timezone,
+    remote_dir,
     minimum_interval_seconds=None,
 ):
     @sensor(
-        name=f"{code_location}_{source_system}_sftp_sensor",
+        name=f"{code_location}_iready_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
         now = pendulum.now(tz=timezone)
 
         cursor: dict = json.loads(context.cursor or "{}")
+
+        try:
+            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir, files=[])
+        except Exception as e:
+            context.log.exception(e)
+            return SensorResult(skip_reason=str(e))
 
         run_requests = []
         for asset in asset_defs:
@@ -41,17 +44,6 @@ def build_sftp_sensor(
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
-
-            try:
-                files = ssh_iready.listdir_attr_r(
-                    remote_dir=asset_metadata["remote_dir"], files=[]
-                )
-            except SSHException as e:
-                context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
-            except ConnectionResetError as e:
-                context.log.exception(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
 
             updates = []
             for f in files:
