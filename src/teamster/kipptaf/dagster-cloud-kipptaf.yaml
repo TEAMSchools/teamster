@@ -45,9 +45,9 @@ locations:
           container_config:
             resources:
               requests:
-                cpu: 750m
+                cpu: 1000m
               limits:
-                cpu: 750m
+                cpu: 1000m
             env:
               - name: ACHIEVE3K_SFTP_PASSWORD
                 valueFrom:
