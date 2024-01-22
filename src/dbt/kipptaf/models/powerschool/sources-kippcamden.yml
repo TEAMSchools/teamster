@@ -723,3 +723,19 @@ sources:
               - kippcamden
               - powerschool
               - int_powerschool__attendance_streak
+      - name: stg_powerschool__studenttest
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__studenttest
+      - name: stg_powerschool__studenttestscore
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__studenttestscore
