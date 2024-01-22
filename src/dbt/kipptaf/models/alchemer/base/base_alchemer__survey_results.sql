@@ -20,6 +20,10 @@ select
         true,
         false
     ) as is_identifier_question,
+    srd.string_value as response_string_value,
+    srd.map_value as response_map_value,
+    srd.option_value as response_option_value,
+    srd.rank_value as response_rank_value,
     coalesce(
         srd.string_value, srd.map_value, srd.option_value, srd.rank_value
     ) as response_value,
