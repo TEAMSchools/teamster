@@ -59,12 +59,7 @@ select
     safe_cast(sr.survey_id as string) as survey_id,
     sr.survey_title as survey_title,
     safe_cast(sr.response_id as string) as survey_response_id,
-    coalesce(
-        sr.response_string_value,
-        sr.response_map_value,
-        sr.response_option_value,
-        sr.response_rank_value
-    ) as answer,
+    sr.response_value as answer,
     sr.question_title_english as question_title,
     sr.question_short_name as question_shortname,
     concat(
@@ -95,29 +90,11 @@ select
     eh.level_of_education,
     eh.primary_grade_level_taught,
 
-    timestamp(sr.response_date_started) as date_started,
-    timestamp(sr.response_date_submitted) as date_submitted,
-    safe_cast(
-        coalesce(
-            sr.response_string_value,
-            sr.response_map_value,
-            sr.response_option_value,
-            sr.response_rank_value
-        ) as numeric
-    ) as answer_value,
+    sr.response_date_started as date_started,
+    sr.response_date_submitted as date_submitted,
+    safe_cast(response_value as numeric) as answer_value,
     case
-        when
-            safe_cast(
-                coalesce(
-                    sr.response_string_value,
-                    sr.response_map_value,
-                    sr.response_option_value,
-                    sr.response_rank_value
-                ) as integer
-            )
-            is null
-        then 1
-        else 0
+        when safe_cast(sr.response_value) as integer is null then 1 else 0
     end as is_open_ended,
 from {{ ref("base_alchemer__survey_results") }} as sr
 left join
