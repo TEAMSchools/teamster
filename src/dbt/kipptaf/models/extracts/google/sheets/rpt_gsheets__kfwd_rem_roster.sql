@@ -1,19 +1,4 @@
 with
-    enrollment_status as (
-        select
-            student,
-            name,
-            actual_end_date,
-            last_modified_date,
-            status,
-            of_credits_required_for_graduation,
-            row_number() over (
-                partition by ei.student order by ei.start_date desc
-            ) as rn_enrollment,
-        from {{ ref("stg_kippadb__enrollment") }} as ei
-        where status = 'Withdrawn'
-    ),
-
     transcript_data as (
         select
             student,
