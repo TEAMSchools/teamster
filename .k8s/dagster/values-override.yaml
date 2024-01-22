@@ -13,7 +13,7 @@ dagsterCloud:
 
   # Optionally specify the timeout in seconds to use when making requests to Dagster
   # Cloud servers.
-  timeout: 30
+  timeout: 15
 
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
