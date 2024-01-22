@@ -92,9 +92,9 @@ select
 
     sr.response_date_started as date_started,
     sr.response_date_submitted as date_submitted,
-    safe_cast(response_value as numeric) as answer_value,
+    safe_cast(sr.response_value as numeric) as answer_value,
     case
-        when safe_cast(sr.response_value) as integer is null then 1 else 0
+        when safe_cast(sr.response_value as integer) is null then 1 else 0
     end as is_open_ended,
 from {{ ref("base_alchemer__survey_results") }} as sr
 left join
