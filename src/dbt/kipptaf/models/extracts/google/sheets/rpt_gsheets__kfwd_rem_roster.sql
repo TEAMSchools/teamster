@@ -46,14 +46,14 @@ select  -- noqa: ST06
     c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
     c.contact_latest_fafsa_date as latest_fafsa_date,
 
-    ei.status,
-    ei.actual_end_date,
-    ei.of_credits_required_for_graduation,
+    ei.cur_status as status,
+    ei.cur_actual_end_date as actual_end_date,
+    ei.cur_credits_required_for_graduation as of_credits_required_for_graduation,
 
     gpa.cumulative_credits_earned,
     gpa.credits_required_for_graduation,
 
-    format_datetime('%Y-%m-%d', ei.last_modified_date) as last_modified_date,
+    format_datetime('%Y-%m-%d', e.last_modified_date) as last_modified_date,
 
     (gpa.cumulative_credits_earned / gpa.credits_required_for_graduation)
     * 100 as degree_percentage_completed,
@@ -79,13 +79,19 @@ select  -- noqa: ST06
     r.contact_expected_college_graduation as expected_college_graduation,
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
     rs.date as most_recent_rem_status,
+
+    case
+        when ei.cur_status = 'Attending' and rs.subject like 'REM%FY%Q% Enrolled'
+        then 'REM Enrolled'
+        when ei.cur_status = 'Graduated' and rs.subject like 'REM%FY%Q% Enrolled'
+        then 'REM Graduated'
+        when ei.cur_status = 'Withdrawn' and rs.subject like 'REM%FY%Q% Enrolled'
+        then 'REM Withdrawn'
+    end as rem_enrollment_status,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
-left join enrollment_status as ei on r.contact_id = ei.student and ei.rn_enrollment = 1
+left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
+left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id
 left join rem_subject as rs on rs.contact = r.contact_id and rs.rn_note = 1
 left join transcript_data as gpa on gpa.student = r.contact_id and gpa.rn_transcript = 1
-inner join
-    {{ ref("int_kippadb__enrollment_pivot") }} as e
-    on r.contact_id = e.student
-    and e.cur_status not in ('Attending', 'Graduated')
 where r.contact_has_hs_graduated_enrollment = 'HS Graduate'

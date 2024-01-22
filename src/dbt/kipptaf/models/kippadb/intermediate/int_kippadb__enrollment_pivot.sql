@@ -167,6 +167,7 @@ with
             e.secondary_enrollment_id as hs_enrollment_id,
             e.vocational_enrollment_id as cte_enrollment_id,
             e.graduate_enrollment_id,
+            e.curr_enrollment_id as cur_enrollment_id,
 
             ba.name as ba_school_name,
             ba.pursuing_degree_type as ba_pursuing_degree_type,
@@ -319,6 +320,7 @@ select
     ew.cte_enrollment_id,
     ew.graduate_enrollment_id,
     ew.ugrad_enrollment_id,
+    ew.cur_enrollment_id,
     ew.ba_school_name,
     ew.ba_pursuing_degree_type,
     ew.ba_status,
