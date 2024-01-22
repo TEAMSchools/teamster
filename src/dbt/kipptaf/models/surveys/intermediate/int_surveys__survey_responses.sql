@@ -108,5 +108,5 @@ inner join
 inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_employee_number = eh.employee_number
-    and timestamp(sr.response_date_submitted)
+    and sr.response_date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
