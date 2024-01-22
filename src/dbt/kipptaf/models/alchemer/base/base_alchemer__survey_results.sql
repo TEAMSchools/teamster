@@ -7,8 +7,8 @@ select
     sr.session_id as response_session_id,
     sr.contact_id as response_contact_id,
     sr.status as response_status,
-    timestamp(sr.date_started) as response_date_started,
-    timestamp(sr.date_submitted) as response_date_submitted,
+    sr.date_started as response_date_started,
+    sr.date_submitted as response_date_submitted,
     sr.response_time,
 
     sq.id as question_id,
