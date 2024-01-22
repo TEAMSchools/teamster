@@ -5,8 +5,8 @@ from dagster import MonthlyPartitionsDefinition, materialize
 
 from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.resources import (
+    DB_POWERSCHOOL,
     get_io_manager_gcs_file,
-    get_oracle_resource_powerschool,
     get_ssh_resource_powerschool,
 )
 from teamster.staging import LOCAL_TIMEZONE
@@ -33,15 +33,17 @@ def _test_asset(asset_name, partitions_def=None, partition_column=None):
         partition_key=partition_key,
         resources={
             "io_manager_gcs_file": get_io_manager_gcs_file("staging"),
-            "db_powerschool": get_oracle_resource_powerschool("STAGING"),
-            "ssh_powerschool": get_ssh_resource_powerschool("STAGING"),
+            "ssh_powerschool": get_ssh_resource_powerschool(
+                "teamacademy.clgpstest.com"
+            ),
+            "db_powerschool": DB_POWERSCHOOL,
         },
     )
 
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]
+        .event_specific_data.materialization.metadata["records"]  # type: ignore
         .value
         > 0
     )
@@ -249,6 +251,14 @@ def test_asset_powerschool_test():
 
 def test_asset_powerschool_testscore():
     _test_asset(asset_name="testscore")
+
+
+def test_asset_powerschool_studenttest():
+    _test_asset(asset_name="studenttest")
+
+
+def test_asset_powerschool_studenttestscore():
+    _test_asset(asset_name="studenttestscore")
 
 
 def test_asset_powerschool_attendance():
