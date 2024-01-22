@@ -43,5 +43,6 @@
   "python.analysis.typeCheckingMode": "basic",
   "trunk.numJobs": 1,
   "python.createEnvironment.trigger": "off",
-  "python.terminal.activateEnvironment": false
+  "python.terminal.activateEnvironment": false,
+  "python.envFile": "${workspaceFolder}/env/.env"
 }
