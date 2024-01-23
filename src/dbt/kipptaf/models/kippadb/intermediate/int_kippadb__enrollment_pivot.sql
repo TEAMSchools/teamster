@@ -153,7 +153,7 @@ with
             ) as ecc_enrollment_id,
             max(
                 if(rn_current = 1 and is_employment = 0, enrollment_id, null)
-            ) as curr_enrollment_id,
+            ) as cur_enrollment_id,
         from enrollment_ordered
         group by student
     ),
@@ -167,7 +167,7 @@ with
             e.secondary_enrollment_id as hs_enrollment_id,
             e.vocational_enrollment_id as cte_enrollment_id,
             e.graduate_enrollment_id,
-            e.curr_enrollment_id as cur_enrollment_id,
+            e.cur_enrollment_id,
 
             ba.name as ba_school_name,
             ba.pursuing_degree_type as ba_pursuing_degree_type,
@@ -301,7 +301,7 @@ with
             on e.vocational_enrollment_id = cte.id
         left join {{ ref("stg_kippadb__account") }} as ctea on cte.school = ctea.id
         left join
-            {{ ref("stg_kippadb__enrollment") }} as cur on e.curr_enrollment_id = cur.id
+            {{ ref("stg_kippadb__enrollment") }} as cur on e.cur_enrollment_id = cur.id
         left join {{ ref("stg_kippadb__account") }} as cura on cur.school = cura.id
         left join
             {{ ref("stg_kippadb__employment") }} as emp
