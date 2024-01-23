@@ -9,6 +9,8 @@ select
     sr.status as response_status,
     sr.date_started as response_date_started,
     sr.date_submitted as response_date_submitted,
+    date(sr.date_started) as response_date_started_date,
+    date(sr.date_submitted) as response_date_submitted_date,
     sr.response_time,
 
     sq.id as question_id,
