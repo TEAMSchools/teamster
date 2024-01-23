@@ -92,11 +92,11 @@ with
     transfer_roster as (
         select
             e.student_number as localstudentidentifier,
-            safe_cast(e.state_studentnumber as int) as statestudentidentifier,
             x.subject,
             x.testcode,
             x.testscalescore,
             x.discipline,
+            safe_cast(e.state_studentnumber as int) as statestudentidentifier,
         from roster as e
         left join
             transfer_scores as x
