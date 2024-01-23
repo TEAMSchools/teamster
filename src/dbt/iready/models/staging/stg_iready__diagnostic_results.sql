@@ -26,12 +26,12 @@ select
     overall_scale_score + if(
         (annual_typical_growth_measure - diagnostic_gain) > 0,
         (annual_typical_growth_measure - diagnostic_gain),
-        overall_scale_score
+        0
     ) as overall_scale_score_plus_typical_growth,
     overall_scale_score + if(
         (annual_stretch_growth_measure - diagnostic_gain) > 0,
         (annual_stretch_growth_measure - diagnostic_gain),
-        overall_scale_score
+        0
     ) as overall_scale_score_plus_stretch_growth,
     if(
         _dagster_partition_subject = 'ela',
