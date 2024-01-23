@@ -392,3 +392,15 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+      - name: src_powerschool__studenttest
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studenttest/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__studenttestscore
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studenttestscore/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
