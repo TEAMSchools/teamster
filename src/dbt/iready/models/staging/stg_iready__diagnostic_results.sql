@@ -1,4 +1,4 @@
-{% set src_model = source("iready", "src_iready__diagnostic_results") %}
+{%- set src_model = source("iready", "src_iready__diagnostic_results") -%}
 
 select
     {{
@@ -20,7 +20,7 @@ select
     coalesce(
         student_grade.string_value, safe_cast(student_grade.long_value as string)
     ) as student_grade,
-    parse_date('%m/%d/%Y', start_date) as start_date,
+    parse_date('%m/%d/%Y', `start_date`) as `start_date`,
     parse_date('%m/%d/%Y', completion_date) as completion_date,
     safe_cast(left(academic_year, 4) as int) as academic_year_int,
     overall_scale_score + if(
