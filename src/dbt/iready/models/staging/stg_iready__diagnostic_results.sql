@@ -23,10 +23,16 @@ select
     parse_date('%m/%d/%Y', start_date) as start_date,
     parse_date('%m/%d/%Y', completion_date) as completion_date,
     safe_cast(left(academic_year, 4) as int) as academic_year_int,
-    overall_scale_score
-    + annual_typical_growth_measure as overall_scale_score_plus_typical_growth,
-    overall_scale_score
-    + annual_stretch_growth_measure as overall_scale_score_plus_stretch_growth,
+    overall_scale_score + if(
+        (annual_typical_growth_measure - diagnostic_gain) > 0,
+        (annual_typical_growth_measure - diagnostic_gain),
+        overall_scale_score
+    ) as overall_scale_score_plus_typical_growth,
+    overall_scale_score + if(
+        (annual_stretch_growth_measure - diagnostic_gain) > 0,
+        (annual_stretch_growth_measure - diagnostic_gain),
+        overall_scale_score
+    ) as overall_scale_score_plus_stretch_growth,
     if(
         _dagster_partition_subject = 'ela',
         'Reading',
