@@ -87,7 +87,7 @@ def get_dbt_cli_resource(code_location):
 def get_ssh_resource_powerschool(remote_host):
     return SSHResource(
         remote_host=remote_host,
-        remote_port=EnvVar("PS_SSH_PORT").get_value(),  # type: ignore
+        remote_port=int(EnvVar("PS_SSH_PORT").get_value()),  # type: ignore
         username=EnvVar("PS_SSH_USERNAME"),
         password=EnvVar("PS_SSH_PASSWORD"),
         tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),

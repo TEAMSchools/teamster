@@ -52,7 +52,9 @@ from {{ ref("int_performance_management__observation_details") }} as od
 inner join
     {{ ref("base_people__staff_roster_history") }} as sr
     on od.internal_id = safe_cast(sr.employee_number as string)
-    and od.observed_at
-    between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
+    and coalesce(
+        od.observed_at,
+        od.start_date
+    ) between safe_cast(sr.work_assignment__fivetran_start as date) and safe_cast(
         sr.work_assignment__fivetran_end as date
     )
