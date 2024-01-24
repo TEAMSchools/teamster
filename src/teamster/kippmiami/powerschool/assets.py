@@ -65,6 +65,16 @@ assignment_assets = [
     for asset in config_from_files([f"{config_dir}/assets-whenmodified.yaml"])["assets"]
 ]
 
+dcid_assets = [
+    build_powerschool_table_asset(
+        code_location=CODE_LOCATION,
+        asset_name="storedgrades_dcid",
+        local_timezone=LOCAL_TIMEZONE,
+        table_name="storedgrades",
+        select_columns=["dcid"],
+    )
+]
+
 partition_assets = [
     *assignment_assets,
     *transaction_date_partition_assets,
@@ -75,4 +85,5 @@ _all = [
     *full_assets,
     *nonpartition_assets,
     *transaction_date_partition_assets,
+    *dcid_assets,
 ]
