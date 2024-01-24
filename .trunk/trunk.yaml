@@ -41,7 +41,7 @@ lint:
     - terrascan@1.18.11
     - trivy@0.48.3
     - trufflehog@3.63.11
-    - bandit@1.7.6
+    - bandit@1.7.7
     - oxipng@9.0.0
     - sqlfluff@2.3.5
     - svgo@3.2.0
