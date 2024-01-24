@@ -32,6 +32,9 @@ dagsterCloudAgent:
     limits:
       cpu: 250m
 
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
@@ -55,6 +58,7 @@ workspace:
   serverK8sConfig:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
         operator.1password.io/auto-restart: "true"
 
 ########################################################################################
