@@ -8,7 +8,6 @@
 
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
@@ -21,9 +20,6 @@ def current_term(df):
     df_current_term = df_current_year[df_current_year["term_num"] == max_term]
     df_current_term = df_current_term.reset_index()
     return df_current_term
-
-
-df_current_term = current_term(df)
 
 
 # IQR
@@ -63,8 +59,6 @@ def get_pca(df):
         data=principalComponents,
         columns=["principal component 1", "principal component 2"],
     )
-    # get loadings
-    loadings_alltime = pca.components_
     # percent of variance
     df["PC1_variance_explained"] = pca.explained_variance_ratio_[0]
     df["PC2_variance_explained"] = pca.explained_variance_ratio_[1]
@@ -129,6 +123,7 @@ df = pd.read_csv(
 df = df.dropna()
 df = df.reset_index()
 df = df.drop(["index"], axis=1)
+df_current_term = current_term(df)
 
 # all time IQR outliers
 outliers = get_iqr_outliers(df)
