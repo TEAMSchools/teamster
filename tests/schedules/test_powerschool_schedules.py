@@ -12,7 +12,7 @@ def test_schedule():
 
     output = last_modified_schedule(
         context=context,
-        ssh_powerschool=get_ssh_resource_powerschool("psteam.kippnj.org"),
+        ssh_powerschool=get_ssh_resource_powerschool("teamacademy.clgpstest.com"),
         db_powerschool=DB_POWERSCHOOL,
     )
 
