@@ -50,7 +50,12 @@ select
     i.questionitem.image.properties.width as question_item__image__properties__width,
     i.questionitem.image.properties.alignment
     as question_item__image__properties__alignment,
-
+    {# i.questionItem.question.grading.correctAnswers.answers	REPEATED #}
+    {# i.questionItem.question.grading.whenRight.material	REPEATED #}
+    {# i.questionItem.question.grading.whenWrong.material	REPEATED #}
+    {# i.questionItem.question.grading.generalFeedback.material	REPEATED #}
+    {# i.questionItem.question.choiceQuestion.options	REPEATED #}
+    {# i.questionItem.question.fileUploadQuestion.types	REPEATED	STRING #}
     i.questiongroupitem.image.contenturi as question_group_item__image__content_uri,
     i.questiongroupitem.image.alttext as question_group_item__image__alt_text,
     i.questiongroupitem.image.sourceuri as question_group_item__image__source_uri,
@@ -64,7 +69,14 @@ select
     i.questiongroupitem.grid.columns.shuffle
     as question_group_item__grid__columns__shuffle,
     i.questiongroupitem.grid.columns.`type` as question_group_item__grid__columns__type,
-
+    {# i.questionGroupItem.grid.columns.options	REPEATED #}
+    {# i.questionGroupItem.questions	REPEATED #}
+    {# i.questionGroupItem.questions.grading.correctAnswers.answers	REPEATED #}
+    {# i.questionGroupItem.questions.grading.whenRight.material	REPEATED #}
+    {# i.questionGroupItem.questions.grading.whenWrong.material	REPEATED #}
+    {# i.questionGroupItem.questions.grading.generalFeedback.material #}
+    {# i.questionGroupItem.questions.choiceQuestion.options	REPEATED #}
+    {# i.questionGroupItem.questions.fileUploadQuestion.types	REPEATED	STRING #}
     i.imageitem.image.contenturi as image_item__image__content_uri,
     i.imageitem.image.alttext as image_item__image__alt_text,
     i.imageitem.image.sourceuri as image_item__image__source_uri,
@@ -75,22 +87,7 @@ select
     i.videoitem.video.youtubeuri as video_item__video__youtube_uri,
     i.videoitem.video.properties.width as video_item__video__properties__width,
     i.videoitem.video.properties.alignment as video_item__video__properties__alignment,
-
 {# i.pagebreakitem.string_field_for_empty_message #}
 {# i.textitem.string_field_for_empty_message #}
-{# i.questionItem.question.grading.correctAnswers.answers	REPEATED #}
-{# i.questionItem.question.grading.whenRight.material	REPEATED #}
-{# i.questionItem.question.grading.whenWrong.material	REPEATED #}
-{# i.questionItem.question.grading.generalFeedback.material	REPEATED #}
-{# i.questionItem.question.choiceQuestion.options	REPEATED #}
-{# i.questionItem.question.fileUploadQuestion.types	REPEATED	STRING #}
-{# i.questionGroupItem.grid.columns.options	REPEATED #}
-{# i.questionGroupItem.questions	REPEATED #}
-{# i.questionGroupItem.questions.grading.correctAnswers.answers	REPEATED #}
-{# i.questionGroupItem.questions.grading.whenRight.material	REPEATED #}
-{# i.questionGroupItem.questions.grading.whenWrong.material	REPEATED #}
-{# i.questionGroupItem.questions.grading.generalFeedback.material #}
-{# i.questionGroupItem.questions.choiceQuestion.options	REPEATED #}
-{# i.questionGroupItem.questions.fileUploadQuestion.types	REPEATED	STRING #}
 from {{ source("google_forms", "src_google_forms__form") }} as f
 cross join unnest(f.items) as i
