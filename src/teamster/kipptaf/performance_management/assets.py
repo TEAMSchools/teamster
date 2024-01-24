@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# ## Initial Data Load + Exploration
-
-# In[1]:
-
-
 import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
