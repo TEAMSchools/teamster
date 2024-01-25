@@ -1,12 +1,9 @@
-select
-    _dbt_source_relation,
-    yearid,
-    studentid,
-    sum(attendancevalue) as days_present,
-    sum(abs(attendancevalue - 1)) as days_absent_unexcused,
-    sum(membershipvalue) as days_in_membership,
-    avg(attendancevalue) as ada,
-from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
-where
-    membershipvalue = 1 and calendardate <= current_date('{{ var("local_timezone") }}')
-group by _dbt_source_relation, yearid, studentid
+{{
+    dbt_utils.union_relations(
+        relations=[
+            source("kippnewark_powerschool", model.name),
+            source("kippcamden_powerschool", model.name),
+            source("kippmiami_powerschool", model.name),
+        ]
+    )
+}}
