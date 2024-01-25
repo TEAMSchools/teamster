@@ -21,10 +21,8 @@ select
     a.billing_state as school_state,
     a.name as school_name,
     a.hbcu,
-    if
-    (e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
-    if
-    (e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
+    if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
+    if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
     case
         when
             e.school = ei.ecc_account_id
