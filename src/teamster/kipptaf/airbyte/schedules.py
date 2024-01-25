@@ -1,7 +1,12 @@
-from dagster import ScheduleEvaluationContext, SkipReason, schedule
+from dagster import ScheduleEvaluationContext, SkipReason, job, schedule
 from dagster_airbyte import AirbyteCloudResource
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
+
+
+@job
+def airbyte_job():
+    ...
 
 
 def build_airbyte_start_sync_schedule(
@@ -11,7 +16,7 @@ def build_airbyte_start_sync_schedule(
         name=f"{code_location}_airbyte_sync_{connection_name}_schedule",
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
-        job_name="",
+        job=airbyte_job,
     )  # type: ignore
     def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudResource):
         job_details = airbyte.start_sync(connection_id)

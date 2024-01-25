@@ -1,7 +1,12 @@
-from dagster import ScheduleEvaluationContext, SkipReason, schedule
+from dagster import ScheduleEvaluationContext, SkipReason, job, schedule
 from dagster_fivetran import FivetranResource
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
+
+
+@job
+def fivetran_job():
+    ...
 
 
 def build_fivetran_start_sync_schedule(
@@ -11,7 +16,7 @@ def build_fivetran_start_sync_schedule(
         name=f"{code_location}_fivetran_sync_{connector_name}_schedule",
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
-        job_name="",
+        job=fivetran_job,
     )  # type: ignore
     def _schedule(context: ScheduleEvaluationContext, fivetran: FivetranResource):
         fivetran.start_sync(connector_id=connector_id)
@@ -27,7 +32,7 @@ def build_fivetran_start_resync_schedule(
         name=f"{code_location}_fivetran_resync_{connector_name}_schedule",
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
-        job_name="",
+        job=fivetran_job,
     )  # type: ignore
     def _schedule(context: ScheduleEvaluationContext, fivetran: FivetranResource):
         fivetran.start_resync(connector_id=connector_id)
