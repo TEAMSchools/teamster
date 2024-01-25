@@ -739,3 +739,11 @@ sources:
               - kippnewark
               - powerschool
               - stg_powerschool__studenttestscore
+      - name: int_powerschool__ada
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__ada
