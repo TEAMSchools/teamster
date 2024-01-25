@@ -404,3 +404,9 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+      - name: src_powerschool__storedgrades_dcid
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/storedgrades_dcid/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
