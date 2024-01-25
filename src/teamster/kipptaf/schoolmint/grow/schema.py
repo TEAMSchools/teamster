@@ -331,6 +331,12 @@ TYPE_FIELDS = [
     {"name": "name", "type": ["null", "string"], "default": None},
 ]
 
+SIGNED_FIELDS = [
+    {"name": "_id", "type": ["null", "string"], "default": None},
+    {"name": "signed", "type": ["null", "boolean"], "default": None},
+    {"name": "user", "type": ["null", "string"], "default": None},
+]
+
 MEETING_FIELDS = [
     *CORE_FIELDS,
     {"name": "course", "type": ["null", "string"], "default": None},
@@ -349,14 +355,14 @@ MEETING_FIELDS = [
     {"name": "signatureRequired", "type": ["null", "boolean"], "default": None},
     {"name": "title", "type": ["null", "string"], "default": None},
     {
-        "name": "observations",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
-        "default": None,
-    },
-    {
         "name": "date",
         "type": ["null", "string"],
         "logicalType": "timestamp-millis",
+        "default": None,
+    },
+    {
+        "name": "observations",
+        "type": ["null", {"type": "array", "items": "string", "default": []}],
         "default": None,
     },
     {
@@ -388,20 +394,6 @@ MEETING_FIELDS = [
         "default": None,
     },
     {
-        "name": "participants",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="participant", fields=PARTICIPANT_FIELDS
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
         "name": "type",
         "type": [
             "null",
@@ -418,6 +410,32 @@ MEETING_FIELDS = [
                 "items": get_avro_record_schema(
                     name="additional_field", fields=ADDITIONAL_FIELD_FIELDS
                 ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "participants",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="participant", fields=PARTICIPANT_FIELDS
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "signed",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(name="signed", fields=SIGNED_FIELDS),
                 "default": [],
             },
         ],
