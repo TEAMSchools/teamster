@@ -43,11 +43,11 @@ locations:
                         path: gcloud_service_account_json
         server_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 1000m
-              limits:
-                cpu: 1000m
+            # resources:
+            #   requests:
+            #     cpu: 1000m
+            #   limits:
+            #     cpu: 1000m
             env:
               - name: ACHIEVE3K_SFTP_PASSWORD
                 valueFrom:
