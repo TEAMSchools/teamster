@@ -5,6 +5,56 @@ with
         from {{ ref("base_iready__diagnostic_results") }}
         where academic_year_int = {{ var("current_academic_year") }}
         group by academic_year, subject, student_id
+    ),
+
+    diagnostic_results as (
+        select
+            student_id,
+            academic_year,
+            academic_year_int,
+            subject,
+            completion_date,
+            test_round,
+            percentile,
+            overall_placement,
+            overall_scale_score,
+            percent_progress_to_annual_typical_growth_percent,
+            percent_progress_to_annual_stretch_growth_percent,
+            rn_subj_round,
+
+            case
+                test_round
+                when 'BOY'
+                then 'Fall ' || left(academic_year, 4)
+                when 'MOY'
+                then 'Winter ' || right(academic_year, 4)
+                when 'EOY'
+                then 'Spring ' || right(academic_year, 4)
+            end as test_round_date,
+            case
+                when test_round = 'BOY'
+                then 'Beginning-of-year'
+                when test_round = 'MOY'
+                then 'Middle-of-year'
+                when test_round = 'EOY'
+                then 'End-of-year'
+            end as test_round_display,
+            case
+                test_round
+                when 'BOY'
+                then 'Aug ' || "'" || right(left(academic_year, 4), 2)
+                when 'MOY'
+                then 'Jan ' || "'" || right(academic_year, 2)
+                when 'EOY'
+                then 'May ' || "'" || right(academic_year, 2)
+            end as test_round_display_short,
+            if(
+                overall_placement like 'Level%',
+                regexp_replace(overall_placement, 'Level', 'Grade'),
+                overall_placement
+            ) as overall_placement_display,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where academic_year_int >= {{ var("current_academic_year") }} - 1
     )
 
 select
@@ -15,24 +65,17 @@ select
     test_round,
     test_round_date,
     test_round_display,
+    test_round_display_short,
     percentile,
     overall_placement,
     overall_scale_score,
+    overall_placement_display,
     percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
     'Test Rounds' as `domain`,
-
-    if(
-        overall_placement like 'Level%',
-        regexp_replace(overall_placement, 'Level', 'Grade'),
-        overall_placement
-    ) as overall_placement_display,
-from {{ ref("base_iready__diagnostic_results") }}
-where
-    rn_subj_round = 1
-    and test_round != 'Outside Round'
-    and academic_year_int >= {{ var("current_academic_year") }} - 1
+from diagnostic_results
+where rn_subj_round = 1 and test_round != 'Outside Round'
 
 union all
 
@@ -44,20 +87,16 @@ select
     ir.test_round,
     ir.test_round_date,
     ir.test_round_display,
+    ir.test_round_display_short,
     ir.percentile,
     ir.overall_placement,
     ir.overall_scale_score,
+    ir.overall_placement_display,
     ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
     'YTD Growth' as `domain`,
-
-    if(
-        ir.overall_placement like 'Level%',
-        regexp_replace(ir.overall_placement, 'Level', 'Grade'),
-        ir.overall_placement
-    ) as overall_placement_display,
-from {{ ref("base_iready__diagnostic_results") }} as ir
+from diagnostic_results as ir
 inner join
     max_completion_date as mcd
     on ir.student_id = mcd.student_id
