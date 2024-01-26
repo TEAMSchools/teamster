@@ -17,6 +17,7 @@ from teamster.core.ssh.resources import SSHResource
 
 def build_powerschool_sensor(
     name,
+    asset_selection: list[AssetsDefinition],
     asset_defs: list[AssetsDefinition],
     execution_timezone,
     minimum_interval_seconds=None,
@@ -24,7 +25,7 @@ def build_powerschool_sensor(
     @sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_defs,
+        asset_selection=asset_selection,
     )
     def _sensor(
         context: SensorEvaluationContext,
