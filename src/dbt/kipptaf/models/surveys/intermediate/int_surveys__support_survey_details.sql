@@ -25,7 +25,7 @@ with
             {{ ref("stg_ldap__user_person") }} as up
             on fr.respondent_email = up.google_email
         where
-            fr.question_item__question__question_id = '55f7fb30'
+            fr.question_id = '55f7fb30'
             and fr.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
             and fr.rn_form_item_respondent_submitted_desc = 1
     )
@@ -42,14 +42,11 @@ select
     ri.respondent_df_employee_number,
     ri.respondent_email,
 
-    fi.abbreviation as question_shortname,
-    fi.title as question_title,
-
+    fr.item_abbreviation as question_shortname,
+    fr.item_title as question_title,
     fr.text_value as answer,
     safe_cast(fr.text_value as numeric) as answer_value,
-    case
-        when safe_cast(fr.text_value as integer) is null then 1 else 0
-    end as is_open_ended,
+    if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 
     eh.preferred_name_lastfirst,
     eh.management_position_indicator as is_manager,
@@ -60,23 +57,18 @@ select
     eh.home_work_location_name as respondent_primary_site,
     eh.race_ethnicity_reporting,
     eh.gender_identity as gender,
-
 from response_identifiers as ri
 inner join
     {{ ref("base_google_forms__form_responses") }} as fr
     on ri.survey_id = fr.form_id
     and ri.survey_response_id = fr.response_id
-inner join
-    {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
-    on fr.form_id = fi.form_id
-    and fr.question_item__question__question_id = fi.question_id
+    and fr.item_abbreviation != 'respondent_name'
 inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_df_employee_number = eh.employee_number
-    and eh.assignment_status not in ('Terminated', 'Deceased')
     and ri.date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
-where fi.abbreviation != 'respondent_name'
+    and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
 
@@ -97,7 +89,7 @@ select
 
     sda.answer,
     safe_cast(sda.answer_value as numeric) as answer_value,
-    case when sda.answer_value is null then 1 else 0 end as is_open_ended,
+    if(sda.answer_value is null, 1, 0) as is_open_ended,
 
     eh.preferred_name_lastfirst,
     eh.management_position_indicator as is_manager,
@@ -108,15 +100,14 @@ select
     eh.home_work_location_name as respondent_primary_site,
     eh.race_ethnicity_reporting,
     eh.gender_identity as gender,
-
 from {{ ref("stg_surveys__cmo_engagement_regional_survey_detail_archive") }} as sda
 inner join
     {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
-    on fi.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
-    and sda.question_shortname = fi.abbreviation
+    on sda.question_shortname = fi.abbreviation
+    and fi.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
 left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on sda.respondent_df_employee_number = eh.employee_number
-    and eh.assignment_status not in ('Terminated', 'Deceased')
     and timestamp(sda.date_submitted)
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
+    and eh.assignment_status not in ('Terminated', 'Deceased')
