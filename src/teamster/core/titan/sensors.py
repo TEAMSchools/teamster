@@ -31,6 +31,9 @@ def build_titan_sftp_sensor(
 
         try:
             files = ssh_titan.listdir_attr_r(remote_dir=".", files=[])
+        except ConnectionResetError as e:
+            context.log.error(e)
+            raise Exception from e
         except Exception as e:
             context.log.error(e)
             return SensorResult(skip_reason=str(e))
