@@ -41,10 +41,10 @@ left join {{ ref_responses }} as r on f.form_id = r.form_id
 left join
     {{ ref_text_answers }} as rata
     on f.form_id = rata.form_id
-    and f.question_item__question__question_id = rata.question_id
+    and f.question_id = rata.question_id
     and r.response_id = rata.response_id
 left join
     {{ ref_file_uploads }} as rafu
     on f.form_id = rafu.form_id
-    and f.question_item__question__question_id = rafu.question_id
+    and f.question_id = rafu.question_id
     and r.response_id = rafu.response_id
