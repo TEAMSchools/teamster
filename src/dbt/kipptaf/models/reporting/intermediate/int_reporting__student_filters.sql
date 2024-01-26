@@ -18,7 +18,7 @@ with
         select
             st.local_student_id as student_number,
 
-            regexp_extract(g.group_name, r'Bucket 2 - (\w+) - Gr\w-\w') as subject,
+            regexp_extract(g.group_name, r'Bucket 2 - (Math|Reading) -') as subject,
         from {{ source("illuminate", "group_student_aff") }} as s
         inner join
             {{ source("illuminate", "groups") }} as g
