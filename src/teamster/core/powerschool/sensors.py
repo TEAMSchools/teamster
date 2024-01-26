@@ -1,5 +1,6 @@
 import pendulum
 from dagster import (
+    AssetKey,
     AssetsDefinition,
     MonthlyPartitionsDefinition,
     RunRequest,
@@ -16,6 +17,7 @@ from teamster.core.ssh.resources import SSHResource
 
 def build_powerschool_sensor(
     name,
+    asset_selection: list[AssetsDefinition],
     asset_defs: list[AssetsDefinition],
     execution_timezone,
     minimum_interval_seconds=None,
@@ -23,7 +25,7 @@ def build_powerschool_sensor(
     @sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_defs,
+        asset_selection=asset_selection,
     )
     def _sensor(
         context: SensorEvaluationContext,
@@ -42,6 +44,7 @@ def build_powerschool_sensor(
             for asset in asset_defs:
                 context.log.info(asset.key)
 
+                table_name = asset.key.path[-1]
                 partition_column = asset.metadata_by_key[asset.key]["partition_column"]
 
                 latest_materialization_event = (
@@ -74,7 +77,7 @@ def build_powerschool_sensor(
                     query=text(
                         # trunk-ignore(bandit/B608)
                         "SELECT COUNT(*) "
-                        f"FROM {asset.key.path[-1]} "
+                        f"FROM {table_name} "
                         f"WHERE {partition_column} >= "
                         f"TO_TIMESTAMP('{latest_materialization_fmt}', "
                         "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
@@ -115,6 +118,18 @@ def build_powerschool_sensor(
                             for partition_key in partition_keys
                         ]
                     )
+
+                    if table_name == "storedgrades":
+                        run_requests.append(
+                            RunRequest(
+                                run_key=f"storedgrades_dcid_{hour_ts}",
+                                asset_selection=[
+                                    AssetKey(
+                                        [*asset.key.path[:-1], "storedgrades_dcid"]
+                                    )
+                                ],
+                            )
+                        )
         except Exception as e:
             return SensorResult(skip_reason=str(e))
         finally:

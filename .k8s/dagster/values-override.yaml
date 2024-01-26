@@ -13,11 +13,7 @@ dagsterCloud:
 
   # Optionally specify the timeout in seconds to use when making requests to Dagster
   # Cloud servers.
-  timeout: 5
-
-  # Optionally specify the number of retries to use when an HTTPS request to Dagster
-  # Cloud servers fails with a retryable error.
-  retries: 12
+  timeout: 10
 
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
@@ -32,6 +28,18 @@ dagsterCloudAgent:
     limits:
       cpu: 250m
 
+  # annotations:
+  #   cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+
+  tolerations:
+    - key: group
+      operator: Equal
+      value: servers
+      effect: NoSchedule
+
+  nodeSelector:
+    group: servers
+
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
@@ -42,6 +50,29 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+    podSpecConfig:
+      tolerations:
+        - key: group
+          operator: Equal
+          value: runs
+          effect: NoSchedule
+      nodeSelector:
+        group: runs
+
+  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  serverK8sConfig:
+    podTemplateSpecMetadata: # raw config for the pod's metadata
+      annotations:
+        operator.1password.io/auto-restart: "true"
+        # cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+    podSpecConfig:
+      tolerations:
+        - key: group
+          operator: Equal
+          value: servers
+          effect: NoSchedule
+      nodeSelector:
+        group: servers
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
@@ -51,18 +82,48 @@ workspace:
     branchDeployments:
       ttlSeconds: 300
 
-  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
-  serverK8sConfig:
-    podTemplateSpecMetadata: # raw config for the pod's metadata
-      annotations:
-        operator.1password.io/auto-restart: "true"
-
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
 extraManifests:
   # Useful for providing extra configuration -- e.g. RBAC/serviceAccount information,
   # etc. -- for user workspace pods.
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: pdb-agent
+    spec:
+      maxUnavailable: 0
+      selector:
+        matchLabels:
+          component: agent
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: pdb-kippcamden
+    spec:
+      maxUnavailable: 0
+      selector:
+        matchLabels:
+          location_name: kippcamden
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: pdb-kippmiami
+    spec:
+      maxUnavailable: 0
+      selector:
+        matchLabels:
+          location_name: kippmiami
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: pdb-kippnewark
+    spec:
+      maxUnavailable: 0
+      selector:
+        matchLabels:
+          location_name: kippnewark
   - apiVersion: onepassword.com/v1
     kind: OnePasswordItem
     metadata:
