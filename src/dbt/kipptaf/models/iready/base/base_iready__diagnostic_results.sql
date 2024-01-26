@@ -149,7 +149,15 @@ select
         when 'EOY'
         then 'Spring ' || right(dr.academic_year, 4)
     end as test_round_date,
-
+    case
+        rt.name
+        when 'BOY'
+        then 'Aug ' || "'" || right(left(dr.academic_year, 4), 2)
+        when 'MOY'
+        then 'Jan ' || "'" || right(dr.academic_year, 2)
+        when 'EOY'
+        then 'May ' || "'" || right(dr.academic_year, 2)
+    end as test_round_display_short,
     if(
         cwp.scale_low - dr.most_recent_overall_scale_score <= 0,
         0,
