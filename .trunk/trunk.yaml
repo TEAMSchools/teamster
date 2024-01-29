@@ -37,10 +37,10 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
-    - checkov@3.1.70
+    - checkov@3.2.0
     - terrascan@1.18.11
     - trivy@0.48.3
-    - trufflehog@3.64.0
+    - trufflehog@3.65.0
     - bandit@1.7.7
     - oxipng@9.0.0
     - sqlfluff@2.3.5
@@ -52,7 +52,7 @@ lint:
     - git-diff-check
     - gitleaks@8.18.1
     - hadolint@2.12.0
-    - markdownlint@0.38.0
+    - markdownlint@0.39.0
     - prettier@3.2.4
     - shellcheck@0.9.0
     - shfmt@3.6.0
