@@ -132,23 +132,6 @@ select
 
     right(rt.code, 1) as round_number,
     coalesce(rt.name, 'Outside Round') as test_round,
-    case
-        when rt.name = 'BOY'
-        then 'Beginning-of-year'
-        when rt.name = 'MOY'
-        then 'Middle-of-year'
-        when rt.name = 'EOY'
-        then 'End-of-year'
-    end as test_round_display,
-    case
-        rt.name
-        when 'BOY'
-        then 'Fall ' || left(dr.academic_year, 4)
-        when 'MOY'
-        then 'Winter ' || right(dr.academic_year, 4)
-        when 'EOY'
-        then 'Spring ' || right(dr.academic_year, 4)
-    end as test_round_date,
 
     if(
         cwp.scale_low - dr.most_recent_overall_scale_score <= 0,

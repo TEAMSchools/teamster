@@ -116,19 +116,13 @@ with
             employee_number,
             termination_reason,
             is_attrition,
-            sum(
-                case
-                    when assignment_status not in ('Terminated', 'Deceased')
-                    then 1
-                    else 0
-                end
-            ) over (partition by employee_number order by academic_year)
-            as year_at_kipp,  /* Counting year as the year a person is in*/
+            sum(1) over (
+                partition by employee_number order by academic_year
+            ) as year_at_kipp,  /* Counting year as the year a person is in*/
             sum(
                 case
                     when
-                        assignment_status not in ('Terminated', 'Deceased')
-                        and job_title in (
+                        job_title in (
                             'Teacher',
                             'Teacher in Residence',
                             'Learning Specialist',
