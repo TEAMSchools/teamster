@@ -4,20 +4,37 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
+FIT_TRANSFORM_COLUMNS = [
+    "etr1a",
+    "etr1b",
+    "etr2a",
+    "etr2b",
+    "etr2c",
+    "etr2d",
+    "etr3a",
+    "etr3b",
+    "etr3c",
+    "etr3d",
+    "etr4a",
+    "etr4b",
+    "etr4c",
+    "etr4d",
+    "etr4e",
+    "etr4f",
+    "etr5a",
+    "etr5b",
+    "etr5c",
+    "so1",
+    "so2",
+    "so3",
+    "so4",
+    "so5",
+    "so6",
+    "so7",
+    "so8",
+]
 
-def current_term(df: pandas.DataFrame):
-    df_current_year = df[df["academic_year"] == df["academic_year"].max()]
 
-    df_current_term: pandas.DataFrame = df_current_year[
-        df_current_year["term_num"] == df["term_num"].max()
-    ]
-
-    df_current_term.reset_index(inplace=True)
-
-    return df_current_term
-
-
-# IQR
 def get_iqr_outliers(df: pandas.DataFrame):
     # Calculate the IQR.
     q1 = numpy.percentile(df["overall_score"], 25)
@@ -26,209 +43,116 @@ def get_iqr_outliers(df: pandas.DataFrame):
     iqr = q3 - q1
 
     # Find the outliers.
-    outliers = numpy.where(
+    outliers_array = numpy.where(
         (df["overall_score"] < q1 - 1.5 * iqr) | (df["overall_score"] > q3 + 1.5 * iqr)
     )[0]
 
-    outliers = df.loc[outliers]["observer_employee_number"].tolist()
-
-    return outliers
-
-
-# PCA
-def get_pca(df: pandas.DataFrame):
-    # isolate fields
-    df_num = df.drop(
-        labels=[
-            "observer_employee_number",
-            "overall_score",
-            "iqr_outliers",
-            "academic_year",
-            "form_term",
-            "term_num",
-        ],
-        axis=1,
+    df["is_iqr_outlier"] = df["observer_employee_number"].isin(
+        df.loc[outliers_array]["observer_employee_number"].tolist()
     )
 
+    return df
+
+
+def get_pca(df: pandas.DataFrame):
     # set num of compenents
     pca = PCA(n_components=2)
 
-    principal_components = pca.fit_transform(X=df_num)
+    principal_components = pca.fit_transform(X=df[FIT_TRANSFORM_COLUMNS])
 
-    principal_df = pandas.DataFrame(
+    pca_df = pandas.DataFrame(
         data=principal_components,
-        columns=["principal_component_1", "principal_component_2"],
+        columns=["pc1", "pc2"],
     )
+
+    df = pandas.merge(left=df, right=pca_df, left_index=True, right_index=True)
 
     # percent of variance
     df["pc1_variance_explained"] = pca.explained_variance_ratio_[0]
     df["pc2_variance_explained"] = pca.explained_variance_ratio_[1]
 
-    return principal_df
+    return df
 
 
-# DBSCAN
-def get_dbscan(principal_df):
+def get_dbscan(df):
     # All time Outlier Detction Using PCA
     # 0.6 is the historic optimal epsilon, but we may need to adjust
     outlier_detection = DBSCAN(min_samples=3, eps=0.6)
 
-    clusters = outlier_detection.fit_predict(X=principal_df)
-    # print(list(clusters))
+    clusters = outlier_detection.fit_predict(X=df[["pc1", "pc2"]])
 
-    cluster_rename = {0: "core", 1: "boundary", -1: "outlier"}
+    cluster_df = pandas.DataFrame(data=clusters, columns=["cluster"])
 
-    cluster_name = [cluster_rename.get(n, n) for n in list(clusters)]
-
-    cluster_df = pandas.DataFrame(data=list(cluster_name), columns=["clusters"])
-
-    final_df = pandas.concat(objs=[principal_df, cluster_df[["clusters"]]], axis=1)
-
-    final_df["clusters"] = final_df["clusters"].apply(func=str)
-
-    return final_df
-
-
-# Isolation Forest
-def get_isolation_forest(df: pandas.DataFrame):
-    # isolate fields
-    df_num = df.drop(
-        labels=[
-            "observer_employee_number",
-            "overall_score",
-            "iqr_outliers",
-            "academic_year",
-            "form_term",
-            "term_num",
-            "clusters",
-            "pc1_variance_explained",
-            "pc2_variance_explained",
-            "principal_component_1",
-            "principal_component_2",
-        ],
-        axis=1,
-    )
-
-    model = IsolationForest(contamination=0.1)  # assuming 10% of the data are outliers
-
-    model.fit(X=df_num)
-    outliers = model.predict(X=df_num)
-
-    tree_rename = {1: "core", -1: "outlier"}
-    tree_name = [tree_rename.get(n, n) for n in list(outliers)]
-
-    tree_df = pandas.DataFrame(data=list(tree_name), columns=["tree_outliers"])
-
-    df = pandas.concat(objs=[df, tree_df[["tree_outliers"]]], axis=1)
+    df = pandas.merge(left=df, right=cluster_df, left_index=True, right_index=True)
 
     return df
 
 
-# replace this block with a connection to teamster, the data here is just a sample
-df = pandas.read_csv(
-    "src_dbt_kipptaf_models_people_staging_stg_people__manager_pm_score_averages.csv"
-)
+def get_isolation_forest(df: pandas.DataFrame):
+    model = IsolationForest(contamination=0.1)  # assuming 10% of the data are outliers
 
-# df['primary_site_schoolid'] = df['primary_site_schoolid'].apply(str)
-# df['observer_id'] = df['observer_id'].apply(str)
-df.dropna(inplace=True)
-df.reset_index(inplace=True)
-df.drop(labels=["index"], axis=1, inplace=True)
+    model.fit(X=df[FIT_TRANSFORM_COLUMNS])
 
-df_current_term = current_term(df)
+    outliers = model.predict(X=df[FIT_TRANSFORM_COLUMNS])
 
-# all time IQR outliers
-outliers = get_iqr_outliers(df)
+    # tree_rename = {1: "core", -1: "outlier"}
+    # tree_name = [tree_rename.get(n, n) for n in list(outliers)]
 
-df["iqr_outliers"] = df["observer_employee_number"].isin(outliers)
-df["iqr_outliers"] = df["iqr_outliers"].replace({True: "outlier", False: "core"})
+    tree_df = pandas.DataFrame(data=outliers, columns=["tree_outlier"])
 
-# current term IQR outliers
-outliers = get_iqr_outliers(df_current_term)
+    df = pandas.merge(left=df, right=tree_df, left_index=True, right_index=True)
 
-df_current_term["iqr_outliers"] = df_current_term["observer_employee_number"].isin(
-    outliers
-)
-df_current_term["iqr_outliers"] = df_current_term["iqr_outliers"].replace(
-    {True: "outlier", False: "core"}
-)
+    return df
 
-principal_df = get_pca(df)
 
-df = pandas.merge(
-    left=df, right=principal_df, left_index=True, right_index=True, how="left"
-)
+# TODO: partition asset by year/term
 
-final_df = get_dbscan(principal_df)
+# load data from extract view
+df_global = pandas.read_csv("env/stg_people__manager_pm_score_averages.csv")
 
-df = pandas.concat(objs=[df, final_df[["clusters"]]], axis=1)
+df_global.dropna(inplace=True)
+df_global.reset_index(inplace=True)
 
-principal_df = get_pca(df_current_term)
+# subset current year/term
+df_current: pandas.DataFrame = df_global[
+    (df_global["academic_year"] == df_global["academic_year"].max())
+    & (df_global["term_num"] == df_global["term_num"].max())
+]
+df_current.reset_index(inplace=True)
 
-df_current_term = pandas.merge(
-    left=df_current_term,
-    right=principal_df,
-    left_index=True,
-    right_index=True,
+# calculate outliers columns: all-time
+df_global = get_iqr_outliers(df_global)
+df_global = get_pca(df_global)
+df_global = get_dbscan(df_global)
+df_global = get_isolation_forest(df_global)
+
+# calculate outliers columns: current term
+df_current = get_iqr_outliers(df_current)
+df_current = get_pca(df_current)
+df_current = get_dbscan(df_current)
+df_current = get_isolation_forest(df_current)
+
+# merge all-time rows to matching current term rows
+df_current = pandas.merge(
+    left=df_current,
+    right=df_global[
+        [
+            "observer_employee_number",
+            "academic_year",
+            "form_term",
+            "cluster",
+            "is_iqr_outlier",
+            "pc1_variance_explained",
+            "pc1",
+            "pc2_variance_explained",
+            "pc2",
+            "tree_outlier",
+        ]
+    ],
     how="left",
+    left_on=["observer_employee_number", "academic_year", "form_term"],
+    right_on=["observer_employee_number", "academic_year", "form_term"],
+    suffixes=["_current", "_global"],
 )
 
-final_df = get_dbscan(principal_df)
-
-df_current_term = pandas.concat(objs=[df_current_term, final_df[["clusters"]]], axis=1)
-
-df = get_isolation_forest(df)
-
-df_current_term = get_isolation_forest(df_current_term)
-
-df_current_term.rename(
-    columns={
-        "iqr_outliers": "iqr_outliers_current_term",
-        "clusters": "dbscan_clusters_current_term",
-        "tree_outliers": "tree_Outliers_current_term",
-        "index": "index_old",
-    },
-    inplace=True,
-)
-
-df_current_term = pandas.merge(
-    left=df_current_term, right=df, left_on="index_old", right_index=True, how="left"
-)
-
-df_current_term.rename(
-    columns={
-        "iqr_outliers": "iqr_outliers_all_time",
-        "clusters": "dbscan_clusters_all_time",
-        "tree_outliers": "tree_outliers_all_time",
-    },
-    inplace=True,
-)
-
-# combine all
-# Create a new column that counts the number of 'Outlier' values in each row.
-df_current_term["outlier_count"] = (
-    df_current_term["iqr_outliers_current_term"].str.count("outlier")
-    + df_current_term["dbscan_clusters_current_term"].str.count("outlier")
-    + df_current_term["tree_outliers_current_term"].str.count("outlier")
-    + df_current_term["iqr_outliers_all_time"].str.count("outlier")
-    + df_current_term["dbscan_clusters_all_time"].str.count("outlier")
-    + df_current_term["tree_outliers_all_time"].str.count("outlier")
-)
-
-# Create a new column that maps the outlier_count column to the values 1, 2, or 3.
-df_current_term["outlier_value"] = df_current_term["outlier_count"].map(
-    {
-        0: "Not an Outlier",
-        1: "One Outlier",
-        2: "Two Outliers",
-        3: "Three Outliers",
-        4: "Four Outliers",
-        5: "Five Outliers",
-        6: "Six Outliers",
-    }
-)
-
-df_current_term.drop("index_old", axis=1, inplace=True)
-
-# Save this data frame as a table:
-# df_current_term
+# TODO: output as AVRO
