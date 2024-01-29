@@ -27,4 +27,3 @@ left join
     {{ src_form_items_ext }} as fie
     on fi.form_id = fie.form_id
     and fi.item_id = fie.item_id
-    and fi.question_item__question__question_id = fie.question_id
