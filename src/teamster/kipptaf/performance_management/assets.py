@@ -1,8 +1,23 @@
 import numpy
 import pandas
+from dagster import (
+    AssetExecutionContext,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    Output,
+    StaticPartitionsDefinition,
+    asset,
+)
+from dagster_gcp import BigQueryResource
+from google.cloud import bigquery
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
+
+from teamster.core.utils.functions import get_avro_record_schema
+
+from .. import CODE_LOCATION
+from .schema import ASSET_FIELDS
 
 FIT_TRANSFORM_COLUMNS = [
     "etr1a",
@@ -40,7 +55,7 @@ def get_iqr_outliers(df: pandas.DataFrame):
     q1 = numpy.percentile(df["overall_score"], 25)
     q3 = numpy.percentile(df["overall_score"], 75)
 
-    iqr = q3 - q1
+    iqr = q3 - q1  # type: ignore
 
     # Find the outliers.
     outliers_array = numpy.where(
@@ -105,54 +120,93 @@ def get_isolation_forest(df: pandas.DataFrame):
     return df
 
 
-# TODO: partition asset by year/term
-
-# load data from extract view
-df_global = pandas.read_csv("env/stg_people__manager_pm_score_averages.csv")
-
-df_global.dropna(inplace=True)
-df_global.reset_index(inplace=True)
-
-# subset current year/term
-df_current: pandas.DataFrame = df_global[
-    (df_global["academic_year"] == df_global["academic_year"].max())
-    & (df_global["term_num"] == df_global["term_num"].max())
-]
-df_current.reset_index(inplace=True)
-
-# calculate outliers columns: all-time
-df_global = get_iqr_outliers(df_global)
-df_global = get_pca(df_global)
-df_global = get_dbscan(df_global)
-df_global = get_isolation_forest(df_global)
-
-# calculate outliers columns: current term
-df_current = get_iqr_outliers(df_current)
-df_current = get_pca(df_current)
-df_current = get_dbscan(df_current)
-df_current = get_isolation_forest(df_current)
-
-# merge all-time rows to matching current term rows
-df_current = pandas.merge(
-    left=df_current,
-    right=df_global[
-        [
-            "observer_employee_number",
-            "academic_year",
-            "form_term",
-            "cluster",
-            "is_iqr_outlier",
-            "pc1_variance_explained",
-            "pc1",
-            "pc2_variance_explained",
-            "pc2",
-            "tree_outlier",
-        ]
-    ],
-    how="left",
-    left_on=["observer_employee_number", "academic_year", "form_term"],
-    right_on=["observer_employee_number", "academic_year", "form_term"],
-    suffixes=["_current", "_global"],
+@asset(
+    key=[CODE_LOCATION, "performance_management", "outlier_detection"],
+    io_manager_key="io_manager_gcs_avro",
+    group_name="performance_management",
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "academic_year": StaticPartitionsDefinition(
+                ["2018", "2019", "2020", "2021", "2022", "2023"]
+            ),
+            "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
+        }
+    ),
 )
+def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
+    partition_key: MultiPartitionKey = context.partition_key  # type: ignore
 
-# TODO: output as AVRO
+    # load data from extract view
+    with db_bigquery.get_client() as bq:
+        bq_client = bq
+
+    dataset_ref = bigquery.DatasetReference(
+        project=bq_client.project, dataset_id="kipptaf_extracts"
+    )
+
+    rows = bq_client.list_rows(
+        table=dataset_ref.table("rpt_python__manager_pm_averages")
+    )
+
+    df_global = rows.to_dataframe()
+
+    df_global.dropna(inplace=True)
+    df_global.reset_index(inplace=True, drop=True)
+
+    # subset current year/term
+    df_current: pandas.DataFrame = df_global[
+        (
+            df_global["academic_year"]
+            == int(partition_key.keys_by_dimension["academic_year"])
+        )
+        & (df_global["form_term"] == partition_key.keys_by_dimension["term"])
+    ]
+
+    df_current.reset_index(inplace=True, drop=True)
+
+    # calculate outliers columns: all-time
+    df_global = get_iqr_outliers(df_global)
+    df_global = get_pca(df_global)
+    df_global = get_dbscan(df_global)
+    df_global = get_isolation_forest(df_global)
+
+    # calculate outliers columns: current term
+    df_current = get_iqr_outliers(df_current)
+    df_current = get_pca(df_current)
+    df_current = get_dbscan(df_current)
+    df_current = get_isolation_forest(df_current)
+
+    # merge all-time rows to matching current term rows
+    df_current = pandas.merge(
+        left=df_current,
+        right=df_global[
+            [
+                "observer_employee_number",
+                "academic_year",
+                "form_term",
+                "cluster",
+                "is_iqr_outlier",
+                "pc1_variance_explained",
+                "pc1",
+                "pc2_variance_explained",
+                "pc2",
+                "tree_outlier",
+            ]
+        ],
+        how="left",
+        left_on=["observer_employee_number", "academic_year", "form_term"],
+        right_on=["observer_employee_number", "academic_year", "form_term"],
+        suffixes=["_current", "_global"],
+    )
+
+    data = df_current.to_dict(orient="records")
+    schema = get_avro_record_schema(
+        name="outlier_detection", fields=ASSET_FIELDS["outlier_detection"]
+    )
+
+    yield Output(value=(data, schema), metadata={"records": df_current.shape[0]})
+
+
+_all = [
+    outlier_detection,
+]
