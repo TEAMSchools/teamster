@@ -18,7 +18,7 @@ with
         select
             st.local_student_id as student_number,
 
-            regexp_extract(g.group_name, r'Bucket 2 - (\w+) - Gr\w-\w') as subject,
+            regexp_extract(g.group_name, r'Bucket 2 - (Math|Reading) -') as subject,
         from {{ source("illuminate", "group_student_aff") }} as s
         inner join
             {{ source("illuminate", "groups") }} as g
@@ -159,6 +159,10 @@ select
     end as nj_student_tier,
 
     coalesce(ie.value, false) as is_exempt_iready,
+
+    if(
+        co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
+    ) as assessment_dashboard_join,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
