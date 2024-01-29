@@ -73,9 +73,9 @@ select
     s.first_suspension_date_oss,
 
     if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
-    if(d.date_day >= s.first_suspension_date, 1, 0) is_susp_running,
-    if(d.date_day >= s.first_suspension_date_iss, 1, 0) is_iss_running,
-    if(d.date_day >= s.first_suspension_date_oss, 1, 0) is_oss_running,
+    if(d.date_day >= s.first_suspension_date, 1, 0) as is_susp_running,
+    if(d.date_day >= s.first_suspension_date_iss, 1, 0) as is_iss_running,
+    if(d.date_day >= s.first_suspension_date_oss, 1, 0) as is_oss_running,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join date_range as d on d.date_day >= co.entrydate
 left join
