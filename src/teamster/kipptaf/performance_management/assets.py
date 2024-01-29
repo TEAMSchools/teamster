@@ -51,13 +51,11 @@ FIT_TRANSFORM_COLUMNS = [
 
 
 def get_iqr_outliers(df: pandas.DataFrame):
-    # Calculate the IQR.
     q1 = numpy.percentile(df["overall_score"], 25)
     q3 = numpy.percentile(df["overall_score"], 75)
 
     iqr = q3 - q1  # type: ignore
 
-    # Find the outliers.
     outliers_array = numpy.where(
         (df["overall_score"] < q1 - 1.5 * iqr) | (df["overall_score"] > q3 + 1.5 * iqr)
     )[0]
@@ -70,7 +68,6 @@ def get_iqr_outliers(df: pandas.DataFrame):
 
 
 def get_pca(df: pandas.DataFrame):
-    # set num of compenents
     pca = PCA(n_components=2)
 
     principal_components = pca.fit_transform(X=df[FIT_TRANSFORM_COLUMNS])
@@ -109,9 +106,6 @@ def get_isolation_forest(df: pandas.DataFrame):
     model.fit(X=df[FIT_TRANSFORM_COLUMNS])
 
     outliers = model.predict(X=df[FIT_TRANSFORM_COLUMNS])
-
-    # tree_rename = {1: "core", -1: "outlier"}
-    # tree_name = [tree_rename.get(n, n) for n in list(outliers)]
 
     tree_df = pandas.DataFrame(data=outliers, columns=["tree_outlier"])
 
