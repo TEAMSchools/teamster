@@ -2,7 +2,13 @@ import json
 
 from dagster import SensorResult, build_sensor_context
 
-from teamster.core.resources import SSH_EDPLAN, SSH_IREADY, SSH_RENLEARN, SSH_TITAN
+from teamster.core.resources import (
+    SSH_COUCHDROP,
+    SSH_EDPLAN,
+    SSH_IREADY,
+    SSH_RENLEARN,
+    SSH_TITAN,
+)
 
 
 def _test_sensor(sftp_sensor, **kwargs):
@@ -74,6 +80,12 @@ def test_sensor_deanslist():
     _test_sensor(
         sftp_sensor=deanslist_sftp_sensor, ssh_deanslist=SSH_RESOURCE_DEANSLIST
     )
+
+
+def test_sensor_adp_payroll():
+    from teamster.kipptaf.adp.payroll.sensors import adp_payroll_sftp_sensor
+
+    _test_sensor(sftp_sensor=adp_payroll_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
 
 
 """
