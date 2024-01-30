@@ -16,13 +16,13 @@ from dagster import (
 from teamster.core.ssh.resources import SSHResource
 
 from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import _all
+from .assets import _all as _all_assets
 
 
 @sensor(
     name=f"{CODE_LOCATION}_adp_payroll_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=_all,
+    asset_selection=_all_assets,
 )
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource
@@ -41,7 +41,7 @@ def adp_payroll_sftp_sensor(
 
     run_requests = []
     dynamic_partitions_requests = []
-    for asset in _all:
+    for asset in _all_assets:
         add_dynamic_partition_keys = set()
 
         asset_metadata = asset.metadata_by_key[asset.key]
@@ -94,3 +94,8 @@ def adp_payroll_sftp_sensor(
         dynamic_partitions_requests=dynamic_partitions_requests,
         cursor=json.dumps(obj=cursor),
     )
+
+
+_all = [
+    adp_payroll_sftp_sensor,
+]
