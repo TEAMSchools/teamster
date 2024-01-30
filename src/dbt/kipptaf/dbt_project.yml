@@ -133,6 +133,8 @@ models:
     people:
       +schema: people
       +materialized: table
+    performance_management:
+      +schema: performance_management
     powerschool:
       +schema: powerschool
     renlearn:
