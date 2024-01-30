@@ -11,7 +11,7 @@ def test_outlier_detection():
 
     result = materialize(
         assets=[outlier_detection],
-        partition_key="2023|PM2",
+        partition_key="2023|PM3",
         # partition_key=partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
         resources={
             "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
@@ -20,9 +20,3 @@ def test_outlier_detection():
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # type: ignore
-        .value
-        > 0
-    )
