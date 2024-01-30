@@ -7,11 +7,15 @@ select
     r.contact_expected_hs_graduation as expected_hs_graduation,
     r.contact_college_match_display_gpa as hs_gpa,
     r.contact_highest_act_score as highest_act_score,
+
     e.status,
     e.pursuing_degree_type,
     e.start_date,
     e.actual_end_date,
     e.account_type,
+
+    ei.ugrad_status,
+
     a.competitiveness_ranking,
     a.act25,
     a.act75,
@@ -21,6 +25,7 @@ select
     a.billing_state as school_state,
     a.name as school_name,
     a.hbcu,
+
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
     case
