@@ -54,6 +54,8 @@ select
     co.student_number,
     co.lastfirst,
     co.school_abbreviation as school,
+    co.region,
+    co.school_level,
     co.grade_level,
     co.advisory_name as team,
     co.entrydate,
