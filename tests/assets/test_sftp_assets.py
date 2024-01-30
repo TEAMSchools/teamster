@@ -1,6 +1,7 @@
 import random
 
 from dagster import (
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -29,7 +30,7 @@ from teamster.staging import LOCAL_TIMEZONE
 
 
 def _test_asset(
-    asset_key: list,
+    asset_key: list[str],
     remote_dir: str,
     remote_file_regex: str,
     asset_fields: dict,
@@ -562,6 +563,46 @@ def test_asset_deanslist_reconcile_suspensions():
         asset_fields=ASSET_FIELDS,
         ssh_resource={"ssh_deanslist": SSH_RESOURCE_DEANSLIST},
     )
+
+
+def test_asset_adp_payroll_general_ledger_file():
+    from teamster.kipptaf.adp.payroll.schema import ASSET_FIELDS
+
+    asset_key = AssetKey(["kipptaf", "adp", "payroll", "general_ledger_file"])
+
+    partitions_def_name = f"{asset_key.to_python_identifier()}__date"
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name,
+            partition_keys=[
+                # "20231215",
+                "20231231",
+                # "20240115",
+            ],
+        )
+
+        _test_asset(
+            asset_key=asset_key.path,  # type: ignore
+            remote_dir="/teamster-kipptaf/couchdrop/adp/payroll",
+            remote_file_regex=r"adp_payroll_(?P<date>\d+)_(?P<group_code>\w+)\.csv",
+            asset_fields=ASSET_FIELDS,
+            ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
+            instance=instance,
+            partitions_def=MultiPartitionsDefinition(
+                {
+                    "date": DynamicPartitionsDefinition(name=partitions_def_name),
+                    "group_code": StaticPartitionsDefinition(
+                        [
+                            "2Z3",
+                            "3LE",
+                            "47S",
+                            "9AM",
+                        ]
+                    ),
+                }
+            ),
+        )
 
 
 """ cannot test in dev: IP filter
