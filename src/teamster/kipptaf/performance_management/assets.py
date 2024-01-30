@@ -124,9 +124,13 @@ def get_isolation_forest(df: pandas.DataFrame):
             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
         }
     ),
+    output_required=False,
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
     partition_key: MultiPartitionKey = context.partition_key  # type: ignore
+    schema = get_avro_record_schema(
+        name="outlier_detection", fields=ASSET_FIELDS["outlier_detection"]
+    )
 
     # load data from extract view
     with db_bigquery.get_client() as bq:
@@ -153,6 +157,10 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
         )
         & (df_global["form_term"] == partition_key.keys_by_dimension["term"])
     ]
+
+    # exit if no data for partition
+    if df_current.shape[0] == 0:
+        return Output(value=([], schema), metadata={"records": 0})
 
     df_current.reset_index(inplace=True, drop=True)
 
@@ -192,9 +200,6 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     )
 
     data = df_current.to_dict(orient="records")
-    schema = get_avro_record_schema(
-        name="outlier_detection", fields=ASSET_FIELDS["outlier_detection"]
-    )
 
     yield Output(value=(data, schema), metadata={"records": df_current.shape[0]})
 
