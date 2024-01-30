@@ -2,6 +2,7 @@ import pathlib
 from stat import S_ISDIR, S_ISREG
 
 from dagster_ssh import SSHResource as DagsterSSHResource
+from paramiko.sftp_client import SFTPClient
 from sshtunnel import SSHTunnelForwarder
 
 
@@ -37,19 +38,21 @@ class SSHResource(DagsterSSHResource):
                 conn.close()
                 return files
 
-    def _listdir_attr_r(self, sftp_client, remote_dir: str, files: list = []):
+    def _listdir_attr_r(
+        self, sftp_client: SFTPClient, remote_dir: str, files: list = []
+    ):
         for file in sftp_client.listdir_attr(remote_dir):
             try:
-                filepath = str(pathlib.Path(remote_dir) / file.filepath)
+                filepath = str(pathlib.Path(remote_dir) / file.filepath)  # type: ignore
             except AttributeError:
                 filepath = str(pathlib.Path(remote_dir) / file.filename)
 
-            if S_ISDIR(file.st_mode):
+            if S_ISDIR(file.st_mode):  # type: ignore
                 self._listdir_attr_r(
                     sftp_client=sftp_client, remote_dir=filepath, files=files
                 )
-            elif S_ISREG(file.st_mode):
-                file.filepath = filepath
+            elif S_ISREG(file.st_mode):  # type: ignore
+                file.filepath = filepath  # type: ignore
                 files.append(file)
 
         return files
