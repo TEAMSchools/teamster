@@ -12,5 +12,6 @@ select
     adminldapenabled,
     ptaccess,
     dob,
+    staffstatus,
 from {{ source("kipptaf_extracts", "rpt_powerschool__autocomm_teachers") }}
 where home_work_location_dagster_code_location = '{{ project_name }}'
