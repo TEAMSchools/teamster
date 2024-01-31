@@ -54,3 +54,11 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__staffing_model
             skip_leading_rows: 1
+      - name: src_people__salary_scale
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__salary_scale
+            skip_leading_rows: 1
