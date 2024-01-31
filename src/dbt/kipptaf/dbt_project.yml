@@ -44,6 +44,10 @@ models:
   kipptaf:
     act:
       +schema: act
+    adp_payroll:
+      +schema: adp_payroll
+      staging:
+        +materialized: table
     adp_workforce_manager:
       +schema: adp_workforce_manager
       +materialized: table
