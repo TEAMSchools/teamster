@@ -14,3 +14,10 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/adp/payroll/general_ledger_file/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            dep_key:
+              - kipptaf
+              - adp
+              - payroll
+              - general_ledger_file
