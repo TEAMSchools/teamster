@@ -61,7 +61,7 @@ def _test_asset(
             dynamic_partitions_store=instance
         )
 
-        partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
+        partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]  # type: ignore
     else:
         partition_key = None
 
@@ -576,9 +576,10 @@ def test_asset_adp_payroll_general_ledger_file():
         instance.add_dynamic_partitions(
             partitions_def_name=partitions_def_name,
             partition_keys=[
-                # "20231215",
+                "20230831",
+                "20231215",
                 "20231231",
-                # "20240115",
+                "20240115",
             ],
         )
 
@@ -602,6 +603,7 @@ def test_asset_adp_payroll_general_ledger_file():
                     ),
                 }
             ),
+            partition_key="20230831|3LE",
         )
 
 
