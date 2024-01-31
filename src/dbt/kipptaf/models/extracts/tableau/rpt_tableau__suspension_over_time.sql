@@ -85,7 +85,7 @@ inner join
             current_date('{{ var("local_timezone") }}')
         )
     ) as date_day
-    on date_day >= co.entrydate
+    on date_day between co.entrydate and date(co.academic_year + 1, 6, 30)
 left join
     suspension_dates as s
     on co.student_number = s.student_number
