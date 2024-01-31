@@ -52,7 +52,7 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
-    and eh.assignment_status not in ('Terminated', 'Deceased')
+    -- and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
 
@@ -111,4 +111,4 @@ inner join
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
-    and eh.assignment_status not in ('Terminated', 'Deceased')
+    -- and eh.assignment_status not in ('Terminated', 'Deceased')
