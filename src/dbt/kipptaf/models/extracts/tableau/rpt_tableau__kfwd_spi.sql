@@ -6,6 +6,8 @@ select
     r.ktc_cohort as cohort,
     r.contact_advising_provider as advising_provider,
     r.contact_owner_name,
+    r.contact_current_kipp_student as current_kipp_student,
+    r.contact_currently_enrolled_school as currently_enrolled_school,
     r.contact_expected_hs_graduation as expected_hs_graduation,
     r.contact_college_match_display_gpa as hs_gpa,
     r.contact_highest_act_score as highest_act_score,
@@ -17,6 +19,7 @@ select
     e.account_type,
 
     ei.ugrad_status,
+    ei.hs_account_name,
 
     a.competitiveness_ranking,
     a.act25,
@@ -99,6 +102,8 @@ select
     r.ktc_cohort as cohort,
     r.contact_advising_provider as advising_provider,
     r.contact_owner_name,
+    r.contact_current_kipp_student as current_kipp_student,
+    r.contact_currently_enrolled_school as currently_enrolled_school,
     r.contact_expected_hs_graduation as expected_hs_graduation,
     r.contact_college_match_display_gpa as hs_gpa,
     r.contact_highest_act_score as highest_act_score,
@@ -110,6 +115,7 @@ select
     a.account_type,
 
     null as ugrad_status,
+    ei.hs_account_name,
 
     a.competitiveness_ranking,
     a.act25,
@@ -142,4 +148,5 @@ select
         then '<2.00'
     end as hs_gpa_bands,
 from {{ ref("int_kippadb__roster") }} as r
-inner join {{ ref("base_kippadb__application") }} as a on r.contact_id = a.applicant
+left join {{ ref("base_kippadb__application") }} as a on r.contact_id = a.applicant
+left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
