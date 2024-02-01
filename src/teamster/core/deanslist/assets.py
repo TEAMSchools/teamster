@@ -1,10 +1,9 @@
-import copy
-import gc
-
 import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
+    MonthlyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
@@ -13,25 +12,32 @@ from dagster import (
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.deanslist.schema import ASSET_FIELDS
-from teamster.core.utils.classes import FiscalYear
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_record_schema,
+    get_avro_schema_valid_check_spec,
+)
 
 
-def build_static_partition_asset(
-    asset_name,
+def build_deanslist_static_partition_asset(
     code_location,
+    asset_name,
     api_version,
-    partitions_def: StaticPartitionsDefinition = None,
+    partitions_def: StaticPartitionsDefinition | None = None,
     op_tags={},
     params={},
 ) -> AssetsDefinition:
+    asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
+
     @asset(
-        key=[code_location, "deanslist", asset_name.replace("-", "_")],
+        key=asset_key,
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="deanslist",
+        compute_kind="deanslist",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
@@ -41,107 +47,77 @@ def build_static_partition_asset(
             params=params,
         )
 
-        row_count = endpoint_content["row_count"]
+        data = endpoint_content["data"]
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+        )
 
         yield Output(
-            value=(
-                endpoint_content["data"],
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-                ),
-            ),
-            metadata={"records": row_count},
+            value=(data, schema), metadata={"records": endpoint_content["row_count"]}
+        )
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=data, schema=schema
         )
 
     return _asset
 
 
-def build_multi_partition_asset(
-    asset_name,
+def build_deanslist_multi_partition_asset(
     code_location,
+    asset_name,
     api_version,
     partitions_def: MultiPartitionsDefinition,
-    inception_date=None,
     op_tags={},
     params={},
 ) -> AssetsDefinition:
+    asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
+
     @asset(
-        key=[code_location, "deanslist", asset_name.replace("-", "_")],
+        key=asset_key,
         metadata=params,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="deanslist",
+        compute_kind="deanslist",
+        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
-        school_partition = context.partition_key.keys_by_dimension["school"]
+        partitions_def: MultiPartitionsDefinition = context.assets_def.partitions_def  # type: ignore
+        partition_key: MultiPartitionKey = context.partition_key  # type: ignore
+
+        school_partition = partition_key.keys_by_dimension["school"]
         date_partition = pendulum.from_format(
-            string=context.partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
-        ).subtract(days=1)
+            string=partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
+        )
 
-        # determine if endpoint is within time-window
-        if set(["StartDate", "EndDate"]).issubset(params.keys()) or set(
-            ["sdt", "edt"]
-        ).issubset(params.keys()):
-            is_time_bound = True
-        else:
-            is_time_bound = False
+        request_params = {"UpdatedSince": date_partition.to_date_string(), **params}
+        if isinstance(
+            partitions_def.get_partitions_def_for_dimension("date"),
+            MonthlyPartitionsDefinition,
+        ):
+            request_params["StartDate"] = date_partition.to_date_string()
+            request_params["EndDate"] = date_partition.end_of("month").to_date_string()
 
-        # TODO: date_partition == inception_date for first partition
+        endpoint_content = deanslist.get(
+            api_version=api_version,
+            endpoint=asset_name,
+            school_id=int(school_partition),
+            params=request_params,
+        )
 
-        # determine start and end dates
-        partition_fy = FiscalYear(datetime=date_partition, start_month=7)
+        data = endpoint_content["data"]
+        row_count = endpoint_content["row_count"]
 
-        total_row_count = 0
-        all_data = []
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+        )
 
-        fy_period = partition_fy.end - partition_fy.start
+        yield Output(value=(data, schema), metadata={"records": row_count})
 
-        for month in fy_period.range(unit="months"):
-            composed_params = copy.deepcopy(params)
-
-            for k, v in composed_params.items():
-                if isinstance(v, str):
-                    composed_params[k] = v.format(
-                        start_date=month.start_of("month").to_date_string(),
-                        end_date=month.end_of("month").to_date_string(),
-                    )
-
-            endpoint_content = deanslist.get(
-                api_version=api_version,
-                endpoint=asset_name,
-                school_id=int(school_partition),
-                params={
-                    "UpdatedSince": date_partition.to_date_string(),
-                    **composed_params,
-                },
-            )
-
-            row_count = endpoint_content["row_count"]
-            data = endpoint_content["data"]
-
-            del endpoint_content
-            gc.collect()
-
-            if row_count > 0:
-                total_row_count += row_count
-                all_data.extend(data)
-
-                del data
-                gc.collect()
-
-            # break loop for endpoints w/o start/end dates
-            if not is_time_bound:
-                break
-
-        yield Output(
-            value=(
-                all_data,
-                get_avro_record_schema(
-                    name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-                ),
-            ),
-            metadata={"records": total_row_count},
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=data, schema=schema
         )
 
     return _asset

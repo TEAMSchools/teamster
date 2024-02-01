@@ -2,7 +2,14 @@ import os
 import pathlib
 
 import pendulum
-from dagster import DagsterInstance, MultiPartitionKey
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetCheckSpec,
+    DagsterInstance,
+    MetadataValue,
+    MultiPartitionKey,
+)
 
 from teamster.core.utils.classes import FiscalYear
 
@@ -21,7 +28,7 @@ def regex_pattern_replace(pattern: str, replacements: dict):
     return pattern
 
 
-def get_avro_record_schema(name: str, fields: list, namespace: str = None):
+def get_avro_record_schema(name: str, fields: list, namespace: str | None = None):
     return {
         "type": "record",
         "name": f"{name.replace('-', '_').replace('/', '_')}_record",
@@ -134,3 +141,28 @@ def get_dagster_cloud_instance(dagster_home_path):
     pathlib.Path(dagster_home_path).mkdir(parents=True, exist_ok=True)
 
     return DagsterInstance.get()
+
+
+def get_avro_schema_valid_check_spec(asset):
+    return AssetCheckSpec(
+        name="avro_schema_valid",
+        asset=asset,
+        description=(
+            "Checks output records against the supplied schema and warns if any "
+            "unexpected fields are discovered"
+        ),
+    )
+
+
+def check_avro_schema_valid(asset_key, records, schema):
+    extras = set().union(*(d.keys() for d in records)) - set(
+        field["name"] for field in schema["fields"]
+    )
+
+    return AssetCheckResult(
+        passed=len(extras) == 0,
+        asset_key=asset_key,
+        check_name="avro_schema_valid",
+        metadata={"extras": MetadataValue.text(", ".join(extras))},
+        severity=AssetCheckSeverity.WARN,
+    )

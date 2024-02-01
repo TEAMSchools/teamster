@@ -291,16 +291,22 @@ COMMUNICATION_FIELDS = {
         {"name": "CallStatus", "type": ["null", "string"], "default": None},
         {"name": "CallStatusID", "type": ["null", "int"], "default": None},
         {"name": "CallType", "type": ["null", "string"], "default": None},
+        {"name": "CommunicationWithID", "type": ["null", "long"], "default": None},
+        {"name": "CommunicationWithName", "type": ["null", "string"], "default": None},
+        {"name": "CommunicationWithType", "type": ["null", "string"], "default": None},
         {"name": "EducatorName", "type": ["null", "string"], "default": None},
         {"name": "Email", "type": ["null", "string"], "default": None},
         {"name": "IsDraft", "type": ["null", "boolean"], "default": None},
         {"name": "MailingAddress", "type": ["null", "string"], "default": None},
+        {"name": "PersonContacted", "type": ["null", "string"], "default": None},
         {"name": "PhoneNumber", "type": ["null", "string"], "default": None},
         {"name": "Reason", "type": ["null", "string"], "default": None},
         {"name": "ReasonID", "type": ["null", "int"], "default": None},
         {"name": "RecordID", "type": ["null", "int"], "default": None},
         {"name": "RecordType", "type": ["null", "string"], "default": None},
+        {"name": "Relationship", "type": ["null", "string"], "default": None},
         {"name": "Response", "type": ["null", "string"], "default": None},
+        {"name": "ThirdPartyName", "type": ["null", "string"], "default": None},
         {"name": "Topic", "type": ["null", "string"], "default": None},
         {"name": "UserID", "type": ["null", "int"], "default": None},
         {
@@ -622,6 +628,11 @@ LIST_FIELDS = {
         {"name": "IsDated", "type": ["null", "boolean"], "default": None},
         {"name": "ListID", "type": ["null", "string"], "default": None},
         {"name": "ListName", "type": ["null", "string"], "default": None},
+        {"name": "Show", "type": ["null", "boolean"], "default": None},
+        {"name": "IsAccumulation", "type": ["null", "boolean"], "default": None},
+        {"name": "Sort", "type": ["null", "string"], "default": None},
+        {"name": "IsClearable", "type": ["null", "boolean"], "default": None},
+        {"name": "IsSystem", "type": ["null", "boolean"], "default": None},
     ]
 }
 
@@ -691,6 +702,7 @@ ROSTER_FIELDS = {
         {"name": "SubjectName", "type": ["null", "string"], "default": None},
         {"name": "TakeAttendance", "type": ["null", "string"], "default": None},
         {"name": "TakeClassAttendance", "type": ["null", "string"], "default": None},
+        {"name": "StudentIDs", "type": ["null", "string"], "default": None},
         {
             "name": "LastSynced",
             "type": ["null", "string"],
@@ -699,6 +711,36 @@ ROSTER_FIELDS = {
         },
     ]
 }
+
+RECONCILE_ATTENDANCE_FIELDS = [
+    {"name": "schoolname", "type": ["null", "string"], "default": None},
+    {"name": "studentid", "type": ["null", "long"], "default": None},
+    {"name": "studentfirst", "type": ["null", "string"], "default": None},
+    {"name": "studentlast", "type": ["null", "string"], "default": None},
+    {"name": "attendancedate", "type": ["null", "string"], "default": None},
+    {"name": "attendancebehavior", "type": ["null", "string"], "default": None},
+    {"name": "submittedfn", "type": ["null", "string"], "default": None},
+    {"name": "submittedln", "type": ["null", "string"], "default": None},
+    {"name": "submittedat", "type": ["null", "string"], "default": None},
+    {"name": "unnamed_9", "type": ["null", "string"], "default": None},
+]
+
+RECONCILE_SUSPENSIONS_FIELDS = [
+    {"name": "schoolname", "type": ["null", "string"], "default": None},
+    {"name": "dlincidentid", "type": ["null", "long"], "default": None},
+    {"name": "studentid", "type": ["null", "long"], "default": None},
+    {"name": "studentfirst", "type": ["null", "string"], "default": None},
+    {"name": "studentlast", "type": ["null", "string"], "default": None},
+    {"name": "consequence", "type": ["null", "string"], "default": None},
+    {"name": "constart", "type": ["null", "string"], "default": None},
+    {"name": "conend", "type": ["null", "string"], "default": None},
+    {"name": "attendancedate", "type": ["null", "string"], "default": None},
+    {"name": "attendancebehavior", "type": ["null", "string"], "default": None},
+    {"name": "submittedfn", "type": ["null", "string"], "default": None},
+    {"name": "submittedln", "type": ["null", "string"], "default": None},
+    {"name": "submittedat", "type": ["null", "string"], "default": None},
+    {"name": "unnamed_13", "type": ["null", "string"], "default": None},
+]
 
 ASSET_FIELDS = {
     "lists": LIST_FIELDS,
@@ -712,4 +754,6 @@ ASSET_FIELDS = {
     "comm-log": COMMUNICATION_FIELDS,
     "incidents": INCIDENT_FIELDS,
     "followups": FOLLOWUP_FIELDS,
+    "reconcile_attendance": RECONCILE_ATTENDANCE_FIELDS,
+    "reconcile_suspensions": RECONCILE_SUSPENSIONS_FIELDS,
 }

@@ -224,6 +224,7 @@ with
 
     students_schedules_and_assessments_scores as (
         select
+            s._dbt_source_relation,
             s.academic_year,
             s.district,
             s.region,
@@ -336,12 +337,14 @@ with
 
     base_roster as (
         select
+            s._dbt_source_relation,
             s.academic_year,
             s.district,
             s.region,
             s.schoolid,
             s.school,
             s.student_number,
+            s.studentid,
             s.student_name,
             s.student_last_name,
             s.student_first_name,
@@ -449,12 +452,14 @@ with
     )
 
 select
+    b._dbt_source_relation,
     b.academic_year,
     b.district,
     b.region,
     b.schoolid,
     b.school,
     b.student_number,
+    b.studentid,
     b.student_name,
     b.student_last_name,
     b.student_first_name,
@@ -506,9 +511,20 @@ select
     t.name,
     t.start_date,
     t.end_date,
+    f.nj_student_tier,
+    hos.head_of_school_preferred_name_lastfirst as hos,
 from base_roster as b
 left join
     expanded_terms as t
     on cast(b.academic_year as int) = t.academic_year
     and b.expected_test = t.name
     and b.region = t.region
+left join
+    {{ ref("int_reporting__student_filters") }} as f
+    on cast(b.academic_year as int) = f.academic_year
+    and b.student_number = f.student_number
+    and {{ union_dataset_join_clause(left_alias="b", right_alias="f") }}
+    and f.iready_subject = 'Reading'
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on b.schoolid = hos.home_work_location_powerschool_school_id

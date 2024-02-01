@@ -11,6 +11,22 @@ sources:
               - kippcamden
               - edplan
               - stg_edplan__njsmart_powerschool
+      - name: stg_edplan__njsmart_powerschool_archive
+        meta:
+          dagster:
+            group: edplan
+            asset_key:
+              - kippcamden
+              - edplan
+              - stg_edplan__njsmart_powerschool_archive
+      - name: int_edplan__njsmart_powerschool_union
+        meta:
+          dagster:
+            group: edplan
+            asset_key:
+              - kippcamden
+              - edplan
+              - int_edplan__njsmart_powerschool_union
   - name: kippnewark_edplan
     tables:
       - name: stg_edplan__njsmart_powerschool
@@ -21,3 +37,19 @@ sources:
               - kippnewark
               - edplan
               - stg_edplan__njsmart_powerschool
+      - name: stg_edplan__njsmart_powerschool_archive
+        meta:
+          dagster:
+            group: edplan
+            asset_key:
+              - kippnewark
+              - edplan
+              - stg_edplan__njsmart_powerschool_archive
+      - name: int_edplan__njsmart_powerschool_union
+        meta:
+          dagster:
+            group: edplan
+            asset_key:
+              - kippnewark
+              - edplan
+              - int_edplan__njsmart_powerschool_union

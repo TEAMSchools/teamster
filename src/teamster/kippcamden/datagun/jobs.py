@@ -1,18 +1,11 @@
-from dagster import AssetSelection, define_asset_job
+from dagster import define_asset_job
 
-from .assets import powerschool_extract_assets  # cpn_extract_assets
-
-# cpn_extract_asset_job = define_asset_job(
-#     name="datagun_cpn_extract_asset_job",
-#     selection=AssetSelection.assets(*cpn_extract_assets),
-# )
+from .assets import powerschool_extract_assets
 
 powerschool_extract_asset_job = define_asset_job(
-    name="datagun_powerschool_extract_asset_job",
-    selection=AssetSelection.assets(*powerschool_extract_assets),
+    name="datagun_powerschool_extract_asset_job", selection=powerschool_extract_assets
 )
 
-__all__ = [
-    # cpn_extract_asset_job,
+_all = [
     powerschool_extract_asset_job,
 ]

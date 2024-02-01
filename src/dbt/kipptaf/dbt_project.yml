@@ -27,6 +27,7 @@ vars:
   current_academic_year: 2023
   current_fiscal_year: 2024
   alchemer_survey_identifier_short_names:
+    - respondent_employee_number
     - respondent_df_employee_number
     - respondent_userprincipalname
     - respondent_adp_associate_id
@@ -43,6 +44,10 @@ models:
   kipptaf:
     act:
       +schema: act
+    adp_payroll:
+      +schema: adp_payroll
+      staging:
+        +materialized: table
     adp_workforce_manager:
       +schema: adp_workforce_manager
       +materialized: table
@@ -131,16 +136,17 @@ models:
       +schema: pearson
     people:
       +schema: people
-      staging:
-        +materialized: table
+      +materialized: table
+    performance_management:
+      +schema: performance_management
+      +materialized: table
     powerschool:
       +schema: powerschool
     renlearn:
       +schema: renlearn
     reporting:
       +schema: reporting
-      staging:
-        +materialized: table
+      +materialized: table
     schoolmint:
       grow:
         +schema: schoolmint_grow

@@ -1,53 +1,42 @@
 import json
 
 from dagster import (
-    Any,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    Mapping,
+    AutoMaterializeRule,
     Nothing,
-    Optional,
     Output,
     multi_asset,
 )
-from dagster_dbt import DbtCliResource, KeyPrefixDagsterDbtTranslator
+from dagster_dbt import DbtCliResource, dbt_assets
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     MANIFEST_METADATA_KEY,
-    _auto_materialize_policy_fn,
 )
 from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
-
-class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
-    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        asset_key_config = (
-            dbt_resource_props.get("meta", {}).get("dagster", {}).get("asset_key", [])
-        )
-
-        if asset_key_config:
-            return AssetKey(asset_key_config)
-        else:
-            return super().get_asset_key(dbt_resource_props)
-
-    def get_auto_materialize_policy(
-        self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[AutoMaterializePolicy]:
-        auto_materialize_policy = _auto_materialize_policy_fn(
-            dbt_resource_props.get("meta", {})
-            .get("dagster", {})
-            .get("auto_materialize_policy", {})
-        )
-
-        if auto_materialize_policy:
-            return auto_materialize_policy
-        else:
-            return AutoMaterializePolicy.eager()
+from teamster.core.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 
-def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_translator):
+def build_dbt_assets(dbt_manifest, dagster_dbt_translator):
+    @dbt_assets(
+        manifest=dbt_manifest,
+        exclude="tag:stage_external_sources",
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
+    def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+        dbt_build = dbt_cli.cli(args=["build"], context=context)
+
+        yield from dbt_build.stream()
+
+    return _assets
+
+
+def build_dbt_external_source_assets(
+    code_location, manifest, dagster_dbt_translator: CustomDagsterDbtTranslator
+):
     external_sources = [
         source
         for source in manifest["sources"].values()
@@ -65,8 +54,10 @@ def build_dbt_external_source_assets(code_location, manifest, dagster_dbt_transl
                 **dagster_dbt_translator.get_metadata(source),
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
-            },
-            auto_materialize_policy=AutoMaterializePolicy.eager(),
+            },  # type: ignore
+            auto_materialize_policy=AutoMaterializePolicy.eager().without_rules(
+                AutoMaterializeRule.skip_on_parent_missing()
+            ),
         )
         for source in external_sources
     }

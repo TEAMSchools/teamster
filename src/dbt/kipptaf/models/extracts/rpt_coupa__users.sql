@@ -132,17 +132,6 @@ with
                 /* no interns */
                 when au.worker_type like 'Intern%'
                 then 'inactive'
-                /* keep Approvers active while on leave */
-                when
-                    au.assignment_status = 'Leave'
-                    and (
-                        au.roles like '%Edit Expense Report AS Approver%'
-                        or au.roles like '%Edit Requisition AS Approver%'
-                    )
-                then 'active'
-                /* deactivate all others on leave */
-                when au.assignment_status = 'Leave'
-                then 'inactive'
                 when au.uac_account_disable = 0
                 then 'active'
                 else 'inactive'

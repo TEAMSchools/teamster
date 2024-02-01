@@ -1,15 +1,23 @@
-from dagster import config_from_files
+import pathlib
 
-from teamster.core.airbyte.assets import build_airbyte_cloud_assets
-from teamster.kipptaf import CODE_LOCATION
+from dagster import AssetKey, AssetsDefinition, AssetSpec, config_from_files
 
-config_dir = f"src/teamster/{CODE_LOCATION}/airbyte/config"
+from teamster.core.definitions.external_asset import external_assets_from_specs
 
-__all__ = []
+from .. import CODE_LOCATION
 
-for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]:
-    __all__.extend(
-        build_airbyte_cloud_assets(
-            **a, asset_key_prefix=[CODE_LOCATION, a["group_name"]]
-        )
+specs = [
+    AssetSpec(
+        key=AssetKey([CODE_LOCATION, a["group_name"], table]),
+        metadata={"connection_id": a["connection_id"]},
+        group_name=a["group_name"],
     )
+    for a in config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])[
+        "assets"
+    ]
+    for table in a["destination_tables"]
+]
+
+_all: list[AssetsDefinition] = external_assets_from_specs(
+    specs=specs, compute_kind="airbyte"
+)

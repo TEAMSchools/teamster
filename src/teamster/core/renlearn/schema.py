@@ -93,7 +93,7 @@ ACCELERATED_READER_FIELDS = [
     {"name": "Passed", "type": ["null", "boolean"], "default": None},
     {"name": "TWI", "type": ["null", "string"], "default": None},
     {"name": "BookRating", "type": ["null", "double"], "default": None},
-    {"name": "AudioUsed", "type": ["null", "double"], "default": None},
+    {"name": "AudioUsed", "type": ["null", "double", "string"], "default": None},
     {"name": "QuizDeleted", "type": ["null", "long"], "default": None},
     {"name": "WordCount", "type": ["null", "double"], "default": None},
     {"name": "QuizType", "type": ["null", "string"], "default": None},
@@ -317,7 +317,7 @@ STAR_FIELDS = [
         "default": None,
     },
     # Math
-    {"name": "Audio", "type": ["null", "double"], "default": None},
+    {"name": "Audio", "type": ["null", "double", "string"], "default": None},
     {"name": "Quantile", "type": ["null", "string"], "default": None},
     # Reading
     {"name": "InstructionalReadingLevel", "type": ["null", "string"], "default": None},
@@ -403,6 +403,15 @@ STAR_SKILL_AREA_FIELDS = [
 ]
 
 FAST_STAR_CORE_FIELDS = [
+    {"name": "AchievementLevel", "type": ["null", "string"], "default": None},
+    {"name": "AssessmentName", "type": ["null", "string"], "default": None},
+    {"name": "FAST_Equivalent_Score", "type": ["null", "long"], "default": None},
+    {"name": "FAST_ES_Max", "type": ["null", "double"], "default": None},
+    {"name": "FAST_ES_Min", "type": ["null", "double"], "default": None},
+    {"name": "FAST_NOL", "type": ["null", "double"], "default": None},
+    {"name": "FileDate", "type": ["null", "string"], "default": None},
+    {"name": "Level3_or_Above", "type": ["null", "string"], "default": None},
+    {"name": "SchoolType", "type": ["null", "string"], "default": None},
     {"name": "Assess_Num", "type": ["null", "long"], "default": None},
     {"name": "Assess_Status", "type": ["null", "string"], "default": None},
     {"name": "CBTFlag", "type": ["null", "string"], "default": None},
@@ -438,7 +447,7 @@ FAST_STAR_CORE_FIELDS = [
     {"name": "Gender", "type": ["null", "string"], "default": None},
     {"name": "GID_RID", "type": ["null", "string"], "default": None},
     {"name": "Gname", "type": ["null", "string"], "default": None},
-    {"name": "Grade_E", "type": ["null", "double"], "default": None},
+    {"name": "Grade_E", "type": ["null", "double", "string"], "default": None},
     {"name": "Grade_P", "type": ["null", "double"], "default": None},
     {"name": "Grade_T", "type": ["null", "string"], "default": None},
     {"name": "GUID", "type": ["null", "string"], "default": None},
@@ -523,7 +532,7 @@ FAST_STAR_FIELDS = [
     # Math
     {"name": "Quantile", "type": ["null", "string"], "default": None},
     # Reading
-    {"name": "Attempts_G3", "type": ["null", "string"], "default": None},
+    {"name": "Attempts_G3", "type": ["null", "string", "long"], "default": None},
     {"name": "IRL", "type": ["null", "string"], "default": None},
     {"name": "Lexile", "type": ["null", "string"], "default": None},
     {"name": "PassingScore_G3", "type": ["null", "string"], "default": None},

@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import (
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -11,7 +13,7 @@ from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
-__all__ = [
+_all = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "renlearn", a["asset_name"]],
         ssh_resource_key="ssh_renlearn",
@@ -32,6 +34,6 @@ __all__ = [
         **a,
     )
     for a in config_from_files(
-        [f"src/teamster/{CODE_LOCATION}/renlearn/config/assets.yaml"]
+        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
     )["assets"]
 ]

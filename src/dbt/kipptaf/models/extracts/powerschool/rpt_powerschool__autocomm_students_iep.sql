@@ -31,7 +31,7 @@ select  -- noqa: disable=ST06
     spedlep as studentcorefields__spedlep,
     if(special_education_code = '00', '1', '0') as s_nj_stu_x__determined_ineligible_yn,
     regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
-from {{ ref("stg_edplan__njsmart_powerschool") }}
+from {{ ref("int_edplan__njsmart_powerschool_union") }}
 where
     academic_year = {{ var("current_academic_year") }}
     and rn_student_year_desc = 1

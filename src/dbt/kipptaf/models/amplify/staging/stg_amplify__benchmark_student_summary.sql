@@ -13,6 +13,7 @@ with
                 dbt_utils.star(
                     from=src_bss,
                     except=[
+                        "assessment_grade",
                         "client_date",
                         "composite_level",
                         "composite_national_norm_percentile",
@@ -24,6 +25,7 @@ with
                         "decoding_nwf_wrc_score",
                         "decoding_nwf_wrc_semester_growth",
                         "decoding_nwf_wrc_year_growth",
+                        "enrollment_grade",
                         "letter_names_lnf_level",
                         "letter_names_lnf_national_norm_percentile",
                         "letter_names_lnf_score",
@@ -67,7 +69,17 @@ with
 
             safe_cast(client_date as date) as client_date,
             safe_cast(sync_date as date) as sync_date,
+
             safe_cast(left(school_year, 4) as int) as academic_year,
+
+            coalesce(
+                assessment_grade.string_value,
+                safe_cast(assessment_grade.long_value as string)
+            ) as assessment_grade,
+            coalesce(
+                enrollment_grade.string_value,
+                safe_cast(enrollment_grade.long_value as string)
+            ) as enrollment_grade,
             coalesce(
                 official_teacher_staff_id.string_value,
                 safe_cast(official_teacher_staff_id.long_value as string)
