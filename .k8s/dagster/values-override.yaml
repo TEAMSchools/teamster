@@ -35,14 +35,10 @@ dagsterCloudAgent:
   # annotations:
   #   cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 
-  tolerations:
-    - key: group
-      operator: Equal
-      value: servers
-      effect: NoSchedule
-
   nodeSelector:
-    group: servers
+    cloud.google.com/gke-placement-group: servers
+    cloud.google.com/compute-class: Balanced
+    cloud.google.com/gke-spot: "true"
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
@@ -62,13 +58,11 @@ workspace:
         operator.1password.io/auto-restart: "true"
         # cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
-      tolerations:
-        - key: group
-          operator: Equal
-          value: servers
-          effect: NoSchedule
       nodeSelector:
-        group: servers
+        cloud.google.com/gke-placement-group: servers
+        cloud.google.com/compute-class: Balanced
+        cloud.google.com/gke-spot: "true"
+      terminationGracePeriodSeconds: 25
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
