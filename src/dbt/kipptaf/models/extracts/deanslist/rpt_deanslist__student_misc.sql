@@ -46,6 +46,7 @@ with
 
             sch.principal,
             sch.schoolphone,
+            sch.asstprincipal as culture_lead,
 
             co.student_web_id || '.fam' as family_access_id,
             co.student_web_id || '@teamstudents.org' as student_email,
