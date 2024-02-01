@@ -86,7 +86,9 @@ inner join
     and e.status != 'Did Not Enroll'
 left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
+
 union all
+
 select
     r.contact_id,
     r.lastfirst as student_name,
@@ -111,7 +113,7 @@ select
     a.act_composite_25_75,
     a.adjusted_6_year_graduation_rate,
     a.adjusted_6_year_minority_graduation_rate,
-    a.school_state,
+    a.account_billing_state as school_state,
     a.account_name as school_name,
     a.hbcu,
 
