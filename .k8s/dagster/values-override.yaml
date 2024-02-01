@@ -54,14 +54,6 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
-    podSpecConfig:
-      tolerations:
-        - key: group
-          operator: Equal
-          value: runs
-          effect: NoSchedule
-      nodeSelector:
-        group: runs
 
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
