@@ -57,6 +57,7 @@ select
     c.mail,
     c.google_email,
     c.worker_original_hire_date as original_hire_date,
+    c.business_unit_home_name as entity,
 
     null as pm1,
     null as pm2,

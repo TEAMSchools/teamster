@@ -1,0 +1,1 @@
+op://Data Team/TEAMster 1Password Credentials File/1password-credentials.json

@@ -47,6 +47,8 @@ with
             {{ ref("stg_powerschool__attendance") }} as att
             on mem.studentid = att.studentid
             and mem.calendardate = att.att_date
+            and mem.schoolid = att.schoolid
+            and att.att_mode_code = 'ATT_ModeDaily'
             and {{ union_dataset_join_clause(left_alias="mem", right_alias="att") }}
         left join
             {{ ref("stg_powerschool__attendance_code") }} as ac
@@ -165,6 +167,31 @@ with
             end as attendance_status,
 
             case
+                /* Gr K-8 */
+                when co.grade_level <= 8 and att.ada_term_running is null
+                then 'Off-Track'
+                /* Gr K */
+                when co.grade_level = 0 and att.ada_term_running < 0.75
+                then 'Off-Track'
+                /* Gr 1-2 */
+                when co.grade_level between 1 and 2 and att.ada_term_running < 0.80
+                then 'Off-Track'
+                /* Gr3-8 */
+                when co.grade_level between 3 and 8 and att.ada_term_running < 0.85
+                then 'Off-Track'
+                /* HS */
+                when
+                    co.grade_level >= 9
+                    and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
+                then 'Off-Track (Already reached threshold)'
+                when
+                    co.grade_level >= 9
+                    and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
+                then 'Off-Track (Approaching threshold)'
+                else 'On-Track'
+            end as attendance_status_hs_detail,
+
+            case
                 /* Gr1-2 */
                 when
                     co.grade_level between 1 and 2
@@ -224,6 +251,7 @@ select
     projected_credits_cum,
     projected_credits_y1_term,
     attendance_status,
+    attendance_status_hs_detail,
     academic_status,
     case
         when grade_level = 0

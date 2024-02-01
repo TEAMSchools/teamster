@@ -86,6 +86,7 @@ select
     se.schoolid,
     se.reporting_schoolid,
     se.school_name,
+    se.school_abbreviation,
     se.grade_level,
     se.enroll_status,
     se.entrydate,

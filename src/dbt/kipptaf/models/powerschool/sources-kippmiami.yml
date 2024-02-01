@@ -691,3 +691,27 @@ sources:
               - kippmiami
               - powerschool
               - int_powerschool__attendance_streak
+      - name: stg_powerschool__studenttest
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - stg_powerschool__studenttest
+      - name: stg_powerschool__studenttestscore
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - stg_powerschool__studenttestscore
+      - name: int_powerschool__ada
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - int_powerschool__ada

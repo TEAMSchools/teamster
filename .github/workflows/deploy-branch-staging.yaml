@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - src/teamster/**
+      - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-branch-staging.yaml
     types:
       - opened

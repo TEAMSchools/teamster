@@ -1,9 +1,9 @@
-from .assets import __all__ as assets
-from .jobs import __all__ as jobs
-from .schedules import __all__ as schedules
+from .assets import _all as assets
+from .jobs import _all as jobs
+from .schedules import _all as schedules
 
-__all__ = [
+_all = [
     assets,
-    schedules,
     jobs,
+    schedules,
 ]

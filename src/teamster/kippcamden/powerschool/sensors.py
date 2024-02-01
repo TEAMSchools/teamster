@@ -1,15 +1,16 @@
-from teamster.core.powerschool.sensors import build_partition_sensor
+from teamster.core.powerschool.sensors import build_powerschool_sensor
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import partition_assets
+from .assets import dcid_assets, partition_assets
 
-partition_sensor = build_partition_sensor(
+partition_sensor = build_powerschool_sensor(
     name=f"{CODE_LOCATION}_powerschool_partition_sensor",
+    asset_selection=[*dcid_assets, *partition_assets],
     asset_defs=partition_assets,
-    timezone=LOCAL_TIMEZONE,
+    execution_timezone=LOCAL_TIMEZONE,
     minimum_interval_seconds=(60 * 10),
 )
 
-__all__ = [
+_all = [
     partition_sensor,
 ]

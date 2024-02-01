@@ -42,8 +42,8 @@ with
                 lower(coalesce(respondent_userprincipalname, email)) as string
             ) as respondent_user_principal_name,
 
-            if(
-                safe_cast(respondent_df_employee_number as int) is not null,
+            coalesce(
+                safe_cast(respondent_employee_number as int),
                 safe_cast(respondent_df_employee_number as int),
                 safe_cast(
                     regexp_extract(
@@ -55,8 +55,7 @@ with
                 )
             ) as respondent_employee_number,
 
-            if(
-                safe_cast(subject_df_employee_number as int) is not null,
+            coalesce(
                 safe_cast(subject_df_employee_number as int),
                 safe_cast(
                     regexp_extract(

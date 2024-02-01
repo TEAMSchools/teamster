@@ -1,3 +1,5 @@
+import pathlib
+
 import pendulum
 from dagster import (
     AssetExecutionContext,
@@ -15,13 +17,20 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_powerschool_table_asset(
-    asset_name,
     code_location,
-    partitions_def: FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition = None,
+    asset_name,
+    local_timezone,
+    partitions_def: (
+        FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
+    ) = None,
+    table_name=None,
     select_columns=["*"],
     partition_column=None,
     op_tags={},
 ) -> AssetsDefinition:
+    if table_name is None:
+        table_name = asset_name
+
     @asset(
         key=[code_location, "powerschool", asset_name],
         metadata={"partition_column": partition_column},
@@ -29,24 +38,18 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="powerschool",
+        compute_kind="powerschool",
     )
     def _asset(
         context: AssetExecutionContext,
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ):
-        now = pendulum.now()
-
-        asset_metadata = context.assets_def.metadata_by_key[context.assets_def.key]
-
-        partition_column = asset_metadata["partition_column"]
+        now = pendulum.now(tz=local_timezone).start_of("hour")
 
         if not context.has_partition_key:
             constructed_where = ""
-        elif (
-            context.partition_key
-            == context.assets_def.partitions_def.get_first_partition_key()
-        ):
+        elif context.partition_key == partitions_def.get_first_partition_key():
             constructed_where = ""
         else:
             window_start = pendulum.from_format(
@@ -55,14 +58,12 @@ def build_powerschool_table_asset(
 
             window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
-            if isinstance(
-                context.assets_def.partitions_def, FiscalYearPartitionsDefinition
-            ):
+            if isinstance(partitions_def, FiscalYearPartitionsDefinition):
                 date_add_kwargs = {"years": 1}
-            elif isinstance(
-                context.assets_def.partitions_def, MonthlyPartitionsDefinition
-            ):
+            elif isinstance(partitions_def, MonthlyPartitionsDefinition):
                 date_add_kwargs = {"months": 1}
+            else:
+                date_add_kwargs = {}
 
             window_end_fmt = (
                 window_start.add(**date_add_kwargs)
@@ -80,7 +81,7 @@ def build_powerschool_table_asset(
 
         sql = (
             select(*[literal_column(col) for col in select_columns])
-            .select_from(table(asset_name))
+            .select_from(table(table_name))
             .where(text(constructed_where))
         )
 
@@ -90,9 +91,9 @@ def build_powerschool_table_asset(
             context.log.info("Starting SSH tunnel")
             ssh_tunnel.start()
 
-            file_path = db_powerschool.engine.execute_query(
+            file_path: pathlib.Path = db_powerschool.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
-            )
+            )  # type: ignore
 
             try:
                 with file_path.open(mode="rb") as f:

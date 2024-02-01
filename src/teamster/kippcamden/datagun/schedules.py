@@ -15,7 +15,7 @@ powerschool_extract_assets_schedule = ScheduleDefinition(
 #     execution_timezone=LOCAL_TIMEZONE.name,
 # )
 
-__all__ = [
+_all = [
     # cpn_extract_assets_schedule,
     powerschool_extract_assets_schedule,
 ]

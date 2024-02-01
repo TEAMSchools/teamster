@@ -43,7 +43,7 @@ class DeansListResource(ConfigurableResource):
             response.raise_for_status()
             return response
         except exceptions.HTTPError as e:
-            context.log.error(e)
+            context.log.exception(e)
             raise exceptions.HTTPError(response.text) from e
 
     def _parse_response(self, response):

@@ -6,7 +6,10 @@
 
 ## Self-review
 
-- [ ] Update due date and assignee on the [Teamster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838)
+- [ ] Update **due date**, **assignee**, and **priority** on our [TEAMster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838)
+
+    _If this is a same-day request, please flag that in Slack_
+
 - [ ] <kbd>Format</kbd> has been run on all modified files
 
 ## Troubleshooting

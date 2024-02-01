@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: zendesk
+    schema: kipptaf_zendesk
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_zendesk__ticket_metrics_archive
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/zendesk/ticket_metrics_archive/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/zendesk/ticket_metrics_archive/"

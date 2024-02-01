@@ -8,6 +8,9 @@ with
             case
                 subject when 'Reading' then 'ENG' when 'Math' then 'MATH'
             end as powerschool_credittype,
+            case
+                subject when 'Reading' then 'ela' when 'Math' then 'math'
+            end as grad_unpivot_subject,
         from unnest(['Reading', 'Math']) as subject
     ),
 
@@ -15,7 +18,7 @@ with
         select
             st.local_student_id as student_number,
 
-            regexp_extract(g.group_name, r'Bucket 2 - (\w+) - Gr\w-\w') as subject,
+            regexp_extract(g.group_name, r'Bucket 2 - (Math|Reading) -') as subject,
         from {{ source("illuminate", "group_student_aff") }} as s
         inner join
             {{ source("illuminate", "groups") }} as g
@@ -75,6 +78,48 @@ with
             end as iready_proficiency,
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
+    ),
+
+    composite_only as (
+        select
+            bss.academic_year,
+            bss.student_primary_id as student_number,
+            bss.benchmark_period as mclass_period,
+            u.level as mclass_measure_level,
+        from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
+        inner join
+            {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
+            on bss.surrogate_key = u.surrogate_key
+        where
+            bss.academic_year = {{ var("current_academic_year") }}
+            and u.measure = 'Composite'
+    ),
+
+    dibels_overall_composite_by_window as (
+        select distinct academic_year, student_number, p.boy, p.moy, p.eoy,
+        from
+            composite_only pivot (
+                max(mclass_measure_level) for mclass_period in ('BOY', 'MOY', 'EOY')
+            ) as p
+    ),
+
+    iready_exempt as (
+        select
+            students_student_number as student_number,
+            cc_academic_year as academic_year,
+            true as `value`,
+            case
+                when sections_section_number = 'mgmath'
+                then 'Math'
+                when sections_section_number = 'mgela'
+                then 'Reading'
+            end as iready_subject,
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            courses_course_number = 'LOG300'
+            and sections_section_number in ('mgmath', 'mgela')
+            and not is_dropped_section
+            and rn_course_number_year = 1
     )
 
 select
@@ -86,6 +131,13 @@ select
     sj.iready_subject,
     sj.illuminate_subject_area,
     sj.powerschool_credittype,
+    sj.grad_unpivot_subject,
+
+    a.is_iep_eligible as is_grad_iep_exempt,
+
+    coalesce(db.boy, 'No Test') as dibels_boy_composite,
+    coalesce(db.moy, 'No Test') as dibels_moy_composite,
+    coalesce(db.eoy, 'No Test') as dibels_eoy_composite,
 
     if(nj.subject is not null, true, false) as bucket_two,
 
@@ -96,6 +148,21 @@ select
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
     if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+
+    case
+        when co.grade_level < 4 and pr.iready_proficiency = 'At/Above'
+        then 'Bucket 1'
+        when co.grade_level >= 4 and py.njsla_proficiency = 'At/Above'
+        then 'Bucket 1'
+        when nj.subject is not null
+        then 'Bucket 2'
+    end as nj_student_tier,
+
+    coalesce(ie.value, false) as is_exempt_iready,
+
+    if(
+        co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
+    ) as assessment_dashboard_join,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -119,4 +186,20 @@ left join
     on co.student_number = pr.student_id
     and co.academic_year = pr.academic_year_plus
     and sj.iready_subject = pr.subject
+left join
+    dibels_overall_composite_by_window as db
+    on co.academic_year = db.academic_year
+    and co.student_number = db.student_number
+    and sj.iready_subject = 'Reading'
+left join
+    iready_exempt as ie
+    on co.academic_year = ie.academic_year
+    and co.student_number = ie.student_number
+    and sj.iready_subject = ie.iready_subject
+left join
+    {{ ref("int_powerschool__nj_graduation_pathway_unpivot") }} as a
+    on co.students_dcid = a.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+    and sj.grad_unpivot_subject = a.subject
+    and a.values_column = 'M'
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1

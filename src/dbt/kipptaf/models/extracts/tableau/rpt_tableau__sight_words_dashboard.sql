@@ -23,6 +23,10 @@ select
 
     sw.`value`,
 
+    nj.nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
     false as is_replacement,
 from {{ ref("base_illuminate__repositories") }} as r
 inner join
@@ -47,6 +51,16 @@ left join
     on co.student_number = sw.local_student_id
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label
+left join
+    {{ ref("int_reporting__student_filters") }} as nj
+    on co.academic_year = nj.academic_year
+    and co.student_number = nj.student_number
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+    and nj.iready_subject = 'Reading'
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
+
 where r.scope = 'Sight Words Quiz'
 
 union all
@@ -76,6 +90,10 @@ select
 
     sw.`value`,
 
+    nj.nj_student_tier,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
     true as is_replacement,
 from {{ ref("base_illuminate__repositories") }} as r
 inner join
@@ -100,4 +118,13 @@ inner join
     on co.student_number = sw.local_student_id
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label
+left join
+    {{ ref("int_reporting__student_filters") }} as nj
+    on co.academic_year = nj.academic_year
+    and co.student_number = nj.student_number
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+    and nj.iready_subject = 'Reading'
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on co.schoolid = hos.home_work_location_powerschool_school_id
 where r.scope = 'Sight Words Quiz'

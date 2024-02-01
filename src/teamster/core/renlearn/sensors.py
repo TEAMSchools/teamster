@@ -4,24 +4,19 @@ import re
 import pendulum
 from dagster import (
     AssetsDefinition,
-    AssetSelection,
     MultiPartitionKey,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     StaticPartitionsDefinition,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
-from teamster.core.sftp.assets import listdir_attr_r
 from teamster.core.ssh.resources import SSHResource
 
 
-def build_sftp_sensor(
+def build_renlearn_sftp_sensor(
     code_location,
-    source_system,
     asset_defs: list[AssetsDefinition],
     fiscal_year,
     timezone,
@@ -30,13 +25,19 @@ def build_sftp_sensor(
     fiscal_year_start_string = fiscal_year.start.to_date_string()
 
     @sensor(
-        name=f"{code_location}_{source_system}_sftp_sensor",
+        name=f"{code_location}_renlearn_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=AssetSelection.assets(*asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_renlearn: SSHResource):
-        cursor: dict = json.loads(context.cursor or "{}")
         now = pendulum.now(tz=timezone)
+        cursor: dict = json.loads(context.cursor or "{}")
+
+        try:
+            files = ssh_renlearn.listdir_attr_r(remote_dir=".", files=[])
+        except Exception as e:
+            context.log.exception(e)
+            return SensorResult(skip_reason=str(e))
 
         run_requests = []
         for asset in asset_defs:
@@ -46,23 +47,8 @@ def build_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
-            try:
-                with ssh_renlearn.get_connection() as conn:
-                    with conn.open_sftp() as sftp_client:
-                        files = listdir_attr_r(
-                            sftp_client=sftp_client,
-                            remote_dir=asset_metadata["remote_dir"],
-                            files=[],
-                        )
-            except SSHException as e:
-                context.log.error(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
-            except ConnectionResetError as e:
-                context.log.error(e)
-                return SensorResult(skip_reason=SkipReason(str(e)))
-
             subjects: StaticPartitionsDefinition = (
-                asset.partitions_def.get_partitions_def_for_dimension("subject")
+                asset.partitions_def.get_partitions_def_for_dimension("subject")  # type: ignore
             )
 
             for f in files:
