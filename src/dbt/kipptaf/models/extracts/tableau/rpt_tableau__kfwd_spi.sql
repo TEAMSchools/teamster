@@ -1,4 +1,6 @@
 select
+    'Enrollments' as data_source,
+
     r.contact_id,
     r.lastfirst as student_name,
     r.ktc_cohort as cohort,
@@ -90,6 +92,8 @@ left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.
 union all
 
 select
+    'Applications' as data_source,
+
     r.contact_id,
     r.lastfirst as student_name,
     r.ktc_cohort as cohort,
