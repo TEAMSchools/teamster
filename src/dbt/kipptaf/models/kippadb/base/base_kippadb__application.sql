@@ -71,7 +71,7 @@ with
             acc.act75,
             acc.act_composite_25_75,
             acc.adjusted_6_year_graduation_rate,
-            acc.billing_state as school_state,
+            acc.billing_state as account_billing_state,
             acc.hbcu,
 
             enr.status as enrollment_status,
