@@ -27,6 +27,7 @@ dependencies = [
   "tenacity>=8.2.3",
   "zenpy>=2.0.42",
   "scikit-learn>=1.4.0",
+  "whenever>=0.3.1",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
