@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:c3ad91988f87fbf7ee162036b973603e9172fa348975ac8796e2071292ae6d02"
+content_hash = "sha256:e32152e3b49ec919344964a127ab7620da45b6fe0146713c34e42dc43f214ddd"
 
 [[package]]
 name = "agate"
@@ -2385,6 +2385,16 @@ summary = "WebSocket client for Python with low level API options"
 files = [
     {file = "websocket-client-1.7.0.tar.gz", hash = "sha256:10e511ea3a8c744631d3bd77e61eb17ed09304c413ad42cf6ddfa4c7787e8fe6"},
     {file = "websocket_client-1.7.0-py3-none-any.whl", hash = "sha256:f4c3d22fec12a2461427a29957ff07d35098ee2d976d3ba244e688b8b4057588"},
+]
+
+[[package]]
+name = "whenever"
+version = "0.3.1"
+requires_python = ">=3.8.1,<4.0"
+summary = "Foolproof datetimes for maintainable code"
+files = [
+    {file = "whenever-0.3.1-py3-none-any.whl", hash = "sha256:ce411e27d22b4c99939dfba2284a75191d4bb9d4ab1b66bf69b101bd59a2f133"},
+    {file = "whenever-0.3.1.tar.gz", hash = "sha256:828826c07e516316973e578b6cf413f80b68eb9eb9825dc00d46065ca0bef571"},
 ]
 
 [[package]]
