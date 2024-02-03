@@ -43,10 +43,10 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
-    podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        kubernetes.io/arch: arm64
+    # podSpecConfig:
+    #   nodeSelector:
+    #     cloud.google.com/compute-class: Scale-Out
+    #     kubernetes.io/arch: arm64
 
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
