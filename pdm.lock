@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:ef9479409d43b67fd6e51d46a712584a7b6dfc2ba67b5d0c344054c6d59815aa"
+content_hash = "sha256:f433a00abfa56bfed8a6e435c64dec4f987c54174caca0dcb0d909fbf328361c"
 
 [[package]]
 name = "agate"
@@ -210,6 +210,30 @@ dependencies = [
 files = [
     {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
     {file = "click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de"},
+]
+
+[[package]]
+name = "cmake"
+version = "3.28.1"
+summary = "CMake is an open-source, cross-platform family of tools designed to build, test and package software"
+files = [
+    {file = "cmake-3.28.1-py2.py3-none-macosx_10_10_universal2.macosx_10_10_x86_64.macosx_11_0_arm64.macosx_11_0_universal2.whl", hash = "sha256:9c77c47afef821c0044ba73d182c386ab02e92e6bda5296e553c12455a083f29"},
+    {file = "cmake-3.28.1-py2.py3-none-manylinux2010_i686.manylinux_2_12_i686.whl", hash = "sha256:6a9549755d1178426502753d48949edae9bb0c66f15a07f09904783125beb0e3"},
+    {file = "cmake-3.28.1-py2.py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:d0978cdd08c0ebc76f4f8543aba1381a41580dcb9c3bcffb536c41337b75aea1"},
+    {file = "cmake-3.28.1-py2.py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:96d506c417d63bbcff19b3e9eaa69fe546456a0ddeffe914bcbb23cceee6818e"},
+    {file = "cmake-3.28.1-py2.py3-none-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:74c9878c504ccc6ddd5b0914cbe3b86417a36a2c2dfc486040bfdfe63fbbb1ac"},
+    {file = "cmake-3.28.1-py2.py3-none-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:64d4642c48486bb4320540781a2266c2060929d1e236d6eb2b2c96273e75e958"},
+    {file = "cmake-3.28.1-py2.py3-none-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:363bd0124d71d7e3d9b1ac9bd1dce1d80ba90f48b264c3bf9dbfcfda875cafc9"},
+    {file = "cmake-3.28.1-py2.py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1be8f351271f8bcbe32288066e5add642d7c32f2f8fec3f135949c2cb13dfac2"},
+    {file = "cmake-3.28.1-py2.py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:3ed193134a4937bad8de2b4f62faebc8c1a4049cd37dad9767db7e7d91a08b52"},
+    {file = "cmake-3.28.1-py2.py3-none-musllinux_1_1_i686.whl", hash = "sha256:6ffb1fdb0b0f7f11271d82b5892c2edc109d561e186f882def095970403e2110"},
+    {file = "cmake-3.28.1-py2.py3-none-musllinux_1_1_ppc64le.whl", hash = "sha256:9ea12ebe4b8266f04d6619ed64860bd6e687522f02caf3131515dd39d614ef00"},
+    {file = "cmake-3.28.1-py2.py3-none-musllinux_1_1_s390x.whl", hash = "sha256:2ad22d897d2ed38544e5ef26ee21c4dccc38e938660cd07497fd6bdba0993ea6"},
+    {file = "cmake-3.28.1-py2.py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:379a730b274f39e5858ef2107861b2727918493347b0ccdd5f62bcbb6a8450d9"},
+    {file = "cmake-3.28.1-py2.py3-none-win32.whl", hash = "sha256:c82bc0eb1495cf518cb4f355b8a73e584e67d53453406c0498bacc454cf6c404"},
+    {file = "cmake-3.28.1-py2.py3-none-win_amd64.whl", hash = "sha256:bb03ed4753185d0c70c0bc3212e5533e20eb2c17fa0ca1e7603b702c6d0db8cf"},
+    {file = "cmake-3.28.1-py2.py3-none-win_arm64.whl", hash = "sha256:40f0671c05ef7eec27c4f53c63630b0b621e40f80ab38607d3a0e3a1f2c9242a"},
+    {file = "cmake-3.28.1.tar.gz", hash = "sha256:0d4051d101d151d8387156c463aa45c8cd0e164f870e0ac0c8c91d3ff08528e1"},
 ]
 
 [[package]]
