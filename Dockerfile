@@ -17,12 +17,12 @@ RUN python -m pip install pip --no-cache-dir --upgrade
 COPY pyproject.toml ./pyproject.toml
 RUN pip install . --no-cache-dir
 
-# install project
-COPY src ./src
-RUN pip install . --no-cache-dir
-
-# install dbt
+# install dbt project
+COPY src/dbt ./src/dbt
 WORKDIR ${DBT_PROFILES_DIR}
 RUN dbt clean && dbt deps && dbt parse
 
+# install python project
 WORKDIR /root/app
+COPY src/teamster ./src/teamster
+RUN pip install . --no-cache-dir
