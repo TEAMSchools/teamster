@@ -1,5 +1,3 @@
-# trunk-ignore-all(trivy/DS002)
-# trunk-ignore-all(trivy/DS026)
 # trunk-ignore-all(checkov)
 ARG PYTHON_VERSION
 
