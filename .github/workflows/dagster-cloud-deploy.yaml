@@ -78,14 +78,14 @@ jobs:
           # this value is ignored and a branch deployment is used.
           deployment: prod
 
-      # Any value can be used as the docker image tag. It is recommended to use a
-      # unique value for each build so that multiple builds do not overwrite each other.
-      - name: Generate docker image tag
-        id: generate-image-tag
-        if: steps.prerun.outputs.result != 'skip'
-        run:
-          echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV && echo
-          $IMAGE_TAG
+      # # Any value can be used as the docker image tag. It is recommended to use a
+      # # unique value for each build so that multiple builds do not overwrite each other.
+      # - name: Generate docker image tag
+      #   id: generate-image-tag
+      #   if: steps.prerun.outputs.result != 'skip'
+      #   run:
+      #     echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV && echo
+      #     $IMAGE_TAG
 
       # Enable buildx for caching
       # https://github.com/docker/setup-buildx-action
@@ -130,9 +130,8 @@ jobs:
             PYTHON_VERSION=3.11
             CODE_LOCATION=${{ env.CODE_LOCATION }}
           push: true
-          tags: ${{ env.IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-${{ env.CODE_LOCATION }}
-          # platforms: linux/amd64,linux/arm64
-          platforms: linux/arm64
+          tags: ${{ env.IMAGE_REGISTRY }}:${{ env.CODE_LOCATION }}
+          platforms: linux/amd64,linux/arm64
 
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update build session with image tag
@@ -142,7 +141,7 @@ jobs:
         with:
           command:
             ci set-build-output --location-name=${{ env.CODE_LOCATION }} --image-tag=${{
-            env.IMAGE_TAG }}-${{ env.CODE_LOCATION }}
+            env.CODE_LOCATION }}
 
       # Deploy all code locations in this build session to Dagster Cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml

@@ -8,6 +8,10 @@ ENV DBT_PROFILES_DIR=/root/app/src/dbt/${CODE_LOCATION}
 
 WORKDIR /root/app
 
+# update system pip
+# trunk-ignore(hadolint/DL3013,terrascan/AC_DOCKER_0010)
+RUN python -m pip install --no-cache-dir --upgrade pip
+
 # install dependencies & project
 COPY src ./src
 COPY pyproject.toml ./pyproject.toml
