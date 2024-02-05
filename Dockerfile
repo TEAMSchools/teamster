@@ -1,4 +1,4 @@
-# trunk-ignore-all(trivy,checkov)
+# trunk-ignore-all(checkov)
 ARG PYTHON_VERSION
 
 # Debian
