@@ -6,6 +6,10 @@ FROM python:${PYTHON_VERSION}-slim
 ARG CODE_LOCATION
 ENV DBT_PROFILES_DIR=/root/app/src/dbt/${CODE_LOCATION}
 
+RUN apt-get update && apt-get -y install cmake --no-install-recommends \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
 # update system pip
 # hadolint ignore=DL3013
 RUN python -m pip install --no-cache-dir --upgrade pip
