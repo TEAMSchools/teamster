@@ -131,6 +131,7 @@ jobs:
             CODE_LOCATION=${{ env.CODE_LOCATION }}
           push: true
           tags: ${{ env.IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-${{ env.CODE_LOCATION }}
+          platforms: linux/amd64,linux/arm/v8
 
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update build session with image tag
