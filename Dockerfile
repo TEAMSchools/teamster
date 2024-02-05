@@ -14,8 +14,11 @@ WORKDIR /root/app
 RUN python -m pip install pip --no-cache-dir --upgrade
 
 # install dependencies & project
-COPY src ./src
 COPY pyproject.toml ./pyproject.toml
+RUN pip install . --no-cache-dir
+
+# install project
+COPY src ./src
 RUN pip install . --no-cache-dir
 
 # install dbt
