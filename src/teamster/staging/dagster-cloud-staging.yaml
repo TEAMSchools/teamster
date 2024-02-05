@@ -47,6 +47,10 @@ locations:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
         run_k8s_config:
+          pod_spec_config:
+            node_selector:
+              cloud.google.com/compute-class: Scale-Out
+              kubernetes.io/arch: arm64
           container_config:
             env:
               - name: ACHIEVE3K_SFTP_PASSWORD
