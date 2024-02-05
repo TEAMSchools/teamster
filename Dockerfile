@@ -1,4 +1,4 @@
-# trunk-ignore-all(trivy/DS026,checkov/CKV_DOCKER_2)
+# trunk-ignore-all(trivy,checkov)
 ARG PYTHON_VERSION
 
 # Debian
