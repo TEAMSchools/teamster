@@ -16,7 +16,7 @@ with
 
         union all
 
-        select tae.ticket_id, tae.event_field_name, u.email as field_value,
+        select tae.ticket_id, tae.event_field_name, lower(u.email) as field_value,
         from {{ ref("stg_zendesk__ticket_audits__events") }} as tae
         left join
             {{ source("zendesk", "users") }} as u
@@ -88,9 +88,12 @@ left join
 left join
     original_value as oa on t.id = oa.ticket_id and oa.event_field_name = 'assignee_id'
 left join
-    {{ ref("base_people__staff_roster") }} as sx on s.email = sx.user_principal_name
-left join {{ ref("base_people__staff_roster") }} as c on a.email = c.user_principal_name
+    {{ ref("base_people__staff_roster") }} as sx
+    on lower(s.email) = lower(sx.user_principal_name)
+left join
+    {{ ref("base_people__staff_roster") }} as c
+    on lower(a.email) = lower(c.user_principal_name)
 left join
     {{ ref("base_people__staff_roster") }} as oad
-    on oa.field_value = oad.user_principal_name
+    on oa.field_value = lower(oad.user_principal_name)
 where t.status != 'deleted'
