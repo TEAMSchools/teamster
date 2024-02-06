@@ -1,11 +1,9 @@
+# https://hub.docker.com/_/python
 ARG PYTHON_VERSION
-
-# Debian
 FROM python:${PYTHON_VERSION}-slim
 
-ARG CODE_LOCATION
-
 # set container envs
+ARG CODE_LOCATION
 ENV DBT_PROFILES_DIR=/app/src/dbt/${CODE_LOCATION}
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -13,7 +11,7 @@ ENV PYTHONUNBUFFERED=1
 # set workdir
 WORKDIR /app
 
-# install dependencies & project
+# install dependencies
 COPY pyproject.toml ./pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install . --no-cache-dir
