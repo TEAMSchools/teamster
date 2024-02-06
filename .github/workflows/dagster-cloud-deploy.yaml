@@ -78,15 +78,6 @@ jobs:
           # this value is ignored and a branch deployment is used.
           deployment: prod
 
-      # # Any value can be used as the docker image tag. It is recommended to use a
-      # # unique value for each build so that multiple builds do not overwrite each other.
-      # - name: Generate docker image tag
-      #   id: generate-image-tag
-      #   if: steps.prerun.outputs.result != 'skip'
-      #   run:
-      #     echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV && echo
-      #     $IMAGE_TAG
-
       # Enable buildx for caching
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
@@ -132,6 +123,8 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_REGISTRY }}:${{ env.CODE_LOCATION }}
           platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update build session with image tag
