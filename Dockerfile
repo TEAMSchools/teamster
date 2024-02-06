@@ -1,20 +1,24 @@
-# trunk-ignore-all(checkov)
 ARG PYTHON_VERSION
 
 # Debian
 FROM python:${PYTHON_VERSION}-slim
 
 ARG CODE_LOCATION
-ENV DBT_PROFILES_DIR=/root/app/src/dbt/${CODE_LOCATION}
 
-WORKDIR /root/app
+# set container envs
+ENV PATH=${PATH}:/app/.local/bin
+ENV DBT_PROFILES_DIR=/app/src/dbt/${CODE_LOCATION}
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
 
 # install dependencies & project
 COPY pyproject.toml ./pyproject.toml
-RUN pip install . --no-cache-dir
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install . --no-cache-dir
 
 # install python project
-WORKDIR /root/app
 COPY src/teamster/ ./src/teamster/
 RUN pip install . --no-cache-dir
 
@@ -23,4 +27,4 @@ COPY src/dbt/ ./src/dbt/
 WORKDIR ${DBT_PROFILES_DIR}
 RUN dbt clean && dbt deps && dbt parse
 
-WORKDIR /root/app
+WORKDIR /app
