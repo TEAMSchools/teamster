@@ -6,7 +6,7 @@ FROM python:${PYTHON_VERSION}-slim
 ARG CODE_LOCATION
 
 # create non-root user
-RUN useradd -ms /bin/sh app
+RUN addgroup --system app && adduser --system --group app
 USER app
 
 # set container envs
@@ -23,7 +23,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install . --no-cache-dir
 
 # install python project
-WORKDIR /home/app
 COPY src/teamster/ ./src/teamster/
 RUN pip install . --no-cache-dir
 
