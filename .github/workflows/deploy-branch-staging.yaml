@@ -7,9 +7,11 @@ on:
     branches:
       - main
     paths:
-      - src/teamster/**
+      - Dockerfile
+      - pdm.lock
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-branch-staging.yaml
+      - src/teamster/**
     types:
       - opened
       - synchronize
