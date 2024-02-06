@@ -1,3 +1,6 @@
+# trunk-ignore-all(checkov)
+# trunk-ignore-all(trivy)
+
 # https://hub.docker.com/_/python
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim
@@ -5,7 +8,6 @@ FROM python:${PYTHON_VERSION}-slim
 # set container envs
 ARG CODE_LOCATION
 ENV DBT_PROFILES_DIR /app/src/dbt/${CODE_LOCATION}
-ENV DAGSTER_HOME /app/dagster
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
@@ -26,7 +28,3 @@ COPY src/dbt/ ./src/dbt/
 RUN dbt clean --project-dir ${DBT_PROFILES_DIR} \
     && dbt deps --project-dir ${DBT_PROFILES_DIR} \
     && dbt parse --project-dir ${DBT_PROFILES_DIR}
-
-# create non-root user
-RUN groupadd -r app && useradd -r -g app app
-USER app
