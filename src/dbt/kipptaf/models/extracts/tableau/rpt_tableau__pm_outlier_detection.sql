@@ -90,12 +90,24 @@ select
     sd.observer_employee_number,
     sd.academic_year,
     sd.reporting_term,
-    case when sd.is_iqr_outlier_current then 'outlier' else 'not outlier' end as iqr_current,
-    case when sd.is_iqr_outlier_global then 'outlier' else 'not outlier' end as iqr_global,
-    case when sd.cluster_current = -1 then 'outlier' else 'not outlier' end as cluster_current,
-    case when sd.cluster_global = -1 then 'outlier' else 'not outlier' end as cluster_global,
-    case when sd.tree_outlier_current = -1 then 'outlier' else 'not outlier' end as tree_current,
-    case when sd.tree_outlier_global = -1 then 'outlier' else 'not outlier' end as tree_global,
+    case
+        when sd.is_iqr_outlier_current then 'outlier' else 'not outlier'
+    end as iqr_current,
+    case
+        when sd.is_iqr_outlier_global then 'outlier' else 'not outlier'
+    end as iqr_global,
+    case
+        when sd.cluster_current = -1 then 'outlier' else 'not outlier'
+    end as cluster_current,
+    case
+        when sd.cluster_global = -1 then 'outlier' else 'not outlier'
+    end as cluster_global,
+    case
+        when sd.tree_outlier_current = -1 then 'outlier' else 'not outlier'
+    end as tree_current,
+    case
+        when sd.tree_outlier_global = -1 then 'outlier' else 'not outlier'
+    end as tree_global,
     sd.pc1_current,
     sd.pc1_global,
     sd.pc1_variance_explained_current,
@@ -144,9 +156,11 @@ select
     sa.report_to_preferred_name_lastfirst as teacher_manager,
     sa.overall_score as teacher_overall_score,
 from score_dates as sd
-inner join {{ ref("base_people__staff_roster_history") }} as srh
-  on sd.observer_employee_number = srh.employee_number
- and safe_cast(sd.end_date as timestamp) between srh.work_assignment__fivetran_start and srh.work_assignment__fivetran_end
+inner join
+    {{ ref("base_people__staff_roster_history") }} as srh
+    on sd.observer_employee_number = srh.employee_number
+    and safe_cast(sd.end_date as timestamp)
+    between srh.work_assignment__fivetran_start and srh.work_assignment__fivetran_end
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number
