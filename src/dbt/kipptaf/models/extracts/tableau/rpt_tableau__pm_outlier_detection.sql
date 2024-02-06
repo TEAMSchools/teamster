@@ -55,6 +55,7 @@ with
             and od.academic_year = rt.academic_year
             and od.form_term = rt.code
     ),
+
     score_aggs as (
         select
             obs.internal_id,
@@ -90,24 +91,6 @@ select
     sd.observer_employee_number,
     sd.academic_year,
     sd.reporting_term,
-    case
-        when sd.is_iqr_outlier_current then 'outlier' else 'not outlier'
-    end as iqr_current,
-    case
-        when sd.is_iqr_outlier_global then 'outlier' else 'not outlier'
-    end as iqr_global,
-    case
-        when sd.cluster_current = -1 then 'outlier' else 'not outlier'
-    end as cluster_current,
-    case
-        when sd.cluster_global = -1 then 'outlier' else 'not outlier'
-    end as cluster_global,
-    case
-        when sd.tree_outlier_current = -1 then 'outlier' else 'not outlier'
-    end as tree_current,
-    case
-        when sd.tree_outlier_global = -1 then 'outlier' else 'not outlier'
-    end as tree_global,
     sd.pc1_current,
     sd.pc1_global,
     sd.pc1_variance_explained_current,
@@ -145,16 +128,35 @@ select
     sd.so7,
     sd.so8,
     srh.preferred_name_lastfirst as observer_name,
-    srh.preferred_name_lastfirst as observer_name,
+    srh.department_home_name as observer_department,
     srh.job_title as observer_job_title,
     srh.home_work_location_name as observer_location,
     srh.report_to_preferred_name_lastfirst as observer_manager,
     sa.internal_id as teacher_employee_number,
     sa.preferred_name_lastfirst as teacher_name,
+    sa.department_home_name as teacher_department,
     sa.job_title as teacher_job_title,
     sa.home_work_location_name as teacher_location,
     sa.report_to_preferred_name_lastfirst as teacher_manager,
     sa.overall_score as teacher_overall_score,
+    case
+        when sd.is_iqr_outlier_current then 'outlier' else 'not outlier'
+    end as iqr_current,
+    case
+        when sd.is_iqr_outlier_global then 'outlier' else 'not outlier'
+    end as iqr_global,
+    case
+        when sd.cluster_current = -1 then 'outlier' else 'not outlier'
+    end as cluster_current,
+    case
+        when sd.cluster_global = -1 then 'outlier' else 'not outlier'
+    end as cluster_global,
+    case
+        when sd.tree_outlier_current = -1 then 'outlier' else 'not outlier'
+    end as tree_current,
+    case
+        when sd.tree_outlier_global = -1 then 'outlier' else 'not outlier'
+    end as tree_global,
 from score_dates as sd
 inner join
     {{ ref("base_people__staff_roster_history") }} as srh
