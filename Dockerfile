@@ -20,11 +20,11 @@ WORKDIR /home/app
 # install dependencies & project
 COPY pyproject.toml ./pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install . --no-cache-dir
+    pip install . --no-cache-dir --user
 
 # install python project
 COPY src/teamster/ ./src/teamster/
-RUN pip install . --no-cache-dir
+RUN pip install . --no-cache-dir --user
 
 # install dbt project
 COPY src/dbt/ ./src/dbt/
