@@ -24,12 +24,9 @@ RUN pip install . --no-cache-dir
 
 # install dbt project
 COPY src/dbt/ ./src/dbt/
-WORKDIR ${DBT_PROFILES_DIR}
 RUN dbt clean \
-    && dbt deps \
-    && dbt parse
-
-WORKDIR /app
+    && dbt deps --project-dir ${DBT_PROFILES_DIR} \
+    && dbt parse --project-dir ${DBT_PROFILES_DIR}
 
 # create non-root user
 RUN groupadd -r app && useradd -r -g app app
