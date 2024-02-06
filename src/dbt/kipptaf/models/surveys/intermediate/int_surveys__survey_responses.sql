@@ -35,6 +35,7 @@ select
     eh.community_professional_exp,
     eh.level_of_education,
     eh.primary_grade_level_taught,
+    eh.assignment_status,
 
     timestamp(fr.create_time) as date_started,
     timestamp(fr.last_submitted_time) as date_submitted,
@@ -52,6 +53,7 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
+    and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
 
@@ -89,6 +91,7 @@ select
     eh.community_professional_exp,
     eh.level_of_education,
     eh.primary_grade_level_taught,
+    eh.assignment_status,
 
     sr.response_date_started as date_started,
     sr.response_date_submitted as date_submitted,
@@ -110,3 +113,4 @@ inner join
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
+    and eh.assignment_status not in ('Terminated', 'Deceased')
