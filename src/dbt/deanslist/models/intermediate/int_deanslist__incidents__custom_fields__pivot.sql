@@ -48,7 +48,6 @@ from
             'Staff involved in restraint' as `staff_involved_in_restraint`,
             'Suspension logged?' as `suspension_logged`,
             'Teacher Response' as `teacher_response`,
-            'Referral to law enforcement' as `law_enforcement_referral`,
-
+            'Referral to law enforcement' as `law_enforcement_referral`
         )
     )
