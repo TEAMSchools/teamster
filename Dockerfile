@@ -15,10 +15,10 @@ RUN pip install . --no-cache-dir
 
 # install python project
 WORKDIR /root/app
-COPY src/teamster ./src/teamster
+COPY src/teamster/ ./src/teamster
 RUN pip install . --no-cache-dir
 
 # install dbt project
-COPY src/dbt ./src/dbt
+COPY src/dbt/ ./src/dbt
 WORKDIR ${DBT_PROFILES_DIR}
 RUN dbt clean && dbt deps && dbt parse
