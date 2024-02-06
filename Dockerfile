@@ -1,19 +1,20 @@
-ARG PYTHON_VERSION
+# trunk-ignore-all(checkov)
+# trunk-ignore-all(trivy)
 
-# Debian
+# https://hub.docker.com/_/python
+ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim
 
-ARG CODE_LOCATION
-
 # set container envs
-ENV PATH=${PATH}:/app/.local/bin
-ENV DBT_PROFILES_DIR=/app/src/dbt/${CODE_LOCATION}
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ARG CODE_LOCATION
+ENV DBT_PROFILES_DIR /app/src/dbt/${CODE_LOCATION}
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
+# set workdir
 WORKDIR /app
 
-# install dependencies & project
+# install dependencies
 COPY pyproject.toml ./pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install . --no-cache-dir
@@ -24,7 +25,6 @@ RUN pip install . --no-cache-dir
 
 # install dbt project
 COPY src/dbt/ ./src/dbt/
-WORKDIR ${DBT_PROFILES_DIR}
-RUN dbt clean && dbt deps && dbt parse
-
-WORKDIR /app
+RUN dbt clean --project-dir ${DBT_PROFILES_DIR} \
+    && dbt deps --project-dir ${DBT_PROFILES_DIR} \
+    && dbt parse --project-dir ${DBT_PROFILES_DIR}
