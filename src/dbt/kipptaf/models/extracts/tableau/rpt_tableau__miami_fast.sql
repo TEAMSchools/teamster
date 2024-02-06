@@ -67,6 +67,7 @@ select
     co.lep_status,
     co.lunch_status as lunchstatus,
     co.is_retained_year,
+    co.enroll_status,
 
     subj.fast_subject as fsa_subject,
     subj.iready_subject,
