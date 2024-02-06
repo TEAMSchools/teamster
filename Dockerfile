@@ -10,6 +10,7 @@ ENV DBT_PROFILES_DIR=/app/src/dbt/${CODE_LOCATION}
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# set workdir
 WORKDIR /app
 
 # install dependencies & project
@@ -24,6 +25,12 @@ RUN pip install . --no-cache-dir
 # install dbt project
 COPY src/dbt/ ./src/dbt/
 WORKDIR ${DBT_PROFILES_DIR}
-RUN dbt clean && dbt deps && dbt parse
+RUN dbt clean \
+    && dbt deps \
+    && dbt parse
 
 WORKDIR /app
+
+# create non-root user
+RUN groupadd -r app && useradd -r -g app app
+USER app
