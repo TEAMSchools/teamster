@@ -46,7 +46,7 @@ workspace:
     podSpecConfig:
       nodeSelector:
         cloud.google.com/compute-class: Scale-Out
-        kubernetes.io/arch: amd64
+        kubernetes.io/arch: arm64
 
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
