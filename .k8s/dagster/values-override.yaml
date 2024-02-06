@@ -23,26 +23,15 @@ dagsterCloud:
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
 dagsterCloudAgent:
-  # # Number of replicas of the agent service to keep up at a given time.
-  # replicas: 2
-
   resources:
     requests:
       cpu: 250m
     limits:
       cpu: 250m
-
-  # annotations:
-  #   cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
-
-  tolerations:
-    - key: group
-      operator: Equal
-      value: servers
-      effect: NoSchedule
-
   nodeSelector:
-    group: servers
+    cloud.google.com/gke-placement-group: servers
+    cloud.google.com/compute-class: Balanced
+    cloud.google.com/gke-spot: "true"
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
@@ -54,21 +43,22 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+    podSpecConfig:
+      nodeSelector:
+        cloud.google.com/compute-class: Scale-Out
+        kubernetes.io/arch: arm64
 
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
-        # cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
-      tolerations:
-        - key: group
-          operator: Equal
-          value: servers
-          effect: NoSchedule
       nodeSelector:
-        group: servers
+        cloud.google.com/gke-spot: "true"
+        cloud.google.com/compute-class: Balanced
+        cloud.google.com/gke-placement-group: servers
+      terminationGracePeriodSeconds: 25
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
