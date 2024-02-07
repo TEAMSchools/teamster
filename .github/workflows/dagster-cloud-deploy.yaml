@@ -94,19 +94,24 @@ jobs:
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
-        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
             }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
 
+      - name: foo
+        id: auth
+        run: |
+          echo "gar-json-key=$(cat $GOOGLE_APPLICATION_CREDENTIALS)" >> $GITHUB_OUTPUT
+
       # https://github.com/docker/login-action
       - name: Login to GAR
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
-          password: ${{ steps.auth.outputs.auth_token }}
+          username: _json_key
+          password: ${{ steps.auth.outputs.gar-json-key }}
 
       # https://github.com/docker/build-push-action
       - name: Build and push by digest
