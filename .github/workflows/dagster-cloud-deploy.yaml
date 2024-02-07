@@ -21,10 +21,9 @@ env:
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   CODE_LOCATION: ${{ inputs.code-location }}
-  REGISTRY_IMAGE: teamster-${{ inputs.code-location }}
-  REGISTRY_REPO:
+  REGISTRY_IMAGE:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster-${{
-    inputs.code-location }}
+    inputs.code-location }}/teamster-${{ inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH:
     src/teamster/${{ inputs.code-location }}/dagster-cloud-${{ inputs.code-location }}.yaml
 
@@ -121,7 +120,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: ${{ matrix.platform }}
-          tags: ${{ env.REGISTRY_REPO }}/${{ env.REGISTRY_IMAGE }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             PYTHON_VERSION=3.11
@@ -199,7 +197,7 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+          docker buildx imagetools create -t {{ env.REGISTRY_IMAGE }} \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
