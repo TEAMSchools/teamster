@@ -17,6 +17,7 @@ concurrency:
 
 env:
   CODE_LOCATION: ${{ inputs.code-location }}
+  REGISTRY_IMAGE: teamster-${{ inputs.code-location }}
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DAGSTER_CLOUD_ORGANIZATION: ${{ vars.DAGSTER_ORGANIZATION_ID }}
@@ -28,15 +29,12 @@ env:
     src/teamster/${{ inputs.code-location }}/dagster-cloud-${{ inputs.code-location }}.yaml
 
 jobs:
-  dagster-cloud-deploy:
-    runs-on: ubuntu-20.04
-
-    # trunk-ignore(checkov/CKV2_GHA_1)
+  prerun:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
       pull-requests: write
-
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
@@ -45,19 +43,185 @@ jobs:
         id: prerun
         uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
 
-      # Checkout the project
+  build:
+    needs:
+      - prerun
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    steps:
+      - name: Prepare
+        # if: steps.prerun.outputs.result != 'skip'
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v4
-        if: steps.prerun.outputs.result != 'skip'
+        # if: steps.prerun.outputs.result != 'skip'
         with:
           ref: ${{ github.head_ref }}
 
+      # https://github.com/docker/metadata-action
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        # if: steps.prerun.outputs.result != 'skip'
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+
+      # https://github.com/docker/setup-qemu-action
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        # if: steps.prerun.outputs.result != 'skip'
+
+      # https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        # if: steps.prerun.outputs.result != 'skip'
+
+      # https://github.com/google-github-actions/auth
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v1
+        # if: steps.prerun.outputs.result != 'skip'
+        with:
+          token_format: access_token
+          workload_identity_provider:
+            projects/${{ vars.GCP_PROJECT_NUMBER
+            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account:
+            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      # https://github.com/docker/login-action
+      - name: Login to GAR
+        uses: docker/login-action@v3
+        # if: steps.prerun.outputs.result != 'skip'
+        with:
+          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      # https://github.com/docker/build-push-action
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v5
+        # if: steps.prerun.outputs.result != 'skip'
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: ${{ matrix.platform }}
+          tags: ${{ env.IMAGE_REGISTRY }}:${{ env.CODE_LOCATION }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            PYTHON_VERSION=3.11
+            CODE_LOCATION=${{ env.CODE_LOCATION }}
+          outputs:
+            type=image,name=${{ env.REGISTRY_IMAGE
+            }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        # if: steps.prerun.outputs.result != 'skip'
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        # if: steps.prerun.outputs.result != 'skip'
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - prerun
+      - build
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      # https://github.com/actions/download-artifact
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      # https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # https://github.com/docker/metadata-action
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+
+      # https://github.com/google-github-actions/auth
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: access_token
+          workload_identity_provider:
+            projects/${{ vars.GCP_PROJECT_NUMBER
+            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account:
+            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      # https://github.com/docker/login-action
+      - name: Login to GAR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+      - prerun
+      - build
+      - merge
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
       # Validate dagster_cloud.yaml and the connection to dagster.cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Validate configuration
         id: ci-validate
-        if: steps.prerun.outputs.result != 'skip'
+        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         with:
           command:
@@ -69,7 +233,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/ci-init/action.yml
       - name: Initialize build session
         id: ci-init
-        if: steps.prerun.outputs.result != 'skip'
+        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@v0.1
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
@@ -78,58 +242,10 @@ jobs:
           # this value is ignored and a branch deployment is used.
           deployment: prod
 
-      # Enable buildx for caching
-      # https://github.com/docker/setup-buildx-action
-      - name: Set up Docker Buildx
-        if: steps.prerun.outputs.result != 'skip'
-        uses: docker/setup-buildx-action@v3
-
-      # Building and deploying the docker image requires a login step specific to the
-      # container registry.
-      # https://github.com/google-github-actions/auth
-      - id: auth
-        name: Authenticate to Google Cloud
-        if: steps.prerun.outputs.result != 'skip'
-        uses: google-github-actions/auth@v1
-        with:
-          # trunk-ignore(checkov/CKV_SECRET_6)
-          token_format: access_token
-          workload_identity_provider:
-            projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account:
-            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
-
-      # https://github.com/docker/login-action
-      - name: Login to GAR
-        if: steps.prerun.outputs.result != 'skip'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
-
-      # For each code location, the "build-push-action" builds the docker image and a
-      # "set-build-output" command records the image tag for each code location.
-      # https://github.com/docker/build-push-action
-      - name: Build and upload Docker image
-        if: steps.prerun.outputs.result != 'skip'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          build-args: |
-            PYTHON_VERSION=3.11
-            CODE_LOCATION=${{ env.CODE_LOCATION }}
-          push: true
-          tags: ${{ env.IMAGE_REGISTRY }}:${{ env.CODE_LOCATION }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update build session with image tag
         id: ci-set-build-output
-        if: steps.prerun.outputs.result != 'skip'
+        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         with:
           command:
@@ -140,7 +256,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Deploy to Dagster Cloud
         id: ci-deploy
-        if: steps.prerun.outputs.result != 'skip'
+        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         with:
           command: ci deploy
@@ -150,7 +266,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update PR comment for branch deployments
         id: ci-notify
-        if: steps.prerun.outputs.result != 'skip' && always()
+        # if: steps.prerun.outputs.result != 'skip' && always()
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         with:
           command: ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}
@@ -159,7 +275,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Generate a summary
         id: ci-summary
-        if: steps.prerun.outputs.result != 'skip' && always()
+        # if: steps.prerun.outputs.result != 'skip' && always()
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1.27
         with:
           command: ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY

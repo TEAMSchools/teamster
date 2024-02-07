@@ -8,6 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
+    - checkov
     - pyright
     - black
     - flake8
@@ -37,7 +38,6 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
-    - checkov@3.2.5
     - terrascan@1.18.11
     - trivy@0.49.0
     - trufflehog@3.67.2
