@@ -14,7 +14,7 @@ WORKDIR /app
 # install dependencies
 COPY pyproject.toml ./pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install . --no-cache-dir
+    pip install . --no-cache-dir --verbose
 
 # install python project
 COPY src/teamster/ ./src/teamster/
