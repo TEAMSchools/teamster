@@ -40,7 +40,9 @@ select
     case
         when sr.primary_grade_level_taught = 0
         then 'Grade K'
-        when sr.department_home_name = 'Elementary' and sr.primary_grade_level_taught is not null
+        when
+            sr.department_home_name = 'Elementary'
+            and sr.primary_grade_level_taught is not null
         then concat('Grade ', sr.primary_grade_level_taught)
         else sr.department_home_name
     end as department_grade,
@@ -51,7 +53,6 @@ select
             sr.home_work_location_name not like '%Room%'
             and sr.business_unit_home_name != 'KIPP TEAM and Family Schools Inc.'
         then true
-        else false
     end as school_based,
 
     case
@@ -59,7 +60,7 @@ select
         then 'Leadership'
         when sr.job_title = 'Teacher in Residence'
         then 'Teacher Development'
-        else NULL
+        else null
     end as feedback_group,
 from {{ ref("base_people__staff_roster") }} as sr
 /* manager information */
@@ -69,9 +70,10 @@ left join
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
-left join {{ ref('int_people__leadership_crosswalk') }} as lc
-on sr.home_work_location_name = lc.home_work_location_name
- 
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as lc
+    on sr.home_work_location_name = lc.home_work_location_name
+
 where
     sr.assignment_status != 'Terminated'
     and sr.job_title != 'Intern'
