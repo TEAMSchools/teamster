@@ -16,15 +16,15 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CODE_LOCATION: ${{ inputs.code-location }}
-  REGISTRY_IMAGE: teamster-${{ inputs.code-location }}
+  DAGSTER_PROJECT_DIR: .
+  DAGSTER_CLOUD_ORGANIZATION: ${{ vars.DAGSTER_ORGANIZATION_ID }}
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  DAGSTER_CLOUD_ORGANIZATION: ${{ vars.DAGSTER_ORGANIZATION_ID }}
-  IMAGE_REGISTRY:
+  CODE_LOCATION: ${{ inputs.code-location }}
+  REGISTRY_IMAGE: teamster-${{ inputs.code-location }}
+  REGISTRY_REPO:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster-${{
-    inputs.code-location }}/teamster-${{ inputs.code-location }}
-  DAGSTER_PROJECT_DIR: .
+    inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH:
     src/teamster/${{ inputs.code-location }}/dagster-cloud-${{ inputs.code-location }}.yaml
 
@@ -92,7 +92,7 @@ jobs:
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
         id: auth
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         # if: steps.prerun.outputs.result != 'skip'
         with:
           token_format: access_token
@@ -121,7 +121,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: ${{ matrix.platform }}
-          # tags: ${{ env.IMAGE_REGISTRY }}:${{ env.CODE_LOCATION }}
+          tags: ${{ env.REGISTRY_REPO }}/${{ env.REGISTRY_IMAGE }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             PYTHON_VERSION=3.11
@@ -179,7 +179,7 @@ jobs:
       # https://github.com/google-github-actions/auth
       - id: auth
         name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           token_format: access_token
           workload_identity_provider:
