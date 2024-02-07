@@ -8,6 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
+    - terrascan
     - black
     - checkov
     - flake8
@@ -39,7 +40,6 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
-    - terrascan@1.18.11
     - trufflehog@3.67.4
     - bandit@1.7.7
     - oxipng@9.0.0
