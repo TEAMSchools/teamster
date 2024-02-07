@@ -4,7 +4,7 @@ locations:
       module_name: teamster.kippcamden.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster
     working_directory: /app
     container_context:
       k8s:
