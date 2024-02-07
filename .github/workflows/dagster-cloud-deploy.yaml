@@ -65,6 +65,7 @@ jobs:
             }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account:
             ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+          cleanup_credentials: false
 
   build:
     needs:
