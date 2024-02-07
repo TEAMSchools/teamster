@@ -1,0 +1,12 @@
+[
+  {
+    "name": "keep_mostRecentVersions_prefix_1",
+    "action": {
+      "type": "Keep"
+    },
+    "mostRecentVersions": {
+      "packageNamePrefixes": ["kippmiami"],
+      "keepCount": 1
+    }
+  }
+]
