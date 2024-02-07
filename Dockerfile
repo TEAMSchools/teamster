@@ -1,6 +1,6 @@
 # https://hub.docker.com/_/python
 ARG PYTHON_VERSION
-FROM python:${PYTHON_VERSION}-slim AS base
+FROM python:${PYTHON_VERSION}-slim
 
 # set container envs
 ARG CODE_LOCATION
@@ -17,12 +17,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install . --no-cache-dir --verbose
 
 # install python project
-FROM base AS project
 COPY src/teamster/ ./src/teamster/
 RUN pip install . --no-cache-dir
 
 # install dbt project
-FROM project as dbt
 COPY src/dbt/ ./src/dbt/
 RUN dbt clean --project-dir "${DBT_PROFILES_DIR}" \
     && dbt deps --project-dir "${DBT_PROFILES_DIR}" \
