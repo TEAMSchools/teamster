@@ -39,23 +39,27 @@ select
     sl.preferred_name_lastfirst as school_leader_preferred_name_lastfirst,
     sl.mail as school_leader_mail,
     sl.google_email as school_leader_google_email,
+    lower(sl.sam_account_name) as tableau_username_sl,
     sl.job_title as school_leader_job_title,
     sl.report_to_employee_number as school_leader_report_to_employee_number,
 
     hos.preferred_name_lastfirst as head_of_school_preferred_name_lastfirst,
     hos.mail as head_of_school_mail,
     hos.google_email as head_of_school_google_email,
+    lower(hos.sam_account_name) as tableau_username_hos,
     hos.job_title as head_of_school_job_title,
 
     dso.preferred_name_lastfirst as dso_preferred_name_lastfirst,
     dso.mail as dso_mail,
     dso.google_email as dso_google_email,
+    lower(dso.sam_account_name) as tableau_username_dso,
     dso.job_title as dso_job_title,
     dso.report_to_employee_number as dso_report_to_employee_number,
 
     mdso.preferred_name_lastfirst as mdso_preferred_name_lastfirst,
     mdso.mail as mdso_mail,
     mdso.google_email as mdso_google_email,
+    lower(mdso.sam_account_name) as tableau_username_mdso,
     mdso.job_title as mdso_job_title,
 from school_leadership as l
 left join
