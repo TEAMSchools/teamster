@@ -64,7 +64,7 @@ jobs:
       matrix:
         platform:
           - linux/amd64
-          # - linux/arm64
+          - linux/arm64
     steps:
       - name: Prepare
         run: |
@@ -109,7 +109,7 @@ jobs:
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.auth_token }}
+          password: ${{ steps.auth.outputs.access_token }}
 
       # https://github.com/docker/build-push-action
       - name: Build and push by digest
@@ -186,7 +186,7 @@ jobs:
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.auth_token }}
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
