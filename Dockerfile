@@ -10,6 +10,15 @@ ARG CODE_LOCATION
 ENV DBT_PROFILES_DIR /app/src/dbt/${CODE_LOCATION}
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV DEBIAN_FRONTEND noninteractive
+
+# upgrade standard image packages
+# trunk-ignore(terrascan/AC_DOCKER_0002)
+RUN apt-get -y --no-install-recommends update \
+    && apt-get -y --no-install-recommends upgrade \
+    && apt-get -y autoremove \
+    && apt-get -y clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # set workdir
 WORKDIR /app
