@@ -60,7 +60,6 @@ select
         then 'Leadership'
         when sr.job_title = 'Teacher in Residence'
         then 'Teacher Development'
-        else null
     end as feedback_group,
 from {{ ref("base_people__staff_roster") }} as sr
 /* manager information */
