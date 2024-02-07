@@ -4,7 +4,7 @@ locations:
       module_name: teamster.staging.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-staging/teamster-staging
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-staging/teamster
     working_directory: /app
     container_context:
       k8s:
