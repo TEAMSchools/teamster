@@ -51,8 +51,8 @@ jobs:
       - name: Generate docker image tag
         id: generate-image-tag
         run:
-          echo "image-tag=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_OUTPUT && echo
-          $image-tag
+          echo "image-tag=$CODE_LOCATION-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>
+          $GITHUB_OUTPUT && echo $image-tag
 
   build:
     needs:
