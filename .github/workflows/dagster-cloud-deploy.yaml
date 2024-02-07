@@ -97,6 +97,7 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
+          token_format: access_token
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
             }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
@@ -174,6 +175,7 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
+          token_format: access_token
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
             }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
