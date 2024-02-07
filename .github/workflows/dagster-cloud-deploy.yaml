@@ -204,6 +204,17 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
 
+  deploy:
+    runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
+    needs:
+      - prerun
+      - build
+      - merge
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
       # Validate dagster_cloud.yaml and the connection to dagster.cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Validate configuration
