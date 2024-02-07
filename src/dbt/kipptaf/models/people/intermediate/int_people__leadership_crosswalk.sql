@@ -41,7 +41,7 @@ select
     sl.google_email as school_leader_google_email,
     sl.job_title as school_leader_job_title,
     sl.report_to_employee_number as school_leader_report_to_employee_number,
-    sl.sam_account_name as school_leader_tableau_username
+    sl.sam_account_name as school_leader_tableau_username,
 
     hos.preferred_name_lastfirst as head_of_school_preferred_name_lastfirst,
     hos.mail as head_of_school_mail,
