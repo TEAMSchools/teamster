@@ -106,6 +106,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       # https://github.com/docker/build-push-action
       - name: Build and push by digest
@@ -179,6 +181,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
