@@ -13,12 +13,12 @@ select
 
     sr2.google_email as manager_google,
     sr2.user_principal_name as manager_email,
-    sr2.sam_account_name as tableau_username_manager,
+    sr2.sam_account_name as manager_tableau_username,
 
-    lc.dso_tableau_username,
-    lc.head_of_school_tableau_username,
-    lc.mdso_tableau_username,
-    lc.school_leader_tableau_username,
+    lc.dso_sam_account_name as dso_tableau_username,
+    lc.head_of_school_sam_account_name as head_of_school_tableau_username,
+    lc.mdso_sam_account_name as mdso_tableau_username,
+    lc.school_leader_sam_account_name as school_leader_tableau_username,
 
     coalesce(cc.name, sr.home_work_location_name) as site_campus,
 
