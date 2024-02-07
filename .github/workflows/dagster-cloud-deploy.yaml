@@ -204,17 +204,6 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs:
-      - prerun
-      - build
-      - merge
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
-    steps:
       # Validate dagster_cloud.yaml and the connection to dagster.cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Validate configuration
