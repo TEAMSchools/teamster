@@ -3,10 +3,11 @@ import json
 from dagster import SensorResult, build_sensor_context
 
 from teamster.core.resources import (
+    SSH_COUCHDROP,
+    SSH_EDPLAN,
     SSH_IREADY,
-    get_ssh_resource_edplan,
-    get_ssh_resource_renlearn,
-    get_ssh_resource_titan,
+    SSH_RENLEARN,
+    SSH_TITAN,
 )
 
 
@@ -30,31 +31,15 @@ def _test_sensor(sftp_sensor, **kwargs):
 
 
 def test_sensor_edplan():
-    from teamster.kippcamden.edplan.sensors import sftp_sensor
-
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_edplan=get_ssh_resource_edplan("KIPPCAMDEN")
-    )
-
     from teamster.kippnewark.edplan.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_edplan=get_ssh_resource_edplan("KIPPNEWARK")
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_edplan=SSH_EDPLAN)
 
 
 def test_sensor_titan():
     from teamster.kippcamden.titan.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_titan=get_ssh_resource_titan("KIPPCAMDEN")
-    )
-
-    from teamster.kippnewark.titan.sensors import sftp_sensor
-
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_titan=get_ssh_resource_titan("KIPPNEWARK")
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_titan=SSH_TITAN)
 
 
 def test_sensor_iready():
@@ -62,23 +47,11 @@ def test_sensor_iready():
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=SSH_IREADY)
 
-    from teamster.kippnewark.iready.sensors import sftp_sensor
-
-    _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=SSH_IREADY)
-
 
 def test_sensor_renlearn():
-    from teamster.kippmiami.renlearn.sensors import sftp_sensor
-
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_renlearn=get_ssh_resource_renlearn("KIPPMIAMI")
-    )
-
     from teamster.kippnewark.renlearn.sensors import sftp_sensor
 
-    _test_sensor(
-        sftp_sensor=sftp_sensor, ssh_renlearn=get_ssh_resource_renlearn("KIPPNJ")
-    )
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_renlearn=SSH_RENLEARN)
 
 
 def test_sensor_achieve3k():
@@ -90,16 +63,6 @@ def test_sensor_achieve3k():
     )
 
 
-def test_sensor_clever_reports():
-    from teamster.kipptaf.clever.sensors import clever_reports_sftp_sensor
-    from teamster.kipptaf.resources import SSH_RESOURCE_CLEVER_REPORTS
-
-    _test_sensor(
-        sftp_sensor=clever_reports_sftp_sensor,
-        ssh_clever_reports=SSH_RESOURCE_CLEVER_REPORTS,
-    )
-
-
 def test_sensor_deanslist():
     from teamster.kipptaf.deanslist.sensors import deanslist_sftp_sensor
     from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
@@ -107,6 +70,12 @@ def test_sensor_deanslist():
     _test_sensor(
         sftp_sensor=deanslist_sftp_sensor, ssh_deanslist=SSH_RESOURCE_DEANSLIST
     )
+
+
+def test_sensor_adp_payroll():
+    from teamster.kipptaf.adp.payroll.sensors import adp_payroll_sftp_sensor
+
+    _test_sensor(sftp_sensor=adp_payroll_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
 
 
 """

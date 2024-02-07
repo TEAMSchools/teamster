@@ -33,7 +33,7 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=1, request_timeout=8
+    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=1, request_timeout=6
 )
 
 ALCHEMER_RESOURCE = AlchemerSession(
@@ -41,6 +41,7 @@ ALCHEMER_RESOURCE = AlchemerSession(
     api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET").get_value(),
     api_version="v5",
     time_zone="America/New_York",  # determined by Alchemer
+    timeout=3,
 )
 
 FIVETRAN_RESOURCE = FivetranResource(

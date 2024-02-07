@@ -22,12 +22,13 @@ from . import (
     deanslist,
     fivetran,
     ldap,
+    performance_management,
     resources,
     schoolmint,
     smartrecruiters,
     zendesk,
 )
-from .adp import workforce_manager, workforce_now
+from .adp import payroll, workforce_manager, workforce_now
 from .dbt import assets as dbt_assets
 from .dbt.schedules import _all as dbt_schedules
 from .google import directory, forms, sheets
@@ -48,6 +49,8 @@ defs = Definitions(
             fivetran,
             forms,
             ldap,
+            payroll,
+            performance_management,
             schoolmint,
             sheets,
             smartrecruiters,
@@ -76,6 +79,7 @@ defs = Definitions(
         *alchemer.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
+        *payroll.sensors,
         *sheets.sensors,
         *workforce_now.sensors,
     ],

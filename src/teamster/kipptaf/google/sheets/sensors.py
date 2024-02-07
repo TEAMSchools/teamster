@@ -30,7 +30,7 @@ def google_sheets_asset_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
     asset_events: list = []
 
-    gsheets._client.set_timeout(TIMEOUT)
+    gsheets._client.http_client.set_timeout(TIMEOUT)
 
     for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID:
         try:

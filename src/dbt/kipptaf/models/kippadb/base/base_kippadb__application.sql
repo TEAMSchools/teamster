@@ -66,6 +66,13 @@ with
             acc.name as account_name,
             acc.type as account_type,
             acc.adjusted_6_year_minority_graduation_rate,
+            acc.competitiveness_ranking,
+            acc.act25,
+            acc.act75,
+            acc.act_composite_25_75,
+            acc.adjusted_6_year_graduation_rate,
+            acc.billing_state as account_billing_state,
+            acc.hbcu,
 
             enr.status as enrollment_status,
             enr.pursuing_degree_type as enrollment_pursuing_degree_type,

@@ -1,5 +1,6 @@
 import pendulum
 from dagster import (
+    AssetKey,
     AssetsDefinition,
     MonthlyPartitionsDefinition,
     RunRequest,
@@ -15,12 +16,16 @@ from teamster.core.ssh.resources import SSHResource
 
 
 def build_powerschool_sensor(
-    name, asset_defs: list[AssetsDefinition], minimum_interval_seconds=None
+    name,
+    asset_selection: list[AssetsDefinition],
+    asset_defs: list[AssetsDefinition],
+    execution_timezone,
+    minimum_interval_seconds=None,
 ):
     @sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_defs,
+        asset_selection=asset_selection,
     )
     def _sensor(
         context: SensorEvaluationContext,
@@ -39,6 +44,7 @@ def build_powerschool_sensor(
             for asset in asset_defs:
                 context.log.info(asset.key)
 
+                table_name = asset.key.path[-1]
                 partition_column = asset.metadata_by_key[asset.key]["partition_column"]
 
                 latest_materialization_event = (
@@ -59,23 +65,26 @@ def build_powerschool_sensor(
                         if latest_materialization_timestamp is not None
                         else 0.0
                     )  # type: ignore
-                ).start_of("minute")
+                )
 
-                window_start_fmt = latest_materialization_datetime.format(
-                    "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+                latest_materialization_fmt = (
+                    latest_materialization_datetime.in_timezone(
+                        tz=execution_timezone
+                    ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                 )
 
                 [(count,)] = db_powerschool.engine.execute_query(
                     query=text(
                         # trunk-ignore(bandit/B608)
                         "SELECT COUNT(*) "
-                        f"FROM {asset.key.path[-1]} "
+                        f"FROM {table_name} "
                         f"WHERE {partition_column} >= "
-                        f"TO_TIMESTAMP('{window_start_fmt}', "
+                        f"TO_TIMESTAMP('{latest_materialization_fmt}', "
                         "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
                     ),
                     partition_size=1,
                     output_format=None,
+                    call_timeout=10000,
                 )  # type: ignore
 
                 context.log.info(f"count: {count}")
@@ -109,6 +118,18 @@ def build_powerschool_sensor(
                             for partition_key in partition_keys
                         ]
                     )
+
+                    if table_name == "storedgrades":
+                        run_requests.append(
+                            RunRequest(
+                                run_key=f"storedgrades_dcid_{hour_ts}",
+                                asset_selection=[
+                                    AssetKey(
+                                        [*asset.key.path[:-1], "storedgrades_dcid"]
+                                    )
+                                ],
+                            )
+                        )
         except Exception as e:
             return SensorResult(skip_reason=str(e))
         finally:

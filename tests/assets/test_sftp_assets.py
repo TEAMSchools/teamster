@@ -1,6 +1,7 @@
 import random
 
 from dagster import (
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -11,11 +12,11 @@ from dagster import (
 
 from teamster.core.resources import (
     SSH_COUCHDROP,
+    SSH_EDPLAN,
     SSH_IREADY,
+    SSH_RENLEARN,
+    SSH_TITAN,
     get_io_manager_gcs_avro,
-    get_ssh_resource_edplan,
-    get_ssh_resource_renlearn,
-    get_ssh_resource_titan,
 )
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
@@ -29,7 +30,7 @@ from teamster.staging import LOCAL_TIMEZONE
 
 
 def _test_asset(
-    asset_key: list,
+    asset_key: list[str],
     remote_dir: str,
     remote_file_regex: str,
     asset_fields: dict,
@@ -60,7 +61,7 @@ def _test_asset(
             dynamic_partitions_store=instance
         )
 
-        partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
+        partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]  # type: ignore
     else:
         partition_key = None
 
@@ -97,7 +98,7 @@ def test_asset_edplan():
             fmt="%Y-%m-%d",
             end_offset=1,
         ),
-        ssh_resource={"ssh_edplan": get_ssh_resource_edplan("KIPPNEWARK")},
+        ssh_resource={"ssh_edplan": SSH_EDPLAN},
     )
 
 
@@ -179,7 +180,6 @@ def test_asset_renlearn_accelerated_reader():
     _test_asset(
         asset_key=["renlearn", "accelerated_reader"],
         remote_dir=".",
-        # remote_file_regex=r"KIPP Miami\.zip",
         remote_file_regex=r"KIPP TEAM & Family\.zip",
         asset_fields=ASSET_FIELDS,
         partitions_def=MultiPartitionsDefinition(
@@ -190,7 +190,7 @@ def test_asset_renlearn_accelerated_reader():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPNJ")},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
         archive_filepath=r"(?P<subject>).csv",
         slugify_cols=False,
     )
@@ -216,8 +216,7 @@ def test_asset_renlearn_star():
             }
         ),
         partition_key="2023-07-01|SR",
-        ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPNJ")},
-        # ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPMIAMI")},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
     )
 
 
@@ -237,7 +236,7 @@ def test_asset_renlearn_star_skill_area():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPMIAMI")},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
         archive_filepath=r"(?P<subject>)_SkillArea_v1.csv",
         slugify_cols=False,
     )
@@ -250,7 +249,6 @@ def test_asset_renlearn_star_dashboard_standards():
         asset_key=["renlearn", "star_dashboard_standards"],
         remote_dir=".",
         remote_file_regex=r"KIPP Miami\.zip",
-        # remote_file_regex=r"KIPP TEAM & Family\.zip",
         asset_fields=ASSET_FIELDS,
         partitions_def=MultiPartitionsDefinition(
             {
@@ -260,8 +258,7 @@ def test_asset_renlearn_star_dashboard_standards():
                 ),
             }
         ),
-        ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPMIAMI")},
-        # ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPNJ")},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
         archive_filepath=r"(?P<subject>)_Dashboard_Standards_v2.csv",
         slugify_cols=False,
     )
@@ -277,7 +274,7 @@ def test_asset_renlearn_fast_star():
         archive_filepath=r"FL_FAST_(?P<subject>)_K-2.csv",
         asset_fields=ASSET_FIELDS,
         slugify_cols=False,
-        ssh_resource={"ssh_renlearn": get_ssh_resource_renlearn("KIPPMIAMI")},
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN},
         partitions_def=MultiPartitionsDefinition(
             {
                 "subject": StaticPartitionsDefinition(
@@ -442,7 +439,7 @@ def test_asset_titan_person_data():
         remote_file_regex=r"persondata(?P<fiscal_year>\d{4})\.csv",
         asset_fields=ASSET_FIELDS,
         partitions_def=StaticPartitionsDefinition(["2021", "2022", "2023"]),
-        ssh_resource={"ssh_titan": get_ssh_resource_titan("KIPPNEWARK")},
+        ssh_resource={"ssh_titan": SSH_TITAN},
     )
 
 
@@ -455,7 +452,7 @@ def test_asset_titan_income_form_data():
         remote_file_regex=r"incomeformdata(?P<fiscal_year>\d{4})\.csv",
         asset_fields=ASSET_FIELDS,
         partitions_def=StaticPartitionsDefinition(["2021", "2022", "2023"]),
-        ssh_resource={"ssh_titan": get_ssh_resource_titan("KIPPNEWARK")},
+        ssh_resource={"ssh_titan": SSH_TITAN},
     )
 
 
@@ -566,6 +563,48 @@ def test_asset_deanslist_reconcile_suspensions():
         asset_fields=ASSET_FIELDS,
         ssh_resource={"ssh_deanslist": SSH_RESOURCE_DEANSLIST},
     )
+
+
+def test_asset_adp_payroll_general_ledger_file():
+    from teamster.kipptaf.adp.payroll.schema import ASSET_FIELDS
+
+    asset_key = AssetKey(["kipptaf", "adp", "payroll", "general_ledger_file"])
+
+    partitions_def_name = f"{asset_key.to_python_identifier()}__date"
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name,
+            partition_keys=[
+                "20230831",
+                "20231215",
+                "20231231",
+                "20240115",
+            ],
+        )
+
+        _test_asset(
+            asset_key=asset_key.path,  # type: ignore
+            remote_dir="/teamster-kipptaf/couchdrop/adp/payroll",
+            remote_file_regex=r"adp_payroll_(?P<date>\d+)_(?P<group_code>\w+)\.csv",
+            asset_fields=ASSET_FIELDS,
+            ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
+            instance=instance,
+            partitions_def=MultiPartitionsDefinition(
+                {
+                    "date": DynamicPartitionsDefinition(name=partitions_def_name),
+                    "group_code": StaticPartitionsDefinition(
+                        [
+                            "2Z3",
+                            "3LE",
+                            "47S",
+                            "9AM",
+                        ]
+                    ),
+                }
+            ),
+            partition_key="20230831|3LE",
+        )
 
 
 """ cannot test in dev: IP filter
