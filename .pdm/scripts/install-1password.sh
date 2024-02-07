@@ -1,21 +1,13 @@
 #!/bin/bash
 
-kubectl create secret generic onepassword-token \
-  --save-config \
-  --dry-run=client \
-  --namespace=dagster-cloud \
-  --from-literal=token="${OP_CONNECT_TOKEN}" \
-  --output=yaml |
-  kubectl apply -f - ||
-  true
-
 helm repo add 1password https://1password.github.io/connect-helm-charts/
 helm repo update
 
-helm show values 1password/connect >.helm/1password/values.yaml
+helm show values 1password/connect >.k8s/1password/values.yaml
 
 helm upgrade \
   --install connect 1password/connect \
+  --set-file connect.credentials=/etc/secret-volume/op_credentials_json \
+  --set operator.token.value="${OP_CONNECT_TOKEN}" \
   --namespace dagster-cloud \
-  --set-file connect.credentials=env/1password-credentials.json \
-  -f .helm/1password/values-override.yaml
+  -f .k8s/1password/values-override.yaml

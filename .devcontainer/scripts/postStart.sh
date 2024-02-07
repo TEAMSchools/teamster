@@ -14,3 +14,10 @@ sudo /usr/local/py-utils/bin/pdm self update
 
 # update trunk
 trunk upgrade -y --no-progress
+
+# 1password cli completions
+# trunk-ignore(shellcheck/SC1090,shellcheck/SC2312)
+source <(op completion bash)
+
+# set default kubectl context
+kubectl config set-context --current --namespace=dagster-cloud

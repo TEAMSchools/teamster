@@ -31,52 +31,39 @@ def build_iready_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
+        run_requests = []
+
         try:
             files = ssh_iready.listdir_attr_r(remote_dir=remote_dir, files=[])
         except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
 
-        run_requests = []
         for asset in asset_defs:
             asset_metadata = asset.metadata_by_key[asset.key]
             asset_identifier = asset.key.to_python_identifier()
-            context.log.info(asset_identifier)
 
+            context.log.info(asset_identifier)
             last_run = cursor.get(asset_identifier, 0)
 
-            updates = []
             for f in files:
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
-                if match is not None:
+                if match is not None and f.st_mtime > last_run and f.st_size > 0:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    if f.st_mtime > last_run and f.st_size > 0:
-                        updates.append(
-                            {
-                                "mtime": f.st_mtime,
-                                "partition_key": MultiPartitionKey(
-                                    {
-                                        **match.groupdict(),
-                                        "academic_year": "Current_Year",
-                                    }
-                                ),
-                            }
-                        )
-
-            if updates:
-                for run in updates:
                     run_requests.append(
                         RunRequest(
-                            run_key=f"{asset_identifier}_{run['mtime']}",
+                            run_key=f"{asset_identifier}_{f.st_mtime}",
                             asset_selection=[asset.key],
-                            partition_key=run["partition_key"],
+                            partition_key=MultiPartitionKey(
+                                {**match.groupdict(), "academic_year": "Current_Year"}
+                            ),
                         )
                     )
 
-                cursor[asset_identifier] = now.timestamp()
+                    cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

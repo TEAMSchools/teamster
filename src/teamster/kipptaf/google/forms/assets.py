@@ -14,6 +14,8 @@ FORM_IDS = [
     "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",  # staff info
     "1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0",  # manager
     "1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI",  # support
+    "1tuqQIkPX8GfGXdpkNra9shB2Ig_U9CSS7VH1RfuQ_68",  # ITR
+    "15xuEO72xhyhhv8K0qKbkSV864-DetXhmWsxKyS7ai50",  # KTAF support
 ]
 
 key_prefix = [CODE_LOCATION, "google", "forms"]

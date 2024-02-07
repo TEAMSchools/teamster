@@ -93,7 +93,7 @@ class AvroGCSIOManager(GCSUPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         bucket_obj: storage.Bucket = self.bucket_obj
 
-        return fastavro.reader(fo=bucket_obj.blob(blob_name=str(path)).open("wb"))
+        return fastavro.reader(fo=bucket_obj.blob(blob_name=str(path)).open("wb"))  # type: ignore
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         bucket_obj: storage.Bucket = self.bucket_obj
