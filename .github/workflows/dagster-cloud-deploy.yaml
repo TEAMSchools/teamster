@@ -197,7 +197,7 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create -t {{ env.REGISTRY_IMAGE }} \
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }} \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
