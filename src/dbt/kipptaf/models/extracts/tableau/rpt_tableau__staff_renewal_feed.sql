@@ -6,7 +6,7 @@ with
             pss.scale_cy_salary,
             pss.scale_ny_salary,
             pss.scale_step,
-            pss.school_level
+            pss.school_level,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ source("people", "src_people__salary_scale") }} as pss
@@ -27,7 +27,7 @@ with
             pss.scale_cy_salary,
             pss.scale_ny_salary,
             pss.scale_step,
-            pss.school_level
+            pss.school_level,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ source("people", "src_people__salary_scale") }} as pss
@@ -52,7 +52,7 @@ with
             form_term in ('PM2', 'PM3')
             and overall_score is not null
             and academic_year = functions.current_academic_year()
-        group by internal_id, academic_year
+        group by internal_id
     )
 
 select
