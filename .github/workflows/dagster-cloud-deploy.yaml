@@ -1,5 +1,6 @@
 # https://github.com/dagster-io/dagster-cloud-hybrid-quickstart
 # https://github.com/dagster-io/dagster-cloud-action
+# https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 
 name: Dagster Cloud Hybrid Deployment
 
@@ -26,15 +27,17 @@ env:
     inputs.code-location }}/teamster
   DAGSTER_CLOUD_YAML_PATH: src/teamster/${{ inputs.code-location }}/dagster-cloud.yaml
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
 jobs:
   prerun:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
     outputs:
       result: ${{ steps.prerun.outputs.result }}
+      access_token: ${{ steps.auth.outputs.access_token }}
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
@@ -43,15 +46,24 @@ jobs:
         id: prerun
         uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
 
+      # https://github.com/google-github-actions/auth
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        if: steps.prerun.outputs.result != 'skip'
+        with:
+          token_format: access_token
+          workload_identity_provider:
+            projects/${{ vars.GCP_PROJECT_NUMBER
+            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account:
+            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
   build:
     needs:
       - prerun
     runs-on: ubuntu-latest
     if: needs.prerun.outputs.result != 'skip'
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
     strategy:
       fail-fast: false
       matrix:
@@ -85,25 +97,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # https://github.com/google-github-actions/auth
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: access_token
-          workload_identity_provider:
-            projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account:
-            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
-
       # https://github.com/docker/login-action
       - name: Login to GAR
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
+          password: ${{ needs.prerun.outputs.access_token }}
 
       # https://github.com/docker/build-push-action
       - name: Build and push by digest
@@ -145,10 +145,6 @@ jobs:
     outputs:
       image-tag: ${{ steps.generate-image-tag.outputs.image-tag }}
     if: needs.prerun.outputs.result != 'skip'
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
     steps:
       # https://github.com/actions/download-artifact
       - name: Download digests
@@ -169,25 +165,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
 
-      # https://github.com/google-github-actions/auth
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: access_token
-          workload_identity_provider:
-            projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account:
-            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
-
       # https://github.com/docker/login-action
       - name: Login to GAR
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
+          password: ${{ needs.prerun.outputs.access_token }}
 
       # Any value can be used as the docker image tag. It is recommended to use a
       # unique value for each build so that multiple builds do not overwrite each other.
@@ -213,10 +197,6 @@ jobs:
       - prerun
       - build
       - merge
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
