@@ -23,9 +23,8 @@ env:
   CODE_LOCATION: ${{ inputs.code-location }}
   REGISTRY_IMAGE:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster-${{
-    inputs.code-location }}/teamster-${{ inputs.code-location }}
-  DAGSTER_CLOUD_YAML_PATH:
-    src/teamster/${{ inputs.code-location }}/dagster-cloud-${{ inputs.code-location }}.yaml
+    inputs.code-location }}/teamster
+  DAGSTER_CLOUD_YAML_PATH: src/teamster/${{ inputs.code-location }}/dagster-cloud.yaml
 
 jobs:
   prerun:
@@ -34,6 +33,8 @@ jobs:
       contents: read
       id-token: write
       pull-requests: write
+    outputs:
+      result: ${{ steps.prerun.outputs.result }}
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
@@ -46,6 +47,7 @@ jobs:
     needs:
       - prerun
     runs-on: ubuntu-latest
+    if: needs.prerun.outputs.result != 'skip'
     permissions:
       contents: read
       id-token: write
@@ -58,7 +60,6 @@ jobs:
           # - linux/arm64
     steps:
       - name: Prepare
-        # if: steps.prerun.outputs.result != 'skip'
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
@@ -66,7 +67,6 @@ jobs:
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v4
-        # if: steps.prerun.outputs.result != 'skip'
         with:
           ref: ${{ github.head_ref }}
 
@@ -74,25 +74,21 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
-        # if: steps.prerun.outputs.result != 'skip'
         with:
           images: ${{ env.REGISTRY_IMAGE }}
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-        # if: steps.prerun.outputs.result != 'skip'
 
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        # if: steps.prerun.outputs.result != 'skip'
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
-        # if: steps.prerun.outputs.result != 'skip'
         with:
           token_format: access_token
           workload_identity_provider:
@@ -104,7 +100,6 @@ jobs:
       # https://github.com/docker/login-action
       - name: Login to GAR
         uses: docker/login-action@v3
-        # if: steps.prerun.outputs.result != 'skip'
         with:
           registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
@@ -114,7 +109,6 @@ jobs:
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v5
-        # if: steps.prerun.outputs.result != 'skip'
         with:
           context: .
           cache-from: type=gha
@@ -129,7 +123,6 @@ jobs:
             }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
-        # if: steps.prerun.outputs.result != 'skip'
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
@@ -138,7 +131,6 @@ jobs:
       # https://github.com/actions/upload-artifact
       - name: Upload digest
         uses: actions/upload-artifact@v4
-        # if: steps.prerun.outputs.result != 'skip'
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: /tmp/digests/*
@@ -150,6 +142,9 @@ jobs:
     needs:
       - prerun
       - build
+    outputs:
+      image-tag: ${{ steps.generate-image-tag.outputs.image-tag }}
+    if: needs.prerun.outputs.result != 'skip'
     permissions:
       contents: read
       id-token: write
@@ -194,15 +189,23 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
+      # Any value can be used as the docker image tag. It is recommended to use a
+      # unique value for each build so that multiple builds do not overwrite each other.
+      - name: Generate docker image tag
+        id: generate-image-tag
+        run:
+          echo "image-tag=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_OUTPUT && echo
+          $image-tag
+
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }} \
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ steps.generate-image-tag.outputs.image-tag }} \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.generate-image-tag.outputs.image-tag }}
 
   deploy:
     runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
@@ -218,7 +221,7 @@ jobs:
       # https://github.com/actions/checkout
       - name: Checkout
         uses: actions/checkout@v4
-        # if: steps.prerun.outputs.result != 'skip'
+        if: needs.prerun.outputs.result != 'skip'
         with:
           ref: ${{ github.head_ref }}
 
@@ -226,8 +229,8 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Validate configuration
         id: ci-validate
-        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        if: needs.prerun.outputs.result != 'skip'
         with:
           command:
             ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{
@@ -238,8 +241,8 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/ci-init/action.yml
       - name: Initialize build session
         id: ci-init
-        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@v0.1
+        if: needs.prerun.outputs.result != 'skip'
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
           dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_YAML_PATH }}
@@ -250,19 +253,19 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update build session with image tag
         id: ci-set-build-output
-        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        if: needs.prerun.outputs.result != 'skip'
         with:
           command:
             ci set-build-output --location-name=${{ env.CODE_LOCATION }} --image-tag=${{
-            env.CODE_LOCATION }}
+            needs.merge.outputs.image-tag }}
 
       # Deploy all code locations in this build session to Dagster Cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Deploy to Dagster Cloud
         id: ci-deploy
-        # if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        if: needs.prerun.outputs.result != 'skip'
         with:
           command: ci deploy
 
@@ -271,8 +274,8 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update PR comment for branch deployments
         id: ci-notify
-        # if: steps.prerun.outputs.result != 'skip' && always()
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        if: needs.prerun.outputs.result != 'skip' && always()
         with:
           command: ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}
 
@@ -280,7 +283,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Generate a summary
         id: ci-summary
-        # if: steps.prerun.outputs.result != 'skip' && always()
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1.27
+        if: needs.prerun.outputs.result != 'skip' && always()
         with:
           command: ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY
