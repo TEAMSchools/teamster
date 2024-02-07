@@ -8,10 +8,13 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
-    - pyright
+    - terrascan
     - black
+    - checkov
     - flake8
+    - pyright
     - sql-formatter
+    - trivy
   ignore:
     - linters:
         - sqlfmt
@@ -37,9 +40,6 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
-    - checkov@3.2.5
-    - terrascan@1.18.11
-    - trivy@0.49.1
     - trufflehog@3.67.4
     - bandit@1.7.7
     - oxipng@9.0.0
