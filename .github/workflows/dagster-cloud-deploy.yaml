@@ -23,8 +23,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   CODE_LOCATION: ${{ inputs.code-location }}
   REGISTRY_IMAGE:
-    ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster-${{
-    inputs.code-location }}/teamster
+    ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster/${{
+    inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH: src/teamster/${{ inputs.code-location }}/dagster-cloud.yaml
 
 permissions:
