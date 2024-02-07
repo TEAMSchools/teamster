@@ -15,10 +15,10 @@ select
     sr2.user_principal_name as manager_email,
     sr2.sam_account_name as tableau_username_manager,
 
-    lc.tableau_username_dso,
-    lc.tableau_username_hos,
-    lc.tableau_username_mdso,
-    lc.tableau_username_sl,
+    lc.dso_tableau_username,
+    lc.head_of_school_tableau_username,
+    lc.mdso_tableau_username,
+    lc.school_leader_tableau_username,
 
     coalesce(cc.name, sr.home_work_location_name) as site_campus,
 
