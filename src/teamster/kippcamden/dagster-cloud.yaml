@@ -1,10 +1,10 @@
 locations:
-  - location_name: kippmiami
+  - location_name: kippcamden
     code_source:
-      module_name: teamster.kippmiami.definitions
+      module_name: teamster.kippcamden.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/kippcamden
     working_directory: /app
     container_context:
       k8s:
@@ -44,50 +44,50 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: username
-              - name: IREADY_SFTP_PASSWORD
+              - name: EDPLAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-iready-sftp
+                    name: op-edplan-sftp-kippcamden
                     key: password
-              - name: IREADY_SFTP_USERNAME
+              - name: EDPLAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-iready-sftp
+                    name: op-edplan-sftp-kippcamden
                     key: username
               - name: PS_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-db-kippmiami
+                    name: op-ps-db-kippcamden
                     key: password
               - name: PS_SSH_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: port
               - name: PS_SSH_REMOTE_BIND_HOST
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: remote-bind-host
               - name: PS_SSH_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: username
-              - name: RENLEARN_SFTP_PASSWORD
+              - name: TITAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-renlearn-sftp-kippmiami
+                    name: op-titan-sftp-kippcamden
                     key: password
-              - name: RENLEARN_SFTP_USERNAME
+              - name: TITAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-renlearn-sftp-kippmiami
+                    name: op-titan-sftp-kippcamden
                     key: username
         run_k8s_config:
           container_config:
@@ -102,48 +102,48 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: username
-              - name: IREADY_SFTP_PASSWORD
+              - name: EDPLAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-iready-sftp
+                    name: op-edplan-sftp-kippcamden
                     key: password
-              - name: IREADY_SFTP_USERNAME
+              - name: EDPLAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-iready-sftp
+                    name: op-edplan-sftp-kippcamden
                     key: username
               - name: PS_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-db-kippmiami
+                    name: op-ps-db-kippcamden
                     key: password
               - name: PS_SSH_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: port
               - name: PS_SSH_REMOTE_BIND_HOST
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: remote-bind-host
               - name: PS_SSH_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippmiami
+                    name: op-ps-ssh-kippcamden
                     key: username
-              - name: RENLEARN_SFTP_PASSWORD
+              - name: TITAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-renlearn-sftp-kippmiami
+                    name: op-titan-sftp-kippcamden
                     key: password
-              - name: RENLEARN_SFTP_USERNAME
+              - name: TITAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-renlearn-sftp-kippmiami
+                    name: op-titan-sftp-kippcamden
                     key: username

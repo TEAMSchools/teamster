@@ -1,10 +1,10 @@
 locations:
-  - location_name: kippcamden
+  - location_name: kippnewark
     code_source:
-      module_name: teamster.kippcamden.definitions
+      module_name: teamster.kippnewark.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippcamden/teamster-kippcamden
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/kippnewark
     working_directory: /app
     container_context:
       k8s:
@@ -44,50 +44,70 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: username
+              - name: IREADY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: password
+              - name: IREADY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: username
               - name: EDPLAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-edplan-sftp-kippcamden
+                    name: op-edplan-sftp-kippnewark
                     key: password
               - name: EDPLAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-edplan-sftp-kippcamden
+                    name: op-edplan-sftp-kippnewark
                     key: username
               - name: PS_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-db-kippcamden
+                    name: op-ps-db-kippnewark
                     key: password
               - name: PS_SSH_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: port
               - name: PS_SSH_REMOTE_BIND_HOST
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: remote-bind-host
               - name: PS_SSH_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: username
               - name: TITAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-titan-sftp-kippcamden
+                    name: op-titan-sftp-kippnewark
                     key: password
               - name: TITAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-titan-sftp-kippcamden
+                    name: op-titan-sftp-kippnewark
+                    key: username
+              - name: RENLEARN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
+                    key: password
+              - name: RENLEARN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
                     key: username
         run_k8s_config:
           container_config:
@@ -102,48 +122,68 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: username
+              - name: IREADY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: password
+              - name: IREADY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: username
               - name: EDPLAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-edplan-sftp-kippcamden
+                    name: op-edplan-sftp-kippnewark
                     key: password
               - name: EDPLAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-edplan-sftp-kippcamden
+                    name: op-edplan-sftp-kippnewark
                     key: username
               - name: PS_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-db-kippcamden
+                    name: op-ps-db-kippnewark
                     key: password
               - name: PS_SSH_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: port
               - name: PS_SSH_REMOTE_BIND_HOST
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: remote-bind-host
               - name: PS_SSH_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-ps-ssh-kippcamden
+                    name: op-ps-ssh-kippnewark
                     key: username
               - name: TITAN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: op-titan-sftp-kippcamden
+                    name: op-titan-sftp-kippnewark
                     key: password
               - name: TITAN_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: op-titan-sftp-kippcamden
+                    name: op-titan-sftp-kippnewark
+                    key: username
+              - name: RENLEARN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
+                    key: password
+              - name: RENLEARN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
                     key: username
