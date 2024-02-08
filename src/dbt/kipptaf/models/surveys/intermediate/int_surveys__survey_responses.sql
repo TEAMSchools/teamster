@@ -115,4 +115,3 @@ inner join
     and sr.response_date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
     and eh.assignment_status not in ('Terminated', 'Deceased')
-
