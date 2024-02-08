@@ -5,6 +5,7 @@ select
     fr.text_value as answer,
     fr.item_title as question_title,
     fr.item_abbreviation as question_shortname,
+    fr.rn_form_item_respondent_submitted_desc as rn,
     concat(
         'https://docs.google.com/forms/d/',
         fr.form_id,
@@ -54,7 +55,6 @@ left join
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
     and eh.assignment_status not in ('Terminated', 'Deceased')
-where fr.rn_form_item_respondent_submitted_desc = 1
 
 union all
 
@@ -65,6 +65,7 @@ select
     sr.response_value as answer,
     sr.question_title_english as question_title,
     sr.question_short_name as question_shortname,
+    1 as rn,
     concat(
         sr.survey_link_default, '?snc=', sr.response_session_id, '&sg_navigate=start'
     ) as survey_response_link,
