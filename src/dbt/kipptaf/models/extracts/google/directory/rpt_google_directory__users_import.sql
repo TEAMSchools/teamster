@@ -22,24 +22,37 @@ with
                 'Out of District',
                 case
                     school_abbreviation
-                    when 'KHS'
-                    then 'KCNHS'
+                    /* Camden */
                     when 'Hatch'
                     then 'KHM'
+                    when 'KHS'
+                    then 'KCNHS'
                     when 'Sumner'
                     then 'KSE'
+                    /* Miami */
+                    when 'Courage'
+                    then 'Courage Academy'
+                    when 'Liberty'
+                    then 'Liberty Academy'
                     when 'Royalty'
                     then 'Royalty Academy'
+                    when 'Sunrise'
+                    then 'Sunrise Academy'
+                    /* Newark */
                     when 'Justice'
                     then 'KJA'
-                    when 'Purpose'
-                    then 'KPA'
-                    when 'NLH'
-                    then 'Newark Lab'
-                    when 'TEAM'
-                    then 'TEAM Academy'
                     when 'KURA'
                     then 'Upper Roseville'
+                    when 'NCP'
+                    then 'Newark Community'
+                    when 'NLH'
+                    then 'Newark Lab'
+                    when 'Purpose'
+                    then 'KPA'
+                    when 'TEAM'
+                    then 'TEAM Academy'
+                    when 'Truth'
+                    then 'KTA'
                     else school_abbreviation
                 end
             ) as ou_school_name,
