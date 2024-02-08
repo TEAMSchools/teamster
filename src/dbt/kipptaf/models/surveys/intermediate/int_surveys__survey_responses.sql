@@ -54,6 +54,7 @@ left join
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
     and eh.assignment_status not in ('Terminated', 'Deceased')
+where fr.rn_form_item_respondent_submitted_desc = 1
 
 union all
 
@@ -114,3 +115,4 @@ inner join
     and sr.response_date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
     and eh.assignment_status not in ('Terminated', 'Deceased')
+
