@@ -40,7 +40,8 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
-    - trufflehog@3.67.4
+    - osv-scanner@1.6.2
+    - trufflehog@3.67.5
     - bandit@1.7.7
     - oxipng@9.0.0
     - sqlfluff@2.3.5
