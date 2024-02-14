@@ -12,9 +12,9 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 
 # install dependencies
-COPY pyproject.toml ./pyproject.toml
+COPY pyproject.toml requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install . --no-cache-dir --verbose
+    pip install -r requirements.txt --no-cache-dir --verbose
 
 # install python project
 COPY src/teamster/ ./src/teamster/
