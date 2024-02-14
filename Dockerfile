@@ -5,6 +5,7 @@ FROM python:${PYTHON_VERSION}-slim
 # install system dependencies
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
     && apt-get install -y --no-install-recommends \
         build-essential \
         cargo \
