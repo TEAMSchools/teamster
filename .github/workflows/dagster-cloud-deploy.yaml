@@ -97,20 +97,17 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          token_format: access_token
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
             }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account:
-            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      # https://github.com/google-github-actions/setup-gcloud
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
       # https://github.com/docker/login-action
       - name: Login to GAR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
+        run: gcloud auth configure-docker
 
       # https://github.com/docker/build-push-action
       - name: Build and push by digest
@@ -175,20 +172,17 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          token_format: access_token
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
             }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account:
-            ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      # https://github.com/google-github-actions/setup-gcloud
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
       # https://github.com/docker/login-action
       - name: Login to GAR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
+        run: gcloud auth configure-docker
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
