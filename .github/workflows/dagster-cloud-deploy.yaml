@@ -120,7 +120,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            PYTHON_VERSION=3.11
+            PYTHON_VERSION=3.12
             CODE_LOCATION=${{ env.CODE_LOCATION }}
           outputs:
             type=image,name=${{ env.REGISTRY_IMAGE
