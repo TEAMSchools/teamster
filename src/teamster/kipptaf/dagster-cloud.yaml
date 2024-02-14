@@ -4,8 +4,8 @@ locations:
       module_name: teamster.kipptaf.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kipptaf/teamster-kipptaf
-    working_directory: /root/app
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/kipptaf
+    working_directory: /app
     container_context:
       k8s:
         volume_mounts:

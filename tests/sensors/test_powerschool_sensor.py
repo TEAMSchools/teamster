@@ -13,7 +13,10 @@ def test_powerschool_sensor():
     )
 
     dynamic_partition_sensor = build_powerschool_sensor(
-        name="test", asset_defs=partition_assets, execution_timezone=LOCAL_TIMEZONE
+        name="test",
+        asset_selection=partition_assets,
+        asset_defs=partition_assets,
+        execution_timezone=LOCAL_TIMEZONE,
     )
 
     sensor_results = dynamic_partition_sensor(
