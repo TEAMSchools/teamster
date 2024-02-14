@@ -110,6 +110,19 @@ jobs:
       - name: Login to GAR
         run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
 
+      - name: Checkout actions-oidc-debugger
+        uses: actions/checkout@v3
+        with:
+          repository: github/actions-oidc-debugger
+          ref: main
+          token: ${{ secrets.your-checkout-token }}
+          path: ./.github/actions/actions-oidc-debugger
+
+      - name: Debug OIDC Claims
+        uses: ./.github/actions/actions-oidc-debugger
+        with:
+          audience: "https://github.com/github"
+
       # https://github.com/docker/build-push-action
       - name: Build and push by digest
         id: build
