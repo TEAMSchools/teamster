@@ -24,17 +24,17 @@ ENV PYTHONUNBUFFERED 1
 # set workdir
 WORKDIR /app
 
-# install dependencies
-COPY pyproject.toml requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt --no-cache-dir
+# # install dependencies
+# COPY pyproject.toml requirements.txt ./
+# RUN --mount=type=cache,target=/root/.cache/pip \
+#     pip install -r requirements.txt --no-cache-dir
 
-# install python project
-COPY src/teamster/ ./src/teamster/
-RUN pip install . --no-cache-dir
+# # install python project
+# COPY src/teamster/ ./src/teamster/
+# RUN pip install . --no-cache-dir
 
-# install dbt project
-COPY src/dbt/ ./src/dbt/
-RUN dbt clean --project-dir "${DBT_PROFILES_DIR}" \
-    && dbt deps --project-dir "${DBT_PROFILES_DIR}" \
-    && dbt parse --project-dir "${DBT_PROFILES_DIR}"
+# # install dbt project
+# COPY src/dbt/ ./src/dbt/
+# RUN dbt clean --project-dir "${DBT_PROFILES_DIR}" \
+#     && dbt deps --project-dir "${DBT_PROFILES_DIR}" \
+#     && dbt parse --project-dir "${DBT_PROFILES_DIR}"
