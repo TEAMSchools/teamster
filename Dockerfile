@@ -12,7 +12,7 @@ RUN apt-get update \
 
 # install rust
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # set container envs
 ARG CODE_LOCATION
