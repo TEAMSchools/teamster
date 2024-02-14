@@ -44,6 +44,7 @@ workspace:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
+      backoffLimit: 6
       nodeSelector:
         cloud.google.com/compute-class: Scale-Out
         kubernetes.io/arch: arm64

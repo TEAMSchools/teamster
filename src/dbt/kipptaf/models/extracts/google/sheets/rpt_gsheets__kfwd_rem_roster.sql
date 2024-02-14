@@ -34,6 +34,8 @@ select  -- noqa: ST06
     ei.cur_status as status,
     ei.cur_actual_end_date as actual_end_date,
     ei.cur_credits_required_for_graduation as of_credits_required_for_graduation,
+    ei.ugrad_pursuing_degree_type as college_degree_type,
+    ei.cte_pursuing_degree_type as cte_degree_type,
 
     gpa.cumulative_credits_earned,
     gpa.credits_required_for_graduation,
@@ -49,7 +51,7 @@ select  -- noqa: ST06
                 current_date('America/New_York'), c.contact_last_successful_contact, day
             )
             > 30
-        then 'Succesful Contact > 30 days'
+        then 'Successful Contact > 30 days'
         else 'Successful Contact within 30'
     end as successful_contact_status,
     case
