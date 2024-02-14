@@ -8,12 +8,6 @@ pool_name=github
 repo=teamster
 location=us-central1
 
-# # Create an IAM service account for your application
-# # or use an existing IAM service account instead.
-# gcloud iam service-accounts create \
-#   "${service_account_name}" \
-#   --project "${project_id}"
-
 # set up Workload Identity Federation for GitHub actions
 # create WI pool
 gcloud iam workload-identity-pools create \
@@ -45,6 +39,7 @@ gcloud iam workload-identity-pools providers describe "teamster" \
   --workload-identity-pool="${pool_name}" \
   --format="value(name)"
 
+# allow authentications from the Workload Identity Pool to Google Cloud resources
 gcloud artifacts repositories add-iam-policy-binding \
   "${repo}" \
   --project="${project_id}" \
