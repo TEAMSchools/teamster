@@ -2,10 +2,12 @@
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim
 
+# install system dependencies
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
+        cargo \
     && rm -rf /var/lib/apt/lists/*
 
 # set container envs
@@ -20,7 +22,7 @@ WORKDIR /app
 # install dependencies
 COPY pyproject.toml requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt --no-cache-dir --verbose
+    pip install -r requirements.txt --no-cache-dir
 
 # install python project
 COPY src/teamster/ ./src/teamster/
