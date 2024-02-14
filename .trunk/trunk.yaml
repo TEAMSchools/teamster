@@ -41,7 +41,7 @@ lint:
         - .k8s/**/values.yaml
   enabled:
     - osv-scanner@1.6.2
-    - trufflehog@3.67.5
+    - trufflehog@3.67.6
     - bandit@1.7.7
     - oxipng@9.0.0
     - sqlfluff@2.3.5
