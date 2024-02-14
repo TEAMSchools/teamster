@@ -1,6 +1,7 @@
 #!/bin/bash
 # https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to
 
+gh_org_name=TEAMSchools
 project_id=teamster-332318
 service_account_name=user-cloud-dagster-cloud-agent
 service_account=${service_account_name}@${project}.iam.gserviceaccount.com
@@ -31,29 +32,33 @@ gcloud iam service-accounts add-iam-policy-binding \
 # set up Workload Identity Federation for GitHub actions
 # create WI pool
 gcloud iam workload-identity-pools create \
-  "github-pool" \
-  --project="teamster-332318" \
+  "github" \
+  --project="${project_id}" \
   --location="global" \
-  --display-name="GitHub Pool"
+  --display-name="GitHub Actions Pool"
+
+gcloud iam workload-identity-pools describe \
+  "github" \
+  --project="${project_id}" \
+  --location="global" \
+  --format="value(name)"
 
 # create WI provider for pool
 gcloud iam workload-identity-pools providers create-oidc \
-  "github-provider" \
+  "teamster" \
   --project="${project_id}" \
   --location="global" \
-  --display-name="GitHub Provider" \
-  --workload-identity-pool="github-pool" \
+  --display-name="TEAMster Provider" \
+  --workload-identity-pool="github" \
   --issuer-uri="https://token.actions.githubusercontent.com" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository"
+  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-condition="assertion.repository_owner == '${gh_org_name}'"
 
-# bind service account to WI pool
-gh_org_name=$(gh repo view --json owner --jq '.owner.login')
-
-gcloud iam service-accounts add-iam-policy-binding \
-  "${service_account}" \
+gcloud iam workload-identity-pools providers describe "teamster" \
   --project="${project_id}" \
-  --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/624231820004/locations/global/workloadIdentityPools/github-pool/attribute.repository/${gh_org_name}/teamster"
+  --location="global" \
+  --workload-identity-pool="github" \
+  --format="value(name)"
 
 # Annotate the Kubernetes service account
 # with the email address of the IAM service account.

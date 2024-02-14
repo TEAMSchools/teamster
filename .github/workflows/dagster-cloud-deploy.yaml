@@ -28,8 +28,8 @@ env:
   DAGSTER_CLOUD_YAML_PATH: src/teamster/${{ inputs.code-location }}/dagster-cloud.yaml
 
 permissions:
-  contents: read
   id-token: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -100,7 +100,7 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+            }}/locations/global/workloadIdentityPools/github/providers/teamster
 
       # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
@@ -176,7 +176,7 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+            }}/locations/global/workloadIdentityPools/github/providers/teamster
 
       # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
