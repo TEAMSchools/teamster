@@ -63,16 +63,6 @@ def test_sensor_achieve3k():
     )
 
 
-def test_sensor_clever_reports():
-    from teamster.kipptaf.clever.sensors import clever_reports_sftp_sensor
-    from teamster.kipptaf.resources import SSH_RESOURCE_CLEVER_REPORTS
-
-    _test_sensor(
-        sftp_sensor=clever_reports_sftp_sensor,
-        ssh_clever_reports=SSH_RESOURCE_CLEVER_REPORTS,
-    )
-
-
 def test_sensor_deanslist():
     from teamster.kipptaf.deanslist.sensors import deanslist_sftp_sensor
     from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST

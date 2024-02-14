@@ -4,8 +4,8 @@ locations:
       module_name: teamster.staging.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-staging/teamster-staging
-    working_directory: /root/app
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/staging
+    working_directory: /app
     container_context:
       k8s:
         volume_mounts:
@@ -47,6 +47,10 @@ locations:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
         run_k8s_config:
+          # pod_spec_config:
+          #   node_selector:
+          #     cloud.google.com/compute-class: Scale-Out
+          #     kubernetes.io/arch: arm64
           container_config:
             env:
               - name: ACHIEVE3K_SFTP_PASSWORD

@@ -5,6 +5,7 @@ select
     fr.text_value as answer,
     fr.item_title as question_title,
     fr.item_abbreviation as question_shortname,
+    fr.rn_form_item_respondent_submitted_desc as rn,
     concat(
         'https://docs.google.com/forms/d/',
         fr.form_id,
@@ -35,6 +36,7 @@ select
     eh.community_professional_exp,
     eh.level_of_education,
     eh.primary_grade_level_taught,
+    eh.assignment_status,
 
     timestamp(fr.create_time) as date_started,
     timestamp(fr.last_submitted_time) as date_submitted,
@@ -52,6 +54,7 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
+    and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
 
@@ -62,6 +65,7 @@ select
     sr.response_value as answer,
     sr.question_title_english as question_title,
     sr.question_short_name as question_shortname,
+    1 as rn,
     concat(
         sr.survey_link_default, '?snc=', sr.response_session_id, '&sg_navigate=start'
     ) as survey_response_link,
@@ -89,6 +93,7 @@ select
     eh.community_professional_exp,
     eh.level_of_education,
     eh.primary_grade_level_taught,
+    eh.assignment_status,
 
     sr.response_date_started as date_started,
     sr.response_date_submitted as date_submitted,
@@ -110,3 +115,4 @@ inner join
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
     between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
+    and eh.assignment_status not in ('Terminated', 'Deceased')
