@@ -2,6 +2,12 @@
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim
 
+# trunk-ignore(hadolint/DL3008)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 # set container envs
 ARG CODE_LOCATION
 ENV DBT_PROFILES_DIR /app/src/dbt/${CODE_LOCATION}
