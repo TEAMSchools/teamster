@@ -2,21 +2,8 @@
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim
 
-# install system dependencies
-# trunk-ignore(hadolint/DL3008)
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# install rust
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
 # set container envs
 ARG CODE_LOCATION
-ENV PATH /root/.cargo/bin:${PATH}
 ENV DBT_PROFILES_DIR /app/src/dbt/${CODE_LOCATION}
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
