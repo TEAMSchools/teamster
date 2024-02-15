@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   prerun:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
     outputs:
       result: ${{ steps.prerun.outputs.result }}
       image-tag: ${{ steps.generate-image-tag.outputs.image-tag }}
