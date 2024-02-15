@@ -2,10 +2,6 @@
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim
 
-# upgrade pip
-# trunk-ignore(hadolint/DL3013)
-RUN python -m pip install --no-cache-dir --upgrade pip
-
 # install system dependencies
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
