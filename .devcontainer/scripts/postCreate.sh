@@ -4,8 +4,7 @@
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
   sudo apt-get -y --no-install-recommends install bash-completion &&
-  sudo apt-get -y autoremove &&
-  sudo apt-get -y clean
+  rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
@@ -56,7 +55,7 @@ gcloud config set compute/region us-central1
 gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
 
 # install pdm dependencies
-pdm install --no-lock
+pdm install --frozen-lockfile
 
 # install dbt deps and generate manifests
 # trunk-ignore(shellcheck/SC2312)

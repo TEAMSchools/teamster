@@ -14,7 +14,7 @@ WORKDIR /app
 # install dependencies
 COPY pyproject.toml requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt --no-cache-dir --verbose
+    pip install -r requirements.txt --no-cache-dir
 
 # install python project
 COPY src/teamster/ ./src/teamster/
