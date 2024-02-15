@@ -1,5 +1,5 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "features": {
     "ghcr.io/devcontainers-contrib/features/pdm:2": {},
     "ghcr.io/trunk-io/devcontainer-feature/trunk:1": {},

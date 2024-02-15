@@ -28,33 +28,6 @@ gcloud iam service-accounts add-iam-policy-binding \
   --role roles/iam.workloadIdentityUser \
   --member "serviceAccount:${project_id}.svc.id.goog[dagster-cloud/${service_account_name}]"
 
-# set up Workload Identity Federation for GitHub actions
-# create WI pool
-gcloud iam workload-identity-pools create \
-  "github-pool" \
-  --project="teamster-332318" \
-  --location="global" \
-  --display-name="GitHub Pool"
-
-# create WI provider for pool
-gcloud iam workload-identity-pools providers create-oidc \
-  "github-provider" \
-  --project="${project_id}" \
-  --location="global" \
-  --display-name="GitHub Provider" \
-  --workload-identity-pool="github-pool" \
-  --issuer-uri="https://token.actions.githubusercontent.com" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository"
-
-# bind service account to WI pool
-gh_org_name=$(gh repo view --json owner --jq '.owner.login')
-
-gcloud iam service-accounts add-iam-policy-binding \
-  "${service_account}" \
-  --project="${project_id}" \
-  --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/624231820004/locations/global/workloadIdentityPools/github-pool/attribute.repository/${gh_org_name}/teamster"
-
 # Annotate the Kubernetes service account
 # with the email address of the IAM service account.
 kubectl annotate serviceaccount \
