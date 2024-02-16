@@ -161,7 +161,6 @@ jobs:
           workload_identity_provider:
             projects/${{ vars.GCP_PROJECT_NUMBER
             }}/locations/global/workloadIdentityPools/github/providers/teamster
-          create_credentials_file: false
 
       # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
