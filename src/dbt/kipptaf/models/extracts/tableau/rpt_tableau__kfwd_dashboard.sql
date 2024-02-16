@@ -212,8 +212,7 @@ with
                     and is_ecc
                     and persistence_year between 1 and 6
             ) pivot (
-                max(is_persisting_int) for persistence_year
-                in ('1', '2', '3', '4', '5', '6')
+                max(is_persisting_int) for persistence_year in ('1', '2', '3', '4', '5')
             )
     )
 
