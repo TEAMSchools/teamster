@@ -5,20 +5,21 @@ FROM python:"${PYTHON_VERSION}"-slim
 # set shell to bash
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# set container envs
+# declare build arg
 ARG CODE_LOCATION
+
+# set container envs
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV DBT_PROFILES_DIR /app/src/dbt/"${CODE_LOCATION}"
-ENV PATH /root/.venv/bin:/root/.cargo/bin:"${PATH}"
+ENV PATH /root/.cargo/bin:"${PATH}"
 
 # install curl & uv
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl=* \
     && rm -rf /var/lib/apt/lists/* \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && uv venv
+    && curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # set workdir
 WORKDIR /app
