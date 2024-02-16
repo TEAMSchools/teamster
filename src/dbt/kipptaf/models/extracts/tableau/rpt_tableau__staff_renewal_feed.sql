@@ -1,11 +1,13 @@
 with
     pm_scores as (
-        select internal_id, avg(overall_score) as pm4_overall_score,
+        select
+            safe_cast(internal_id as int) as internal_id,
+            avg(overall_score) as pm4_overall_score,
         from {{ ref("int_performance_management__observation_details") }}
         where
             form_term in ('PM2', 'PM3')
             and overall_score is not null
-            and academic_year = functions.current_academic_year()
+            and academic_year = {{ var("current_academic_year") }}
         group by internal_id
     )
 
@@ -49,5 +51,5 @@ from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__expected_next_year_salary") }} as s
     on b.employee_number = s.employee_number
-left join pm_scores as p on b.employee_number = safe_cast(p.internal_id as int)
+left join pm_scores as p on b.employee_number = p.internal_id
 where b.assignment_status not in ('Terminated', 'Deceased')
