@@ -7,17 +7,20 @@ ARG CODE_LOCATION
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV DBT_PROFILES_DIR /app/src/dbt/"${CODE_LOCATION}"
-ENV PATH "${HOME}"/.cargo/bin:"${PATH}"
 
-# install curl, uv, and set up venv
+# install curl & uv
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl=* \
     && rm -rf /var/lib/apt/lists/* \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && uv venv \
-    && source .venv/bin/activate
+
+RUN source "${HOME}"/.cargo/env \
+    && uv venv
+
+# set up venv
+RUN source .venv/bin/activate
 
 # set workdir
 WORKDIR /app
