@@ -2,9 +2,11 @@ select
     sr.employee_number,
     sr.job_title,
     sr.base_remuneration_annual_rate_amount_amount_value,
+
     pss.scale_cy_salary,
     pss.scale_ny_salary,
     pss.scale_step,
+
     case
         when pss.salary_rule is not null
         then pss.salary_rule
