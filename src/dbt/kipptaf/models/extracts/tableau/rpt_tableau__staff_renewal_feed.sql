@@ -5,9 +5,9 @@ with
             avg(overall_score) as pm4_overall_score,
         from {{ ref("int_performance_management__observation_details") }}
         where
-            form_term in ('PM2', 'PM3')
+            academic_year = {{ var("current_academic_year") }}
             and overall_score is not null
-            and academic_year = {{ var("current_academic_year") }}
+            and form_term in ('PM2', 'PM3')
         group by internal_id
     )
 
@@ -46,7 +46,6 @@ select
     s.scale_step,
 
     p.pm4_overall_score,
-
 from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__expected_next_year_salary") }} as s
