@@ -14,9 +14,12 @@ ENV PYTHONUNBUFFERED 1
 ENV DBT_PROFILES_DIR /app/src/dbt/"${CODE_LOCATION}"
 ENV VIRTUAL_ENV /root/.venv
 
-# install uv
-ADD --chmod=655 https://astral.sh/uv/install.sh /install.sh
-RUN /install.sh && rm /install.sh
+# install curl & uv
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl=* \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # set workdir
 WORKDIR /app
