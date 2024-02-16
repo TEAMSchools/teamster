@@ -10,8 +10,7 @@ ARG CODE_LOCATION
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV DBT_PROFILES_DIR /app/src/dbt/"${CODE_LOCATION}"
-ENV PATH "${HOME}"/.venv/bin:"${HOME}"/.cargo/bin:"${PATH}"
-RUN echo "${PATH}"
+ENV PATH /root/.venv/bin:/root/.cargo/bin:"${PATH}"
 
 # install curl & uv
 RUN apt-get update \
