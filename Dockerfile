@@ -1,10 +1,10 @@
 # https://hub.docker.com/_/python
 ARG PYTHON_VERSION
-FROM python:${PYTHON_VERSION}-slim
+FROM python:"${PYTHON_VERSION}"-slim
 
 # set container envs
 ARG CODE_LOCATION
-ENV DBT_PROFILES_DIR /app/src/dbt/${CODE_LOCATION}
+ENV DBT_PROFILES_DIR /app/src/dbt/"${CODE_LOCATION}"
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
@@ -15,6 +15,7 @@ RUN apt-get update \
         curl=* \
     && rm -rf /var/lib/apt/lists/* \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && source "${HOME}"/.cargo/env \
     && uv venv \
     && source .venv/bin/activate
 
