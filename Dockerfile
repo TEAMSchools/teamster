@@ -12,14 +12,15 @@ ARG CODE_LOCATION
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV DBT_PROFILES_DIR /app/src/dbt/"${CODE_LOCATION}"
-ENV VIRTUAL_ENV /.venv
+ENV VIRTUAL_ENV /root/.venv
 
 # install curl & uv
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl=* \
     && rm -rf /var/lib/apt/lists/* \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mkdir -p /root/.venv
 
 # set workdir
 WORKDIR /app
