@@ -1,50 +1,4 @@
 with
-    step_scales as (
-        select
-            sr.employee_number,
-            pss.salary_rule,
-            pss.scale_cy_salary,
-            pss.scale_ny_salary,
-            pss.scale_step,
-            pss.school_level,
-        from {{ ref("base_people__staff_roster") }} as sr
-        left join
-            {{ source("people", "src_people__salary_scale") }} as pss
-            on sr.job_title = pss.job_title
-            and sr.business_unit_assigned_name = pss.region
-            and sr.base_remuneration_annual_rate_amount_amount_value + 150
-            >= pss.scale_cy_salary
-            and sr.base_remuneration_annual_rate_amount_amount_value + 150
-            < pss.scale_ny_salary
-            and pss.school_level is null
-        where sr.assignment_status = 'Active' and pss.school_level is null
-
-        union all
-
-        select
-            sr.employee_number,
-            pss.salary_rule,
-            pss.scale_cy_salary,
-            pss.scale_ny_salary,
-            pss.scale_step,
-            pss.school_level,
-        from {{ ref("base_people__staff_roster") }} as sr
-        left join
-            {{ source("people", "src_people__salary_scale") }} as pss
-            on sr.job_title = pss.job_title
-            and sr.business_unit_assigned_name = pss.region
-            and sr.base_remuneration_annual_rate_amount_amount_value + 150
-            >= pss.scale_cy_salary
-            and sr.base_remuneration_annual_rate_amount_amount_value + 150
-            < pss.scale_ny_salary
-            and pss.school_level = sr.home_work_location_grade_band
-        where
-            sr.assignment_status not in ('Terminated', 'Deceased')
-            and pss.school_level is not null
-            and sr.home_work_location_grade_band is not null
-
-    ),
-
     pm_scores as (
         select internal_id, avg(overall_score) as pm4_overall_score,
         from {{ ref("int_performance_management__observation_details") }}
@@ -88,11 +42,12 @@ select
     s.scale_cy_salary,
     s.scale_ny_salary,
     s.scale_step,
-    s.school_level,
 
     p.pm4_overall_score,
 
 from {{ ref("base_people__staff_roster") }} as b
-left join step_scales as s on b.employee_number = s.employee_number
+left join
+    {{ ref("int_people__expected_next_year_salary") }} as s
+    on b.employee_number = s.employee_number
 left join pm_scores as p on b.employee_number = safe_cast(p.internal_id as int)
 where b.assignment_status not in ('Terminated', 'Deceased')
