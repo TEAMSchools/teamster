@@ -20,7 +20,7 @@ RUN apt-get update \
         curl=* \
     && rm -rf /var/lib/apt/lists/* \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && mkdir -p /root/.venv
+    && /root/.cargo/bin/uv venv
 
 # set workdir
 WORKDIR /app
