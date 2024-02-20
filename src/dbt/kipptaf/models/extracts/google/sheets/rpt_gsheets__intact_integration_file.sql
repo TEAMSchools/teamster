@@ -6,11 +6,9 @@ select
     concat(
         'adp_payroll_',
         extract(year from gl.date),
-        case
-            when safe_cast(extract(month from gl.date) as int) < 10 then '0' else ''
-        end,
+        if(safe_cast(extract(month from gl.date) as int) < 10, '0', ''),
         extract(month from gl.date),
-        case when safe_cast(extract(day from gl.date) as int) < 10 then '0' else '' end,
+        if(safe_cast(extract(day from gl.date) as int) < 10, '0', ''),
         extract(day from gl.date),
         '_',
         gl.group_code
