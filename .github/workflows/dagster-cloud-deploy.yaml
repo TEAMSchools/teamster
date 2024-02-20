@@ -10,6 +10,9 @@ on:
       code-location:
         required: true
         type: string
+      python-version:
+        required: true
+        type: string
       dbt-version:
         required: true
         type: string
@@ -53,8 +56,8 @@ jobs:
       - name: Generate Docker image tag
         id: generate-image-tag
         run:
-          echo "image-tag=${{ inputs.code-location
-          }}-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_OUTPUT && echo $image-tag
+          echo "image-tag=${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}-${{
+          github.run_attempt }}" >> "${GITHUB_OUTPUT}" && echo "${image-tag}"
 
   dbt:
     needs:
@@ -70,7 +73,7 @@ jobs:
       # https://github.com/actions/setup-python
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ inputs.python-version }}
           cache: pip
 
       - name: Install dbt
@@ -109,7 +112,7 @@ jobs:
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "${GITHUB_ENV}"
 
       # https://github.com/actions/checkout
       - uses: actions/checkout@v4
@@ -122,13 +125,6 @@ jobs:
         with:
           name: dbt_artifacts
           path: ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
-
-      # - name: Move dbt artifacts
-      #   run:
-      #     rsync -r ${{ github.workspace }}/dbt_artifacts/ ${{ github.workspace }}/src/dbt/${{
-      #     inputs.code-location }}/
-
-      - run: ls -la ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
@@ -169,8 +165,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            PYTHON_VERSION=3.12
-            CODE_LOCATION=${{ inputs.code-location }}
+            PYTHON_VERSION=${{ inputs.python-version }}
           outputs:
             type=image,name=${{ env.REGISTRY_IMAGE
             }},push-by-digest=true,name-canonical=true,push=true
