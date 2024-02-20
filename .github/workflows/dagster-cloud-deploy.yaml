@@ -77,8 +77,15 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - name: dbt
-        run: docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -c dbt deps
+      - name: dbt deps
+        run:
+          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -c deps
+          --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
+
+      - name: dbt parse
+        run:
+          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -c parse
+          --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
