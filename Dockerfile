@@ -5,10 +5,6 @@ FROM python:"${PYTHON_VERSION}"-slim
 # set shell to bash
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# set dbt env from build arg
-ARG CODE_LOCATION
-ENV DBT_PROFILES_DIR /app/src/dbt/"${CODE_LOCATION}"
-
 # set container envs
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
