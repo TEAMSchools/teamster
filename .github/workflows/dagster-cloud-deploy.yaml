@@ -30,6 +30,8 @@ env:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster/${{
     inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH: src/teamster/${{ inputs.code-location }}/dagster-cloud.yaml
+  IMAGE_TAG:
+    ${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
 permissions:
   id-token: write
@@ -41,7 +43,6 @@ jobs:
     runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
     outputs:
       result: ${{ steps.prerun.outputs.result }}
-      image-tag: ${{ steps.generate-image-tag.outputs.image-tag }}
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
@@ -49,14 +50,6 @@ jobs:
       - name: Pre-run checks
         id: prerun
         uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
-
-      # Any value can be used as the docker image tag. It is recommended to use a
-      # unique value for each build so that multiple builds do not overwrite each other.
-      - name: Generate Docker image tag
-        id: generate-image-tag
-        run:
-          echo "image-tag=${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}-${{
-          github.run_attempt }}" >> "${GITHUB_OUTPUT}" && echo "${image-tag}"
 
   dbt:
     needs:
@@ -223,12 +216,11 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prerun.outputs.image-tag }} \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }} $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prerun.outputs.image-tag }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
 
   deploy:
     runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
@@ -278,7 +270,7 @@ jobs:
         with:
           command:
             ci set-build-output --location-name=${{ inputs.code-location }} --image-tag=${{
-            needs.prerun.outputs.image-tag }}
+            env.IMAGE_TAG }}
 
       # Deploy all code locations in this build session to Dagster Cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
