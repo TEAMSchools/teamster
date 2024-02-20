@@ -1,7 +1,7 @@
 select
     gl.journal,
     gl.date,
-    -- trunk-ignore-begin(sqlfluff)
+    -- trunk-ignore(sqlfluff/ST06)
     concat(
         'adp_payroll_',
         extract(year from gl.date),
@@ -14,7 +14,6 @@ select
         '_',
         gl.group_code
     ) as description,
-    -- trunk-ignore-end(sqlfluff)
     gl.reference_no,
     gl.state,
     gl.source_entity,
@@ -27,9 +26,8 @@ select
     gl.location_id,
     gl.dept_id,
     gl.gl_entry_class_id,
-    -- trunk-ignore-begin(sqlfluff)
+    -- trunk-ignore(sqlfluff/ST06)
     coalesce(cm.project_id, gl.gl_entry_project_id) as project_id_corrected,
-    -- trunk-ignore-end(sqlfluff)
     gl.gl_dim_function,
     gl.gl_dim_donor_restriction,
     srh.employee_number,
@@ -49,6 +47,6 @@ left join
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
     on gl.position_id = srh.position_id
-    and primary_indicator
+    and srh.primary_indicator
     and safe_cast(gl.date as timestamp)
     between srh.work_assignment__fivetran_start and srh.work_assignment__fivetran_end
