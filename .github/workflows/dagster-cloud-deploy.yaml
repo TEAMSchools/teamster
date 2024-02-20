@@ -121,12 +121,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dbt_artifacts
-          path: ${{ github.workspace }}
+          path: ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
 
-      - name: Move dbt artifacts
-        run:
-          rsync -r ${{ github.workspace }}/dbt_artifacts/ ${{ github.workspace }}/src/dbt/${{
-          inputs.code-location }}/
+      # - name: Move dbt artifacts
+      #   run:
+      #     rsync -r ${{ github.workspace }}/dbt_artifacts/ ${{ github.workspace }}/src/dbt/${{
+      #     inputs.code-location }}/
 
       - run: ls -la ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
 
