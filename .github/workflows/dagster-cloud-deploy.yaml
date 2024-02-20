@@ -79,12 +79,12 @@ jobs:
 
       - name: dbt deps
         run:
-          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -c deps
+          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest deps
           --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
 
       - name: dbt parse
         run:
-          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -c parse
+          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest parse
           --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
 
       # https://github.com/google-github-actions/auth
