@@ -119,11 +119,15 @@ jobs:
       # https://github.com/actions/download-artifact
       - name: Download dbt artifacts
         uses: actions/download-artifact@v4
+        with:
+          name: dbt_artifacts
 
       - name: Move dbt artifacts
         run:
-          rsync ${{ github.workspace }}/dbt_artifacts/ ${{ github.workspace }}/src/dbt/${{
+          rsync -r ${{ github.workspace }}/dbt_artifacts/ ${{ github.workspace }}/src/dbt/${{
           inputs.code-location }}/
+
+      - run: ls -la ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
