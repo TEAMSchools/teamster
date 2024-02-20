@@ -77,12 +77,10 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - run: ls -la ${{ github.workspace }}/src
-
       - name: dbt deps
         run:
-          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest deps --project-dir=${{
-          github.workspace }}/src/dbt/${{ env.CODE_LOCATION }}
+          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -v ${{ github.workspace}}
+          deps --project-dir=${{github.workspace }}/src/dbt/${{ env.CODE_LOCATION }}
 
       - name: dbt parse
         run:
