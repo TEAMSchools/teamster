@@ -121,6 +121,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dbt_artifacts
+          path: ${{ github.workspace }}
 
       - name: Move dbt artifacts
         run:
