@@ -40,6 +40,7 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
+    - ruff@0.2.2
     - osv-scanner@1.6.2
     - trufflehog@3.67.6
     - bandit@1.7.7
@@ -62,17 +63,8 @@ lint:
   definitions:
     - name: ruff
       commands:
-        - output: rewrite
-          success_codes:
-            - 0
-          allow_empty_files: false
-          batch: true
-          cache_results: true
+        - name: format
           enabled: true
-          formatter: true
-          in_place: true
-          name: format
-          run: ruff format ${target}
 runtimes:
   enabled:
     - go@1.21.0
