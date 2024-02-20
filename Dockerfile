@@ -28,6 +28,3 @@ RUN uv pip install -e . --no-cache-dir
 
 # # install dbt project
 COPY src/dbt/ ./src/dbt/
-# RUN dbt clean --project-dir "${DBT_PROFILES_DIR}" \
-#     && dbt deps --project-dir "${DBT_PROFILES_DIR}" \
-#     && dbt parse --project-dir "${DBT_PROFILES_DIR}"
