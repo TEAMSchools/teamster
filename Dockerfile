@@ -30,8 +30,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY src/teamster/ ./src/teamster/
 RUN uv pip install -e . --no-cache-dir
 
-# install dbt project
+# # install dbt project
 COPY src/dbt/ ./src/dbt/
-RUN dbt clean --project-dir "${DBT_PROFILES_DIR}" \
-    && dbt deps --project-dir "${DBT_PROFILES_DIR}" \
-    && dbt parse --project-dir "${DBT_PROFILES_DIR}"
+# RUN dbt clean --project-dir "${DBT_PROFILES_DIR}" \
+#     && dbt deps --project-dir "${DBT_PROFILES_DIR}" \
+#     && dbt parse --project-dir "${DBT_PROFILES_DIR}"
