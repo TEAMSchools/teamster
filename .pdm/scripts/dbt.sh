@@ -9,6 +9,8 @@ if [[ ${dbt_command} == "sxs" ]]; then
     stage_external_sources \
     --vars "ext_full_refresh: true" \
     --args "select: ${flags}"
+elif [[ ${dbt_command} == "deps" ]]; then
+  dbt "${dbt_command}" --project-dir src/dbt/"${project}"
 else
-  dbt "${dbt_command}" "${flags}" --project-dir src/dbt/"${project}"
+  dbt "${dbt_command}" --project-dir src/dbt/"${project}" "${flags}"
 fi
