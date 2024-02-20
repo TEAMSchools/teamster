@@ -10,6 +10,12 @@ on:
       code-location:
         required: true
         type: string
+      python-version:
+        required: true
+        type: string
+      dbt-version:
+        required: true
+        type: string
 
 concurrency:
   # Cancel in-progress deploys to the same branch
@@ -20,12 +26,12 @@ env:
   DAGSTER_PROJECT_DIR: .
   DAGSTER_CLOUD_ORGANIZATION: ${{ vars.DAGSTER_ORGANIZATION_ID }}
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  CODE_LOCATION: ${{ inputs.code-location }}
   REGISTRY_IMAGE:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster/${{
     inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH: src/teamster/${{ inputs.code-location }}/dagster-cloud.yaml
+  IMAGE_TAG:
+    ${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
 permissions:
   id-token: write
@@ -37,7 +43,6 @@ jobs:
     runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
     outputs:
       result: ${{ steps.prerun.outputs.result }}
-      image-tag: ${{ steps.generate-image-tag.outputs.image-tag }}
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
@@ -46,17 +51,46 @@ jobs:
         id: prerun
         uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
 
-      # Any value can be used as the docker image tag. It is recommended to use a
-      # unique value for each build so that multiple builds do not overwrite each other.
-      - name: Generate docker image tag
-        id: generate-image-tag
+  dbt:
+    needs:
+      - prerun
+    runs-on: ubuntu-latest
+    if: needs.prerun.outputs.result != 'skip'
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      # https://github.com/actions/setup-python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+
+      - name: Install dbt
+        run: pip install setuptools "dbt-bigquery>=${{ inputs.dbt-version }}"
+
+      - name: dbt deps
+        run: dbt deps --project-dir=./src/dbt/${{ inputs.code-location }}
+
+      - name: dbt parse
         run:
-          echo "image-tag=$CODE_LOCATION-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>
-          $GITHUB_OUTPUT && echo $image-tag
+          dbt parse --project-dir=./src/dbt/${{ inputs.code-location }} --profiles-dir=./src/dbt/${{
+          inputs.code-location }}
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload dbt artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt_artifacts
+          path: ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
+          if-no-files-found: error
 
   build:
     needs:
       - prerun
+      - dbt
     runs-on: ubuntu-latest
     if: needs.prerun.outputs.result != 'skip'
     strategy:
@@ -69,13 +103,19 @@ jobs:
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "${GITHUB_ENV}"
 
       # https://github.com/actions/checkout
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+
+      # https://github.com/actions/download-artifact
+      - name: Download dbt artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dbt_artifacts
+          path: ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
@@ -116,8 +156,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            PYTHON_VERSION=3.12
-            CODE_LOCATION=${{ env.CODE_LOCATION }}
+            PYTHON_VERSION=${{ inputs.python-version }}
           outputs:
             type=image,name=${{ env.REGISTRY_IMAGE
             }},push-by-digest=true,name-canonical=true,push=true
@@ -141,6 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - prerun
+      - dbt
       - build
     if: needs.prerun.outputs.result != 'skip'
     steps:
@@ -176,17 +216,17 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prerun.outputs.image-tag }} \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }} $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prerun.outputs.image-tag }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
 
   deploy:
     runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
     needs:
       - prerun
+      - dbt
       - build
       - merge
     steps:
@@ -229,8 +269,8 @@ jobs:
         if: needs.prerun.outputs.result != 'skip'
         with:
           command:
-            ci set-build-output --location-name=${{ env.CODE_LOCATION }} --image-tag=${{
-            needs.prerun.outputs.image-tag }}
+            ci set-build-output --location-name=${{ inputs.code-location }} --image-tag=${{
+            env.IMAGE_TAG }}
 
       # Deploy all code locations in this build session to Dagster Cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
