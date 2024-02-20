@@ -3,7 +3,7 @@ ARG PYTHON_VERSION
 FROM python:"${PYTHON_VERSION}"-alpine
 
 # set shell to bash
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
 # set container envs
 ENV PYTHONDONTWRITEBYTECODE 1
