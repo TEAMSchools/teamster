@@ -50,7 +50,7 @@ jobs:
 
       # Any value can be used as the docker image tag. It is recommended to use a
       # unique value for each build so that multiple builds do not overwrite each other.
-      - name: Generate docker image tag
+      - name: Generate Docker image tag
         id: generate-image-tag
         run:
           echo "image-tag=${{ inputs.code-location
@@ -74,17 +74,18 @@ jobs:
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
       # https://github.com/actions/checkout
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
 
+      # https://github.com/actions/setup-python
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
 
-      - run: pip install setuptools "dbt-bigquery>=${{ inputs.dbt-version }}"
+      - name: Install dbt
+        run: pip install setuptools "dbt-bigquery>=${{ inputs.dbt-version }}"
 
       - name: dbt deps
         run: dbt deps --project-dir=./src/dbt/${{ inputs.code-location }}
