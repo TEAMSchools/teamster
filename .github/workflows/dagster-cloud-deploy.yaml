@@ -24,7 +24,6 @@ env:
   DAGSTER_CLOUD_ORGANIZATION: ${{ vars.DAGSTER_ORGANIZATION_ID }}
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  CODE_LOCATION: ${{ inputs.code-location }}
   REGISTRY_IMAGE:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster/${{
     inputs.code-location }}
@@ -54,8 +53,8 @@ jobs:
       - name: Generate docker image tag
         id: generate-image-tag
         run:
-          echo "image-tag=$CODE_LOCATION-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>
-          $GITHUB_OUTPUT && echo $image-tag
+          echo "image-tag=${{ inputs.code-location
+          }}-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_OUTPUT && echo $image-tag
 
   build:
     needs:
@@ -83,14 +82,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
 
       - run: pip install setuptools "dbt-bigquery>=${{ inputs.dbt-version }}"
 
       - name: dbt deps
-        run: dbt deps --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
+        run: dbt deps --project-dir=./src/dbt/${{ inputs.code-location }}
 
       - name: dbt parse
-        run: dbt parse --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
+        run:
+          dbt parse --project-dir=./src/dbt/${{ inputs.code-location }} --profiles-dir=./src/dbt/${{
+          inputs.code-location }}
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
@@ -132,7 +134,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             PYTHON_VERSION=3.12
-            CODE_LOCATION=${{ env.CODE_LOCATION }}
+            CODE_LOCATION=${{ inputs.code-location }}
           outputs:
             type=image,name=${{ env.REGISTRY_IMAGE
             }},push-by-digest=true,name-canonical=true,push=true
@@ -244,7 +246,7 @@ jobs:
         if: needs.prerun.outputs.result != 'skip'
         with:
           command:
-            ci set-build-output --location-name=${{ env.CODE_LOCATION }} --image-tag=${{
+            ci set-build-output --location-name=${{ inputs.code-location }} --image-tag=${{
             needs.prerun.outputs.image-tag }}
 
       # Deploy all code locations in this build session to Dagster Cloud
