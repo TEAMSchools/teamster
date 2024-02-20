@@ -11,6 +11,8 @@ if [[ ${dbt_command} == "sxs" ]]; then
     --args "select: ${flags}"
 elif [[ ${dbt_command} == "deps" ]]; then
   dbt "${dbt_command}" --project-dir src/dbt/"${project}"
+elif [[ ${dbt_command} == "parse" ]]; then
+  dbt "${dbt_command}" --project-dir src/dbt/"${project}"
 else
   dbt "${dbt_command}" --project-dir src/dbt/"${project}" "${flags}"
 fi
