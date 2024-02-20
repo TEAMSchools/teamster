@@ -79,13 +79,13 @@ jobs:
 
       - name: dbt deps
         run:
-          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest deps --project-dir=${{
-          github.workspace }}/src/dbt/${{ env.CODE_LOCATION }}
+          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest deps
+          --project-dir=/github/workspace/src/dbt/${{ env.CODE_LOCATION }}
 
       - name: dbt parse
         run:
-          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest parse --project-dir=${{
-          github.workspace }}/src/dbt/${{ env.CODE_LOCATION }}
+          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest parse
+          --project-dir=/github/workspace/src/dbt/${{ env.CODE_LOCATION }}
 
       - run: ls -la ${{ github.workspace }}
 
