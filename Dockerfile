@@ -1,6 +1,6 @@
 # https://hub.docker.com/_/python
 ARG PYTHON_VERSION
-FROM python:"${PYTHON_VERSION}"-slim
+FROM python:"${PYTHON_VERSION}"-alpine
 
 # set shell to bash
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
