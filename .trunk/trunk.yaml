@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.4.2
+      ref: v1.4.3
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
@@ -48,7 +48,7 @@ lint:
     - svgo@3.2.0
     - sqlfmt@0.21.2
     - isort@5.13.2
-    - ruff@0.2.1
+    - ruff@0.2.2
     - actionlint@1.6.26
     - git-diff-check
     - gitleaks@8.18.2
@@ -58,19 +58,21 @@ lint:
     - shellcheck@0.9.0
     - shfmt@3.6.0
     - taplo@0.8.1
-    - yamllint@1.35.0
+    - yamllint@1.35.1
   definitions:
     - name: ruff
       commands:
-        - name: format
-          output: rewrite
-          run: ruff format ${target}
-          success_codes: [0]
-          batch: true
-          in_place: true
+        - output: rewrite
+          success_codes:
+            - 0
           allow_empty_files: false
+          batch: true
           cache_results: true
+          enabled: true
           formatter: true
+          in_place: true
+          name: format
+          run: ruff format ${target}
 runtimes:
   enabled:
     - go@1.21.0
