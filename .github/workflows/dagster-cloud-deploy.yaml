@@ -77,23 +77,17 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install dbt-bigquery==1.7.4
+
       - name: dbt deps
-        run:
-          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -v ${{github.workspace}}:${{
-          github.workspace}} deps --project-dir=${{ github.workspace}}/src/dbt/${{ env.CODE_LOCATION
-          }}
+        run: dbt deps --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
 
       - name: dbt parse
-        run:
-          docker container run ghcr.io/dbt-labs/dbt-bigquery:1.7.latest -v ${{github.workspace}}:${{
-          github.workspace}} parse --project-dir=${{ github.workspace}}/src/dbt/${{
-          env.CODE_LOCATION }}
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dbt_artifacts
-          path: ${{ github.workspace }}/src/dbt/${{ env.CODE_LOCATION }}
+        run: dbt parse --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
