@@ -88,7 +88,7 @@ jobs:
       - name: Upload dbt artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dbt artifacts
+          name: dbt_artifacts
           path: ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
           if-no-files-found: error
           retention-days: 1
@@ -119,8 +119,11 @@ jobs:
       # https://github.com/actions/download-artifact
       - name: Download dbt artifacts
         uses: actions/download-artifact@v4
-        with:
-          path: ${{ github.workspace }}/src/dbt/${{ inputs.code-location }}
+
+      - name: Move dbt artifacts
+        run:
+          mv ${{ github.workspace }}/dbt_artifacts/* ${{ github.workspace }}/src/dbt/${{
+          inputs.code-location }}
 
       # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
