@@ -10,6 +10,9 @@ on:
       code-location:
         required: true
         type: string
+      dbt-version:
+        required: true
+        type: string
 
 concurrency:
   # Cancel in-progress deploys to the same branch
@@ -81,7 +84,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: pip install dbt-bigquery==1.7.4
+      - run: pip install setuptools "dbt-bigquery>=${{ inputs.dbt-version }}"
 
       - name: dbt deps
         run: dbt deps --project-dir=./src/dbt/${{ env.CODE_LOCATION }}
