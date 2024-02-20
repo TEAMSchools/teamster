@@ -22,4 +22,5 @@ jobs:
     uses: ./.github/workflows/dagster-cloud-deploy.yaml
     with:
       code-location: staging
+      dbt-version: "1.7"
     secrets: inherit
