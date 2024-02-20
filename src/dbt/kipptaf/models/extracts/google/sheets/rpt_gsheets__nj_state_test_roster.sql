@@ -11,13 +11,13 @@ with
                 then 'GEO01'
                 when c.courses_credittype = 'MATH' and nj.nces_course_id = '056'
                 then 'ALG02'
-            end as math_course
+            end as math_course,
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as nj
             on c.courses_dcid = nj.coursesdcid
             and {{ union_dataset_join_clause(left_alias="c", right_alias="nj") }}
-        where rn_credittype_year = 1 and not is_dropped_section
+        where c.rn_credittype_year = 1 and not c.is_dropped_section
     ),
 
     roster as (
@@ -92,6 +92,7 @@ with
             on co.students_dcid = nj.studentsdcid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     )
+
 select
     region,
     school_abbreviation,
