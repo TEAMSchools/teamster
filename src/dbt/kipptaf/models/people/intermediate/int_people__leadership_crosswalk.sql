@@ -43,6 +43,7 @@ select
     sl.report_to_employee_number as school_leader_report_to_employee_number,
     sl.sam_account_name as school_leader_sam_account_name,
 
+    hos.employee_number as head_of_school_employee_number,
     hos.preferred_name_lastfirst as head_of_school_preferred_name_lastfirst,
     hos.mail as head_of_school_mail,
     hos.google_email as head_of_school_google_email,
@@ -56,6 +57,7 @@ select
     dso.report_to_employee_number as dso_report_to_employee_number,
     dso.sam_account_name as dso_sam_account_name,
 
+    mdso.employee_number as mdso_employee_number,
     mdso.preferred_name_lastfirst as mdso_preferred_name_lastfirst,
     mdso.mail as mdso_mail,
     mdso.google_email as mdso_google_email,
