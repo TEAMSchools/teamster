@@ -1,0 +1,170 @@
+assets:
+  - name: Academic Priorities [NJ]
+    deps:
+      - [kipptaf, tableau, rpt_tableau__power_standards]
+      - [kipptaf, tableau, rpt_tableau__qbl]
+    metadata:
+      type: workbook
+  - name: APM Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__iready_apm]
+    metadata:
+      type: workbook
+  - name: Assessment Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
+    metadata:
+      type: workbook
+  - name: Attendance Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
+      - [kipptaf, tableau, attendance_chronic_absenteeism_log_temp]
+      - [kipptaf, tableau, rpt_tableau__attendance_comm_log_temp]
+    metadata:
+      type: workbook
+  - name: Attrition Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_attrition_details]
+    metadata:
+      type: workbook
+  - name: Coaching Conversation Tool
+    deps:
+      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
+    metadata:
+      type: workbook
+  - name: College Admission Readiness Assessments Tracker (CARAT)
+    deps:
+      - [kipptaf, tableau, rpt_tableau__ap_assessment_dashboard]
+      - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard]
+    metadata:
+      type: workbook
+  - name: Data Quality Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__assessment_entry_audit]
+      - [kipptaf, tableau, rpt_tableau__student_info_audit]
+    metadata:
+      type: workbook
+  - name: Early Literacy Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
+      - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
+    metadata:
+      type: workbook
+  - name: Federal Grants Timesheet Approval
+    deps:
+      - [kipptaf, tableau, roster]
+    metadata:
+      type: workbook
+  - name: Finance & Accounting Tools & Resources
+    deps:
+      - [kipptaf, tableau, rpt_tableau__adp_pension_and_benefits_enrollments]
+      - [kipptaf, tableau, rpt_tableau__finance_accounting_people_model]
+      - [kipptaf, tableau, rpt_tableau__staff_attrition]
+    metadata:
+      type: workbook
+  - name: Gradebook Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__gpa_analysis]
+      - [kipptaf, tableau, rpt_tableau__gradebook_assignments]
+      - [kipptaf, tableau, rpt_tableau__gradebook_dashboard]
+    metadata:
+      type: workbook
+  - name: High School Early Warning Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__graduation_requirements]
+      - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
+    metadata:
+      type: workbook
+  - name: KIPP Forward Data Suite
+    deps:
+      - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
+      - [kipptaf, tableau, rpt_tableau__kfwd_contact_notes]
+      - [kipptaf, tableau, rpt_tableau__kfwd_dashboard]
+      - [kipptaf, tableau, rpt_tableau__kfwd_persistence]
+      - [kipptaf, tableau, rpt_tableau__kfwd_spi]
+      - [kipptaf, tableau, rpt_tableau__kfwd_verification]
+    metadata:
+      type: workbook
+  - name: KIPP Miami FAST & i-Ready Analysis
+    deps:
+      - [kipptaf, tableau, rpt_tableau__miami_fast]
+      - [kipptaf, tableau, rpt_tableau__miami_fast_temp]
+      - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
+      - [kipptaf, tableau, rpt_tableau__miami_k2_star]
+    metadata:
+      type: workbook
+  - name: "Marketing Data: Social Media"
+    deps:
+      - [kipptaf, tableau, rpt_tableau__marketing_facebook_page]
+      - [kipptaf, tableau, rpt_tableau__marketing_facebook_post]
+      - [kipptaf, tableau, rpt_tableau__marketing_instagram_page]
+      - [kipptaf, tableau, rpt_tableau__marketing_instagram_post]
+    metadata:
+      type: workbook
+  - name: Master Renewal Tracking Tool
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
+    metadata:
+      type: workbook
+  - name: Newark Home Instruction Tracker
+    deps:
+      - [kipptaf, tableau, rpt_tableau__approved_hi]
+      - [kipptaf, tableau, rpt_tableau__hi_approval_queue]
+    metadata:
+      type: workbook
+  - name: NJ Certification Dashboard (Schools View)
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_roster]
+    metadata:
+      type: workbook
+  - name: Ops Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__ops_dashboard]
+    metadata:
+      type: workbook
+  - name: Promotional Status Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__promo_status]
+    metadata:
+      type: workbook
+  - name: School Culture Dashboard [NJ]
+    deps:
+      - [kipptaf, tableau, culture_dash_temp]
+    metadata:
+      type: workbook
+  - name: SchoolMint Grow Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
+      # - [kipptaf, tableau, Report - Microgoal Lookup Connection]
+    metadata:
+      type: workbook
+  - name: Staff Demographic Explorer
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_roster]
+    metadata:
+      type: workbook
+  - name: Staff Roster
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_roster]
+    metadata:
+      type: workbook
+  - name: State Testing Accommodations Tracker
+    deps:
+      - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
+    metadata:
+      type: workbook
+  - name: Survey Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__survey_responses]
+    metadata:
+      type: workbook
+  - name: Teacher Attendance Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_attendance]
+    metadata:
+      type: workbook
+  - name: Zendesk Reporting
+    deps:
+      - [kipptaf, tableau, rpt_tableau__zendesk_tickets]
+    metadata:
+      type: workbook
