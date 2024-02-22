@@ -158,16 +158,6 @@ with
             statestudentidentifier as state_id,
             assessment_name,
             subject_area as discipline,
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as test_code,
             testscalescore as score,
             testperformancelevel as performance_band_level,
             is_proficient,
@@ -217,6 +207,16 @@ with
                 then 'English Language Arts'
                 else subject
             end as subject,
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as test_code,
         from {{ ref("int_pearson__all_assessments") }}
         where cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
     ),
