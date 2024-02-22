@@ -37,34 +37,14 @@ with
                 then 'CMO'
                 else 'Special'
             end as route,
-            lc.dso_employee_number,
-
+            
             coalesce(cc.name, sr.home_work_location_name) as campus,
+            
+            lc.dso_employee_number,
             lc.sl_employee_number,
-            lc.school_leader_preferred_name_lastfirst,
-            lc.school_leader_mail,
-            lc.school_leader_google_email,
-            lc.school_leader_job_title,
-            lc.school_leader_report_to_employee_number,
-            lc.school_leader_sam_account_name,
             lc.head_of_school_employee_number,
-            lc.head_of_school_preferred_name_lastfirst,
-            lc.head_of_school_mail,
-            lc.head_of_school_google_email,
-            lc.head_of_school_job_title,
-            lc.head_of_school_sam_account_name,
-            lc.dso_preferred_name_lastfirst,
-            lc.dso_mail,
-            lc.dso_google_email,
-            lc.dso_job_title,
-            lc.dso_report_to_employee_number,
-            lc.dso_sam_account_name,
             lc.mdso_employee_number,
-            lc.mdso_preferred_name_lastfirst,
-            lc.mdso_mail,
-            lc.mdso_google_email,
-            lc.mdso_job_title,
-            lc.mdso_sam_account_name,
+
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ ref("stg_people__campus_crosswalk") }} as cc
