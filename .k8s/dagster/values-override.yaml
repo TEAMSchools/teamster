@@ -385,3 +385,10 @@ extraManifests:
       namespace: dagster-cloud
     spec:
       itemPath: vaults/Data Team/items/GCP Service Account - TEAMster
+  - apiVersion: onepassword.com/v1
+    kind: OnePasswordItem
+    metadata:
+      name: op-tableau-server-api
+      namespace: dagster-cloud
+    spec:
+      itemPath: vaults/Data Team/items/Tableau Server PAT - Dagster
