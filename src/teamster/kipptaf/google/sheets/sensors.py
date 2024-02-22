@@ -36,7 +36,7 @@ def google_sheets_asset_sensor(
         try:
             spreadsheet = gsheets.open(sheet_id=sheet_id)
 
-            last_update_timestamp = pendulum.parser.parse(
+            last_update_timestamp = pendulum.parse(
                 text=spreadsheet.get_lastUpdateTime()
             ).timestamp()  # type: ignore
 
