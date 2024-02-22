@@ -1,21 +1,11 @@
 [
   {
-    "name": "keep_mostRecentVersions_packageNamePrefixes_1",
+    "name": "keep_mostRecentVersions_1",
     "action": {
       "type": "Keep"
     },
     "mostRecentVersions": {
-      "packageNamePrefixes": ["kippcamden", "kippmiami", "kippnewark", "kipptaf", "staging"],
       "keepCount": 1
-    }
-  },
-  {
-    "name": "delete_tagState_untagged",
-    "action": {
-      "type": "Delete"
-    },
-    "condition": {
-      "tagState": "untagged"
     }
   }
 ]
