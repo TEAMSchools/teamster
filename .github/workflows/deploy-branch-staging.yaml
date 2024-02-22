@@ -1,4 +1,3 @@
-# trunk-ignore-all(checkov/CKV2_GHA_1)
 name: staging
 
 on:
@@ -7,9 +6,11 @@ on:
     branches:
       - main
     paths:
-      - src/teamster/**
+      - Dockerfile
+      - pdm.lock
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-branch-staging.yaml
+      - src/teamster/**
     types:
       - opened
       - synchronize
@@ -21,4 +22,6 @@ jobs:
     uses: ./.github/workflows/dagster-cloud-deploy.yaml
     with:
       code-location: staging
+      python-version: "3.12"
+      dbt-version: "1.7"
     secrets: inherit

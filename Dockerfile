@@ -1,28 +1,30 @@
-# trunk-ignore-all(checkov)
+# https://hub.docker.com/_/python
 ARG PYTHON_VERSION
+FROM python:"${PYTHON_VERSION}"-slim
 
-# Debian
-FROM python:${PYTHON_VERSION}-slim
+# set shell to bash
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG CODE_LOCATION
-ENV DBT_PROFILES_DIR=/root/app/src/dbt/${CODE_LOCATION}
+# set container envs
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PATH /app/.venv/bin:"${PATH}"
 
-WORKDIR /root/app
+# set workdir
+WORKDIR /app
 
-# update system pip
-# trunk-ignore(hadolint/DL3013,terrascan/AC_DOCKER_0010)
-RUN python -m pip install pip --no-cache-dir --upgrade
+# install uv & create venv
+RUN pip install "uv<1" --no-cache-dir \
+    && uv venv
 
-# install dependencies & project
-COPY pyproject.toml ./pyproject.toml
-RUN pip install . --no-cache-dir
-
-# install dbt project
-COPY src/dbt ./src/dbt
-WORKDIR ${DBT_PROFILES_DIR}
-RUN dbt clean && dbt deps && dbt parse
+# install dependencies
+COPY pyproject.toml requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    uv pip install -r requirements.txt --no-cache-dir
 
 # install python project
-WORKDIR /root/app
-COPY src/teamster ./src/teamster
-RUN pip install . --no-cache-dir
+COPY src/teamster/ ./src/teamster/
+RUN uv pip install -e . --no-cache-dir
+
+# # install dbt project
+COPY src/dbt/ ./src/dbt/

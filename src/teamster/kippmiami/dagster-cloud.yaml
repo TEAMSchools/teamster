@@ -4,8 +4,8 @@ locations:
       module_name: teamster.kippmiami.definitions
     build:
       directory: ./
-      registry: us-central1-docker.pkg.dev/teamster-332318/teamster-kippmiami/teamster-kippmiami
-    working_directory: /root/app
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/kippmiami
+    working_directory: /app
     container_context:
       k8s:
         volume_mounts:
@@ -30,9 +30,11 @@ locations:
           container_config:
             resources:
               requests:
-                cpu: 250m
+                cpu: 500m
+                memory: 2.0Gi
               limits:
-                cpu: 250m
+                cpu: 500m
+                memory: 2.0Gi
             env:
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
