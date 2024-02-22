@@ -136,6 +136,10 @@ select
                 ka.chief_employee_number
             )
         then r.manager_employee_number
+        WHEN r.job_title LIKE '%Head%' THEN r.manager_employee_number
+        WHEN r.job_title LIKE '%Chief%' THEN r.manager_employee_number
+        WHEN r.job_title LIKE '%Managing Director%' THEN r.manager_employee_number
+        WHEN r.job_title LIKE '%Executive Director%' THEN r.manager_employee_number
         when r.route = 'Instructional'
         then r.sl_employee_number
         when r.route = 'Operations'
@@ -155,7 +159,11 @@ select
                 ka.report_to_chief_employee_number,
                 ka.chief_employee_number
             )
-        then r.manager_employee_number
+            then r.manager_employee_number
+        WHEN r.job_title LIKE '%Head%' THEN r.manager_employee_number
+        WHEN r.job_title LIKE '%Chief%' THEN r.manager_employee_number
+        WHEN r.job_title LIKE '%Managing Director%' THEN r.manager_employee_number
+        WHEN r.job_title LIKE '%Executive Director%' THEN r.manager_employee_number
         when r.route = 'Instructional'
         then r.head_of_school_employee_number
         when r.route = 'Operations'
@@ -176,6 +184,3 @@ left join
     and r.job_title <> ka.report_to_chief_job_title
     and r.job_title <> ka.chief_job_title
 left join regional_approval as ra on r.region = ra.region and r.route = 'Regional'
-where
-    first_approver_employee_number is not null
-    and second_approver_employee_number is not null
