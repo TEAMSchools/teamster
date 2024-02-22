@@ -136,10 +136,14 @@ select
                 ka.chief_employee_number
             )
         then r.manager_employee_number
-        WHEN r.job_title LIKE '%Head%' THEN r.manager_employee_number
-        WHEN r.job_title LIKE '%Chief%' THEN r.manager_employee_number
-        WHEN r.job_title LIKE '%Managing Director%' THEN r.manager_employee_number
-        WHEN r.job_title LIKE '%Executive Director%' THEN r.manager_employee_number
+        when r.job_title like '%Head%'
+        then r.manager_employee_number
+        when r.job_title like '%Chief%'
+        then r.manager_employee_number
+        when r.job_title like '%Managing Director%'
+        then r.manager_employee_number
+        when r.job_title like '%Executive Director%'
+        then r.manager_employee_number
         when r.route = 'Instructional'
         then r.sl_employee_number
         when r.route = 'Operations'
@@ -159,11 +163,15 @@ select
                 ka.report_to_chief_employee_number,
                 ka.chief_employee_number
             )
-            then r.manager_employee_number
-        WHEN r.job_title LIKE '%Head%' THEN r.manager_employee_number
-        WHEN r.job_title LIKE '%Chief%' THEN r.manager_employee_number
-        WHEN r.job_title LIKE '%Managing Director%' THEN r.manager_employee_number
-        WHEN r.job_title LIKE '%Executive Director%' THEN r.manager_employee_number
+        then r.manager_employee_number
+        when r.job_title like '%Head%'
+        then r.manager_employee_number
+        when r.job_title like '%Chief%'
+        then r.manager_employee_number
+        when r.job_title like '%Managing Director%'
+        then r.manager_employee_number
+        when r.job_title like '%Executive Director%'
+        then r.manager_employee_number
         when r.route = 'Instructional'
         then r.head_of_school_employee_number
         when r.route = 'Operations'
