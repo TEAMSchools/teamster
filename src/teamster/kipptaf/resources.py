@@ -15,6 +15,7 @@ from .google.sheets.resources import GoogleSheetsResource
 from .ldap.resources import LdapResource
 from .schoolmint.grow.resources import SchoolMintGrowResource
 from .smartrecruiters.resources import SmartRecruitersResource
+from .tableau.resources import TableauServerResource
 
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
@@ -83,6 +84,13 @@ SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
 
 SMARTRECRUITERS_RESOURCE = SmartRecruitersResource(
     smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
+)
+
+TABLEAU_SERVER_RESOURCE = TableauServerResource(
+    server_address="https://tableau.kipp.org",
+    site_id="KIPPNJ",
+    token_name=EnvVar("TABLEAU_TOKEN_NAME"),
+    personal_access_token=EnvVar("TABLEAU_PERSONAL_ACCESS_TOKEN"),
 )
 
 ZENDESK_RESOURCE = Zenpy(
