@@ -94,7 +94,7 @@ with
             worker_termination_date,
             home_work_location_name as location,
             business_unit_home_name as region,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("base_people__staff_roster") }}
         where
             job_title in (
                 'Managing Director of School Operations',
@@ -189,6 +189,6 @@ left join
     ktaf_approval as ka
     on r.department = ka.report_to_chief_department
     and r.route = 'CMO'
-    and r.job_title <> ka.report_to_chief_job_title
-    and r.job_title <> ka.chief_job_title
+    and r.job_title != ka.report_to_chief_job_title
+    and r.job_title != ka.chief_job_title
 left join regional_approval as ra on r.region = ra.region and r.route = 'Regional'
