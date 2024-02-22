@@ -20,6 +20,10 @@ with
             ) as location_abbr,
             case
                 when
+                    sr.home_work_location_name like '%Room%' or sr.home_work_location_name like '%Campus%'
+                    and sr.business_unit_home_name not like '%Family%'
+                then 'Regional'
+                when
                     sr.home_work_location_name not like '%Room%'
                     and sr.department_home_name in ('Operations', 'School Support')
                 then 'Operations'
@@ -29,17 +33,13 @@ with
                 then 'Instructional'
                 when
                     sr.home_work_location_name like '%Room%'
-                    and sr.business_unit_home_name not like '%Family%'
-                then 'Regional'
-                when
-                    sr.home_work_location_name like '%Room%'
                     and sr.business_unit_home_name like '%Family%'
                 then 'CMO'
                 else 'Special'
             end as route,
-            
+
             coalesce(cc.name, sr.home_work_location_name) as campus,
-            
+
             lc.dso_employee_number,
             lc.sl_employee_number,
             lc.head_of_school_employee_number,
@@ -137,6 +137,8 @@ select
         then r.mdso_employee_number
         when r.route = 'CMO'
         then ka.chief_employee_number
+        when r.route = 'Regional'
+        then ra.employee_number
     end as second_approver_employee_number,
 
 from roster as r
@@ -144,6 +146,7 @@ left join
     ktaf_approval as ka
     on r.department = ka.reports_to_chief_department
     and r.route = 'CMO'
-left join regional_approval as ra on r.location = ra.location and r.region = ra.region
- and r.route = 'Regional'
-where route = 'CMO' or route = 'Regional'
+left join
+    regional_approval as ra
+on r.region = ra.region
+    and r.route = 'Regional'
