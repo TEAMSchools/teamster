@@ -158,7 +158,16 @@ with
             statestudentidentifier as state_id,
             assessment_name,
             subject_area as discipline,
-            testcode as test_code,
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as test_code,
             testscalescore as score,
             testperformancelevel as performance_band_level,
             is_proficient,
