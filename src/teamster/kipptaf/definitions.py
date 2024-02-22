@@ -83,6 +83,7 @@ defs = Definitions(
         *fivetran.sensors,
         *payroll.sensors,
         *sheets.sensors,
+        *tableau.sensors,
         *workforce_now.sensors,
     ],
     resources={
@@ -107,6 +108,7 @@ defs = Definitions(
         "mclass": resources.MCLASS_RESOURCE,
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
+        "tableau": resources.TABLEAU_SERVER_RESOURCE,
         "zendesk": resources.ZENDESK_RESOURCE,
         # ssh
         "ssh_achieve3k": resources.SSH_RESOURCE_ACHIEVE3K,
