@@ -64,7 +64,7 @@ with
     ktaf_approval as (
 
         select
-            sr2.employee_number as report_to_chief_employee_number,
+            sr2.employee_number as reports_to_chief_employee_number,
             sr2.preferred_name_lastfirst as reports_to_chief_preferred_name,
             sr2.job_title as reports_to_chief_job_title,
             sr2.department_home_name as reports_to_chief_department,
@@ -129,7 +129,7 @@ select
         when r.route = 'Operations'
         then r.dso_employee_number
         when r.route = 'CMO'
-        then ka.report_to_chief_employee_number
+        then ka.reports_to_chief_employee_number
         when r.route = 'Regional'
         then ra.employee_number
     end as first_approver_employee_number,
@@ -145,8 +145,6 @@ select
     end as second_approver_employee_number,
 
 from roster as r
-left join
-    ktaf_approval as ka
-    on r.department = ka.reports_to_chief_department
-    and r.route = 'CMO'
+left join ktaf_approval as ka on r.department = ka.reports_to_chief_department and r.route = 'CMO' and r.job_title <> ka.reports_to_chief_job_title
 left join regional_approval as ra on r.region = ra.region and r.route = 'Regional'
+
