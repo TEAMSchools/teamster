@@ -189,6 +189,31 @@ with
                 partition by contact, academic_year order by benchmark_date desc
             ) as rn_benchmark,
         from {{ ref("stg_kippadb__college_persistence") }}
+    ),
+
+    persist_pivot as (
+        select
+            sf_contact_id,
+            `1` as is_persist_yr1_int,
+            `2` as is_persist_yr2_int,
+            `3` as is_persist_yr3_int,
+            `4` as is_persist_yr4_int,
+            `5` as is_persist_yr5_int,
+        from
+            (
+                select
+                    sf_contact_id,
+                    cast(persistence_year as string) as persistence_year,
+                    is_persisting_int,
+                from {{ ref("int_kippadb__persistence") }}
+                where
+                    rn_enrollment_year = 1
+                    and semester = 'Fall'
+                    and is_ecc
+                    and persistence_year between 1 and 6
+            ) pivot (
+                max(is_persisting_int) for persistence_year in ('1', '2', '3', '4', '5')
+            )
     )
 
 select
@@ -329,26 +354,36 @@ select
     cnr.as22_date,
     cnr.as23_date,
     cnr.as24_date,
-    cnr.ccdm,
-    cnr.hd_p,
-    cnr.hd_nr,
-    cnr.td_p,
-    cnr.td_nr,
-    cnr.psc,
-    cnr.sc,
-    cnr.hv,
-    cnr.dp_2year,
-    cnr.dp_4year,
-    cnr.dp_cte,
-    cnr.dp_military,
-    cnr.dp_workforce,
-    cnr.dp_unknown,
     cnr.bgp_2year,
     cnr.bgp_4year,
     cnr.bgp_cte,
     cnr.bgp_military,
-    cnr.bgp_workforce,
     cnr.bgp_unknown,
+    cnr.bgp_workforce,
+    cnr.cc1,
+    cnr.cc2,
+    cnr.cc3,
+    cnr.cc4,
+    cnr.cc5,
+    cnr.cc1_date,
+    cnr.cc2_date,
+    cnr.cc3_date,
+    cnr.cc4_date,
+    cnr.cc5_date,
+    cnr.ccdm,
+    cnr.dp_2year,
+    cnr.dp_4year,
+    cnr.dp_cte,
+    cnr.dp_military,
+    cnr.dp_unknown,
+    cnr.dp_workforce,
+    cnr.hd_nr,
+    cnr.hd_p,
+    cnr.hv,
+    cnr.psc,
+    cnr.sc,
+    cnr.td_nr,
+    cnr.td_p,
 
     gpa_fall.transcript_date as fall_transcript_date,
     gpa_fall.semester_gpa as fall_semester_gpa,
@@ -379,8 +414,11 @@ select
     b.benchmark_financial_color,
     b.benchmark_ppp_color,
 
-    p.is_persisting_int as is_persisting_fall_yr1,
-    p.is_retained_int as is_retained_fall_yr1,
+    p.is_persist_yr1_int,
+    p.is_persist_yr2_int,
+    p.is_persist_yr3_int,
+    p.is_persist_yr4_int,
+    p.is_persist_yr5_int,
 
     case
         when c.contact_college_match_display_gpa >= 3.50
@@ -529,12 +567,7 @@ left join
     on c.contact_id = b.contact
     and ay.academic_year = b.academic_year
     and b.rn_benchmark = 1
-left join
-    {{ ref("int_kippadb__persistence") }} as p
-    on c.contact_id = p.sf_contact_id
-    and p.semester = 'Fall'
-    and p.persistence_year = 1
-    and p.rn_enrollment_year = 1
+left join persist_pivot as p on c.contact_id = p.sf_contact_id
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

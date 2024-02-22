@@ -6,7 +6,7 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 dependencies = [
-  "dagster<2",
+  "dagster>=1.6.3,<2",
   "dagster-cloud<2",
   "dagster-dbt<1",
   "dagster-gcp<1",
@@ -29,7 +29,7 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "cmake>=3.28.1",
 ]
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
 
 [build-system]
@@ -49,6 +49,7 @@ install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
+post_install = { shell = "pdm export -o requirements.txt" }
 
 [tool.pyright]
 venvPath = ".venv"

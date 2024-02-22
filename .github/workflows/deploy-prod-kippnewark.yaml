@@ -27,4 +27,6 @@ jobs:
     uses: ./.github/workflows/dagster-cloud-deploy.yaml
     with:
       code-location: kippnewark
+      python-version: "3.12"
+      dbt-version: "1.7"
     secrets: inherit

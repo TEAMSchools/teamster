@@ -27,6 +27,7 @@ with
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
+            s.sections_section_number as section_number,
             safe_cast(e.state_studentnumber as int) as state_studentnumber,
             case
                 when e.spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
@@ -264,6 +265,7 @@ select
     r.courses_course_name as ccr_course,
     r.teacher_lastfirst as ccr_teacher,
     r.sections_external_expression as ccr_period,
+    r.section_number as ccr_section_number,
     g.test_type,
     g.grad_eligible_type,
     g.discipline,

@@ -114,4 +114,4 @@ sources:
             asset_key:
               - kippcamden
               - deanslist
-              - stg_deanslist__incidents__custom_fields
+              - int_deanslist__incidents__custom_fields__pivot
