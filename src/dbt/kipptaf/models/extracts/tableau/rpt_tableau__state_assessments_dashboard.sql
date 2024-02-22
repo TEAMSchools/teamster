@@ -47,7 +47,7 @@ with
             on e.student_number = m.student_number
             and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
         where
-            e.academic_year >= {{ var("current_academic_year") }} - 2
+            e.academic_year >= {{ var("current_academic_year") }} - 7
             and e.rn_year = 1
             and e.region in ('Camden', 'Newark')
             and e.grade_level > 2
@@ -85,7 +85,7 @@ with
             end as advisory,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
-            academic_year >= {{ var("current_academic_year") }} - 2
+            academic_year >= {{ var("current_academic_year") }} - 7
             and rn_year = 1
             and region = 'Miami'
             and grade_level > 2
@@ -146,7 +146,7 @@ with
             on e.students_student_number = c.students_student_number
             and e.courses_credittype = c.courses_credittype
         where
-            e.cc_academic_year >= {{ var("current_academic_year") }} - 2
+            e.cc_academic_year >= {{ var("current_academic_year") }} - 7
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
@@ -158,7 +158,6 @@ with
             statestudentidentifier as state_id,
             assessment_name,
             subject_area as discipline,
-            testcode as test_code,
             testscalescore as score,
             testperformancelevel as performance_band_level,
             is_proficient,
@@ -208,8 +207,18 @@ with
                 then 'English Language Arts'
                 else subject
             end as subject,
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as test_code,
         from {{ ref("int_pearson__all_assessments") }}
-        where cast(academic_year as int) >= {{ var("current_academic_year") }} - 2
+        where cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
     ),
 
     assessments_fl as (
