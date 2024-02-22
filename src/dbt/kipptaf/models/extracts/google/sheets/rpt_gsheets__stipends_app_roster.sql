@@ -20,7 +20,7 @@ with
             ) as location_abbr,
             case
                 when
-                    sr.home_work_location_name like '%Room%' or sr.home_work_location_name like '%Campus%'
+                    (sr.home_work_location_name like '%Room%' or sr.home_work_location_name like '%Campus%')
                     and sr.business_unit_home_name not like '%Family%'
                 then 'Regional'
                 when
