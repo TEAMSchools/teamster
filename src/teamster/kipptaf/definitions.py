@@ -26,6 +26,7 @@ from . import (
     resources,
     schoolmint,
     smartrecruiters,
+    tableau,
     zendesk,
 )
 from .adp import payroll, workforce_manager, workforce_now
@@ -54,6 +55,7 @@ defs = Definitions(
             schoolmint,
             sheets,
             smartrecruiters,
+            tableau,
             workforce_manager,
             workforce_now,
             zendesk,
