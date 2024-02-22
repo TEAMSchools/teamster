@@ -292,6 +292,7 @@ select
     ei.ugrad_adjusted_6_year_minority_graduation_rate,
     ei.ugrad_act_composite_25_75,
     ei.ugrad_competitiveness_ranking,
+    ei.ugrad_status,
 
     apps.name as application_name,
     apps.account_type as application_account_type,
