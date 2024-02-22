@@ -39,7 +39,7 @@ def ticket_metrics_archive(
         )
     )
 
-    partition_key: DateTime = pendulum.parser.parse(context.partition_key)  # type: ignore
+    partition_key: DateTime = pendulum.parse(context.partition_key)  # type: ignore
 
     start_date = partition_key.subtract(seconds=1)
     end_date = partition_key.add(months=1)
