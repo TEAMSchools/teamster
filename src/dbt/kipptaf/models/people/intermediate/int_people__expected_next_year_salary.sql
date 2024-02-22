@@ -10,7 +10,7 @@ select
     case
         when pss.salary_rule is not null
         then pss.salary_rule
-        when sr.job_title in ('Teacher', 'Teacher ESL', 'Learrning Specialist')
+        when sr.job_title in ('Teacher', 'Teacher ESL', 'Learning Specialist')
         then concat('Teacher PM - ', sr.business_unit_assigned_code)
         else 'Annual Adjustment'
     end as salary_rule,
