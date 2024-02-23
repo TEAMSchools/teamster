@@ -108,6 +108,9 @@ select
     test_code,
     has_extended_time,
     concat(student_number, '_', test_code) as sn_test_hash,
+    concat(
+        school_abbreviation, '-', test_code, if(has_extended_time, '-ET', '')
+    ) as session_name,
 from roster
 where
     academic_year = 2023
