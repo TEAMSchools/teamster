@@ -25,14 +25,13 @@ with
             coalesce(
                 sr.home_work_location_abbreviation, sr.home_work_location_name
             ) as location_abbr,
-            coalesce(cc.name, sr.home_work_location_name) as campus,
             case
                 when
-                    (
+                    sr.business_unit_home_name not like '%Family%'
+                    and (
                         sr.home_work_location_name like '%Room%'
                         or sr.home_work_location_name like '%Campus%'
                     )
-                    and sr.business_unit_home_name not like '%Family%'
                 then 'Regional'
                 when
                     sr.home_work_location_name not like '%Room%'
@@ -49,6 +48,7 @@ with
                 else 'Special'
             end as route,
 
+            coalesce(cc.name, sr.home_work_location_name) as campus,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ ref("stg_people__campus_crosswalk") }} as cc
@@ -63,27 +63,23 @@ with
     ),
 
     ktaf_approval as (
-
         select
-            sr2.employee_number as report_to_chief_employee_number,
-            sr2.preferred_name_lastfirst as report_to_chief_preferred_name,
-            sr2.job_title as report_to_chief_job_title,
-            sr2.department_home_name as report_to_chief_department,
-            sr1.employee_number as chief_employee_number,
-            sr1.preferred_name_lastfirst as chief_preferred_name,
-            sr1.job_title as chief_job_title,
-            sr1.department_home_name as chief_department,
+            sr1.employee_number as report_to_chief_employee_number,
+            sr1.preferred_name_lastfirst as report_to_chief_preferred_name,
+            sr1.job_title as report_to_chief_job_title,
+            sr1.department_home_name as report_to_chief_department,
+            sr1.report_to_employee_number as chief_employee_number,
+            sr1.report_to_preferred_name_lastfirst as chief_preferred_name,
 
+            sr2.department_home_name as chief_department,
+            sr2.job_title as chief_job_title,
         from {{ ref("base_people__staff_roster") }} as sr1
-        left join
+        inner join
             {{ ref("base_people__staff_roster") }} as sr2
-            on sr1.employee_number = sr2.report_to_employee_number
-        where
-            sr1.job_title like '%Chief%'
-            and sr1.job_title like '%Officer%'
-            and sr1.worker_termination_date is null
+            on sr1.report_to_employee_number = sr2.employee_number
+            and sr2.job_title like 'Chief%Officer'
             and sr2.worker_termination_date is null
-
+        where sr1.worker_termination_date is null
     ),
 
     regional_approval as (
@@ -96,13 +92,12 @@ with
             business_unit_home_name as region,
         from {{ ref("base_people__staff_roster") }}
         where
-            job_title in (
+            worker_termination_date is null
+            and job_title in (
                 'Managing Director of School Operations',
                 'Managing Director of Operations',
                 'Executive Director'
             )
-            and worker_termination_date is null
-
     )
 
 select
@@ -183,7 +178,6 @@ select
         when r.route = 'Regional'
         then ra.employee_number
     end as second_approver_employee_number,
-
 from roster as r
 left join
     ktaf_approval as ka
