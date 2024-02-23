@@ -32,7 +32,7 @@ class SmartRecruitersResource(ConfigurableResource):
     def get(self, endpoint, *args, **kwargs):
         context = self.get_resource_context()
 
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(*args, endpoint=endpoint)
         context.log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
@@ -40,9 +40,9 @@ class SmartRecruitersResource(ConfigurableResource):
     def post(self, endpoint, *args, **kwargs):
         context = self.get_resource_context()
 
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(*args, endpoint=endpoint)
         context.log.debug(f"POST: {url}")
 
         return self._request(
-            method="POST", url=self._get_url(endpoint=endpoint, *args), **kwargs
+            method="POST", url=self._get_url(*args, endpoint=endpoint), **kwargs
         )

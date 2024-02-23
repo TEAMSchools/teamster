@@ -71,7 +71,7 @@ class DeansListResource(ConfigurableResource):
     def get(self, api_version, endpoint, school_id, params, *args, **kwargs):
         context = self.get_resource_context()
 
-        url = self._get_url(api_version=api_version, endpoint=endpoint, *args)
+        url = self._get_url(*args, api_version=api_version, endpoint=endpoint)
 
         context.log.info(f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}")
 
