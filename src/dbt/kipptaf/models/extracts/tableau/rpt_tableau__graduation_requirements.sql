@@ -22,12 +22,15 @@ with
             e.is_retained_year,
             e.is_retained_ever,
             e.student_email_google,
+
             adb.contact_id as kippadb_contact_id,
             adb.ktc_cohort,
+
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
             s.sections_section_number as section_number,
+
             safe_cast(e.state_studentnumber as int) as state_studentnumber,
             case
                 when e.spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
@@ -57,10 +60,13 @@ with
         select
             b._dbt_source_relation,
             b.name as test_name,
+
             s.studentid,
             s.grade_level as assessment_grade_level,
+
             t.numscore as testscalescore,
             t.alphascore as testperformancelevel,
+
             r.name as testcode,
             case
                 r.name when 'ELAGP' then 'ELA' when 'MATGP' then 'Math'
@@ -93,10 +99,12 @@ with
     transfer_roster as (
         select
             e.student_number as localstudentidentifier,
+
             x.subject,
             x.testcode,
             x.testscalescore,
             x.discipline,
+
             safe_cast(e.state_studentnumber as int) as statestudentidentifier,
         from roster as e
         left join
@@ -196,6 +204,7 @@ with
     grad_options_append_final as (
         select
             r.student_number,
+
             a.testcode as test_type,
             a.discipline,
             a.subject,
@@ -207,6 +216,7 @@ with
         union all
         select
             r.student_number,
+
             a.test_type,
             a.discipline,
             a.subject,
@@ -218,6 +228,7 @@ with
         union all
         select
             r.student_number,
+
             'Alternative' as test_type,
             case
                 a.subject when 'ela' then 'ELA' when 'math' then 'Math'
