@@ -1,6 +1,6 @@
 import json
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
 from requests import Session, exceptions
@@ -18,7 +18,7 @@ class MClassResource(ConfigurableResource):
 
         soup = BeautifulSoup(markup=portal_redirect.text, features="html.parser")
 
-        kc_form_login = soup.find(name="form", id="kc-form-login")
+        kc_form_login: Tag = soup.find(name="form", id="kc-form-login")  # type: ignore
 
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
         self._request(
@@ -46,13 +46,16 @@ class MClassResource(ConfigurableResource):
             raise exceptions.HTTPError(response.text) from e
 
     def get(self, path, *args, **kwargs):
-        url = self._get_url(path=path, *args)
+        url = self._get_url(*args, path=path)
         self.get_resource_context().log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
-    def post(self, path, data={}, *args, **kwargs):
-        url = self._get_url(path=path, *args)
+    def post(self, path, data: dict | None = None, *args, **kwargs):
+        if data is None:
+            data = {}
+
+        url = self._get_url(*args, path=path)
         self.get_resource_context().log.debug(f"POST: {url}")
 
         for k, v in data.items():
