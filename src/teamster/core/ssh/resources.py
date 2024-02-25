@@ -24,7 +24,10 @@ class SSHResource(DagsterSSHResource):
             remote_port=remote_port, remote_host=remote_host, local_port=local_port
         )
 
-    def listdir_attr_r(self, remote_dir: str, files: list = []):
+    def listdir_attr_r(self, remote_dir: str, files: list | None = None):
+        if files is None:
+            files = []
+
         with self.get_connection() as conn:
             try:
                 with conn.open_sftp() as sftp_client:
@@ -36,11 +39,15 @@ class SSHResource(DagsterSSHResource):
                         sftp_client.close()
             finally:
                 conn.close()
-                return files
+
+        return files
 
     def _listdir_attr_r(
-        self, sftp_client: SFTPClient, remote_dir: str, files: list = []
+        self, sftp_client: SFTPClient, remote_dir: str, files: list | None = None
     ):
+        if files is None:
+            files = []
+
         for file in sftp_client.listdir_attr(remote_dir):
             try:
                 filepath = str(pathlib.Path(remote_dir) / file.filepath)  # type: ignore

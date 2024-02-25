@@ -78,13 +78,13 @@ class AdpWorkforceManagerResource(ConfigurableResource):
         return f"{self._base_url}/{endpoint}" + ("/" + "/".join(args) if args else "")
 
     def get(self, endpoint, *args, **kwargs):
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(*args, endpoint=endpoint)
         self.get_resource_context().log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
     def post(self, endpoint, *args, **kwargs):
-        url = self._get_url(endpoint=endpoint, *args)
+        url = self._get_url(*args, endpoint=endpoint)
         self.get_resource_context().log.debug(f"POST: {url}")
 
         return self._request(method="POST", url=url, **kwargs)

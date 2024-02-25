@@ -42,7 +42,7 @@ lint:
   enabled:
     - ruff@0.2.2
     - osv-scanner@1.6.2
-    - trufflehog@3.67.7
+    - trufflehog@3.68.0
     - bandit@1.7.7
     - oxipng@9.0.0
     - sqlfluff@2.3.5
