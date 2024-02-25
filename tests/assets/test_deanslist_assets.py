@@ -40,7 +40,10 @@ STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(
 )
 
 
-def _test_asset(partition_type, asset_name, api_version, params={}):
+def _test_asset(partition_type, asset_name, api_version, params: dict | None = None):
+    if params is None:
+        params = {}
+
     if partition_type == "monthly":
         asset = build_deanslist_multi_partition_asset(
             code_location="staging",

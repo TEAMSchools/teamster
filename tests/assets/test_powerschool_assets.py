@@ -13,8 +13,14 @@ from teamster.staging import LOCAL_TIMEZONE
 
 
 def _test_asset(
-    asset_name, partitions_def=None, partition_column=None, select_columns=["*"]
+    asset_name,
+    partitions_def=None,
+    partition_column=None,
+    select_columns: list | None = None,
 ):
+    if select_columns is None:
+        select_columns = ["*"]
+
     asset = build_powerschool_table_asset(
         code_location="staging",
         local_timezone=LOCAL_TIMEZONE,

@@ -46,7 +46,19 @@ DATETIME_ATTRIBUTES = [
 ]
 
 
-def build_ldap_asset(name, search_base, search_filter, attributes=["*"], op_tags={}):
+def build_ldap_asset(
+    name,
+    search_base,
+    search_filter,
+    attributes: list | None = None,
+    op_tags: dict | None = None,
+):
+    if attributes is None:
+        attributes = ["*"]
+
+    if op_tags is None:
+        op_tags = {}
+
     asset_key = [CODE_LOCATION, "ldap", name]
 
     @asset(
