@@ -418,3 +418,13 @@ locations:
                   secretKeyRef:
                     name: op-renlearn-sftp-kippnj
                     key: username
+              - name: TABLEAU_TOKEN_NAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: username
+              - name: TABLEAU_PERSONAL_ACCESS_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: credential
