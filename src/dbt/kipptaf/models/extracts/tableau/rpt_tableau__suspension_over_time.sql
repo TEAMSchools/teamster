@@ -93,6 +93,7 @@ select
     if(date_day >= s.first_suspension_date_iss, 1, 0) as is_iss_running,
     if(date_day >= s.first_suspension_date_oss, 1, 0) as is_oss_running,
 
+    --HEY CHARLIE LOOK AT THIS CHARLIE
     sum(sd.num_days) over (
         partition by co.student_number, co.academic_year
         order by date_day
