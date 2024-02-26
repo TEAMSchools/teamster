@@ -82,3 +82,5 @@ assets:
     partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
+  - asset_name: sced_code_mapping
+    partition_column: last_modified_ts
