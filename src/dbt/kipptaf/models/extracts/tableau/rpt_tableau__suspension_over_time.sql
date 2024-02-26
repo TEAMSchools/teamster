@@ -93,12 +93,10 @@ select
     if(date_day >= s.first_suspension_date_iss, 1, 0) as is_iss_running,
     if(date_day >= s.first_suspension_date_oss, 1, 0) as is_oss_running,
 
-    --HEY CHARLIE LOOK AT THIS CHARLIE
+    -- HEY CHARLIE LOOK AT THIS CHARLIE
     sum(sd.num_days) over (
-        partition by co.student_number, co.academic_year
-        order by date_day
-        rows between unbounded preceding and current row
-    ) as total_suspended_days
+        partition by co.student_number, co.academic_year order by date_day asc
+    ) as total_suspended_days_running
 
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
