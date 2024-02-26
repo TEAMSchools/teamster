@@ -335,6 +335,10 @@ def test_asset_powerschool_assignmentsection():
     )
 
 
+def test_asset_powerschool_sced_code_mapping():
+    _test_asset(asset_name="sced_code_mapping")
+
+
 def test_asset_powerschool_storedgrades_full():
     _test_asset(asset_name="storedgrades")
 
