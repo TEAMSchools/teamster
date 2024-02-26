@@ -51,6 +51,9 @@ with
         select
             i.create_ts_academic_year as academic_year,
             i.student_school_id as student_number,
+
+            s.suspension_type,
+
             p.end_date,
             p.num_days,
         from {{ ref("stg_deanslist__incidents") }} as i
@@ -96,6 +99,12 @@ select
     sum(sd.num_days) over (
         partition by co.student_number, co.academic_year order by date_day asc
     ) as total_suspended_days_running,
+    sum(if(sd.suspension_type = 'OSS', sd.num_days, null)) over (
+        partition by co.student_number, co.academic_year order by date_day asc
+    ) as oss_suspended_days_running,
+    sum(if(sd.suspension_type = 'ISS', sd.num_days, null)) over (
+        partition by co.student_number, co.academic_year order by date_day asc
+    ) as iss_suspended_days_running,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     unnest(
