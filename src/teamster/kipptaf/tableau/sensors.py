@@ -3,14 +3,14 @@ import json
 from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
 
 from .. import CODE_LOCATION
-from . import assets
+from .assets import external_assets
 from .resources import TableauServerResource
 
 
 @sensor(
     name=f"{CODE_LOCATION}_tableau_asset_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=assets,
+    asset_selection=external_assets,
 )
 def tableau_asset_sensor(
     context: SensorEvaluationContext, tableau: TableauServerResource
@@ -19,7 +19,7 @@ def tableau_asset_sensor(
 
     asset_events = []
 
-    for asset in assets:
+    for asset in external_assets:
         asset_identifier = asset.key.to_python_identifier()
         asset_metadata = asset.metadata_by_key[asset.key]
         context.log.info(asset_identifier)

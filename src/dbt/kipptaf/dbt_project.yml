@@ -158,6 +158,10 @@ models:
       +schema: surveys
       intermediate:
         +materialized: table
+    tableau:
+      +schema: tableau
+      staging:
+        +materialized: table
     titan:
       +schema: titan
     utils:

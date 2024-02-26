@@ -72,6 +72,7 @@ defs = Definitions(
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
+        *tableau.schedules,
         *workforce_manager.schedules,
         *workforce_now.schedules,
     ],
