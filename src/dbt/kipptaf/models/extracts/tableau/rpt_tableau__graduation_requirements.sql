@@ -259,6 +259,7 @@ select
     r.student_number,
     r.state_studentnumber,
     r.kippadb_contact_id,
+    r.students_dcid,
     r.lastfirst,
     r.first_name,
     r.last_name,
