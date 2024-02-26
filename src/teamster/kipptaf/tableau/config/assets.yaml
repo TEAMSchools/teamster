@@ -1,4 +1,15 @@
-assets:
+workbook:
+  partitions_def:
+    start_date: 2024-02-26
+  asset_def:
+    key_prefix:
+      - kipptaf
+      - tableau
+    name: workbook
+    io_manager_key: io_manager_gcs_avro
+    compute_kind: tableau
+    group_name: tableau
+external_assets:
   - name: Academic Priorities [NJ]
     deps:
       - [kipptaf, tableau, rpt_tableau__power_standards]
