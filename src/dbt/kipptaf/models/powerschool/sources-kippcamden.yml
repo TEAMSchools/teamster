@@ -747,3 +747,11 @@ sources:
               - kippcamden
               - powerschool
               - int_powerschool__ada
+      - name: stg_powerschool__sced_code_mapping
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__sced_code_mapping
