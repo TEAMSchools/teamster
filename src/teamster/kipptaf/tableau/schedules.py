@@ -39,6 +39,7 @@ def tableau_workbook_asset_job_schedule(context: ScheduleEvaluationContext):
             run_key=f"{CODE_LOCATION}_{context._schedule_name}_{partition_key}",
             asset_selection=[workbook.key],
             partition_key=partition_key,
+            tags={"tableau_pat_session_limit": "true"},
         )
 
 
