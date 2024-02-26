@@ -13,6 +13,9 @@ defs = Definitions(
             tableau,
         ]
     ),
+    schedules=[
+        *tableau.schedules,
+    ],
     resources={
         "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
         "tableau": TableauServerResource(
