@@ -50,7 +50,7 @@ install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "
 validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
-post_install = { shell = "pdm export -o requirements.txt" }
+post_install = { shell = "pdm export --prod -o requirements.txt" }
 
 [tool.pyright]
 venvPath = ".venv"
