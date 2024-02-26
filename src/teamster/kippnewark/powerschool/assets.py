@@ -51,7 +51,7 @@ transaction_date_partition_assets = [
     ]
 ]
 
-assignment_assets = [
+whenmodified_assets = [
     build_powerschool_table_asset(
         **asset,
         code_location=CODE_LOCATION,
@@ -79,12 +79,12 @@ dcid_assets = [
 ]
 
 partition_assets = [
-    *assignment_assets,
+    *whenmodified_assets,
     *transaction_date_partition_assets,
 ]
 
 _all = [
-    *assignment_assets,
+    *whenmodified_assets,
     *full_assets,
     *nonpartition_assets,
     *transaction_date_partition_assets,
