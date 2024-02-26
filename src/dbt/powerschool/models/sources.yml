@@ -410,3 +410,9 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+      - name: src_powerschool__sced_code_mapping
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/sced_code_mapping/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
