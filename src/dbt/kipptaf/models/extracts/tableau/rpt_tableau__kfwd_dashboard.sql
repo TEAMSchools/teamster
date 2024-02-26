@@ -59,6 +59,24 @@ with
             round(
                 avg(
                     case
+                        when application_status = 'Accepted'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_accepted_avg,
+            round(
+                min(
+                    case
+                        when application_status = 'Accepted'
+                        then adjusted_6_year_minority_graduation_rate
+                    end
+                ),
+                0
+            ) as ecc_accepted_min,
+            round(
+                avg(
+                    case
                         when
                             matriculation_decision = 'Matriculated (Intent to Enroll)'
                             and transfer_application = false
