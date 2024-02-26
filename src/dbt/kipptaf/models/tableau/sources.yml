@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: tableau
+    schema: staging_tableau
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_tableau__workbook
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/tableau/workbook/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/tableau/workbook/"
+            format: AVRO
+            enable_logical_types: true
