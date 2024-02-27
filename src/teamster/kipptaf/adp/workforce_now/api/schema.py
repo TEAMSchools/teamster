@@ -1,120 +1,371 @@
 from teamster.core.utils.functions import get_avro_record_schema
 
-EMAIL_RECORDS = []
+CODE_FIELDS = [
+    # codeValue
+    # effectiveDate
+    # shortName
+    # longName
+    # identificationMethodCode
+]
 
-FAX_RECORDS = []
+NAME_FIELDS = [
+    # familyName1
+    # formattedName
+    # generationAffixCode
+    # givenName
+    # middleName
+    # nickName
+    # qualificationAffixCode
+]
 
-LANDLINE_RECORDS = []
+ADDRESS_FIELDS = [
+    # cityName
+    # countryCode
+    # countrySubdivisionLevel1
+    # countrySubdivisionLevel2
+    # deliveryPoint
+    # lineOne
+    # lineThree
+    # lineTwo
+    # postalCode
+]
 
-MOBILE_RECORDS = []
+LOCATION_FIELDS = [
+    # address
+    # nameCode
+]
 
-PAGER_RECORDS = []
+HOURS_FIELDS = [
+    # hoursQuantity
+    # unitCode
+]
 
-BUSINESS_COMMUNICATION_FIELDS = [
-    {
-        "name": "emails",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="email",
-                    fields=EMAIL_RECORDS,
-                    namespace="worker.business_communication",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "faxes",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="fax",
-                    fields=FAX_RECORDS,
-                    namespace="worker.business_communication",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "landlines",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="landline",
-                    fields=LANDLINE_RECORDS,
-                    namespace="worker.business_communication",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "mobiles",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="mobile",
-                    fields=MOBILE_RECORDS,
-                    namespace="worker.business_communication",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "pagers",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="pager",
-                    fields=PAGER_RECORDS,
-                    namespace="worker.business_communication",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
+REMUNERATIONS_FIELDS = [
+    # currencyCode
+    # effectiveDate
+    # itemID
+    # nameCode
+    # rate
+    # hourlyRateAmount
+]
+
+CUSTOM_FIELD_GROUP_FIELDS = [
+    # amountFields
+    # codeFields
+    # dateFields
+    # indicatorFields
+    # numberFields
+    # percentFields
+    # stringFields
+    # telephoneFields
+]
+
+EMAIL_RECORD_FIELDS = [
+    # emailUri
+]
+
+PHONE_FIELDS = [
+    # access
+    # areaDialing
+    # countryDialing
+    # dialNumber
+    # extension
+]
+
+
+def get_communication_fields(parent_namespace):
+    return [
+        {
+            "name": "emails",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": get_avro_record_schema(
+                        name="email",
+                        fields=EMAIL_RECORD_FIELDS,
+                        namespace=f"{parent_namespace}.communication",
+                    ),
+                    "default": [],
+                },
+            ],
+            "default": None,
+        },
+        {
+            "name": "faxes",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": get_avro_record_schema(
+                        name="fax",
+                        fields=PHONE_FIELDS,
+                        namespace=f"{parent_namespace}.communication",
+                    ),
+                    "default": [],
+                },
+            ],
+            "default": None,
+        },
+        {
+            "name": "landlines",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": get_avro_record_schema(
+                        name="landline",
+                        fields=PHONE_FIELDS,
+                        namespace=f"{parent_namespace}.communication",
+                    ),
+                    "default": [],
+                },
+            ],
+            "default": None,
+        },
+        {
+            "name": "mobiles",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": get_avro_record_schema(
+                        name="mobile",
+                        fields=PHONE_FIELDS,
+                        namespace=f"{parent_namespace}.communication",
+                    ),
+                    "default": [],
+                },
+            ],
+            "default": None,
+        },
+        {
+            "name": "pagers",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": get_avro_record_schema(
+                        name="pager",
+                        fields=PHONE_FIELDS,
+                        namespace=f"{parent_namespace}.communication",
+                    ),
+                    "default": [],
+                },
+            ],
+            "default": None,
+        },
+    ]
+
+
+GOVERNMENT_ID_FIELDS = [
+    # countryCode
+    # idValue
+    # itemID
+    # nameCode
+    # statusCode
+]
+
+SOCIAL_INSURANCE_PROGRAMS_FIELDS = [
+    # coveredIndicator
+    # nameCode
 ]
 
 PERSON_FIELDS = [
-    # birthDate
-    # deathDate
-    # militaryDischargeDate
+    {"name": "birthDate", "type": ["null", "string"], "default": None},
+    {"name": "deathDate", "type": ["null", "string"], "default": None},
+    {"name": "militaryDischargeDate", "type": ["null", "string"], "default": None},
     #
-    # birthName
-    # communication
-    # customFieldGroup
-    # ethnicityCode
-    # genderCode
-    # genderSelfIdentityCode
-    # governmentIDs
-    # highestEducationLevelCode
-    # legalAddress
-    # maritalStatusCode
-    # militaryClassificationCodes
-    # otherPersonalAddresses
-    # preferredGenderPronounCode
-    # preferredName
-    # raceCode
+    {
+        "name": "birthName",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="birth_name", fields=NAME_FIELDS, namespace="worker.person"
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "communication",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="communication",
+                fields=get_communication_fields("worker.person"),
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "customFieldGroup",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="custom_field_group",
+                fields=CUSTOM_FIELD_GROUP_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "ethnicityCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="ethnicity_code", fields=CODE_FIELDS, namespace="worker.person"
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "genderCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="gender_code", fields=CODE_FIELDS, namespace="worker.person"
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "genderSelfIdentityCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="gender_self_identity_code",
+                fields=CODE_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "governmentIDs",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="government_id",
+                fields=GOVERNMENT_ID_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "highestEducationLevelCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="highest_education_level_code",
+                fields=CODE_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "legalAddress",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="legal_address",
+                fields=ADDRESS_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "maritalStatusCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="marital_status_code",
+                fields=CODE_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "militaryClassificationCodes",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="military_classification_codes",
+                fields=CODE_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "otherPersonalAddresses",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="other_personal_addresses",
+                fields=ADDRESS_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "preferredGenderPronounCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="preferred_gender_pronoun_code",
+                fields=CODE_FIELDS,
+                namespace="worker.person",
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "preferredName",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="preferred_name", fields=NAME_FIELDS, namespace="worker.person"
+            ),
+        ],
+        "default": None,
+    },
+    {
+        "name": "raceCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="race_code", fields=CODE_FIELDS, namespace="worker.person"
+            ),
+        ],
+        "default": None,
+    },
 ]
 
+WORKER_ID_FIELDS = [{"name": "idValue", "type": ["null", "string"], "default": None}]
+
+WORKER_STATUS_FIELDS = [
+    {
+        "name": "statusCode",
+        "type": [
+            "null",
+            get_avro_record_schema(
+                name="status_code", fields=CODE_FIELDS, namespace="worker.status_code"
+            ),
+        ],
+        "default": None,
+    }
+]
+
+LINK_FIELDS = [
+    # href
+]
 PHOTOS_FIELDS = [
     # links
 ]
@@ -125,6 +376,54 @@ WORKER_DATES_FIELDS = [
     # rehireDate
     # retirementDate
     # terminationDate
+]
+
+ASSIGNMENT_STATUS_FIELDS = [
+    # reasonCode
+    # statusCode
+]
+
+BARGAINING_UNIT_FIELDS = [
+    # bargainingUnitCode
+]
+
+LABOR_UNION_FIELDS = [
+    # laborUnionCode
+]
+
+PAY_GRADE_PAY_RANGE_FIELDS = [
+    # maximumRate
+    # medianRate
+    # minimumRate
+]
+
+WAGE_LAW_COVERAGE_FIELDS = [
+    # wageLawNameCode
+]
+
+WORKER_TIME_PROFILE_FIELDS = [
+    # badgeID
+    # timeAndAttendanceIndicator
+    # timeServiceSupervisor
+    # timeZoneCode
+]
+
+HOME_ORGANIZATIONAL_UNITS_FIELDS = [
+    # nameCode
+    # typeCode
+]
+
+OCCUPATIONAL_CLASSIFICATIONS_FIELDS = [
+    # classificationCode
+    # nameCode
+]
+
+REPORTS_TO_FIELDS = [
+    # positionID
+]
+
+WORKER_GROUPS_FIELDS = [
+    # groupCode
 ]
 
 WORK_ASSIGNMENTS_FIELDS = [
@@ -142,35 +441,30 @@ WORK_ASSIGNMENTS_FIELDS = [
     # terminationDate
     # voluntaryIndicator
     #
+    # assignmentStatus/
     # bargainingUnit/
     # baseRemuneration/
     # customFieldGroup/
     # homeWorkLocation/
-    # jobCode/
     # laborUnion/
-    # payCycleCode/
-    # payGradeCode/
     # payGradePayRange/
+    # standardHours/
+    # standardPayPeriodHours/
     # wageLawCoverage/
     # workerTimeProfile/
+    #
+    # jobCode/
+    # payCycleCode/
+    # payGradeCode/
     # workerTypeCode/
     # workShiftCode/
     #
     # additionalRemunerations/
     # assignedWorkLocations/
-    # assignmentStatus/
     # homeOrganizationalUnits/
     # occupationalClassifications/
     # reportsTo/
-    # standardHours/
-    # standardPayPeriodHours/
     # workerGroups/
-]
-
-WORKER_ID_FIELDS = [{"name": "idValue", "type": ["null", "string"], "default": None}]
-
-WORKER_STATUS_FIELDS = [
-    {"name": "statusCode", "type": ["null", "string"], "default": None}
 ]
 
 WORKER_FIELDS = [
@@ -192,7 +486,7 @@ WORKER_FIELDS = [
             "null",
             get_avro_record_schema(
                 name="business_communication",
-                fields=BUSINESS_COMMUNICATION_FIELDS,
+                fields=get_communication_fields("worker"),
                 namespace="worker",
             ),
         ],
@@ -264,149 +558,6 @@ WORKER_FIELDS = [
         "default": None,
     },
 ]
-
-# businessCommunication/emails/emailUri
-# businessCommunication/faxes/access
-# businessCommunication/faxes/areaDialing
-# businessCommunication/faxes/countryDialing
-# businessCommunication/faxes/dialNumber
-# businessCommunication/landlines/access
-# businessCommunication/landlines/areaDialing
-# businessCommunication/landlines/countryDialing
-# businessCommunication/landlines/dialNumber
-# businessCommunication/landlines/extension
-# businessCommunication/mobiles/access
-# businessCommunication/mobiles/areaDialing
-# businessCommunication/mobiles/countryDialing
-# businessCommunication/mobiles/dialNumber
-# businessCommunication/pagers/access
-# businessCommunication/pagers/areaDialing
-# businessCommunication/pagers/countryDialing
-# businessCommunication/pagers/dialNumber
-# businessCommunication/pagers/extension
-# person/birthName/familyName1
-# person/communication/emails
-# person/communication/faxes
-# person/communication/landlines
-# person/communication/mobiles
-# person/communication/pagers
-# person/customFieldGroup/amountFields
-# person/customFieldGroup/codeFields
-# person/customFieldGroup/dateFields
-# person/customFieldGroup/indicatorFields
-# person/customFieldGroup/numberFields
-# person/customFieldGroup/percentFields
-# person/customFieldGroup/stringFields
-# person/customFieldGroup/telephoneFields
-# person/ethnicityCode/codeValue
-# person/ethnicityCode/longName
-# person/ethnicityCode/shortName
-# person/genderCode/codeValue
-# person/genderCode/shortName
-# person/genderSelfIdentityCode/codeValue
-# person/genderSelfIdentityCode/shortName
-# person/governmentIDs/countryCode
-# person/governmentIDs/idValue
-# person/governmentIDs/itemID
-# person/governmentIDs/nameCode
-# person/governmentIDs/statusCode
-# person/highestEducationLevelCode/codeValue
-# person/highestEducationLevelCode/longName
-# person/highestEducationLevelCode/shortName
-# person/legalAddress/cityName
-# person/legalAddress/countryCode
-# person/legalAddress/countrySubdivisionLevel1
-# person/legalAddress/countrySubdivisionLevel2
-# person/legalAddress/deliveryPoint
-# person/legalAddress/lineOne
-# person/legalAddress/lineThree
-# person/legalAddress/lineTwo
-# person/legalAddress/postalCode
-# person/legalName/familyName1
-# person/legalName/formattedName
-# person/legalName/generationAffixCode
-# person/legalName/givenName
-# person/legalName/middleName
-# person/legalName/nickName
-# person/legalName/qualificationAffixCode
-# person/maritalStatusCode/codeValue
-# person/maritalStatusCode/effectiveDate
-# person/maritalStatusCode/shortName
-# person/militaryClassificationCodes/codeValue
-# person/militaryClassificationCodes/longName
-# person/militaryClassificationCodes/shortName
-# person/otherPersonalAddresses/cityName
-# person/otherPersonalAddresses/countryCode
-# person/otherPersonalAddresses/countrySubdivisionLevel1
-# person/otherPersonalAddresses/countrySubdivisionLevel2
-# person/otherPersonalAddresses/lineOne
-# person/otherPersonalAddresses/lineThree
-# person/otherPersonalAddresses/lineTwo
-# person/otherPersonalAddresses/postalCode
-# person/preferredGenderPronounCode/codeValue
-# person/preferredGenderPronounCode/longName
-# person/preferredGenderPronounCode/shortName
-# person/preferredName/familyName1
-# person/preferredName/givenName
-# person/preferredName/middleName
-# person/raceCode/codeValue
-# person/raceCode/identificationMethodCode
-# person/raceCode/longName
-# person/raceCode/shortName
-# person/socialInsurancePrograms/coveredIndicator
-# person/socialInsurancePrograms/nameCode
-
-# photos/links/href
-
-# workAssignments/additionalRemunerations/currencyCode
-# workAssignments/additionalRemunerations/effectiveDate
-# workAssignments/additionalRemunerations/itemID
-# workAssignments/additionalRemunerations/nameCode
-# workAssignments/additionalRemunerations/rate
-# workAssignments/assignedWorkLocations/address
-# workAssignments/assignmentStatus/reasonCode
-# workAssignments/assignmentStatus/statusCode
-# workAssignments/bargainingUnit/bargainingUnitCode
-# workAssignments/baseRemuneration/hourlyRateAmount
-# workAssignments/customFieldGroup/stringFields
-# workAssignments/homeOrganizationalUnits/nameCode
-# workAssignments/homeOrganizationalUnits/typeCode
-# workAssignments/homeWorkLocation/address
-# workAssignments/homeWorkLocation/nameCode
-# workAssignments/jobCode/codeValue
-# workAssignments/jobCode/longName
-# workAssignments/jobCode/shortName
-# workAssignments/laborUnion/laborUnionCode
-# workAssignments/occupationalClassifications/classificationCode
-# workAssignments/occupationalClassifications/nameCode
-# workAssignments/payCycleCode/codeValue
-# workAssignments/payCycleCode/longName
-# workAssignments/payCycleCode/shortName
-# workAssignments/payGradeCode/codeValue
-# workAssignments/payGradeCode/longName
-# workAssignments/payGradeCode/shortName
-# workAssignments/payGradePayRange/maximumRate
-# workAssignments/payGradePayRange/medianRate
-# workAssignments/payGradePayRange/minimumRate
-# workAssignments/reportsTo/positionID
-# workAssignments/standardHours/hoursQuantity
-# workAssignments/standardHours/unitCode
-# workAssignments/standardPayPeriodHours/hoursQuantity
-# workAssignments/workerGroups/groupCode
-# workAssignments/workerTimeProfile/badgeID
-# workAssignments/workerTimeProfile/timeAndAttendanceIndicator
-# workAssignments/workerTimeProfile/timeServiceSupervisor
-# workAssignments/workerTimeProfile/timeZoneCode
-# workAssignments/workerTypeCode/codeValue
-# workAssignments/workerTypeCode/longName
-# workAssignments/workerTypeCode/shortName
-# workAssignments/workShiftCode/codeValue
-# workAssignments/workShiftCode/longName
-# workAssignments/workShiftCode/shortName
-
-# workerStatus/statusCode/codeValue
-# workerStatus/statusCode/longName
-# workerStatus/statusCode/shortName
 
 # ---
 
