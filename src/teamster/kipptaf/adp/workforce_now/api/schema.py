@@ -1,27 +1,106 @@
 from teamster.core.utils.functions import get_avro_record_schema
 
-WORKER_ID_FIELDS = [
-    # idValue
-]
+EMAIL_RECORDS = []
 
-WORKER_STATUS_FIELDS = [
-    # statusCode
-]
+FAX_RECORDS = []
+
+LANDLINE_RECORDS = []
+
+MOBILE_RECORDS = []
+
+PAGER_RECORDS = []
 
 BUSINESS_COMMUNICATION_FIELDS = [
-    # emails
-    # faxes
-    # landlines
-    # mobiles
-    # pagers
+    {
+        "name": "emails",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="email",
+                    fields=EMAIL_RECORDS,
+                    namespace="worker.business_communication",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "faxes",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="fax",
+                    fields=FAX_RECORDS,
+                    namespace="worker.business_communication",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "landlines",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="landline",
+                    fields=LANDLINE_RECORDS,
+                    namespace="worker.business_communication",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "mobiles",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="mobile",
+                    fields=MOBILE_RECORDS,
+                    namespace="worker.business_communication",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
+    {
+        "name": "pagers",
+        "type": [
+            "null",
+            {
+                "type": "array",
+                "items": get_avro_record_schema(
+                    name="pager",
+                    fields=PAGER_RECORDS,
+                    namespace="worker.business_communication",
+                ),
+                "default": [],
+            },
+        ],
+        "default": None,
+    },
 ]
 
 PERSON_FIELDS = [
     # birthDate
+    # deathDate
+    # militaryDischargeDate
+    #
     # birthName
     # communication
     # customFieldGroup
-    # deathDate
     # ethnicityCode
     # genderCode
     # genderSelfIdentityCode
@@ -30,7 +109,6 @@ PERSON_FIELDS = [
     # legalAddress
     # maritalStatusCode
     # militaryClassificationCodes
-    # militaryDischargeDate
     # otherPersonalAddresses
     # preferredGenderPronounCode
     # preferredName
@@ -51,40 +129,48 @@ WORKER_DATES_FIELDS = [
 
 WORK_ASSIGNMENTS_FIELDS = [
     # actualStartDate
-    # additionalRemunerations
-    # assignedWorkLocations
-    # assignmentStatus
-    # bargainingUnit
-    # baseRemuneration
-    # customFieldGroup
     # fullTimeEquivalenceRatio
     # hireDate
-    # homeOrganizationalUnits
-    # homeWorkLocation
     # itemID
-    # jobCode
     # jobFunctionCode
-    # laborUnion
     # managementPositionIndicator
-    # occupationalClassifications
-    # payCycleCode
-    # payGradeCode
-    # payGradePayRange
     # payrollFileNumber
     # payrollGroupCode
     # positionID
     # primaryIndicator
-    # reportsTo
     # seniorityDate
-    # standardHours
-    # standardPayPeriodHours
     # terminationDate
     # voluntaryIndicator
-    # wageLawCoverage
-    # workerGroups
-    # workerTimeProfile
-    # workerTypeCode
-    # workShiftCode
+    #
+    # bargainingUnit/
+    # baseRemuneration/
+    # customFieldGroup/
+    # homeWorkLocation/
+    # jobCode/
+    # laborUnion/
+    # payCycleCode/
+    # payGradeCode/
+    # payGradePayRange/
+    # wageLawCoverage/
+    # workerTimeProfile/
+    # workerTypeCode/
+    # workShiftCode/
+    #
+    # additionalRemunerations/
+    # assignedWorkLocations/
+    # assignmentStatus/
+    # homeOrganizationalUnits/
+    # occupationalClassifications/
+    # reportsTo/
+    # standardHours/
+    # standardPayPeriodHours/
+    # workerGroups/
+]
+
+WORKER_ID_FIELDS = [{"name": "idValue", "type": ["null", "string"], "default": None}]
+
+WORKER_STATUS_FIELDS = [
+    {"name": "statusCode", "type": ["null", "string"], "default": None}
 ]
 
 WORKER_FIELDS = [
