@@ -42,7 +42,7 @@ lint:
   enabled:
     - ruff@0.2.2
     - osv-scanner@1.6.2
-    - trufflehog@3.68.0
+    - trufflehog@3.68.2
     - bandit@1.7.7
     - oxipng@9.0.0
     - sqlfluff@2.3.5
@@ -50,7 +50,7 @@ lint:
     - sqlfmt@0.21.2
     - isort@5.13.2
     - ruff@0.2.2
-    - actionlint@1.6.26
+    - actionlint@1.6.27
     - git-diff-check
     - gitleaks@8.18.2
     - hadolint@2.12.0

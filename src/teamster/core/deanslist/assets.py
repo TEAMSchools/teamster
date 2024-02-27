@@ -1,5 +1,3 @@
-from typing import Any
-
 import pendulum
 from dagster import (
     AssetExecutionContext,
@@ -29,6 +27,9 @@ def build_deanslist_static_partition_asset(
     op_tags: dict | None = None,
     params: dict | None = None,
 ) -> AssetsDefinition:
+    if params is None:
+        params = {}
+
     asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
 
     @asset(
@@ -71,8 +72,11 @@ def build_deanslist_multi_partition_asset(
     api_version,
     partitions_def: MultiPartitionsDefinition,
     op_tags: dict | None = None,
-    params: dict[str, Any] | None = None,
+    params: dict | None = None,
 ) -> AssetsDefinition:
+    if params is None:
+        params = {}
+
     asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
 
     @asset(

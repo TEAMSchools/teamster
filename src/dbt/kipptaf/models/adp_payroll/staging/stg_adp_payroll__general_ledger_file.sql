@@ -21,7 +21,9 @@ select
 
     coalesce(acct_no.long_value, safe_cast(acct_no.string_value as int)) as acct_no,
     coalesce(
-        location_id.long_value, safe_cast(location_id.string_value as int)
+        location_id.long_value,
+        safe_cast(location_id.string_value as int),
+        safe_cast(location_id.double_value as int)
     ) as location_id,
     coalesce(dept_id.long_value, safe_cast(dept_id.double_value as int)) as dept_id,
     coalesce(
