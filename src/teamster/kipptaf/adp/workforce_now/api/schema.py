@@ -561,24 +561,6 @@ WORKER_FIELDS = [
 
 # ---
 
-# person/communication/emails/emailUri
-# person/communication/faxes/access
-# person/communication/faxes/areaDialing
-# person/communication/faxes/countryDialing
-# person/communication/faxes/dialNumber
-# person/communication/landlines/access
-# person/communication/landlines/areaDialing
-# person/communication/landlines/countryDialing
-# person/communication/landlines/dialNumber
-# person/communication/mobiles/access
-# person/communication/mobiles/areaDialing
-# person/communication/mobiles/countryDialing
-# person/communication/mobiles/dialNumber
-# person/communication/pagers/access
-# person/communication/pagers/areaDialing
-# person/communication/pagers/countryDialing
-# person/communication/pagers/dialNumber
-# person/communication/pagers/extension
 # person/customFieldGroup/amountFields/amountValue
 # person/customFieldGroup/amountFields/currencyCode
 # person/customFieldGroup/amountFields/nameCode
@@ -605,9 +587,6 @@ WORKER_FIELDS = [
 # person/customFieldGroup/telephoneFields/formattedNumber
 # person/customFieldGroup/telephoneFields/itemID
 # person/customFieldGroup/telephoneFields/nameCode
-# person/governmentIDs/nameCode/codeValue
-# person/governmentIDs/nameCode/longName
-# person/governmentIDs/nameCode/shortName
 # person/legalAddress/countrySubdivisionLevel1/codeValue
 # person/legalAddress/countrySubdivisionLevel1/longName
 # person/legalAddress/countrySubdivisionLevel1/shortName
