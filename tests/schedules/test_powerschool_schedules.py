@@ -6,15 +6,14 @@ from teamster.kippnewark.powerschool.schedules import last_modified_schedule
 
 
 def test_schedule():
-    context = build_schedule_context(
+    with build_schedule_context(
         instance=get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
-    )
+    ) as context:
+        output = last_modified_schedule(
+            context=context,
+            ssh_powerschool=get_ssh_resource_powerschool("teamacademy.clgpstest.com"),
+            db_powerschool=DB_POWERSCHOOL,
+        )
 
-    output = last_modified_schedule(
-        context=context,
-        ssh_powerschool=get_ssh_resource_powerschool("teamacademy.clgpstest.com"),
-        db_powerschool=DB_POWERSCHOOL,
-    )
-
-    for o in output:
-        context.log.info(o)
+        for o in output:
+            context.log.info(o)
