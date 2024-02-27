@@ -324,6 +324,8 @@ select
     ar.ecc_wishlist_min,
     ar.ecc_matriculated_avg,
     ar.ecc_matriculated_min,
+    ar.ecc_accepted_avg,
+    ar.ecc_accepted_min,
 
     cnr.as1,
     cnr.as2,
