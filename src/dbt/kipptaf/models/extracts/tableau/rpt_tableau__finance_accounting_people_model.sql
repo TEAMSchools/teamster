@@ -14,10 +14,16 @@ with
             and extract(year from date_day) >= 2016
     ),
 
+    additional_earnings_clean as (
+        select distinct
+            employee_number, academic_year, pay_date, additional_earnings_description, gross_pay
+        from {{ ref("stg_adp_workforce_now__additional_earnings_report") }}
+    )
+
     additional_earnings as (
         select
             employee_number, academic_year, sum(gross_pay) as additional_earnings_total,
-        from {{ ref("stg_adp_workforce_now__additional_earnings_report") }}
+        from additional_earnings_clean
         group by employee_number, academic_year
     )
 
