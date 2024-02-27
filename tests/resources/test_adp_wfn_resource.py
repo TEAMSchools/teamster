@@ -37,14 +37,15 @@ def test_get_worker():
 
 def test_get_workers():
     params = {
-        "asOfDate": "06/30/2022",
-        "$select": "workers/workAssignments/baseRemuneration",
+        # "asOfDate": "06/30/2022",
+        "asOfDate": "07/01/2022",
+        # "$select": "workers/workAssignments/baseRemuneration,workers/workAssignments/reportsTo",
     }
 
-    response = ADP_WFN.get(endpoint="hr/v2/workers", params=params)
+    records = ADP_WFN.get_records(endpoint="hr/v2/workers", params=params)
 
     filepath = pathlib.Path("env/adp/workers.json")
 
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
-    json.dump(obj=response.json(), fp=filepath.open(mode="w"))
+    json.dump(obj=records, fp=filepath.open(mode="w"))

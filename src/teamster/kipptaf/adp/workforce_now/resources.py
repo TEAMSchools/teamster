@@ -63,3 +63,27 @@ class AdpWorkforceNowResource(ConfigurableResource):
         return self._request(
             method="GET", url=f"{self._service_root}/{endpoint}", params=params
         )
+
+    def get_records(self, endpoint, params: dict | None = None) -> list[dict]:
+        page_size = 100
+        all_records = []
+
+        endpoint_name = endpoint.split("/")[-1]
+        if params is None:
+            params = {}
+
+        params.update({"$top": page_size, "$skip": 0})
+
+        while True:
+            response = self.get(endpoint=endpoint, params=params)
+
+            if response.status_code == 204:
+                break
+
+            response_json = response.json()[endpoint_name]
+
+            all_records.extend(response_json)
+
+            params.update({"$skip": params["$skip"] + page_size})
+
+        return all_records
