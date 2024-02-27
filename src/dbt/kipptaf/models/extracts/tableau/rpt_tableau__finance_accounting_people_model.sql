@@ -20,7 +20,7 @@ with
             academic_year,
             pay_date,
             additional_earnings_description,
-            gross_pay
+            gross_pay,
         from {{ ref("stg_adp_workforce_now__additional_earnings_report") }}
     ),
 
