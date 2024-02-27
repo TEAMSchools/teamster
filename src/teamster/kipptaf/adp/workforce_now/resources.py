@@ -1,8 +1,8 @@
-import requests
 from dagster import ConfigurableResource, InitResourceContext
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import exceptions
+from requests.auth import HTTPBasicAuth
 from requests_oauthlib import OAuth2Session
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -18,16 +18,20 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         # instantiate client
-        auth = requests.auth.HTTPBasicAuth(self.client_id, self.client_secret)
-        client = BackendApplicationClient(client_id=self.client_id)
-        self._session = OAuth2Session(client=client)
+        self._session = OAuth2Session(
+            client=BackendApplicationClient(client_id=self.client_id)
+        )
         self._session.cert = (self.cert_filepath, self.key_filepath)
 
         # authorize client
+        # trunk-ignore(bandit/B106)
         token_dict = self._session.fetch_token(
-            token_url="https://accounts.adp.com/auth/oauth/v2/token", auth=auth
+            token_url="https://accounts.adp.com/auth/oauth/v2/token",
+            auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
         )
+
         access_token = token_dict.get("access_token")
+
         self._session.headers["Authorization"] = f"Bearer {access_token}"
 
     @retry(
@@ -46,6 +50,16 @@ class AdpWorkforceNowResource(ConfigurableResource):
             raise exceptions.HTTPError() from e
 
     def post(self, endpoint, subresource, verb, payload):
-        url = f"{self._service_root}{endpoint}.{subresource}.{verb}"
+        return self._request(
+            method="POST",
+            url=f"{self._service_root}/{endpoint}.{subresource}.{verb}",
+            json=payload,
+        )
 
-        return self._request(method="POST", url=url, json=payload)
+    def get(self, endpoint, params: dict | None = None):
+        if params is None:
+            params = {}
+
+        return self._request(
+            method="GET", url=f"{self._service_root}/{endpoint}", params=params
+        )
