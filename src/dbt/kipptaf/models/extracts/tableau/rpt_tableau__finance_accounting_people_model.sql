@@ -80,6 +80,7 @@ select
     null as original_salary_upon_hire,
 
     pm.overall_score as most_recent_pm_score,
+    pm.overall_tier as most_recent_pm_tier,
     null as is_currently_certified_nj_only,
 from {{ ref("base_people__staff_roster_history") }} as eh
 inner join
