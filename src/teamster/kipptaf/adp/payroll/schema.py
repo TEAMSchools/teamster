@@ -17,13 +17,17 @@ GENERAL_LEDGER_FILE_FIELDS = [
     {"name": "job_title", "type": ["null", "long"], "default": None},
     {"name": "journal", "type": ["null", "string"], "default": None},
     {"name": "line_no", "type": ["null", "long"], "default": None},
-    {"name": "location_id", "type": ["null", "string", "long"], "default": None},
     {"name": "memo", "type": ["null", "string"], "default": None},
     {"name": "position_id", "type": ["null", "string"], "default": None},
     {"name": "reference_no", "type": ["null", "long"], "default": None},
     {"name": "sourceentity", "type": ["null", "string"], "default": None},
     {"name": "state", "type": ["null", "string"], "default": None},
     {"name": "vendor_id", "type": ["null", "string"], "default": None},
+    {
+        "name": "location_id",
+        "type": ["null", "string", "long", "double"],
+        "default": None,
+    },
 ]
 
 ASSET_FIELDS = {
