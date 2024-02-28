@@ -18,9 +18,7 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
     group_name="adp_workforce_now",
     compute_kind="adp",
     check_specs=[get_avro_schema_valid_check_spec(asset_key)],
-    partitions_def=DailyPartitionsDefinition(
-        start_date="01/01/2021", fmt="%m/%d/%Y", end_offset=1
-    ),
+    partitions_def=DailyPartitionsDefinition(start_date="01/01/2021", fmt="%m/%d/%Y"),
 )
 def workers(context: AssetExecutionContext, adp_wfn: AdpWorkforceNowResource):
     records = adp_wfn.get_records(
