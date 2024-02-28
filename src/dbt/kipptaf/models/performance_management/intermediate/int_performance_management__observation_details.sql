@@ -12,35 +12,11 @@ with
             rt.start_date,
             rt.end_date,
             rt.academic_year,
-
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
         left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
         left join
             {{ ref("stg_reporting__terms") }} as rt on ur.role_name = rt.grade_band
-
         where ur.role_name like '%Teacher%'
-    ),
-
-    observer_details as (
-        select ur.user_id, u.internal_id,
-        from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
-        left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
-        where ur.role_name not like '%Teacher%'
-    ),
-
-    boxes as (
-        select
-            observation_id,
-            measurement,
-            `value` as text_box_value,
-            null as checkbox_value,
-            'textbox' as question_type,
-        from
-            {{
-                ref(
-                    "stg_schoolmint_grow__observations__observation_scores__text_boxes"
-                )
-            }}
     ),
 
     observations as (
@@ -117,10 +93,14 @@ with
             array_to_string(o.list_two_column_a, '|') as glows,
             array_to_string(o.list_two_column_b, '|') as grows,
 
-            safe_cast(od.internal_id as int) as observer_employee_number,
-
+            safe_cast(u.internal_id as int) as observer_employee_number,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
-        inner join observer_details as od on o.observer_id = od.user_id
+        inner join
+            {{ ref("stg_schoolmint_grow__users") }} as u on o.observer_id = u.user_id
+        inner join
+            {{ ref("stg_schoolmint_grow__users__roles") }} as ur
+            on u.user_id = ur.user_id
+            and ur.role_name not like '%Teacher%'
         where
             o.is_published
             /* 2023 is first year with new rubric */
@@ -145,12 +125,10 @@ with
             o.overall_score,
             o.form_short_name,
             o.form_type,
-
             o.glows,
             o.grows,
 
             os.measurement as score_measurement_id,
-
             os.percentage as score_percentage,
             os.value_score as row_score_value,
 
@@ -159,13 +137,11 @@ with
             m.scale_max as measurement_scale_max,
 
             regexp_replace(
-                regexp_replace(b.text_box_value, r'<[^>]*>', ''), r'&nbsp;', ' '
+                regexp_replace(b.value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
 
             regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
-
             regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
-
         from observations as o
         left join
             {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
@@ -174,35 +150,36 @@ with
             {{ ref("stg_schoolmint_grow__measurements") }} as m
             on os.measurement = m.measurement_id
         left join
-            boxes as b
+            {{
+                ref(
+                    "stg_schoolmint_grow__observations__observation_scores__text_boxes"
+                )
+            }} as b
             on os.observation_id = b.observation_id
             and os.measurement = b.measurement
     ),
 
-    pm_overall_scores_long as (
+    pm_overall_scores_avg as (
         select
-            om.observation_id,
-            case
-                when om.score_measurement_type = 's&o'
-                then 'so'
-                else om.score_measurement_type
-            end as score_measurement_type,
-            avg(om.row_score_value) as score_measurement_score,
-        from observation_measurements as om
-        where om.score_measurement_type in ('etr', 's&o')
-        group by om.observation_id, om.score_measurement_type
+            observation_id,
+            score_measurement_type,
 
+            avg(row_score_value) as score_measurement_score,
+        from observation_measurements
+        where score_measurement_type in ('etr', 's&o')
+        group by observation_id, score_measurement_type
     ),
 
-    pm_overall_scores as (
+    pm_overall_scores_pivot as (
         select
             p.observation_id,
             p.etr as etr_score,
             p.so as so_score,
             coalesce((0.8 * p.etr) + (0.2 * p.so), p.etr, p.so) as overall_score,
         from
-            pm_overall_scores_long pivot (
-                avg(score_measurement_score) for score_measurement_type in ('etr', 'so')
+            pm_overall_scores_avg pivot (
+                avg(score_measurement_score) for score_measurement_type
+                in ('etr', 's&o' as `so`)
             ) as p
     ),
 
@@ -395,13 +372,6 @@ with
             od.observed_at,
             od.observer_name,
             od.observer_employee_number,
-            os.etr_score as etr_score,
-            os.so_score as so_score,
-            case
-                when od.academic_year <= 2024
-                then os.overall_score
-                else od.overall_score
-            end as overall_score,
             od.glows,
             od.grows,
             od.score_measurement_id,
@@ -410,8 +380,15 @@ with
             od.measurement_name,
             od.text_box,
             od.rn_submission,
+
+            os.etr_score as etr_score,
+            os.so_score as so_score,
+
+            if(
+                od.academic_year <= 2024, os.overall_score, od.overall_score
+            ) as overall_score,
         from observation_details as od
-        left join pm_overall_scores as os on od.observation_id = os.observation_id
+        left join pm_overall_scores_pivot as os on od.observation_id = os.observation_id
         where od.rn_submission = 1
 
         union all
@@ -419,34 +396,46 @@ with
         select
             null as `user_id`,
             null as role_name,
+
             safe_cast(hd.employee_number as string) as internal_id,
+
             'PM' as form_type,
+
             hd.form_term,
             hd.form_short_name,
             hd.form_long_name,
             hd.score_type,
+
             null as score_measurement_type,
             null as score_measurement_shortname,
             null as start_date,
             null as end_date,
+
             hd.academic_year,
+
             null as observation_id,
             null as teacher_id,
             null as created,
+
             hd.observed_at,
             hd.observer_name,
             hd.observer_employee_number,
-            hd.etr_score,
-            hd.so_score,
-            hd.overall_score,
+
             null as glows,
             null as grows,
             null as score_measurement_id,
             null as score_percentage,
+
             hd.row_score_value,
             hd.measurement_name,
+
             null as text_box,
+
             1 as rn_submission,
+
+            hd.etr_score,
+            hd.so_score,
+            hd.overall_score,
         from historical_data as hd
     )
 
@@ -471,11 +460,8 @@ select
     observer_name,
     observer_employee_number,
     etr_score,
-
     so_score,
-
     overall_score,
-
     glows,
     grows,
     score_measurement_id,
