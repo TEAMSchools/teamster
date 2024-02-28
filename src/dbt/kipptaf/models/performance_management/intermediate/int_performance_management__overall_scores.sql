@@ -94,9 +94,9 @@ with
         from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
         where
             form_type = 'PM'
-            and overall_score is not null
             and form_term in ('PM2', 'PM3')
             and rn_submission = 1
+            and overall_score is not null
         group by employee_number, academic_year
     )
 
