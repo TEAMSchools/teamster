@@ -14,6 +14,7 @@ from teamster.core.resources import (
 from . import (
     CODE_LOCATION,
     achieve3k,
+    adp,
     airbyte,
     alchemer,
     amplify,
@@ -29,7 +30,6 @@ from . import (
     tableau,
     zendesk,
 )
-from .adp import payroll, workforce_manager, workforce_now
 from .dbt import assets as dbt_assets
 from .dbt.schedules import _all as dbt_schedules
 from .google import directory, forms, sheets
@@ -39,6 +39,7 @@ defs = Definitions(
     assets=load_assets_from_modules(
         modules=[
             achieve3k,
+            adp,
             airbyte,
             alchemer,
             amplify,
@@ -50,18 +51,16 @@ defs = Definitions(
             fivetran,
             forms,
             ldap,
-            payroll,
             performance_management,
             schoolmint,
             sheets,
             smartrecruiters,
             tableau,
-            workforce_manager,
-            workforce_now,
             zendesk,
         ]
     ),
     schedules=[
+        *adp.schedules,
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
@@ -73,19 +72,16 @@ defs = Definitions(
         *schoolmint.schedules,
         *smartrecruiters.schedules,
         *tableau.schedules,
-        *workforce_manager.schedules,
-        *workforce_now.schedules,
     ],
     sensors=[
         *achieve3k.sensors,
+        *adp.sensors,
         *airbyte.sensors,
         *alchemer.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
-        *payroll.sensors,
         *sheets.sensors,
         *tableau.sensors,
-        *workforce_now.sensors,
     ],
     resources={
         # shared

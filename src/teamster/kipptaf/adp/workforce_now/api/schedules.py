@@ -1,6 +1,6 @@
 from dagster import ScheduleDefinition
 
-from ... import LOCAL_TIMEZONE
+from .... import LOCAL_TIMEZONE
 from .jobs import adp_wfn_update_workers_job
 
 adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
