@@ -50,9 +50,13 @@ with
                 else 'Special'
             end as route,
             case
-                when sr.job_title like '%Director%' and sr.business_unit_home_name not like '%Family%'
+                when
+                    sr.job_title like '%Director%'
+                    and sr.business_unit_home_name not like '%Family%'
                 then 'Region Submitter'
-                when sr.department_home_name = 'School Support' and sr.home_work_location_name like '%Room%'
+                when
+                    sr.department_home_name = 'School Support'
+                    and sr.home_work_location_name like '%Room%'
                 then 'Region Submitter'
                 when sr.job_title = 'Managing Director of Operations'
                 then 'Region Approver'
@@ -60,7 +64,7 @@ with
                 then 'KTAF Approver'
                 when sr.job_title like 'Chief%Strategist'
                 then 'KTAF Approver'
-                when sr2.job_title like 'Chief%Officer' 
+                when sr2.job_title like 'Chief%Officer'
                 then 'KTAF Submitter'
             end as role_type,
 
@@ -70,8 +74,8 @@ with
             {{ ref("base_people__staff_roster") }} as sr2
             on sr.report_to_employee_number = sr2.employee_number
         left join
-        {{ ref('base_people__staff_roster') }} as sr3
-        on sr2.report_to_employee_number = sr3.employee_number
+            {{ ref("base_people__staff_roster") }} as sr3
+            on sr2.report_to_employee_number = sr3.employee_number
         left join
             {{ ref("stg_people__campus_crosswalk") }} as cc
             on sr.home_work_location_name = cc.location_name
@@ -107,11 +111,7 @@ select
     r.role_type,
 
     case
-        when
-            r.employee_number in (
-                r.sl_employee_number,
-                r.dso_employee_number
-            )
+        when r.employee_number in (r.sl_employee_number, r.dso_employee_number)
         then r.manager_employee_number
         when r.route = 'Instructional'
         then r.sl_employee_number
@@ -123,11 +123,7 @@ select
         then null
     end as first_approver_employee_number,
     case
-        when
-            r.employee_number in (
-                r.sl_employee_number,
-                r.dso_employee_number
-            )
+        when r.employee_number in (r.sl_employee_number, r.dso_employee_number)
         then r.grandmanager_employee_number
         when r.route = 'Instructional'
         then r.head_of_school_employee_number
