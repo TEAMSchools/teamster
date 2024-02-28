@@ -50,7 +50,9 @@ with
                 else 'Special'
             end as route,
             case
-                when sr.job_title = 'Managing Director of School Operations'
+                when sr.job_title like '%Director%' and sr.business_unit_home_name not like '%Family%'
+                then 'Region Submitter'
+                when sr.department_home_name = 'School Support' and sr.home_work_location_name like '%Room%'
                 then 'Region Submitter'
                 when sr.job_title = 'Managing Director of Operations'
                 then 'Region Approver'
