@@ -28,7 +28,7 @@ with
             {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
         where
             s.end_date is null
-            or s.end_date < current_date('{{ var("local_timezone") }}')
+            or s.end_date > current_date('{{ var("local_timezone") }}')
     ),
 
     prev_yr_state_test as (
