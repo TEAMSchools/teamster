@@ -301,15 +301,16 @@ select
     gpa.credits_required_for_graduation,
 
     dense_rank() over (
-        partition by student_number order by persistence_year asc, semester asc
+        partition by p.student_number order by p.persistence_year asc, p.semester asc
     ) as n_semester,
     dense_rank() over (
-        partition by student_number order by persistence_year asc, semester asc
+        partition by p.student_number order by p.persistence_year asc, p.semester asc
     )
     * .125 as progress_multiplier_4yr,
     round(
         dense_rank() over (
-            partition by student_number order by persistence_year asc, semester asc
+            partition by p.student_number
+            order by p.persistence_year asc, p.semester asc
         )
         * .083,
         3
