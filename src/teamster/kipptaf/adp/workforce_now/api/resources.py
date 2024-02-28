@@ -68,6 +68,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
         page_size = 100
         all_records = []
 
+        context = self.get_resource_context()
         endpoint_name = endpoint.split("/")[-1]
         if params is None:
             params = {}
@@ -75,6 +76,8 @@ class AdpWorkforceNowResource(ConfigurableResource):
         params.update({"$top": page_size, "$skip": 0})
 
         while True:
+            context.log.debug(params)
+
             response = self.get(endpoint=endpoint, params=params)
 
             if response.status_code == 204:

@@ -36,11 +36,7 @@ def test_get_worker():
 
 
 def test_get_workers():
-    params = {
-        # "asOfDate": "06/30/2022",
-        "asOfDate": "07/01/2022",
-        # "$select": "workers/workAssignments/baseRemuneration,workers/workAssignments/reportsTo",
-    }
+    params = {"asOfDate": "07/01/2022"}
 
     records = ADP_WFN.get_records(endpoint="hr/v2/workers", params=params)
 
