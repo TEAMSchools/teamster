@@ -7,7 +7,7 @@ from zenpy import Zenpy
 from teamster.core.ssh.resources import SSHResource
 
 from .adp.workforce_manager.resources import AdpWorkforceManagerResource
-from .adp.workforce_now.resources import AdpWorkforceNowResource
+from .adp.workforce_now.api.resources import AdpWorkforceNowResource
 from .amplify.resources import MClassResource
 from .google.directory.resources import GoogleDirectoryResource
 from .google.forms.resources import GoogleFormsResource
