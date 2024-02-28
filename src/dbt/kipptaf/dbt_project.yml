@@ -154,6 +154,8 @@ models:
           +materialized: table
     smartrecruiters:
       +schema: smartrecruiters
+    students:
+      +schema: students
     surveys:
       +schema: surveys
       intermediate:

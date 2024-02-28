@@ -15,7 +15,7 @@ from teamster.core.utils.classes import FiscalYear
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):
     def _parse_datetime_partition_value(self, partition_value: str):
-        datetime_formats = iter(["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ssZZ"])
+        datetime_formats = iter(["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ssZZ", "MM/DD/YYYY"])
         while True:
             try:
                 return pendulum.from_format(
