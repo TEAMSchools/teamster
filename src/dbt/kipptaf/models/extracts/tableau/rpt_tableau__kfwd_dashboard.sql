@@ -232,6 +232,27 @@ with
             ) pivot (
                 max(is_persisting_int) for persistence_year in ('1', '2', '3', '4', '5')
             )
+    ),
+
+    matriculation_type as (
+        select 'BA' as matriculation_type, application_account_type,
+        from unnest(['Public 4 yr', 'Private 4 yr']) as application_account_type
+        union all
+        select 'CTE' as matriculation_type, application_account_type,
+        from
+            unnest(
+                [
+                    'Alternative High School',
+                    'Public',
+                    'Military',
+                    'Private 2 yr',
+                    'Non-profit',
+                    'Private',
+                    'NonProfit'
+                ]
+            ) as application_account_type
+        union all
+        select 'AA' as matriculation_type, 'Public 2 yr' as application_account_type
     )
 
 select
@@ -440,6 +461,8 @@ select
     p.is_persist_yr4_int,
     p.is_persist_yr5_int,
 
+    m.matriculation_type,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -589,6 +612,7 @@ left join
     and ay.academic_year = b.academic_year
     and b.rn_benchmark = 1
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
+left join matriculation_type as m on apps.account_type = m.application_account_type
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
