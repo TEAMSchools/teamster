@@ -3,7 +3,7 @@ import pathlib
 
 from dagster import EnvVar, build_resources
 
-from teamster.kipptaf.adp.workforce_now.resources import AdpWorkforceNowResource
+from teamster.kipptaf.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
 with build_resources(
     resources={
@@ -28,22 +28,20 @@ def test_event_notification():
 
 
 def test_get_worker():
-    aoid = "G3MQ5XDMH0DC9TWJ"
+    aoid = "G3ASWDTVJ0WV011W"
 
-    r = ADP_WFN._request(
-        method="GET", url=f"{ADP_WFN._service_root}/hr/v2/workers/{aoid}"
-    )
+    r = ADP_WFN.get(endpoint=f"hr/v2/workers/{aoid}")
 
-    print(r.json())
+    print(json.dumps(r.json()))
 
 
 def test_get_workers():
-    response = ADP_WFN._request(
-        method="GET", url=f"{ADP_WFN._service_root}/hr/v2/workers"
-    )
+    params = {"asOfDate": "07/01/2022"}
+
+    records = ADP_WFN.get_records(endpoint="hr/v2/workers", params=params)
 
     filepath = pathlib.Path("env/adp/workers.json")
 
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
-    json.dump(obj=response.json()["workers"], fp=filepath.open(mode="w"))
+    json.dump(obj=records, fp=filepath.open(mode="w"))
