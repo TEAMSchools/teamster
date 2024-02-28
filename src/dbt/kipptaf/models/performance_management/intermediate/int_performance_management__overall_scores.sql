@@ -1,6 +1,5 @@
 with
     all_scores as (
-
         select
             employee_number,
             academic_year,
@@ -50,7 +49,7 @@ with
                 then date(academic_year + 1, 3, 1)
             end as eval_date,
         from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
-        where form_type = 'PM' and academic_year = 2023 and rn_submission = 1
+        where form_type = 'PM' and rn_submission = 1
 
         union all
 
@@ -96,7 +95,6 @@ with
         where
             form_type = 'PM'
             and overall_score is not null
-            and academic_year = 2023
             and form_term in ('PM2', 'PM3')
             and rn_submission = 1
         group by employee_number, academic_year
