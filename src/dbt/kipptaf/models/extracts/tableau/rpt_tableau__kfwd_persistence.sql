@@ -22,6 +22,11 @@ select
     p.is_retained_int,
     p.persistence_status,
     p.rn_enrollment_year,
+    p.cumulative_credits_earned,
+    p.credits_required_for_graduation,
+    p.n_semester,
+    p.progress_multiplier_4yr,
+    p.progress_multiplier_6yr,
 
     r.lastfirst as student_name,
     r.last_name as student_last_name,
