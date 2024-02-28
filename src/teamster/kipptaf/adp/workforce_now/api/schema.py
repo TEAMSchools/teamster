@@ -1,734 +1,307 @@
-from teamster.core.utils.functions import get_avro_record_schema
+import json
 
-CODE_FIELDS = [
-    # codeValue
-    # effectiveDate
-    # shortName
-    # longName
-    # identificationMethodCode
-]
-
-NAME_FIELDS = [
-    # familyName1
-    # formattedName
-    # generationAffixCode
-    # givenName
-    # middleName
-    # nickName
-    # qualificationAffixCode
-]
-
-ADDRESS_FIELDS = [
-    # cityName
-    # countryCode
-    # countrySubdivisionLevel1
-    # countrySubdivisionLevel2
-    # deliveryPoint
-    # lineOne
-    # lineThree
-    # lineTwo
-    # postalCode
-]
-
-LOCATION_FIELDS = [
-    # address
-    # nameCode
-]
-
-HOURS_FIELDS = [
-    # hoursQuantity
-    # unitCode
-]
-
-REMUNERATIONS_FIELDS = [
-    # currencyCode
-    # effectiveDate
-    # itemID
-    # nameCode
-    # rate
-    # hourlyRateAmount
-]
-
-CUSTOM_FIELD_GROUP_FIELDS = [
-    # amountFields
-    # codeFields
-    # dateFields
-    # indicatorFields
-    # numberFields
-    # percentFields
-    # stringFields
-    # telephoneFields
-]
-
-EMAIL_RECORD_FIELDS = [
-    # emailUri
-]
-
-PHONE_FIELDS = [
-    # access
-    # areaDialing
-    # countryDialing
-    # dialNumber
-    # extension
-]
+from py_avro_schema import generate
+from pydantic import BaseModel
 
 
-def get_communication_fields(parent_namespace):
-    return [
-        {
-            "name": "emails",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="email",
-                        fields=EMAIL_RECORD_FIELDS,
-                        namespace=f"{parent_namespace}.communication",
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "faxes",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="fax",
-                        fields=PHONE_FIELDS,
-                        namespace=f"{parent_namespace}.communication",
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "landlines",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="landline",
-                        fields=PHONE_FIELDS,
-                        namespace=f"{parent_namespace}.communication",
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "mobiles",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="mobile",
-                        fields=PHONE_FIELDS,
-                        namespace=f"{parent_namespace}.communication",
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "pagers",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="pager",
-                        fields=PHONE_FIELDS,
-                        namespace=f"{parent_namespace}.communication",
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-    ]
+class Code(BaseModel):
+    codeValue: str | None = None
+    longName: str | None = None
+    shortName: str | None = None
+    effectiveDate: str | None = None
 
 
-GOVERNMENT_ID_FIELDS = [
-    # countryCode
-    # idValue
-    # itemID
-    # nameCode
-    # statusCode
-]
+class RaceCode(Code):
+    identificationMethodCode: Code | None = None
 
-SOCIAL_INSURANCE_PROGRAMS_FIELDS = [
-    # coveredIndicator
-    # nameCode
-]
 
-PERSON_FIELDS = [
-    {"name": "birthDate", "type": ["null", "string"], "default": None},
-    {"name": "deathDate", "type": ["null", "string"], "default": None},
-    {"name": "militaryDischargeDate", "type": ["null", "string"], "default": None},
-    #
-    {
-        "name": "birthName",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="birth_name", fields=NAME_FIELDS, namespace="worker.person"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "communication",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="communication",
-                fields=get_communication_fields("worker.person"),
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "customFieldGroup",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="custom_field_group",
-                fields=CUSTOM_FIELD_GROUP_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "ethnicityCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="ethnicity_code", fields=CODE_FIELDS, namespace="worker.person"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "genderCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="gender_code", fields=CODE_FIELDS, namespace="worker.person"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "genderSelfIdentityCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="gender_self_identity_code",
-                fields=CODE_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "governmentIDs",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="government_id",
-                fields=GOVERNMENT_ID_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "highestEducationLevelCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="highest_education_level_code",
-                fields=CODE_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "legalAddress",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="legal_address",
-                fields=ADDRESS_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "maritalStatusCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="marital_status_code",
-                fields=CODE_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "militaryClassificationCodes",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="military_classification_codes",
-                fields=CODE_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "otherPersonalAddresses",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="other_personal_addresses",
-                fields=ADDRESS_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "preferredGenderPronounCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="preferred_gender_pronoun_code",
-                fields=CODE_FIELDS,
-                namespace="worker.person",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "preferredName",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="preferred_name", fields=NAME_FIELDS, namespace="worker.person"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "raceCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="race_code", fields=CODE_FIELDS, namespace="worker.person"
-            ),
-        ],
-        "default": None,
-    },
-]
+class CountrySubdivisionLevel(Code):
+    subdivisionType: str
 
-WORKER_ID_FIELDS = [{"name": "idValue", "type": ["null", "string"], "default": None}]
 
-WORKER_STATUS_FIELDS = [
-    {
-        "name": "statusCode",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="status_code", fields=CODE_FIELDS, namespace="worker.status_code"
-            ),
-        ],
-        "default": None,
-    }
-]
+class CustomField(BaseModel):
+    itemID: str
+    nameCode: Code
 
-LINK_FIELDS = [
-    # href
-]
-PHOTOS_FIELDS = [
-    # links
-]
 
-WORKER_DATES_FIELDS = [
-    # adjustedServiceDate
-    # originalHireDate
-    # rehireDate
-    # retirementDate
-    # terminationDate
-]
+class CodeField(CustomField):
+    codeValue: str | None = None
+    longName: str | None = None
+    shortName: str | None = None
 
-ASSIGNMENT_STATUS_FIELDS = [
-    # reasonCode
-    # statusCode
-]
 
-BARGAINING_UNIT_FIELDS = [
-    # bargainingUnitCode
-]
+class DateField(CustomField):
+    dateValue: str | None = None
 
-LABOR_UNION_FIELDS = [
-    # laborUnionCode
-]
 
-PAY_GRADE_PAY_RANGE_FIELDS = [
-    # maximumRate
-    # medianRate
-    # minimumRate
-]
+class NumberField(CustomField):
+    numberValue: float | None = None
 
-WAGE_LAW_COVERAGE_FIELDS = [
-    # wageLawNameCode
-]
 
-WORKER_TIME_PROFILE_FIELDS = [
-    # badgeID
-    # timeAndAttendanceIndicator
-    # timeServiceSupervisor
-    # timeZoneCode
-]
+class MultiCodeField(CustomField):
+    codes: list[Code]
 
-HOME_ORGANIZATIONAL_UNITS_FIELDS = [
-    # nameCode
-    # typeCode
-]
 
-OCCUPATIONAL_CLASSIFICATIONS_FIELDS = [
-    # classificationCode
-    # nameCode
-]
+class StringField(CustomField):
+    stringValue: str | None = None
 
-REPORTS_TO_FIELDS = [
-    # positionID
-]
 
-WORKER_GROUPS_FIELDS = [
-    # groupCode
-]
+class IndicatorField(CustomField):
+    indicatorValue: bool | None = None
 
-WORK_ASSIGNMENTS_FIELDS = [
-    # actualStartDate
-    # fullTimeEquivalenceRatio
-    # hireDate
-    # itemID
-    # jobFunctionCode
-    # managementPositionIndicator
-    # payrollFileNumber
-    # payrollGroupCode
-    # positionID
-    # primaryIndicator
-    # seniorityDate
-    # terminationDate
-    # voluntaryIndicator
-    #
-    # assignmentStatus/
-    # bargainingUnit/
-    # baseRemuneration/
-    # customFieldGroup/
-    # homeWorkLocation/
-    # laborUnion/
-    # payGradePayRange/
-    # standardHours/
-    # standardPayPeriodHours/
-    # wageLawCoverage/
-    # workerTimeProfile/
-    #
-    # jobCode/
-    # payCycleCode/
-    # payGradeCode/
-    # workerTypeCode/
-    # workShiftCode/
-    #
-    # additionalRemunerations/
-    # assignedWorkLocations/
-    # homeOrganizationalUnits/
-    # occupationalClassifications/
-    # reportsTo/
-    # workerGroups/
-]
 
-WORKER_FIELDS = [
-    {"name": "associateOID", "type": ["null", "string"], "default": None},
-    #
-    {
-        "name": "workerID",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="worker_id", fields=WORKER_ID_FIELDS, namespace="worker"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "businessCommunication",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="business_communication",
-                fields=get_communication_fields("worker"),
-                namespace="worker",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "person",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="person", fields=PERSON_FIELDS, namespace="worker"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "workerStatus",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="worker_status", fields=WORKER_STATUS_FIELDS, namespace="worker"
-            ),
-        ],
-        "default": None,
-    },
-    #
-    {
-        "name": "photos",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="photos", fields=PHOTOS_FIELDS, namespace="worker"
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "workAssignments",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="work_assignments",
-                    fields=WORK_ASSIGNMENTS_FIELDS,
-                    namespace="worker",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "workerDates",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="worker_dates", fields=WORKER_DATES_FIELDS, namespace="worker"
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
+class Phone(BaseModel):
+    areaDialing: str
+    countryDialing: str
+    dialNumber: str
+    formattedNumber: str
+    itemID: str
+    nameCode: Code
 
-# ---
+    access: str | None = None
+    extension: str | None = None
 
-# person/customFieldGroup/amountFields/amountValue
-# person/customFieldGroup/amountFields/currencyCode
-# person/customFieldGroup/amountFields/nameCode
-# person/customFieldGroup/codeFields/codeValue
-# person/customFieldGroup/codeFields/itemID
-# person/customFieldGroup/codeFields/longName
-# person/customFieldGroup/codeFields/nameCode
-# person/customFieldGroup/codeFields/shortName
-# person/customFieldGroup/dateFields/dateValue
-# person/customFieldGroup/dateFields/itemID
-# person/customFieldGroup/dateFields/nameCode
-# person/customFieldGroup/indicatorFields/indicatorValue
-# person/customFieldGroup/indicatorFields/itemID
-# person/customFieldGroup/indicatorFields/nameCode
-# person/customFieldGroup/numberFields/itemID
-# person/customFieldGroup/numberFields/nameCode
-# person/customFieldGroup/numberFields/numberValue
-# person/customFieldGroup/percentFields/itemID
-# person/customFieldGroup/percentFields/nameCode
-# person/customFieldGroup/percentFields/percentValue
-# person/customFieldGroup/stringFields/itemID
-# person/customFieldGroup/stringFields/nameCode
-# person/customFieldGroup/stringFields/stringValue
-# person/customFieldGroup/telephoneFields/formattedNumber
-# person/customFieldGroup/telephoneFields/itemID
-# person/customFieldGroup/telephoneFields/nameCode
-# person/legalAddress/countrySubdivisionLevel1/codeValue
-# person/legalAddress/countrySubdivisionLevel1/longName
-# person/legalAddress/countrySubdivisionLevel1/shortName
-# person/legalAddress/countrySubdivisionLevel1/subdivisionType
-# person/legalAddress/countrySubdivisionLevel2/codeValue
-# person/legalAddress/countrySubdivisionLevel2/longName
-# person/legalAddress/countrySubdivisionLevel2/shortName
-# person/legalAddress/countrySubdivisionLevel2/subdivisionType
-# person/legalName/generationAffixCode/codeValue
-# person/legalName/generationAffixCode/shortName
-# person/legalName/preferredSalutations/salutationCode
-# person/legalName/qualificationAffixCode/codeValue
-# person/legalName/qualificationAffixCode/longName
-# person/legalName/qualificationAffixCode/shortName
-# person/otherPersonalAddresses/countrySubdivisionLevel1/codeValue
-# person/otherPersonalAddresses/countrySubdivisionLevel1/countrySubdivisionLevel1
-# person/otherPersonalAddresses/countrySubdivisionLevel1/shortName
-# person/otherPersonalAddresses/countrySubdivisionLevel2/codeValue
-# person/otherPersonalAddresses/countrySubdivisionLevel2/longName
-# person/otherPersonalAddresses/countrySubdivisionLevel2/shortName
-# person/raceCode/identificationMethodCode/codeValue
-# person/raceCode/identificationMethodCode/shortName
-# workAssignments/additionalRemunerations/nameCode/codeValue
-# workAssignments/additionalRemunerations/nameCode/shortName
-# workAssignments/additionalRemunerations/rate/amountValue
-# workAssignments/assignedWorkLocations/address/cityName
-# workAssignments/assignedWorkLocations/address/countryCode
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel1
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel2
-# workAssignments/assignedWorkLocations/address/lineOne
-# workAssignments/assignedWorkLocations/address/lineThree
-# workAssignments/assignedWorkLocations/address/lineTwo
-# workAssignments/assignedWorkLocations/address/nameCode
-# workAssignments/assignedWorkLocations/address/postalCode
-# workAssignments/assignmentStatus/reasonCode/codeValue
-# workAssignments/assignmentStatus/reasonCode/shortName
-# workAssignments/assignmentStatus/statusCode/codeValue
-# workAssignments/assignmentStatus/statusCode/longName
-# workAssignments/assignmentStatus/statusCode/shortName
-# workAssignments/bargainingUnit/bargainingUnitCode/codeValue
-# workAssignments/bargainingUnit/bargainingUnitCode/longName
-# workAssignments/bargainingUnit/bargainingUnitCode/shortName
-# workAssignments/baseRemuneration/hourlyRateAmount/amountValue
-# workAssignments/baseRemuneration/hourlyRateAmount/currencyCode
-# workAssignments/baseRemuneration/hourlyRateAmount/nameCode
-# workAssignments/customFieldGroup/stringFields/itemID
-# workAssignments/customFieldGroup/stringFields/nameCode
-# workAssignments/customFieldGroup/stringFields/stringValue
-# workAssignments/homeOrganizationalUnits/nameCode/codeValue
-# workAssignments/homeOrganizationalUnits/nameCode/longName
-# workAssignments/homeOrganizationalUnits/nameCode/shortName
-# workAssignments/homeOrganizationalUnits/typeCode/codeValue
-# workAssignments/homeOrganizationalUnits/typeCode/longName
-# workAssignments/homeOrganizationalUnits/typeCode/shortName
-# workAssignments/homeWorkLocation/address/cityName
-# workAssignments/homeWorkLocation/address/countryCode
-# workAssignments/homeWorkLocation/address/countrySubdivisionLevel1
-# workAssignments/homeWorkLocation/address/countrySubDivisionLevel2
-# workAssignments/homeWorkLocation/address/lineOne
-# workAssignments/homeWorkLocation/address/lineThree
-# workAssignments/homeWorkLocation/address/lineTwo
-# workAssignments/homeWorkLocation/address/postalCode
-# workAssignments/homeWorkLocation/nameCode/codeValue
-# workAssignments/homeWorkLocation/nameCode/longName
-# workAssignments/homeWorkLocation/nameCode/shortName
-# workAssignments/laborUnion/laborUnionCode/codeValue
-# workAssignments/laborUnion/laborUnionCode/longName
-# workAssignments/laborUnion/laborUnionCode/shortName
-# workAssignments/occupationalClassifications/classificationCode/codeValue
-# workAssignments/occupationalClassifications/classificationCode/longName
-# workAssignments/occupationalClassifications/classificationCode/shortName
-# workAssignments/occupationalClassifications/nameCode/codeValue
-# workAssignments/occupationalClassifications/nameCode/longName
-# workAssignments/occupationalClassifications/nameCode/shortName
-# workAssignments/payGradePayRange/maximumRate/amountValue
-# workAssignments/payGradePayRange/medianRate/amountValue
-# workAssignments/payGradePayRange/minimumRate/amountValue
-# workAssignments/reportsTo/reportsToWorkerName/associateOID
-# workAssignments/reportsTo/reportsToWorkerName/formattedName
-# workAssignments/reportsTo/workerID/idValue
-# workAssignments/standardHours/unitCode/codeValue
-# workAssignments/standardHours/unitCode/longName
-# workAssignments/standardHours/unitCode/shortName
-# workAssignments/wageLawCoverage/wageLawNameCode/codeValue
-# workAssignments/wageLawCoverage/wageLawNameCode/longName
-# workAssignments/wageLawCoverage/wageLawNameCode/shortName
-# workAssignments/workerGroups/groupCode/codeValue
-# workAssignments/workerGroups/groupCode/longName
-# workAssignments/workerGroups/groupCode/shortName
-# workAssignments/workerTimeProfile/timeServiceSupervisor/associateOID
-# workAssignments/workerTimeProfile/timeServiceSupervisor/positionID
-# workAssignments/workerTimeProfile/timeServiceSupervisor/reportsToWorkerName
-# workAssignments/workerTimeProfile/timeServiceSupervisor/workerID
 
-# ---
+class Email(BaseModel):
+    emailUri: str
+    itemID: str | None = None
+    notificationIndicator: bool
+    nameCode: Code
 
-# person/customFieldGroup/amountFields/nameCode/codeValue
-# person/customFieldGroup/amountFields/nameCode/longName
-# person/customFieldGroup/amountFields/nameCode/shortName
-# person/customFieldGroup/codeFields/nameCode/codeValue
-# person/customFieldGroup/codeFields/nameCode/longName
-# person/customFieldGroup/codeFields/nameCode/shortName
-# person/customFieldGroup/dateFields/nameCode/codeValue
-# person/customFieldGroup/indicatorFields/nameCode/codeValue
-# person/customFieldGroup/indicatorFields/nameCode/longName
-# person/customFieldGroup/indicatorFields/nameCode/shortName
-# person/customFieldGroup/numberFields/nameCode/codeValue
-# person/customFieldGroup/numberFields/nameCode/longName
-# person/customFieldGroup/numberFields/nameCode/shortName
-# person/customFieldGroup/percentFields/nameCode/codeValue
-# person/customFieldGroup/percentFields/nameCode/longName
-# person/customFieldGroup/percentFields/nameCode/shortName
-# person/customFieldGroup/stringFields/nameCode/codeValue
-# person/customFieldGroup/stringFields/nameCode/longName
-# person/customFieldGroup/stringFields/nameCode/shortName
-# person/customFieldGroup/telephoneFields/nameCode/codeValue
-# person/customFieldGroup/telephoneFields/nameCode/longName
-# person/customFieldGroup/telephoneFields/nameCode/shortName
-# person/legalName/preferredSalutations/salutationCode/codeValue
-# person/legalName/preferredSalutations/salutationCode/shortName
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel1/codeValue
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel1/longName
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel1/shortName
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel1/subdivisionType
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel2/codeValue
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel2/longName
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel2/shortName
-# workAssignments/assignedWorkLocations/address/countrySubdivisionLevel2/subdivisionType
-# workAssignments/assignedWorkLocations/address/nameCode/codeValue
-# workAssignments/baseRemuneration/hourlyRateAmount/nameCode/codeValue
-# workAssignments/baseRemuneration/hourlyRateAmount/nameCode/shortName
-# workAssignments/customFieldGroup/stringFields/nameCode/codeValue
-# workAssignments/customFieldGroup/stringFields/nameCode/shortName
-# workAssignments/workerTimeProfile/timeServiceSupervisor/reportsToWorkerName/familyName1
-# workAssignments/workerTimeProfile/timeServiceSupervisor/reportsToWorkerName/formattedName
-# workAssignments/workerTimeProfile/timeServiceSupervisor/reportsToWorkerName/givenName
-# workAssignments/workerTimeProfile/timeServiceSupervisor/reportsToWorkerName/middleName
-# workAssignments/workerTimeProfile/timeServiceSupervisor/workerID/idValue
 
-# ---
+class Address(BaseModel):
+    cityName: str | None = None
+    countryCode: str | None = None
+    itemID: str | None = None
+    lineOne: str | None = None
+    lineTwo: str | None = None
+    lineThree: str | None = None
+    postalCode: str | None = None
+    countrySubdivisionLevel1: CountrySubdivisionLevel | None = None
+    countrySubdivisionLevel2: CountrySubdivisionLevel | None = None
+    nameCode: Code | None = None
+    typeCode: Code | None = None
 
-# workAssignments/assignedWorkLocations/address/nameCode/codeValue/longName
-# workAssignments/assignedWorkLocations/address/nameCode/codeValue/shortName
 
-# ---
+class GovernmentID(BaseModel):
+    countryCode: str
+    idValue: str
+    itemID: str
+    nameCode: Code
+
+    expirationDate: str | None = None
+    statusCode: Code | None = None
+
+
+class PreferredSalutation(BaseModel):
+    salutationCode: Code
+
+
+class Name(BaseModel):
+    formattedName: str | None = None
+    familyName1: str | None = None
+    givenName: str | None = None
+    middleName: str | None = None
+    nickName: str | None = None
+
+    generationAffixCode: Code | None = None
+    qualificationAffixCode: Code | None = None
+    preferredSalutations: list[PreferredSalutation] | None = None
+
+
+class SocialInsuranceProgram(BaseModel):
+    coveredIndicator: bool
+    nameCode: Code
+
+
+class AssignmentStatus(BaseModel):
+    statusCode: Code
+
+    effectiveDate: str | None = None
+    reasonCode: Code | None = None
+
+
+class WorkerGroup(BaseModel):
+    groupCode: Code
+    nameCode: Code
+
+
+class WageLawCoverage(BaseModel):
+    coverageCode: Code
+    wageLawNameCode: Code
+
+
+class OrganizationalUnit(BaseModel):
+    nameCode: Code
+    typeCode: Code
+
+
+class WorkLocation(BaseModel):
+    address: Address | None = None
+    nameCode: Code | None = None
+
+
+class StandardPayPeriodHours(BaseModel):
+    hoursQuantity: float
+
+
+class Rate(BaseModel):
+    amountValue: float
+
+    currencyCode: str | None = None
+    nameCode: Code | None = None
+
+
+class BaseRemuneration(BaseModel):
+    effectiveDate: str
+    annualRateAmount: Rate
+
+    payPeriodRateAmount: Rate | None = None
+    hourlyRateAmount: Rate | None = None
+    dailyRateAmount: Rate | None = None
+
+
+class AdditionalRemuneration(BaseModel):
+    itemID: str
+    effectiveDate: str
+    nameCode: Code
+    rate: Rate
+
+
+class OccupationalClassification(BaseModel):
+    nameCode: Code
+    classificationCode: Code
+
+
+class StandardHours(BaseModel):
+    hoursQuantity: float
+    unitCode: Code
+
+
+class Link(BaseModel):
+    href: str
+    mediaType: str
+    method: str
+
+
+class Photo(BaseModel):
+    links: list[Link]
+
+
+class Communication(BaseModel):
+    emails: list[Email] | None = None
+    landlines: list[Phone] | None = None
+    mobiles: list[Phone] | None = None
+
+
+class WorkerStatus(BaseModel):
+    statusCode: Code
+
+
+class WorkerID(BaseModel):
+    idValue: str
+
+    schemeCode: Code | None = None
+
+
+class ReportsToItem(BaseModel):
+    positionID: str
+    associateOID: str
+    workerID: WorkerID
+    reportsToWorkerName: Name
+
+
+class WorkerDates(BaseModel):
+    originalHireDate: str
+
+    terminationDate: str | None = None
+    rehireDate: str | None = None
+
+
+class CustomFieldGroup(BaseModel):
+    codeFields: list[CodeField] | None = None
+    dateFields: list[DateField] | None = None
+    indicatorFields: list[IndicatorField] | None = None
+    multiCodeFields: list[MultiCodeField] | None = None
+    numberFields: list[NumberField] | None = None
+    stringFields: list[StringField] | None = None
+
+
+class Person(BaseModel):
+    birthDate: str
+    disabledIndicator: bool
+    customFieldGroup: CustomFieldGroup
+    genderCode: Code
+    legalName: Name
+    preferredName: Name
+    militaryClassificationCodes: list[Code]
+
+    militaryDischargeDate: str | None = None
+    tobaccoUserIndicator: bool | None = None
+    birthName: Name | None = None
+    communication: Communication | None = None
+    ethnicityCode: Code | None = None
+    genderSelfIdentityCode: Code | None = None
+    highestEducationLevelCode: Code | None = None
+    legalAddress: Address | None = None
+    maritalStatusCode: Code | None = None
+    militaryStatusCode: Code | None = None
+    preferredGenderPronounCode: Code | None = None
+    raceCode: RaceCode | None = None
+    disabilityTypeCodes: list[Code] | None = None
+    governmentIDs: list[GovernmentID] | None = None
+    otherPersonalAddresses: list[Address] | None = None
+    socialInsurancePrograms: list[SocialInsuranceProgram] | None = None
+
+
+class WorkAssignment(BaseModel):
+    actualStartDate: str
+    hireDate: str
+    itemID: str
+    managementPositionIndicator: bool
+    positionID: str
+    primaryIndicator: bool
+    assignmentStatus: AssignmentStatus
+    payCycleCode: Code
+    payrollProcessingStatusCode: Code
+
+    fullTimeEquivalenceRatio: float | None = None
+    jobTitle: str | None = None
+    payrollFileNumber: str | None = None
+    payrollScheduleGroupID: str | None = None
+    seniorityDate: str | None = None
+    terminationDate: str | None = None
+    voluntaryIndicator: bool | None = None
+    baseRemuneration: BaseRemuneration | None = None
+    customFieldGroup: CustomFieldGroup | None = None
+    homeWorkLocation: WorkLocation | None = None
+    jobCode: Code | None = None
+    payrollGroupCode: str | None = None
+    standardHours: StandardHours | None = None
+    standardPayPeriodHours: StandardPayPeriodHours | None = None
+    wageLawCoverage: WageLawCoverage | None = None
+    workerTypeCode: Code | None = None
+    additionalRemunerations: list[AdditionalRemuneration] | None = None
+    assignedOrganizationalUnits: list[OrganizationalUnit] | None = None
+    assignedWorkLocations: list[WorkLocation] | None = None
+    homeOrganizationalUnits: list[OrganizationalUnit] | None = None
+    occupationalClassifications: list[OccupationalClassification] | None = None
+    reportsTo: list[ReportsToItem] | None = None
+    workerGroups: list[WorkerGroup] | None = None
+
+
+class Worker(BaseModel):
+    associateOID: str
+    customFieldGroup: CustomFieldGroup
+    person: Person
+    workerDates: WorkerDates
+    workerID: WorkerID
+    workerStatus: WorkerStatus
+    workAssignments: list[WorkAssignment]
+
+    _languageCode: Code | None = None
+    businessCommunication: Communication | None = None
+    photos: list[Photo] | None = None
+
+
+WORKER_SCHEMA = json.loads(generate(py_type=Worker, namespace="worker"))

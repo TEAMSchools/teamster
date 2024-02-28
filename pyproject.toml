@@ -28,6 +28,7 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "cmake>=3.28.1",
   "tableauserverclient==0.25",
+  "py-avro-schema>=3.4.1",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
