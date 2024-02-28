@@ -448,13 +448,6 @@ with
             null as text_box,
             1 as rn_submission,
         from historical_data as hd
-        left join
-            {{ ref("base_people__staff_roster_history") }} as r
-            on hd.employee_number = r.employee_number
-            and hd.observed_at between safe_cast(r.work_assignment__fivetran_start as date) and safe_cast(
-        r.work_assignment__fivetran_end as date
-    )
-
     )
 
 select
