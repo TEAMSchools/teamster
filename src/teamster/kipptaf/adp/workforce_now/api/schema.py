@@ -1,7 +1,7 @@
 import json
 
-from py_avro_schema import generate
-from pydantic import BaseModel
+from py_avro_schema import Option, generate
+from pydantic import BaseModel, Field
 
 
 class Code(BaseModel):
@@ -256,18 +256,18 @@ class Person(BaseModel):
 
 class WorkAssignment(BaseModel):
     actualStartDate: str
+    assignmentStatus: AssignmentStatus
     hireDate: str
     itemID: str
     managementPositionIndicator: bool
+    payrollProcessingStatusCode: Code
     positionID: str
     primaryIndicator: bool
-    assignmentStatus: AssignmentStatus
-    payCycleCode: Code
-    payrollProcessingStatusCode: Code
 
     fullTimeEquivalenceRatio: float | None = None
     jobTitle: str | None = None
     payrollFileNumber: str | None = None
+    payrollGroupCode: str | None = None
     payrollScheduleGroupID: str | None = None
     seniorityDate: str | None = None
     terminationDate: str | None = None
@@ -276,7 +276,7 @@ class WorkAssignment(BaseModel):
     customFieldGroup: CustomFieldGroup | None = None
     homeWorkLocation: WorkLocation | None = None
     jobCode: Code | None = None
-    payrollGroupCode: str | None = None
+    payCycleCode: Code | None = None
     standardHours: StandardHours | None = None
     standardPayPeriodHours: StandardPayPeriodHours | None = None
     wageLawCoverage: WageLawCoverage | None = None
@@ -299,9 +299,11 @@ class Worker(BaseModel):
     workerStatus: WorkerStatus
     workAssignments: list[WorkAssignment]
 
-    _languageCode: Code | None = None
     businessCommunication: Communication | None = None
     photos: list[Photo] | None = None
+    field_languageCode: Code | None = Field(default=None, alias="_languageCode")
 
 
-WORKER_SCHEMA = json.loads(generate(py_type=Worker, namespace="worker"))
+WORKER_SCHEMA = json.loads(
+    generate(py_type=Worker, namespace="worker", options=Option.USE_FIELD_ALIAS)
+)
