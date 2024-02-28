@@ -11,6 +11,7 @@ select
     s.eval_date,
     s.years_at_kipp,
     s.years_teaching,
+
     sr.preferred_name_lastfirst as teammate,
     sr.business_unit_home_name as entity,
     sr.home_work_location_name as location,
@@ -27,7 +28,7 @@ select
     sr.base_remuneration_annual_rate_amount_amount_value as annual_salary,
     sr.alumni_status,
     sr.community_professional_exp,
-from {{ ref("int_performance_management_pm_overall_scores") }} as s
+from {{ ref("int_performance_management__overall_scores") }} as s
 inner join
     {{ ref("base_people__staff_roster_history") }} as sr
     on s.employee_number = sr.employee_number

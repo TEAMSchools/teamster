@@ -116,7 +116,7 @@ left join
     on eh.employee_number = ae.employee_number
     and y.academic_year = ae.academic_year
 left join
-    {{ ref("int_performance_management_pm_overall_scores") }} as pm
+    {{ ref("int_performance_management__overall_scores") }} as pm
     on pm.employee_number = eh.employee_number
     and pm.academic_year = y.academic_year
     and pm.pm_term = 'PM4'
