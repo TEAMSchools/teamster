@@ -419,7 +419,7 @@ with
         select
             null as `user_id`,
             null as role_name,
-            null as internal_id,
+            safe_cast(hd.employee_number as string) as internal_id,
             'PM' as form_type,
             hd.form_term,
             hd.form_short_name,
@@ -448,10 +448,6 @@ with
             null as text_box,
             1 as rn_submission,
         from historical_data as hd
-        left join
-            {{ ref("base_people__staff_roster") }} as r
-            on hd.employee_number = r.employee_number
-
     )
 
 select
