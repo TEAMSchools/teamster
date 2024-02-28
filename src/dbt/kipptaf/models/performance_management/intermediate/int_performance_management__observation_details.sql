@@ -194,7 +194,7 @@ with
             s.start_date,
             s.end_date,
             s.academic_year,
-            'ETR + S&O' as score_type,
+
             o.score_measurement_type,
             o.score_measurement_shortname,
             o.observation_id,
@@ -213,8 +213,9 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-
             o.text_box,
+
+            'ETR + S&O' as score_type,
 
             row_number() over (
                 partition by
@@ -245,11 +246,9 @@ with
             s.start_date,
             s.end_date,
             s.academic_year,
-            null as score_type,
 
             o.score_measurement_type,
             o.score_measurement_shortname,
-
             o.observation_id,
             o.teacher_id,
             o.form_long_name,
@@ -266,8 +265,9 @@ with
             o.measurement_name,
             o.measurement_scale_min,
             o.measurement_scale_max,
-
             o.text_box,
+
+            safe_cast(null as string) as score_type,
 
             row_number() over (
                 partition by
