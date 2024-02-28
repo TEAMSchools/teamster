@@ -1,6 +1,6 @@
 from dagster import RunConfig, job
 
-from ...google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
+from ....google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
 from .ops import adp_wfn_update_workers_op
 
 
