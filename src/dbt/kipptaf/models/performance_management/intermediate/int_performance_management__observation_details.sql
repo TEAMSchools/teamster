@@ -287,70 +287,6 @@ with
         where s.form_type in ('WT', 'O3')
     ),
 
-    historical_overall_scores as (
-        select
-            employee_number,
-            academic_year,
-            pm_term as form_term,
-            etr_score,
-            so_score,
-            overall_score,
-        from
-            {{
-                source(
-                    "performance_management",
-                    "src_performance_management__scores_overall_archive",
-                )
-            }}
-    ),
-
-    historical_detail_scores as (
-        select
-            subject_employee_number as employee_number,
-            academic_year,
-            pm_term as form_term,
-            score_type,
-            observer_employee_number,
-            measurement_name,
-            score_value as row_score_value,
-            safe_cast(null as string) as observer_name,
-            safe_cast(observed_at as date) as observed_at,
-        from
-            {{
-                source(
-                    "performance_management",
-                    "src_performance_management__scores_detail_archive",
-                )
-            }}
-    ),
-
-    historical_data as (
-        select
-            os.employee_number,
-            os.academic_year,
-            os.form_term,
-            os.etr_score,
-            os.so_score,
-            os.overall_score,
-
-            ds.score_type,
-            ds.observer_employee_number,
-            ds.observer_name,
-            ds.observed_at,
-            ds.measurement_name,
-            ds.row_score_value,
-
-            'Coaching Tool: Coach ETR and Reflection' as form_long_name,
-
-            concat(ds.form_term, ' (Coach)') as form_short_name,
-        from historical_overall_scores as os
-        inner join
-            historical_detail_scores as ds
-            on os.employee_number = ds.employee_number
-            and os.academic_year = ds.academic_year
-            and os.form_term = ds.form_term
-    ),
-
     all_data as (
         select
             od.user_id,
@@ -397,46 +333,46 @@ with
             null as `user_id`,
             null as role_name,
 
-            safe_cast(hd.employee_number as string) as internal_id,
+            employee_number as internal_id,
 
             'PM' as form_type,
 
-            hd.form_term,
-            hd.form_short_name,
-            hd.form_long_name,
-            hd.score_type,
+            form_term,
+            form_short_name,
+            form_long_name,
+            score_type,
 
             null as score_measurement_type,
             null as score_measurement_shortname,
             null as start_date,
             null as end_date,
 
-            hd.academic_year,
+            academic_year,
 
             null as observation_id,
             null as teacher_id,
             null as created,
 
-            hd.observed_at,
-            hd.observer_name,
-            hd.observer_employee_number,
+            observed_at,
+            observer_name,
+            observer_employee_number,
 
             null as glows,
             null as grows,
             null as score_measurement_id,
             null as score_percentage,
 
-            hd.row_score_value,
-            hd.measurement_name,
+            row_score_value,
+            measurement_name,
 
             null as text_box,
 
             1 as rn_submission,
 
-            hd.etr_score,
-            hd.so_score,
-            hd.overall_score,
-        from historical_data as hd
+            etr_score,
+            so_score,
+            overall_score,
+        from {{ ref("int_performance_management__scores_archive") }}
     )
 
 select
