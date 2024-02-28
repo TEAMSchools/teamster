@@ -39,7 +39,7 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-dev = ["pytest>=7.4.3"]
+dev = ["pytest>=7.4.3", "datamodel-code-generator>=0.25.4"]
 
 [tool.pdm.scripts]
 _.env_file = "env/.env"
