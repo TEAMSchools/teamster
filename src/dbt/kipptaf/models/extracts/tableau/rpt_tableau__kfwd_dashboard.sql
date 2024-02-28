@@ -252,7 +252,7 @@ with
                 ]
             ) as application_account_type
         union all
-        select 'AA' as matriculation_type, 'Public 2 yr' as application_account_type
+        select 'AA' as matriculation_type, 'Public 2 yr' as application_account_type,
     )
 
 select
