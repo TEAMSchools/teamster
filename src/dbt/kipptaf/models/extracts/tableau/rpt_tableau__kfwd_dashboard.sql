@@ -232,6 +232,27 @@ with
             ) pivot (
                 max(is_persisting_int) for persistence_year in ('1', '2', '3', '4', '5')
             )
+    ),
+
+    matriculation_type as (
+        select 'BA' as matriculation_type, application_account_type,
+        from unnest(['Public 4 yr', 'Private 4 yr']) as application_account_type
+        union all
+        select 'CTE' as matriculation_type, application_account_type,
+        from
+            unnest(
+                [
+                    'Alternative High School',
+                    'Public',
+                    'Military',
+                    'Private 2 yr',
+                    'Non-profit',
+                    'Private',
+                    'NonProfit'
+                ]
+            ) as application_account_type
+        union all
+        select 'AA' as matriculation_type, 'Public 2 yr' as application_account_type,
     )
 
 select
@@ -317,13 +338,14 @@ select
 
     ar.n_submitted,
     ar.n_accepted,
-    ar.is_matriculated,
     ar.ecc_submitted_avg,
     ar.ecc_wishlist_avg,
     ar.ecc_submitted_min,
     ar.ecc_wishlist_min,
     ar.ecc_matriculated_avg,
     ar.ecc_matriculated_min,
+    ar.ecc_accepted_avg,
+    ar.ecc_accepted_min,
 
     cnr.as1,
     cnr.as2,
@@ -439,6 +461,8 @@ select
     p.is_persist_yr4_int,
     p.is_persist_yr5_int,
 
+    m.matriculation_type,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -543,6 +567,7 @@ select
     coalesce(ar.is_accepted_ba, false) as is_accepted_ba,
     coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
     coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
+    coalesce(ar.is_matriculated, false) as is_matriculated,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -587,6 +612,7 @@ left join
     and ay.academic_year = b.academic_year
     and b.rn_benchmark = 1
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
+left join matriculation_type as m on apps.account_type = m.application_account_type
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

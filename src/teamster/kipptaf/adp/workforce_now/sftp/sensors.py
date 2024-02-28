@@ -6,7 +6,7 @@ from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 
 from teamster.core.ssh.resources import SSHResource
 
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
+from .... import CODE_LOCATION, LOCAL_TIMEZONE
 from .assets import _all as adp_wfn_sftp_assets
 
 
