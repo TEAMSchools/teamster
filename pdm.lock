@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:604d21f2e79d5afa3c648b93fe9477fdb93b841c92958c14dffa0e8028069de8"
+content_hash = "sha256:4be5cafa8c73e019a5bf6afd1f16dc44e1c634ea989e603b44bc0c62b56e4ea5"
 
 [[package]]
 name = "agate"
@@ -64,6 +64,16 @@ files = [
 ]
 
 [[package]]
+name = "argcomplete"
+version = "3.2.2"
+requires_python = ">=3.8"
+summary = "Bash tab completion for argparse"
+files = [
+    {file = "argcomplete-3.2.2-py3-none-any.whl", hash = "sha256:e44f4e7985883ab3e73a103ef0acd27299dbfe2dfed00142c35d4ddd3005901d"},
+    {file = "argcomplete-3.2.2.tar.gz", hash = "sha256:f3e49e8ea59b4026ee29548e24488af46e30c9de57d48638e24f54a1ea1000a2"},
+]
+
+[[package]]
 name = "attrs"
 version = "23.2.0"
 requires_python = ">=3.7"
@@ -71,6 +81,15 @@ summary = "Classes Without Boilerplate"
 files = [
     {file = "attrs-23.2.0-py3-none-any.whl", hash = "sha256:99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1"},
     {file = "attrs-23.2.0.tar.gz", hash = "sha256:935dc3b529c262f6cf76e50877d35a4bd3c1de194fd41f47a2b7ae8f19971f30"},
+]
+
+[[package]]
+name = "avro"
+version = "1.11.3"
+requires_python = ">=3.6"
+summary = "Avro is a serialization and RPC framework."
+files = [
+    {file = "avro-1.11.3.tar.gz", hash = "sha256:3393bb5139f9cf0791d205756ce1e39a5b58586af5b153d6a3b5a199610e9d17"},
 ]
 
 [[package]]
@@ -132,13 +151,34 @@ files = [
 ]
 
 [[package]]
+name = "black"
+version = "24.2.0"
+requires_python = ">=3.8"
+summary = "The uncompromising code formatter."
+dependencies = [
+    "click>=8.0.0",
+    "mypy-extensions>=0.4.3",
+    "packaging>=22.0",
+    "pathspec>=0.9.0",
+    "platformdirs>=2",
+]
+files = [
+    {file = "black-24.2.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:d84f29eb3ee44859052073b7636533ec995bd0f64e2fb43aeceefc70090e752b"},
+    {file = "black-24.2.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1e08fb9a15c914b81dd734ddd7fb10513016e5ce7e6704bdd5e1251ceee51ac9"},
+    {file = "black-24.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:810d445ae6069ce64030c78ff6127cd9cd178a9ac3361435708b907d8a04c693"},
+    {file = "black-24.2.0-cp312-cp312-win_amd64.whl", hash = "sha256:ba15742a13de85e9b8f3239c8f807723991fbfae24bad92d34a2b12e81904982"},
+    {file = "black-24.2.0-py3-none-any.whl", hash = "sha256:e8a6ae970537e67830776488bca52000eaa37fa63b9988e8c487458d9cd5ace6"},
+    {file = "black-24.2.0.tar.gz", hash = "sha256:bce4f25c27c3435e4dace4815bcb2008b87e167e3bf4ee47ccdc5ce906eb4894"},
+]
+
+[[package]]
 name = "cachetools"
-version = "5.3.2"
+version = "5.3.3"
 requires_python = ">=3.7"
 summary = "Extensible memoizing collections and decorators"
 files = [
-    {file = "cachetools-5.3.2-py3-none-any.whl", hash = "sha256:861f35a13a451f94e301ce2bec7cac63e881232ccce7ed67fab9b5df4d3beaa1"},
-    {file = "cachetools-5.3.2.tar.gz", hash = "sha256:086ee420196f7b2ab9ca2db2520aca326318b68fe5ba8bc4d49cca91add450f2"},
+    {file = "cachetools-5.3.3-py3-none-any.whl", hash = "sha256:0abad1021d3f8325b2fc1d2e9c8b9c9d57b04c3932657a72465447332c24d945"},
+    {file = "cachetools-5.3.3.tar.gz", hash = "sha256:ba29e2dfa0b8b556606f097407ed1aa62080ee108ab0dc5ec9d6a723a007d105"},
 ]
 
 [[package]]
@@ -533,6 +573,28 @@ files = [
 ]
 
 [[package]]
+name = "datamodel-code-generator"
+version = "0.25.4"
+requires_python = ">=3.7,<4.0"
+summary = "Datamodel Code Generator"
+dependencies = [
+    "argcomplete<4.0,>=1.10",
+    "black>=19.10b0",
+    "genson<2.0,>=1.2.1",
+    "inflect<6.0,>=4.1.0",
+    "isort<6.0,>=4.3.21",
+    "jinja2<4.0,>=2.10.1",
+    "packaging",
+    "pydantic[email]!=2.0.0,!=2.0.1,!=2.4.0,<3.0,>=1.10.0; python_version ~= \"3.12\"",
+    "pydantic[email]!=2.4.0,<3.0,>=1.10.0; python_version ~= \"3.11\"",
+    "pyyaml>=6.0.1",
+]
+files = [
+    {file = "datamodel_code_generator-0.25.4-py3-none-any.whl", hash = "sha256:cbf179517c610dce81589203d72b52e6ab848d78cb57264c1e5d929a9cc9d9a4"},
+    {file = "datamodel_code_generator-0.25.4.tar.gz", hash = "sha256:8e64c94a3bc92c69a6f56de84f0d61f70fd65c2e0ac95a27ce66837bd04c5492"},
+]
+
+[[package]]
 name = "db-dtypes"
 version = "1.2.0"
 requires_python = ">=3.7"
@@ -626,7 +688,7 @@ files = [
 
 [[package]]
 name = "dbt-semantic-interfaces"
-version = "0.4.3"
+version = "0.4.4"
 requires_python = ">=3.8"
 summary = "The shared semantic layer definitions that dbt-core and MetricFlow use"
 dependencies = [
@@ -641,8 +703,8 @@ dependencies = [
     "typing-extensions~=4.4",
 ]
 files = [
-    {file = "dbt_semantic_interfaces-0.4.3-py3-none-any.whl", hash = "sha256:af6ab8509da81ae5f5f1d5631c9761cccaed8cd5311d4824a8d4168ecd0f2093"},
-    {file = "dbt_semantic_interfaces-0.4.3.tar.gz", hash = "sha256:9a46d07ad022a4c48783565a776ebc6f1d19e0412e70c4759bc9d7bba461ea1c"},
+    {file = "dbt_semantic_interfaces-0.4.4-py3-none-any.whl", hash = "sha256:0149a4fd7fd4f25309edf5f856410536eaf2019f29dad58967dcf6d0625e6914"},
+    {file = "dbt_semantic_interfaces-0.4.4.tar.gz", hash = "sha256:3b8126deb964c03d14e8af1cb4bdfb9f20c53dfcef28fa3a0bc158a8312e4070"},
 ]
 
 [[package]]
@@ -656,6 +718,16 @@ files = [
 ]
 
 [[package]]
+name = "dnspython"
+version = "2.6.1"
+requires_python = ">=3.8"
+summary = "DNS toolkit"
+files = [
+    {file = "dnspython-2.6.1-py3-none-any.whl", hash = "sha256:5ef3b9680161f6fa89daf8ad451b5f1a33b18ae8a1c6778cdf4b43f08c0a6e50"},
+    {file = "dnspython-2.6.1.tar.gz", hash = "sha256:e8f0f9c23a7b7cb99ded64e6c3a6f3e701d78f50c55e002b839dea7225cff7cc"},
+]
+
+[[package]]
 name = "docstring-parser"
 version = "0.15"
 requires_python = ">=3.6,<4.0"
@@ -663,6 +735,20 @@ summary = "Parse Python docstrings in reST, Google and Numpydoc format"
 files = [
     {file = "docstring_parser-0.15-py3-none-any.whl", hash = "sha256:d1679b86250d269d06a99670924d6bce45adc00b08069dae8c47d98e89b667a9"},
     {file = "docstring_parser-0.15.tar.gz", hash = "sha256:48ddc093e8b1865899956fcc03b03e66bb7240c310fac5af81814580c55bf682"},
+]
+
+[[package]]
+name = "email-validator"
+version = "2.1.1"
+requires_python = ">=3.8"
+summary = "A robust email address syntax and deliverability validation library."
+dependencies = [
+    "dnspython>=2.0.0",
+    "idna>=2.0.0",
+]
+files = [
+    {file = "email_validator-2.1.1-py3-none-any.whl", hash = "sha256:97d882d174e2a65732fb43bfce81a3a834cbc1bde8bf419e30ef5ea976370a05"},
+    {file = "email_validator-2.1.1.tar.gz", hash = "sha256:200a70680ba08904be6d1eef729205cc0d687634399a5924d842533efb824b84"},
 ]
 
 [[package]]
@@ -688,6 +774,14 @@ summary = "File-system specification"
 files = [
     {file = "fsspec-2024.2.0-py3-none-any.whl", hash = "sha256:817f969556fa5916bc682e02ca2045f96ff7f586d45110fcb76022063ad2c7d8"},
     {file = "fsspec-2024.2.0.tar.gz", hash = "sha256:b6ad1a679f760dda52b1168c859d01b7b80648ea6f7f7c7f5a8a91dc3f3ecb84"},
+]
+
+[[package]]
+name = "genson"
+version = "1.2.2"
+summary = "GenSON is a powerful, user-friendly JSON Schema generator."
+files = [
+    {file = "genson-1.2.2.tar.gz", hash = "sha256:8caf69aa10af7aee0e1a1351d1d06801f4696e005f06cedef438635384346a16"},
 ]
 
 [[package]]
@@ -1076,6 +1170,16 @@ files = [
 ]
 
 [[package]]
+name = "inflect"
+version = "5.6.2"
+requires_python = ">=3.7"
+summary = "Correctly generate plurals, singular nouns, ordinals, indefinite articles; convert numbers to words"
+files = [
+    {file = "inflect-5.6.2-py3-none-any.whl", hash = "sha256:b45d91a4a28a4e617ff1821117439b06eaa86e2a4573154af0149e9be6687238"},
+    {file = "inflect-5.6.2.tar.gz", hash = "sha256:aadc7ed73928f5e014129794bbac03058cca35d0a973a5fc4eb45c7fa26005f9"},
+]
+
+[[package]]
 name = "iniconfig"
 version = "2.0.0"
 requires_python = ">=3.7"
@@ -1095,6 +1199,16 @@ dependencies = [
 files = [
     {file = "isodate-0.6.1-py2.py3-none-any.whl", hash = "sha256:0751eece944162659049d35f4f549ed815792b38793f07cf73381c1c87cbed96"},
     {file = "isodate-0.6.1.tar.gz", hash = "sha256:48c5881de7e8b0a0d648cb024c8062dc84e7b840ed81e864c7614fd3c127bde9"},
+]
+
+[[package]]
+name = "isort"
+version = "5.13.2"
+requires_python = ">=3.8.0"
+summary = "A Python utility / library to sort Python imports."
+files = [
+    {file = "isort-5.13.2-py3-none-any.whl", hash = "sha256:8ca5e72a8d85860d5a3fa69b8745237f2939afe12dbf656afbcb47fe72d947a6"},
+    {file = "isort-5.13.2.tar.gz", hash = "sha256:48fdfcb9face5d58a4f6dde2e72a1fb8dcaf8ab26f95ab49fab84c2ddefb0109"},
 ]
 
 [[package]]
@@ -1284,6 +1398,15 @@ files = [
 ]
 
 [[package]]
+name = "memoization"
+version = "0.4.0"
+requires_python = ">=3, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4"
+summary = "A powerful caching library for Python, with TTL support and multiple algorithm options. (https://github.com/lonelyenvoy/python-memoization)"
+files = [
+    {file = "memoization-0.4.0.tar.gz", hash = "sha256:fde5e7cd060ef45b135e0310cfec17b2029dc472ccb5bbbbb42a503d4538a135"},
+]
+
+[[package]]
 name = "minimal-snowplow-tracker"
 version = "0.0.2"
 summary = "A minimal snowplow event tracker for Python. Add analytics to your Python and Django apps, webapps and games"
@@ -1323,6 +1446,16 @@ files = [
     {file = "msgpack-1.0.7-cp312-cp312-win32.whl", hash = "sha256:27dcd6f46a21c18fa5e5deed92a43d4554e3df8d8ca5a47bf0615d6a5f39dbc9"},
     {file = "msgpack-1.0.7-cp312-cp312-win_amd64.whl", hash = "sha256:7687e22a31e976a0e7fc99c2f4d11ca45eff652a81eb8c8085e9609298916dcf"},
     {file = "msgpack-1.0.7.tar.gz", hash = "sha256:572efc93db7a4d27e404501975ca6d2d9775705c2d922390d878fcf768d92c87"},
+]
+
+[[package]]
+name = "mypy-extensions"
+version = "1.0.0"
+requires_python = ">=3.5"
+summary = "Type system extensions for programs checked with the mypy type checker."
+files = [
+    {file = "mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d"},
+    {file = "mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782"},
 ]
 
 [[package]]
@@ -1543,6 +1676,16 @@ files = [
 ]
 
 [[package]]
+name = "platformdirs"
+version = "4.2.0"
+requires_python = ">=3.8"
+summary = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+files = [
+    {file = "platformdirs-4.2.0-py3-none-any.whl", hash = "sha256:0614df2a2f37e1a662acbd8e2b25b92ccf8632929bc6d43467e17fe89c75e068"},
+    {file = "platformdirs-4.2.0.tar.gz", hash = "sha256:ef0cc731df711022c174543cb70a9b5bd22e5a9337c8624ef2c2ceb8ddad8768"},
+]
+
+[[package]]
 name = "pluggy"
 version = "1.4.0"
 requires_python = ">=3.8"
@@ -1606,6 +1749,22 @@ files = [
     {file = "psutil-5.9.8-cp37-abi3-win_amd64.whl", hash = "sha256:8db4c1b57507eef143a15a6884ca10f7c73876cdf5d51e713151c1236a0e68cf"},
     {file = "psutil-5.9.8-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:d16bbddf0693323b8c6123dd804100241da461e41d6e332fb0ba6058f630f8c8"},
     {file = "psutil-5.9.8.tar.gz", hash = "sha256:6be126e3225486dff286a8fb9a06246a5253f4c7c53b475ea5f5ac934e64194c"},
+]
+
+[[package]]
+name = "py-avro-schema"
+version = "3.4.1"
+requires_python = ">=3.9"
+summary = "Generate Apache Avro schemas for Python types including standard library data-classes and Pydantic data models."
+dependencies = [
+    "avro~=1.10",
+    "memoization~=0.4",
+    "orjson~=3.5",
+    "typeguard~=4.0",
+]
+files = [
+    {file = "py-avro-schema-3.4.1.tar.gz", hash = "sha256:ceb0cc1c80f8d6e05d52be3492abf6dfe97fe399ceeb11593694c198e9454fdb"},
+    {file = "py_avro_schema-3.4.1-py3-none-any.whl", hash = "sha256:d92d23b158b1edf8da1d81221845f78119cfc5f5fbffddc9fc6b5f0349f93864"},
 ]
 
 [[package]]
@@ -1691,7 +1850,7 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.6.2"
+version = "2.6.3"
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 dependencies = [
@@ -1700,8 +1859,8 @@ dependencies = [
     "typing-extensions>=4.6.1",
 ]
 files = [
-    {file = "pydantic-2.6.2-py3-none-any.whl", hash = "sha256:37a5432e54b12fecaa1049c5195f3d860a10e01bdfd24f1840ef14bd0d3aeab3"},
-    {file = "pydantic-2.6.2.tar.gz", hash = "sha256:a09be1c3d28f3abe37f8a78af58284b236a92ce520105ddc91a6d29ea1176ba7"},
+    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
+    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
 ]
 
 [[package]]
@@ -1743,6 +1902,21 @@ files = [
     {file = "pydantic_core-2.16.3-pp39-pypy39_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:ed25e1835c00a332cb10c683cd39da96a719ab1dfc08427d476bce41b92531fc"},
     {file = "pydantic_core-2.16.3-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:86b3d0033580bd6bbe07590152007275bd7af95f98eaa5bd36f3da219dcd93da"},
     {file = "pydantic_core-2.16.3.tar.gz", hash = "sha256:1cac689f80a3abab2d3c0048b29eea5751114054f032a941a32de4c852c59cad"},
+]
+
+[[package]]
+name = "pydantic"
+version = "2.6.3"
+extras = ["email"]
+requires_python = ">=3.8"
+summary = "Data validation using Python type hints"
+dependencies = [
+    "email-validator>=2.0.0",
+    "pydantic==2.6.3",
+]
+files = [
+    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
+    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
 ]
 
 [[package]]
@@ -1975,7 +2149,7 @@ files = [
 
 [[package]]
 name = "rich"
-version = "13.7.0"
+version = "13.7.1"
 requires_python = ">=3.7.0"
 summary = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 dependencies = [
@@ -1983,8 +2157,8 @@ dependencies = [
     "pygments<3.0.0,>=2.13.0",
 ]
 files = [
-    {file = "rich-13.7.0-py3-none-any.whl", hash = "sha256:6da14c108c4866ee9520bbffa71f6fe3962e193b7da68720583850cd4548e235"},
-    {file = "rich-13.7.0.tar.gz", hash = "sha256:5cb5123b5cf9ee70584244246816e9114227e0b98ad9176eede6ad54bf5403fa"},
+    {file = "rich-13.7.1-py3-none-any.whl", hash = "sha256:4edbae314f59eb482f54e9e30bf00d33350aaa94f4bfcd4e9e3110e64d0d7222"},
+    {file = "rich-13.7.1.tar.gz", hash = "sha256:9be308cb1fe2f1f57d67ce99e95af38a1e2bc71ad9813b0e247cf7ffbcc3a432"},
 ]
 
 [[package]]
@@ -2304,6 +2478,16 @@ dependencies = [
 files = [
     {file = "tqdm-4.66.2-py3-none-any.whl", hash = "sha256:1ee4f8a893eb9bef51c6e35730cebf234d5d0b6bd112b0271e10ed7c24a02bd9"},
     {file = "tqdm-4.66.2.tar.gz", hash = "sha256:6cd52cdf0fef0e0f543299cfc96fec90d7b8a7e88745f411ec33eb44d5ed3531"},
+]
+
+[[package]]
+name = "typeguard"
+version = "4.1.5"
+requires_python = ">=3.8"
+summary = "Run-time type checker for Python"
+files = [
+    {file = "typeguard-4.1.5-py3-none-any.whl", hash = "sha256:8923e55f8873caec136c892c3bed1f676eae7be57cdb94819281b3d3bc9c0953"},
+    {file = "typeguard-4.1.5.tar.gz", hash = "sha256:ea0a113bbc111bcffc90789ebb215625c963411f7096a7e9062d4e4630c155fd"},
 ]
 
 [[package]]

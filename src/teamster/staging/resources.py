@@ -6,7 +6,7 @@ from zenpy import Zenpy
 
 from teamster.core.ssh.resources import SSHResource
 from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
-from teamster.kipptaf.adp.workforce_now.resources import AdpWorkforceNowResource
+from teamster.kipptaf.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.kipptaf.amplify.resources import MClassResource
 from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
 from teamster.kipptaf.google.forms.resources import GoogleFormsResource

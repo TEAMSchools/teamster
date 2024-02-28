@@ -45,7 +45,7 @@ def adp_wfn_update_workers_op(
         if mail != mail_adp or mail_adp is None:
             context.log.info(f"{employee_number}\twork_email\t{mail_adp} => {mail}")
             adp_wfn.post(
-                endpoint="/events/hr/v1/worker",
+                endpoint="events/hr/v1/worker",
                 subresource="business-communication.email",
                 verb="change",
                 payload={
@@ -69,7 +69,7 @@ def adp_wfn_update_workers_op(
             )
 
             adp_wfn.post(
-                endpoint="/events/hr/v1/worker",
+                endpoint="events/hr/v1/worker",
                 subresource="custom-field.string",
                 verb="change",
                 payload={
@@ -93,7 +93,7 @@ def adp_wfn_update_workers_op(
             )
 
             adp_wfn.post(
-                endpoint="/events/hr/v1/worker",
+                endpoint="events/hr/v1/worker",
                 subresource="custom-field.string",
                 verb="change",
                 payload={
@@ -118,7 +118,7 @@ def adp_wfn_update_workers_op(
             )
 
             adp_wfn.post(
-                endpoint="/events/hr/v1/worker",
+                endpoint="events/hr/v1/worker",
                 subresource="custom-field.string",
                 verb="change",
                 payload={
