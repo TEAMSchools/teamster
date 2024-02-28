@@ -317,7 +317,6 @@ select
 
     ar.n_submitted,
     ar.n_accepted,
-    ar.is_matriculated,
     ar.ecc_submitted_avg,
     ar.ecc_wishlist_avg,
     ar.ecc_submitted_min,
@@ -545,6 +544,7 @@ select
     coalesce(ar.is_accepted_ba, false) as is_accepted_ba,
     coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
     coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
+    coalesce(ar.is_matriculated, false) as is_matriculated,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
