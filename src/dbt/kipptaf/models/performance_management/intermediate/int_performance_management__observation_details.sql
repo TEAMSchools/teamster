@@ -245,7 +245,7 @@ with
             s.start_date,
             s.end_date,
             s.academic_year,
-            safe_cast(null as string) as score_type,
+            null as score_type,
 
             o.score_measurement_type,
             o.score_measurement_shortname,
@@ -330,7 +330,7 @@ with
         union all
 
         select
-            null as `user_id`,
+            null as user_id,
             null as role_name,
 
             employee_number as internal_id,
