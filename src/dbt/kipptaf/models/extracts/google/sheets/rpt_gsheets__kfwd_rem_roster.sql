@@ -18,6 +18,16 @@ with
             row_number() over (partition by contact order by date desc) as rn_note,
         from {{ ref("stg_kippadb__contact_note") }}
         where subject like 'REM FY%'
+    ),
+
+    rem_handoff as (
+        select
+            contact,
+            `date` as rem_handoff_date,
+            subject,
+            row_number() over (partition by contact order by date desc) as rn_note,
+        from {{ ref("stg_kippadb__contact_note") }}
+        where subject like 'REM Handoff'
     )
 
 select  -- noqa: ST06
@@ -62,6 +72,10 @@ select  -- noqa: ST06
         else 'Last Outreach within 30'
     end as last_outreach_status,
 
+    date_diff(
+        rh.rem_handoff_date, c.contact_last_successful_contact, day
+    ) as rem_contact_days_since_handoff,
+
     r.contact_kipp_hs_graduate as is_kipp_hs_grad,
     r.contact_expected_college_graduation as expected_college_graduation,
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
@@ -80,5 +94,6 @@ left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id
 left join rem_subject as rs on rs.contact = r.contact_id and rs.rn_note = 1
+left join rem_handoff as rh on rh.contact = r.contact_id and rh.rn_note = 1
 left join transcript_data as gpa on gpa.student = r.contact_id and gpa.rn_transcript = 1
 where r.contact_has_hs_graduated_enrollment = 'HS Graduate'
