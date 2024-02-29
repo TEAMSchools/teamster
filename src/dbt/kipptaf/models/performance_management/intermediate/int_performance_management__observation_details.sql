@@ -320,8 +320,9 @@ with
             os.etr_score as etr_score,
             os.so_score as so_score,
 
+            /* 2023 direct SMG overall score is messed up */
             if(
-                od.academic_year <= 2024, os.overall_score, od.overall_score
+                od.academic_year <= 2023, os.overall_score, od.overall_score
             ) as overall_score,
         from observation_details as od
         left join pm_overall_scores_pivot as os on od.observation_id = os.observation_id
