@@ -31,6 +31,8 @@ with
             s.sections_external_expression,
             s.sections_section_number as section_number,
 
+            discipline,
+
             safe_cast(e.state_studentnumber as int) as state_studentnumber,
             case
                 when e.spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
@@ -47,6 +49,7 @@ with
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
+        cross join unnest(['Math', 'ELA']) as discipline
         where
             e.rn_year = 1
             and e.academic_year = {{ var("current_academic_year") }}
@@ -205,31 +208,30 @@ with
         select
             r.student_number,
 
-            a.testcode as test_type,
             a.discipline,
             a.subject,
             safe_cast(a.testscalescore as string) as `value`,
             if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
-            'State Assessment' as grad_eligible_type,
+            a.testcode as test_type,
+            'State Assessment' as pathway_option,
         from roster as r
         inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
         union all
         select
             r.student_number,
 
-            a.test_type,
             a.discipline,
             a.subject,
             safe_cast(a.score as string) as `value`,
             a.met_pathway_requirement,
-            'ACT/SAT' as grad_eligible_type,
+            a.test_type,
+            'ACT/SAT' as pathway_option,
         from roster as r
         inner join act_sat_official as a on r.kippadb_contact_id = a.contact
         union all
         select
             r.student_number,
 
-            'Alternative' as test_type,
             case
                 a.subject when 'ela' then 'ELA' when 'math' then 'Math'
             end as discipline,
@@ -241,7 +243,8 @@ with
                 then 'IEP'
                 when a.is_portfolio_eligible
                 then 'Portfolio'
-            end as grad_eligible_type,
+            end as test_type,
+            'Alternative' as pathway_option,
         from roster as r
         inner join
             {{ ref("int_powerschool__nj_graduation_pathway_unpivot") }} as a
@@ -279,11 +282,25 @@ select
     r.teacher_lastfirst as ccr_teacher,
     r.sections_external_expression as ccr_period,
     r.section_number as ccr_section_number,
+    r.discipline,
+    g.pathway_option,
     g.test_type,
-    g.grad_eligible_type,
-    g.discipline,
     g.subject,
     g.value,
     g.met_pathway_requirement,
+    c.code,
+    c.njgpa_attempt,
+    c.njgpa_pass,
+    c.act,
+    c.sat,
+    c.final_grad_path,
 from roster as r
-left join grad_options_append_final as g on r.student_number = g.student_number
+left join
+    grad_options_append_final as g
+    on r.student_number = g.student_number
+    and r.discipline = g.discipline
+left join
+    {{ ref("int_students__graduation_path_codes") }} as c
+    on r.student_number = c.student_number
+    and r.academic_year = c.academic_year
+    and r.discipline = c.discipline
