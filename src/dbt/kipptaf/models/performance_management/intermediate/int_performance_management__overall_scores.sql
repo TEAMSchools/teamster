@@ -3,35 +3,20 @@ with
         select
             employee_number,
             academic_year,
-            pm_term,
+            form_term,
             etr_score,
             so_score,
             overall_score,
             etr_tier,
             so_tier,
             overall_tier,
-            case
-                when pm_term = 'PM1'
-                then date(academic_year, 10, 1)
-                when pm_term = 'PM2'
-                then date(academic_year + 1, 1, 1)
-                when pm_term = 'PM3'
-                then date(academic_year + 1, 3, 1)
-                when pm_term = 'PM4'
-                then date(academic_year + 1, 5, 15)
-            end as eval_date,
-        from
-            {{
-                source(
-                    "performance_management",
-                    "src_performance_management__scores_overall_archive",
-                )
-            }}
+            eval_date,
+        from {{ ref("stg_performance_management__scores_overall_archive") }}
 
         union all
 
         select distinct
-            employee_number,
+            safe_cast(internal_id as int) as employee_number,
             academic_year,
             form_term,
             etr_score,
@@ -48,13 +33,13 @@ with
                 when form_term = 'PM3'
                 then date(academic_year + 1, 3, 1)
             end as eval_date,
-        from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
+        from {{ ref("int_performance_management__observation_details") }}
         where form_type = 'PM' and rn_submission = 1
 
         union all
 
         select
-            employee_number,
+            safe_cast(internal_id as int) as employee_number,
             academic_year,
             'PM4' as form_term,
             avg(etr_score) as etr_score,
@@ -91,19 +76,19 @@ with
                 then 1
             end as overall_tier,
             date(academic_year + 1, 5, 15) as eval_date,
-        from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
+        from {{ ref("int_performance_management__observation_details") }}
         where
             form_type = 'PM'
             and form_term in ('PM2', 'PM3')
             and rn_submission = 1
             and overall_score is not null
-        group by employee_number, academic_year
+        group by internal_id, academic_year
     )
 
 select
     s.employee_number,
     s.academic_year,
-    s.pm_term,
+    s.form_term as pm_term,
     s.etr_score,
     s.so_score,
     s.overall_score,
