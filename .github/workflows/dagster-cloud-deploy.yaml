@@ -11,11 +11,13 @@ on:
         required: true
         type: string
       python-version:
-        required: true
         type: string
+        required: false
+        default: "3.12"
       dbt-version:
-        required: true
         type: string
+        required: false
+        default: "1.7"
 
 concurrency:
   # Cancel in-progress deploys to the same branch
