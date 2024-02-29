@@ -35,7 +35,7 @@ with
 
             if(e.spedlep in ('No IEP', null), 0, 1) as sped,
 
-            if(d.student_number is null, false, true) as dlm
+            if(d.student_number is null, false, true) as dlm,
 
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
