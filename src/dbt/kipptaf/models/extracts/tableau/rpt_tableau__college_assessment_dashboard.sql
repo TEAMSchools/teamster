@@ -1,4 +1,10 @@
 with
+    dlm as (
+        select distinct student_number,
+        from {{ ref("int_students__graduation_path_codes") }}
+        where code = 'M'
+    ),
+
     roster as (
         select
             e.academic_year,
@@ -29,6 +35,8 @@ with
 
             if(e.spedlep in ('No IEP', null), 0, 1) as sped,
 
+            if(d.student_number is null, false, true) as dlm
+
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -42,6 +50,7 @@ with
             {{ ref("stg_assessments__college_readiness_expected_tests") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
+        left join dlm as d on e.student_number = d.student_number
         where
             e.academic_year = 2023
             and e.rn_year = 1
@@ -118,6 +127,7 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
+    e.dlm,
 
     o.test_type,
     o.scope,
@@ -173,6 +183,7 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
+    e.dlm,
 
     p.test_type,
     p.scope,
