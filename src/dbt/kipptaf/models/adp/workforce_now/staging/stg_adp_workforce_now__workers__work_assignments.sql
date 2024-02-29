@@ -1,5 +1,4 @@
 select
-    w._dagster_partition_date as as_of_date,
     w.associateoid as associate_oid,
 
     /* workAssignments */
@@ -43,5 +42,12 @@ select
     as base_remuneration__pay_period_rate_amount__name_code__code_value,
     wa.baseremuneration.payperiodrateamount.namecode.shortname
     as base_remuneration__pay_period_rate_amount__name_code__short_name,
+
+    timestamp(
+        w._dagster_partition_date, '{{ var("local_timezone")}}'
+    ) as as_of_date_timestamp,
+
+    {{ dbt_utils.generate_surrogate_key(["to_json_string(w.workassignments)"]) }}
+    as surrogate_key,
 from {{ source("adp_workforce_now", "src_adp_workforce_now__workers") }} as w
 cross join unnest(w.workassignments) as wa
