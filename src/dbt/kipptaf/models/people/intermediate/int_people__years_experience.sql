@@ -1,65 +1,130 @@
 with
-    history_clean as (
+    staff_roster_history_distinct as (
+        select distinct
+            employee_number,
+            assignment_status,
+            assignment_status_effective_date,
+            work_assignment_termination_date,
+
+            coalesce(job_title, 'Missing Historic Job') as job_title,
+            if(
+                assignment_status = 'Active', 'days_active', 'days_inactive'
+            ) as input_column,
+        from {{ ref("base_people__staff_roster_history") }}
+    ),
+
+    with_end_date as (
         select
             employee_number,
             assignment_status,
+            job_title,
+            input_column,
             assignment_status_effective_date as assignment_status_effective_date_start,
-            coalesce(job_title, 'Missing Historic Job') as job_title,
+
             coalesce(
-                lead(assignment_status_effective_date, 1) over (
-                    partition by employee_number
-                    order by assignment_status_effective_date asc
+                date_sub(
+                    lead(assignment_status_effective_date, 1) over (
+                        partition by employee_number
+                        order by assignment_status_effective_date asc
+                    ),
+                    interval 1 day
                 ),
                 work_assignment_termination_date,
                 date(9999, 12, 31)
             ) as assignment_status_effective_date_end,
-        from {{ ref("base_people__staff_roster_history") }}
+        from staff_roster_history_distinct
     ),
 
-    staff_roster_history as (
+    with_end_date_corrected as (
         select
             employee_number,
             job_title,
-            cast(
-                assignment_status_effective_date_start as datetime
-            ) as work_assignment_start_date,
+            assignment_status_effective_date_start,
+            input_column,
+
             if(
-                cast(assignment_status_effective_date_end as datetime)
-                >= current_datetime('{{ var("local_timezone") }}'),
-                current_datetime('{{ var("local_timezone") }}'),
-                cast(assignment_status_effective_date_end as datetime)
-            ) as work_assignment_end_date,
-            if(
-                assignment_status = 'Active', 'days_active', 'days_inactive'
-            ) as input_column,
-        from history_clean
-        where assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
+                assignment_status_effective_date_end
+                >= current_date('{{ var("local_timezone") }}'),
+                current_date('{{ var("local_timezone") }}'),
+                assignment_status_effective_date_end
+            ) as assignment_status_effective_date_end,
+        from with_end_date
+        where
+            assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
+            and job_title != 'Intern'
+            and assignment_status_effective_date_end
+            >= assignment_status_effective_date_start
+    ),
+
+    with_year_scaffold as (
+        select
+            srh.employee_number,
+            srh.job_title,
+            srh.input_column,
+
+            d as date_value,
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="d", start_month=7, year_source="start"
+                )
+            }} as academic_year,
+        from with_end_date_corrected as srh
+        inner join
+            unnest(
+                array(
+                    select *,
+                    from
+                        unnest(
+                            generate_date_array(
+                                srh.assignment_status_effective_date_start,
+                                srh.assignment_status_effective_date_end
+                            )
+                        )
+                )
+            ) as d
+    ),
+
+    with_ay_dates as (
+        select
+            employee_number,
+            academic_year,
+            job_title,
+            input_column,
+            min(date_value) as academic_year_start_date,
+            max(date_value) as academic_year_end_date,
+        from with_year_scaffold
+        group by employee_number, academic_year, job_title, input_column
     ),
 
     with_date_diff as (
         select
             employee_number,
-            input_column,
+            academic_year,
             job_title,
+            input_column,
+
             date_diff(
-                work_assignment_end_date, work_assignment_start_date, day
+                academic_year_end_date, academic_year_start_date, day
             ) as work_assignment_day_count,
-        from staff_roster_history
+        from with_ay_dates
     ),
 
     day_counts as (
         select
             employee_number,
+            academic_year,
+            job_title,
             input_column,
             sum(work_assignment_day_count) as work_assignment_day_count,
         from with_date_diff
-        where job_title != 'Intern'
-        group by employee_number, input_column
+        group by employee_number, academic_year, job_title, input_column
 
         union all
 
         select
             employee_number,
+            academic_year,
+            job_title,
             'days_as_teacher' as input_column,
             sum(work_assignment_day_count) as work_assignment_day_count,
         from with_date_diff
@@ -73,7 +138,7 @@ with
                 'Teacher ESL',
                 'Co-Teacher'
             )
-        group by employee_number
+        group by employee_number, academic_year, job_title
     ),
 
     day_count_pivot as (
