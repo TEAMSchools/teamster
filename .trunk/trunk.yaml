@@ -41,7 +41,7 @@ lint:
       paths:
         - .k8s/**/values.yaml
   enabled:
-    - ruff@0.2.2
+    - ruff@0.3.0
     - osv-scanner@1.6.2
     - trufflehog@3.68.3
     - bandit@1.7.7
@@ -50,7 +50,7 @@ lint:
     - svgo@3.2.0
     - sqlfmt@0.21.2
     - isort@5.13.2
-    - ruff@0.2.2
+    - ruff@0.3.0
     - actionlint@1.6.27
     - gitleaks@8.18.2
     - hadolint@2.12.0
