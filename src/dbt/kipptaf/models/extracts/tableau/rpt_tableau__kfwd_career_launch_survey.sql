@@ -23,6 +23,9 @@ with
             c.gender,
             c.ethnicity,
 
+            a.adjusted_6_year_minority_graduation_rate as ecc,
+            a.name as institution,
+
             extract(month from e.actual_end_date) as actual_end_date_month,
             extract(year from e.actual_end_date) as actual_end_date_year,
 
@@ -30,6 +33,7 @@ with
                 partition by e.student order by e.actual_end_date desc
             ) as rn_latest,
         from {{ ref("stg_kippadb__enrollment") }} as e
+        left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
         inner join {{ ref("stg_kippadb__contact") }} as c on e.student = c.id
         where e.status = 'Graduated'
     ),
