@@ -35,7 +35,7 @@ with
         from {{ ref("stg_kippadb__enrollment") }} as e
         left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
         inner join {{ ref("stg_kippadb__contact") }} as c on e.student = c.id
-        where e.status = 'Graduated'
+        where e.status = 'Graduated' and e.type not in ('High School', 'Middle School')
     ),
 
     survey_data as (
