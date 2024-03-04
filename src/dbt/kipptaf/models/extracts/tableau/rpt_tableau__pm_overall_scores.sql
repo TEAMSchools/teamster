@@ -9,8 +9,9 @@ select
     s.so_tier,
     s.overall_tier,
     s.eval_date,
-    s.years_at_kipp,
-    s.years_teaching,
+
+    ye.years_at_kipp_total as years_at_kipp,
+    ye.years_teaching_total as years_teaching,
 
     sr.preferred_name_lastfirst as teammate,
     sr.business_unit_home_name as entity,
@@ -29,6 +30,10 @@ select
     sr.alumni_status,
     sr.community_professional_exp,
 from {{ ref("int_performance_management__overall_scores") }} as s
+left join
+    {{ ref("int_people__years_experience") }} as ye
+    on s.employee_number = ye.employee_number
+    and ye.academic_year = {{ var("current_academic_year") }}
 inner join
     {{ ref("base_people__staff_roster_history") }} as sr
     on s.employee_number = sr.employee_number

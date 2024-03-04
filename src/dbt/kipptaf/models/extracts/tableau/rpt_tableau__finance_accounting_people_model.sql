@@ -111,6 +111,7 @@ left join
 left join
     {{ ref("int_people__years_experience") }} as ye
     on eh.employee_number = ye.employee_number
+    and y.academic_year = ye.academic_year
 left join
     additional_earnings as ae
     on eh.employee_number = ae.employee_number

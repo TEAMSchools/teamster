@@ -86,65 +86,15 @@ with
     )
 
 select
-    s.employee_number,
-    s.academic_year,
-    s.form_term as pm_term,
-    s.etr_score,
-    s.so_score,
-    s.overall_score,
-    s.etr_tier,
-    s.so_tier,
-    s.overall_tier,
-    s.eval_date,
-
-    case
-        when sr.worker_termination_date is null
-        then
-            y.years_at_kipp_total
-            - ({{ var("current_academic_year") }} - s.academic_year)
-        else
-            y.years_at_kipp_total - (
-                {{
-                    teamster_utils.date_to_fiscal_year(
-                        date_field="worker_termination_date",
-                        start_month=7,
-                        year_source="start",
-                    )
-                }} - s.academic_year
-            )
-    end as years_at_kipp,
-
-    case
-        when sr.worker_termination_date is null
-        then
-            y.years_teaching_at_kipp
-            + sr.years_teaching_in_njfl
-            + sr.years_teaching_outside_njfl
-            - ({{ var("current_academic_year") }} - s.academic_year)
-        else
-            y.years_teaching_at_kipp
-            + sr.years_teaching_in_njfl
-            + sr.years_teaching_outside_njfl
-            - (
-                {{
-                    teamster_utils.date_to_fiscal_year(
-                        date_field="worker_termination_date",
-                        start_month=7,
-                        year_source="start",
-                    )
-                }} - s.academic_year
-            )
-    end as years_teaching,
-from all_scores as s
-inner join
-    {{ ref("base_people__staff_roster_history") }} as sr
-    on s.employee_number = sr.employee_number
-    and s.eval_date between date(sr.work_assignment__fivetran_start) and date(
-        sr.work_assignment__fivetran_end
-    )
-    and sr.assignment_status not in ('Terminated', 'Deceased')
-    and sr.primary_indicator
-inner join
-    {{ ref("int_people__years_experience") }} as y
-    on s.employee_number = y.employee_number
-where s.overall_score is not null
+    employee_number,
+    academic_year,
+    form_term as pm_term,
+    etr_score,
+    so_score,
+    overall_score,
+    etr_tier,
+    so_tier,
+    overall_tier,
+    eval_date,
+from all_scores
+where overall_score is not null
