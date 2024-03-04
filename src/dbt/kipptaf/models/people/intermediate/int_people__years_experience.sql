@@ -2,6 +2,9 @@ with
     staff_roster_history as (
         select
             employee_number,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             assignment_status,
             assignment_status_effective_date,
             work_assignment_termination_date,
@@ -21,6 +24,9 @@ with
     with_end_date as (
         select
             employee_number,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             job_title,
             assignment_status,
             input_column,
@@ -44,6 +50,9 @@ with
     with_end_date_corrected as (
         select
             employee_number,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             job_title,
             input_column,
             rn_employee_status_date_asc,
@@ -66,6 +75,9 @@ with
     with_year_scaffold as (
         select
             srh.employee_number,
+            srh.years_teaching_in_njfl,
+            srh.years_teaching_outside_njfl,
+            srh.years_exp_outside_kipp,
             srh.job_title,
             srh.input_column,
             srh.rn_employee_status_date_asc,
@@ -96,6 +108,9 @@ with
         select
             employee_number,
             academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             job_title,
             input_column,
             rn_employee_status_date_asc,
@@ -105,6 +120,9 @@ with
         group by
             employee_number,
             academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             job_title,
             input_column,
             rn_employee_status_date_asc
@@ -114,6 +132,9 @@ with
         select
             employee_number,
             academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             job_title,
             input_column,
 
@@ -127,6 +148,9 @@ with
         select
             employee_number,
             academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             job_title,
             input_column,
             sum(work_assignment_day_count) over (
@@ -139,6 +163,9 @@ with
         select
             employee_number,
             academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             job_title,
             'days_as_teacher' as input_column,
             sum(work_assignment_day_count) over (
@@ -161,6 +188,9 @@ with
         select
             employee_number,
             academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             coalesce(days_active, 0) as days_active,
             coalesce(days_inactive, 0) as days_inactive,
             coalesce(days_as_teacher, 0) as days_as_teacher,
@@ -186,5 +216,17 @@ select
     years_active_at_kipp,
     years_inactive_at_kipp,
     years_teaching_at_kipp,
+    years_teaching_in_njfl,
+    years_teaching_outside_njfl,
+    years_exp_outside_kipp,
+
     years_active_at_kipp + years_inactive_at_kipp as years_at_kipp_total,
+
+    years_active_at_kipp
+    + years_inactive_at_kipp
+    + coalesce(years_exp_outside_kipp, 0) as years_experience_total,
+
+    years_teaching_at_kipp
+    + coalesce(years_teaching_in_njfl, 0)
+    + coalesce(years_teaching_outside_njfl, 0) as years_teaching_total,
 from year_counts
