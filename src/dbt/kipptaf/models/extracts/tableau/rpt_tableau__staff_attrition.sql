@@ -73,17 +73,12 @@ with
             r.primary_grade_level_taught,
 
             y.years_at_kipp_total,
+            y.years_teaching_total,
+            y.years_experience_total,
 
             coalesce(
                 r.worker_rehire_date, r.worker_original_hire_date
             ) as most_recent_hire_date,
-
-            coalesce(r.years_teaching_in_njfl, 0)
-            + coalesce(r.years_teaching_outside_njfl, 0) as years_teaching_total,
-
-            y.years_active_at_kipp
-            + y.years_inactive_at_kipp
-            + coalesce(r.years_exp_outside_kipp, 0) as years_experience_total,
 
             coalesce(
                 t.termination_effective_date,
