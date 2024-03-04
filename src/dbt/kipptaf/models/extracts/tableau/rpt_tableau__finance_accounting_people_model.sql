@@ -14,10 +14,20 @@ with
             and extract(year from date_day) >= 2016
     ),
 
+    additional_earnings_clean as (
+        select distinct
+            employee_number,
+            academic_year,
+            pay_date,
+            additional_earnings_description,
+            gross_pay,
+        from {{ ref("stg_adp_workforce_now__additional_earnings_report") }}
+    ),
+
     additional_earnings as (
         select
             employee_number, academic_year, sum(gross_pay) as additional_earnings_total,
-        from {{ ref("stg_adp_workforce_now__additional_earnings_report") }}
+        from additional_earnings_clean
         group by employee_number, academic_year
     )
 
@@ -69,9 +79,8 @@ select
     null as last_year_salary,
     null as original_salary_upon_hire,
 
-    {# TODO: add teacher goals/certs data #}
-    {# if year is over, displays PM4 score #}
-    null as most_recent_pm_score,
+    pm.overall_score as most_recent_pm_score,
+    pm.overall_tier as most_recent_pm_tier,
     null as is_currently_certified_nj_only,
 from {{ ref("base_people__staff_roster_history") }} as eh
 inner join
@@ -102,7 +111,13 @@ left join
 left join
     {{ ref("int_people__years_experience") }} as ye
     on eh.employee_number = ye.employee_number
+    and y.academic_year = ye.academic_year
 left join
     additional_earnings as ae
     on eh.employee_number = ae.employee_number
     and y.academic_year = ae.academic_year
+left join
+    {{ ref("int_performance_management__overall_scores") }} as pm
+    on pm.employee_number = eh.employee_number
+    and pm.academic_year = y.academic_year
+    and pm.pm_term = 'PM4'
