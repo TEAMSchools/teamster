@@ -1,4 +1,18 @@
 with
+    overall_filters as (
+        select distinct
+            academic_year,
+            student_number,
+            max(
+                case
+                    nj_student_tier when 'Bucket 1' then 1 when 'Bucket 2' then 2 else 0
+                end
+            ) over (partition by academic_year, student_number)
+            as nj_overall_student_tier,
+        from {{ ref("int_reporting__student_filters") }}
+
+    ),
+
     attendance_dash as (
         select
             mem.studentid,
@@ -28,6 +42,8 @@ with
             att.att_code,
 
             dt.name as term,
+
+            f.nj_overall_student_tier,
 
             cast(mem.attendancevalue as numeric) as is_present,
             abs(mem.attendancevalue - 1) as is_absent,
@@ -81,6 +97,10 @@ with
             on mem.schoolid = dt.school_id
             and mem.calendardate between dt.start_date and dt.end_date
             and dt.type = 'RT'
+        left join
+            overall_filters as f
+            on co.academic_year = f.academic_year
+            and co.student_number = f.student_number
         where
             mem.attendancevalue is not null
             and mem.membershipvalue > 0
@@ -117,6 +137,11 @@ select
     is_counselingservices,
     is_studentathlete,
     term,
+    if(
+        nj_overall_student_tier = 0,
+        'Unbucketed',
+        concat('Bucket ', nj_overall_student_tier)
+    ) as nj_overall_student_tier,
     avg(is_present) over (
         partition by studentid, academic_year order by calendardate
     ) as ada_running,
