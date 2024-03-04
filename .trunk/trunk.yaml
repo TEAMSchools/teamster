@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.4.3
+      ref: v1.4.4
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
@@ -42,7 +42,7 @@ lint:
   enabled:
     - ruff@0.3.0
     - osv-scanner@1.6.2
-    - trufflehog@3.68.3
+    - trufflehog@3.68.4
     - bandit@1.7.7
     - oxipng@9.0.0
     - sqlfluff@2.3.5
