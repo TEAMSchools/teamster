@@ -1,6 +1,6 @@
 with
-    staff_roster_history_distinct as (
-        select distinct
+    staff_roster_history as (
+        select
             employee_number,
             assignment_status,
             assignment_status_effective_date,
@@ -10,15 +10,21 @@ with
             if(
                 assignment_status = 'Active', 'days_active', 'days_inactive'
             ) as input_column,
+
+            row_number() over (
+                partition by employee_number
+                order by assignment_status_effective_date asc
+            ) as rn_employee_status_date_asc,
         from {{ ref("base_people__staff_roster_history") }}
     ),
 
     with_end_date as (
         select
             employee_number,
-            assignment_status,
             job_title,
+            assignment_status,
             input_column,
+            rn_employee_status_date_asc,
             assignment_status_effective_date as assignment_status_effective_date_start,
 
             coalesce(
@@ -32,15 +38,16 @@ with
                 work_assignment_termination_date,
                 date(9999, 12, 31)
             ) as assignment_status_effective_date_end,
-        from staff_roster_history_distinct
+        from staff_roster_history
     ),
 
     with_end_date_corrected as (
         select
             employee_number,
             job_title,
-            assignment_status_effective_date_start,
             input_column,
+            rn_employee_status_date_asc,
+            assignment_status_effective_date_start,
 
             if(
                 assignment_status_effective_date_end
@@ -61,6 +68,7 @@ with
             srh.employee_number,
             srh.job_title,
             srh.input_column,
+            srh.rn_employee_status_date_asc,
 
             d as date_value,
             {{
@@ -90,10 +98,16 @@ with
             academic_year,
             job_title,
             input_column,
+            rn_employee_status_date_asc,
             min(date_value) as academic_year_start_date,
             max(date_value) as academic_year_end_date,
         from with_year_scaffold
-        group by employee_number, academic_year, job_title, input_column
+        group by
+            employee_number,
+            academic_year,
+            job_title,
+            input_column,
+            rn_employee_status_date_asc
     ),
 
     with_date_diff as (
@@ -115,9 +129,10 @@ with
             academic_year,
             job_title,
             input_column,
-            sum(work_assignment_day_count) as work_assignment_day_count,
+            sum(work_assignment_day_count) over (
+                partition by employee_number, input_column order by academic_year asc
+            ) as work_assignment_day_count,
         from with_date_diff
-        group by employee_number, academic_year, job_title, input_column
 
         union all
 
@@ -126,7 +141,9 @@ with
             academic_year,
             job_title,
             'days_as_teacher' as input_column,
-            sum(work_assignment_day_count) as work_assignment_day_count,
+            sum(work_assignment_day_count) over (
+                partition by employee_number, input_column order by academic_year asc
+            ) as work_assignment_day_count,
         from with_date_diff
         where
             job_title in (
@@ -138,12 +155,12 @@ with
                 'Teacher ESL',
                 'Co-Teacher'
             )
-        group by employee_number, academic_year, job_title
     ),
 
     day_count_pivot as (
         select
             employee_number,
+            academic_year,
             coalesce(days_active, 0) as days_active,
             coalesce(days_inactive, 0) as days_inactive,
             coalesce(days_as_teacher, 0) as days_as_teacher,
@@ -165,6 +182,7 @@ with
 
 select
     employee_number,
+    academic_year,
     years_active_at_kipp,
     years_inactive_at_kipp,
     years_teaching_at_kipp,
