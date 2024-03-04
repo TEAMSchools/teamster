@@ -27,12 +27,12 @@ select
     gl.dept_id,
     gl.gl_entry_class_id,
 
-    coalesce(cm.project_id, gl.gl_entry_project_id) as project_id_corrected,
+    coalesce(cm.project_id, gl.gl_entry_project_id) as glentry_projectid,
 
     gl.gl_dim_function,
     gl.gl_dim_donor_restriction,
 
-    srh.employee_number,
+    srh.employee_number as glentry_employeeid,
     srh.assignment_status as status,
     srh.worker_original_hire_date as hire_date,
     srh.work_assignment_actual_start_date as effective_position_start_date,
