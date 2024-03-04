@@ -50,16 +50,10 @@ select
     b.base_remuneration_annual_rate_amount_amount_value as base_salary,
 
     ye.years_at_kipp_total,
+    ye.years_teaching_total,
+    ye.years_experience_total,
 
-    ye.years_teaching_at_kipp
-    + coalesce(b.years_teaching_in_njfl, 0)
-    + coalesce(b.years_teaching_outside_njfl, 0) as years_teaching_total,
-
-    ye.years_active_at_kipp
-    + ye.years_inactive_at_kipp
-    + coalesce(b.years_exp_outside_kipp, 0) as years_experience_total,
-
-    {# retired fields, kept to not break tableau #}
+    /* retired fields, kept to not break tableau */
     null as salesforce_job_position_name_custom,
     null as is_regional_staff,
     null as maiden_name,
@@ -75,3 +69,4 @@ from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__years_experience") }} as ye
     on b.employee_number = ye.employee_number
+    and ye.academic_year = {{ var("current_academic_year") }}
