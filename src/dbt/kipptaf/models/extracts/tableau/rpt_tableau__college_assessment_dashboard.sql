@@ -199,11 +199,10 @@ select
     null as raw_score,
 
     o.scale_score,
-    o.rn_highest,
-
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+    o.rn_highest,
 from roster as e
 left join
     college_assessments_official as o
@@ -259,14 +258,15 @@ select
     p.total_subjects_tested,
     p.raw_score,
     p.scale_score,
-    row_number() over (
-        partition by e.student_number, p.scope, p.subject_area
-        order by p.scale_score desc
-    ) as rn_highest,
 
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+
+    row_number() over (
+        partition by e.student_number, p.scope, p.subject_area
+        order by p.scale_score desc
+    ) as rn_highest,
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
