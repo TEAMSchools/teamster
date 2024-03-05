@@ -43,8 +43,9 @@ select
     wa.baseremuneration.payperiodrateamount.namecode.shortname
     as base_remuneration__pay_period_rate_amount__name_code__short_name,
 
-    timestamp(
-        w._dagster_partition_date, '{{ var("local_timezone")}}'
+    timestamp_sub(
+        timestamp_add(timestamp(w._dagster_partition_date), interval 1 day),
+        interval 1 millisecond
     ) as as_of_date_timestamp,
 
     {{ dbt_utils.generate_surrogate_key(["to_json_string(w.workassignments)"]) }}

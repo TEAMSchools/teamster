@@ -135,31 +135,34 @@ with
         }}
     ),
 
-    with_reports_to as (
+    with_as_of_date_timestamp_lag as (
         select
-            dwa.* except (work_assignment__as_of_date_timestamp),
-
-            {{
-                dbt_utils.star(
-                    from=ref_reports_to,
-                    except=["item_id", "associate_oid"],
-                    relation_alias="wrt",
-                    prefix="work_assignment__",
-                )
-            }},
-        from deduplicate_work_assignments as dwa
-        left join
-            {{ ref_reports_to }} as wrt
-            on dwa.work_assignment_id = wrt.item_id
-            and wrt.as_of_date_timestamp
-            between dwa.work_assignment__fivetran_start
-            and dwa.work_assignment__fivetran_end
+            *,
+            lag(work_assignment__as_of_date_timestamp, 1) over (
+                partition by
+                    work_assignment_id,
+                    work_assignment__fivetran_start,
+                    work_assignment__fivetran_end
+                order by work_assignment__as_of_date_timestamp
+            ) as work_assignment__as_of_date_timestamp_lag,
+        from deduplicate_work_assignments
     )
 
-    {{
-        dbt_utils.deduplicate(
-            relation="with_reports_to",
-            partition_by="work_assignment_id, work_assignment__fivetran_start, work_assignment__fivetran_end, work_assignment__reports_to_surrogate_key",
-            order_by="work_assignment__as_of_date_timestamp desc",
-        )
-    }}
+select
+    *,
+
+    coalesce(
+        timestamp_add(
+            work_assignment__as_of_date_timestamp_lag, interval 1 millisecond
+        ),
+        work_assignment__fivetran_start
+    ) as work_assignment__dbt_start,
+
+    (
+        select min(col)
+        from
+            unnest(
+                [work_assignment__fivetran_end, work_assignment__as_of_date_timestamp]
+            ) as col
+    ) as work_assignment__dbt_end,
+from with_as_of_date_timestamp_lag
