@@ -43,6 +43,21 @@ select
     wa.baseremuneration.payperiodrateamount.namecode.shortname
     as base_remuneration__pay_period_rate_amount__name_code__short_name,
 
+    /* workAssignments.reportsTo */
+    wa.reportsto[safe_offset(0)].associateoid as reports_to__associate_oid,
+    wa.reportsto[safe_offset(0)].positionid as reports_to__position_id,
+
+    wa.reportsto[safe_offset(0)].reportstoworkername.formattedname
+    as reports_to__reports_to_worker_name__formatted_name,
+
+    wa.reportsto[safe_offset(0)].workerid.idvalue as reports_to__worker_id__id_value,
+    wa.reportsto[
+        safe_offset(0)
+    ].workerid.schemecode.codevalue as reports_to__worker_id__scheme_code__code_value,
+    wa.reportsto[
+        safe_offset(0)
+    ].workerid.schemecode.shortname as reports_to__worker_id__scheme_code__short_name,
+
     timestamp_sub(
         timestamp_add(timestamp(w._dagster_partition_date), interval 1 day),
         interval 1 millisecond

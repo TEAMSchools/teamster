@@ -16,9 +16,6 @@
 {%- set ref_worker_organizational_unit = ref(
     "stg_adp_workforce_now__worker_organizational_unit_pivot"
 ) -%}
-{%- set ref_reports_to = ref(
-    "stg_adp_workforce_now__workers__work_assignments__reports_to"
-) -%}
 {%- set ref_work_assignments = ref(
     "stg_adp_workforce_now__workers__work_assignments"
 ) -%}
