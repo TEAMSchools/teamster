@@ -46,6 +46,18 @@ with
                 end,
                 null
             ) as scale_score,
+            if(
+                cast(format_date('%m', a.date_taken) as int) <= 7,
+                cast(format_date('%Y', a.date_taken) as int) - 1,
+                cast(format_date('%Y', a.date_taken) as int)
+            ) as test_academic_year,
+            case
+                when a.subject_area in ('Reading', 'Writing', 'English')
+                then 'ENG'
+                when a.subject_area in ('Math')
+                then 'MATH'
+                else 'NA'
+            end as course_discipline,
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
@@ -87,7 +99,9 @@ select
     r.test_type,
     r.assessment_id,
     r.assessment_title,
+    r.test_academic_year,
     r.administration_round,
+    r.course_discipline,
     r.subject_area,
     r.test_date,
     r.response_type,
@@ -113,7 +127,9 @@ select distinct
     test_type,
     null as assessment_id,
     'NA' as assessment_title,
+    test_academic_year,
     administration_round,
+    course_discipline,
     'Composite' as subject_area,
     test_date,
     'NA' as response_type,
@@ -149,7 +165,9 @@ select distinct
     test_type,
     null as assessment_id,
     'NA' as assessment_title,
+    test_academic_year,
     administration_round,
+    course_discipline,
     'Composite' as subject_area,
     test_date,
     'NA' as response_type,

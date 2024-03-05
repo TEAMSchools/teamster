@@ -66,7 +66,39 @@ with
             )
     ),
 
-    act_sat_official as (
+    course_subjects_roster as (
+        select
+            e._dbt_source_relation,
+            e.academic_year,
+            e.student_number,
+
+            s.courses_course_name,
+            s.teacher_lastfirst,
+            s.sections_external_expression,
+            s.courses_credittype,
+
+            adb.contact_id,
+
+        from {{ ref("base_powerschool__student_enrollments") }} as e
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as s
+            on e.studentid = s.cc_studentid
+            and e.academic_year = s.cc_academic_year
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+        left join
+            {{ ref("int_kippadb__roster") }} as adb
+            on e.student_number = adb.student_number
+        where
+            e.rn_year = 1
+            and e.school_level = 'HS'
+            and e.schoolid != 999999
+            and s.rn_course_number_year = 1
+            and not s.is_dropped_section
+            and s.courses_credittype in ('ENG', 'MATH')
+
+    ),
+
+    college_assessments_official as (
         select
             contact,
             'Official' as test_type,
@@ -87,6 +119,24 @@ with
             end as subject_area,
             score as scale_score,
             rn_highest,
+            if(
+                cast(format_date('%m', date) as int) <= 7,
+                cast(format_date('%Y', date) as int) - 1,
+                cast(format_date('%Y', date) as int)
+            ) as test_academic_year,
+            case
+                when
+                    score_type in (
+                        'act_reading',
+                        'act_english',
+                        'sat_reading_test_score',
+                        'sat_ebrw'
+                    )
+                then 'ENG'
+                when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
+                then 'MATH'
+                else 'NA'
+            end as course_discipline,
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             score_type in (
@@ -94,7 +144,7 @@ with
                 'act_reading',
                 'act_math',
                 'act_english',
-                'act_science',
+                -- 'act_science',
                 'sat_total_score',
                 'sat_reading_test_score',
                 'sat_math_test_score',
@@ -150,13 +200,22 @@ select
 
     o.scale_score,
     o.rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
 from roster as e
 left join
-    act_sat_official as o
+    college_assessments_official as o
     on e.contact_id = o.contact
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
+left join
+    course_subjects_roster as c
+    on c.contact_id = o.contact
+    and c.academic_year = o.test_academic_year
+    and c.courses_credittype = o.course_discipline
 where e.expected_test_type = 'Official'
 union all
 select
@@ -204,6 +263,10 @@ select
         partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
     ) as rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
@@ -212,4 +275,9 @@ left join
     and e.expected_test_type = p.test_type
     and e.expected_scope = p.scope
     and e.expected_subject_area = p.subject_area
+left join
+    course_subjects_roster as c
+    on c.student_number = p.powerschool_student_number
+    and c.academic_year = p.test_academic_year
+    and c.courses_credittype = p.course_discipline
 where e.expected_test_type = 'Practice'
