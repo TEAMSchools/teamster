@@ -168,6 +168,6 @@ with
         from with_as_of_date_timestamp_lag
     )
 
-select *
+select *,
 from with_final_dates
 where work_assignment_start_date <= work_assignment_end_date
