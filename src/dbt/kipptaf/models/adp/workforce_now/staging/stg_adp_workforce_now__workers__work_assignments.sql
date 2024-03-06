@@ -5,8 +5,6 @@ select
     wa.itemid as item_id,
 
     /* workAssignments.baseRemuneration */
-    wa.baseremuneration.effectivedate as base_remuneration__effective_date,
-
     wa.baseremuneration.annualrateamount.amountvalue
     as base_remuneration__annual_rate_amount__amount_value,
     wa.baseremuneration.annualrateamount.currencycode
@@ -57,6 +55,10 @@ select
     wa.reportsto[
         safe_offset(0)
     ].workerid.schemecode.shortname as reports_to__worker_id__scheme_code__short_name,
+
+    safe_cast(
+        wa.baseremuneration.effectivedate as date
+    ) as base_remuneration__effective_date,
 
     timestamp_sub(
         timestamp_add(timestamp(w._dagster_partition_date), interval 1 day),
