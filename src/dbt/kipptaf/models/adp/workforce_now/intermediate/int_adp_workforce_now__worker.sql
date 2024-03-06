@@ -138,30 +138,36 @@ with
         select
             *,
             lag(work_assignment__as_of_date_timestamp, 1) over (
-                partition by
-                    work_assignment_id,
-                    work_assignment__fivetran_start,
-                    work_assignment__fivetran_end
+                partition by work_assignment_id
                 order by work_assignment__as_of_date_timestamp
             ) as work_assignment__as_of_date_timestamp_lag,
         from deduplicate_work_assignments
+    ),
+
+    with_final_dates as (
+        select
+            * except (work_assignment__fivetran_start, work_assignment__fivetran_end),
+
+            coalesce(
+                timestamp_add(
+                    work_assignment__as_of_date_timestamp_lag, interval 1 millisecond
+                ),
+                work_assignment__fivetran_start
+            ) as work_assignment_start_date,
+
+            (
+                select min(col),
+                from
+                    unnest(
+                        [
+                            work_assignment__fivetran_end,
+                            work_assignment__as_of_date_timestamp
+                        ]
+                    ) as col
+            ) as work_assignment_end_date,
+        from with_as_of_date_timestamp_lag
     )
 
-select
-    * except (work_assignment__fivetran_start, work_assignment__fivetran_end),
-
-    coalesce(
-        timestamp_add(
-            work_assignment__as_of_date_timestamp_lag, interval 1 millisecond
-        ),
-        work_assignment__fivetran_start
-    ) as work_assignment_start_date,
-
-    (
-        select min(col),
-        from
-            unnest(
-                [work_assignment__fivetran_end, work_assignment__as_of_date_timestamp]
-            ) as col
-    ) as work_assignment_end_date,
-from with_as_of_date_timestamp_lag
+select *
+from with_final_dates
+where work_assignment_start_date <= work_assignment_end_date
