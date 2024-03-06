@@ -37,8 +37,7 @@ left join
 inner join
     {{ ref("base_people__staff_roster_history") }} as sr
     on s.employee_number = sr.employee_number
-    and s.eval_date between date(sr.work_assignment__fivetran_start) and date(
-        sr.work_assignment__fivetran_end
-    )
+    and s.eval_date
+    between date(sr.work_assignment__start_date) and date(sr.work_assignment__end_date)
     and sr.assignment_status not in ('Terminated', 'Deceased')
     and sr.primary_indicator
