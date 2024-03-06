@@ -44,19 +44,18 @@ models:
   kipptaf:
     act:
       +schema: act
-    adp_payroll:
-      +schema: adp_payroll
-      staging:
+    adp:
+      payroll:
+        +schema: adp_payroll
+        staging:
+          +materialized: table
+      workforce_manager:
+        +schema: adp_workforce_manager
         +materialized: table
-    adp_workforce_manager:
-      +schema: adp_workforce_manager
-      +materialized: table
-    adp_workforce_now:
-      +schema: adp_workforce_now
-      staging:
-        +materialized: table
-      base:
-        +materialized: view
+      workforce_now:
+        +schema: adp_workforce_now
+        staging:
+          +materialized: table
     alchemer:
       +schema: alchemer
       staging:
