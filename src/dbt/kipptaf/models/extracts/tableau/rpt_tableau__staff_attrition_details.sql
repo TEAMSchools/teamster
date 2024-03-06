@@ -22,15 +22,15 @@ with
         inner join
             dates as d
             on (
-                date(srh.work_assignment__fivetran_start) <= d.denominator_start_date
-                and date(srh.work_assignment__fivetran_end) >= d.effective_date
+                date(srh.work_assignment__start_date) <= d.denominator_start_date
+                and date(srh.work_assignment__end_date) >= d.effective_date
             )
             or (
-                date(srh.work_assignment__fivetran_start)
+                date(srh.work_assignment__start_date)
                 between d.denominator_start_date and d.effective_date
             )
             or (
-                date(srh.work_assignment__fivetran_end)
+                date(srh.work_assignment__end_date)
                 between d.denominator_start_date and d.effective_date
             )
         where
@@ -58,9 +58,8 @@ with
         from denom as dc
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on dc.attrition_date
-            between date(srh.work_assignment__fivetran_start) and date(
-                srh.work_assignment__fivetran_end
+            on dc.attrition_date between date(srh.work_assignment__start_date) and date(
+                srh.work_assignment__end_date
             )
             and dc.employee_number = srh.employee_number
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
@@ -95,9 +94,8 @@ with
         from denom as dc
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on dc.attrition_date
-            between date(srh.work_assignment__fivetran_start) and date(
-                srh.work_assignment__fivetran_end
+            on dc.attrition_date between date(srh.work_assignment__start_date) and date(
+                srh.work_assignment__end_date
             )
             and dc.employee_number = srh.employee_number
             and srh.assignment_status in ('Terminated', 'Deceased')
@@ -172,8 +170,8 @@ with
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
             on cat.effective_date
-            between date(srh.work_assignment__fivetran_start) and date(
-                srh.work_assignment__fivetran_end
+            between date(srh.work_assignment__start_date) and date(
+                srh.work_assignment__end_date
             )  /* where you worked on 4/30 is the reporting data*/
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
@@ -242,8 +240,8 @@ with
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
             on cat.effective_date
-            between date(srh.work_assignment__fivetran_start) and date(
-                srh.work_assignment__fivetran_end
+            between date(srh.work_assignment__start_date) and date(
+                srh.work_assignment__end_date
             )  /* where you worked on 4/30 is the reporting data*/
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'

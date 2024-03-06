@@ -1,8 +1,8 @@
 select
     h.employee_number,
     h.worker_id as associate_id,
-    h.work_assignment__fivetran_start as effective_start_date,
-    h.work_assignment__fivetran_end as effective_end_date,
+    h.work_assignment__start_date as effective_start_date,
+    h.work_assignment__end_date as effective_end_date,
     h.department_home_name as home_department,
     h.job_title,
     h.assignment_status_reason as job_change_reason,
@@ -18,25 +18,25 @@ select
     r.assignment_status as current_status,
 
     lag(h.department_home_name, 1) over (
-        partition by h.employee_number order by h.work_assignment__fivetran_start asc
+        partition by h.employee_number order by h.work_assignment__start_date asc
     ) as prev_home_department,
     lag(h.job_title, 1) over (
-        partition by h.employee_number order by h.work_assignment__fivetran_start asc
+        partition by h.employee_number order by h.work_assignment__start_date asc
     ) as prev_job_title,
     lag(h.base_remuneration_annual_rate_amount_amount_value, 1) over (
-        partition by h.employee_number order by h.work_assignment__fivetran_start asc
+        partition by h.employee_number order by h.work_assignment__start_date asc
     ) as prev_annual_salary,
     /* dedupe positions */
     row_number() over (
         partition by h.employee_number
         order by
             h.primary_indicator desc,
-            h.work_assignment__fivetran_start desc,
+            h.work_assignment__start_date desc,
             case when h.assignment_status = 'Terminated' then 0 else 1 end desc,
-            h.work_assignment__fivetran_start desc
+            h.work_assignment__start_date desc
     ) as rn_position,
     row_number() over (
-        partition by h.employee_number order by h.work_assignment__fivetran_start desc
+        partition by h.employee_number order by h.work_assignment__start_date desc
     ) as rn_curr,
 from {{ ref("base_people__staff_roster_history") }} as h
 inner join

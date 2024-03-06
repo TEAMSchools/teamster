@@ -49,7 +49,7 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on fr.respondent_email = eh.google_email
     and timestamp(fr.last_submitted_time)
-    between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
+    between eh.work_assignment__start_date and eh.work_assignment__end_date
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
@@ -114,5 +114,5 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
-    between eh.work_assignment__fivetran_start and eh.work_assignment__fivetran_end
+    between eh.work_assignment__start_date and eh.work_assignment__end_date
     and eh.assignment_status not in ('Terminated', 'Deceased')

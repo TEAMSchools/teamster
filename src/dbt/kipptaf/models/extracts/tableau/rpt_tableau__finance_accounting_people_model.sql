@@ -33,8 +33,8 @@ with
 
 select
     eh.employee_number,
-    eh.work_assignment__fivetran_start as effective_start_date,
-    eh.work_assignment__fivetran_end as effective_end_date,
+    eh.work_assignment__start_date as effective_start_date,
+    eh.work_assignment__end_date as effective_end_date,
     eh.assignment_status as position_status,
     eh.business_unit_home_name as business_unit,
     eh.home_work_location_name as location,
@@ -86,8 +86,8 @@ from {{ ref("base_people__staff_roster_history") }} as eh
 inner join
     years as y
     on y.effective_date
-    between safe_cast(eh.work_assignment__fivetran_start as date) and safe_cast(
-        eh.work_assignment__fivetran_end as date
+    between safe_cast(eh.work_assignment__start_date as date) and safe_cast(
+        eh.work_assignment__end_date as date
     )
 inner join
     {{ ref("base_people__staff_roster") }} as cw
@@ -105,8 +105,8 @@ left join
     and date_sub(
         y.effective_date,
         interval 1 year
-    ) between safe_cast(ly.work_assignment__fivetran_start as date) and safe_cast(
-        ly.work_assignment__fivetran_end as date
+    ) between safe_cast(ly.work_assignment__start_date as date) and safe_cast(
+        ly.work_assignment__end_date as date
     )
 left join
     {{ ref("int_people__years_experience") }} as ye
