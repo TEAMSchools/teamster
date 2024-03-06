@@ -1,7 +1,7 @@
 with
     adp_worker_person as (
         select
-            work_assignment__end_date,
+            work_assignment_end_date,
             work_assignment__fivetran_active,
             work_assignment_id,
             work_assignment_worker_id as worker_id,
@@ -186,10 +186,10 @@ with
             end as race_ethnicity_reporting,
 
             if(
-                work_assignment__start_date < timestamp('2021-01-01'),
+                work_assignment_start_date < timestamp('2021-01-01'),
                 timestamp('2021-01-01'),
-                work_assignment__start_date
-            ) as work_assignment__start_date,
+                work_assignment_start_date
+            ) as work_assignment_start_date,
             if(
                 work_assignment_hire_date > current_date('{{ var("local_timezone") }}')
                 and work_assignment_assignment_status_long_name = 'Active'
@@ -203,13 +203,13 @@ with
         from {{ ref("int_adp_workforce_now__worker_person") }}
         where
             not worker__fivetran_deleted
-            and work_assignment__end_date >= timestamp('2021-01-01')  -- after transistion from Dayforce
+            and work_assignment_end_date >= timestamp('2021-01-01')  -- after transistion from Dayforce
     ),
 
     with_dayforce as (
         select
-            wp.work_assignment__start_date,
-            wp.work_assignment__end_date,
+            wp.work_assignment_start_date,
+            wp.work_assignment_end_date,
             wp.work_assignment__fivetran_active,
             wp.work_assignment_id,
             wp.worker_id,
@@ -341,8 +341,8 @@ with
         union all
 
         select
-            effective_start_date as work_assignment__start_date,
-            effective_end_date as work_assignment__end_date,
+            effective_start_date as work_assignment_start_date,
+            effective_end_date as work_assignment_end_date,
             is_active as work_assignment__fivetran_active,
             surrogate_key as work_assignment_id,
             null as worker_id,

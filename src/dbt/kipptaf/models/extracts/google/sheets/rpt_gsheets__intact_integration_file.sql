@@ -51,4 +51,4 @@ left join
     on gl.position_id = srh.position_id
     and srh.primary_indicator
     and safe_cast(gl.date as timestamp)
-    between srh.work_assignment__start_date and srh.work_assignment__end_date
+    between srh.work_assignment_start_date and srh.work_assignment_end_date

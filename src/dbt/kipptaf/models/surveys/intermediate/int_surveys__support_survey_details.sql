@@ -67,7 +67,7 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_df_employee_number = eh.employee_number
     and ri.date_submitted
-    between eh.work_assignment__start_date and eh.work_assignment__end_date
+    between eh.work_assignment_start_date and eh.work_assignment_end_date
     and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
@@ -109,5 +109,5 @@ left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on sda.respondent_df_employee_number = eh.employee_number
     and timestamp(sda.date_submitted)
-    between eh.work_assignment__start_date and eh.work_assignment__end_date
+    between eh.work_assignment_start_date and eh.work_assignment_end_date
     and eh.assignment_status not in ('Terminated', 'Deceased')

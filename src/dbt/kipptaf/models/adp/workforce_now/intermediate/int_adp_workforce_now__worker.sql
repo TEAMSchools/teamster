@@ -155,7 +155,7 @@ select
             work_assignment__as_of_date_timestamp_lag, interval 1 millisecond
         ),
         work_assignment__fivetran_start
-    ) as work_assignment__start_date,
+    ) as work_assignment_start_date,
 
     (
         select min(col),
@@ -163,5 +163,5 @@ select
             unnest(
                 [work_assignment__fivetran_end, work_assignment__as_of_date_timestamp]
             ) as col
-    ) as work_assignment__end_date,
+    ) as work_assignment_end_date,
 from with_as_of_date_timestamp_lag
