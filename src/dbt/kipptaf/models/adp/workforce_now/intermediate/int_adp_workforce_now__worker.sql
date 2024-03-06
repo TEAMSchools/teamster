@@ -101,6 +101,7 @@ with
             on wah.id = wou.worker_assignment_id
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     with_work_assignments as (
         select
             s.*,
@@ -133,6 +134,7 @@ with
     ),
 
     with_as_of_date_timestamp_lag as (
+        -- trunk-ignore(sqlfluff/AM04)
         select
             *,
             lag(work_assignment__as_of_date_timestamp, 1) over (
@@ -156,7 +158,7 @@ select
     ) as work_assignment__start_date,
 
     (
-        select min(col)
+        select min(col),
         from
             unnest(
                 [work_assignment__fivetran_end, work_assignment__as_of_date_timestamp]
