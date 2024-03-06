@@ -55,6 +55,6 @@ inner join
     and coalesce(
         od.observed_at,
         od.start_date
-    ) between safe_cast(sr.work_assignment__start_date as date) and safe_cast(
-        sr.work_assignment__end_date as date
+    ) between safe_cast(sr.work_assignment_start_date as date) and safe_cast(
+        sr.work_assignment_end_date as date
     )
