@@ -146,14 +146,14 @@ with
     )
 
 select
-    *,
+    * except (work_assignment__fivetran_start, work_assignment__fivetran_end),
 
     coalesce(
         timestamp_add(
             work_assignment__as_of_date_timestamp_lag, interval 1 millisecond
         ),
         work_assignment__fivetran_start
-    ) as work_assignment__dbt_start,
+    ) as work_assignment__start_date,
 
     (
         select min(col)
@@ -161,5 +161,5 @@ select
             unnest(
                 [work_assignment__fivetran_end, work_assignment__as_of_date_timestamp]
             ) as col
-    ) as work_assignment__dbt_end,
+    ) as work_assignment__end_date,
 from with_as_of_date_timestamp_lag

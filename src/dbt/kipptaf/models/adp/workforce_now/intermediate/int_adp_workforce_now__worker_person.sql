@@ -1,5 +1,5 @@
-{%- set ref_worker = ref("base_adp_workforce_now__worker") -%}
-{%- set ref_person = ref("base_adp_workforce_now__person") -%}
+{%- set ref_worker = ref("int_adp_workforce_now__worker") -%}
+{%- set ref_person = ref("int_adp_workforce_now__person") -%}
 
 select
     {{ dbt_utils.star(from=ref_worker, relation_alias="w") }},

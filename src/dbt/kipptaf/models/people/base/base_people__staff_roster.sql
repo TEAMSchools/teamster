@@ -10,7 +10,7 @@ with
             dbt_utils.deduplicate(
                 relation="staff_roster_active",
                 partition_by="employee_number",
-                order_by="is_prestart desc, primary_indicator desc, work_assignment__fivetran_end desc",
+                order_by="is_prestart desc, primary_indicator desc, work_assignment__end_date desc",
             )
         }}
     )
@@ -20,8 +20,8 @@ select
         dbt_utils.star(
             from=ref_staff_history,
             except=[
-                "work_assignment__fivetran_start",
-                "work_assignment__fivetran_end",
+                "work_assignment__start_date",
+                "work_assignment__end_date",
                 "work_assignment__fivetran_active",
             ],
         )
