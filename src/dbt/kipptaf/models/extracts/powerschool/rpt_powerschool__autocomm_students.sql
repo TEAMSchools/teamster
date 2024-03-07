@@ -1,3 +1,16 @@
+with
+    grad_path as (
+        select
+            _dbt_source_relation,
+            student_number,
+            math as s_nj_stu_x__graduation_pathway_math,
+            ela as s_nj_stu_x__graduation_pathway_ela,
+        from
+            {{ ref("int_students__graduation_path_codes") }}
+            pivot (max(final_grad_path) for discipline in ('Math', 'ELA'))
+        where grade_level = 12
+    )
+
 select
     se.student_number,
     se.student_web_id,
@@ -10,6 +23,8 @@ select
     se.student_web_id || '.fam' as web_id,
     se.academic_year + (13 - se.grade_level) as graduation_year,
     regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
+    g.s_nj_stu_x__graduation_pathway_math,
+    g.s_nj_stu_x__graduation_pathway_ela,
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
@@ -34,6 +49,10 @@ left join
     on se.studentid = de.studentid
     and {{ union_dataset_join_clause(left_alias="se", right_alias="de") }}
     and de.rn_entry = 1
+left join
+    grad_path as g
+    on se.student_number = g.student_number
+    and {{ union_dataset_join_clause(left_alias="se", right_alias="g") }}
 where
     se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1

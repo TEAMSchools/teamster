@@ -217,6 +217,7 @@ with
     )
 
 select
+    r._dbt_source_relation,
     r.academic_year,
     r.student_number,
     r.grade_level,
