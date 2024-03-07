@@ -64,4 +64,3 @@ where
     se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1
     and se.grade_level != 99
-    and g.s_nj_stu_x__graduation_pathway_math is not null
