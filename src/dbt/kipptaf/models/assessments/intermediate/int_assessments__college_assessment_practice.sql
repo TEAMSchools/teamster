@@ -46,11 +46,6 @@ with
                 end,
                 null
             ) as scale_score,
-            if(
-                cast(format_date('%m', a.date_taken) as int) <= 7,
-                cast(format_date('%Y', a.date_taken) as int) - 1,
-                cast(format_date('%Y', a.date_taken) as int)
-            ) as test_academic_year,
             case
                 when a.subject_area in ('Reading', 'Writing', 'English')
                 then 'ENG'
