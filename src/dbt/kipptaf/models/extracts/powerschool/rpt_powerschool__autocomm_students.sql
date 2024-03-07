@@ -1,23 +1,22 @@
 with
     grad_path as (
-        select distinct
-            s._dbt_source_relation,
-            s.student_number,
+        select _dbt_source_relation, student_number, discipline, final_grad_path,
+        from {{ ref("int_students__graduation_path_codes") }}
+    ),
 
-            m.final_grad_path as s_nj_stu_x__graduation_pathway_math,
-
-            e.final_grad_path as s_nj_stu_x__graduation_pathway_ela,
-        from {{ ref("int_students__graduation_path_codes") }} as s
-        left join
-            {{ ref("int_students__graduation_path_codes") }} as m
-            on s.student_number = m.student_number
-            and m.discipline = 'Math'
-            and m.grade_level = 12
-        left join
-            {{ ref("int_students__graduation_path_codes") }} as e
-            on s.student_number = e.student_number
-            and e.discipline = 'ELA'
-            and e.grade_level = 12
+    grad_path_pivot as (
+        select
+            _dbt_source_relation,
+            student_number,
+            s_nj_stu_x__graduation_pathway_math,
+            s_nj_stu_x__graduation_pathway_ela,
+        from
+            grad_path pivot (
+                max(final_grad_path) for discipline in (
+                    'Math' as `s_nj_stu_x__graduation_pathway_math`,
+                    'ELA' as `s_nj_stu_x__graduation_pathway_ela`
+                )
+            )
     )
 
 select
@@ -53,7 +52,6 @@ select
         when se.grade_level = 4
         then 'E'
     end as track,
-
     regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 from {{ ref("base_powerschool__student_enrollments") }} as se
 left join
@@ -62,7 +60,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="se", right_alias="de") }}
     and de.rn_entry = 1
 left join
-    grad_path as g
+    grad_path_pivot as g
     on se.student_number = g.student_number
     and {{ union_dataset_join_clause(left_alias="se", right_alias="g") }}
 where
