@@ -84,13 +84,13 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
             and e.academic_year = s.cc_academic_year
+            and s.rn_course_number_year = 1
+            and not s.is_dropped_section
+            and s.courses_credittype in ('ENG', 'MATH')
             and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
-            and s.rn_course_number_year = 1
-            and not s.is_dropped_section
-            and s.courses_credittype in ('ENG', 'MATH')
         where e.rn_year = 1 and e.school_level = 'HS' and e.schoolid != 999999
     ),
 
@@ -115,11 +115,8 @@ with
             end as subject_area,
             score as scale_score,
             rn_highest,
-            if(
-                cast(format_date('%m', date) as int) <= 7,
-                cast(format_date('%Y', date) as int) - 1,
-                cast(format_date('%Y', date) as int)
-            ) as test_academic_year,
+            {# {{ teamster_utils.date_to_fiscal_year(date, 8, "start") }} 
+            {# as test_academic_year,#}
             case
                 when
                     score_type in (
