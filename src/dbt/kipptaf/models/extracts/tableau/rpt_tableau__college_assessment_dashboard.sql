@@ -36,13 +36,20 @@ with
             if(e.spedlep in ('No IEP', null), 0, 1) as sped,
 
             if(d.student_number is null, false, true) as dlm,
-
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
             and e.academic_year = s.cc_academic_year
             and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and s.rn_course_number_year = 1
+            and not s.is_dropped_section
+            and s.courses_course_name in (
+                'College and Career IV',
+                'College and Career I',
+                'College and Career III',
+                'College and Career II'
+            )
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
@@ -52,18 +59,10 @@ with
             and e.grade_level = t.grade
         left join dlm as d on e.student_number = d.student_number
         where
-            e.academic_year = 2023
+            e.academic_year = {{ var("current_academic_year") }}
             and e.rn_year = 1
             and e.school_level = 'HS'
             and e.schoolid != 999999
-            and s.rn_course_number_year = 1
-            and not s.is_dropped_section
-            and s.courses_course_name in (
-                'College and Career IV',
-                'College and Career I',
-                'College and Career III',
-                'College and Career II'
-            )
     ),
 
     course_subjects_roster as (
@@ -78,16 +77,15 @@ with
             s.courses_credittype,
 
             adb.contact_id,
-
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
             and e.academic_year = s.cc_academic_year
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and s.courses_credittype in ('ENG', 'MATH')
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
-            and s.courses_credittype in ('ENG', 'MATH')
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
@@ -97,12 +95,17 @@ with
     college_assessments_official as (
         select
             contact,
-            'Official' as test_type,
             test_type as scope,
+            date as test_date,
+            score as scale_score,
+            rn_highest,
+
+            'Official' as test_type,
+
             concat(
                 format_date('%b', date), ' ', format_date('%g', date)
             ) as administration_round,
-            date as test_date,
+
             case
                 score_type
                 when 'sat_total_score'
@@ -113,10 +116,6 @@ with
                 then 'Math Test'
                 else test_subject
             end as subject_area,
-            score as scale_score,
-            rn_highest,
-            {# {{ teamster_utils.date_to_fiscal_year(date, 8, "start") }} 
-            {# as test_academic_year,#}
             case
                 when
                     score_type in (
@@ -130,6 +129,12 @@ with
                 then 'MATH'
                 else 'NA'
             end as course_discipline,
+
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="date", start_month=7, year_source="start"
+                )
+            }} as test_academic_year,
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             score_type in (
@@ -137,7 +142,7 @@ with
                 'act_reading',
                 'act_math',
                 'act_english',
-                -- 'act_science',
+                'act_science',
                 'sat_total_score',
                 'sat_reading_test_score',
                 'sat_math_test_score',
@@ -210,7 +215,9 @@ left join
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
 where e.expected_test_type = 'Official'
+
 union all
+
 select
     e.academic_year,
     e.region,
@@ -257,6 +264,7 @@ select
         partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
     ) as rn_highest,
+
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
