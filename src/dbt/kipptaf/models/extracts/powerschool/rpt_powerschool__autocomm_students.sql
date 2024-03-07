@@ -31,9 +31,6 @@ select
     se.academic_year + (13 - se.grade_level) as graduation_year,
     g.s_nj_stu_x__graduation_pathway_math,
     g.s_nj_stu_x__graduation_pathway_ela,
-    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
-    format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
-    format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
@@ -49,6 +46,9 @@ select
         when se.grade_level = 4
         then 'E'
     end as track,
+    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
+    format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
+    format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
 
 from {{ ref("base_powerschool__student_enrollments") }} as se
 left join
