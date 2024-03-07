@@ -1,12 +1,7 @@
 with
     adp_worker_person as (
         select
-            if(
-                work_assignment__fivetran_start < timestamp('2021-01-01'),
-                timestamp('2021-01-01'),
-                work_assignment__fivetran_start
-            ) as work_assignment__fivetran_start,
-            work_assignment__fivetran_end,
+            work_assignment_end_date,
             work_assignment__fivetran_active,
             work_assignment_id,
             work_assignment_worker_id as worker_id,
@@ -15,10 +10,6 @@ with
             work_assignment_termination_date,
             work_assignment_assignment_status_long_name as assignment_status,
             work_assignment_assignment_status_long_name_prev as assignment_status_prev,
-            ifnull(
-                work_assignment_assignment_status_reason_long_name,
-                work_assignment_assignment_status_reason_short_name
-            ) as assignment_status_reason,
             work_assignment_assignment_status_effective_date
             as assignment_status_effective_date,
             work_assignment_management_position_indicator
@@ -31,20 +22,12 @@ with
             work_assignment_position_id as position_id,
             work_assignment_primary_indicator as primary_indicator,
             work_assignment_pay_cycle_short_name as pay_cycle_short_name,
-            ifnull(
-                work_assignment_home_work_location_name_long_name,
-                work_assignment_home_work_location_name_short_name
-            ) as home_work_location_name,
             work_assignment_job_title as job_title,
             work_assignment_wage_law_coverage_name_long_name
             as wage_law_coverage_name_long_name,
             work_assignment_wage_law_coverage_short_name
             as wage_law_coverage_short_name,
             work_assignment_seniority_date,
-            ifnull(
-                work_assignment_worker_type_long_name,
-                work_assignment_worker_type_short_name
-            ) as worker_type,
             work_assignment_standard_pay_period_hour_hours_quantity
             as standard_pay_period_hour_hours_quantity,
             work_assignment_standard_hour_hours_quantity
@@ -59,6 +42,13 @@ with
             work_assignment_custom_payroll_custom_area_3
             as custom_payroll_custom_area_3,
             work_assignment_custom_payroll_data_control as custom_payroll_data_control,
+            work_assignment__base_remuneration__effective_date
+            as base_remuneration_effective_date,
+            work_assignment__base_remuneration__annual_rate_amount__amount_value
+            as base_remuneration_annual_rate_amount_amount_value,
+            work_assignment__reports_to__associate_oid as report_to_associate_oid,
+            work_assignment__reports_to__position_id as report_to_position_id,
+            work_assignment__reports_to__worker_id__id_value as report_to_worker_id,
 
             worker_associate_oid as associate_oid,
             worker_status_value as status_value,
@@ -75,9 +65,6 @@ with
             worker_custom_wfmgr_loa as custom_wfmgr_loa,
             worker_custom_wfmgr_pay_rule as custom_wfmgr_pay_rule,
             worker_custom_wfmgr_trigger as custom_wfmgr_trigger,
-            safe_cast(
-                worker_custom_miami_aces_number as int
-            ) as custom_miami_aces_number,
 
             preferred_salutation_legal_name,
             person_legal_name_given_name as legal_name_given_name,
@@ -87,15 +74,6 @@ with
             person_legal_name_nick_name as legal_name_nick_name,
             person_legal_name_generation_affix as legal_name_generation_affix,
             person_legal_name_qualification_affix as legal_name_qualification_affix,
-            ifnull(
-                person_preferred_name_given_name, person_legal_name_given_name
-            ) as preferred_name_given_name,
-            ifnull(
-                person_preferred_name_middle_name, person_legal_name_middle_name
-            ) as preferred_name_middle_name,
-            ifnull(
-                person_preferred_name_family_name_1, person_legal_name_family_name_1
-            ) as preferred_name_family_name,
             person_birth_name_family_name_1 as birth_name_family_name,
             person_legal_address_line_one as legal_address_line_one,
             person_legal_address_line_two as legal_address_line_two,
@@ -127,16 +105,8 @@ with
 
             disability_long_name as disability,
 
-            ifnull(
-                organizational_unit_business_unit_assigned_name_long_name,
-                organizational_unit_business_unit_assigned_name_short_name
-            ) as business_unit_assigned_name,
             organizational_unit_business_unit_assigned_name
             as business_unit_assigned_code,
-            ifnull(
-                organizational_unit_business_unit_home_name_long_name,
-                organizational_unit_business_unit_home_name_short_name
-            ) as business_unit_home_name,
             organizational_unit_business_unit_home_name as business_unit_home_code,
             organizational_unit_cost_number_assigned_name_short_name
             as cost_number_assigned_name,
@@ -144,19 +114,8 @@ with
             organizational_unit_cost_number_home_name_short_name
             as cost_number_home_name,
             organizational_unit_cost_number_home_name as cost_number_home_code,
-            ifnull(
-                organizational_unit_department_assigned_name_long_name,
-                organizational_unit_department_assigned_name_short_name
-            ) as department_assigned_name,
             organizational_unit_department_assigned_name as department_assigned_code,
-            ifnull(
-                organizational_unit_department_home_name_long_name,
-                organizational_unit_department_home_name_short_name
-            ) as department_home_name,
             organizational_unit_department_home_name as department_home_code,
-
-            base_remuneration_effective_date,
-            base_remuneration_annual_rate_amount_amount_value,
 
             additional_remuneration_effective_date,
             additional_remuneration_rate_amount_value,
@@ -167,15 +126,53 @@ with
             communication_business_email,
 
             group_name_long_name as worker_group_name,
-            ifnull(group_group_long_name, group_group_short_name) as worker_group_value,
-
-            report_to_id as report_to_associate_oid,
-            report_to_position_id,
-            report_to_report_to_worker_id as report_to_worker_id,
 
             communication_person_landline,
             communication_business_mobile,
             communication_business_landline,
+
+            safe_cast(
+                worker_custom_miami_aces_number as int
+            ) as custom_miami_aces_number,
+
+            ifnull(
+                work_assignment_assignment_status_reason_long_name,
+                work_assignment_assignment_status_reason_short_name
+            ) as assignment_status_reason,
+            ifnull(
+                work_assignment_home_work_location_name_long_name,
+                work_assignment_home_work_location_name_short_name
+            ) as home_work_location_name,
+            ifnull(
+                work_assignment_worker_type_long_name,
+                work_assignment_worker_type_short_name
+            ) as worker_type,
+            ifnull(
+                person_preferred_name_given_name, person_legal_name_given_name
+            ) as preferred_name_given_name,
+            ifnull(
+                person_preferred_name_middle_name, person_legal_name_middle_name
+            ) as preferred_name_middle_name,
+            ifnull(
+                person_preferred_name_family_name_1, person_legal_name_family_name_1
+            ) as preferred_name_family_name,
+            ifnull(
+                organizational_unit_business_unit_assigned_name_long_name,
+                organizational_unit_business_unit_assigned_name_short_name
+            ) as business_unit_assigned_name,
+            ifnull(
+                organizational_unit_business_unit_home_name_long_name,
+                organizational_unit_business_unit_home_name_short_name
+            ) as business_unit_home_name,
+            ifnull(
+                organizational_unit_department_assigned_name_long_name,
+                organizational_unit_department_assigned_name_short_name
+            ) as department_assigned_name,
+            ifnull(
+                organizational_unit_department_home_name_long_name,
+                organizational_unit_department_home_name_short_name
+            ) as department_home_name,
+            ifnull(group_group_long_name, group_group_short_name) as worker_group_value,
 
             case
                 person_race_long_name
@@ -189,6 +186,11 @@ with
             end as race_ethnicity_reporting,
 
             if(
+                work_assignment_start_date < timestamp('2021-01-01'),
+                timestamp('2021-01-01'),
+                work_assignment_start_date
+            ) as work_assignment_start_date,
+            if(
                 work_assignment_hire_date > current_date('{{ var("local_timezone") }}')
                 and work_assignment_assignment_status_long_name = 'Active'
                 and (
@@ -198,15 +200,131 @@ with
                 true,
                 false
             ) as is_prestart,
-        from {{ ref("base_adp_workforce_now__worker_person") }}
+        from {{ ref("int_adp_workforce_now__worker_person") }}
         where
             not worker__fivetran_deleted
-            and work_assignment__fivetran_end >= timestamp('2021-01-01')  -- after transistion from Dayforce
+            and work_assignment_end_date >= timestamp('2021-01-01')  -- after transistion from Dayforce
     ),
 
     with_dayforce as (
         select
-            wp.*,
+            wp.work_assignment_start_date,
+            wp.work_assignment_end_date,
+            wp.work_assignment__fivetran_active,
+            wp.work_assignment_id,
+            wp.worker_id,
+            wp.work_assignment_actual_start_date,
+            wp.work_assignment_hire_date,
+            wp.work_assignment_termination_date,
+            wp.assignment_status,
+            wp.assignment_status_prev,
+            wp.assignment_status_reason,
+            wp.assignment_status_effective_date,
+            wp.management_position_indicator,
+            wp.payroll_processing_status_short_name,
+            wp.payroll_group_code,
+            wp.payroll_file_number,
+            wp.payroll_schedule_group_id,
+            wp.position_id,
+            wp.primary_indicator,
+            wp.pay_cycle_short_name,
+            wp.home_work_location_name,
+            wp.job_title,
+            wp.wage_law_coverage_name_long_name,
+            wp.wage_law_coverage_short_name,
+            wp.work_assignment_seniority_date,
+            wp.worker_type,
+            wp.standard_pay_period_hour_hours_quantity,
+            wp.standard_hour_hours_quantity,
+            wp.standard_hour_unit_short_name,
+            wp.full_time_equivalence_ratio,
+            wp.custom_payroll_custom_area_1,
+            wp.custom_payroll_custom_area_2,
+            wp.custom_payroll_custom_area_3,
+            wp.custom_payroll_data_control,
+            wp.associate_oid,
+            wp.status_value,
+            wp.worker_original_hire_date,
+            wp.worker_rehire_date,
+            wp.worker_termination_date,
+            wp.custom_nj_pension_number,
+            wp.custom_employee_number,
+            wp.custom_wfmgr_accrual_profile,
+            wp.custom_wfmgr_badge_number,
+            wp.custom_wfmgr_ee_type,
+            wp.custom_wfmgr_home_hyperfind,
+            wp.custom_wfmgr_loa_return_date,
+            wp.custom_wfmgr_loa,
+            wp.custom_wfmgr_pay_rule,
+            wp.custom_wfmgr_trigger,
+            wp.custom_miami_aces_number,
+            wp.preferred_salutation_legal_name,
+            wp.legal_name_given_name,
+            wp.legal_name_middle_name,
+            wp.legal_name_family_name,
+            wp.legal_name_formatted_name,
+            wp.legal_name_nick_name,
+            wp.legal_name_generation_affix,
+            wp.legal_name_qualification_affix,
+            wp.preferred_name_given_name,
+            wp.preferred_name_middle_name,
+            wp.preferred_name_family_name,
+            wp.birth_name_family_name,
+            wp.legal_address_line_one,
+            wp.legal_address_line_two,
+            wp.legal_address_line_three,
+            wp.legal_address_city_name,
+            wp.legal_address_country_code,
+            wp.legal_address_country_subdivision_level_1,
+            wp.legal_address_country_subdivision_level_2,
+            wp.legal_address_postal_code,
+            wp.birth_date,
+            wp.gender_long_name,
+            wp.ethnicity_long_name,
+            wp.race_long_name,
+            wp.marital_status_short_name,
+            wp.marital_status_effective_date,
+            wp.military_status_long_name,
+            wp.military_discharge_date,
+            wp.highest_education_level_long_name,
+            wp.tobacco_user_indicator,
+            wp.disabled_indicator,
+            wp.custom_covid_19_booster_1_date,
+            wp.custom_covid_19_booster_1_type,
+            wp.custom_covid_19_date_of_last_vaccine,
+            wp.custom_covid_19_vaccine_type,
+            wp.disability,
+            wp.business_unit_assigned_name,
+            wp.business_unit_assigned_code,
+            wp.business_unit_home_name,
+            wp.business_unit_home_code,
+            wp.cost_number_assigned_name,
+            wp.cost_number_assigned_code,
+            wp.cost_number_home_name,
+            wp.cost_number_home_code,
+            wp.department_assigned_name,
+            wp.department_assigned_code,
+            wp.department_home_name,
+            wp.department_home_code,
+            wp.base_remuneration_effective_date,
+            wp.base_remuneration_annual_rate_amount_amount_value,
+            wp.additional_remuneration_effective_date,
+            wp.additional_remuneration_rate_amount_value,
+            wp.additional_remuneration_name,
+            wp.communication_person_email,
+            wp.communication_person_mobile,
+            wp.communication_business_email,
+            wp.worker_group_name,
+            wp.worker_group_value,
+            wp.report_to_associate_oid,
+            wp.report_to_position_id,
+            wp.report_to_worker_id,
+            wp.communication_person_landline,
+            wp.communication_business_mobile,
+            wp.communication_business_landline,
+            wp.race_ethnicity_reporting,
+            wp.is_prestart,
+
             wp.preferred_name_family_name
             || ', '
             || wp.preferred_name_given_name as preferred_name_lastfirst,
@@ -223,8 +341,8 @@ with
         union all
 
         select
-            effective_start_date as work_assignment__fivetran_start,
-            effective_end_date as work_assignment__fivetran_end,
+            effective_start_date as work_assignment_start_date,
+            effective_end_date as work_assignment_end_date,
             is_active as work_assignment__fivetran_active,
             surrogate_key as work_assignment_id,
             null as worker_id,
