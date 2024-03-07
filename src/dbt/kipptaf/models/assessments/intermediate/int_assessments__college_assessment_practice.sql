@@ -5,35 +5,39 @@ with
             a.illuminate_student_id,
             a.powerschool_student_number,
             a.scope,  -- ACT or SAT
-            'Practice' as test_type,
             a.assessment_id,
             a.title as assessment_title,
             a.date_taken as test_date,
             a.response_type,  -- Group or overall
             a.response_type_description,  -- Group name
-            -- Points earned... looks to be # of questions correct on Illuminate
+            /* Points earned... looks to be # of questions correct on Illuminate */
             a.points,
+
             ssk.administration_round as scope_round,
+
+            'Practice' as test_type,
+
+            round(a.percent_correct / 100, 2) as percent_correct,
             concat(
                 format_date('%b', a.administered_at),
                 ' ',
                 format_date('%g', a.administered_at)
             ) as administration_round,
-            case
-                when a.subject_area = 'Mathematics' then 'Math' else a.subject_area
-            end as subject_area,
-            -- % correct field on Illuminate
-            round(a.percent_correct / 100, 2) as percent_correct,
-            count(distinct a.subject_area) over (
-                partition by
-                    a.academic_year,
-                    a.powerschool_student_number,
-                    ssk.administration_round
 
-            ) as total_subjects_tested,
-            -- Uses the approx raw score to bring a scale score
-            -- Convert the scale scores to be ready to add 
-            -- for sat composite score from the gsheet
+            if(a.subject_area = 'Mathematics', 'Math', a.subject_area) as subject_area,
+            case
+                when a.subject_area in ('Reading', 'Writing', 'English')
+                then 'ENG'
+                when a.subject_area in ('Math')
+                then 'MATH'
+                else 'NA'
+            end as course_discipline,
+
+            /*
+                Uses the approx raw score to bring a scale score
+                Convert the scale scores to be ready to add
+                for sat composite score from the gsheet
+            */
             if(
                 a.response_type = 'overall',
                 case
@@ -46,6 +50,13 @@ with
                 end,
                 null
             ) as scale_score,
+
+            count(distinct a.subject_area) over (
+                partition by
+                    a.academic_year,
+                    a.powerschool_student_number,
+                    ssk.administration_round
+            ) as total_subjects_tested,
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
@@ -88,6 +99,7 @@ select
     r.assessment_id,
     r.assessment_title,
     r.administration_round,
+    r.course_discipline,
     r.subject_area,
     r.test_date,
     r.response_type,
@@ -104,7 +116,9 @@ left join
     and r.powerschool_student_number = s.powerschool_student_number
     and r.assessment_id = s.assessment_id
 where r.response_type = 'group'
+
 union all
+
 select distinct
     academic_year,
     powerschool_student_number,
@@ -114,6 +128,7 @@ select distinct
     null as assessment_id,
     'NA' as assessment_title,
     administration_round,
+    course_discipline,
     'Composite' as subject_area,
     test_date,
     'NA' as response_type,
@@ -140,7 +155,9 @@ select distinct
     ) as scale_score,
 from responses
 where scope = 'ACT' and response_type = 'overall' and total_subjects_tested = 4
+
 union all
+
 select distinct
     academic_year,
     powerschool_student_number,
@@ -150,6 +167,7 @@ select distinct
     null as assessment_id,
     'NA' as assessment_title,
     administration_round,
+    course_discipline,
     'Composite' as subject_area,
     test_date,
     'NA' as response_type,
