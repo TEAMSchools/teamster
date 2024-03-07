@@ -35,7 +35,7 @@ with
 
             /*
                 Uses the approx raw score to bring a scale score
-                Convert the scale scores to be ready to add 
+                Convert the scale scores to be ready to add
                 for sat composite score from the gsheet
             */
             if(
