@@ -213,9 +213,9 @@ left join
     and e.expected_subject_area = o.subject_area
 left join
     course_subjects_roster as c
-    on c.contact_id = o.contact
-    and c.academic_year = o.test_academic_year
-    and c.courses_credittype = o.course_discipline
+    on o.contact = c.contact_id
+    and o.test_academic_year = c.academic_year
+    and o.course_discipline = c.courses_credittype
 where e.expected_test_type = 'Official'
 union all
 select
@@ -277,7 +277,7 @@ left join
     and e.expected_subject_area = p.subject_area
 left join
     course_subjects_roster as c
-    on c.student_number = p.powerschool_student_number
-    and c.academic_year = p.test_academic_year
-    and c.courses_credittype = p.course_discipline
+    on p.powerschool_student_number = c.student_number
+    and p.academic_year = c.academic_year
+    and p.course_discipline = c.courses_credittype
 where e.expected_test_type = 'Practice'
