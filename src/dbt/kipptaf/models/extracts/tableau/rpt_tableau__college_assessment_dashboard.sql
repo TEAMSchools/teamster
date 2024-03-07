@@ -88,14 +88,10 @@ with
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
-        where
-            e.rn_year = 1
-            and e.school_level = 'HS'
-            and e.schoolid != 999999
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
             and s.courses_credittype in ('ENG', 'MATH')
-
+        where e.rn_year = 1 and e.school_level = 'HS' and e.schoolid != 999999
     ),
 
     college_assessments_official as (
