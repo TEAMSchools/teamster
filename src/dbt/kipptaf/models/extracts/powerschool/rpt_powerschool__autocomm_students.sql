@@ -1,14 +1,21 @@
 with
     grad_path as (
-        select
-            _dbt_source_relation,
-            student_number,
-            math as s_nj_stu_x__graduation_pathway_math,
-            ela as s_nj_stu_x__graduation_pathway_ela,
-        from
-            {{ ref("int_students__graduation_path_codes") }}
-            pivot (max(final_grad_path) for discipline in ('Math', 'ELA'))
-        where grade_level = 12
+        select distinct
+            s._dbt_source_relation,
+            s.student_number,
+            m.final_grad_path as s_nj_stu_x__graduation_pathway_math,
+            e.final_grad_path as s_nj_stu_x__graduation_pathway_ela
+        from {{ ref("int_students__graduation_path_codes") }} as s
+        left join
+            {{ ref("int_students__graduation_path_codes") }} as m
+            on s.student_number = m.student_number
+            and m.discipline = 'Math'
+            and m.grade_level = 12
+        left join
+            {{ ref("int_students__graduation_path_codes") }} as e
+            on s.student_number = e.student_number
+            and e.discipline = 'ELA'
+            and e.grade_level = 12
     )
 
 select
@@ -57,3 +64,4 @@ where
     se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1
     and se.grade_level != 99
+    and g.s_nj_stu_x__graduation_pathway_math is not null
