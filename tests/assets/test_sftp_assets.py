@@ -328,7 +328,7 @@ def test_asset_fldoe_fast():
             }
         ),
         ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
-        partition_key="6\w*Mathematics|2023/PM1",
+        partition_key="4\w*ELAReading|2023/PM1",
     )
 
 
