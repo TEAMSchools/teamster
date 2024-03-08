@@ -784,10 +784,3 @@ SURVEY_RESPONSE_FIELDS = [
         "default": None,
     },
 ]
-
-ASSET_FIELDS = {
-    "survey": SURVEY_FIELDS,
-    "survey_campaign": SURVEY_CAMPAIGN_FIELDS,
-    "survey_response": SURVEY_RESPONSE_FIELDS,
-    "survey_question": get_survey_question_fields(namespace="surveyquestion", depth=2),
-}

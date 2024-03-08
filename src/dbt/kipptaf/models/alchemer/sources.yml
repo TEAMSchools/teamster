@@ -37,6 +37,14 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/"
             format: AVRO
             enable_logical_types: true
+      - name: src_alchemer__survey_response_disqualified
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response_disqualified/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response_disqualified/"
+            format: AVRO
+            enable_logical_types: true
       - name: src_alchemer__response_id_override
         external:
           options:
