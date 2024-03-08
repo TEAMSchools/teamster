@@ -119,8 +119,8 @@ select
 
     null as ugrad_status,
     ei.hs_account_name,
-    null as ei.ecc_account_name,
-    null as ei.ugrad_account_name,
+    null as ecc_account_name,
+    null as ugrad_account_name,
 
     a.competitiveness_ranking,
     a.act25,
