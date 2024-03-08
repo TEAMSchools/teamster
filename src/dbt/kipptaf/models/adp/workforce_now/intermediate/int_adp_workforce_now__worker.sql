@@ -139,14 +139,22 @@ with
             *,
             lag(work_assignment__as_of_date_timestamp, 1) over (
                 partition by work_assignment_id
-                order by work_assignment__as_of_date_timestamp
+                order by work_assignment__as_of_date_timestamp asc
             ) as work_assignment__as_of_date_timestamp_lag,
+            max(work_assignment__as_of_date_timestamp) over (
+            ) as work_assignment__as_of_date_timestamp_max,
         from deduplicate_work_assignments
     ),
 
-    with_final_dates as (
+    with_start_end_dates as (
         select
-            * except (work_assignment__fivetran_start, work_assignment__fivetran_end),
+            * except (
+                work_assignment__fivetran_start,
+                work_assignment__fivetran_end,
+                work_assignment__as_of_date_timestamp,
+                work_assignment__as_of_date_timestamp_lag,
+                work_assignment__surrogate_key
+            ),
 
             coalesce(
                 timestamp_add(
@@ -166,8 +174,30 @@ with
                     ) as col
             ) as work_assignment_end_date,
         from with_as_of_date_timestamp_lag
+    ),
+
+    with_start_date_lead as (
+        select
+            *,
+            lead(work_assignment_start_date, 1) over (
+                partition by work_assignment_id order by work_assignment_start_date asc
+            ) as work_assignment_start_date_lead,
+        from with_start_end_dates
+        where work_assignment_start_date <= work_assignment_end_date
     )
 
-select *,
-from with_final_dates
-where work_assignment_start_date <= work_assignment_end_date
+select
+    * except (
+        work_assignment_end_date,
+        work_assignment__as_of_date_timestamp_max,
+        work_assignment_start_date_lead
+    ),
+
+    case
+        when work_assignment_start_date_lead > work_assignment__as_of_date_timestamp_max
+        then timestamp_sub(work_assignment_start_date_lead, interval 1 millisecond)
+        when work_assignment_end_date = work_assignment__as_of_date_timestamp_max
+        then timestamp('9999-12-31 23:59:59.999')
+        else work_assignment_end_date
+    end as work_assignment_end_date,
+from with_start_date_lead
