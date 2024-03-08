@@ -163,9 +163,7 @@ with
                 safe_cast(
                     grade_8_fast_ela_reading_percentile_rank.long_value as string
                 ),
-                safe_cast(
-                    grade_8_fast_mathematics_percentile_rank.long_value as string
-                ),
+                safe_cast(grade_8_fast_mathematics_percentile_rank.long_value as string)
             ) as percentile_rank,
 
             coalesce(
