@@ -1,11 +1,12 @@
 select
+    co.region,
     co.student_number,
     co.lastfirst as student_name,
     co.school_abbreviation as school,
     co.grade_level,
     co.advisory_name as team,
 
-    f.iready_subject,
+    f.iready_subject as subject,
     f.nj_student_tier,
     f.state_test_proficiency as njsla_previous_year,
     f.iready_proficiency_eoy as iready_eoy_previous_year,
