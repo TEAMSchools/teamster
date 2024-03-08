@@ -161,7 +161,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_3_mathematics_scale_score",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
