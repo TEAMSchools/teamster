@@ -42,7 +42,7 @@ ALCHEMER_RESOURCE = AlchemerSession(
     api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET").get_value(),
     api_version="v5",
     time_zone="America/New_York",  # determined by Alchemer
-    timeout=3,
+    timeout=10,
 )
 
 FIVETRAN_RESOURCE = FivetranResource(
