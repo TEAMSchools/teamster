@@ -13,7 +13,7 @@ from teamster.kipptaf.alchemer.assets import (
 )
 from teamster.kipptaf.resources import ALCHEMER_RESOURCE
 
-SURVEY_IDS = ["7151740"]
+SURVEY_IDS = ["4561325"]
 
 
 def _test_asset(asset: AssetsDefinition, partition_keys):
