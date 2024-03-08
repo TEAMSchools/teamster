@@ -85,9 +85,7 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-    case
-        when ei.ecc_account_name = ei.ugrad_account_name then 1 else 0
-    end as is_same_school,
+    if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 from {{ ref("int_kippadb__roster") }} as r
 inner join
     {{ ref("stg_kippadb__enrollment") }} as e
