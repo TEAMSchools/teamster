@@ -11,7 +11,7 @@ FAST_FIELDS = [
         "default": None,
     },
     {"name": "enrolled_district", "type": ["null", "string"], "default": None},
-    {"name": "enrolled_grade", "type": ["null", "long"], "default": None},
+    {"name": "enrolled_grade", "type": ["null", "long", "double"], "default": None},
     {"name": "enrolled_school", "type": ["null", "string"], "default": None},
     {"name": "ethnicity", "type": ["null", "string"], "default": None},
     {"name": "gender_k_12", "type": ["null", "string"], "default": None},
@@ -151,7 +151,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_3_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -171,7 +171,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_3_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -181,7 +181,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_4_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -201,7 +201,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_4_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -211,7 +211,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_5_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -231,7 +231,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_5_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -241,7 +241,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_6_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -261,7 +261,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_6_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -271,7 +271,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_7_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -291,7 +291,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_7_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -301,7 +301,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_8_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -321,7 +321,7 @@ FAST_FIELDS = [
     },
     {
         "name": "fast_grade_8_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -331,7 +331,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_3_fast_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -351,7 +351,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_3_fast_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -361,7 +361,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_4_fast_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -381,7 +381,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_4_fast_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -391,7 +391,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_5_fast_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -411,7 +411,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_5_fast_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -421,7 +421,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_6_fast_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -441,7 +441,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_6_fast_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -451,7 +451,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_7_fast_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -471,7 +471,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_7_fast_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -481,7 +481,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_8_fast_ela_reading_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
     {
@@ -501,7 +501,7 @@ FAST_FIELDS = [
     },
     {
         "name": "grade_8_fast_mathematics_percentile_rank",
-        "type": ["null", "string"],
+        "type": ["null", "string", "long"],
         "default": None,
     },
 ]

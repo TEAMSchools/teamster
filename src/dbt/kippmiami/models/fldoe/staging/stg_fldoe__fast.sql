@@ -70,30 +70,102 @@ with
             ) as achievement_level,
 
             coalesce(
-                fast_grade_3_ela_reading_percentile_rank,
-                grade_3_fast_ela_reading_percentile_rank,
-                fast_grade_4_ela_reading_percentile_rank,
-                grade_4_fast_ela_reading_percentile_rank,
-                fast_grade_5_ela_reading_percentile_rank,
-                grade_5_fast_ela_reading_percentile_rank,
-                fast_grade_6_ela_reading_percentile_rank,
-                grade_6_fast_ela_reading_percentile_rank,
-                fast_grade_7_ela_reading_percentile_rank,
-                grade_7_fast_ela_reading_percentile_rank,
-                fast_grade_8_ela_reading_percentile_rank,
-                grade_8_fast_ela_reading_percentile_rank,
-                fast_grade_3_mathematics_percentile_rank,
-                grade_3_fast_mathematics_percentile_rank,
-                fast_grade_4_mathematics_percentile_rank,
-                grade_4_fast_mathematics_percentile_rank,
-                fast_grade_5_mathematics_percentile_rank,
-                grade_5_fast_mathematics_percentile_rank,
-                fast_grade_6_mathematics_percentile_rank,
-                grade_6_fast_mathematics_percentile_rank,
-                fast_grade_7_mathematics_percentile_rank,
-                grade_7_fast_mathematics_percentile_rank,
-                fast_grade_8_mathematics_percentile_rank,
-                grade_8_fast_mathematics_percentile_rank
+                fast_grade_3_ela_reading_percentile_rank.string_value,
+                grade_3_fast_ela_reading_percentile_rank.string_value,
+                fast_grade_4_ela_reading_percentile_rank.string_value,
+                grade_4_fast_ela_reading_percentile_rank.string_value,
+                fast_grade_5_ela_reading_percentile_rank.string_value,
+                grade_5_fast_ela_reading_percentile_rank.string_value,
+                fast_grade_6_ela_reading_percentile_rank.string_value,
+                grade_6_fast_ela_reading_percentile_rank.string_value,
+                fast_grade_7_ela_reading_percentile_rank.string_value,
+                grade_7_fast_ela_reading_percentile_rank.string_value,
+                fast_grade_8_ela_reading_percentile_rank.string_value,
+                grade_8_fast_ela_reading_percentile_rank.string_value,
+                fast_grade_3_mathematics_percentile_rank.string_value,
+                grade_3_fast_mathematics_percentile_rank.string_value,
+                fast_grade_4_mathematics_percentile_rank.string_value,
+                grade_4_fast_mathematics_percentile_rank.string_value,
+                fast_grade_5_mathematics_percentile_rank.string_value,
+                grade_5_fast_mathematics_percentile_rank.string_value,
+                fast_grade_6_mathematics_percentile_rank.string_value,
+                grade_6_fast_mathematics_percentile_rank.string_value,
+                fast_grade_7_mathematics_percentile_rank.string_value,
+                grade_7_fast_mathematics_percentile_rank.string_value,
+                fast_grade_8_mathematics_percentile_rank.string_value,
+                grade_8_fast_mathematics_percentile_rank.string_value,
+                safe_cast(
+                    fast_grade_3_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_3_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_4_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_4_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_5_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_5_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_6_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_6_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_7_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_7_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_8_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    fast_grade_8_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_3_fast_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_3_fast_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_4_fast_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_4_fast_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_5_fast_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_5_fast_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_6_fast_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_6_fast_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_7_fast_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_7_fast_mathematics_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_8_fast_ela_reading_percentile_rank.long_value as string
+                ),
+                safe_cast(
+                    grade_8_fast_mathematics_percentile_rank.long_value as string
+                ),
             ) as percentile_rank,
 
             coalesce(
