@@ -141,20 +141,12 @@ with
                 partition by work_assignment_id
                 order by work_assignment__as_of_date_timestamp asc
             ) as work_assignment__as_of_date_timestamp_lag,
-            max(work_assignment__as_of_date_timestamp) over (
-            ) as work_assignment__as_of_date_timestamp_max,
         from deduplicate_work_assignments
     ),
 
     with_start_end_dates as (
         select
-            * except (
-                work_assignment__fivetran_start,
-                work_assignment__fivetran_end,
-                work_assignment__as_of_date_timestamp,
-                work_assignment__as_of_date_timestamp_lag,
-                work_assignment__surrogate_key
-            ),
+            *,
 
             coalesce(
                 timestamp_add(
@@ -182,15 +174,22 @@ with
             lead(work_assignment_start_date, 1) over (
                 partition by work_assignment_id order by work_assignment_start_date asc
             ) as work_assignment_start_date_lead,
+            max(work_assignment__as_of_date_timestamp) over (
+            ) as work_assignment__as_of_date_timestamp_max,
         from with_start_end_dates
         where work_assignment_start_date <= work_assignment_end_date
     )
 
 select
     * except (
-        work_assignment_end_date,
+        work_assignment__surrogate_key,
+        work_assignment__fivetran_start,
+        work_assignment__fivetran_end,
+        work_assignment__as_of_date_timestamp,
+        work_assignment__as_of_date_timestamp_lag,
         work_assignment__as_of_date_timestamp_max,
-        work_assignment_start_date_lead
+        work_assignment_start_date_lead,
+        work_assignment_end_date
     ),
 
     case
