@@ -47,8 +47,33 @@ with
                 in ('QAF1', 'QAF2', 'QAF3', 'QAF4')
             )
         where module_type = 'QAF' and academic_year = {{ var("current_academic_year") }}
-    )
+    ),
 
+    scale_crosswalk as (
+        select
+            2022 as academic_year,
+            administration_window,
+            'FAST' as source_system,
+            'FL' as destination_system,
+        from unnest(['PM1', 'PM2']) as administration_window
+        union all
+        select
+            2022 as academic_year,
+            'PM3' as administration_window,
+            'FAST_NEW' as source_system,
+            'FL' as destination_system,
+        union all
+        select
+            academic_year,
+            administration_window,
+            'FAST_NEW' as source_system,
+            'FL' as destination_system,
+        from
+            unnest(
+                generate_array(2023, {{ var("current_academic_year") }})
+            ) as academic_year
+        cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
+    )
 select
     co.academic_year,
     co.student_number,
@@ -68,6 +93,11 @@ select
     co.lunch_status as lunchstatus,
     co.is_retained_year,
     co.enroll_status,
+
+    fte.is_enrolled_fte2,
+    fte.is_enrolled_fte3,
+    fte.is_present_fte2,
+    fte.is_present_fte3,
 
     subj.fast_subject as fsa_subject,
     subj.iready_subject,
@@ -116,6 +146,8 @@ select
     fs.performance as mastery_indicator,
     fs.performance as mastery_number,
 
+    if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
+
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
     case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
@@ -140,6 +172,10 @@ select
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
+left join
+    {{ ref("int_students__fldoe_fte") }} as fte
+    on co.studentid = fte.studentid
+    and co.yearid = fte.yearid
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number
@@ -168,11 +204,16 @@ left join
     and subj.fast_subject = ft.assessment_subject
     and administration_window = ft.administration_window
 left join
+    scale_crosswalk as sc
+    on ft.academic_year = sc.academic_year
+    and ft.administration_window = sc.administration_window
+left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cwf
     on ft.assessment_subject = cwf.test_name
     and ft.assessment_grade = cwf.grade_level
     and ft.scale_score between cwf.scale_low and cwf.scale_high
-    and cwf.source_system = 'FAST'
+    and sc.source_system = cwf.source_system
+    and sc.destination_system = cwf.destination_system
 left join
     {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
     on co.fleid = fs.student_id
