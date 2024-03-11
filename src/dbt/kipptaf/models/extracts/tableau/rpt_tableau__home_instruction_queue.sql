@@ -12,6 +12,8 @@ select
     co.ethnicity,
     co.region,
 
+    cast(d.name as string) as term,
+
     dli.student_id as dl_student_id,
     dli.incident_id as dl_id,
     dli.status,
@@ -33,10 +35,9 @@ select
 
     concat(dli.create_first, ' ', dli.create_last) as referring_teacher_name,
     concat(dli.update_first, ' ', dli.update_last) as reviewed_by,
-    concat(u.first_name, ' ', u.last_name) as `Approver Name`,
+    concat(u.first_name, ' ', u.last_name) as approver_name,
 
     coalesce(dli.category, 'Referral') as dl_behavior,
-    cast(d.name as string) as term,
 from {{ ref("stg_deanslist__incidents") }} as dli
 left join
     {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
