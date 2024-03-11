@@ -34,6 +34,18 @@ select  -- noqa: ST06
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
     act.act_count,
     co.lep_status,
+    case
+        when kt.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when kt.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when kt.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when kt.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when kt.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
