@@ -298,9 +298,9 @@ google-crc32c==1.5.0 \
 google-resumable-media==2.7.0 \
     --hash=sha256:5f18f5fa9836f4b083162064a1c2c98c17239bfda9ca50ad970ccf905f3e625b \
     --hash=sha256:79543cfe433b63fd81c0844b7803aba1bb8950b47bedf7d980c38fa123937e08
-googleapis-common-protos==1.62.0 \
-    --hash=sha256:4750113612205514f9f6aa4cb00d523a94f3e8c06c5ad2fee466387dc4875f07 \
-    --hash=sha256:83f0ece9f94e5672cced82f592d2a5edf527a96ed1794f0bab36d5735c996277
+googleapis-common-protos==1.63.0 \
+    --hash=sha256:17ad01b11d5f1d0171c06d3ba5c04c54474e883b66b949722b4938ee2694ef4e \
+    --hash=sha256:ae45f75702f7c08b541f750854a678bd8f534a1a6bace6afe975f1d0a82d6632
 greenlet==3.0.3; platform_machine == "win32" or platform_machine == "WIN32" or platform_machine == "AMD64" or platform_machine == "amd64" or platform_machine == "x86_64" or platform_machine == "ppc64le" or platform_machine == "aarch64" \
     --hash=sha256:149e94a2dd82d19838fe4b2259f1b6b9957d5ba1b25640d2380bea9c5df37676 \
     --hash=sha256:15d79dd26056573940fcb8c7413d84118086f2ec1a8acdfa854631084393efcc \
