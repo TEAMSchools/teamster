@@ -315,51 +315,51 @@ select
 
     if(
         composite_national_norm_percentile in ('Tested Out', 'Discontinued'),
-        null,
+        composite_national_norm_percentile,
         composite_level
     ) as composite_level,
     if(
         decoding_nwf_wrc_national_norm_percentile in ('Tested Out', 'Discontinued'),
-        null,
+        decoding_nwf_wrc_national_norm_percentile,
         decoding_nwf_wrc_level
     ) as decoding_nwf_wrc_level,
     if(
         letter_names_lnf_national_norm_percentile in ('Tested Out', 'Discontinued'),
-        null,
+        letter_names_lnf_national_norm_percentile,
         letter_names_lnf_level
     ) as letter_names_lnf_level,
     if(
         letter_sounds_nwf_cls_national_norm_percentile
         in ('Tested Out', 'Discontinued'),
-        null,
+        letter_sounds_nwf_cls_national_norm_percentile,
         letter_sounds_nwf_cls_level
     ) as letter_sounds_nwf_cls_level,
     if(
         phonemic_awareness_psf_national_norm_percentile
         in ('Tested Out', 'Discontinued'),
-        null,
+        phonemic_awareness_psf_national_norm_percentile,
         phonemic_awareness_psf_level
     ) as phonemic_awareness_psf_level,
     if(
         reading_accuracy_orf_accu_national_norm_percentile
         in ('Tested Out', 'Discontinued'),
-        null,
+        reading_accuracy_orf_accu_national_norm_percentile,
         reading_accuracy_orf_accu_level
     ) as reading_accuracy_orf_accu_level,
     if(
         reading_comprehension_maze_national_norm_percentile
         in ('Tested Out', 'Discontinued'),
-        null,
+        reading_comprehension_maze_national_norm_percentile,
         reading_comprehension_maze_level
     ) as reading_comprehension_maze_level,
     if(
         reading_fluency_orf_national_norm_percentile in ('Tested Out', 'Discontinued'),
-        null,
+        reading_fluency_orf_national_norm_percentile,
         reading_fluency_orf_level
     ) as reading_fluency_orf_level,
     if(
         word_reading_wrf_national_norm_percentile in ('Tested Out', 'Discontinued'),
-        null,
+        word_reading_wrf_national_norm_percentile,
         word_reading_wrf_level
     ) as word_reading_wrf_level,
 

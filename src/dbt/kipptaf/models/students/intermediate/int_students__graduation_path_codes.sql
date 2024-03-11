@@ -14,17 +14,17 @@ with
 
             discipline,
         from {{ ref("base_powerschool__student_enrollments") }} as e
-        cross join unnest(['Math', 'ELA']) as discipline
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
+        cross join unnest(['Math', 'ELA']) as discipline
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.grade_level = 12
             and e.rn_year = 1
     ),
 
-    pathway_code as (
+    pathway_code_unpivot as (
         select
             _dbt_source_relation,
             studentsdcid,
@@ -83,92 +83,6 @@ with
         where b.name = 'NJGPA'
     ),
 
-    transfer_roster as (
-        select
-            s.student_number as localstudentidentifier,
-
-            x.subject,
-            x.testcode,
-            x.testscalescore,
-            x.discipline,
-
-            safe_cast(s.state_studentnumber as int) as statestudentidentifier,
-        from students as s
-        left join
-            transfer_scores as x
-            on s.studentid = x.studentid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="x") }}
-        where x.studentid is not null
-    ),
-
-    njgpa as (
-        select
-            localstudentidentifier,
-            statestudentidentifier,
-            subject,
-            testcode,
-            testscalescore,
-            case
-                when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
-            end as discipline,
-        from {{ ref("stg_pearson__njgpa") }}
-        where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
-        union all
-        select
-            localstudentidentifier,
-            statestudentidentifier,
-            subject,
-            testcode,
-            testscalescore,
-            discipline,
-        from transfer_roster
-    ),
-
-    njgpa_rollup as (
-        select
-            localstudentidentifier,
-            cast(statestudentidentifier as string) as statestudentidentifier,
-            testcode,
-            subject,
-            discipline,
-            max(testscalescore) as testscalescore,
-        from njgpa
-        group by
-            localstudentidentifier,
-            statestudentidentifier,
-            testcode,
-            subject,
-            discipline
-    ),
-
-    roster as (
-        select
-            s._dbt_source_relation,
-            s.academic_year,
-            s.student_number,
-            s.students_dcid,
-            s.state_studentnumber,
-            s.kippadb_contact_id,
-            s.grade_level,
-            s.enroll_status,
-            s.discipline,
-
-            c.code,
-
-            if(n.testscalescore is null, false, true) as njgpa_attempt,
-            if(n.testscalescore >= 725, true, false) as njgpa_pass,
-        from students as s
-        left join
-            pathway_code as c
-            on s.students_dcid = c.studentsdcid
-            and s.discipline = c.discipline
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
-        left join
-            njgpa_rollup as n
-            on s.state_studentnumber = n.statestudentidentifier
-            and s.discipline = n.discipline
-    ),
-
     act_sat_official as (
         select
             contact,
@@ -205,7 +119,7 @@ with
             )
     ),
 
-    act_sat_unpivot as (
+    act_sat_pivot as (
         select
             contact,
             discipline,
@@ -214,9 +128,81 @@ with
         from
             act_sat_official
             pivot (max(met_pathway_requirement) for test_type in ('ACT', 'SAT'))
+    ),
+
+    njgpa as (
+        select
+            s.student_number,
+            s.state_studentnumber,
+
+            x.subject,
+            x.testcode,
+            x.testscalescore,
+            x.discipline,
+        from students as s
+        left join
+            transfer_scores as x
+            on s.studentid = x.studentid
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="x") }}
+        where x.studentid is not null
+
+        union all
+
+        select
+            localstudentidentifier as student_number,
+            safe_cast(statestudentidentifier as string) as state_studentnumber,
+            subject,
+            testcode,
+            testscalescore,
+            case
+                when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
+            end as discipline,
+        from {{ ref("stg_pearson__njgpa") }}
+        where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
+    ),
+
+    njgpa_rollup as (
+        select
+            student_number,
+            state_studentnumber,
+            testcode,
+            subject,
+            discipline,
+            max(testscalescore) as testscalescore,
+        from njgpa
+        group by student_number, state_studentnumber, testcode, subject, discipline
+    ),
+
+    roster as (
+        select
+            s._dbt_source_relation,
+            s.academic_year,
+            s.student_number,
+            s.students_dcid,
+            s.state_studentnumber,
+            s.kippadb_contact_id,
+            s.grade_level,
+            s.enroll_status,
+            s.discipline,
+
+            c.code,
+
+            if(n.testscalescore is null, false, true) as njgpa_attempt,
+            if(n.testscalescore >= 725, true, false) as njgpa_pass,
+        from students as s
+        left join
+            pathway_code_unpivot as c
+            on s.students_dcid = c.studentsdcid
+            and s.discipline = c.discipline
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+        left join
+            njgpa_rollup as n
+            on s.state_studentnumber = n.state_studentnumber
+            and s.discipline = n.discipline
     )
 
 select
+    r._dbt_source_relation,
     r.academic_year,
     r.student_number,
     r.grade_level,
@@ -225,8 +211,10 @@ select
     r.code,
     r.njgpa_attempt,
     r.njgpa_pass,
+
     if(o.act is null, false, o.act) as act,
     if(o.sat is null, false, o.sat) as sat,
+
     case
         when r.code in ('M', 'N', 'O', 'P')
         then r.code
@@ -240,6 +228,6 @@ select
     end as final_grad_path,
 from roster as r
 left join
-    act_sat_unpivot as o
+    act_sat_pivot as o
     on r.kippadb_contact_id = o.contact
     and r.discipline = o.discipline
