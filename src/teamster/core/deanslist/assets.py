@@ -12,6 +12,7 @@ from dagster import (
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.deanslist.schema import ASSET_FIELDS
+from teamster.core.utils.classes import FiscalYear
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_record_schema,
@@ -98,12 +99,14 @@ def build_deanslist_multi_partition_asset(
             string=partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
         )
 
+        partition_key_fy = FiscalYear(datetime=date_partition, start_month=7)
+
         request_params = {"UpdatedSince": date_partition.to_date_string(), **params}
         if isinstance(
             partitions_def.get_partitions_def_for_dimension("date"),
             MonthlyPartitionsDefinition,
         ):
-            request_params["StartDate"] = date_partition.to_date_string()
+            request_params["StartDate"] = partition_key_fy.start.to_date_string()
             request_params["EndDate"] = date_partition.end_of("month").to_date_string()
 
         endpoint_content = deanslist.get(

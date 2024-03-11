@@ -75,8 +75,7 @@ with
             and obs.form_long_name = 'Coaching Tool: Coach ETR and Reflection'
             and safe_cast(obs.internal_id as int) = srh.employee_number
             and safe_cast(obs.observed_at as timestamp)
-            between srh.work_assignment__fivetran_start
-            and srh.work_assignment__fivetran_end
+            between srh.work_assignment_start_date and srh.work_assignment_end_date
         group by
             obs.internal_id,
             obs.observer_employee_number,
@@ -164,7 +163,7 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
     and safe_cast(sd.end_date as timestamp)
-    between srh.work_assignment__fivetran_start and srh.work_assignment__fivetran_end
+    between srh.work_assignment_start_date and srh.work_assignment_end_date
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number
