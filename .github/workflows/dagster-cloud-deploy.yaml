@@ -224,12 +224,12 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
 
-      # https://github.com/GoogleCloudPlatform/gcr-cleaner/blob/main/docs/deploy-github-actions.md
+      # https://github.com/GoogleCloudPlatform/gcr-cleaner
       - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
         with:
           args: >-
             -repo=us-central1-docker.pkg.dev/teamster-332318/teamster/${{ inputs.code-location }}
-            -keep=1 -tag-filter-any=.* -dry-run
+            -keep=1 -dry-run
 
   deploy:
     runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
