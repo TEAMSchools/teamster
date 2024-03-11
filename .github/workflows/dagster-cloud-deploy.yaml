@@ -228,8 +228,8 @@ jobs:
       - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
         with:
           args: >-
-            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster -keep=1 -tag-filter-any=.*
-            -dry-run -recursive
+            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster/${{ inputs.code-location }}
+            -keep=1 -tag-filter-any=.* -dry-run
 
   deploy:
     runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
