@@ -1,9 +1,7 @@
 select
     o.observation_id,
-    o.last_modified,
-    o.last_modified_lead,
 
-    os.measurement as measurement,
+    os.measurement,
     os.measurementgroup as measurement_group,
     os.percentage as `percentage`,
     os.valuescore as value_score,
