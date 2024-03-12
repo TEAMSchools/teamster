@@ -27,9 +27,9 @@ with
 
 select
     observation_id,
-    score,
     rubric_name,
     last_modified_date,
+    score,
     observation_scores,
 
     lead(date_sub(last_modified_date, interval 1 day), 1, date('9999-12-31')) over (
