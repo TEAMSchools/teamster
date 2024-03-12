@@ -253,6 +253,22 @@ with
             ) as application_account_type
         union all
         select 'AA' as matriculation_type, 'Public 2 yr' as application_account_type,
+    ),
+
+    es_grad as (
+        select
+            student_number,
+            max(
+                if(
+                    grade_level = 4
+                    and exitdate >= date({{ var("current_academic_year") }} + 1, 6, 1),
+                    true,
+                    false
+                )
+            ) as is_es_grad,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where rn_year = 1
+        group by student_number
     )
 
 select
@@ -568,6 +584,7 @@ select
     coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
     coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
     coalesce(ar.is_matriculated, false) as is_matriculated,
+    coalesce(e.is_es_grad, false) as is_es_grad,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -613,6 +630,7 @@ left join
     and b.rn_benchmark = 1
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
+left join es_grad as e on e.student_number = c.student_number
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
