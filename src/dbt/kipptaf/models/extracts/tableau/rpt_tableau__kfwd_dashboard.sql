@@ -585,6 +585,11 @@ select
     coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
     coalesce(ar.is_matriculated, false) as is_matriculated,
     coalesce(e.is_es_grad, false) as is_es_grad,
+    if(
+        ei.ecc_pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)"),
+        true,
+        false
+    ) as has_ecc_enrollment,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
