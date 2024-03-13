@@ -260,8 +260,7 @@ with
             student_number,
             max(
                 if(
-                    grade_level = 4
-                    and exitdate >= date({{ var("current_academic_year") }} + 1, 6, 1),
+                    grade_level = 4 and exitdate >= date(academic_year + 1, 6, 1),
                     true,
                     false
                 )
