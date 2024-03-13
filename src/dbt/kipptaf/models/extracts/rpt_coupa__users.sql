@@ -223,10 +223,18 @@ select  -- noqa: disable=ST06
         then 'No'
         else 'Yes'
     end as `Expense User`,
+
     /* preserve Coupa, otherwise No */
-    coalesce(
-        if(sub.coupa_status = 'inactive', 'No', null), sub.purchasing_user, 'No'
-    ) as `Purchasing User`,
+    case
+        when sub.coupa_status = 'inactive'
+        then 'No'
+        when sub.assignment_status = 'Leave'
+        then 'No'
+        when sub.coupa_status != 'inactive'
+        then sub.purchasing_user
+        else 'No'
+    end as `Purchasing User`,
+
     /* preserve Coupa, otherwise use HRIS */
     coalesce(
         sub.content_groups,
