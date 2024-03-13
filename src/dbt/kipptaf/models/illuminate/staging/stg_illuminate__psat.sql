@@ -72,27 +72,27 @@ select
 
     psat_2023_apseminar as ap_seminar,
 
-    safe_cast(psat_2023_totalscore as float64) as total_score,
-    safe_cast(psat_2023_advancedmathsubscore as float64) as advanced_math_subscore,
+    safe_cast(psat_2023_totalscore as numeric) as total_score,
+    safe_cast(psat_2023_advancedmathsubscore as numeric) as advanced_math_subscore,
     safe_cast(
-        psat_2023_commandevidencesubscore as float64
+        psat_2023_commandevidencesubscore as numeric
     ) as command_evidence_subscore,
     safe_cast(
-        psat_2023_ebreadwritesectionscore as float64
+        psat_2023_ebreadwritesectionscore as numeric
     ) as eb_read_write_section_score,
-    safe_cast(psat_2023_englishconvsubscore as float64) as english_conv_subscore,
+    safe_cast(psat_2023_englishconvsubscore as numeric) as english_conv_subscore,
     safe_cast(
-        psat_2023_expressionideassubscore as float64
+        psat_2023_expressionideassubscore as numeric
     ) as expression_ideas_subscore,
-    safe_cast(psat_2023_heartalgebrasubscore as float64) as heart_algebra_subscore,
-    safe_cast(psat_2023_historycrosstestscore as float64) as history_cross_test_score,
-    safe_cast(psat_2023_mathtestscore as float64) as math_test_score,
-    safe_cast(psat_2023_mathsectionscore as float64) as math_section_score,
-    safe_cast(psat_2023_probsolvedatasubscore as float64) as prob_solve_data_subscore,
-    safe_cast(psat_2023_readingtestscore as float64) as reading_test_score,
-    safe_cast(psat_2023_relevantwordssubscore as float64) as relevant_words_subscore,
-    safe_cast(psat_2023_sciencecrosstestscore as float64) as science_cross_test_score,
-    safe_cast(psat_2023_writingtestscore as float64) as writing_test_score,
+    safe_cast(psat_2023_heartalgebrasubscore as numeric) as heart_algebra_subscore,
+    safe_cast(psat_2023_historycrosstestscore as numeric) as history_cross_test_score,
+    safe_cast(psat_2023_mathtestscore as numeric) as math_test_score,
+    safe_cast(psat_2023_mathsectionscore as numeric) as math_section_score,
+    safe_cast(psat_2023_probsolvedatasubscore as numeric) as prob_solve_data_subscore,
+    safe_cast(psat_2023_readingtestscore as numeric) as reading_test_score,
+    safe_cast(psat_2023_relevantwordssubscore as numeric) as relevant_words_subscore,
+    safe_cast(psat_2023_sciencecrosstestscore as numeric) as science_cross_test_score,
+    safe_cast(psat_2023_writingtestscore as numeric) as writing_test_score,
 
     nullif(psat_2023_newdistrictid, '') as new_district_id,
     nullif(psat_2023_newssid, '') as new_ssid,
