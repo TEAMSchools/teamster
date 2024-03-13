@@ -149,6 +149,12 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+        union all
+        select
+            null as contact,
+            'PSAT10' as test_type,
+            test_date,
+
     )
 
 select
