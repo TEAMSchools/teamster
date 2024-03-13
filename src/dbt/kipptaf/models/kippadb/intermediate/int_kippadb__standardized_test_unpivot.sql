@@ -22,8 +22,9 @@ select
                     end,
                 from unnest(split(score_type, '_')) as component
                 where
-                    component
-                    not in ('act', 'sat', 'ap', 'pre', '2016', 'critical', 'score')
+                    component not in (
+                        'act', 'sat', 'ap', 'pre', '2016', 'critical', 'score', 'psat'
+                    )
             ),
             ' '
         )
@@ -44,6 +45,17 @@ from
             act_stem,
             act_writing,
             ap,
+            psat_critical_reading_pre_2016,
+            psat_ebrw,
+            psat_math_pre_2016,
+            psat_math_test_score,
+            psat_math,
+            psat_reading_test_score,
+            psat_total_score,
+            psat_verbal,
+            psat_writing_and_language_test_score,
+            psat_writing_pre_2016,
+            psat_writing,
             sat_critical_reading_pre_2016,
             sat_ebrw,
             sat_essay_analysis,
@@ -60,4 +72,6 @@ from
             sat_writing
         )
     ) as u
-where not scoring_irregularity and test_type in ('SAT', 'ACT', 'Advanced Placement')
+where
+    not scoring_irregularity
+    and test_type in ('ACT', 'Advanced Placement', 'PSAT', 'SAT')
