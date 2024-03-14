@@ -366,5 +366,3 @@ left join
     on r.student_number = c.student_number
     and r.academic_year = c.academic_year
     and r.discipline = c.discipline
-
-    sdvjdnsfvkbn
