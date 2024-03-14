@@ -92,6 +92,20 @@ with
         where e.rn_year = 1 and e.school_level = 'HS' and e.schoolid != 999999
     ),
 
+        psat10_unpivot as (
+        select local_student_id as contact, test_date, score_type, score,
+        from
+            `teamster-332318`.`kipptaf_illuminate`.`stg_illuminate__psat` unpivot (
+                score for score_type in (
+                    eb_read_write_section_score,
+                    math_test_score,
+                    math_section_score,
+                    reading_test_score
+                )
+            )
+        where score_type not in ('total_score', 'writing_test_score')
+    ),
+
     college_assessments_official as (
         select
             contact,
@@ -148,6 +162,53 @@ with
                 'sat_math_test_score',
                 'sat_math',
                 'sat_ebrw'
+            )
+            union all
+                    select
+            local_student_id as contact,
+            'PSAT10' as scope,
+            test_date,
+            score as scale_score,
+
+            'Official' as test_type,
+
+            concat(
+                format_date('%b', test_date), ' ', format_date('%g', test_date)
+            ) as administration_round,
+
+            case
+                score_type
+                when 'total_score'
+                then 'Composite'
+                when 'reading_test_score'
+                then 'Reading Test'
+                when 'math_test_score'
+                then 'Math Test'
+                else test_subject
+            end as subject_area,
+            case
+                when
+                    score_type in (
+'eb_read_write_section_score', 'reading_test_score'
+                    )
+                then 'ENG'
+                when score_type in ('math_section_score','math_test_score')
+                then 'MATH'
+                else 'NA'
+            end as course_discipline,
+
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="test_date", start_month=7, year_source="start"
+                )
+            }} as test_academic_year,
+        from {{ ref("stg_illuminate__psat") }}
+        where
+            score_type in (
+                'eb_read_write_section_score',
+                    'math_test_score',
+                    'math_section_score',
+                    'reading_test_score'
             )
     )
 
