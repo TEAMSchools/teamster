@@ -243,9 +243,9 @@ with
                     score_type in ('reading_test_score', 'math_test_score')
                     and score >= 21
                 then true
-                when score_type = 'math_section_score' and score >= 420
-                then true
-                when score_type = 'eb_read_write_section_score' and score >= 420
+                when
+                    score_type in ('math_section_score', 'eb_read_write_section_score')
+                    and score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
