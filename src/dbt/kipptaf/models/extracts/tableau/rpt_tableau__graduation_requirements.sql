@@ -158,7 +158,7 @@ with
     ),
 
     psat10_unpivot as (
-        select local_student_id as contact, score_type, score,
+        select local_student_id, score_type, score,
         from
             {{ ref("stg_illuminate__psat") }} unpivot (
                 score for score_type in (
@@ -171,7 +171,7 @@ with
         where score_type not in ('total_score', 'writing_test_score')
     ),
 
-    act_sat__psat10_official as (
+    act_sat_psat10_official as (
         select
             contact,
             test_type,
@@ -220,7 +220,7 @@ with
         union all
 
         select
-            contact,
+            local_student_id as contact,
             'PSAT10' as test_type,
             score,
             case
@@ -275,7 +275,7 @@ with
             a.test_type,
             'ACT/SAT' as pathway_option,
         from roster as r
-        inner join act_sat__psat10_official as a on r.kippadb_contact_id = a.contact
+        inner join act_sat_psat10_official as a on r.kippadb_contact_id = a.contact
         where a.test_type in ('ACT', 'SAT')
         union all
         select
@@ -288,7 +288,8 @@ with
             a.test_type,
             'PSAT10' as pathway_option,
         from roster as r
-        inner join act_sat__psat10_official as a on r.kippadb_contact_id = a.contact
+        inner join
+            act_sat_psat10_official as a on cast(r.student_number as string) = a.contact
         where a.test_type = 'PSAT10'
         union all
         select
