@@ -168,7 +168,6 @@ with
                     reading_test_score
                 )
             )
-        where score_type not in ('total_score', 'writing_test_score')
     ),
 
     act_sat_psat10_official as (
