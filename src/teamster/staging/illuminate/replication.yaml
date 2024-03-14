@@ -1,0 +1,10 @@
+source: POSTGRES_ILLUMINATE
+target: BIGQUERY_TEAMSTER
+
+defaults:
+  mode: incremental
+  object: "{stream_schema}_{stream_table}"
+
+streams:
+  dna_assessments.assessments:
+    primary_key: assessment_id

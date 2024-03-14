@@ -1,9 +1,0 @@
-SOURCE: ILLUMINATE_POSTGRES
-TARGET: BIGQUERY
-
-defaults:
-  mode: incremental
-  object: "{stream_schema}_{stream_table}"
-
-streams:
-  dna_assessment.assessments:

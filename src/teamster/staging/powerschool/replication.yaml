@@ -1,0 +1,9 @@
+source: ORACLE_POWERSCHOOL
+target: BIGQUERY_TEAMSTER
+
+defaults:
+  mode: full-refresh
+  object: "{stream_table}"
+
+streams:
+  students: null
