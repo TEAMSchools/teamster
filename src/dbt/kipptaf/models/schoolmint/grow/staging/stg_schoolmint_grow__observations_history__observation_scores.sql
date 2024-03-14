@@ -1,5 +1,7 @@
 select
     o.observation_id,
+    o.last_modified_date,
+    o.last_modified_date_lead,
 
     os.measurement,
     os.measurementgroup as measurement_group,
