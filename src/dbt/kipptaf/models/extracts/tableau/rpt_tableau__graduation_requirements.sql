@@ -157,6 +157,20 @@ with
             discipline
     ),
 
+    psat10_unpivot as (
+        select local_student_id, score_type, score,
+        from
+            {{ ref("stg_illuminate__psat") }} unpivot (
+                score for score_type in (
+                    eb_read_write_section_score,
+                    math_test_score,
+                    math_section_score,
+                    reading_test_score
+                )
+            )
+        where score_type not in ('total_score', 'writing_test_score')
+    ),
+
     act_sat_official as (
         select
             contact,
@@ -202,6 +216,40 @@ with
                 'sat_reading_test_score',
                 'sat_ebrw'
             )
+
+        union all
+
+        select
+            '' as contact,
+            'PSAT10' as test_type,
+            score,
+            case
+                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                then 'ELA'
+                else 'Math'
+            end as discipline,
+            case
+                when score_type = 'reading_test_score'
+                then 'Reading'
+                when score_type = 'math_section_score'
+                then 'Math'
+                when score_type = 'math_test_score'
+                then 'Math Test'
+                when score_type = 'eb_read_write_section_score'
+                then 'EBRW'
+            end as subject,
+            case
+                when
+                    score_type in ('reading_test_score', 'math_test_score')
+                    and score >= 21
+                then true
+                when score_type = 'math_section_score' and score >= 420
+                then true
+                when score_type = 'eb_read_write_section_score' and score >= 420
+                then true
+                else false
+            end as met_pathway_requirement,
+        from psat10_unpivot
     ),
 
     grad_options_append_final as (
@@ -228,6 +276,20 @@ with
             'ACT/SAT' as pathway_option,
         from roster as r
         inner join act_sat_official as a on r.kippadb_contact_id = a.contact
+        where test_type in ('ACT', 'SAT')
+        union all
+        select
+            r.student_number,
+
+            a.discipline,
+            a.subject,
+            safe_cast(a.score as string) as `value`,
+            a.met_pathway_requirement,
+            a.test_type,
+            'PSAT10' as pathway_option,
+        from roster as r
+        inner join act_sat_official as a on r.kippadb_contact_id = a.contact
+        where test_type = 'PSAT10'
         union all
         select
             r.student_number,
