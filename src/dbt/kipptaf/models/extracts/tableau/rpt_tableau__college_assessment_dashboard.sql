@@ -164,13 +164,13 @@ with
             )
         union all
         select
-            local_student_id as contact,
+            contact,
             'PSAT10' as scope,
             test_date,
             score as scale_score,
 
             row_number() over (
-                partition by local_student_id, score_type order by score desc
+                partition by contact, score_type order by score desc
             ) as rn_highest,
 
             'Official' as test_type,
@@ -191,8 +191,7 @@ with
                 then 'Writing and Language Test'
             end as subject_area,
             case
-                when
-                    score_type in ('eb_read_write_section_score', 'reading_test_score',)
+                when score_type in ('eb_read_write_section_score', 'reading_test_score')
                 then 'ENG'
                 when score_type = 'math_test_score'
                 then 'MATH'
@@ -329,14 +328,14 @@ select
 from roster as e
 left join
     college_assessments_official as o
-    on e.student_number = o.contact
+    on cast(e.student_number as string) = o.contact
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
     and o.test_type = 'PSAT10'
 left join
     course_subjects_roster as c
-    on o.student_number = c.contact_id
+    on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
 where e.expected_test_type = 'Official'
