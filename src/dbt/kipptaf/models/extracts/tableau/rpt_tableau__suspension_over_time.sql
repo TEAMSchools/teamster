@@ -54,6 +54,7 @@ with
 
             s.suspension_type,
 
+            p.incident_penalty_id,
             p.end_date,
             p.num_days,
         from {{ ref("stg_deanslist__incidents") }} as i
@@ -105,6 +106,9 @@ select
     sum(if(sd.suspension_type = 'ISS', sd.num_days, null)) over (
         partition by co.student_number, co.academic_year order by date_day asc
     ) as iss_suspended_days_running,
+    count(sd.incident_penalty_id) over (
+        partition by co.student_number, co.academic_year order by date_day asc
+    ) as total_suspension_incidents_running,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     unnest(
