@@ -184,6 +184,9 @@ dagster-cloud-cli==1.6.10 \
 dagster-dbt==0.22.10 \
     --hash=sha256:9fe5c9df272992b43b0673c34259595be6ca00e6e970901eeadb3b28c145ddfc \
     --hash=sha256:d54585b75b3c78d8b0a7f44ad4045db2f850aac8a91647a6072724a2619a0974
+dagster-embedded-elt==0.22.10 \
+    --hash=sha256:653c61d1f2aec65b31e0e18f87470effc723372d5e1ca0c3ee1f532138ebe892 \
+    --hash=sha256:8a3ea23c943314e9ec48ee51929cad0bc48a428007ce1c2fdf2b1dbb588f812d
 dagster-fivetran==0.22.10 \
     --hash=sha256:66cee78466b7a698232bd063342fe12d2e362a4e787c62d05ef4ce40eb41a4c2 \
     --hash=sha256:a66141783b97489d1d3224e87af94742df6cfa8b54a4b64f700a2c833de7993a
@@ -759,10 +762,10 @@ shellingham==1.5.4 \
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
-sling==1.1.13 \
-    --hash=sha256:6f602f3ded32ae54bf33ba70a39cb26ed2b9afef843f9cb24c199f2be2921dbd
-sling-linux-amd64==1.1.13 \
-    --hash=sha256:61626b9f195dcb9d74e623ac0b4f163a70fd065e499c44ae138f4496bb94cbfd
+sling==1.1.14 \
+    --hash=sha256:16cfb7bd2cb64bb8b5a32b87bdfaa62deb0a27c3aa4870dd99a64a93f008474d
+sling-linux-amd64==1.1.14 \
+    --hash=sha256:a706ba0907a22ad56946d1ccf96ff2634bf53177903cf07782eb42cb27061253
 soupsieve==2.5 \
     --hash=sha256:5663d5a7b3bfaeee0bc4372e7fc48f9cff4940b3eec54a6451cc5299f1097690 \
     --hash=sha256:eaa337ff55a1579b6549dc679565eac1e3d000563bcb1c8ab0d0fefbc0c2cdc7

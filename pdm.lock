@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:f66ecb9e4f4afb9bdaefd10237144adf106eb20bb891be8a741e8e2721543fc7"
+content_hash = "sha256:84c46a1d309fb5d4e91645732559219687d84dbd5ea04c1ee8bdb131a0b38ded"
 
 [[package]]
 name = "agate"
@@ -490,6 +490,20 @@ dependencies = [
 files = [
     {file = "dagster-dbt-0.22.10.tar.gz", hash = "sha256:9fe5c9df272992b43b0673c34259595be6ca00e6e970901eeadb3b28c145ddfc"},
     {file = "dagster_dbt-0.22.10-py3-none-any.whl", hash = "sha256:d54585b75b3c78d8b0a7f44ad4045db2f850aac8a91647a6072724a2619a0974"},
+]
+
+[[package]]
+name = "dagster-embedded-elt"
+version = "0.22.10"
+requires_python = ">=3.8,<3.13"
+summary = "Package for performing ETL/ELT tasks with Dagster."
+dependencies = [
+    "dagster==1.6.10",
+    "sling>=1.1.5",
+]
+files = [
+    {file = "dagster-embedded-elt-0.22.10.tar.gz", hash = "sha256:653c61d1f2aec65b31e0e18f87470effc723372d5e1ca0c3ee1f532138ebe892"},
+    {file = "dagster_embedded_elt-0.22.10-py3-none-any.whl", hash = "sha256:8a3ea23c943314e9ec48ee51929cad0bc48a428007ce1c2fdf2b1dbb588f812d"},
 ]
 
 [[package]]
@@ -2306,21 +2320,21 @@ files = [
 
 [[package]]
 name = "sling"
-version = "1.1.13"
+version = "1.1.14"
 summary = "Slings data from a source to a target"
 dependencies = [
-    "sling-linux-amd64==1.1.13",
+    "sling-linux-amd64==1.1.14",
 ]
 files = [
-    {file = "sling-1.1.13.tar.gz", hash = "sha256:6f602f3ded32ae54bf33ba70a39cb26ed2b9afef843f9cb24c199f2be2921dbd"},
+    {file = "sling-1.1.14.tar.gz", hash = "sha256:16cfb7bd2cb64bb8b5a32b87bdfaa62deb0a27c3aa4870dd99a64a93f008474d"},
 ]
 
 [[package]]
 name = "sling-linux-amd64"
-version = "1.1.13"
+version = "1.1.14"
 summary = "Sling Binary for Linux (AMD64)"
 files = [
-    {file = "sling-linux-amd64-1.1.13.tar.gz", hash = "sha256:61626b9f195dcb9d74e623ac0b4f163a70fd065e499c44ae138f4496bb94cbfd"},
+    {file = "sling-linux-amd64-1.1.14.tar.gz", hash = "sha256:a706ba0907a22ad56946d1ccf96ff2634bf53177903cf07782eb42cb27061253"},
 ]
 
 [[package]]
