@@ -44,5 +44,5 @@ gcloud artifacts repositories add-iam-policy-binding \
   "${repo}" \
   --project="${project_id}" \
   --location="${location}" \
-  --role="roles/artifactregistry.writer" \
+  --role="roles/artifactregistry.repoAdmin" \
   --member=principalSet://iam.googleapis.com/projects/"${project_number}"/locations/global/workloadIdentityPools/"${pool_name}"/attribute.repository/TEAMSchools/teamster

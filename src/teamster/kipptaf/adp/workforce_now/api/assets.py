@@ -5,7 +5,7 @@ from teamster.core.utils.functions import (
     get_avro_schema_valid_check_spec,
 )
 
-from .... import CODE_LOCATION
+from .... import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import AdpWorkforceNowResource
 from .schema import WORKER_SCHEMA
 
@@ -18,7 +18,9 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
     group_name="adp_workforce_now",
     compute_kind="adp",
     check_specs=[get_avro_schema_valid_check_spec(asset_key)],
-    partitions_def=DailyPartitionsDefinition(start_date="01/01/2021", fmt="%m/%d/%Y"),
+    partitions_def=DailyPartitionsDefinition(
+        start_date="01/01/2021", fmt="%m/%d/%Y", timezone=LOCAL_TIMEZONE.name
+    ),
 )
 def workers(context: AssetExecutionContext, adp_wfn: AdpWorkforceNowResource):
     records = adp_wfn.get_records(
