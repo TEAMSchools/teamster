@@ -3,7 +3,9 @@ target: BIGQUERY_TEAMSTER
 
 defaults:
   mode: full-refresh
-  object: "{stream_table}"
+  object: "staging_{source_name}.{stream_table}"
 
 streams:
-  students: null
+  students:
+    select:
+      - -custom

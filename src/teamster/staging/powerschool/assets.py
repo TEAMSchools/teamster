@@ -25,6 +25,7 @@ def powerschool_table_assets(
         yield from sling.replicate(
             replication_config=replication_config,
             dagster_sling_translator=DagsterSlingTranslator(),
+            # debug=True,
         )
 
         for row in sling.stream_raw_logs():

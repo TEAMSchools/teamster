@@ -31,8 +31,9 @@ SLING_RESOURCE = SlingResource(
             type="bigquery",
             name="BIGQUERY_TEAMSTER",
             project="teamster-332318",
-            dataset="staging_illuminate",
+            dataset="staging_sling",
             key_file="/etc/secret-volume/gcloud_service_account_json",
+            gc_bucket="teamster-sling",
         ),
         SlingConnectionResource(
             type="oracle",
@@ -41,6 +42,7 @@ SLING_RESOURCE = SlingResource(
             user="PSNAVIGATOR",
             password=EnvVar("PS_DB_PASSWORD"),
             sid="PSPRODDB",
+            schema="PS",
         ),
     ]
 )
