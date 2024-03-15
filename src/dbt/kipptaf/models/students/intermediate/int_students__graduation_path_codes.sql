@@ -83,7 +83,21 @@ with
         where b.name = 'NJGPA'
     ),
 
-    act_sat_official as (
+    psat10_unpivot as (
+        select local_student_id, score_type, score,
+        from
+            {{ ref("stg_illuminate__psat") }} unpivot (
+                score for score_type in (
+                    eb_read_write_section_score,
+                    math_test_score,
+                    math_section_score,
+                    reading_test_score
+                )
+            )
+        where score_type not in ('total_score', 'writing_test_score')
+    ),
+
+    act_sat_psat10_official as (
         select
             contact,
             test_type,
@@ -117,17 +131,42 @@ with
                 'sat_reading_test_score',
                 'sat_ebrw'
             )
+
+        union all
+
+        select
+            local_student_id as contact,
+            'PSAT10' as test_type,
+            case
+                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                then 'ELA'
+                else 'Math'
+            end as discipline,
+            case
+                when
+                    score_type in ('reading_test_score', 'math_test_score')
+                    and score >= 21
+                then true
+                when
+                    score_type in ('math_section_score', 'eb_read_write_section_score')
+                    and score >= 420
+                then true
+                else false
+            end as met_pathway_requirement,
+        from psat10_unpivot
     ),
 
-    act_sat_pivot as (
+    act_sat_psat10_pivot as (
         select
             contact,
             discipline,
             if(act is null, false, act) as act,
             if(sat is null, false, sat) as sat,
+            if(psat10 is null, false, psat10) as psat10,
         from
-            act_sat_official
-            pivot (max(met_pathway_requirement) for test_type in ('ACT', 'SAT'))
+            act_sat_psat10_official pivot (
+                max(met_pathway_requirement) for test_type in ('ACT', 'SAT', 'PSAT10')
+            )
     ),
 
     njgpa as (
@@ -212,22 +251,34 @@ select
     r.njgpa_attempt,
     r.njgpa_pass,
 
-    if(o.act is null, false, o.act) as act,
-    if(o.sat is null, false, o.sat) as sat,
+    if(o1.act is null, false, o1.act) as act,
+    if(o1.sat is null, false, o1.sat) as sat,
+    if(o2.psat10 is null, false, o2.psat10) as psat10,
 
     case
         when r.code in ('M', 'N', 'O', 'P')
         then r.code
         when r.njgpa_pass
         then 'S'
-        when r.njgpa_attempt and not r.njgpa_pass and o.act
+        when r.njgpa_attempt and not r.njgpa_pass and o1.act
         then 'E'
-        when r.njgpa_attempt and not r.njgpa_pass and o.act in (false, null) and o.sat
+        when r.njgpa_attempt and not r.njgpa_pass and o1.act in (false, null) and o1.sat
         then 'D'
+        when
+            r.njgpa_attempt
+            and not r.njgpa_pass
+            and o1.act in (false, null)
+            and o1.sat in (false, null)
+            and o2.psat10
+        then 'J'
         else 'R'
     end as final_grad_path,
 from roster as r
 left join
-    act_sat_pivot as o
-    on r.kippadb_contact_id = o.contact
-    and r.discipline = o.discipline
+    act_sat_psat10_pivot as o1
+    on r.kippadb_contact_id = o1.contact
+    and r.discipline = o1.discipline
+left join
+    act_sat_psat10_pivot as o2
+    on cast(r.student_number as string) = o2.contact
+    and r.discipline = o2.discipline
