@@ -494,16 +494,16 @@ files = [
 
 [[package]]
 name = "dagster-embedded-elt"
-version = "0.22.10"
+version = "0.22.11"
 requires_python = ">=3.8,<3.13"
 summary = "Package for performing ETL/ELT tasks with Dagster."
 dependencies = [
-    "dagster==1.6.10",
+    "dagster==1.6.11",
     "sling>=1.1.5",
 ]
 files = [
-    {file = "dagster-embedded-elt-0.22.10.tar.gz", hash = "sha256:653c61d1f2aec65b31e0e18f87470effc723372d5e1ca0c3ee1f532138ebe892"},
-    {file = "dagster_embedded_elt-0.22.10-py3-none-any.whl", hash = "sha256:8a3ea23c943314e9ec48ee51929cad0bc48a428007ce1c2fdf2b1dbb588f812d"},
+    {file = "dagster-embedded-elt-0.22.11.tar.gz", hash = "sha256:1b7256a79e3088ba72649be6cabd0de4fc067fe9c9c6f5ccc38d512412d213bf"},
+    {file = "dagster_embedded_elt-0.22.11-py3-none-any.whl", hash = "sha256:8a3f10e8265253a10e7ed997dc2f870b878d0e70385606a6df6e8ff96d48ddb3"},
 ]
 
 [[package]]
