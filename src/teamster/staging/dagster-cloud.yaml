@@ -424,6 +424,11 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: credential
+              - name: ILLUMINATE_ODBC_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-odbc
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -802,3 +807,8 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: credential
+              - name: ILLUMINATE_ODBC_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-odbc
+                    key: password
