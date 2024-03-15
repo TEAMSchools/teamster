@@ -33,6 +33,7 @@ FIVETRAN_API_KEY=op://Data Team/Fivetran API/api key
 FIVETRAN_API_SECRET=op://Data Team/Fivetran API/api secret
 ILLUMINATE_SFTP_PASSWORD=op://Data Team/Illuminate SFTP/password
 ILLUMINATE_SFTP_USERNAME=op://Data Team/Illuminate SFTP/username
+ILLUMINATE_DB_PASSWORD=op://Data Team/Illuminate ODBC/password
 IREADY_SFTP_PASSWORD=op://Data Team/iReady SFTP/password
 IREADY_SFTP_USERNAME=op://Data Team/iReady SFTP/username
 KTAF_SFTP_PASSWORD=op://Data Team/ID Auto SFTP/password

@@ -392,3 +392,10 @@ extraManifests:
       namespace: dagster-cloud
     spec:
       itemPath: vaults/Data Team/items/Tableau Server PAT - Dagster
+  - apiVersion: onepassword.com/v1
+    kind: OnePasswordItem
+    metadata:
+      name: op-illuminate-odbc
+      namespace: dagster-cloud
+    spec:
+      itemPath: vaults/Data Team/items/Illuminate ODBC/password
