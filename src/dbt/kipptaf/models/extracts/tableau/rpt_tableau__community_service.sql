@@ -13,11 +13,13 @@ select
     co.contact_1_email_current as guardianemail,
     co.student_email_google as student_email,
     co.school_abbreviation as school_name,
+
     b.behavior_date,
     b.behavior,
     b.notes,
+
     concat(b.staff_last_name, ', ', b.staff_first_name) as staff_name,
-    cast(left(b.behavior, length(b.behavior) - 5) as int64) as cs_hours
+    cast(left(b.behavior, length(b.behavior) - 5) as int64) as cs_hours,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__behavior") }} as b
