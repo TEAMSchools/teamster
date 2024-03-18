@@ -45,3 +45,4 @@ select
     nullif(studentlastname, '') as `student_last_name`,
     nullif(`weight`, '') as `weight`,
 from deduplicate
+where not is_deleted or is_deleted is null
