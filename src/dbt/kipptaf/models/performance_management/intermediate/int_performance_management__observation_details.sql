@@ -7,7 +7,6 @@ with
             o.teacher_id,
             o.rubric_name,
             o.rubric_id,
-            o.created,
             o.observer_name,
             o.observer_email,
             o.score as overall_score,
@@ -21,15 +20,12 @@ with
             ohos.last_modified_date_lead,
 
             m.name as measurement_name,
-            m.scale_min as measurement_scale_min,
-            m.scale_max as measurement_scale_max,
+            regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
+            regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
 
             regexp_replace(
                 regexp_replace(b.value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
-
-            regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
-            regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
 
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
@@ -51,7 +47,10 @@ with
             }} as b
             on ohos.observation_id = b.observation_id
             and ohos.measurement = b.measurement
-        where o.is_published
+        where
+            o.is_published
+            /* 23-24 first year of new rubric*/
+            and safe_cast(o.observed_at as date) > date(2023, 07, 01)
     ),
     /* for 2024, move 2023 scores to archive view and delete these CTEs to use calculated overall scores from SMG */
     pm_overall_scores_avg as (
@@ -80,7 +79,7 @@ with
 
 select
     m.employee_number,
-    safe_cast(m.observer_employee_number as int),
+    safe_cast(m.observer_employee_number as int) as observer_employee_number,
     m.observation_id,
     m.teacher_id,
     m.rubric_name,
@@ -103,14 +102,13 @@ select
     if(
         m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
     ) as overall_score,
-    null as form_type,
     null as form_term,
+    null as form_type,
     null as academic_year,
 from measurements as m
 left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
 
 union all
-
 select
     sa.employee_number,
     sa.observer_employee_number,
@@ -124,7 +122,6 @@ select
     null as glows,
     null as grows,
     null as score_measurement_id,
-    null as score_percentage,
     sa.row_score_value,
     null as last_modified_date,
     null as last_modified_date_lead,
@@ -136,6 +133,6 @@ select
     sa.so_score,
     sa.overall_score,
     sa.form_term,
-    sa.form_type,
+    'PM' as form_type,
     sa.academic_year,
 from {{ ref("int_performance_management__scores_archive") }} as sa
