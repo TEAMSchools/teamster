@@ -4,6 +4,7 @@ with
             kt.contact_id,
             kt.last_name,
             kt.first_name,
+            kt.ktc_cohort as cohort,
 
             ap.id,
             ap.name,
@@ -30,6 +31,7 @@ select
     contact_id,
     last_name,
     first_name,
+    cohort,
     id,
     name,
     matriculation_decision,
