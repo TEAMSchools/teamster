@@ -75,64 +75,99 @@ with
                 avg(score_measurement_score) for score_measurement_type
                 in ('etr', 's&o' as `so`)
             ) as p
+    ),
+
+    observation_details as (
+        select
+            m.employee_number,
+            safe_cast(m.observer_employee_number as int) as observer_employee_number,
+            m.observation_id,
+            m.teacher_id,
+            m.rubric_name,
+            m.rubric_id,
+            m.observer_name,
+            m.observer_email,
+            m.observed_at,
+            m.glows,
+            m.grows,
+            m.score_measurement_id,
+            m.row_score_value,
+            m.last_modified_date,
+            m.last_modified_date_lead,
+            m.measurement_name,
+            m.text_box,
+            m.score_measurement_type,
+            m.score_measurement_shortname,
+            sp.etr_score,
+            sp.so_score,
+            if(
+                m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
+            ) as overall_score,
+            null as form_term,
+            null as form_type,
+            null as academic_year,
+        from measurements as m
+        left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
+
+        union all
+        select
+            sa.employee_number,
+            sa.observer_employee_number,
+            'archive' as observation_id,
+            null as teacher_id,
+            sa.form_long_name as rubric_name,
+            concat(sa.academic_year, sa.form_term) as rubric_id,
+            sa.observer_name,
+            null as observer_email,
+            sa.observed_at,
+            null as glows,
+            null as grows,
+            null as score_measurement_id,
+            sa.row_score_value,
+            null as last_modified_date,
+            null as last_modified_date_lead,
+            sa.measurement_name,
+            null as text_box,
+            sa.score_type as score_measurement_type,
+            sa.measurement_name as score_measurement_shortname,
+            sa.etr_score,
+            sa.so_score,
+            sa.overall_score,
+            sa.form_term,
+            'PM' as form_type,
+            sa.academic_year,
+        from {{ ref("int_performance_management__scores_archive") }} as sa
     )
 
 select
-    m.employee_number,
-    safe_cast(m.observer_employee_number as int) as observer_employee_number,
-    m.observation_id,
-    m.teacher_id,
-    m.rubric_name,
-    m.rubric_id,
-    m.observer_name,
-    m.observer_email,
-    m.observed_at,
-    m.glows,
-    m.grows,
-    m.score_measurement_id,
-    m.row_score_value,
-    m.last_modified_date,
-    m.last_modified_date_lead,
-    m.measurement_name,
-    m.text_box,
-    m.score_measurement_type,
-    m.score_measurement_shortname,
-    sp.etr_score,
-    sp.so_score,
-    if(
-        m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
-    ) as overall_score,
-    null as form_term,
-    null as form_type,
-    null as academic_year,
-from measurements as m
-left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
-
-union all
-select
-    sa.employee_number,
-    sa.observer_employee_number,
-    'archive' as observation_id,
-    null as teacher_id,
-    sa.form_long_name as rubric_name,
-    concat(sa.academic_year, sa.form_term) as rubric_id,
-    sa.observer_name,
-    null as observer_email,
-    sa.observed_at,
-    null as glows,
-    null as grows,
-    null as score_measurement_id,
-    sa.row_score_value,
-    null as last_modified_date,
-    null as last_modified_date_lead,
-    sa.measurement_name,
-    null as text_box,
-    sa.score_type as score_measurement_type,
-    sa.measurement_name as score_measurement_shortname,
-    sa.etr_score,
-    sa.so_score,
-    sa.overall_score,
-    sa.form_term,
-    'PM' as form_type,
-    sa.academic_year,
-from {{ ref("int_performance_management__scores_archive") }} as sa
+    employee_number,
+    observer_employee_number,
+    observation_id,
+    teacher_id,
+    rubric_name,
+    rubric_id,
+    observer_name,
+    observer_email,
+    observed_at,
+    glows,
+    grows,
+    score_measurement_id,
+    row_score_value,
+    last_modified_date,
+    last_modified_date_lead,
+    measurement_name,
+    text_box,
+    score_measurement_type,
+    score_measurement_shortname,
+    etr_score,
+    so_score,
+    overall_score,
+    coalesce(od.form_term, t.code) as form_term,
+    coalesce(od.form_type, t.type) as form_type,
+    coalesce(od.academic_year, t.academic_year) as academic_year,
+from {{ ref("stg_reporting__terms") }} as t
+join
+    observation_details as od
+    on t.name = od.rubric_name
+    and od.observed_at between t.start_date and t.end_date
+    and t.lockbox_date between od.last_modified_date and od.last_modified_date_lead
