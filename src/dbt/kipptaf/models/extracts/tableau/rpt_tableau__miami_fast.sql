@@ -46,7 +46,10 @@ with
                 max(percent_correct) for module_number
                 in ('QAF1', 'QAF2', 'QAF3', 'QAF4')
             )
-        where module_type = 'QAF' and academic_year = {{ var("current_academic_year") }}
+        where
+            module_type = 'QAF'
+            and academic_year = {{ var("current_academic_year") }}
+            and response_type = 'overall'
     ),
 
     scale_crosswalk as (
