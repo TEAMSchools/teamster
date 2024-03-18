@@ -27,6 +27,7 @@ with
             ap.matriculation_decision = 'Matriculated (Intent to Enroll)'
             and cn.academic_year = {{ var("current_academic_year") }}
     )
+    
 select
     contact_id,
     last_name,
