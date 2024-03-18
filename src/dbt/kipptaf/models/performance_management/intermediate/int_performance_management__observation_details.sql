@@ -100,7 +100,9 @@ select
     m.score_measurement_shortname,
     sp.etr_score,
     sp.so_score,
-    if(m.observed_at <= date(2023,07,01), sp.overall_score, m.overall_score) as overall_score,
+    if(
+        m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
+    ) as overall_score,
     null as form_type,
     null as form_term,
     null as academic_year,
@@ -115,7 +117,7 @@ select
     'archive' as observation_id,
     null as teacher_id,
     sa.form_long_name as rubric_name,
-    concat(sa.academic_year,sa.form_term) as rubric_id,
+    concat(sa.academic_year, sa.form_term) as rubric_id,
     sa.observer_name,
     null as observer_email,
     sa.observed_at,
