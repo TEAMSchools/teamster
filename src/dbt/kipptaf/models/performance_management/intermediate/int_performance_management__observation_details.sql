@@ -165,9 +165,46 @@ select
     coalesce(od.form_term, t.code) as form_term,
     coalesce(od.form_type, t.type) as form_type,
     coalesce(od.academic_year, t.academic_year) as academic_year,
-from {{ ref("stg_reporting__terms") }} as t
-join
-    observation_details as od
-    on t.name = od.rubric_name
+from observation_details as od
+inner join
+    {{ ref("stg_reporting__terms") }} as t
+    on REGEXP_CONTAINS(od.rubric_name,t.name)
     and od.observed_at between t.start_date and t.end_date
     and t.lockbox_date between od.last_modified_date and od.last_modified_date_lead
+
+
+-- union all
+
+-- select
+--     employee_number,
+--     observer_employee_number,
+--     observation_id,
+--     teacher_id,
+--     rubric_name,
+--     rubric_id,
+--     observer_name,
+--     observer_email,
+--     observed_at,
+--     glows,
+--     grows,
+--     score_measurement_id,
+--     row_score_value,
+--     last_modified_date,
+--     last_modified_date_lead,
+--     measurement_name,
+--     text_box,
+--     score_measurement_type,
+--     score_measurement_shortname,
+--     etr_score,
+--     so_score,
+--     overall_score,
+--     coalesce(od.form_term, t.code) as form_term,
+--     coalesce(od.form_type, t.type) as form_type,
+--     coalesce(od.academic_year, t.academic_year) as academic_year,
+-- from observation_details as od
+-- left join
+--     {{ ref("stg_reporting__terms") }} as t
+--     on REGEXP_CONTAINS(od.rubric_name,t.name)
+--     and od.observed_at between t.start_date and t.end_date
+--     --and t.lockbox_date between od.last_modified_date and od.last_modified_date_lead
+-- where t.type in ('WT','O3')
