@@ -398,4 +398,4 @@ extraManifests:
       name: op-illuminate-odbc
       namespace: dagster-cloud
     spec:
-      itemPath: vaults/Data Team/items/Illuminate ODBC/password
+      itemPath: vaults/Data Team/items/Illuminate ODBC
