@@ -19,3 +19,8 @@ def illuminate_table_assets(context, sling: SlingResource):
 
     for row in sling.stream_raw_logs():
         context.log.info(row)
+
+
+_all = [
+    illuminate_table_assets,
+]
