@@ -80,7 +80,6 @@ with
 
     prev_pm3 as (
         select
-            f.academic_year + 1 as academic_year_next,
             f.student_id,
             f.assessment_subject,
             f.scale_score as prev_pm3_scale,
@@ -89,13 +88,15 @@ with
             i.sublevel_name as prev_pm3_sublevel_name,
             i.sublevel_number as prev_pm3_sublevel_number,
 
+            f.academic_year + 1 as academic_year_next,
             round(
                 rank() over (
                     partition by
                         f.academic_year, f.assessment_grade, f.assessment_subject
                     order by f.scale_score asc
                 ) / count(*) over (
-                    partition by f.academic_year, assessment_grade, assessment_subject
+                    partition by
+                        f.academic_year, f.assessment_grade, f.assessment_subject
                 ),
                 4
             ) as fldoe_percentile_rank,
@@ -107,7 +108,7 @@ with
             and f.scale_score between i.scale_low and i.scale_high
             and i.source_system = 'FAST_NEW'
             and i.destination_system = 'FL'
-        where administration_window = 'PM3'
+        where f.administration_window = 'PM3'
     )
 
 select
