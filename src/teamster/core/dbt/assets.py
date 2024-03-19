@@ -56,7 +56,8 @@ def build_dbt_external_source_assets(
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },  # type: ignore
             auto_materialize_policy=AutoMaterializePolicy.eager().without_rules(
-                AutoMaterializeRule.skip_on_parent_missing()
+                AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
             ),
         )
         for source in external_sources
