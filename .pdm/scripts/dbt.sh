@@ -14,5 +14,6 @@ elif [[ ${dbt_command} == "deps" ]]; then
 elif [[ ${dbt_command} == "parse" ]]; then
   dbt "${dbt_command}" --project-dir src/dbt/"${project}"
 else
+  echo dbt "${dbt_command}" --project-dir src/dbt/"${project}" "${flags}"
   dbt "${dbt_command}" --project-dir src/dbt/"${project}" "${flags}"
 fi
