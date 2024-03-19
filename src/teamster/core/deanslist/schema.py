@@ -1,4 +1,155 @@
+import json
+
+from py_avro_schema import generate
+from pydantic import BaseModel
+
 from teamster.core.utils.functions import get_avro_record_schema
+
+
+class Date(BaseModel):
+    date: str
+    timezone_type: int
+    timezone: str
+
+
+class EnrollmentObject(BaseModel):
+    EnrollmentID: str
+    GradeLevelID: str
+    GradeLevelName: str
+    DepartmentID: str
+    DepartmentName: str
+    BehaviorPlanID: str
+    BehaviorPlanName: str
+    GradeLevelKey: str
+
+    StartDate: Date
+    EndDate: Date
+
+    AcademicYearID: str | None = None
+    CreateByName: str | None = None
+    CreateDate: str | None = None
+    TermByName: str | None = None
+    TermDate: str | None = None
+    YearName: str | None = None
+
+
+class PhoneNumber(BaseModel):
+    SPhoneID: str
+    PhoneNumber: str
+    Label: str
+    AutoDial: bool
+    AutoSMS: bool
+
+    TextDeliverability: str | None = None
+
+
+class Parent(BaseModel):
+    SParentID: str
+    StudentID: str
+    FirstName: str
+    MiddleName: str
+    LastName: str
+    Relationship: str
+    Guardian: bool
+    IsEmergency: bool
+    ResidesWith: bool
+    CanPickup: bool
+    ReceivesMail: bool
+    Email: str
+    AutoEmail: bool
+    Provider: str
+    AutoLanguageCode: str
+
+    PhoneNumbers: list[PhoneNumber]
+
+    IntegrationKey: str | None = None
+    LanguageID: str | None = None
+    Language: str | None = None
+    LanguageCode: str | None = None
+    log: str | None = None
+    Sort: str | None = None
+
+
+class CustomField(BaseModel):
+    CustomFieldID: str
+    SourceType: str
+    FieldType: str
+    FieldName: str
+    StringValue: str
+    SourceID: str
+    IsFrontEnd: str
+    IsRequired: str
+    MinUserLevel: str
+    InputName: str
+
+    FieldCategory: str | None = None
+    FieldKey: str | None = None
+    InputHTML: str | None = None
+    LabelHTML: str | None = None
+    NumValue: str | None = None
+    Options: str | None = None
+    Value: str | None = None
+
+
+class Student(BaseModel):
+    StudentID: str
+    Department: str
+    FirstName: str
+    MiddleName: str
+    LastName: str
+    LegalFirstName: str
+    StudentSchoolID: str
+    SecondaryStudentID: str
+    EnrollmentStatus: str
+    IsNSLP: str
+    GenderLetter: str
+    Ethnicity: str
+    StreetAddress1: str
+    StreetAddress2: str
+    City: str
+    State: str
+    ZipCode: str
+    BirthDate: int | str
+
+    Enrollment: EnrollmentObject | None = None
+
+    BehaviorPlan: str | None = None
+    CellPhone: str | None = None
+    DepartmentID: str | None = None
+    DLPS_ValidationCode: str | None = None
+    ELLStatus: str | None = None
+    Email: str | None = None
+    Emoji: str | None = None
+    EnrollmentID: str | None = None
+    Gender: str | None = None
+    GradeLevel: str | None = None
+    GradeLevelID: str | None = None
+    GradeLevelKey: str | None = None
+    GradeLevelShort: str | None = None
+    GradeLevelSort: str | None = None
+    HomeLanguage: str | None = None
+    HomeLanguageCode: str | None = None
+    HomeLanguageID: str | None = None
+    Homeroom: str | None = None
+    HomeroomID: str | None = None
+    IntegrationID: str | None = None
+    Is504: bool | None = None
+    MessageMerge1: str | None = None
+    MessageMerge2: str | None = None
+    MessageMerge3: str | None = None
+    PhotoFile: str | None = None
+    PhotoFileUrl: str | None = None
+    PreferredName: str | None = None
+    Pronouns: str | None = None
+    SecondaryIntegrationID: str | None = None
+    SourceSchoolID: str | None = None
+    SPEDPlan: str | None = None
+    TransportationNotes: str | None = None
+
+    Notes: list[str | None]
+    Parents: list[Parent | None]
+    CustomFields: list[CustomField | None]
+
 
 TIMESTAMP_FIELDS = {
     "v1": [
@@ -756,4 +907,5 @@ ASSET_FIELDS = {
     "followups": FOLLOWUP_FIELDS,
     "reconcile_attendance": RECONCILE_ATTENDANCE_FIELDS,
     "reconcile_suspensions": RECONCILE_SUSPENSIONS_FIELDS,
+    "students": json.loads(generate(py_type=Student, namespace="student")),
 }

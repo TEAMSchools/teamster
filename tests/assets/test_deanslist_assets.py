@@ -205,5 +205,10 @@ def test_asset_deanslist_students():
         partition_type="static",
         asset_name="students",
         api_version="v1",
-        params={"IncludeCustomFields": "Y", "IncludeUnenrolled": "Y"},
+        params={
+            "IncludeCustomFields": "Y",
+            "IncludeUnenrolled": "Y",
+            "IncludeParents": "Y",
+        },
+        # partition_key="120",
     )
