@@ -1,3 +1,16 @@
+with
+    union_relations as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source("illuminate", "psat_2023"),
+                    source("illuminate", "psat_2024"),
+                ],
+                where="not _fivetran_deleted",
+            )
+        }}
+    )
+
 select
     student_id,
 
@@ -119,5 +132,4 @@ select
     nullif(psat_2023_apusgovpol, '') as ap_usgovpol,
     nullif(psat_2023_apushist, '') as ap_ushist,
     nullif(psat_2023_apworldhist, '') as ap_worldhist,
-from {{ source("illuminate", "psat_2023") }}
-where not _fivetran_deleted
+from union_relations
