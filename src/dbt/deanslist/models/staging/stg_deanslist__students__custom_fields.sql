@@ -1,5 +1,7 @@
 select
+    s._dagster_partition_key as school_id,
     s.studentid as student_id,
+    s.studentschoolid as student_school_id,
 
     cf.numvalue as num_value,
 
