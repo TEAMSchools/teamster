@@ -5,10 +5,8 @@ with
             u2.internal_id as observer_employee_number,
             o.observation_id,
             o.teacher_id,
-            o.rubric_name,
+            o.rubric_name as form_long_name,
             o.rubric_id,
-            o.observer_name,
-            o.observer_email,
             o.score as overall_score,
             safe_cast(o.observed_at as date) as observed_at,
             array_to_string(o.list_two_column_a, '|') as glows,
@@ -47,9 +45,10 @@ with
             }} as b
             on ohos.observation_id = b.observation_id
             and ohos.measurement = b.measurement
-        where o.is_published
-        /*2023 is first year with new rubric*/
-        and safe_cast(o.observed_at as date) >= date(2023,07,01)
+        where
+            o.is_published
+            /* 2023 is first year with new rubric*/
+            and safe_cast(o.observed_at as date) >= date(2023, 07, 01)
     ),
     /* for 2024, move 2023 scores to archive view and delete these CTEs to use calculated overall scores from SMG */
     pm_overall_scores_avg as (
@@ -82,34 +81,33 @@ with
             safe_cast(m.observer_employee_number as int) as observer_employee_number,
             m.observation_id,
             m.teacher_id,
-            m.rubric_name,
+            m.form_long_name,
             m.rubric_id,
-            m.observer_name,
-            m.observer_email,
             m.observed_at,
             m.glows,
             m.grows,
             m.score_measurement_id,
             m.row_score_value,
-            m.last_modified_date,
-            m.last_modified_date_lead,
             m.measurement_name,
             m.text_box,
             m.score_measurement_type,
             m.score_measurement_shortname,
             sp.etr_score,
             sp.so_score,
-            null as form_term,
-            null as form_type,
-            null as academic_year,
             if(
                 m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
             ) as overall_score,
-            row_number() over (
-                partition by m.observation_id, m.score_measurement_id
-                order by m.observed_at desc) as rn_submission,
+            t.code as form_term,
+            t.type as form_type,
+            t.academic_year as academic_year,
         from measurements as m
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
+        left join
+            {{ ref("stg_reporting__terms") }} as t
+            on regexp_contains(m.form_long_name, t.name)
+            and m.observed_at between t.start_date and t.end_date
+            and t.lockbox_date
+            between m.last_modified_date and m.last_modified_date_lead
 
         union all
         select
@@ -117,17 +115,13 @@ with
             sa.observer_employee_number,
             'archive' as observation_id,
             null as teacher_id,
-            sa.form_long_name as rubric_name,
+            sa.form_long_name,
             concat(sa.academic_year, sa.form_term) as rubric_id,
-            sa.observer_name,
-            null as observer_email,
             sa.observed_at,
             null as glows,
             null as grows,
-            null as score_measurement_id,
+            sa.measurement_name as score_measurement_id,
             sa.row_score_value,
-            null as last_modified_date,
-            null as last_modified_date_lead,
             sa.measurement_name,
             null as text_box,
             sa.score_type as score_measurement_type,
@@ -138,27 +132,21 @@ with
             sa.form_term,
             'PM' as form_type,
             sa.academic_year,
-            1 as rn_submission,
         from {{ ref("int_performance_management__scores_archive") }} as sa
-    ),
+    )
 
-test as (
 select
     employee_number,
     observer_employee_number,
     observation_id,
     teacher_id,
-    rubric_name,
+    form_long_name,
     rubric_id,
-    observer_name,
-    observer_email,
     observed_at,
     glows,
     grows,
     score_measurement_id,
     row_score_value,
-    last_modified_date,
-    last_modified_date_lead,
     measurement_name,
     text_box,
     score_measurement_type,
@@ -166,18 +154,18 @@ select
     etr_score,
     so_score,
     overall_score,
-    coalesce(od.form_term, t.code) as form_term,
-    coalesce(od.form_type, t.type) as form_type,
-    coalesce(od.academic_year, t.academic_year) as academic_year,
-    rn_submission,
-
-from observation_details as od
-left join
-    {{ ref("stg_reporting__terms") }} as t
-    on regexp_contains(od.rubric_name, t.name)
-    and od.observed_at between t.start_date and t.end_date
-    and t.lockbox_date between od.last_modified_date and od.last_modified_date_lead
-
-)
-
-select rubric_name,max(rn_submission) from test group by rubric_name
+    form_term,
+    form_type,
+    academic_year,
+    case
+        when academic_year >= 2023 and form_type = 'PM'
+        then
+            row_number() over (
+                partition by rubric_id, form_term, employee_number, score_measurement_id
+                order by observed_at desc
+            )
+        when academic_year < 2023 and form_type = 'PM'
+        then 1
+        else null
+    end as rn_submission,
+from observation_details
