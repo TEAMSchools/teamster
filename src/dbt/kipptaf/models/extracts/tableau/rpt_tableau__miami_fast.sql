@@ -206,6 +206,23 @@ select
 
     if(p.fldoe_percentile_rank < .255, true, false) as is_low_25,
 
+    case
+        when
+            p.prev_pm3_scale is not null
+            and cwf.sublevel_number > p.prev_pm3_sublevel_number
+        then true
+        when p.prev_pm3_scale is not null and cwf.sublevel_number = 8
+        then true
+        when
+            p.prev_pm3_scale is not null
+            and p.prev_pm3_sublevel_number in (6, 7)
+            and p.prev_pm3_sublevel_number = cwf.sublevel_number
+            and ft.scale_score > p.prev_pm3_scale
+        then true
+        when p.prev_pm3_scale is not null
+        then false
+    end as is_fldoe_growth,
+
     row_number() over (
         partition by
             co.student_number,

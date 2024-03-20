@@ -1,4 +1,8 @@
 packages:
   - package: dbt-labs/dbt_external_tables
     version: 0.8.7
-sha1_hash: 43396a15f2446230ead7d97c8b189d37a87d9209
+  - local: ../deanslist
+  - local: ../teamster_utils
+  - package: dbt-labs/dbt_utils
+    version: 1.1.1
+sha1_hash: 738b7bac9aba7dee57b510ec796b1ae965b24dad
