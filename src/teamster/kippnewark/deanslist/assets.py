@@ -15,11 +15,11 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
+static_partitions_def = StaticPartitionsDefinition(
+    ["121", "122", "123", "124", "125", "127", "128", "129", "378", "380", "522", "523"]
+)
+
 config_dir = pathlib.Path(__file__).parent / "config"
-
-school_ids = config_from_files([f"{config_dir}/school_ids.yaml"])["school_ids"]
-
-static_partitions_def = StaticPartitionsDefinition(school_ids)
 
 static_partition_assets = [
     build_deanslist_static_partition_asset(

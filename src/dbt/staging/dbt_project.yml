@@ -19,11 +19,15 @@ target-path: target # directory which will store compiled SQL files
 clean-targets: # directories to be removed by `dbt clean`
   - target
   - dbt_packages
+
 vars:
-  cloud_storage_uri_base: gs://teamster-staging/dagster
+  current_academic_year: 2023
+  current_fiscal_year: 2024
+  local_timezone: America/New_York
+  cloud_storage_uri_base: gs://teamster-staging/dagster/staging
+  deanslist_schema: staging_deanslist
 #   current_academic_year: 2023
 #   current_fiscal_year: 2024
-#   deanslist_schema: staging_deanslist
 #   edplan_schema: staging_edplan
 #   powerschool_schema: staging_powerschool
 #   titan_schema: staging_titan
