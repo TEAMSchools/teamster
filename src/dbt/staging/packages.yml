@@ -2,3 +2,4 @@ packages:
   # https://github.com/dbt-labs/dbt-external-tables
   - package: dbt-labs/dbt_external_tables
     version: 0.8.7
+  - local: ../deanslist
