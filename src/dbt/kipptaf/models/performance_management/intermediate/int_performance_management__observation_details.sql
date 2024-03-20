@@ -16,14 +16,14 @@ with
             ohos.last_modified_date_lead,
 
             m.name as measurement_name,
+            array_to_string(o.list_two_column_a, '|') as glows,
+            array_to_string(o.list_two_column_b, '|') as grows,
             regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
             regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
 
             regexp_replace(
                 regexp_replace(b.value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
-            array_to_string(o.list_two_column_a, '|') as glows,
-            array_to_string(o.list_two_column_b, '|') as grows,
 
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
