@@ -9,8 +9,6 @@ with
             o.rubric_id,
             o.score as overall_score,
             safe_cast(o.observed_at as date) as observed_at,
-            array_to_string(o.list_two_column_a, '|') as glows,
-            array_to_string(o.list_two_column_b, '|') as grows,
 
             ohos.measurement as score_measurement_id,
             ohos.value_score as row_score_value,
@@ -24,6 +22,8 @@ with
             regexp_replace(
                 regexp_replace(b.value, r'<[^>]*>', ''), r'&nbsp;', ' '
             ) as text_box,
+            array_to_string(o.list_two_column_a, '|') as glows,
+            array_to_string(o.list_two_column_b, '|') as grows,
 
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
@@ -50,7 +50,8 @@ with
             /* 2023 is first year with new rubric*/
             and safe_cast(o.observed_at as date) >= date(2023, 07, 01)
     ),
-    /* for 2024, move 2023 scores to archive view and delete these CTEs to use calculated overall scores from SMG */
+
+    /* for 2024, move 2023 scores to archive view, delete CTEs*/
     pm_overall_scores_avg as (
         select
             observation_id,
@@ -99,7 +100,7 @@ with
             ) as overall_score,
             t.code as form_term,
             t.type as form_type,
-            t.academic_year as academic_year,
+            t.academic_year,
         from measurements as m
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
         left join
@@ -166,6 +167,5 @@ select
             )
         when academic_year < 2023 and form_type = 'PM'
         then 1
-        else null
     end as rn_submission,
 from observation_details

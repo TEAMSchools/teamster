@@ -17,7 +17,7 @@ with
         union all
 
         select distinct
-            safe_cast(employee_number as int64),
+            safe_cast(employee_number as int64) as employee_number,
             observation_id,
             academic_year,
             form_term,
@@ -68,7 +68,7 @@ with
         union all
 
         select
-            safe_cast(employee_number as int64),
+            safe_cast(employee_number as int64) as employee_number,
             'overall' as observation_id,
             academic_year,
             'PM4' as form_term,
