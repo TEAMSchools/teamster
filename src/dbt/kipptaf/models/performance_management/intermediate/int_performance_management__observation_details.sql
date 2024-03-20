@@ -47,10 +47,9 @@ with
             }} as b
             on ohos.observation_id = b.observation_id
             and ohos.measurement = b.measurement
-        where
-            o.is_published
-            /* 23-24 first year of new rubric*/
-            and safe_cast(o.observed_at as date) > date(2023, 07, 01)
+        where o.is_published
+        /*2023 is first year with new rubric*/
+        and safe_cast(o.observed_at as date) >= date(2023,07,01)
     ),
     /* for 2024, move 2023 scores to archive view and delete these CTEs to use calculated overall scores from SMG */
     pm_overall_scores_avg as (
@@ -100,12 +99,15 @@ with
             m.score_measurement_shortname,
             sp.etr_score,
             sp.so_score,
-            if(
-                m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
-            ) as overall_score,
             null as form_term,
             null as form_type,
             null as academic_year,
+            if(
+                m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
+            ) as overall_score,
+            row_number() over (
+                partition by m.observation_id, m.score_measurement_id
+                order by m.observed_at desc) as rn_submission,
         from measurements as m
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
 
@@ -136,9 +138,11 @@ with
             sa.form_term,
             'PM' as form_type,
             sa.academic_year,
+            1 as rn_submission,
         from {{ ref("int_performance_management__scores_archive") }} as sa
-    )
+    ),
 
+test as (
 select
     employee_number,
     observer_employee_number,
@@ -165,45 +169,15 @@ select
     coalesce(od.form_term, t.code) as form_term,
     coalesce(od.form_type, t.type) as form_type,
     coalesce(od.academic_year, t.academic_year) as academic_year,
+    rn_submission,
+
 from observation_details as od
-inner join
+left join
     {{ ref("stg_reporting__terms") }} as t
     on regexp_contains(od.rubric_name, t.name)
     and od.observed_at between t.start_date and t.end_date
     and t.lockbox_date between od.last_modified_date and od.last_modified_date_lead
 
-    -- union all
-    -- select
-    -- employee_number,
-    -- observer_employee_number,
-    -- observation_id,
-    -- teacher_id,
-    -- rubric_name,
-    -- rubric_id,
-    -- observer_name,
-    -- observer_email,
-    -- observed_at,
-    -- glows,
-    -- grows,
-    -- score_measurement_id,
-    -- row_score_value,
-    -- last_modified_date,
-    -- last_modified_date_lead,
-    -- measurement_name,
-    -- text_box,
-    -- score_measurement_type,
-    -- score_measurement_shortname,
-    -- etr_score,
-    -- so_score,
-    -- overall_score,
-    -- coalesce(od.form_term, t.code) as form_term,
-    -- coalesce(od.form_type, t.type) as form_type,
-    -- coalesce(od.academic_year, t.academic_year) as academic_year,
-    -- from observation_details as od
-    -- left join
-    -- {{ ref("stg_reporting__terms") }} as t
-    -- on REGEXP_CONTAINS(od.rubric_name,t.name)
-    -- and od.observed_at between t.start_date and t.end_date
-    -- --and t.lockbox_date between od.last_modified_date and od.last_modified_date_lead
-    -- where t.type in ('WT','O3')
-    
+)
+
+select rubric_name,max(rn_submission) from test group by rubric_name
