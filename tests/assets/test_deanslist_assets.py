@@ -210,5 +210,5 @@ def test_asset_deanslist_students():
             "IncludeUnenrolled": "Y",
             "IncludeParents": "Y",
         },
-        # partition_key="120",
+        partition_key="473",
     )

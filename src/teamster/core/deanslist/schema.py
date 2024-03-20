@@ -85,7 +85,7 @@ class CustomField(BaseModel):
     FieldKey: str | None = None
     InputHTML: str | None = None
     LabelHTML: str | None = None
-    NumValue: str | None = None
+    NumValue: float | None = None
     Options: str | None = None
     StringValue: str | None = None
     Value: str | None = None
@@ -102,10 +102,8 @@ class Student(BaseModel):
     SecondaryStudentID: str
     EnrollmentStatus: str
     IsNSLP: str
-    GenderLetter: str
     Ethnicity: str
     StreetAddress1: str
-    StreetAddress2: str
     City: str
     State: str
     ZipCode: str
@@ -122,6 +120,7 @@ class Student(BaseModel):
     Emoji: str | None = None
     EnrollmentID: str | None = None
     Gender: str | None = None
+    GenderLetter: str | None = None
     GradeLevel: str | None = None
     GradeLevelID: str | None = None
     GradeLevelKey: str | None = None
@@ -144,6 +143,7 @@ class Student(BaseModel):
     SecondaryIntegrationID: str | None = None
     SourceSchoolID: str | None = None
     SPEDPlan: str | None = None
+    StreetAddress2: str | None = None
     TransportationNotes: str | None = None
 
     Notes: list[str | None]
