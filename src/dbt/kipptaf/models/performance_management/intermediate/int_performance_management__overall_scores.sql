@@ -2,6 +2,7 @@ with
     all_scores as (
         select
             employee_number,
+            'archive' as observation_id,
             academic_year,
             form_term,
             etr_score,
@@ -17,6 +18,7 @@ with
 
         select distinct
             safe_cast(employee_number as int64),
+            observation_id,
             academic_year,
             form_term,
             etr_score,
@@ -67,6 +69,7 @@ with
 
         select
             safe_cast(employee_number as int64),
+            'overall' as observation_id,
             academic_year,
             'PM4' as form_term,
             avg(etr_score) as etr_score,
@@ -114,6 +117,7 @@ with
 
 select
     employee_number,
+    observation_id,
     academic_year,
     form_term as pm_term,
     etr_score,

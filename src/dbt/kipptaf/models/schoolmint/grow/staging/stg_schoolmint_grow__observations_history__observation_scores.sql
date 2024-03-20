@@ -14,3 +14,4 @@ select
     os.checkboxes as checkboxes,
 from {{ ref("stg_schoolmint_grow__observations_history") }} as o
 cross join unnest(o.observation_scores) as os
+where last_modified_date <> '9999-12-31'

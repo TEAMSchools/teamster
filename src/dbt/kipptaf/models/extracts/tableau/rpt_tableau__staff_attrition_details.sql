@@ -342,6 +342,6 @@ select distinct
 from ly_deduped as l
 left join
     pm_scores as pm
-    on l.employee_number = pm.employee_number
+    on safe_cast(l.employee_number as string) = pm.employee_number
     and l.academic_year = pm.academic_year
 where l.dupe_check != 'dupe'
