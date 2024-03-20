@@ -51,9 +51,12 @@ def build_deanslist_static_partition_asset(
         )
 
         data = endpoint_content["data"]
-        schema = get_avro_record_schema(
-            name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-        )
+        if asset_name == "students":
+            schema = ASSET_FIELDS[asset_name]
+        else:
+            schema = get_avro_record_schema(
+                name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+            )
 
         yield Output(
             value=(data, schema), metadata={"records": endpoint_content["row_count"]}
