@@ -9,6 +9,8 @@ with
             o.rubric_id,
             o.score as overall_score,
             safe_cast(o.observed_at as date) as observed_at,
+            array_to_string(o.list_two_column_a, '|') as glows,
+            array_to_string(o.list_two_column_b, '|') as grows,
 
             ohos.measurement as score_measurement_id,
             ohos.value_score as row_score_value,
@@ -16,8 +18,6 @@ with
             ohos.last_modified_date_lead,
 
             m.name as measurement_name,
-            array_to_string(o.list_two_column_a, '|') as glows,
-            array_to_string(o.list_two_column_b, '|') as grows,
             regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
             regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
 
@@ -95,12 +95,12 @@ with
             m.score_measurement_shortname,
             sp.etr_score,
             sp.so_score,
-            if(
-                m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
-            ) as overall_score,
             t.code as form_term,
             t.type as form_type,
             t.academic_year,
+            if(
+                m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
+            ) as overall_score,
         from measurements as m
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
         left join
@@ -129,10 +129,10 @@ with
             sa.measurement_name as score_measurement_shortname,
             sa.etr_score,
             sa.so_score,
-            sa.overall_score,
             sa.form_term,
             'PM' as form_type,
             sa.academic_year,
+            sa.overall_score,
         from {{ ref("int_performance_management__scores_archive") }} as sa
     )
 
@@ -167,5 +167,6 @@ select
             )
         when academic_year < 2023 and form_type = 'PM'
         then 1
+
     end as rn_submission,
 from observation_details
