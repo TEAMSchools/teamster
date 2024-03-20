@@ -82,3 +82,10 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/users/"
             format: AVRO
             enable_logical_types: true
+      - name: src_deanslist__students
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/students/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/students/"
+            format: AVRO
+            enable_logical_types: true

@@ -198,3 +198,17 @@ def test_asset_deanslist_comm_log():
 
 def test_asset_deanslist_followups():
     _test_asset(partition_type="fiscal", asset_name="followups", api_version="v1")
+
+
+def test_asset_deanslist_students():
+    _test_asset(
+        partition_type="static",
+        asset_name="students",
+        api_version="v1",
+        params={
+            "IncludeCustomFields": "Y",
+            "IncludeUnenrolled": "Y",
+            "IncludeParents": "Y",
+        },
+        partition_key="473",
+    )
