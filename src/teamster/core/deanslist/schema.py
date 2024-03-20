@@ -75,7 +75,6 @@ class CustomField(BaseModel):
     SourceType: str
     FieldType: str
     FieldName: str
-    StringValue: str
     SourceID: str
     IsFrontEnd: str
     IsRequired: str
@@ -88,6 +87,7 @@ class CustomField(BaseModel):
     LabelHTML: str | None = None
     NumValue: str | None = None
     Options: str | None = None
+    StringValue: str | None = None
     Value: str | None = None
 
 
