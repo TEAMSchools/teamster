@@ -3,8 +3,12 @@ target: BIGQUERY_TEAMSTER
 
 defaults:
   mode: incremental
-  object: "{stream_schema}_{stream_table}"
+  object: "staging_{source_name}.{stream_schema}_{stream_table}"
+  sql: |
+    select *, xmin from {stream_schema}.{stream_table}
+    where xid::text::bigint > coalesce({incremental_value}, 0)
 
 streams:
   dna_assessments.assessments:
     primary_key: assessment_id
+    update_key: xmin
