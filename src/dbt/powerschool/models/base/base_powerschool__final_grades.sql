@@ -21,6 +21,12 @@ with
             tb.storecode,
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between tb.date1 and tb.date2,
+                true,
+                false
+            ) as termbin_is_current,
 
             if(
                 min(tb.storecode) over (partition by enr.cc_sectionid) like 'Q%',
@@ -64,6 +70,7 @@ with
             te.storecode,
             te.termbin_start_date,
             te.termbin_end_date,
+            te.termbin_is_current,
             te.term_weighted_points_possible,
 
             sg.grade as sg_letter_grade,
@@ -152,6 +159,7 @@ with
             storecode,
             termbin_start_date,
             termbin_end_date,
+            termbin_is_current,
             term_weighted_points_possible,
             sg_letter_grade,
             sg_exclude_from_gpa,
@@ -210,6 +218,7 @@ with
             storecode,
             termbin_start_date,
             termbin_end_date,
+            termbin_is_current,
             exclude_from_gpa,
             exclude_from_graduation,
             potential_credit_hours,
@@ -281,6 +290,7 @@ with
             storecode,
             termbin_start_date,
             termbin_end_date,
+            termbin_is_current,
             exclude_from_gpa,
             exclude_from_graduation,
             potential_credit_hours,
@@ -367,6 +377,7 @@ select
     y1.courses_gradescaleid_unweighted,
     y1.termbin_start_date,
     y1.termbin_end_date,
+    y1.termbin_is_current,
     y1.exclude_from_gpa,
     y1.sg_exclude_from_gpa,
     y1.courses_excludefromgpa,
