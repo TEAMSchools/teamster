@@ -4,12 +4,86 @@ target: BIGQUERY_TEAMSTER
 defaults:
   mode: incremental
   object: "staging_{source_name}_{stream_schema}.{stream_table}"
+  update_key: xmin
   sql: |
     select *, xmin
     from {stream_schema}.{stream_table}
     where xmin::text > coalesce({incremental_value}, '0') or xmin::text = '0'
 
 streams:
+  codes.dna_scopes:
+    primary_key: code_id
+  codes.dna_subject_areas:
+    primary_key: code_id
+  dna_assessments.agg_student_responses:
+    primary_key: student_assessment_id
+  dna_assessments.agg_student_responses_group:
+    primary_key:
+      - student_assessment_id
+      - reporting_group_id
+  dna_assessments.agg_student_responses_standard:
+    primary_key:
+      - student_assessment_id
+      - standard_id
+  dna_assessments.assessment_grade_levels:
+    primary_key: assessment_grade_level_id
+  dna_assessments.assessment_standards:
+    primary_key:
+      - assessment_id
+      - standard_id
   dna_assessments.assessments:
     primary_key: assessment_id
-    update_key: xmin
+  dna_assessments.assessments_reporting_groups:
+    primary_key: assessment_reporting_group_id
+  dna_assessments.field_standards:
+    primary_key:
+      - field_id
+      - standard_id
+  dna_assessments.fields:
+    primary_key: field_id
+  dna_assessments.fields_reporting_groups:
+    primary_key:
+      - field_id
+      - reporting_group_id
+  dna_assessments.performance_band_sets:
+    primary_key: performance_band_set_id
+  dna_assessments.performance_bands:
+    primary_key: performance_band_id
+  dna_assessments.reporting_groups:
+    primary_key: reporting_group_id
+  dna_assessments.students_assessments:
+    primary_key: student_assessment_id
+  dna_assessments.students_assessments_archive:
+    primary_key: student_assessment_id
+  dna_assessments.tags:
+    primary_key: tag_id
+  dna_repositories.expressions:
+    primary_key: expression_id
+  dna_repositories.fields:
+    primary_key: field_id
+  dna_repositories.repositories:
+    primary_key: repository_id
+  dna_repositories.repository_grade_levels:
+    primary_key: repo_grade_level_id
+  groups.group_student_aff:
+    primary_key: gsa_id
+  groups.groups:
+    primary_key: group_id
+  national_assessments.psat_2023:
+    primary_key: psat_2023_id
+  national_assessments.psat_2024:
+    primary_key: psat_2024_id
+  public.grade_levels:
+    primary_key: grade_level_id
+  public.sessions:
+    primary_key: session_id
+  public.student_session_aff:
+    primary_key: stu_sess_id
+  public.students:
+    primary_key: student_id
+  public.users:
+    primary_key: user_id
+  standards.standards:
+    primary_key: standard_id
+  standards.subjects:
+    primary_key: subject_id
