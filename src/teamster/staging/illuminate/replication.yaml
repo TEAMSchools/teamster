@@ -3,7 +3,7 @@ target: BIGQUERY_TEAMSTER
 
 defaults:
   mode: incremental
-  object: "staging_{source_name}.{stream_schema}_{stream_table}"
+  object: "staging_{source_name}_{stream_schema}.{stream_table}"
   sql: |
     select *, xmin from {stream_schema}.{stream_table}
     where xmin::text::bigint > coalesce({incremental_value}, 0)
