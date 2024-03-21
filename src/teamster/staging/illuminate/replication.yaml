@@ -6,7 +6,7 @@ defaults:
   object: "staging_{source_name}.{stream_schema}_{stream_table}"
   sql: |
     select *, xmin from {stream_schema}.{stream_table}
-    where xid::text::bigint > coalesce({incremental_value}, 0)
+    where xmin > coalesce({incremental_value}, 0)
 
 streams:
   dna_assessments.assessments:
