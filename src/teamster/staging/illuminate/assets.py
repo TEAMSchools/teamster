@@ -15,6 +15,7 @@ def illuminate_table_assets(context, sling: SlingResource):
     yield from sling.replicate(
         replication_config=replication_config,
         dagster_sling_translator=DagsterSlingTranslator(),
+        debug=True,
     )
 
     for row in sling.stream_raw_logs():
