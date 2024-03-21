@@ -1,8 +1,8 @@
 with
     measurements as (
         select
-            u.internal_id as employee_number,
-            u2.internal_id as observer_employee_number,
+            safe_cast(u.internal_id as int64) as employee_number,
+            safe_cast(u2.internal_id as int64) as observer_employee_number,
             o.observation_id,
             o.teacher_id,
             o.rubric_name as form_long_name,
@@ -112,7 +112,7 @@ with
 
         union all
         select
-            sa.employee_number,
+            safe_cast(sa.employee_number as int64),
             sa.observer_employee_number,
             'archive' as observation_id,
             null as teacher_id,
