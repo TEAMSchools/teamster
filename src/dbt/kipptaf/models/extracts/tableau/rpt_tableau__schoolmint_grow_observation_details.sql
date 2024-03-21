@@ -47,11 +47,12 @@ select
     /* past observers names */
     srh2.preferred_name_lastfirst as observer_name,
 
-from {{ ref("base_people__staff_roster_history") }} as sr
+from {{ ref("base_people__staff_roster") }} as sr
 cross join {{ ref("stg_reporting__terms") }} as rt
 left join
     {{ ref("int_performance_management__observation_details") }} as od
-    on rt.code = od.form_term
+    on sr.employee_number = od.employee_number
+    and rt.code = od.form_term
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.observation_id = os.observation_id
@@ -69,3 +70,6 @@ where
     sr.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
     and sr.assignment_status not in ('Terminated', 'Deceased')
     and rt.type in ('PM', 'O3', 'WT')
+    and rt.lockbox_date is not null
+
+/*check how measures are being joined*/
