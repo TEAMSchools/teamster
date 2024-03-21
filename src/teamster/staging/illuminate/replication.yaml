@@ -7,7 +7,7 @@ defaults:
   sql: |
     select *, xmin
     from {stream_schema}.{stream_table}
-    where xmin::text::bigint > coalesce({incremental_value}, 0) or xmin::text::bigint = 0
+    where xmin::text > coalesce({incremental_value}, '0') or xmin::text = '0'
 
 streams:
   dna_assessments.assessments:
