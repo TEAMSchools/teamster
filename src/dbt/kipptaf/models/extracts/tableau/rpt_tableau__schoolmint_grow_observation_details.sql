@@ -1,3 +1,4 @@
+
 select
     rt.type as form_type,
     rt.code as form_term,
@@ -37,7 +38,7 @@ select
     od.etr_score,
     od.so_score,
     od.overall_score,
-    od.academic_year,
+    od.academic_year as od_academic_year,
     od.rn_submission,
 
     os.etr_tier,
@@ -53,6 +54,7 @@ left join
     {{ ref("int_performance_management__observation_details") }} as od
     on sr.employee_number = od.employee_number
     and rt.code = od.form_term
+    and rt.academic_year = od.academic_year
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.observation_id = os.observation_id
@@ -70,6 +72,4 @@ where
     sr.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
     and sr.assignment_status not in ('Terminated', 'Deceased')
     and rt.type in ('PM', 'O3', 'WT')
-    and rt.lockbox_date is not null
 
-/*check how measures are being joined*/
