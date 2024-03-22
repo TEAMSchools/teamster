@@ -17,7 +17,7 @@ with
 
     )
 
-select
+select distinct
     s.employee_number,
     s.type as form_type,
     s.code as form_term,
