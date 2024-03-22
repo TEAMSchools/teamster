@@ -50,14 +50,14 @@ lint:
     - osv-scanner@1.7.0
     - oxipng@9.0.0
     - prettier@3.2.5
-    - ruff@0.3.3
+    - ruff@0.3.4
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.0.2
     - sqlfmt@0.21.2
     - svgo@3.2.0
     - taplo@0.8.1
-    - trufflehog@3.70.2
+    - trufflehog@3.70.3
     - yamllint@1.35.1
   definitions:
     - name: ruff
