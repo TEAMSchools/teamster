@@ -32,5 +32,4 @@ left join
         )
     )
 
-where sr.assignment_status not in ('Terminated', 'Deceased')
-  and sr.primary_indicator
+where sr.assignment_status not in ('Terminated', 'Deceased') and sr.primary_indicator
