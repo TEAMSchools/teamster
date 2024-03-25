@@ -93,10 +93,6 @@ dagsterCloudAgent:
     tag: ~
     pullPolicy: "Always"
 
-  # heartbeatTolerance is used to set how long the agent will run for without a hearbeat from the
-  # hosted cloud. Set heartbeatTolerance to overwrite the default.
-  # heartbeatTolerance: 300
-
   # initContainers are used for testing, since the host cloud will not be available while it is starting
   initContainers: []
 
@@ -132,6 +128,13 @@ dagsterCloudAgent:
   #   ENV_ONE: one
   #   ENV_TWO: two
   env: {}
+
+  # Additional sources of environment variables on the agent container. Follows the
+  # same format as the `envFrom` dictionary in a Kubernes pod container. Note that this
+  # configuration will not automatically be included in other pods that the agent
+  # creates - see the `workspace` section below to specify environment variables in those
+  # pods.
+  envFrom: []
 
   annotations: {}
   labels: {}
