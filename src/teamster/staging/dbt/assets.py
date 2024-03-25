@@ -13,9 +13,7 @@ dbt_assets = build_dbt_assets(
 )
 
 dbt_external_source_assets = build_dbt_external_source_assets(
-    code_location=CODE_LOCATION,
-    manifest=dbt_manifest,
-    dagster_dbt_translator=dagster_dbt_translator,
+    manifest=dbt_manifest, dagster_dbt_translator=dagster_dbt_translator
 )
 
 _all = [
