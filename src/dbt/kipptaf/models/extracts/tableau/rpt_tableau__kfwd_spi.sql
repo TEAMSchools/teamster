@@ -20,6 +20,8 @@ select
 
     ei.ugrad_status,
     ei.hs_account_name,
+    ei.ecc_account_name,
+    ei.ugrad_account_name,
 
     a.competitiveness_ranking,
     a.act25,
@@ -83,6 +85,7 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
+    if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 from {{ ref("int_kippadb__roster") }} as r
 inner join
     {{ ref("stg_kippadb__enrollment") }} as e
@@ -116,6 +119,8 @@ select
 
     null as ugrad_status,
     ei.hs_account_name,
+    null as ecc_account_name,
+    null as ugrad_account_name,
 
     a.competitiveness_ranking,
     a.act25,
@@ -147,6 +152,7 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
+    null as is_same_school,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__application") }} as a on r.contact_id = a.applicant
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student

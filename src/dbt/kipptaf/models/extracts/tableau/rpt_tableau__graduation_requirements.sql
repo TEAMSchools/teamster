@@ -22,11 +22,17 @@ with
             e.is_retained_year,
             e.is_retained_ever,
             e.student_email_google,
+
             adb.contact_id as kippadb_contact_id,
             adb.ktc_cohort,
+
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
+            s.sections_section_number as section_number,
+
+            discipline,
+
             safe_cast(e.state_studentnumber as int) as state_studentnumber,
             case
                 when e.spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
@@ -43,6 +49,7 @@ with
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
+        cross join unnest(['Math', 'ELA']) as discipline
         where
             e.rn_year = 1
             and e.academic_year = {{ var("current_academic_year") }}
@@ -56,10 +63,13 @@ with
         select
             b._dbt_source_relation,
             b.name as test_name,
+
             s.studentid,
             s.grade_level as assessment_grade_level,
+
             t.numscore as testscalescore,
             t.alphascore as testperformancelevel,
+
             r.name as testcode,
             case
                 r.name when 'ELAGP' then 'ELA' when 'MATGP' then 'Math'
@@ -92,10 +102,12 @@ with
     transfer_roster as (
         select
             e.student_number as localstudentidentifier,
+
             x.subject,
             x.testcode,
             x.testscalescore,
             x.discipline,
+
             safe_cast(e.state_studentnumber as int) as statestudentidentifier,
         from roster as e
         left join
@@ -145,7 +157,20 @@ with
             discipline
     ),
 
-    act_sat_official as (
+    psat10_unpivot as (
+        select local_student_id, score_type, score,
+        from
+            {{ ref("stg_illuminate__psat") }} unpivot (
+                score for score_type in (
+                    eb_read_write_section_score,
+                    math_test_score,
+                    math_section_score,
+                    reading_test_score
+                )
+            )
+    ),
+
+    act_sat_psat10_official as (
         select
             contact,
             test_type,
@@ -190,34 +215,85 @@ with
                 'sat_reading_test_score',
                 'sat_ebrw'
             )
+
+        union all
+
+        select
+            local_student_id as contact,
+            'PSAT10' as test_type,
+            score,
+            case
+                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                then 'ELA'
+                else 'Math'
+            end as discipline,
+            case
+                when score_type = 'reading_test_score'
+                then 'Reading'
+                when score_type = 'math_section_score'
+                then 'Math'
+                when score_type = 'math_test_score'
+                then 'Math Test'
+                when score_type = 'eb_read_write_section_score'
+                then 'EBRW'
+            end as subject,
+            case
+                when
+                    score_type in ('reading_test_score', 'math_test_score')
+                    and score >= 21
+                then true
+                when
+                    score_type in ('math_section_score', 'eb_read_write_section_score')
+                    and score >= 420
+                then true
+                else false
+            end as met_pathway_requirement,
+        from psat10_unpivot
     ),
 
     grad_options_append_final as (
         select
             r.student_number,
-            a.testcode as test_type,
+
             a.discipline,
             a.subject,
             safe_cast(a.testscalescore as string) as `value`,
             if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
-            'State Assessment' as grad_eligible_type,
+            a.testcode as test_type,
+            'State Assessment' as pathway_option,
         from roster as r
         inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
         union all
         select
             r.student_number,
-            a.test_type,
+
             a.discipline,
             a.subject,
             safe_cast(a.score as string) as `value`,
             a.met_pathway_requirement,
-            'ACT/SAT' as grad_eligible_type,
+            a.test_type,
+            'ACT/SAT' as pathway_option,
         from roster as r
-        inner join act_sat_official as a on r.kippadb_contact_id = a.contact
+        inner join act_sat_psat10_official as a on r.kippadb_contact_id = a.contact
+        where a.test_type in ('ACT', 'SAT')
         union all
         select
             r.student_number,
-            'Alternative' as test_type,
+
+            a.discipline,
+            a.subject,
+            safe_cast(a.score as string) as `value`,
+            a.met_pathway_requirement,
+            a.test_type,
+            'PSAT10' as pathway_option,
+        from roster as r
+        inner join
+            act_sat_psat10_official as a on cast(r.student_number as string) = a.contact
+        where a.test_type = 'PSAT10'
+        union all
+        select
+            r.student_number,
+
             case
                 a.subject when 'ela' then 'ELA' when 'math' then 'Math'
             end as discipline,
@@ -229,7 +305,8 @@ with
                 then 'IEP'
                 when a.is_portfolio_eligible
                 then 'Portfolio'
-            end as grad_eligible_type,
+            end as test_type,
+            'Alternative' as pathway_option,
         from roster as r
         inner join
             {{ ref("int_powerschool__nj_graduation_pathway_unpivot") }} as a
@@ -239,6 +316,7 @@ with
     )
 
 select
+    r._dbt_source_relation,
     r.academic_year,
     r.region,
     r.schoolid,
@@ -247,6 +325,7 @@ select
     r.student_number,
     r.state_studentnumber,
     r.kippadb_contact_id,
+    r.students_dcid,
     r.lastfirst,
     r.first_name,
     r.last_name,
@@ -264,11 +343,26 @@ select
     r.courses_course_name as ccr_course,
     r.teacher_lastfirst as ccr_teacher,
     r.sections_external_expression as ccr_period,
+    r.section_number as ccr_section_number,
+    r.discipline,
+    g.pathway_option,
     g.test_type,
-    g.grad_eligible_type,
-    g.discipline,
     g.subject,
     g.value,
     g.met_pathway_requirement,
+    c.code,
+    c.njgpa_attempt,
+    c.njgpa_pass,
+    c.act,
+    c.sat,
+    c.final_grad_path,
 from roster as r
-left join grad_options_append_final as g on r.student_number = g.student_number
+left join
+    grad_options_append_final as g
+    on r.student_number = g.student_number
+    and r.discipline = g.discipline
+left join
+    {{ ref("int_students__graduation_path_codes") }} as c
+    on r.student_number = c.student_number
+    and r.academic_year = c.academic_year
+    and r.discipline = c.discipline

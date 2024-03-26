@@ -16,6 +16,8 @@ FORM_IDS = [
     "1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI",  # support
     "1tuqQIkPX8GfGXdpkNra9shB2Ig_U9CSS7VH1RfuQ_68",  # ITR
     "15xuEO72xhyhhv8K0qKbkSV864-DetXhmWsxKyS7ai50",  # KTAF support
+    "1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs",  # Career Launch Survey
+    "1IXIrXFLrXDyq9cvjMBhFJB9mV_nxKGUNYUlRbD4ku_A",  # PM Score Change Request Form
 ]
 
 key_prefix = [CODE_LOCATION, "google", "forms"]

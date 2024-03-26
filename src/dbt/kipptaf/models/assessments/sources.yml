@@ -6,6 +6,23 @@ sources:
     tags:
       - stage_external_sources
     tables:
+      - name: src_assessments__ap_course_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1bMHQ2qaVdOcz4fDsl5CnWUBmVwl-JkDD_aj-sHfgn5I
+            sheet_range: src_assessments__ap_course_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: powerschool_ap_course_name
+            data_type: STRING
+          - name: ap_course_name
+            data_type: STRING
+          - name: nj_ap_course_subject_code
+            data_type: STRING
+          - name: adb_test_subject
+            data_type: STRING
       - name: src_assessments__course_subject_crosswalk
         external:
           options:

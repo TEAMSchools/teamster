@@ -3,7 +3,6 @@ from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
     MonthlyPartitionsDefinition,
-    MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
@@ -12,6 +11,7 @@ from dagster import (
 
 from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.deanslist.schema import ASSET_FIELDS
+from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_record_schema,
@@ -24,9 +24,12 @@ def build_deanslist_static_partition_asset(
     asset_name,
     api_version,
     partitions_def: StaticPartitionsDefinition | None = None,
-    op_tags={},
-    params={},
+    op_tags: dict | None = None,
+    params: dict | None = None,
 ) -> AssetsDefinition:
+    if params is None:
+        params = {}
+
     asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
 
     @asset(
@@ -48,9 +51,12 @@ def build_deanslist_static_partition_asset(
         )
 
         data = endpoint_content["data"]
-        schema = get_avro_record_schema(
-            name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-        )
+        if asset_name == "students":
+            schema = ASSET_FIELDS[asset_name]
+        else:
+            schema = get_avro_record_schema(
+                name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
+            )
 
         yield Output(
             value=(data, schema), metadata={"records": endpoint_content["row_count"]}
@@ -68,9 +74,12 @@ def build_deanslist_multi_partition_asset(
     asset_name,
     api_version,
     partitions_def: MultiPartitionsDefinition,
-    op_tags={},
-    params={},
+    op_tags: dict | None = None,
+    params: dict | None = None,
 ) -> AssetsDefinition:
+    if params is None:
+        params = {}
+
     asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
 
     @asset(
@@ -85,25 +94,30 @@ def build_deanslist_multi_partition_asset(
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         partitions_def: MultiPartitionsDefinition = context.assets_def.partitions_def  # type: ignore
-        partition_key: MultiPartitionKey = context.partition_key  # type: ignore
+        partition_keys_by_dimension = context.partition_key.keys_by_dimension  # type: ignore
 
-        school_partition = partition_key.keys_by_dimension["school"]
-        date_partition = pendulum.from_format(
-            string=partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
+        date_partition_def = partitions_def.get_partitions_def_for_dimension("date")
+        date_partition_key = pendulum.from_format(
+            string=partition_keys_by_dimension["date"], fmt="YYYY-MM-DD"
         )
 
-        request_params = {"UpdatedSince": date_partition.to_date_string(), **params}
-        if isinstance(
-            partitions_def.get_partitions_def_for_dimension("date"),
-            MonthlyPartitionsDefinition,
-        ):
-            request_params["StartDate"] = date_partition.to_date_string()
-            request_params["EndDate"] = date_partition.end_of("month").to_date_string()
+        request_params = {"UpdatedSince": date_partition_key.to_date_string(), **params}
+
+        date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
+
+        request_params["StartDate"] = date_partition_key_fy.start.to_date_string()
+
+        if isinstance(date_partition_def, MonthlyPartitionsDefinition):
+            request_params["EndDate"] = date_partition_key.end_of(
+                "month"
+            ).to_date_string()
+        elif isinstance(date_partition_def, FiscalYearPartitionsDefinition):
+            request_params["EndDate"] = date_partition_key_fy.end.to_date_string()
 
         endpoint_content = deanslist.get(
             api_version=api_version,
             endpoint=asset_name,
-            school_id=int(school_partition),
+            school_id=int(partition_keys_by_dimension["school"]),
             params=request_params,
         )
 

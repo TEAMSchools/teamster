@@ -5,6 +5,12 @@ with
         left join {{ ref("int_kippadb__roster") }} as r on adb.contact = r.contact_id
         where adb.score_type = 'act_composite'
         group by r.student_number, r.contact_id
+    ),
+
+    early as (
+        select applicant, max(is_early_action_decision) as is_ea_ed,
+        from {{ ref("base_kippadb__application") }}
+        group by applicant
     )
 
 select  -- noqa: ST06
@@ -34,6 +40,19 @@ select  -- noqa: ST06
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
     act.act_count,
     co.lep_status,
+    case
+        when kt.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when kt.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when kt.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when kt.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when kt.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
+    coalesce(e.is_ea_ed, false) as is_ea_ed,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -45,6 +64,7 @@ left join
     and ce.rn_course_number_year = 1
     and not ce.is_dropped_section
 left join act_valid as act on kt.contact_id = act.contact_id
+left join early as e on kt.contact_id = e.applicant
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1

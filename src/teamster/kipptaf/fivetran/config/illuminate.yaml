@@ -34,6 +34,10 @@ schemas:
       - reporting_groups
       - students_assessments
       - tags
+  - name: national_assessments
+    destination_tables:
+      - psat_2023
+      - psat_2024
   - name: dna_repositories
     destination_tables:
       - expressions

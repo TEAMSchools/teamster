@@ -14,7 +14,12 @@ from dagster import (
 from requests.exceptions import HTTPError
 
 from .. import CODE_LOCATION
-from .assets import survey, survey_metadata_assets, survey_response
+from .assets import (
+    survey,
+    survey_metadata_assets,
+    survey_response,
+    survey_response_disqualified,
+)
 
 
 @sensor(
@@ -95,7 +100,7 @@ def alchemer_survey_metadata_asset_sensor(
 @sensor(
     name=f"{CODE_LOCATION}_alchemer_survey_response_asset_sensor",
     minimum_interval_seconds=(60 * 15),
-    asset_selection=[survey_response],
+    asset_selection=[survey_response, survey_response_disqualified],
 )  # type: ignore
 def alchemer_survey_response_asset_sensor(
     context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
@@ -110,7 +115,8 @@ def alchemer_survey_response_asset_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
 
     run_requests = []
-    add_partitions = []
+    survey_response_partition_keys = []
+    survey_response_dq_partition_keys = []
 
     try:
         surveys = alchemer.survey.list()
@@ -159,15 +165,24 @@ def alchemer_survey_response_asset_sensor(
 
         if is_run_request:
             partition_key = f"{survey_id}_{survey_cursor_timestamp}"
-            add_partitions.append(partition_key)
+            survey_response_partition_keys.append(partition_key)
+            survey_response_dq_partition_keys.append(survey_id)
 
-            run_requests.append(
-                RunRequest(
-                    run_key=f"alchemer_survey_response_job_{partition_key}",
-                    run_config=run_config,
-                    asset_selection=[survey_response.key],
-                    partition_key=partition_key,
-                )
+            run_requests.extend(
+                [
+                    RunRequest(
+                        run_key=f"alchemer_survey_response_job_{partition_key}",
+                        run_config=run_config,
+                        asset_selection=[survey_response.key],
+                        partition_key=partition_key,
+                    ),
+                    RunRequest(
+                        run_key=f"alchemer_survey_response_dq_job_{partition_key}",
+                        run_config=run_config,
+                        asset_selection=[survey_response_disqualified.key],
+                        partition_key=survey_id,
+                    ),
+                ]
             )
 
             cursor[survey_id] = now.timestamp()
@@ -180,8 +195,12 @@ def alchemer_survey_response_asset_sensor(
         dynamic_partitions_requests=[
             AddDynamicPartitionsRequest(
                 partitions_def_name=survey_response.partitions_def.name,  # type: ignore
-                partition_keys=add_partitions,
-            )
+                partition_keys=survey_response_partition_keys,
+            ),
+            AddDynamicPartitionsRequest(
+                partitions_def_name=survey_response_disqualified.partitions_def.name,  # type: ignore
+                partition_keys=survey_response_dq_partition_keys,
+            ),
         ],
     )
 

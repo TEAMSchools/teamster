@@ -1,3 +1,24 @@
+with
+    grad_path as (
+        select _dbt_source_relation, student_number, discipline, final_grad_path,
+        from {{ ref("int_students__graduation_path_codes") }}
+    ),
+
+    grad_path_pivot as (
+        select
+            _dbt_source_relation,
+            student_number,
+            s_nj_stu_x__graduation_pathway_math,
+            s_nj_stu_x__graduation_pathway_ela,
+        from
+            grad_path pivot (
+                max(final_grad_path) for discipline in (
+                    'Math' as `s_nj_stu_x__graduation_pathway_math`,
+                    'ELA' as `s_nj_stu_x__graduation_pathway_ela`
+                )
+            )
+    )
+
 select
     se.student_number,
     se.student_web_id,
@@ -7,9 +28,15 @@ select
     se.lunch_balance as total_balance,
     se.advisor_lastfirst as home_room,
     se.student_web_password as web_password,
+
+    g.s_nj_stu_x__graduation_pathway_math,
+    g.s_nj_stu_x__graduation_pathway_ela,
+
+    format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
+    format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
+
     se.student_web_id || '.fam' as web_id,
     se.academic_year + (13 - se.grade_level) as graduation_year,
-    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
@@ -25,15 +52,17 @@ select
         when se.grade_level = 4
         then 'E'
     end as track,
-
-    format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
-    format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
+    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 from {{ ref("base_powerschool__student_enrollments") }} as se
 left join
     {{ ref("int_powerschool__district_entry_date") }} as de
     on se.studentid = de.studentid
     and {{ union_dataset_join_clause(left_alias="se", right_alias="de") }}
     and de.rn_entry = 1
+left join
+    grad_path_pivot as g
+    on se.student_number = g.student_number
+    and {{ union_dataset_join_clause(left_alias="se", right_alias="g") }}
 where
     se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1

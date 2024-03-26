@@ -328,7 +328,7 @@ def test_asset_fldoe_fast():
             }
         ),
         ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
-        partition_key="8\w*ELAReading|2023/PM2",
+        partition_key="4\w*ELAReading|2023/PM1",
     )
 
 
@@ -575,12 +575,7 @@ def test_asset_adp_payroll_general_ledger_file():
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
             partitions_def_name=partitions_def_name,
-            partition_keys=[
-                "20230831",
-                "20231215",
-                "20231231",
-                "20240115",
-            ],
+            partition_keys=["20240229"],
         )
 
         _test_asset(
@@ -603,7 +598,7 @@ def test_asset_adp_payroll_general_ledger_file():
                     ),
                 }
             ),
-            partition_key="20230831|3LE",
+            partition_key="20240229|2Z3",
         )
 
 

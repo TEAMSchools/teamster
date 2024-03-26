@@ -1,43 +1,4 @@
 with
-    approval_loops as (
-        select
-            home_work_location_name as location,
-            business_unit_home_name as region,
-            department_home_name as department,
-            preferred_name_lastfirst as first_approver_name,
-            user_principal_name as first_approver_email,
-            google_email as first_approver_google,
-            report_to_preferred_name_lastfirst as second_approver_name,
-            report_to_mail as second_approver_email,
-            employee_number as first_approver_employee_number,
-            report_to_employee_number as second_approver_employee_number,
-            case
-                when business_unit_home_name not like '%Miami%'
-                then concat(report_to_sam_account_name, '@apps.teamschools.org')
-                when business_unit_home_name like '%Miami%'
-                then concat(report_to_sam_account_name, '@kippmiami.org')
-            end as second_approver_google,
-            case
-                when department_home_name = 'Operations'
-                then 'Operations'
-                when department_home_name = 'School Leadership'
-                then 'Instructional'
-                when business_unit_home_name like '%Family%'
-                then 'CMO'
-                else 'Regional'
-            end as route,
-        from {{ ref("base_people__staff_roster") }}
-        where
-            job_title in (
-                'Director School Operations',
-                'Director Campus Operations',
-                'Director',
-                'School Leader',
-                'School Leader in Residence'
-            )
-            and assignment_status != 'Terminated'
-    ),
-
     roster as (
         select
             sr.employee_number,
@@ -54,10 +15,26 @@ with
             sr.assignment_status as status,
             sr.business_unit_home_name as region,
             sr.worker_termination_date,
+            sr.report_to_employee_number as manager_employee_number,
+
+            sr3.employee_number as grandmanager_employee_number,
+
+            lc.dso_employee_number,
+            lc.sl_employee_number,
+            lc.head_of_school_employee_number,
+            lc.mdso_employee_number,
+
             coalesce(
                 sr.home_work_location_abbreviation, sr.home_work_location_name
             ) as location_abbr,
             case
+                when
+                    sr.business_unit_home_name not like '%Family%'
+                    and (
+                        sr.home_work_location_name like '%Room%'
+                        or sr.home_work_location_name like '%Campus%'
+                    )
+                then 'Regional'
                 when
                     sr.home_work_location_name not like '%Room%'
                     and sr.department_home_name in ('Operations', 'School Support')
@@ -68,20 +45,47 @@ with
                 then 'Instructional'
                 when
                     sr.home_work_location_name like '%Room%'
-                    and sr.business_unit_home_name not like '%Family%'
-                then 'Special'
-                when
-                    sr.home_work_location_name like '%Room%'
                     and sr.business_unit_home_name like '%Family%'
                 then 'CMO'
-                else 'Regional'
+                else 'Special'
             end as route,
+            case
+                when
+                    sr.job_title like '%Director%'
+                    and sr.business_unit_home_name not like '%Family%'
+                then 'Region Submitter'
+                when
+                    sr.department_home_name = 'School Support'
+                    and sr.home_work_location_name like '%Room%'
+                then 'Region Submitter'
+                when sr.job_title = 'Managing Director of Operations'
+                then 'Region Approver'
+                when sr.job_title like 'Chief%Officer'
+                then 'KTAF Approver'
+                when sr.job_title like 'Chief%Strategist'
+                then 'KTAF Approver'
+                when sr2.job_title like 'Chief%Officer'
+                then 'KTAF Submitter'
+            end as role_type,
 
             coalesce(cc.name, sr.home_work_location_name) as campus,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
+            {{ ref("base_people__staff_roster") }} as sr2
+            on sr.report_to_employee_number = sr2.employee_number
+        left join
+            {{ ref("base_people__staff_roster") }} as sr3
+            on sr2.report_to_employee_number = sr3.employee_number
+        left join
             {{ ref("stg_people__campus_crosswalk") }} as cc
             on sr.home_work_location_name = cc.location_name
+        left join
+            {{ ref("int_people__leadership_crosswalk") }} as lc
+            on sr.home_work_location_name = lc.home_work_location_name
+        where
+            sr.worker_termination_date is null
+            or sr.worker_termination_date
+            >= date({{ var("current_academic_year") }}, 7, 1)
     )
 
 select
@@ -102,14 +106,32 @@ select
     r.location_abbr,
     r.route,
     r.campus,
+    r.manager_employee_number,
+    r.grandmanager_employee_number,
+    r.role_type,
 
-    a.first_approver_employee_number,
-    a.first_approver_name,
-    a.first_approver_email,
-    a.first_approver_google,
-    a.second_approver_employee_number,
-    a.second_approver_name,
-    a.second_approver_email,
-    a.second_approver_google,
+    case
+        when r.employee_number in (r.sl_employee_number, r.dso_employee_number)
+        then r.manager_employee_number
+        when r.route = 'Instructional'
+        then r.sl_employee_number
+        when r.route = 'Operations'
+        then r.dso_employee_number
+        when r.route = 'CMO'
+        then null
+        when r.route = 'Regional'
+        then null
+    end as first_approver_employee_number,
+    case
+        when r.employee_number in (r.sl_employee_number, r.dso_employee_number)
+        then r.grandmanager_employee_number
+        when r.route = 'Instructional'
+        then r.head_of_school_employee_number
+        when r.route = 'Operations'
+        then r.mdso_employee_number
+        when r.route = 'CMO'
+        then null
+        when r.route = 'Regional'
+        then null
+    end as second_approver_employee_number,
 from roster as r
-left join approval_loops as a on r.location = a.location and r.route = a.route
