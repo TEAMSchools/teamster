@@ -23,24 +23,7 @@ select distinct
     rt.academic_year,
     rt.start_date,
     rt.lockbox_date,
-    coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
-    coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
-    coalesce(srh.home_work_location_name, sr.home_work_location_name) as location,
-    coalesce(
-        srh.home_work_location_grade_band, sr.home_work_location_grade_band
-    ) as grade_band,
-    coalesce(srh.department_home_name, sr.department_home_name) as department,
-    coalesce(
-        srh.primary_grade_level_taught, sr.primary_grade_level_taught
-    ) as grade_taught,
-    coalesce(srh.job_title, sr.job_title) as job_title,
-    coalesce(
-        srh.report_to_preferred_name_lastfirst, sr.report_to_preferred_name_lastfirst
-    ) as manager,
-    coalesce(
-        srh.worker_original_hire_date, sr.worker_original_hire_date
-    ) as worker_original_hire_date,
-    coalesce(srh.assignment_status, sr.assignment_status) as assignment_status,
+
     sr.sam_account_name,
     sr.report_to_sam_account_name,
     sr2.preferred_name_lastfirst as observer_name,
@@ -67,6 +50,25 @@ select distinct
     os.etr_tier,
     os.so_tier,
     os.overall_tier,
+
+    coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
+    coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
+    coalesce(srh.home_work_location_name, sr.home_work_location_name) as location,
+    coalesce(
+        srh.home_work_location_grade_band, sr.home_work_location_grade_band
+    ) as grade_band,
+    coalesce(srh.department_home_name, sr.department_home_name) as department,
+    coalesce(
+        srh.primary_grade_level_taught, sr.primary_grade_level_taught
+    ) as grade_taught,
+    coalesce(srh.job_title, sr.job_title) as job_title,
+    coalesce(
+        srh.report_to_preferred_name_lastfirst, sr.report_to_preferred_name_lastfirst
+    ) as manager,
+    coalesce(
+        srh.worker_original_hire_date, sr.worker_original_hire_date
+    ) as worker_original_hire_date,
+    coalesce(srh.assignment_status, sr.assignment_status) as assignment_status,
 
 from {{ ref("base_people__staff_roster") }} as sr
 cross join {{ ref("stg_reporting__terms") }} as rt
