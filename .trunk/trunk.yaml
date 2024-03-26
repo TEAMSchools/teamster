@@ -53,11 +53,11 @@ lint:
     - ruff@0.3.4
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - sqlfluff@3.0.2
+    - sqlfluff@3.0.3
     - sqlfmt@0.21.2
     - svgo@3.2.0
     - taplo@0.8.1
-    - trufflehog@3.70.3
+    - trufflehog@3.71.0
     - yamllint@1.35.1
   definitions:
     - name: ruff
