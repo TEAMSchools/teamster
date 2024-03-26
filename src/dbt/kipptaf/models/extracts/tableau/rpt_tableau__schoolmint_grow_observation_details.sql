@@ -17,9 +17,9 @@ with
     )
 select distinct
     sr.employee_number,
-    rt.type,
-    rt.code,
-    rt.name,
+    rt.type as form_type,
+    rt.code as form_term,
+    rt.name as form_long_name,
     rt.academic_year,
     rt.start_date,
     rt.lockbox_date,
@@ -37,7 +37,7 @@ select distinct
     srh.sam_account_name,
     srh.report_to_sam_account_name,
 
-    od.employee_number,
+
     od.observer_employee_number,
     od.observation_id,
     od.teacher_id,

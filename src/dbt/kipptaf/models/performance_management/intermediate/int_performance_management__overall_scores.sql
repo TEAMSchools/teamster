@@ -63,7 +63,7 @@ with
                 then date(academic_year + 1, 3, 1)
             end as eval_date,
         from {{ ref("int_performance_management__observation_details") }}
-        where form_type = 'PM' and rn_submission = 1
+        where form_type = 'PM' and rn_submission = 1 and academic_year >= 2023
 
         union all
 
