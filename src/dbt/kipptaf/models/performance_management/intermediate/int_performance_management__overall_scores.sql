@@ -2,7 +2,7 @@ with
     all_scores as (
         select
             employee_number,
-            concat(academic_year,form_term,employee_number) as observation_id,
+            concat(academic_year, form_term, employee_number) as observation_id,
             academic_year,
             form_term,
             etr_score,
