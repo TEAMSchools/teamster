@@ -1,21 +1,5 @@
-with
-    scaffold as (
-        select
-            sr.employee_number,
-            rt.type,
-            rt.code,
-            rt.name,
-            rt.academic_year,
-            rt.start_date,
-            rt.lockbox_date,
-        from {{ ref("base_people__staff_roster") }} as sr
-        cross join {{ ref("stg_reporting__terms") }} as rt
-        where
-            sr.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
-            and sr.assignment_status not in ('Terminated', 'Deceased')
-            and rt.type in ('PM', 'O3', 'WT')
-    )
-select distinct
+
+select 
     sr.employee_number,
     rt.type as form_type,
     rt.code as form_term,

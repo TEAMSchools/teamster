@@ -1,14 +1,12 @@
 with
     measurements as (
         select
-            safe_cast(u.internal_id as int64) as employee_number,
-            safe_cast(u2.internal_id as int64) as observer_employee_number,
+
             o.observation_id,
             o.teacher_id,
             o.rubric_name as form_long_name,
             o.rubric_id,
             o.score as overall_score,
-            safe_cast(o.observed_at as date) as observed_at,
 
             ohos.measurement as score_measurement_id,
             ohos.value_score as row_score_value,
@@ -16,8 +14,14 @@ with
             ohos.last_modified_date_lead,
 
             m.name as measurement_name,
+
+            safe_cast(u.internal_id as int64) as employee_number,
+            safe_cast(u2.internal_id as int64) as observer_employee_number,
+
+            safe_cast(o.observed_at as date) as observed_at,
             array_to_string(o.list_two_column_a, '|') as glows,
             array_to_string(o.list_two_column_b, '|') as grows,
+
             regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
             regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
 
