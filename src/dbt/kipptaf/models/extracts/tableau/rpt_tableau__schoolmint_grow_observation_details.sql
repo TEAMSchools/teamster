@@ -14,18 +14,15 @@ with
             sr.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and rt.type in ('PM', 'O3', 'WT')
-
     )
-
 select distinct
-    s.employee_number,
-    s.type as form_type,
-    s.code as form_term,
-    s.name as form_long_name,
-    s.academic_year,
-    s.start_date,
-    s.lockbox_date,
-
+    sr.employee_number,
+    rt.type,
+    rt.code,
+    rt.name,
+    rt.academic_year,
+    rt.start_date,
+    rt.lockbox_date,
     srh.preferred_name_lastfirst as teammate,
     srh.business_unit_home_name as entity,
     srh.home_work_location_name as location,
@@ -40,6 +37,7 @@ select distinct
     srh.sam_account_name,
     srh.report_to_sam_account_name,
 
+    od.employee_number,
     od.observer_employee_number,
     od.observation_id,
     od.teacher_id,
@@ -63,26 +61,29 @@ select distinct
     os.so_tier,
     os.overall_tier,
 
-    /* past observers names */
-    srh2.preferred_name_lastfirst as observer_name,
-
-from scaffold as s
+-- /* past observers names */
+from {{ ref("base_people__staff_roster") }} as sr
+cross join {{ ref("stg_reporting__terms") }} as rt
 left join
     {{ ref("int_performance_management__observation_details") }} as od
-    on s.employee_number = od.employee_number
-    and s.code = od.form_term
-    and s.academic_year = od.academic_year
-    and regexp_contains(od.form_long_name, s.name)
+    on sr.employee_number = od.employee_number
+    and rt.code = od.form_term
+    and rt.academic_year = od.academic_year
+    and regexp_contains(od.form_long_name, rt.name)
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.observation_id = os.observation_id
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
-    on s.employee_number = srh.employee_number
+    on sr.employee_number = srh.employee_number
     and od.observed_at
     between safe_cast(srh.work_assignment_start_date as date) and safe_cast(
         srh.work_assignment_end_date as date
     )
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh2
-    on od.observer_employee_number = srh2.employee_number
+    {{ ref("base_people__staff_roster") }} as sr2
+    on od.observer_employee_number = sr2.employee_number
+where
+    sr.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
+    and sr.assignment_status not in ('Terminated', 'Deceased')
+    and rt.type in ('PM', 'O3', 'WT')

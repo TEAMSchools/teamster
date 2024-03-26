@@ -114,7 +114,7 @@ with
         select
             safe_cast(sa.employee_number as int64),
             sa.observer_employee_number,
-            'archive' as observation_id,
+            concat(sa.academic_year,sa.form_term,sa.employee_number) as observation_id,
             null as teacher_id,
             sa.form_long_name,
             concat(sa.academic_year, sa.form_term) as rubric_id,
