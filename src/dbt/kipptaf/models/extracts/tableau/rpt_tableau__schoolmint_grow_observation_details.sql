@@ -1,5 +1,4 @@
-
-select 
+select
     sr.employee_number,
     rt.type as form_type,
     rt.code as form_term,

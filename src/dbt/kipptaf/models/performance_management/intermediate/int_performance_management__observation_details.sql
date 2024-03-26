@@ -116,7 +116,7 @@ with
 
         union all
         select
-            safe_cast(sa.employee_number as int64),
+            safe_cast(sa.employee_number as int64) as employee_number,
             sa.observer_employee_number,
             concat(
                 sa.academic_year, sa.form_term, sa.employee_number
