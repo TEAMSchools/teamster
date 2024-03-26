@@ -45,8 +45,14 @@ def construct_query(query_type, query_value, now) -> str:
 
 
 def transform_data(
-    data, file_suffix, file_encoding: str = "utf-8", file_format: dict = {}
+    data,
+    file_suffix,
+    file_encoding: str = "utf-8",
+    file_format: dict | None = None,
 ):
+    if file_format is None:
+        file_format = {}
+
     transformed_data = None
 
     if file_suffix == "json":
@@ -125,7 +131,7 @@ def build_bigquery_query_sftp_asset(
     query_config,
     file_config,
     destination_config,
-    op_tags={},
+    op_tags: dict | None = None,
 ):
     query_type = query_config["type"]
     query_value = query_config["value"]
@@ -195,9 +201,12 @@ def build_bigquery_extract_sftp_asset(
     dataset_config,
     file_config,
     destination_config,
-    extract_job_config={},
-    op_tags={},
+    extract_job_config: dict | None = None,
+    op_tags: dict | None = None,
 ):
+    if extract_job_config is None:
+        extract_job_config = {}
+
     dataset_id = dataset_config["dataset_id"]
     table_id = dataset_config["table_id"]
 
@@ -268,9 +277,12 @@ def build_bigquery_extract_asset(
     dataset_config,
     file_config,
     destination_config,
-    extract_job_config={},
-    op_tags={},
+    extract_job_config: dict | None = None,
+    op_tags: dict | None = None,
 ):
+    if extract_job_config is None:
+        extract_job_config = {}
+
     dataset_id = dataset_config["dataset_id"]
     table_id = dataset_config["table_id"]
 

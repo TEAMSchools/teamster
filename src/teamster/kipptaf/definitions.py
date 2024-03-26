@@ -14,6 +14,7 @@ from teamster.core.resources import (
 from . import (
     CODE_LOCATION,
     achieve3k,
+    adp,
     airbyte,
     alchemer,
     amplify,
@@ -26,9 +27,9 @@ from . import (
     resources,
     schoolmint,
     smartrecruiters,
+    tableau,
     zendesk,
 )
-from .adp import payroll, workforce_manager, workforce_now
 from .dbt import assets as dbt_assets
 from .dbt.schedules import _all as dbt_schedules
 from .google import directory, forms, sheets
@@ -38,6 +39,7 @@ defs = Definitions(
     assets=load_assets_from_modules(
         modules=[
             achieve3k,
+            adp,
             airbyte,
             alchemer,
             amplify,
@@ -49,17 +51,16 @@ defs = Definitions(
             fivetran,
             forms,
             ldap,
-            payroll,
             performance_management,
             schoolmint,
             sheets,
             smartrecruiters,
-            workforce_manager,
-            workforce_now,
+            tableau,
             zendesk,
         ]
     ),
     schedules=[
+        *adp.schedules,
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
@@ -70,18 +71,17 @@ defs = Definitions(
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
-        *workforce_manager.schedules,
-        *workforce_now.schedules,
+        *tableau.schedules,
     ],
     sensors=[
         *achieve3k.sensors,
+        *adp.sensors,
         *airbyte.sensors,
         *alchemer.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
-        *payroll.sensors,
         *sheets.sensors,
-        *workforce_now.sensors,
+        *tableau.sensors,
     ],
     resources={
         # shared
@@ -105,6 +105,7 @@ defs = Definitions(
         "mclass": resources.MCLASS_RESOURCE,
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
+        "tableau": resources.TABLEAU_SERVER_RESOURCE,
         "zendesk": resources.ZENDESK_RESOURCE,
         # ssh
         "ssh_achieve3k": resources.SSH_RESOURCE_ACHIEVE3K,

@@ -4,7 +4,7 @@ import pathlib
 from typing import Iterator, Sequence
 
 import oracledb
-from dagster import Any, ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, Row, create_engine, result
@@ -22,7 +22,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     host: str | None = None
     port: int | None = None
     database: str | None = None
-    query: dict[str, Any] = {}
+    query: dict = {}
 
     _engine: Engine = PrivateAttr()
 
@@ -30,11 +30,14 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         self,
         query,
         partition_size,
-        connect_kwargs={},
+        connect_kwargs: dict | None = None,
         output_format=None,
         data_filepath="env/data.avro",
         call_timeout=0,
     ):
+        if connect_kwargs is None:
+            connect_kwargs = {}
+
         context = self.get_resource_context()
 
         context.log.info("Opening connection to engine")

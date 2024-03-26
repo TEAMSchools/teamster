@@ -12,8 +12,8 @@ from dagster import (
 )
 from dagster_dbt import DbtCliResource, dbt_assets
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_MANIFEST_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
-    MANIFEST_METADATA_KEY,
 )
 from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
@@ -52,11 +52,14 @@ def build_dbt_external_source_assets(
             is_required=False,
             metadata={
                 **dagster_dbt_translator.get_metadata(source),
-                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(
+                    manifest=manifest
+                ),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },  # type: ignore
             auto_materialize_policy=AutoMaterializePolicy.eager().without_rules(
-                AutoMaterializeRule.skip_on_parent_missing()
+                AutoMaterializeRule.skip_on_parent_missing(),
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
             ),
         )
         for source in external_sources

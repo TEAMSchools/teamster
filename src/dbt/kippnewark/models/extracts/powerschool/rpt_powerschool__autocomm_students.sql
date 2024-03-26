@@ -15,5 +15,7 @@ select
     district_entry_date,
     school_entry_date,
     retained_tf,
+    s_nj_stu_x__graduation_pathway_math,
+    s_nj_stu_x__graduation_pathway_ela,
 from {{ source("kipptaf_extracts", "rpt_powerschool__autocomm_students") }}
 where code_location = '{{ project_name }}'

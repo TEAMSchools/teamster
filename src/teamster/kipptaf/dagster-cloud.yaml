@@ -43,11 +43,13 @@ locations:
                         path: gcloud_service_account_json
         server_k8s_config:
           container_config:
-            # resources:
-            #   requests:
-            #     cpu: 1000m
-            #   limits:
-            #     cpu: 1000m
+            resources:
+              requests:
+                cpu: 750m
+                memory: 2.0Gi
+              limits:
+                cpu: 750m
+                memory: 2.0Gi
             env:
               - name: ACHIEVE3K_SFTP_PASSWORD
                 valueFrom:
@@ -279,6 +281,16 @@ locations:
                   secretKeyRef:
                     name: op-zendesk-api
                     key: token
+              - name: TABLEAU_TOKEN_NAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: username
+              - name: TABLEAU_PERSONAL_ACCESS_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: credential
         run_k8s_config:
           container_config:
             env:
@@ -512,3 +524,13 @@ locations:
                   secretKeyRef:
                     name: op-zendesk-api
                     key: token
+              - name: TABLEAU_TOKEN_NAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: username
+              - name: TABLEAU_PERSONAL_ACCESS_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: credential

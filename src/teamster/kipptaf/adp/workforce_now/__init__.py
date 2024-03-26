@@ -1,7 +1,21 @@
-from .assets import _all as assets
-from .jobs import _all as jobs
-from .schedules import _all as schedules
-from .sensors import _all as sensors
+from . import api, sftp
+
+assets = [
+    *api.assets,
+    *sftp.assets,
+]
+
+jobs = [
+    *api.jobs,
+]
+
+schedules = [
+    *api.schedules,
+]
+
+sensors = [
+    *sftp.sensors,
+]
 
 _all = [
     assets,

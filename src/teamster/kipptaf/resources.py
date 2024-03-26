@@ -7,7 +7,7 @@ from zenpy import Zenpy
 from teamster.core.ssh.resources import SSHResource
 
 from .adp.workforce_manager.resources import AdpWorkforceManagerResource
-from .adp.workforce_now.resources import AdpWorkforceNowResource
+from .adp.workforce_now.api.resources import AdpWorkforceNowResource
 from .amplify.resources import MClassResource
 from .google.directory.resources import GoogleDirectoryResource
 from .google.forms.resources import GoogleFormsResource
@@ -15,6 +15,7 @@ from .google.sheets.resources import GoogleSheetsResource
 from .ldap.resources import LdapResource
 from .schoolmint.grow.resources import SchoolMintGrowResource
 from .smartrecruiters.resources import SmartRecruitersResource
+from .tableau.resources import TableauServerResource
 
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
@@ -33,7 +34,7 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=1, request_timeout=6
+    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=2, request_timeout=6
 )
 
 ALCHEMER_RESOURCE = AlchemerSession(
@@ -41,7 +42,7 @@ ALCHEMER_RESOURCE = AlchemerSession(
     api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET").get_value(),
     api_version="v5",
     time_zone="America/New_York",  # determined by Alchemer
-    timeout=3,
+    timeout=15,
 )
 
 FIVETRAN_RESOURCE = FivetranResource(
@@ -83,6 +84,13 @@ SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
 
 SMARTRECRUITERS_RESOURCE = SmartRecruitersResource(
     smart_token=EnvVar("SMARTRECRUITERS_SMARTTOKEN")
+)
+
+TABLEAU_SERVER_RESOURCE = TableauServerResource(
+    server_address="https://tableau.kipp.org",
+    site_id="KIPPNJ",
+    token_name=EnvVar("TABLEAU_TOKEN_NAME"),
+    personal_access_token=EnvVar("TABLEAU_PERSONAL_ACCESS_TOKEN"),
 )
 
 ZENDESK_RESOURCE = Zenpy(

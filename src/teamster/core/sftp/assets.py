@@ -73,7 +73,7 @@ def build_sftp_asset(
     auto_materialize_policy=None,
     slugify_cols=True,
     slugify_replacements=(),
-    op_tags={},
+    op_tags: dict | None = None,
     group_name=None,
     **kwargs,
 ):

@@ -24,12 +24,15 @@ def build_powerschool_table_asset(
         FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
     ) = None,
     table_name=None,
-    select_columns=["*"],
+    select_columns: list[str] | None = None,
     partition_column=None,
-    op_tags={},
+    op_tags: dict | None = None,
 ) -> AssetsDefinition:
     if table_name is None:
         table_name = asset_name
+
+    if select_columns is None:
+        select_columns = ["*"]
 
     @asset(
         key=[code_location, "powerschool", asset_name],

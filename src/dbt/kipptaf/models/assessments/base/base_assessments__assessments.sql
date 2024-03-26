@@ -14,6 +14,6 @@ select
     ) as module_number,
 from {{ ref("base_illuminate__assessments") }} as a
 left join
-    {{ source("assessments", "src_assessments__internal_assessment_scopes") }} as ias
+    {{ ref("stg_assessments__internal_assessment_scopes") }} as ias
     on a.scope = ias.scope
     and a.academic_year_clean = ias.academic_year

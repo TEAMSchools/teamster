@@ -18,6 +18,16 @@ with
             row_number() over (partition by contact order by date desc) as rn_note,
         from {{ ref("stg_kippadb__contact_note") }}
         where subject like 'REM FY%'
+    ),
+
+    rem_handoff as (
+        select
+            contact,
+            `date` as rem_handoff_date,
+            subject,
+            row_number() over (partition by contact order by date desc) as rn_note,
+        from {{ ref("stg_kippadb__contact_note") }}
+        where subject like 'REM Handoff'
     )
 
 select  -- noqa: ST06
@@ -25,6 +35,7 @@ select  -- noqa: ST06
     r.contact_id,
     r.ktc_cohort,
     r.contact_owner_name,
+    r.contact_college_match_display_gpa,
 
     c.contact_last_outreach as last_outreach_date,
     c.contact_last_successful_contact as last_successful_contact_date,
@@ -34,6 +45,8 @@ select  -- noqa: ST06
     ei.cur_status as status,
     ei.cur_actual_end_date as actual_end_date,
     ei.cur_credits_required_for_graduation as of_credits_required_for_graduation,
+    ei.ugrad_pursuing_degree_type as college_degree_type,
+    ei.cte_pursuing_degree_type as cte_degree_type,
 
     gpa.cumulative_credits_earned,
     gpa.credits_required_for_graduation,
@@ -49,7 +62,7 @@ select  -- noqa: ST06
                 current_date('America/New_York'), c.contact_last_successful_contact, day
             )
             > 30
-        then 'Succesful Contact > 30 days'
+        then 'Successful Contact > 30 days'
         else 'Successful Contact within 30'
     end as successful_contact_status,
     case
@@ -60,10 +73,15 @@ select  -- noqa: ST06
         else 'Last Outreach within 30'
     end as last_outreach_status,
 
+    date_diff(
+        rh.rem_handoff_date, c.contact_last_successful_contact, day
+    ) as rem_contact_days_since_handoff,
+
     r.contact_kipp_hs_graduate as is_kipp_hs_grad,
     r.contact_expected_college_graduation as expected_college_graduation,
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
     rs.date as most_recent_rem_status,
+    rh.rem_handoff_date,
 
     case
         when ei.cur_status = 'Attending' and rs.subject like 'REM%FY%Q% Enrolled'
@@ -73,10 +91,24 @@ select  -- noqa: ST06
         when ei.cur_status = 'Withdrawn' and rs.subject like 'REM%FY%Q% Enrolled'
         then 'REM Withdrawn'
     end as rem_enrollment_status,
+
+    case
+        when r.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when r.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when r.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when r.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when r.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id
 left join rem_subject as rs on rs.contact = r.contact_id and rs.rn_note = 1
+left join rem_handoff as rh on rh.contact = r.contact_id and rh.rn_note = 1
 left join transcript_data as gpa on gpa.student = r.contact_id and gpa.rn_transcript = 1
 where r.contact_has_hs_graduated_enrollment = 'HS Graduate'
