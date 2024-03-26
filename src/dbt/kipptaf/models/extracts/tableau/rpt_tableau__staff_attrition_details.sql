@@ -293,11 +293,7 @@ with
     ),
 
     pm_scores as (
-        select
-            employee_number,
-            academic_year,
-            overall_score,
-            overall_tier,
+        select employee_number, academic_year, overall_score, overall_tier,
         from {{ ref("int_performance_management__overall_scores") }}
         where pm_term = 'PM4'
     )
