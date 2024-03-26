@@ -35,7 +35,7 @@ select distinct
     coalesce(srh.assignment_status,sr.assignment_status) as assignment_status,
     sr.sam_account_name,
     sr.report_to_sam_account_name,
-    sr2.preferred_name_lastfirst as observer_name
+    sr2.preferred_name_lastfirst as observer_name,
 
     od.observer_employee_number,
     od.observation_id,
