@@ -29,8 +29,8 @@ external_assets:
   - name: Attendance Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
-      - [kipptaf, tableau, attendance_chronic_absenteeism_log_temp]
-      - [kipptaf, tableau, rpt_tableau__attendance_comm_log_temp]
+      - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
+      - [kipptaf, tableau, rpt_tableau__attendance_comm_log]
     metadata:
       id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
   - name: Attrition Dashboard
@@ -99,7 +99,6 @@ external_assets:
   - name: KIPP Miami FAST & i-Ready Analysis
     deps:
       - [kipptaf, tableau, rpt_tableau__miami_fast]
-      - [kipptaf, tableau, rpt_tableau__miami_fast_temp]
       - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
       - [kipptaf, tableau, rpt_tableau__miami_k2_star]
     metadata:
@@ -140,7 +139,7 @@ external_assets:
       id: 5698ccc2-b952-4123-878b-48166b686b16
   - name: School Culture Dashboard [NJ]
     deps:
-      - [kipptaf, tableau, culture_dash_temp]
+      - [kipptaf, tableau, rpt_tableau__school_culture_dashboard_nj]
     metadata:
       id: af792f71-03f3-4a10-9f5e-ab946b1f35ae
   - name: SchoolMint Grow Dashboard
