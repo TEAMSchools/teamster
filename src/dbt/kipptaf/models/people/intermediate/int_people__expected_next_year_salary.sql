@@ -23,6 +23,13 @@ left join
     and sr.business_unit_assigned_name = pss.region
     and sr.home_work_location_grade_band
     = coalesce(pss.school_level, sr.home_work_location_grade_band)
-    and (sr.base_remuneration_annual_rate_amount_amount_value + 150)
-    between pss.scale_cy_salary and (pss.scale_ny_salary + 0.01)
-where sr.assignment_status not in ('Terminated', 'Deceased')
+    and (
+        (sr.base_remuneration_annual_rate_amount_amount_value + 150)
+        between pss.scale_cy_salary and (pss.scale_ny_salary + 0.01)
+        or (
+            sr.base_remuneration_annual_rate_amount_amount_value
+            between (pss.scale_cy_salary - 1) and (pss.scale_cy_salary + 1)
+        )
+    )
+
+where sr.assignment_status not in ('Terminated', 'Deceased') and sr.primary_indicator
