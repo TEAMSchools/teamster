@@ -509,16 +509,16 @@ files = [
 
 [[package]]
 name = "dagster-embedded-elt"
-version = "0.22.12"
+version = "0.22.13"
 requires_python = "<3.13,>=3.8"
 summary = "Package for performing ETL/ELT tasks with Dagster."
 dependencies = [
-    "dagster==1.6.12",
+    "dagster==1.6.13",
     "sling>=1.1.5",
 ]
 files = [
-    {file = "dagster-embedded-elt-0.22.12.tar.gz", hash = "sha256:6d1ea9236e990510a50eda271e0e47dd42b48ee18c265372182734e76a48eba5"},
-    {file = "dagster_embedded_elt-0.22.12-py3-none-any.whl", hash = "sha256:8deb6d6ad666e6c83fb96b3bf320116c8e4d0d0dffbe10cf926e1033e3ef1f41"},
+    {file = "dagster-embedded-elt-0.22.13.tar.gz", hash = "sha256:c4b4f5ed43970abfc57d457f3ee8502ee312c87d47832321c3e7b675e09fddf9"},
+    {file = "dagster_embedded_elt-0.22.13-py3-none-any.whl", hash = "sha256:9c20c10965e75f4f7c1370da54ee5211dd25c3557009bc26044c2f9fc23bea49"},
 ]
 
 [[package]]
@@ -1790,7 +1790,7 @@ files = [
 
 [[package]]
 name = "py-avro-schema"
-version = "3.5.1"
+version = "3.6.0"
 requires_python = ">=3.9"
 summary = "Generate Apache Avro schemas for Python types including standard library data-classes and Pydantic data models."
 dependencies = [
@@ -1800,8 +1800,8 @@ dependencies = [
     "typeguard~=4.0",
 ]
 files = [
-    {file = "py-avro-schema-3.5.1.tar.gz", hash = "sha256:1b3cc2101e51f1a13bf6b0ab279619a3210854bbff8adbc086a65ecb15e5fc0d"},
-    {file = "py_avro_schema-3.5.1-py3-none-any.whl", hash = "sha256:e0019ec90bc69ed7e6da99a44ebfa110a30b55c270ff3d37b77db1928fa87e48"},
+    {file = "py-avro-schema-3.6.0.tar.gz", hash = "sha256:c9ac043169a9f1176dc301f6aa335c4f348c4ae4bcaa5639d9f00c193bb6efe8"},
+    {file = "py_avro_schema-3.6.0-py3-none-any.whl", hash = "sha256:d37407c803be279b49edd15a0997bebd6c2fc1ce901aad52b6127897b1b52c11"},
 ]
 
 [[package]]
@@ -2336,21 +2336,21 @@ files = [
 
 [[package]]
 name = "sling"
-version = "1.1.14"
+version = "1.2.1"
 summary = "Slings data from a source to a target"
 dependencies = [
-    "sling-linux-amd64==1.1.14",
+    "sling-linux-amd64==1.2.1",
 ]
 files = [
-    {file = "sling-1.1.14.tar.gz", hash = "sha256:16cfb7bd2cb64bb8b5a32b87bdfaa62deb0a27c3aa4870dd99a64a93f008474d"},
+    {file = "sling-1.2.1.tar.gz", hash = "sha256:d92d7fe23be739687fa198aeb1e7f767bac74d6478d9032f569057ae97ca6173"},
 ]
 
 [[package]]
 name = "sling-linux-amd64"
-version = "1.1.14"
+version = "1.2.1"
 summary = "Sling Binary for Linux (AMD64)"
 files = [
-    {file = "sling-linux-amd64-1.1.14.tar.gz", hash = "sha256:a706ba0907a22ad56946d1ccf96ff2634bf53177903cf07782eb42cb27061253"},
+    {file = "sling-linux-amd64-1.2.1.tar.gz", hash = "sha256:d0148b4eb54018e38286e894369fc9c129dd588478a248310a30c240a197906b"},
 ]
 
 [[package]]
