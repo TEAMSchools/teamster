@@ -17,7 +17,7 @@ select
     sr.is_self_contained as is_pathways,
     sr.lunch_status as lunchstatus,
     sr.year_in_network,
-    null as boy_status,
+    sr.boy_status,
     sr.is_retained_year,
     sr.is_retained_ever,
     sr.rn_undergrad,

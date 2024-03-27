@@ -42,7 +42,7 @@ select
     co.is_retained_ever,
     co.year_in_network,
     co.code_location as `db_name`,
-    null as boy_status,  -- TODO: add
+    co.boy_status,
 
     dt.name as term_name,
     dt.code as reporting_term,
