@@ -36,6 +36,8 @@ with
             s.zip,
             s.home_phone,
             s.fedethnicity,
+            s.next_school,
+            s.sched_nextyeargrade,
             s.grade_level as highest_grade_level_achieved,
             left(upper(s.gender), 1) as gender,
             left(upper(s.ethnicity), 1) as ethnicity,
@@ -64,7 +66,7 @@ with
 
         /* re-enrollments */
         select
-            re.studentid as studentid,
+            re.studentid,
 
             s.dcid as students_dcid,
             s.student_number,
@@ -93,6 +95,8 @@ with
             s.zip,
             s.home_phone,
             s.fedethnicity,
+            null as next_school,
+            null as sched_nextyeargrade,
             s.grade_level as highest_grade_level_achieved,
             left(upper(s.gender), 1) as gender,
             left(upper(s.ethnicity), 1) as ethnicity,
@@ -152,6 +156,8 @@ with
             s.zip,
             s.home_phone,
             s.fedethnicity,
+            null as next_school,
+            null as sched_nextyeargrade,
             s.grade_level as highest_grade_level_achieved,
             left(upper(s.gender), 1) as gender,
             left(upper(s.ethnicity), 1) as ethnicity,
@@ -201,8 +207,12 @@ with
             gender,
             ethnicity,
             fedethnicity,
-            (yearid + 1990) as academic_year,
+            next_school,
+            sched_nextyeargrade,
+
+            yearid + 1990 as academic_year,
             coalesce(track, 'A') as track,
+
             if(
                 lunchstatus in unnest({{ invalid_lunch_status }}), null, lunchstatus
             ) as lunch_status,
@@ -265,6 +275,8 @@ with
             gender,
             ethnicity,
             fedethnicity,
+            next_school,
+            sched_nextyeargrade,
             rn_year,
             rn_school,
             rn_all,
@@ -338,16 +350,18 @@ select
     enr.gender,
     enr.ethnicity,
     enr.fedethnicity,
+    enr.next_school,
+    enr.sched_nextyeargrade,
     enr.rn_year,
     enr.rn_school,
     enr.rn_undergrad,
     enr.rn_all,
     enr.is_retained_year,
     max(enr.is_retained_year) over (partition by enr.studentid) as is_retained_ever,
-    max(enr.year_in_school) over (
+    min(enr.year_in_school) over (
         partition by enr.studentid, enr.academic_year
     ) as year_in_school,
-    max(enr.year_in_network) over (
+    min(enr.year_in_network) over (
         partition by enr.studentid, enr.academic_year
     ) as year_in_network,
     min(if(enr.year_in_network = 1, enr.schoolid, null)) over (
@@ -462,6 +476,25 @@ select
     scw.pickup_3_phone_work,
     scw.pickup_3_relationship,
 
+    case
+        when enr.grade_level = 99
+        then 'Graduated'
+        when
+            min(enr.year_in_network) over (
+                partition by enr.studentid, enr.academic_year
+            )
+            = 1
+        then 'New'
+        when enr.grade_level_prev is null
+        then 'New'
+        when enr.grade_level_prev < enr.grade_level
+        then 'Promoted'
+        when enr.grade_level_prev = enr.grade_level
+        then 'Retained'
+        when enr.grade_level_prev > enr.grade_level
+        then 'Demoted'
+    end as boy_status,
+
     if(
         sp.specprog_name in unnest({{ self_contained_specprog_names }}), true, false
     ) as is_self_contained,
@@ -469,6 +502,7 @@ select
     if(ood.dcid is not null, true, false) as is_out_of_district,
 
     if(ood.dcid is not null, ood.programid, enr.schoolid) as reporting_schoolid,
+
     if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
 
     case
