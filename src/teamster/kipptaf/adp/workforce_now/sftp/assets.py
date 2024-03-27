@@ -10,7 +10,7 @@ from .schema import ASSET_FIELDS
 
 _all = [
     build_sftp_asset(
-        asset_key=[CODE_LOCATION, "adp_workforce_now", a["asset_name"]],
+        asset_key=[CODE_LOCATION, "adp", "workforce_now", a["asset_name"]],
         ssh_resource_key="ssh_adp_workforce_now",
         avro_schema=get_avro_record_schema(
             name=a["asset_name"], fields=ASSET_FIELDS[a["asset_name"]]
