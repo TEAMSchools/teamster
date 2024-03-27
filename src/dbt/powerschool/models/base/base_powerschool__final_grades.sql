@@ -80,6 +80,9 @@ with
 
             sgs.grade_points as sg_grade_points,
 
+            nullif(pfg.citizenship, '') as citizenship,
+            nullif(pfg.comment_value, '') as comment_value,
+
             if(
                 sg.potentialcrhrs != 0.0, sg.potentialcrhrs, null
             ) as sg_potential_credit_hours,
@@ -172,6 +175,8 @@ with
             fg_letter_grade_adjusted,
             fg_percent_adjusted,
             fg_grade_points,
+            citizenship,
+            comment_value,
 
             coalesce(
                 sg_potential_credit_hours, courses_credit_hours
@@ -241,6 +246,8 @@ with
             term_weighted_points_possible,
             y1_weighted_points_possible_running,
             y1_weighted_points_possible,
+            citizenship,
+            comment_value,
 
             term_percent_grade
             * term_weighted_points_possible as term_weighted_points_earned,
@@ -314,6 +321,8 @@ with
             y1_weighted_points_possible_running,
             y1_weighted_points_possible,
             y1_weighted_points_valid_running,
+            citizenship,
+            comment_value,
 
             round(fg_percent * 100.000, 0) as fg_percent,
             round(fg_percent_adjusted * 100.000, 0) as fg_percent_adjusted,
