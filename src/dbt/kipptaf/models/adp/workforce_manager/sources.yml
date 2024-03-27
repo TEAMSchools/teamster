@@ -17,6 +17,12 @@ sources:
               }}/adp_workforce_manager/accrual_reporting_period_summary/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            dep_key:
+              - kipptaf
+              - adp_workforce_manager
+              - accrual_reporting_period_summary
       - name: src_adp_workforce_manager__time_details
         external:
           location: "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/time_details/*"
@@ -25,3 +31,9 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/time_details/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            dep_key:
+              - kipptaf
+              - adp_workforce_manager
+              - time_details
