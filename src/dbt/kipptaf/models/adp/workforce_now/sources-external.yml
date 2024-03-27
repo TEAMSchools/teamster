@@ -36,3 +36,10 @@ sources:
             enable_logical_types: true
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/adp/workforce_now/workers/"
+        meta:
+          dagster:
+            dep_key:
+              - kipptaf
+              - adp
+              - workforce_now
+              - workers
