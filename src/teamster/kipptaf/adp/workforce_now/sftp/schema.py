@@ -1,6 +1,10 @@
 ADDITIONAL_EARNING_FIELDS = [
     {"name": "additional_earnings_code", "type": ["null", "string"], "default": None},
-    {"name": "check_voucher_number", "type": ["null", "string"], "default": None},
+    {
+        "name": "check_voucher_number",
+        "type": ["null", "string", "long"],
+        "default": None,
+    },
     {"name": "cost_number_description", "type": ["null", "string"], "default": None},
     {"name": "cost_number", "type": ["null", "string"], "default": None},
     {"name": "employee_number", "type": ["null", "double"], "default": None},
