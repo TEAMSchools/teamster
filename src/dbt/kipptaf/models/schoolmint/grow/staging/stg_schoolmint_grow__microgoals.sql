@@ -1,8 +1,10 @@
 with
     goals as (
         select
-            gt.tag_id as goal_tag_id,
-            gt.name as goal_tag_name,
+            gt.tag_id as base_tag_id,
+            gt.name as base_tag_name,
+
+            t as tag_id,
 
             gt2.name as tag_name,
 
@@ -18,10 +20,11 @@ with
 
     goals_parsed as (
         select
-            goal_tag_id,
-            goal_tag_name,
+            base_tag_id,
+            base_tag_name,
             goal_code,
 
+            max(if(starts_with(tag_name, goal_code), tag_id, null)) as goal_tag_id,
             max(if(starts_with(tag_name, goal_code), tag_name, null)) as goal_name,
             max(
                 if(starts_with(tag_name, strand_code || ':'), tag_name, null)
@@ -30,15 +33,15 @@ with
                 if(starts_with(tag_name, bucket_code || ':'), tag_name, null)
             ) as bucket_name,
         from goals
-        group by goal_tag_id, goal_tag_name, goal_code
+        group by base_tag_id, base_tag_name, goal_code
     )
 
 select
     goal_tag_id,
-    bucket_name,
-    strand_name,
-    goal_code,
     goal_name,
+    goal_code,
+    strand_name,
+    bucket_name,
 
-    regexp_replace(goal_tag_name, goal_name || r'\s+', '') as goal_description,
+    regexp_replace(base_tag_name, goal_name || r'\s+', '') as goal_description,
 from goals_parsed
