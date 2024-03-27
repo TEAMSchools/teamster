@@ -80,8 +80,8 @@ with
 
             sgs.grade_points as sg_grade_points,
 
-            nullif(pfg.citizenship, '') as citizenship,
-            nullif(pfg.comment_value, '') as comment_value,
+            fg.citizenship,
+            fg.comment_value,
 
             if(
                 sg.potentialcrhrs != 0.0, sg.potentialcrhrs, null
@@ -404,6 +404,8 @@ select
     y1.y1_weighted_points_earned_running,
     y1.y1_weighted_points_earned_adjusted_running,
     y1.y1_weighted_points_valid_running,
+    y1.citizenship,
+    y1.comment_value,
 
     y1gs.grade_points as y1_grade_points,
     y1gs.letter_grade as y1_letter_grade,
