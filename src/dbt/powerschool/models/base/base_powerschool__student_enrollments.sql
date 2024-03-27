@@ -482,7 +482,7 @@ select
         when
             min(enr.year_in_network) over (
                 partition by enr.studentid, enr.academic_year
-            ) as year_in_network
+            )
             = 1
         then 'New'
         when enr.grade_level_prev is null
