@@ -44,6 +44,12 @@ op inject -f --in-file=.devcontainer/tpl/op_credentials_json.tpl \
   --out-file=env/op_credentials_json &&
   sudo mv -f env/op_credentials_json /etc/secret-volume/op_credentials_json
 
+op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
+  --out-file=env/dbt_cloud.yml &&
+  sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
+
+ln -sf /workspaces/teamster/src/dbt/kipptaf/dbt_project.yml /workspaces/dbt_project.yml
+
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
 
