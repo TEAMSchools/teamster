@@ -51,7 +51,7 @@ with
         inner join
             {{ ref("stg_reporting__terms") }} as rt
             on rt.type = 'PM'
-            and rt.name not like '%Teacher%'
+            and rt.name like '%Coach ETR%'
             and od.academic_year = rt.academic_year
             and od.form_term = rt.code
     ),

@@ -112,6 +112,7 @@ with
             and form_term in ('PM2', 'PM3')
             and rn_submission = 1
             and overall_score is not null
+            and academic_year >= 2023
         group by employee_number, academic_year
     )
 

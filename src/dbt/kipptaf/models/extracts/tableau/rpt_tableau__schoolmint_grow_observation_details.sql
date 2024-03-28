@@ -1,14 +1,15 @@
 select
     sr.employee_number,
+    sr.sam_account_name,
+    sr.report_to_sam_account_name,
+
     rt.type as form_type,
     rt.code as form_term,
     rt.name as form_long_name,
     rt.academic_year,
     rt.start_date,
     rt.lockbox_date,
-
-    sr.sam_account_name,
-    sr.report_to_sam_account_name,
+    
     sr2.preferred_name_lastfirst as observer_name,
 
     od.observer_employee_number,
@@ -75,6 +76,6 @@ left join
     {{ ref("base_people__staff_roster") }} as sr2
     on od.observer_employee_number = sr2.employee_number
 where
-    sr.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
+    (sr.job_title like '%Teacher%' or sr.job_title = 'Learning Specialist')
     and sr.assignment_status not in ('Terminated', 'Deceased')
     and rt.type in ('PM', 'O3', 'WT')
