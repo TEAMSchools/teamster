@@ -1,8 +1,14 @@
+import json
+import pathlib
+
 from teamster.core.dbt.assets import build_dbt_assets, build_dbt_external_source_assets
 from teamster.core.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 from .. import CODE_LOCATION
-from .manifest import dbt_manifest
+
+dbt_manifest = json.loads(
+    s=pathlib.Path(f"src/dbt/{CODE_LOCATION}/target/manifest.json").read_text()
+)
 
 dagster_dbt_translator = CustomDagsterDbtTranslator(
     asset_key_prefix=CODE_LOCATION, source_asset_key_prefix=CODE_LOCATION
@@ -18,7 +24,7 @@ dbt_external_source_assets = build_dbt_external_source_assets(
     dagster_dbt_translator=dagster_dbt_translator,
 )
 
-_all = [
-    dbt_assets,
-    dbt_external_source_assets,
+__all__ = [
+    "dbt_assets",
+    "dbt_external_source_assets",
 ]
