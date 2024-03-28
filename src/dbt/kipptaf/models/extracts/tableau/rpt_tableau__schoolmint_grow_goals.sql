@@ -44,4 +44,7 @@ left join
     on a.assignment_id = t.assignment_id
 left join {{ ref("stg_schoolmint_grow__microgoals") }} as m on t.tag_id = m.goal_tag_id
 /* using O3 weekly assignment as proxy for 1 microgoal per week requirement*/
-where rt.type = 'O3' and sr.assignment_status = 'Active' and sr.job_title in ('Teacher','Teacher in Residence','Learning Specialist','Teacher ESL')
+where
+    rt.type = 'O3'
+    and sr.assignment_status = 'Active'
+    and (sr.job_title like '%Teacher%' or sr.job_title = 'Learning Specialist')
