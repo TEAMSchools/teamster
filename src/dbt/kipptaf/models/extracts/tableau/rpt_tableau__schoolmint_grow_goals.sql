@@ -4,7 +4,6 @@ select
     sr.business_unit_home_name,
     sr.home_work_location_name,
     sr.home_work_location_grade_band,
-    sr.home_work_location_powerschool_school_id,
     sr.department_home_name,
     sr.primary_grade_level_taught,
     sr.job_title,
