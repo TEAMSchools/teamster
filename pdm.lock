@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:4be5cafa8c73e019a5bf6afd1f16dc44e1c634ea989e603b44bc0c62b56e4ea5"
+content_hash = "sha256:84c46a1d309fb5d4e91645732559219687d84dbd5ea04c1ee8bdb131a0b38ded"
 
 [[package]]
 name = "agate"
@@ -505,6 +505,20 @@ dependencies = [
 files = [
     {file = "dagster-dbt-0.22.13.tar.gz", hash = "sha256:970f98ab601e8fc72f858207b84686fd2d2239c6291eeb5dfc5d07d23c7a1248"},
     {file = "dagster_dbt-0.22.13-py3-none-any.whl", hash = "sha256:54f7ba2b0da5d0488e0a28752a2834dca26d2bb43541929c2700adfa7951efd4"},
+]
+
+[[package]]
+name = "dagster-embedded-elt"
+version = "0.22.13"
+requires_python = "<3.13,>=3.8"
+summary = "Package for performing ETL/ELT tasks with Dagster."
+dependencies = [
+    "dagster==1.6.13",
+    "sling>=1.1.5",
+]
+files = [
+    {file = "dagster-embedded-elt-0.22.13.tar.gz", hash = "sha256:c4b4f5ed43970abfc57d457f3ee8502ee312c87d47832321c3e7b675e09fddf9"},
+    {file = "dagster_embedded_elt-0.22.13-py3-none-any.whl", hash = "sha256:9c20c10965e75f4f7c1370da54ee5211dd25c3557009bc26044c2f9fc23bea49"},
 ]
 
 [[package]]
@@ -1115,17 +1129,17 @@ files = [
 
 [[package]]
 name = "grpcio-status"
-version = "1.62.0"
+version = "1.62.1"
 requires_python = ">=3.6"
 summary = "Status proto mapping for gRPC"
 dependencies = [
     "googleapis-common-protos>=1.5.5",
-    "grpcio>=1.62.0",
+    "grpcio>=1.62.1",
     "protobuf>=4.21.6",
 ]
 files = [
-    {file = "grpcio-status-1.62.0.tar.gz", hash = "sha256:0d693e9c09880daeaac060d0c3dba1ae470a43c99e5d20dfeafd62cf7e08a85d"},
-    {file = "grpcio_status-1.62.0-py3-none-any.whl", hash = "sha256:3baac03fcd737310e67758c4082a188107f771d32855bce203331cd4c9aa687a"},
+    {file = "grpcio-status-1.62.1.tar.gz", hash = "sha256:3431c8abbab0054912c41df5c72f03ddf3b7a67be8a287bb3c18a3456f96ff77"},
+    {file = "grpcio_status-1.62.1-py3-none-any.whl", hash = "sha256:af0c3ab85da31669f21749e8d53d669c061ebc6ce5637be49a46edcb7aa8ab17"},
 ]
 
 [[package]]
@@ -1453,22 +1467,22 @@ files = [
 
 [[package]]
 name = "msgpack"
-version = "1.0.7"
+version = "1.0.8"
 requires_python = ">=3.8"
 summary = "MessagePack serializer"
 files = [
-    {file = "msgpack-1.0.7-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:f0936e08e0003f66bfd97e74ee530427707297b0d0361247e9b4f59ab78ddc8b"},
-    {file = "msgpack-1.0.7-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:98bbd754a422a0b123c66a4c341de0474cad4a5c10c164ceed6ea090f3563db4"},
-    {file = "msgpack-1.0.7-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:b291f0ee7961a597cbbcc77709374087fa2a9afe7bdb6a40dbbd9b127e79afee"},
-    {file = "msgpack-1.0.7-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ebbbba226f0a108a7366bf4b59bf0f30a12fd5e75100c630267d94d7f0ad20e5"},
-    {file = "msgpack-1.0.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1e2d69948e4132813b8d1131f29f9101bc2c915f26089a6d632001a5c1349672"},
-    {file = "msgpack-1.0.7-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:bdf38ba2d393c7911ae989c3bbba510ebbcdf4ecbdbfec36272abe350c454075"},
-    {file = "msgpack-1.0.7-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:993584fc821c58d5993521bfdcd31a4adf025c7d745bbd4d12ccfecf695af5ba"},
-    {file = "msgpack-1.0.7-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:52700dc63a4676669b341ba33520f4d6e43d3ca58d422e22ba66d1736b0a6e4c"},
-    {file = "msgpack-1.0.7-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:e45ae4927759289c30ccba8d9fdce62bb414977ba158286b5ddaf8df2cddb5c5"},
-    {file = "msgpack-1.0.7-cp312-cp312-win32.whl", hash = "sha256:27dcd6f46a21c18fa5e5deed92a43d4554e3df8d8ca5a47bf0615d6a5f39dbc9"},
-    {file = "msgpack-1.0.7-cp312-cp312-win_amd64.whl", hash = "sha256:7687e22a31e976a0e7fc99c2f4d11ca45eff652a81eb8c8085e9609298916dcf"},
-    {file = "msgpack-1.0.7.tar.gz", hash = "sha256:572efc93db7a4d27e404501975ca6d2d9775705c2d922390d878fcf768d92c87"},
+    {file = "msgpack-1.0.8-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:114be227f5213ef8b215c22dde19532f5da9652e56e8ce969bf0a26d7c419fee"},
+    {file = "msgpack-1.0.8-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:d661dc4785affa9d0edfdd1e59ec056a58b3dbb9f196fa43587f3ddac654ac7b"},
+    {file = "msgpack-1.0.8-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d56fd9f1f1cdc8227d7b7918f55091349741904d9520c65f0139a9755952c9e8"},
+    {file = "msgpack-1.0.8-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0726c282d188e204281ebd8de31724b7d749adebc086873a59efb8cf7ae27df3"},
+    {file = "msgpack-1.0.8-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8db8e423192303ed77cff4dce3a4b88dbfaf43979d280181558af5e2c3c71afc"},
+    {file = "msgpack-1.0.8-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:99881222f4a8c2f641f25703963a5cefb076adffd959e0558dc9f803a52d6a58"},
+    {file = "msgpack-1.0.8-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:b5505774ea2a73a86ea176e8a9a4a7c8bf5d521050f0f6f8426afe798689243f"},
+    {file = "msgpack-1.0.8-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:ef254a06bcea461e65ff0373d8a0dd1ed3aa004af48839f002a0c994a6f72d04"},
+    {file = "msgpack-1.0.8-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:e1dd7839443592d00e96db831eddb4111a2a81a46b028f0facd60a09ebbdd543"},
+    {file = "msgpack-1.0.8-cp312-cp312-win32.whl", hash = "sha256:64d0fcd436c5683fdd7c907eeae5e2cbb5eb872fafbc03a43609d7941840995c"},
+    {file = "msgpack-1.0.8-cp312-cp312-win_amd64.whl", hash = "sha256:74398a4cf19de42e1498368c36eed45d9528f5fd0155241e82c4082b7e16cffd"},
+    {file = "msgpack-1.0.8.tar.gz", hash = "sha256:95c02b0e27e706e48d0e5426d1710ca78e0f0628d6e89d5b5a5b91a5f12274f3"},
 ]
 
 [[package]]
@@ -1776,7 +1790,7 @@ files = [
 
 [[package]]
 name = "py-avro-schema"
-version = "3.5.1"
+version = "3.6.0"
 requires_python = ">=3.9"
 summary = "Generate Apache Avro schemas for Python types including standard library data-classes and Pydantic data models."
 dependencies = [
@@ -1786,8 +1800,8 @@ dependencies = [
     "typeguard~=4.0",
 ]
 files = [
-    {file = "py-avro-schema-3.5.1.tar.gz", hash = "sha256:1b3cc2101e51f1a13bf6b0ab279619a3210854bbff8adbc086a65ecb15e5fc0d"},
-    {file = "py_avro_schema-3.5.1-py3-none-any.whl", hash = "sha256:e0019ec90bc69ed7e6da99a44ebfa110a30b55c270ff3d37b77db1928fa87e48"},
+    {file = "py-avro-schema-3.6.0.tar.gz", hash = "sha256:c9ac043169a9f1176dc301f6aa335c4f348c4ae4bcaa5639d9f00c193bb6efe8"},
+    {file = "py_avro_schema-3.6.0-py3-none-any.whl", hash = "sha256:d37407c803be279b49edd15a0997bebd6c2fc1ce901aad52b6127897b1b52c11"},
 ]
 
 [[package]]
@@ -2318,6 +2332,25 @@ summary = "Python 2 and 3 compatibility utilities"
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+
+[[package]]
+name = "sling"
+version = "1.2.1"
+summary = "Slings data from a source to a target"
+dependencies = [
+    "sling-linux-amd64==1.2.1",
+]
+files = [
+    {file = "sling-1.2.1.tar.gz", hash = "sha256:d92d7fe23be739687fa198aeb1e7f767bac74d6478d9032f569057ae97ca6173"},
+]
+
+[[package]]
+name = "sling-linux-amd64"
+version = "1.2.1"
+summary = "Sling Binary for Linux (AMD64)"
+files = [
+    {file = "sling-linux-amd64-1.2.1.tar.gz", hash = "sha256:d0148b4eb54018e38286e894369fc9c129dd588478a248310a30c240a197906b"},
 ]
 
 [[package]]
