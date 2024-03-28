@@ -9,7 +9,7 @@ select
     rt.academic_year,
     rt.start_date,
     rt.lockbox_date,
-    
+
     sr2.preferred_name_lastfirst as observer_name,
 
     od.observer_employee_number,
