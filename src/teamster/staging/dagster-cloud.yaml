@@ -424,7 +424,7 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: credential
-              - name: ILLUMINATE_ODBC_PASSWORD
+              - name: ILLUMINATE_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-odbc
@@ -807,7 +807,7 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: credential
-              - name: ILLUMINATE_ODBC_PASSWORD
+              - name: ILLUMINATE_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-odbc
