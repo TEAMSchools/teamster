@@ -11,6 +11,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-branch-staging.yaml
       - src/teamster/**
+      - src/dbt/staging/**
     types:
       - opened
       - synchronize
