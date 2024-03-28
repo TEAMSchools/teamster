@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: adp_workforce_now
+    tables:
+      - name: business_communication
+      - name: classification
+      - name: groups
+      - name: location
+      - name: organizational_unit
+      - name: other_personal_address
+      - name: person_communication
+      - name: person_disability
+      - name: person_government_id
+      - name: person_history
+      - name: person_military_classification
+      - name: person_preferred_salutation
+      - name: person_social_insurance_program
+      - name: work_assignment_history
+      - name: worker
+      - name: worker_additional_remuneration
+      - name: worker_assigned_location
+      - name: worker_assigned_organizational_unit
+      - name: worker_base_remuneration
+      - name: worker_classification
+      - name: worker_group
+      - name: worker_home_organizational_unit
+      - name: worker_report_to

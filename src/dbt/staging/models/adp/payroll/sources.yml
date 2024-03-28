@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: adp_payroll
+    schema: staging_adp_payroll
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_adp_payroll__general_ledger_file
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/adp/payroll/general_ledger_file/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/adp/payroll/general_ledger_file/"
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            dep_key:
+              - staging
+              - adp
+              - payroll
+              - general_ledger_file

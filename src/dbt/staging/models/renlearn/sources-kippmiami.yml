@@ -1,0 +1,45 @@
+version: 2
+
+sources:
+  - name: kippmiami_renlearn
+    tables:
+      - name: stg_renlearn__accelerated_reader
+        meta:
+          dagster:
+            group: renlearn
+            asset_key:
+              - kippmiami
+              - renlearn
+              - stg_renlearn__accelerated_reader
+      - name: stg_renlearn__fast_star
+        meta:
+          dagster:
+            group: renlearn
+            asset_key:
+              - kippmiami
+              - renlearn
+              - stg_renlearn__fast_star
+      - name: stg_renlearn__star_dashboard_standards
+        meta:
+          dagster:
+            group: renlearn
+            asset_key:
+              - kippmiami
+              - renlearn
+              - stg_renlearn__star_dashboard_standards
+      - name: stg_renlearn__star_skill_area
+        meta:
+          dagster:
+            group: renlearn
+            asset_key:
+              - kippmiami
+              - renlearn
+              - stg_renlearn__star_skill_area
+      - name: stg_renlearn__star
+        meta:
+          dagster:
+            group: renlearn
+            asset_key:
+              - kippmiami
+              - renlearn
+              - stg_renlearn__star

@@ -1,0 +1,9 @@
+version: 2
+
+models:
+  - name: base_people__staff_roster
+    columns:
+      - name: employee_number
+        tests:
+          - unique
+          - not_null
