@@ -1,33 +1,17 @@
 from typing import Any, Mapping, Optional
 
+from dagster import AssetKey
 from dagster_dbt import KeyPrefixDagsterDbtTranslator
 from dagster_dbt.asset_utils import default_group_from_dbt_resource_props
 
 
 class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
-    # def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-    #     asset_key_config = (
-    #         dbt_resource_props.get("meta", {}).get("dagster", {}).get("asset_key", [])
-    #     )
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        asset_key = super().get_asset_key(dbt_resource_props)
 
-    #     if asset_key_config:
-    #         return AssetKey(asset_key_config)
-    #     else:
-    #         return super().get_asset_key(dbt_resource_props)
+        asset_key.path.insert(-1, "dbt")
 
-    # def get_auto_materialize_policy(
-    #     self, dbt_resource_props: Mapping[str, Any]
-    # ) -> Optional[AutoMaterializePolicy]:
-    #     auto_materialize_policy = _auto_materialize_policy_fn(
-    #         dbt_resource_props.get("meta", {})
-    #         .get("dagster", {})
-    #         .get("auto_materialize_policy", {})
-    #     )
-
-    #     if auto_materialize_policy:
-    #         return auto_materialize_policy
-    #     else:
-    #         return AutoMaterializePolicy.eager()
+        return asset_key
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         code_location = self._asset_key_prefix[0]
