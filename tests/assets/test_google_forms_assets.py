@@ -35,8 +35,4 @@ def test_asset_google_forms_form():
 
 
 def test_asset_google_forms_responses():
-    _test_asset(
-        asset=responses,
-        # trunk-ignore(gitleaks/generic-api-key)
-        partition_key="15xuEO72xhyhhv8K0qKbkSV864-DetXhmWsxKyS7ai50",
-    )
+    _test_asset(asset=responses)
