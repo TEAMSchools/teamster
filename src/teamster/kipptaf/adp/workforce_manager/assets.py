@@ -19,7 +19,6 @@ from slugify import slugify
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
-    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
@@ -54,7 +53,7 @@ def build_adp_wfm_asset(
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
-        symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]
+        symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]  # type:ignore
 
         symbolic_period_record = [
             sp
@@ -125,9 +124,7 @@ def build_adp_wfm_asset(
         row_count = df.shape[0]
 
         records = df.to_dict(orient="records")
-        schema = get_avro_record_schema(
-            name=asset_name, fields=ASSET_FIELDS[asset_name]
-        )
+        schema = ASSET_FIELDS[asset_name]
 
         yield Output(value=(records, schema), metadata={"records": row_count})
 
