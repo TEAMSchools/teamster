@@ -3,122 +3,423 @@ import json
 from py_avro_schema import generate
 from pydantic import BaseModel
 
-from teamster.core.utils.functions import get_avro_record_schema
-
 
 class Date(BaseModel):
-    date: str
-    timezone_type: int
-    timezone: str
+    date: str | None = None
+    timezone_type: int | None = None
+    timezone: str | None = None
+
+
+class CustomField(BaseModel):
+    CustomFieldID: str | None = None
+    FieldCategory: str | None = None
+    FieldKey: str | None = None
+    FieldName: str | None = None
+    FieldType: str | None = None
+    InputHTML: str | None = None
+    InputName: str | None = None
+    IsFrontEnd: str | None = None
+    IsRequired: str | None = None
+    LabelHTML: str | None = None
+    MinUserLevel: str | None = None
+    Options: str | None = None
+    SourceID: str | None = None
+    SourceType: str | None = None
+    StringValue: str | None = None
+    Value: str | None = None
+
+    NumValue: int | float | None = None
+
+    SelectedOptions: list[str | None] | None = None
+
+
+class Behavior(BaseModel):
+    DLOrganizationID: str | None = None
+    DLSchoolID: str | None = None
+    SchoolName: str | None = None
+    DLStudentID: str | None = None
+    StudentSchoolID: str | None = None
+    SecondaryStudentID: str | None = None
+    StudentFirstName: str | None = None
+    StudentMiddleName: str | None = None
+    StudentLastName: str | None = None
+    DLSAID: str | None = None
+    BehaviorDate: str | None = None
+    Behavior: str | None = None
+    BehaviorID: str | None = None
+    Weight: str | None = None
+    BehaviorCategory: str | None = None
+    PointValue: str | None = None
+    DLUserID: str | None = None
+    StaffSchoolID: str | None = None
+    StaffTitle: str | None = None
+    StaffFirstName: str | None = None
+    StaffMiddleName: str | None = None
+    StaffLastName: str | None = None
+    Roster: str | None = None
+    RosterID: str | None = None
+    Notes: str | None = None
+    DL_LASTUPDATE: str | None = None
+    is_deleted: bool | None = None
+    SourceType: str | None = None
+    SourceID: str | None = None
+    SourceProcedure: str | None = None
+    Assignment: str | None = None
+
+
+class StudentModel(BaseModel):
+    StudentID: str | None = None
+    StudentSchoolID: str | None = None
+    SecondaryStudentID: str | None = None
+    StudentFirstName: str | None = None
+    StudentMiddleName: str | None = None
+    StudentLastName: str | None = None
+
+
+class CommLog(BaseModel):
+    RecordID: int | None = None
+    RecordType: str | None = None
+    UserID: int | None = None
+    EducatorName: str | None = None
+    CallType: str | None = None
+    CallStatusID: int | None = None
+    CallStatus: str | None = None
+    PersonContacted: str | None = None
+    Relationship: str | None = None
+    Email: str | None = None
+    PhoneNumber: str | None = None
+    CallDateTime: str | None = None
+    Topic: str | None = None
+    Response: str | None = None
+    CommunicationWithID: int | None = None
+    CommunicationWithType: str | None = None
+    CommunicationWithName: str | None = None
+    MailingAddress: str | None = None
+    ReasonID: int | None = None
+    Reason: str | None = None
+    IsDraft: bool | None = None
+    ThirdPartyName: str | None = None
+
+    Student: StudentModel | None = None
+
+    Followups: list[str | None] | None = None
+
+
+class Followup(BaseModel):
+    FollowupID: str | None = None
+    SchoolID: str | None = None
+    StudentID: str | None = None
+    FollowupType: str | None = None
+    SourceID: str | None = None
+    StudentSchoolID: str | None = None
+    FirstName: str | None = None
+    MiddleName: str | None = None
+    LastName: str | None = None
+    GradeLevelShort: str | None = None
+    InitBy: str | None = None
+    iFirst: str | None = None
+    iMiddle: str | None = None
+    iLast: str | None = None
+    iTitle: str | None = None
+    CloseBy: str | None = None
+    cFirst: str | None = None
+    cMiddle: str | None = None
+    cLast: str | None = None
+    cTitle: str | None = None
+    InitTS: str | None = None
+    OpenTS: str | None = None
+    CloseTS: str | None = None
+    InitNotes: str | None = None
+    Outstanding: str | None = None
+    FollowupNotes: str | None = None
+    ExtStatus: str | None = None
+    TicketStatus: str | None = None
+    ResponseType: str | None = None
+    ResponseID: str | None = None
+    LongType: str | None = None
+    URL: str | None = None
+    TicketTypeID: str | None = None
+    TicketType: str | None = None
+
+
+class Homework(BaseModel):
+    DLOrganizationID: str | None = None
+    DLSchoolID: str | None = None
+    SchoolName: str | None = None
+    DLStudentID: str | None = None
+    StudentSchoolID: str | None = None
+    SecondaryStudentID: str | None = None
+    StudentFirstName: str | None = None
+    StudentMiddleName: str | None = None
+    StudentLastName: str | None = None
+    DLSAID: str | None = None
+    BehaviorDate: str | None = None
+    BehaviorID: str | None = None
+    Behavior: str | None = None
+    Weight: str | None = None
+    BehaviorCategory: str | None = None
+    PointValue: str | None = None
+    DLUserID: str | None = None
+    StaffSchoolID: str | None = None
+    StaffTitle: str | None = None
+    StaffFirstName: str | None = None
+    StaffMiddleName: str | None = None
+    StaffLastName: str | None = None
+    Roster: str | None = None
+    RosterID: str | None = None
+    Notes: str | None = None
+    DL_LASTUPDATE: str | None = None
+    is_deleted: bool | None = None
+    Assignment: str | None = None
+
+
+class Penalty(BaseModel):
+    IncidentID: str | None = None
+    IncidentPenaltyID: str | None = None
+    SchoolID: str | None = None
+    PenaltyID: str | None = None
+    PenaltyName: str | None = None
+    StartDate: str | None = None
+    EndDate: str | None = None
+    NumDays: int | None = None
+    NumPeriods: str | None = None
+    IsSuspension: bool | None = None
+    IsReportable: bool | None = None
+    SAID: str | None = None
+    Print: bool | None = None
+    StudentID: str | None = None
+
+
+class Incident(BaseModel):
+    IncidentID: str | None = None
+    ReportingIncidentID: str | None = None
+    SchoolID: str | None = None
+    StudentID: str | None = None
+    StudentFirst: str | None = None
+    StudentMiddle: str | None = None
+    StudentLast: str | None = None
+    Gender: str | None = None
+    StudentSchoolID: str | None = None
+    GradeLevelShort: str | None = None
+    HomeroomName: str | None = None
+    InfractionTypeID: str | None = None
+    LocationID: str | None = None
+    Location: str | None = None
+    CategoryID: str | None = None
+    Category: str | None = None
+    ReportedDetails: str | None = None
+    AdminSummary: str | None = None
+    Context: str | None = None
+    AddlReqs: str | None = None
+    StatusID: str | None = None
+    Status: str | None = None
+    FamilyMeetingNotes: str | None = None
+    FollowupNotes: str | None = None
+    HearingFlag: bool | None = None
+    HearingLocation: str | None = None
+    HearingNotes: str | None = None
+    CreateBy: str | None = None
+    CreateFirst: str | None = None
+    CreateMiddle: str | None = None
+    CreateLast: str | None = None
+    CreateStaffSchoolID: str | None = None
+    UpdateBy: str | None = None
+    UpdateFirst: str | None = None
+    UpdateMiddle: str | None = None
+    UpdateLast: str | None = None
+    UpdateTitle: str | None = None
+    IsReferral: bool | None = None
+    IsActive: bool | None = None
+    CreateTitle: str | None = None
+    SendAlert: bool | None = None
+    Infraction: str | None = None
+    ReturnPeriod: str | None = None
+    HearingDate: str | None = None
+    HearingTime: str | None = None
+    UpdateStaffSchoolID: str | None = None
+
+    IssueTS: Date | None = None
+    ReturnDate: Date | None = None
+    CreateTS: Date | None = None
+    UpdateTS: Date | None = None
+    ReviewTS: Date | None = None
+    CloseTS: Date | None = None
+    DL_LASTUPDATE: Date | None = None
+
+    Actions: list[str | None] | None = None
+    Penalties: list[Penalty | None] | None = None
+    Custom_Fields: list[CustomField | None] | None = None
+
+
+class ListModel(BaseModel):
+    ListID: str | None = None
+    ListName: str | None = None
+    IsDated: bool | None = None
+    IsAccumulation: bool | None = None
+    IsSystem: bool | None = None
+    IsClearable: bool | None = None
+    Show: bool | None = None
+    Sort: str | None = None
+
+
+class RosterAssignment(BaseModel):
+    DLSchoolID: str | None = None
+    SchoolName: str | None = None
+    DLStudentID: str | None = None
+    StudentSchoolID: str | None = None
+    SecondaryStudentID: str | None = None
+    FirstName: str | None = None
+    MiddleName: str | None = None
+    LastName: str | None = None
+    GradeLevel: str | None = None
+    DLRosterID: str | None = None
+    RosterName: str | None = None
+    IntegrationID: str | None = None
+    SecondaryIntegrationID: str | None = None
+
+
+class Roster(BaseModel):
+    SchoolID: str | None = None
+    RosterID: str | None = None
+    RosterName: str | None = None
+    RosterTypeID: str | None = None
+    RosterType: str | None = None
+    MasterID: str | None = None
+    MasterName: str | None = None
+    TakeAttendance: str | None = None
+    TakeClassAttendance: str | None = None
+    CollectHW: str | None = None
+    SISKey: str | None = None
+    SecondaryIntegrationID: str | None = None
+    CourseNumber: str | None = None
+    SectionNumber: str | None = None
+    ShowRoster: str | None = None
+    ScreenSetID: str | None = None
+    SubjectID: str | None = None
+    SubjectName: str | None = None
+    Room: str | None = None
+    SISExpression: str | None = None
+    Period: str | None = None
+    MeetingDays: str | None = None
+    Active: str | None = None
+    LastSynced: str | None = None
+    StudentIDs: str | None = None
+    GradeLevels: str | None = None
+    StudentCount: str | None = None
+    MarkerColor: str | None = None
+    SISGradebookName: str | None = None
+    ScreenSetName: str | None = None
+    RTIFocusID: str | None = None
+    RTITier: str | None = None
+
+
+class Term(BaseModel):
+    TermID: str | None = None
+    AcademicYearID: str | None = None
+    AcademicYearName: str | None = None
+    SchoolID: str | None = None
+    TermTypeID: str | None = None
+    TermType: str | None = None
+    TermName: str | None = None
+    IntegrationID: str | None = None
+    SecondaryIntegrationID: str | None = None
+    GradeKey: str | None = None
+    StoredGrades: bool | None = None
+    Days: str | None = None
+    SecondaryGradeKey: str | None = None
+
+    StartDate: Date | None = None
+    EndDate: Date | None = None
+
+
+class User(BaseModel):
+    AccountID: str | None = None
+    Active: str | None = None
+    DLSchoolID: str | None = None
+    DLUserID: str | None = None
+    Email: str | None = None
+    FirstName: str | None = None
+    GroupName: str | None = None
+    LastName: str | None = None
+    MiddleName: str | None = None
+    SchoolName: str | None = None
+    StaffRole: str | None = None
+    Title: str | None = None
+    Username: str | None = None
+    UserSchoolID: str | None = None
+    UserStateID: str | None = None
 
 
 class EnrollmentObject(BaseModel):
-    EnrollmentID: str
-    GradeLevelID: str
-    GradeLevelName: str
-    DepartmentID: str
-    DepartmentName: str
-    BehaviorPlanID: str
-    BehaviorPlanName: str
-    GradeLevelKey: str
-
-    StartDate: Date
-    EndDate: Date
-
     AcademicYearID: str | None = None
+    BehaviorPlanID: str | None = None
+    BehaviorPlanName: str | None = None
     CreateByName: str | None = None
     CreateDate: str | None = None
+    DepartmentID: str | None = None
+    DepartmentName: str | None = None
+    EnrollmentID: str | None = None
+    GradeLevelID: str | None = None
+    GradeLevelKey: str | None = None
+    GradeLevelName: str | None = None
     TermByName: str | None = None
     TermDate: str | None = None
     YearName: str | None = None
 
+    StartDate: Date | None = None
+    EndDate: Date | None = None
+
 
 class PhoneNumber(BaseModel):
-    SPhoneID: str
-    PhoneNumber: str
-    Label: str
-    AutoDial: bool
-    AutoSMS: bool
-
+    AutoDial: bool | None = None
+    AutoSMS: bool | None = None
+    Label: str | None = None
+    PhoneNumber: str | None = None
+    SPhoneID: str | None = None
     TextDeliverability: str | None = None
 
 
 class Parent(BaseModel):
-    SParentID: str
-    StudentID: str
-    FirstName: str
-    MiddleName: str
-    LastName: str
-    Relationship: str
-    Guardian: bool
-    IsEmergency: bool
-    ResidesWith: bool
-    CanPickup: bool
-    ReceivesMail: bool
-    Email: str
-    AutoEmail: bool
-    Provider: str
-    AutoLanguageCode: str
-
-    PhoneNumbers: list[PhoneNumber]
-
+    AutoEmail: bool | None = None
+    AutoLanguageCode: str | None = None
+    CanPickup: bool | None = None
+    Email: str | None = None
+    FirstName: str | None = None
+    Guardian: bool | None = None
     IntegrationKey: str | None = None
-    LanguageID: str | None = None
+    IsEmergency: bool | None = None
     Language: str | None = None
     LanguageCode: str | None = None
+    LanguageID: str | None = None
+    LastName: str | None = None
     log: str | None = None
+    MiddleName: str | None = None
+    Provider: str | None = None
+    ReceivesMail: bool | None = None
+    Relationship: str | None = None
+    ResidesWith: bool | None = None
     Sort: str | None = None
+    SParentID: str | None = None
+    StudentID: str | None = None
 
-
-class CustomField(BaseModel):
-    CustomFieldID: str
-    SourceType: str
-    FieldType: str
-    FieldName: str
-    SourceID: str
-    IsFrontEnd: str
-    IsRequired: str
-    MinUserLevel: str
-    InputName: str
-
-    FieldCategory: str | None = None
-    FieldKey: str | None = None
-    InputHTML: str | None = None
-    LabelHTML: str | None = None
-    NumValue: float | None = None
-    Options: str | None = None
-    StringValue: str | None = None
-    Value: str | None = None
+    PhoneNumbers: list[PhoneNumber] | None = None
 
 
 class Student(BaseModel):
-    StudentID: str
-    Department: str
-    FirstName: str
-    MiddleName: str
-    LastName: str
-    LegalFirstName: str
-    StudentSchoolID: str
-    SecondaryStudentID: str
-    EnrollmentStatus: str
-    IsNSLP: str
-    Ethnicity: str
-    StreetAddress1: str
-    City: str
-    State: str
-    ZipCode: str
-    BirthDate: int | str
-
-    Enrollment: EnrollmentObject | None = None
-
     BehaviorPlan: str | None = None
+    BirthDate: int | str | None = None
     CellPhone: str | None = None
+    City: str | None = None
+    Department: str | None = None
     DepartmentID: str | None = None
     DLPS_ValidationCode: str | None = None
     ELLStatus: str | None = None
     Email: str | None = None
     Emoji: str | None = None
     EnrollmentID: str | None = None
+    EnrollmentStatus: str | None = None
+    Ethnicity: str | None = None
+    FirstName: str | None = None
     Gender: str | None = None
     GenderLetter: str | None = None
     GradeLevel: str | None = None
@@ -133,779 +434,85 @@ class Student(BaseModel):
     HomeroomID: str | None = None
     IntegrationID: str | None = None
     Is504: bool | None = None
+    IsNSLP: str | None = None
+    LastName: str | None = None
+    LegalFirstName: str | None = None
     MessageMerge1: str | None = None
     MessageMerge2: str | None = None
     MessageMerge3: str | None = None
+    MiddleName: str | None = None
     PhotoFile: str | None = None
     PhotoFileUrl: str | None = None
     PreferredName: str | None = None
     Pronouns: str | None = None
     SecondaryIntegrationID: str | None = None
+    SecondaryStudentID: str | None = None
     SourceSchoolID: str | None = None
     SPEDPlan: str | None = None
+    State: str | None = None
+    StreetAddress1: str | None = None
     StreetAddress2: str | None = None
+    StudentID: str | None = None
+    StudentSchoolID: str | None = None
     TransportationNotes: str | None = None
+    ZipCode: str | None = None
 
-    Notes: list[str | None]
-    Parents: list[Parent | None]
-    CustomFields: list[CustomField | None]
+    Enrollment: EnrollmentObject | None = None
+
+    Notes: list[str | None] | None = None
+
+    Parents: list[Parent | None] | None = None
+    CustomFields: list[CustomField | None] | None = None
 
 
-TIMESTAMP_FIELDS = {
-    "v1": [
-        {"name": "timezone_type", "type": ["null", "int"], "default": None},
-        {"name": "timezone", "type": ["null", "string"], "default": None},
-        {
-            "name": "date",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ]
-}
+class ReconcileAttendance(BaseModel):
+    AttendanceBehavior: str | None = None
+    AttendanceDate: str | None = None
+    SchoolName: str | None = None
+    StudentFirst: str | None = None
+    StudentID: int | None = None
+    StudentLast: str | None = None
+    SubmittedAt: str | None = None
+    SubmittedFn: str | None = None
+    SubmittedLn: str | None = None
+    UNNAMED_9: str | None = None
 
-BEHAVIOR_FIELDS = {
-    "beta": [
-        {"name": "Assignment", "type": ["null", "string"], "default": None},
-        {"name": "Behavior", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorCategory", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorID", "type": ["null", "string"], "default": None},
-        {"name": "DLOrganizationID", "type": ["null", "string"], "default": None},
-        {"name": "DLSAID", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLStudentID", "type": ["null", "string"], "default": None},
-        {"name": "DLUserID", "type": ["null", "string"], "default": None},
-        {"name": "is_deleted", "type": ["null", "boolean"], "default": None},
-        {"name": "Notes", "type": ["null", "string"], "default": None},
-        {"name": "PointValue", "type": ["null", "string"], "default": None},
-        {"name": "Roster", "type": ["null", "string"], "default": None},
-        {"name": "RosterID", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryStudentID", "type": ["null", "string"], "default": None},
-        {"name": "SourceID", "type": ["null", "string"], "default": None},
-        {"name": "SourceProcedure", "type": ["null", "string"], "default": None},
-        {"name": "SourceType", "type": ["null", "string"], "default": None},
-        {"name": "StaffFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StaffLastName", "type": ["null", "string"], "default": None},
-        {"name": "StaffMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StaffSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "StaffTitle", "type": ["null", "string"], "default": None},
-        {"name": "StudentFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StudentLastName", "type": ["null", "string"], "default": None},
-        {"name": "StudentMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "Weight", "type": ["null", "string"], "default": None},
-        {
-            "name": "BehaviorDate",
-            "type": ["null", "string"],
-            "logicalType": "date",
-            "default": None,
-        },
-        {
-            "name": "DL_LASTUPDATE",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ],
-    "v1": [
-        {"name": "Assignment", "type": ["null", "string"], "default": None},
-        {"name": "Behavior", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorCategory", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorID", "type": ["null", "string"], "default": None},
-        {"name": "DLOrganizationID", "type": ["null", "string"], "default": None},
-        {"name": "DLSAID", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLStudentID", "type": ["null", "string"], "default": None},
-        {"name": "DLUserID", "type": ["null", "string"], "default": None},
-        {"name": "is_deleted", "type": ["null", "boolean"], "default": None},
-        {"name": "Notes", "type": ["null", "string"], "default": None},
-        {"name": "PointValue", "type": ["null", "string"], "default": None},
-        {"name": "Roster", "type": ["null", "string"], "default": None},
-        {"name": "RosterID", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryStudentID", "type": ["null", "string"], "default": None},
-        {"name": "SourceID", "type": ["null", "string"], "default": None},
-        {"name": "SourceProcedure", "type": ["null", "string"], "default": None},
-        {"name": "SourceType", "type": ["null", "string"], "default": None},
-        {"name": "StaffFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StaffLastName", "type": ["null", "string"], "default": None},
-        {"name": "StaffMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StaffSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "StaffTitle", "type": ["null", "string"], "default": None},
-        {"name": "StudentFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StudentLastName", "type": ["null", "string"], "default": None},
-        {"name": "StudentMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "Weight", "type": ["null", "string"], "default": None},
-        {
-            "name": "BehaviorDate",
-            "type": ["null", "string"],
-            "logicalType": "date",
-            "default": None,
-        },
-        {
-            "name": "DL_LASTUPDATE",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ],
-}
 
-HOMEWORK_FIELDS = {
-    "beta": [
-        {"name": "Assignment", "type": ["null", "string"], "default": None},
-        {"name": "Behavior", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorCategory", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorDate", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorID", "type": ["null", "string"], "default": None},
-        {"name": "DLOrganizationID", "type": ["null", "string"], "default": None},
-        {"name": "DLSAID", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLStudentID", "type": ["null", "string"], "default": None},
-        {"name": "DLUserID", "type": ["null", "string"], "default": None},
-        {"name": "is_deleted", "type": ["null", "boolean"], "default": None},
-        {"name": "Notes", "type": ["null", "string"], "default": None},
-        {"name": "PointValue", "type": ["null", "string"], "default": None},
-        {"name": "Roster", "type": ["null", "string"], "default": None},
-        {"name": "RosterID", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryStudentID", "type": ["null", "string"], "default": None},
-        {"name": "StaffFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StaffLastName", "type": ["null", "string"], "default": None},
-        {"name": "StaffMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StaffSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "StaffTitle", "type": ["null", "string"], "default": None},
-        {"name": "StudentFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StudentLastName", "type": ["null", "string"], "default": None},
-        {"name": "StudentMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "Weight", "type": ["null", "string"], "default": None},
-        {
-            "name": "DL_LASTUPDATE",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ],
-    "v1": [
-        {"name": "Assignment", "type": ["null", "string"], "default": None},
-        {"name": "Behavior", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorCategory", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorDate", "type": ["null", "string"], "default": None},
-        {"name": "BehaviorID", "type": ["null", "string"], "default": None},
-        {"name": "DLOrganizationID", "type": ["null", "string"], "default": None},
-        {"name": "DLSAID", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLStudentID", "type": ["null", "string"], "default": None},
-        {"name": "DLUserID", "type": ["null", "string"], "default": None},
-        {"name": "is_deleted", "type": ["null", "boolean"], "default": None},
-        {"name": "Notes", "type": ["null", "string"], "default": None},
-        {"name": "PointValue", "type": ["null", "string"], "default": None},
-        {"name": "Roster", "type": ["null", "string"], "default": None},
-        {"name": "RosterID", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryStudentID", "type": ["null", "string"], "default": None},
-        {"name": "StaffFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StaffLastName", "type": ["null", "string"], "default": None},
-        {"name": "StaffMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StaffSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "StaffTitle", "type": ["null", "string"], "default": None},
-        {"name": "StudentFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StudentLastName", "type": ["null", "string"], "default": None},
-        {"name": "StudentMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "Weight", "type": ["null", "string"], "default": None},
-        {
-            "name": "DL_LASTUPDATE",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ],
-}
+class ReconcileSuspensions(BaseModel):
+    AttendanceBehavior: str | None = None
+    AttendanceDate: str | None = None
+    ConEnd: str | None = None
+    ConSequence: str | None = None
+    ConStart: str | None = None
+    DLIncidentID: int | None = None
+    SchoolName: str | None = None
+    StudentFirst: str | None = None
+    StudentID: int | None = None
+    StudentLast: str | None = None
+    SubmittedAt: str | None = None
+    SubmittedFn: str | None = None
+    SubmittedLn: str | None = None
+    UNNAMED_13: str | None = None
 
-FOLLOWUP_FIELDS = {
-    "v1": [
-        {"name": "cFirst", "type": ["null", "string"], "default": None},
-        {"name": "cLast", "type": ["null", "string"], "default": None},
-        {"name": "CloseBy", "type": ["null", "string"], "default": None},
-        {"name": "cMiddle", "type": ["null", "string"], "default": None},
-        {"name": "cTitle", "type": ["null", "string"], "default": None},
-        {"name": "ExtStatus", "type": ["null", "string"], "default": None},
-        {"name": "FirstName", "type": ["null", "string"], "default": None},
-        {"name": "FollowupID", "type": ["null", "string"], "default": None},
-        {"name": "FollowupNotes", "type": ["null", "string"], "default": None},
-        {"name": "FollowupType", "type": ["null", "string"], "default": None},
-        {"name": "GradeLevelShort", "type": ["null", "string"], "default": None},
-        {"name": "iFirst", "type": ["null", "string"], "default": None},
-        {"name": "iLast", "type": ["null", "string"], "default": None},
-        {"name": "iMiddle", "type": ["null", "string"], "default": None},
-        {"name": "InitBy", "type": ["null", "string"], "default": None},
-        {"name": "InitNotes", "type": ["null", "string"], "default": None},
-        {"name": "iTitle", "type": ["null", "string"], "default": None},
-        {"name": "LastName", "type": ["null", "string"], "default": None},
-        {"name": "LongType", "type": ["null", "string"], "default": None},
-        {"name": "MiddleName", "type": ["null", "string"], "default": None},
-        {"name": "Outstanding", "type": ["null", "string"], "default": None},
-        {"name": "ResponseID", "type": ["null", "string"], "default": None},
-        {"name": "ResponseType", "type": ["null", "string"], "default": None},
-        {"name": "SchoolID", "type": ["null", "string"], "default": None},
-        {"name": "SourceID", "type": ["null", "string"], "default": None},
-        {"name": "StudentID", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "TicketStatus", "type": ["null", "string"], "default": None},
-        {"name": "TicketType", "type": ["null", "string"], "default": None},
-        {"name": "TicketTypeID", "type": ["null", "string"], "default": None},
-        {"name": "URL", "type": ["null", "string"], "default": None},
-        {
-            "name": "InitTS",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-        {
-            "name": "CloseTS",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-        {
-            "name": "OpenTS",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ]
-}
-
-STUDENT_FIELDS = {
-    "v1": [
-        {"name": "SecondaryStudentID", "type": ["null", "string"], "default": None},
-        {"name": "StudentFirstName", "type": ["null", "string"], "default": None},
-        {"name": "StudentID", "type": ["null", "string"], "default": None},
-        {"name": "StudentLastName", "type": ["null", "string"], "default": None},
-        {"name": "StudentMiddleName", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-    ]
-}
-
-COMMUNICATION_FIELDS = {
-    "beta": [
-        {"name": "CallStatus", "type": ["null", "string"], "default": None},
-        {"name": "CallTopic", "type": ["null", "string"], "default": None},
-        {"name": "CallType", "type": ["null", "string"], "default": None},
-        {"name": "CommWith", "type": ["null", "string"], "default": None},
-        {"name": "DLCallLogID", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLStudentID", "type": ["null", "string"], "default": None},
-        {"name": "DLUserID", "type": ["null", "string"], "default": None},
-        {"name": "Email", "type": ["null", "string"], "default": None},
-        {"name": "FollowupBy", "type": ["null", "string"], "default": None},
-        {"name": "FollowupCloseTS", "type": ["null", "string"], "default": None},
-        {"name": "FollowupID", "type": ["null", "string"], "default": None},
-        {"name": "FollowupInitTS", "type": ["null", "string"], "default": None},
-        {"name": "FollowupOutstanding", "type": ["null", "string"], "default": None},
-        {"name": "FollowupRequest", "type": ["null", "string"], "default": None},
-        {"name": "FollowupResponse", "type": ["null", "string"], "default": None},
-        {"name": "IsActive", "type": ["null", "string"], "default": None},
-        {"name": "MailingAddress", "type": ["null", "string"], "default": None},
-        {"name": "PersonContacted", "type": ["null", "string"], "default": None},
-        {"name": "PhoneNumber", "type": ["null", "string"], "default": None},
-        {"name": "Reason", "type": ["null", "string"], "default": None},
-        {"name": "Relationship", "type": ["null", "string"], "default": None},
-        {"name": "Response", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryStudentID", "type": ["null", "string"], "default": None},
-        {"name": "SourceID", "type": ["null", "string"], "default": None},
-        {"name": "SourceType", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "ThirdParty", "type": ["null", "string"], "default": None},
-        {"name": "UserFirstName", "type": ["null", "string"], "default": None},
-        {"name": "UserLastName", "type": ["null", "string"], "default": None},
-        {"name": "UserSchoolID", "type": ["null", "string"], "default": None},
-        {
-            "name": "CallDateTime",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-        {
-            "name": "DL_LASTUPDATE",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ],
-    "v1": [
-        {"name": "CallStatus", "type": ["null", "string"], "default": None},
-        {"name": "CallStatusID", "type": ["null", "int"], "default": None},
-        {"name": "CallType", "type": ["null", "string"], "default": None},
-        {"name": "CommunicationWithID", "type": ["null", "long"], "default": None},
-        {"name": "CommunicationWithName", "type": ["null", "string"], "default": None},
-        {"name": "CommunicationWithType", "type": ["null", "string"], "default": None},
-        {"name": "EducatorName", "type": ["null", "string"], "default": None},
-        {"name": "Email", "type": ["null", "string"], "default": None},
-        {"name": "IsDraft", "type": ["null", "boolean"], "default": None},
-        {"name": "MailingAddress", "type": ["null", "string"], "default": None},
-        {"name": "PersonContacted", "type": ["null", "string"], "default": None},
-        {"name": "PhoneNumber", "type": ["null", "string"], "default": None},
-        {"name": "Reason", "type": ["null", "string"], "default": None},
-        {"name": "ReasonID", "type": ["null", "int"], "default": None},
-        {"name": "RecordID", "type": ["null", "int"], "default": None},
-        {"name": "RecordType", "type": ["null", "string"], "default": None},
-        {"name": "Relationship", "type": ["null", "string"], "default": None},
-        {"name": "Response", "type": ["null", "string"], "default": None},
-        {"name": "ThirdPartyName", "type": ["null", "string"], "default": None},
-        {"name": "Topic", "type": ["null", "string"], "default": None},
-        {"name": "UserID", "type": ["null", "int"], "default": None},
-        {
-            "name": "CallDateTime",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-        {
-            "name": "Followups",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="followup", fields=FOLLOWUP_FIELDS["v1"]
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "Student",
-            "type": [
-                "null",
-                get_avro_record_schema(name="student", fields=STUDENT_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-    ],
-}
-
-USER_FIELDS = {
-    "beta": [
-        {"name": "AccountID", "type": ["null", "string"], "default": None},
-        {"name": "Active", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLUserID", "type": ["null", "string"], "default": None},
-        {"name": "Email", "type": ["null", "string"], "default": None},
-        {"name": "FirstName", "type": ["null", "string"], "default": None},
-        {"name": "GroupName", "type": ["null", "string"], "default": None},
-        {"name": "LastName", "type": ["null", "string"], "default": None},
-        {"name": "MiddleName", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "StaffRole", "type": ["null", "string"], "default": None},
-        {"name": "Title", "type": ["null", "string"], "default": None},
-        {"name": "Username", "type": ["null", "string"], "default": None},
-        {"name": "UserSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "UserStateID", "type": ["null", "string"], "default": None},
-    ],
-    "v1": [
-        {"name": "AccountID", "type": ["null", "string"], "default": None},
-        {"name": "Active", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLUserID", "type": ["null", "string"], "default": None},
-        {"name": "Email", "type": ["null", "string"], "default": None},
-        {"name": "FirstName", "type": ["null", "string"], "default": None},
-        {"name": "GroupName", "type": ["null", "string"], "default": None},
-        {"name": "LastName", "type": ["null", "string"], "default": None},
-        {"name": "MiddleName", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "StaffRole", "type": ["null", "string"], "default": None},
-        {"name": "Title", "type": ["null", "string"], "default": None},
-        {"name": "Username", "type": ["null", "string"], "default": None},
-        {"name": "UserSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "UserStateID", "type": ["null", "string"], "default": None},
-    ],
-}
-
-ROSTER_ASSIGNMENT_FIELDS = {
-    "beta": [
-        {"name": "DLRosterID", "type": ["null", "string"], "default": None},
-        {"name": "DLSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "DLStudentID", "type": ["null", "string"], "default": None},
-        {"name": "FirstName", "type": ["null", "string"], "default": None},
-        {"name": "GradeLevel", "type": ["null", "string"], "default": None},
-        {"name": "IntegrationID", "type": ["null", "string"], "default": None},
-        {"name": "LastName", "type": ["null", "string"], "default": None},
-        {"name": "MiddleName", "type": ["null", "string"], "default": None},
-        {"name": "RosterName", "type": ["null", "string"], "default": None},
-        {"name": "SchoolName", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryIntegrationID", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryStudentID", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-    ]
-}
-
-PENALTY_FIELDS = {
-    "v1": [
-        {"name": "IncidentID", "type": ["null", "string"], "default": None},
-        {"name": "IncidentPenaltyID", "type": ["null", "string"], "default": None},
-        {"name": "IsReportable", "type": ["null", "boolean"], "default": None},
-        {"name": "IsSuspension", "type": ["null", "boolean"], "default": None},
-        {"name": "NumDays", "type": ["null", "float"], "default": None},
-        {"name": "NumPeriods", "type": ["null", "string"], "default": None},
-        {"name": "PenaltyID", "type": ["null", "string"], "default": None},
-        {"name": "PenaltyName", "type": ["null", "string"], "default": None},
-        {"name": "Print", "type": ["null", "boolean"], "default": None},
-        {"name": "SAID", "type": ["null", "string"], "default": None},
-        {"name": "SchoolID", "type": ["null", "string"], "default": None},
-        {"name": "StudentID", "type": ["null", "string"], "default": None},
-        {
-            "name": "EndDate",
-            "type": ["null", "string"],
-            "logicalType": "date",
-            "default": None,
-        },
-        {
-            "name": "StartDate",
-            "type": ["null", "string"],
-            "logicalType": "date",
-            "default": None,
-        },
-    ]
-}
-
-ACTION_FIELDS = {
-    "v1": [
-        {"name": "ActionID", "type": ["null", "string"], "default": None},
-        {"name": "ActionName", "type": ["null", "string"], "default": None},
-        {"name": "PointValue", "type": ["null", "string"], "default": None},
-        {"name": "SAID", "type": ["null", "string"], "default": None},
-        {"name": "SourceID", "type": ["null", "string"], "default": None},
-    ]
-}
-
-CUSTOM_FIELD_FIELDS = {
-    "v1": [
-        {"name": "CustomFieldID", "type": ["null", "string"], "default": None},
-        {"name": "FieldCategory", "type": ["null", "string"], "default": None},
-        {"name": "FieldKey", "type": ["null", "string"], "default": None},
-        {"name": "FieldName", "type": ["null", "string"], "default": None},
-        {"name": "FieldType", "type": ["null", "string"], "default": None},
-        {"name": "InputHTML", "type": ["null", "string"], "default": None},
-        {"name": "InputName", "type": ["null", "string"], "default": None},
-        {"name": "IsFrontEnd", "type": ["null", "string"], "default": None},
-        {"name": "IsRequired", "type": ["null", "string"], "default": None},
-        {"name": "LabelHTML", "type": ["null", "string"], "default": None},
-        {"name": "MinUserLevel", "type": ["null", "string"], "default": None},
-        {"name": "NumValue", "type": ["null", "float"], "default": None},
-        {"name": "Options", "type": ["null", "string"], "default": None},
-        {"name": "SourceID", "type": ["null", "string"], "default": None},
-        {"name": "SourceType", "type": ["null", "string"], "default": None},
-        {"name": "StringValue", "type": ["null", "string"], "default": None},
-        {"name": "Value", "type": ["null", "string"], "default": None},
-        {
-            "name": "SelectedOptions",
-            "type": ["null", {"type": "array", "items": "string", "default": []}],
-            "default": None,
-        },
-    ]
-}
-
-INCIDENT_FIELDS = {
-    "v1": [
-        {"name": "AddlReqs", "type": ["null", "string"], "default": None},
-        {"name": "AdminSummary", "type": ["null", "string"], "default": None},
-        {"name": "Category", "type": ["null", "string"], "default": None},
-        {"name": "CategoryID", "type": ["null", "string"], "default": None},
-        {"name": "Context", "type": ["null", "string"], "default": None},
-        {"name": "CreateBy", "type": ["null", "string"], "default": None},
-        {"name": "CreateFirst", "type": ["null", "string"], "default": None},
-        {"name": "CreateLast", "type": ["null", "string"], "default": None},
-        {"name": "CreateMiddle", "type": ["null", "string"], "default": None},
-        {"name": "CreateStaffSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "CreateTitle", "type": ["null", "string"], "default": None},
-        {"name": "FamilyMeetingNotes", "type": ["null", "string"], "default": None},
-        {"name": "FollowupNotes", "type": ["null", "string"], "default": None},
-        {"name": "Gender", "type": ["null", "string"], "default": None},
-        {"name": "GradeLevelShort", "type": ["null", "string"], "default": None},
-        {"name": "HearingFlag", "type": ["null", "boolean"], "default": None},
-        {"name": "HearingLocation", "type": ["null", "string"], "default": None},
-        {"name": "HearingNotes", "type": ["null", "string"], "default": None},
-        {"name": "HearingTime", "type": ["null", "string"], "default": None},
-        {"name": "HomeroomName", "type": ["null", "string"], "default": None},
-        {"name": "IncidentID", "type": ["null", "string"], "default": None},
-        {"name": "Infraction", "type": ["null", "string"], "default": None},
-        {"name": "InfractionTypeID", "type": ["null", "string"], "default": None},
-        {"name": "IsActive", "type": ["null", "boolean"], "default": None},
-        {"name": "IsReferral", "type": ["null", "boolean"], "default": None},
-        {"name": "Location", "type": ["null", "string"], "default": None},
-        {"name": "LocationID", "type": ["null", "string"], "default": None},
-        {"name": "ReportedDetails", "type": ["null", "string"], "default": None},
-        {"name": "ReportingIncidentID", "type": ["null", "string"], "default": None},
-        {"name": "ReturnPeriod", "type": ["null", "string"], "default": None},
-        {"name": "SchoolID", "type": ["null", "string"], "default": None},
-        {"name": "SendAlert", "type": ["null", "boolean"], "default": None},
-        {"name": "Status", "type": ["null", "string"], "default": None},
-        {"name": "StatusID", "type": ["null", "string"], "default": None},
-        {"name": "StudentFirst", "type": ["null", "string"], "default": None},
-        {"name": "StudentID", "type": ["null", "string"], "default": None},
-        {"name": "StudentLast", "type": ["null", "string"], "default": None},
-        {"name": "StudentMiddle", "type": ["null", "string"], "default": None},
-        {"name": "StudentSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "UpdateBy", "type": ["null", "string"], "default": None},
-        {"name": "UpdateFirst", "type": ["null", "string"], "default": None},
-        {"name": "UpdateLast", "type": ["null", "string"], "default": None},
-        {"name": "UpdateMiddle", "type": ["null", "string"], "default": None},
-        {"name": "UpdateStaffSchoolID", "type": ["null", "string"], "default": None},
-        {"name": "UpdateTitle", "type": ["null", "string"], "default": None},
-        {
-            "name": "ReturnDate",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="ReturnDate", fields=TIMESTAMP_FIELDS["v1"]
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "HearingDate",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="HearingDate", fields=TIMESTAMP_FIELDS["v1"]
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "CreateTS",
-            "type": [
-                "null",
-                get_avro_record_schema(name="CreateTS", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-        {
-            "name": "UpdateTS",
-            "type": [
-                "null",
-                get_avro_record_schema(name="UpdateTS", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-        {
-            "name": "ReviewTS",
-            "type": [
-                "null",
-                get_avro_record_schema(name="ReviewTS", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-        {
-            "name": "IssueTS",
-            "type": [
-                "null",
-                get_avro_record_schema(name="IssueTS", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-        {
-            "name": "CloseTS",
-            "type": [
-                "null",
-                get_avro_record_schema(name="CloseTS", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-        {
-            "name": "DL_LASTUPDATE",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="DL_LASTUPDATE", fields=TIMESTAMP_FIELDS["v1"]
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "Penalties",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="penalty", fields=PENALTY_FIELDS["v1"]
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "Actions",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="action", fields=ACTION_FIELDS["v1"]
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "Custom_Fields",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="custom_field", fields=CUSTOM_FIELD_FIELDS["v1"]
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-    ]
-}
-
-LIST_FIELDS = {
-    "v1": [
-        {"name": "IsDated", "type": ["null", "boolean"], "default": None},
-        {"name": "ListID", "type": ["null", "string"], "default": None},
-        {"name": "ListName", "type": ["null", "string"], "default": None},
-        {"name": "Show", "type": ["null", "boolean"], "default": None},
-        {"name": "IsAccumulation", "type": ["null", "boolean"], "default": None},
-        {"name": "Sort", "type": ["null", "string"], "default": None},
-        {"name": "IsClearable", "type": ["null", "boolean"], "default": None},
-        {"name": "IsSystem", "type": ["null", "boolean"], "default": None},
-    ]
-}
-
-TERM_FIELDS = {
-    "v1": [
-        {"name": "AcademicYearID", "type": ["null", "string"], "default": None},
-        {"name": "AcademicYearName", "type": ["null", "string"], "default": None},
-        {"name": "Days", "type": ["null", "string"], "default": None},
-        {"name": "GradeKey", "type": ["null", "string"], "default": None},
-        {"name": "IntegrationID", "type": ["null", "string"], "default": None},
-        {"name": "SchoolID", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryGradeKey", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryIntegrationID", "type": ["null", "string"], "default": None},
-        {"name": "StoredGrades", "type": ["null", "boolean"], "default": None},
-        {"name": "TermID", "type": ["null", "string"], "default": None},
-        {"name": "TermName", "type": ["null", "string"], "default": None},
-        {"name": "TermType", "type": ["null", "string"], "default": None},
-        {"name": "TermTypeID", "type": ["null", "string"], "default": None},
-        {
-            "name": "StartDate",
-            "type": [
-                "null",
-                get_avro_record_schema(name="StartDate", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-        {
-            "name": "EndDate",
-            "type": [
-                "null",
-                get_avro_record_schema(name="EndDate", fields=TIMESTAMP_FIELDS["v1"]),
-            ],
-            "default": None,
-        },
-    ]
-}
-
-ROSTER_FIELDS = {
-    "v1": [
-        {"name": "Active", "type": ["null", "string"], "default": None},
-        {"name": "CollectHW", "type": ["null", "string"], "default": None},
-        {"name": "CourseNumber", "type": ["null", "string"], "default": None},
-        {"name": "GradeLevels", "type": ["null", "string"], "default": None},
-        {"name": "MarkerColor", "type": ["null", "string"], "default": None},
-        {"name": "MasterID", "type": ["null", "string"], "default": None},
-        {"name": "MasterName", "type": ["null", "string"], "default": None},
-        {"name": "MeetingDays", "type": ["null", "string"], "default": None},
-        {"name": "Period", "type": ["null", "string"], "default": None},
-        {"name": "Room", "type": ["null", "string"], "default": None},
-        {"name": "RosterID", "type": ["null", "string"], "default": None},
-        {"name": "RosterName", "type": ["null", "string"], "default": None},
-        {"name": "RosterType", "type": ["null", "string"], "default": None},
-        {"name": "RosterTypeID", "type": ["null", "string"], "default": None},
-        {"name": "RTIFocusID", "type": ["null", "string"], "default": None},
-        {"name": "RTITier", "type": ["null", "string"], "default": None},
-        {"name": "SchoolID", "type": ["null", "string"], "default": None},
-        {"name": "ScreenSetID", "type": ["null", "string"], "default": None},
-        {"name": "ScreenSetName", "type": ["null", "string"], "default": None},
-        {"name": "SecondaryIntegrationID", "type": ["null", "string"], "default": None},
-        {"name": "SectionNumber", "type": ["null", "string"], "default": None},
-        {"name": "ShowRoster", "type": ["null", "string"], "default": None},
-        {"name": "SISExpression", "type": ["null", "string"], "default": None},
-        {"name": "SISGradebookName", "type": ["null", "string"], "default": None},
-        {"name": "SISKey", "type": ["null", "string"], "default": None},
-        {"name": "StudentCount", "type": ["null", "string"], "default": None},
-        {"name": "SubjectID", "type": ["null", "string"], "default": None},
-        {"name": "SubjectName", "type": ["null", "string"], "default": None},
-        {"name": "TakeAttendance", "type": ["null", "string"], "default": None},
-        {"name": "TakeClassAttendance", "type": ["null", "string"], "default": None},
-        {"name": "StudentIDs", "type": ["null", "string"], "default": None},
-        {
-            "name": "LastSynced",
-            "type": ["null", "string"],
-            "logicalType": "timestamp-micros",
-            "default": None,
-        },
-    ]
-}
-
-RECONCILE_ATTENDANCE_FIELDS = [
-    {"name": "schoolname", "type": ["null", "string"], "default": None},
-    {"name": "studentid", "type": ["null", "long"], "default": None},
-    {"name": "studentfirst", "type": ["null", "string"], "default": None},
-    {"name": "studentlast", "type": ["null", "string"], "default": None},
-    {"name": "attendancedate", "type": ["null", "string"], "default": None},
-    {"name": "attendancebehavior", "type": ["null", "string"], "default": None},
-    {"name": "submittedfn", "type": ["null", "string"], "default": None},
-    {"name": "submittedln", "type": ["null", "string"], "default": None},
-    {"name": "submittedat", "type": ["null", "string"], "default": None},
-    {"name": "unnamed_9", "type": ["null", "string"], "default": None},
-]
-
-RECONCILE_SUSPENSIONS_FIELDS = [
-    {"name": "schoolname", "type": ["null", "string"], "default": None},
-    {"name": "dlincidentid", "type": ["null", "long"], "default": None},
-    {"name": "studentid", "type": ["null", "long"], "default": None},
-    {"name": "studentfirst", "type": ["null", "string"], "default": None},
-    {"name": "studentlast", "type": ["null", "string"], "default": None},
-    {"name": "consequence", "type": ["null", "string"], "default": None},
-    {"name": "constart", "type": ["null", "string"], "default": None},
-    {"name": "conend", "type": ["null", "string"], "default": None},
-    {"name": "attendancedate", "type": ["null", "string"], "default": None},
-    {"name": "attendancebehavior", "type": ["null", "string"], "default": None},
-    {"name": "submittedfn", "type": ["null", "string"], "default": None},
-    {"name": "submittedln", "type": ["null", "string"], "default": None},
-    {"name": "submittedat", "type": ["null", "string"], "default": None},
-    {"name": "unnamed_13", "type": ["null", "string"], "default": None},
-]
 
 ASSET_FIELDS = {
-    "lists": LIST_FIELDS,
-    "terms": TERM_FIELDS,
-    "rosters": ROSTER_FIELDS,
-    "users": USER_FIELDS,
-    "roster-assignments": ROSTER_ASSIGNMENT_FIELDS,
-    "behavior": BEHAVIOR_FIELDS,
-    "homework": HOMEWORK_FIELDS,
-    "comm": COMMUNICATION_FIELDS,
-    "comm-log": COMMUNICATION_FIELDS,
-    "incidents": INCIDENT_FIELDS,
-    "followups": FOLLOWUP_FIELDS,
-    "reconcile_attendance": RECONCILE_ATTENDANCE_FIELDS,
-    "reconcile_suspensions": RECONCILE_SUSPENSIONS_FIELDS,
+    "behavior": json.loads(generate(py_type=Behavior, namespace="behavior")),
+    "comm-log": json.loads(generate(py_type=CommLog, namespace="comm_log")),
+    "followups": json.loads(generate(py_type=Followup, namespace="followup")),
+    "homework": json.loads(generate(py_type=Homework, namespace="homework")),
+    "incidents": json.loads(generate(py_type=Incident, namespace="incident")),
+    "lists": json.loads(generate(py_type=ListModel, namespace="list")),
+    "roster-assignments": json.loads(
+        generate(py_type=RosterAssignment, namespace="roster_assignment")
+    ),
+    "rosters": json.loads(generate(py_type=Roster, namespace="roster")),
     "students": json.loads(generate(py_type=Student, namespace="student")),
+    "terms": json.loads(generate(py_type=Term, namespace="term")),
+    "users": json.loads(generate(py_type=User, namespace="user")),
+    "reconcile_attendance": json.loads(
+        generate(py_type=ReconcileAttendance, namespace="reconcile_attendance")
+    ),
+    "reconcile_suspensions": json.loads(
+        generate(py_type=ReconcileSuspensions, namespace="reconcile_suspension")
+    ),
 }

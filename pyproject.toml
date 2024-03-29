@@ -51,6 +51,7 @@ validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster i
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 post_install = { shell = "pdm export --prod -o requirements.txt" }
+json2py = { shell = "bash .pdm/scripts/json2py.sh" }
 
 [tool.pyright]
 venvPath = ".venv"

@@ -183,7 +183,6 @@ def test_asset_deanslist_incidents():
         asset_name="incidents",
         api_version="v1",
         params={"IncludeDeleted": "Y", "cf": "Y"},
-        partition_key="2024-02-01|473",
     )
 
 
@@ -210,5 +209,4 @@ def test_asset_deanslist_students():
             "IncludeUnenrolled": "Y",
             "IncludeParents": "Y",
         },
-        partition_key="473",
     )
