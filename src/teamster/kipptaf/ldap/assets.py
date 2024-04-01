@@ -4,7 +4,6 @@ from dagster import AssetExecutionContext, Output, asset, config_from_files
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
-    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
@@ -96,9 +95,7 @@ def build_ldap_asset(
 
             entries.append({**primitive_items, **array_items})
 
-        schema = get_avro_record_schema(
-            name=asset_name, fields=ASSET_FIELDS[asset_name]
-        )
+        schema = ASSET_FIELDS[asset_name]
 
         yield Output(
             value=(entries, schema),

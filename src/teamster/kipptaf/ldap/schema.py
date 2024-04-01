@@ -1,465 +1,264 @@
-USER_PERSON_FIELDS = [
-    {"name": "adminCount", "type": ["null", "long"], "default": None},
-    {"name": "altRecipient", "type": ["null", "string"], "default": None},
-    {"name": "altRecipientBL", "type": ["null", "string"], "default": None},
-    {"name": "authOrig", "type": ["null", "bytes"], "default": None},
-    {"name": "authOrigBL", "type": ["null", "string"], "default": None},
-    {"name": "badPwdCount", "type": ["null", "long"], "default": None},
-    {"name": "c", "type": ["null", "string"], "default": None},
-    {"name": "cn", "type": ["null", "string"], "default": None},
-    {"name": "co", "type": ["null", "string"], "default": None},
-    {"name": "codePage", "type": ["null", "long"], "default": None},
-    {"name": "company", "type": ["null", "string"], "default": None},
-    {"name": "countryCode", "type": ["null", "long"], "default": None},
-    {"name": "delivContLength", "type": ["null", "long"], "default": None},
-    {"name": "deliverAndRedirect", "type": ["null", "boolean"], "default": None},
-    {"name": "department", "type": ["null", "string"], "default": None},
-    {"name": "description", "type": ["null", "string"], "default": None},
-    {"name": "directReports", "type": ["null", "string"], "default": None},
-    {"name": "displayName", "type": ["null", "string"], "default": None},
-    {"name": "displayNamePrintable", "type": ["null", "string"], "default": None},
-    {"name": "distinguishedName", "type": ["null", "string"], "default": None},
-    {"name": "division", "type": ["null", "string"], "default": None},
-    {"name": "dn", "type": ["null", "string"], "default": None},
-    {"name": "employeeID", "type": ["null", "string"], "default": None},
-    {"name": "employeeNumber", "type": ["null", "string"], "default": None},
-    {"name": "employeeType", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute13", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute14", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute15", "type": ["null", "string"], "default": None},
-    {"name": "facsimileTelephoneNumber", "type": ["null", "string"], "default": None},
-    {"name": "garbageCollPeriod", "type": ["null", "long"], "default": None},
-    {"name": "givenName", "type": ["null", "string"], "default": None},
-    {"name": "homeDirectory", "type": ["null", "string"], "default": None},
-    {"name": "homeDrive", "type": ["null", "string"], "default": None},
-    {"name": "homeMDB", "type": ["null", "string"], "default": None},
-    {"name": "homePhone", "type": ["null", "string"], "default": None},
-    {"name": "idauto_pwdPrivate", "type": ["null", "bytes"], "default": None},
-    {"name": "idautoChallengeSet", "type": ["null", "string"], "default": None},
-    {"name": "idautoID", "type": ["null", "string"], "default": None},
-    {"name": "idautoPersonAlternateID", "type": ["null", "string"], "default": None},
-    {"name": "idautoPersonEmailAddresses", "type": ["null", "string"], "default": None},
-    {"name": "idautoPersonFacBirthdate", "type": ["null", "string"], "default": None},
-    {"name": "idautoPersonPreferredName", "type": ["null", "string"], "default": None},
-    {"name": "idautoPersonRehireDate", "type": ["null", "string"], "default": None},
-    {"name": "idautoPersonStatusOverride", "type": ["null", "string"], "default": None},
-    {
-        "name": "idautoPersonEnableOverride",
-        "type": ["null", "boolean"],
-        "default": None,
-    },
-    {"name": "idautoPersonTermDate", "type": ["null", "string"], "default": None},
-    {"name": "idautoStatus", "type": ["null", "string"], "default": None},
-    {"name": "info", "type": ["null", "string"], "default": None},
-    {"name": "initials", "type": ["null", "string"], "default": None},
-    {"name": "instanceType", "type": ["null", "long"], "default": None},
-    {"name": "internetEncoding", "type": ["null", "long"], "default": None},
-    {"name": "ipPhone", "type": ["null", "string"], "default": None},
-    {"name": "isCriticalSystemObject", "type": ["null", "boolean"], "default": None},
-    {"name": "l", "type": ["null", "string"], "default": None},
-    {"name": "lastKnownParent", "type": ["null", "string"], "default": None},
-    {"name": "legacyExchangeDN", "type": ["null", "string"], "default": None},
-    {"name": "logonCount", "type": ["null", "long"], "default": None},
-    {"name": "logonHours", "type": ["null", "bytes"], "default": None},
-    {"name": "mail", "type": ["null", "string"], "default": None},
-    {"name": "mailNickname", "type": ["null", "string"], "default": None},
-    {"name": "managedObjects", "type": ["null", "string"], "default": None},
-    {"name": "manager", "type": ["null", "string"], "default": None},
-    {"name": "mDBStorageQuota", "type": ["null", "long"], "default": None},
-    {"name": "mDBUseDefaults", "type": ["null", "boolean"], "default": None},
-    {"name": "middleName", "type": ["null", "string"], "default": None},
-    {"name": "mobile", "type": ["null", "string"], "default": None},
-    {"name": "mS_DS_ConsistencyGuid", "type": ["null", "bytes"], "default": None},
-    {"name": "msDS_KeyCredentialLink", "type": ["null", "bytes"], "default": None},
-    {"name": "msExchArchiveGUID", "type": ["null", "bytes"], "default": None},
-    {"name": "msExchArchiveName", "type": ["null", "string"], "default": None},
-    {"name": "msExchArchiveStatus", "type": ["null", "long"], "default": None},
-    {"name": "msExchBlockedSendersHash", "type": ["null", "bytes"], "default": None},
-    {"name": "msExchCoManagedObjectsBL", "type": ["null", "string"], "default": None},
-    {"name": "msExchHomeServerName", "type": ["null", "string"], "default": None},
-    {"name": "msExchMailboxGuid", "type": ["null", "bytes"], "default": None},
-    {"name": "msExchMailboxTemplateLink", "type": ["null", "string"], "default": None},
-    {"name": "msExchMasterAccountSid", "type": ["null", "bytes"], "default": None},
-    {"name": "msExchMDBRulesQuota", "type": ["null", "long"], "default": None},
-    {"name": "msExchMobileMailboxFlags", "type": ["null", "long"], "default": None},
-    {"name": "msExchPoliciesExcluded", "type": ["null", "string"], "default": None},
-    {"name": "msExchPoliciesIncluded", "type": ["null", "string"], "default": None},
-    {"name": "msExchRBACPolicyLink", "type": ["null", "string"], "default": None},
-    {"name": "msExchRecipientDisplayType", "type": ["null", "long"], "default": None},
-    {"name": "msExchRecipientTypeDetails", "type": ["null", "long"], "default": None},
-    {"name": "msExchRemoteRecipientType", "type": ["null", "long"], "default": None},
-    {"name": "msExchSafeRecipientsHash", "type": ["null", "bytes"], "default": None},
-    {"name": "msExchSafeSendersHash", "type": ["null", "bytes"], "default": None},
-    {"name": "msExchUMDtmfMap", "type": ["null", "string"], "default": None},
-    {"name": "msExchUserAccountControl", "type": ["null", "long"], "default": None},
-    {"name": "msExchUserCulture", "type": ["null", "string"], "default": None},
-    {"name": "msExchUserHoldPolicies", "type": ["null", "string"], "default": None},
-    {"name": "msExchVersion", "type": ["null", "long"], "default": None},
-    {"name": "mSMQDigests", "type": ["null", "bytes"], "default": None},
-    {"name": "mSMQSignCertificates", "type": ["null", "bytes"], "default": None},
-    {"name": "msNPAllowDialin", "type": ["null", "boolean"], "default": None},
-    {"name": "msTSLicenseVersion", "type": ["null", "string"], "default": None},
-    {"name": "msTSManagingLS", "type": ["null", "string"], "default": None},
-    {"name": "name", "type": ["null", "string"], "default": None},
-    {"name": "o", "type": ["null", "string"], "default": None},
-    {"name": "objectCategory", "type": ["null", "string"], "default": None},
-    {"name": "objectClass", "type": ["null", "string"], "default": None},
-    {"name": "objectGUID", "type": ["null", "string"], "default": None},
-    {"name": "objectSid", "type": ["null", "string"], "default": None},
-    {"name": "operatorCount", "type": ["null", "long"], "default": None},
-    {"name": "ownerBL", "type": ["null", "string"], "default": None},
-    {"name": "pager", "type": ["null", "string"], "default": None},
-    {"name": "physicalDeliveryOfficeName", "type": ["null", "string"], "default": None},
-    {"name": "postalCode", "type": ["null", "string"], "default": None},
-    {"name": "postOfficeBox", "type": ["null", "string"], "default": None},
-    {"name": "primaryGroupID", "type": ["null", "long"], "default": None},
-    {"name": "profilePath", "type": ["null", "string"], "default": None},
-    {"name": "protocolSettings", "type": ["null", "string"], "default": None},
-    {"name": "publicDelegatesBL", "type": ["null", "string"], "default": None},
-    {"name": "sAMAccountName", "type": ["null", "string"], "default": None},
-    {"name": "sAMAccountType", "type": ["null", "long"], "default": None},
-    {"name": "scriptPath", "type": ["null", "string"], "default": None},
-    {"name": "showInAddressBook", "type": ["null", "string"], "default": None},
-    {"name": "showInAdvancedViewOnly", "type": ["null", "boolean"], "default": None},
-    {"name": "sIDHistory", "type": ["null", "bytes"], "default": None},
-    {"name": "sn", "type": ["null", "string"], "default": None},
-    {"name": "st", "type": ["null", "string"], "default": None},
-    {"name": "streetAddress", "type": ["null", "string"], "default": None},
-    {"name": "targetAddress", "type": ["null", "string"], "default": None},
-    {"name": "telephoneNumber", "type": ["null", "string"], "default": None},
-    {"name": "textEncodedORAddress", "type": ["null", "string"], "default": None},
-    {"name": "title", "type": ["null", "string"], "default": None},
-    {"name": "unicodePwd", "type": ["null", "string"], "default": None},
-    {"name": "url", "type": ["null", "string"], "default": None},
-    {"name": "userAccountControl", "type": ["null", "long"], "default": None},
-    {"name": "userCertificate", "type": ["null", "bytes"], "default": None},
-    {"name": "userParameters", "type": ["null", "string"], "default": None},
-    {"name": "userPrincipalName", "type": ["null", "string"], "default": None},
-    {"name": "uSNChanged", "type": ["null", "long"], "default": None},
-    {"name": "uSNCreated", "type": ["null", "long"], "default": None},
-    {"name": "wWWHomePage", "type": ["null", "string"], "default": None},
-    {
-        "name": "idautoPersonPreferredLastName",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "msExchHideFromAddressLists",
-        "type": ["null", "boolean"],
-        "default": None,
-    },
-    {
-        "name": "msDS_ExternalDirectoryObjectId",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "msDS_SupportedEncryptionTypes",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "msExchMailboxSecurityDescriptor",
-        "type": ["null", "bytes"],
-        "default": None,
-    },
-    {
-        "name": "msExchOmaAdminWirelessEnable",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "msExchRecipientSoftDeletedStatus",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "msExchMobileMailboxPolicyLink",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "memberOf",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "otherHomePhone",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "otherIpPhone",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "otherPager",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "otherTelephoneNumber",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "proxyAddresses",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "publicDelegates",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "servicePrincipalName",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "userWorkstations",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "otherFacsimileTelephoneNumber",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "accountExpires",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "badPasswordTime",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "dSCorePropagationData",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "idautoChallengeSetTimestamp",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "idautoPersonEndDate",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "lastLogoff",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "lastLogon",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "lastLogonTimestamp",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "lockoutTime",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "msExchWhenMailboxCreated",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "msTSExpireDate",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "pwdLastSet",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "whenChanged",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "whenCreated",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-]
+import json
 
-GROUP_FIELDS = [
-    {"name": "adminCount", "type": ["null", "long"], "default": None},
-    {"name": "altRecipientBL", "type": ["null", "string"], "default": None},
-    {"name": "authOrig", "type": ["null", "bytes"], "default": None},
-    {"name": "cn", "type": ["null", "string"], "default": None},
-    {"name": "description", "type": ["null", "string"], "default": None},
-    {"name": "displayName", "type": ["null", "string"], "default": None},
-    {"name": "displayNamePrintable", "type": ["null", "string"], "default": None},
-    {"name": "distinguishedName", "type": ["null", "string"], "default": None},
-    {"name": "dLMemSubmitPerms", "type": ["null", "bytes"], "default": None},
-    {"name": "dLMemSubmitPermsBL", "type": ["null", "string"], "default": None},
-    {"name": "dn", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute11", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute12", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute13", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute14", "type": ["null", "string"], "default": None},
-    {"name": "extensionAttribute15", "type": ["null", "string"], "default": None},
-    {"name": "groupType", "type": ["null", "long"], "default": None},
-    {"name": "idautoGroupExcludeBaseDN", "type": ["null", "string"], "default": None},
-    {"name": "idautoGroupExcludeFilter", "type": ["null", "string"], "default": None},
-    {"name": "idautoGroupIncludeBaseDN", "type": ["null", "string"], "default": None},
-    {"name": "idautoGroupIncludeFilter", "type": ["null", "string"], "default": None},
-    {"name": "idautoGroupOwners", "type": ["null", "string"], "default": None},
-    {"name": "idautoGroupSyncInterval", "type": ["null", "long"], "default": None},
-    {"name": "idautoID", "type": ["null", "string"], "default": None},
-    {"name": "info", "type": ["null", "string"], "default": None},
-    {"name": "instanceType", "type": ["null", "long"], "default": None},
-    {"name": "internetEncoding", "type": ["null", "long"], "default": None},
-    {"name": "isCriticalSystemObject", "type": ["null", "boolean"], "default": None},
-    {"name": "legacyExchangeDN", "type": ["null", "string"], "default": None},
-    {"name": "mail", "type": ["null", "string"], "default": None},
-    {"name": "mailNickname", "type": ["null", "string"], "default": None},
-    {"name": "managedBy", "type": ["null", "string"], "default": None},
-    {"name": "managedObjects", "type": ["null", "string"], "default": None},
-    {"name": "msExchAddressBookFlags", "type": ["null", "long"], "default": None},
-    {"name": "msExchArbitrationMailbox", "type": ["null", "string"], "default": None},
-    {"name": "msExchCoManagedByLink", "type": ["null", "string"], "default": None},
-    {"name": "msExchCoManagedObjectsBL", "type": ["null", "string"], "default": None},
-    {"name": "msExchGroupMemberCount", "type": ["null", "long"], "default": None},
-    {"name": "msExchPoliciesExcluded", "type": ["null", "string"], "default": None},
-    {"name": "msExchPoliciesIncluded", "type": ["null", "string"], "default": None},
-    {"name": "msExchRequireAuthToSendTo", "type": ["null", "boolean"], "default": None},
-    {"name": "msExchUMDtmfMap", "type": ["null", "string"], "default": None},
-    {"name": "msExchVersion", "type": ["null", "long"], "default": None},
-    {"name": "name", "type": ["null", "string"], "default": None},
-    {"name": "objectCategory", "type": ["null", "string"], "default": None},
-    {"name": "objectClass", "type": ["null", "string"], "default": None},
-    {"name": "objectGUID", "type": ["null", "string"], "default": None},
-    {"name": "objectSid", "type": ["null", "string"], "default": None},
-    {"name": "owner", "type": ["null", "string"], "default": None},
-    {"name": "ownerBL", "type": ["null", "string"], "default": None},
-    {"name": "reportToOriginator", "type": ["null", "boolean"], "default": None},
-    {"name": "sAMAccountName", "type": ["null", "string"], "default": None},
-    {"name": "sAMAccountType", "type": ["null", "long"], "default": None},
-    {"name": "showInAddressBook", "type": ["null", "string"], "default": None},
-    {"name": "sIDHistory", "type": ["null", "bytes"], "default": None},
-    {"name": "systemFlags", "type": ["null", "long"], "default": None},
-    {"name": "uSNChanged", "type": ["null", "long"], "default": None},
-    {"name": "uSNCreated", "type": ["null", "long"], "default": None},
-    {
-        "name": "idautoGroupCoOwnerEditable",
-        "type": ["null", "boolean"],
-        "default": None,
-    },
-    {
-        "name": "idautoGroupStaticExcludes",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "idautoGroupStaticIncludes",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "msExchHideFromAddressLists",
-        "type": ["null", "boolean"],
-        "default": None,
-    },
-    {
-        "name": "msExchGroupDepartRestriction",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "msExchGroupExternalMemberCount",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "msExchGroupJoinRestriction",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "msExchRecipientDisplayType",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "msExchRecipientTypeDetails",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "member",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "memberOf",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "proxyAddresses",
-        "type": ["null", {"type": "array", "items": "string"}],
-        "default": None,
-    },
-    {
-        "name": "dSCorePropagationData",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "idautoGroupLastSynced",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "whenChanged",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "whenCreated",
-        "type": ["null", "double"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-]
+from py_avro_schema import Option, generate
+from pydantic import BaseModel, Field
+
+
+class UserPerson(BaseModel):
+    accountExpires: float | None = None
+    adminCount: int | None = None
+    altRecipient: str | None = None
+    altRecipientBL: str | None = None
+    authOrig: bytes | None = None
+    authOrigBL: str | None = None
+    badPasswordTime: float | None = None
+    badPwdCount: int | None = None
+    c: str | None = None
+    cn: str | None = None
+    co: str | None = None
+    codePage: int | None = None
+    company: str | None = None
+    countryCode: int | None = None
+    delivContLength: int | None = None
+    deliverAndRedirect: bool | None = None
+    department: str | None = None
+    description: str | None = None
+    directReports: str | None = None
+    displayName: str | None = None
+    displayNamePrintable: str | None = None
+    distinguishedName: str | None = None
+    division: str | None = None
+    dn: str | None = None
+    dSCorePropagationData: float | None = None
+    employeeID: str | None = None
+    employeeNumber: str | None = None
+    employeeType: str | None = None
+    extensionAttribute13: str | None = None
+    extensionAttribute14: str | None = None
+    extensionAttribute15: str | None = None
+    facsimileTelephoneNumber: str | None = None
+    garbageCollPeriod: int | None = None
+    givenName: str | None = None
+    homeDirectory: str | None = None
+    homeDrive: str | None = None
+    homeMDB: str | None = None
+    homePhone: str | None = None
+    idauto_pwdPrivate: bytes | None = None
+    idautoChallengeSet: str | None = None
+    idautoChallengeSetTimestamp: float | None = None
+    idautoID: str | None = None
+    idautoPersonAlternateID: str | None = None
+    idautoPersonEmailAddresses: str | None = None
+    idautoPersonEnableOverride: bool | None = None
+    idautoPersonEndDate: float | None = None
+    idautoPersonFacBirthdate: str | None = None
+    idautoPersonPreferredLastName: str | None = None
+    idautoPersonPreferredName: str | None = None
+    idautoPersonRehireDate: str | None = None
+    idautoPersonStatusOverride: str | None = None
+    idautoPersonTermDate: str | None = None
+    idautoStatus: str | None = None
+    info: str | None = None
+    initials: str | None = None
+    instanceType: int | None = None
+    internetEncoding: int | None = None
+    ipPhone: str | None = None
+    isCriticalSystemObject: bool | None = None
+    lastKnownParent: str | None = None
+    lastLogoff: float | None = None
+    lastLogon: float | None = None
+    lastLogonTimestamp: float | None = None
+    legacyExchangeDN: str | None = None
+    lockoutTime: float | None = None
+    logonCount: int | None = None
+    logonHours: bytes | None = None
+    mail: str | None = None
+    mailNickname: str | None = None
+    managedObjects: str | None = None
+    manager: str | None = None
+    mDBStorageQuota: int | None = None
+    mDBUseDefaults: bool | None = None
+    middleName: str | None = None
+    mobile: str | None = None
+    mS_DS_ConsistencyGuid: bytes | None = None
+    msDS_ExternalDirectoryObjectId: str | None = None
+    msDS_KeyCredentialLink: bytes | None = None
+    msDS_SupportedEncryptionTypes: int | None = None
+    msExchArchiveGUID: bytes | None = None
+    msExchArchiveName: str | None = None
+    msExchArchiveStatus: int | None = None
+    msExchBlockedSendersHash: bytes | None = None
+    msExchCoManagedObjectsBL: str | None = None
+    msExchHideFromAddressLists: bool | None = None
+    msExchHomeServerName: str | None = None
+    msExchMailboxGuid: bytes | None = None
+    msExchMailboxSecurityDescriptor: bytes | None = None
+    msExchMailboxTemplateLink: str | None = None
+    msExchMasterAccountSid: bytes | None = None
+    msExchMDBRulesQuota: int | None = None
+    msExchMobileMailboxFlags: int | None = None
+    msExchMobileMailboxPolicyLink: str | None = None
+    msExchOmaAdminWirelessEnable: int | None = None
+    msExchPoliciesExcluded: str | None = None
+    msExchPoliciesIncluded: str | None = None
+    msExchRBACPolicyLink: str | None = None
+    msExchRecipientDisplayType: int | None = None
+    msExchRecipientSoftDeletedStatus: int | None = None
+    msExchRecipientTypeDetails: int | None = None
+    msExchRemoteRecipientType: int | None = None
+    msExchSafeRecipientsHash: bytes | None = None
+    msExchSafeSendersHash: bytes | None = None
+    msExchUMDtmfMap: str | None = None
+    msExchUserAccountControl: int | None = None
+    msExchUserCulture: str | None = None
+    msExchUserHoldPolicies: str | None = None
+    msExchVersion: int | None = None
+    msExchWhenMailboxCreated: float | None = None
+    mSMQDigests: bytes | None = None
+    mSMQSignCertificates: bytes | None = None
+    msNPAllowDialin: bool | None = None
+    msTSExpireDate: float | None = None
+    msTSLicenseVersion: str | None = None
+    msTSManagingLS: str | None = None
+    name: str | None = None
+    o: str | None = None
+    objectCategory: str | None = None
+    objectClass: str | None = None
+    objectGUID: str | None = None
+    objectSid: str | None = None
+    operatorCount: int | None = None
+    ownerBL: str | None = None
+    pager: str | None = None
+    physicalDeliveryOfficeName: str | None = None
+    postalCode: str | None = None
+    postOfficeBox: str | None = None
+    primaryGroupID: int | None = None
+    profilePath: str | None = None
+    protocolSettings: str | None = None
+    publicDelegatesBL: str | None = None
+    pwdLastSet: float | None = None
+    sAMAccountName: str | None = None
+    sAMAccountType: int | None = None
+    scriptPath: str | None = None
+    showInAddressBook: str | None = None
+    showInAdvancedViewOnly: bool | None = None
+    sIDHistory: bytes | None = None
+    sn: str | None = None
+    st: str | None = None
+    streetAddress: str | None = None
+    targetAddress: str | None = None
+    telephoneNumber: str | None = None
+    textEncodedORAddress: str | None = None
+    title: str | None = None
+    unicodePwd: str | None = None
+    url: str | None = None
+    userAccountControl: int | None = None
+    userCertificate: bytes | None = None
+    userParameters: str | None = None
+    userPrincipalName: str | None = None
+    uSNChanged: int | None = None
+    uSNCreated: int | None = None
+    whenChanged: float | None = None
+    whenCreated: float | None = None
+    wWWHomePage: str | None = None
+
+    memberOf: list[str | None] | None = None
+    otherFacsimileTelephoneNumber: list[str | None] | None = None
+    otherHomePhone: list[str | None] | None = None
+    otherIpPhone: list[str | None] | None = None
+    otherPager: list[str | None] | None = None
+    otherTelephoneNumber: list[str | None] | None = None
+    proxyAddresses: list[str | None] | None = None
+    publicDelegates: list[str | None] | None = None
+    servicePrincipalName: list[str | None] | None = None
+    userWorkstations: list[str | None] | None = None
+
+    field_l: str | None = Field(default=None, alias="l")
+
+
+class Group(BaseModel):
+    adminCount: int | None = None
+    altRecipientBL: str | None = None
+    authOrig: bytes | None = None
+    cn: str | None = None
+    description: str | None = None
+    displayName: str | None = None
+    displayNamePrintable: str | None = None
+    distinguishedName: str | None = None
+    dLMemSubmitPerms: bytes | None = None
+    dLMemSubmitPermsBL: str | None = None
+    dn: str | None = None
+    dSCorePropagationData: float | None = None
+    extensionAttribute11: str | None = None
+    extensionAttribute12: str | None = None
+    extensionAttribute13: str | None = None
+    extensionAttribute14: str | None = None
+    extensionAttribute15: str | None = None
+    groupType: int | None = None
+    idautoGroupCoOwnerEditable: bool | None = None
+    idautoGroupExcludeBaseDN: str | None = None
+    idautoGroupExcludeFilter: str | None = None
+    idautoGroupIncludeBaseDN: str | None = None
+    idautoGroupIncludeFilter: str | None = None
+    idautoGroupLastSynced: float | None = None
+    idautoGroupOwners: str | None = None
+    idautoGroupStaticExcludes: str | None = None
+    idautoGroupStaticIncludes: str | None = None
+    idautoGroupSyncInterval: int | None = None
+    idautoID: str | None = None
+    info: str | None = None
+    instanceType: int | None = None
+    internetEncoding: int | None = None
+    isCriticalSystemObject: bool | None = None
+    legacyExchangeDN: str | None = None
+    mail: str | None = None
+    mailNickname: str | None = None
+    managedBy: str | None = None
+    managedObjects: str | None = None
+    msExchAddressBookFlags: int | None = None
+    msExchArbitrationMailbox: str | None = None
+    msExchCoManagedByLink: str | None = None
+    msExchCoManagedObjectsBL: str | None = None
+    msExchGroupDepartRestriction: int | None = None
+    msExchGroupExternalMemberCount: int | None = None
+    msExchGroupJoinRestriction: int | None = None
+    msExchGroupMemberCount: int | None = None
+    msExchHideFromAddressLists: bool | None = None
+    msExchPoliciesExcluded: str | None = None
+    msExchPoliciesIncluded: str | None = None
+    msExchRecipientDisplayType: int | None = None
+    msExchRecipientTypeDetails: int | None = None
+    msExchRequireAuthToSendTo: bool | None = None
+    msExchUMDtmfMap: str | None = None
+    msExchVersion: int | None = None
+    name: str | None = None
+    objectCategory: str | None = None
+    objectClass: str | None = None
+    objectGUID: str | None = None
+    objectSid: str | None = None
+    owner: str | None = None
+    ownerBL: str | None = None
+    reportToOriginator: bool | None = None
+    sAMAccountName: str | None = None
+    sAMAccountType: int | None = None
+    showInAddressBook: str | None = None
+    sIDHistory: bytes | None = None
+    systemFlags: int | None = None
+    uSNChanged: int | None = None
+    uSNCreated: int | None = None
+    whenChanged: float | None = None
+    whenCreated: float | None = None
+
+    member: list[str | None] | None = None
+    memberOf: list[str | None] | None = None
+    proxyAddresses: list[str | None] | None = None
+
 
 ASSET_FIELDS = {
-    "user_person": USER_PERSON_FIELDS,
-    "group": GROUP_FIELDS,
+    "user_person": json.loads(
+        generate(
+            py_type=UserPerson, namespace="user_person", options=Option.USE_FIELD_ALIAS
+        )
+    ),
+    "group": json.loads(generate(py_type=Group, namespace="group")),
 }
