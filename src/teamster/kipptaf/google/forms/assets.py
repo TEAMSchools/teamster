@@ -1,6 +1,3 @@
-import json
-import pathlib
-
 from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
 
 from teamster.core.utils.functions import (
@@ -39,10 +36,6 @@ asset_kwargs = {
 def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.get_form(form_id=context.partition_key)
     schema = ASSET_FIELDS["form"]
-
-    fp = pathlib.Path("env/google/forms/form.json")
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(obj=data, fp=fp.open("w"))
 
     yield Output(value=([data], schema), metadata={"record_count": len(data)})
 
