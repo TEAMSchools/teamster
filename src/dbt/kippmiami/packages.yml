@@ -3,6 +3,3 @@ packages:
   - local: ../iready
   - local: ../powerschool
   - local: ../renlearn
-  - git: https://github.com/dagster-io/dagster.git
-    subdirectory: python_modules/libraries/dagster-dbt/dbt_packages/dagster
-    revision: 1.6.13
