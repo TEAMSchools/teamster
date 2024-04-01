@@ -35,8 +35,6 @@ vars:
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
-  +post-hook:
-    - "{{ dagster.log_column_level_metadata() }}"
   kippcamden:
     extracts:
       +schema: extracts
