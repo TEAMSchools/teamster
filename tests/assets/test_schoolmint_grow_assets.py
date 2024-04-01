@@ -12,7 +12,12 @@ from teamster.kipptaf.resources import SCHOOLMINT_GROW_RESOURCE
 from teamster.kipptaf.schoolmint.grow.assets import build_schoolmint_grow_asset
 from teamster.staging import LOCAL_TIMEZONE
 
-STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["f"])
+STATIC_PARTITONS_DEF = StaticPartitionsDefinition(
+    [
+        "t",
+        "f",
+    ]
+)
 
 
 def _test_asset(asset_name, partition_start_date=None):
@@ -52,6 +57,7 @@ def _test_asset(asset_name, partition_start_date=None):
         .value
         > 0
     )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_asset_schoolmint_grow_generic_tags():
