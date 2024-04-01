@@ -18,13 +18,13 @@ select
     b.behavior,
     b.notes,
 
-    safe_cast(c.`9th_hours` as float64) as grade_9_hours,
-    safe_cast(c.`10th_hours` as float64) as grade_10_hours,
-    safe_cast(c.`11th_hours` as float64) as grade_11_hours,
-    safe_cast(c.`12th_hours` as float64) as grade_12_hours,
-
-    cast(left(b.behavior, length(b.behavior) - 5) as int64) as cs_hours,
+    safe_cast(left(b.behavior, length(b.behavior) - 5) as int) as cs_hours,
     concat(b.staff_last_name, ', ', b.staff_first_name) as staff_name,
+
+    safe_cast(c.`9th_hours` as numeric) as grade_9_hours,
+    safe_cast(c.`10th_hours` as numeric) as grade_10_hours,
+    safe_cast(c.`11th_hours` as numeric) as grade_11_hours,
+    safe_cast(c.`12th_hours` as numeric) as grade_12_hours,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__behavior") }} as b
