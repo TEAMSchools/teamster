@@ -17,6 +17,9 @@ semantic_models:
       - name: home_work_location_name
         type: foreign
         expr: home_work_location_name
+      - name: report_to_employee_number
+        type: foreign
+        expr: report_to_employee_number
     #Measures. These are the aggregations on the columns in the table.
     measures: 
       - name: hire_count
