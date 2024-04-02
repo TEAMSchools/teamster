@@ -15,7 +15,7 @@ WORKDIR /app
 
 # install uv & create venv
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "uv==0.1.24" --no-cache-dir \
+    pip install "uv==0.1.26" --no-cache-dir \
     && uv venv
 
 # install dependencies
