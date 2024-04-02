@@ -54,6 +54,7 @@ with
             worker_status_value as status_value,
             worker_original_hire_date,
             worker_rehire_date,
+            coalesce(worker_rehire_date,worker_original_hire_date) as worker_most_recent_hire_date,
             worker_termination_date,
             worker_custom_nj_pension_number as custom_nj_pension_number,
             worker_custom_employee_number as custom_employee_number,
@@ -246,6 +247,7 @@ with
             wp.status_value,
             wp.worker_original_hire_date,
             wp.worker_rehire_date,
+            wp.worker_most_recent_hire_date,
             wp.worker_termination_date,
             wp.custom_nj_pension_number,
             wp.custom_employee_number,
@@ -392,6 +394,7 @@ with
 
             original_hire_date as worker_original_hire_date,
             rehire_date as worker_rehire_date,
+            coalesce(rehire_date,original_hire_date) as worker_most_recent_hire_date,
             termination_date as worker_termination_date,
 
             null as custom_nj_pension_number,
