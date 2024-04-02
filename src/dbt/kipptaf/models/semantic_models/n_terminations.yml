@@ -1,10 +1,10 @@
 semantic_models:
   #The name of the semantic model.
-  - name: n_hires
+  - name: n_terminations
     defaults:
-      agg_time_dimension: worker_most_recent_hire_date
+      agg_time_dimension: worker_termination_date
     description: |
-      Fact table for number of hires. This table is at the worker grain with one row per worker 
+      Fact table for number of terminations. This table is at the worker grain with one row per worker 
     #The name of the dbt model and schema
     model: ref('base_people__staff_roster')
     #Entities. These usually corespond to keys in the table.
@@ -19,37 +19,37 @@ semantic_models:
         expr: home_work_location_name
     #Measures. These are the aggregations on the columns in the table.
     measures: 
-      - name: hire_count
-        description: The total number of new hires
+      - name: termination_count
+        description: The total number of new terminations
         expr: 1
         agg: sum
-      - name: total_new_salary
-        description: The total salary amount for the new hires. 
+      - name: total_tern_salary
+        description: The total salary amount for the new terminations. 
         expr: base_remuneration_annual_rate_amount_amount_value
         agg: sum
-      - name: locations_with_hires
-        description: Distinct count of locations hiring new people
+      - name: locations_with_terminations
+        description: Distinct count of locations terminating people
         agg: count_distinct
         expr: home_work_location_name
-      - name: job_titles_with_hires
-        description: Distinct count of job titles with hire
+      - name: job_titles_with_terminations
+        description: Distinct count of job titles with termination
         expr: job_title
         agg: count_distinct
-      - name: managers_with_hires
-        description: Distinct count of managers with hire
+      - name: managers_with_terminations
+        description: Distinct count of managers with termination
         expr: report_to_employee_number
         agg: count_distinct
     #Dimensions. Either categorical or time. These add additional context to metrics. The typical querying pattern is Metric by Dimension.  
     dimensions:
-      - name: worker_most_recent_hire_date
+      - name: worker_termination_date
         type: time
         type_params:
           time_granularity: day 
-      - name: worker_most_recent_hire_date
+      - name: worker_termination_date
         type: time
         type_params:
           time_granularity: month
-      - name: worker_most_recent_hire_date
+      - name: worker_termination_date
         type: time
         type_params:
           time_granularity: year  
