@@ -293,23 +293,9 @@ with
     ),
 
     pm_scores as (
-        select
-            employee_number,
-            academic_year,
-            avg(overall_score) as overage_overall_score,
-            case
-                when avg(overall_score) >= 3.5
-                then 4
-                when avg(overall_score) >= 2.745
-                then 3
-                when avg(overall_score) >= 1.745
-                then 2
-                when avg(overall_score) < 1.75
-                then 1
-            end as overall_tier,
-        from {{ ref("rpt_tableau__schoolmint_grow_observation_details") }}
-        where form_type = 'PM' and form_term in ('PM2', 'PM3')
-        group by employee_number, academic_year
+        select employee_number, academic_year, overall_score, overall_tier,
+        from {{ ref("int_performance_management__overall_scores") }}
+        where pm_term = 'PM4'
     )
 
 select distinct
