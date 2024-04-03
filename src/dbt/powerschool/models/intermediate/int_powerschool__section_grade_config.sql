@@ -119,11 +119,11 @@ left join
     {{ ref("stg_powerschool__gradeformulaset") }} as gfs
     on sec.grade_formula_set_id = gfs.gradeformulasetid
 left join
-    category_weight as gcfw on gct.gradecalculationtypeid = gcfw.gradecalculationtypeid
-left join
     grade_calc as gct
     on sec.schools_dcid = gct.schoolsdcid
     and sec.yearid = gct.yearid
     and sec.term_abbreviation = gct.abbreviation
     and sec.grade_formula_set_id = gct.gradeformulasetid
     and tb.storecode = gct.storecode
+left join
+    category_weight as gcfw on gct.gradecalculationtypeid = gcfw.gradecalculationtypeid
