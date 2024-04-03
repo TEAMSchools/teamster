@@ -151,11 +151,11 @@ with
 
         union distinct
 
-        select u.user_id, r.role_id as role_id, r.name as role_name,
+        select u.user_id, r.role_id, r.name as role_name,
         from {{ ref("base_people__staff_roster") }} as s
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u
-            on s.employee_number = safe_cast(u.internal_id as int)
+            on s.employee_number = u.internal_id_int
         inner join
             {{ ref("stg_schoolmint_grow__roles") }} as r on r.name = 'School Admin'
         where s.job_title = 'School Leader'
@@ -253,10 +253,10 @@ with
         from people as p
         left join
             {{ ref("stg_schoolmint_grow__users") }} as u
-            on p.user_internal_id = safe_cast(u.internal_id as int)
+            on p.user_internal_id = u.internal_id_int
         left join
             {{ ref("stg_schoolmint_grow__users") }} as um
-            on p.manager_internal_id = safe_cast(um.internal_id as int)
+            on p.manager_internal_id = um.internal_id_int
         left join
             {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
         left join

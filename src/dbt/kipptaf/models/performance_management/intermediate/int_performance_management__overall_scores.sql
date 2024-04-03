@@ -2,7 +2,7 @@ with
     all_scores as (
         select
             employee_number,
-            concat(academic_year, form_term, employee_number) as observation_id,
+            observation_id,
             academic_year,
             form_term,
             etr_score,
@@ -17,7 +17,7 @@ with
         union all
 
         select distinct
-            safe_cast(employee_number as int64) as employee_number,
+            employee_number,
             observation_id,
             academic_year,
             form_term,
@@ -68,7 +68,7 @@ with
         union all
 
         select
-            safe_cast(employee_number as int64) as employee_number,
+            employee_number,
             null as observation_id,
             academic_year,
             'PM4' as form_term,

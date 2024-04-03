@@ -1,12 +1,18 @@
 with
     measurements as (
         select
-
             o.observation_id,
             o.teacher_id,
             o.rubric_name as form_long_name,
             o.rubric_id,
             o.score as overall_score,
+            o.observed_at_date_local as observed_at,
+            o.list_two_column_a_str as glows,
+            o.list_two_column_b_str as grows,
+
+            u.internal_id_int as employee_number,
+
+            u2.internal_id_int as observer_employee_number,
 
             ohos.measurement as score_measurement_id,
             ohos.value_score as row_score_value,
@@ -14,21 +20,10 @@ with
             ohos.last_modified_date_lead,
 
             m.name as measurement_name,
+            m.type as score_measurement_type,
+            m.short_name as score_measurement_shortname,
 
-            safe_cast(u.internal_id as int64) as employee_number,
-            safe_cast(u2.internal_id as int64) as observer_employee_number,
-
-            safe_cast(o.observed_at as date) as observed_at,
-            array_to_string(o.list_two_column_a, '|') as glows,
-            array_to_string(o.list_two_column_b, '|') as grows,
-
-            regexp_extract(lower(m.name), r'(^.*?)\-') as score_measurement_type,
-            regexp_extract(lower(m.name), r'(^.*?):') as score_measurement_shortname,
-
-            regexp_replace(
-                regexp_replace(b.value, r'<[^>]*>', ''), r'&nbsp;', ' '
-            ) as text_box,
-
+            b.value_clean as text_box,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
@@ -52,7 +47,7 @@ with
         where
             o.is_published
             /* 2023 is first year with new rubric*/
-            and safe_cast(o.observed_at as date) >= date(2023, 07, 01)
+            and o.observed_at_date_local >= date(2023, 07, 01)
     ),
 
     /* for 2024, move 2023 scores to archive view, delete CTEs*/
@@ -83,7 +78,7 @@ with
     observation_details as (
         select
             m.employee_number,
-            safe_cast(m.observer_employee_number as int) as observer_employee_number,
+            m.observer_employee_number,
             m.observation_id,
             m.teacher_id,
             m.form_long_name,
@@ -106,40 +101,47 @@ with
                 m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
             ) as overall_score,
         from measurements as m
-        left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
         inner join
             {{ ref("stg_reporting__terms") }} as t
             on regexp_contains(m.form_long_name, t.name)
             and m.observed_at between t.start_date and t.end_date
             and t.lockbox_date
             between m.last_modified_date and m.last_modified_date_lead
+        left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
 
         union all
+
         select
-            safe_cast(sa.employee_number as int64) as employee_number,
-            sa.observer_employee_number,
-            concat(
-                sa.academic_year, sa.form_term, sa.employee_number
-            ) as observation_id,
+            employee_number,
+            observer_employee_number,
+            observation_id,
+
             null as teacher_id,
-            sa.form_long_name,
-            concat(sa.academic_year, sa.form_term) as rubric_id,
-            sa.observed_at,
+
+            form_long_name,
+            rubric_id,
+            observed_at,
+
             null as glows,
             null as grows,
-            sa.measurement_name as score_measurement_id,
-            sa.row_score_value,
-            sa.measurement_name,
+
+            measurement_name as score_measurement_id,
+            row_score_value,
+            measurement_name,
+
             null as text_box,
-            sa.score_type as score_measurement_type,
-            sa.measurement_name as score_measurement_shortname,
-            sa.etr_score,
-            sa.so_score,
-            sa.form_term,
+
+            score_type as score_measurement_type,
+            measurement_name as score_measurement_shortname,
+            etr_score,
+            so_score,
+            form_term,
+
             'PM' as form_type,
-            sa.academic_year,
-            sa.overall_score,
-        from {{ ref("int_performance_management__scores_archive") }} as sa
+
+            academic_year,
+            overall_score,
+        from {{ ref("int_performance_management__scores_archive") }}
     )
 
 select
@@ -164,6 +166,7 @@ select
     form_term,
     form_type,
     academic_year,
+
     case
         when academic_year >= 2023 and form_type = 'PM'
         then
@@ -173,6 +176,5 @@ select
             )
         when academic_year < 2023 and form_type = 'PM'
         then 1
-
     end as rn_submission,
 from observation_details
