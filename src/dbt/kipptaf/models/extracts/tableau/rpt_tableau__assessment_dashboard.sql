@@ -136,6 +136,7 @@ select
 
     sf.nj_student_tier,
     sf.tutoring_nj,
+    sf.territory,
 from dashboard as d
 left join
     {{ ref("int_reporting__student_filters") }} as sf
