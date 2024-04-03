@@ -1,14 +1,12 @@
 with
     pm_scores as (
-        select
-            safe_cast(internal_id as int) as internal_id,
-            avg(overall_score) as pm4_overall_score,
+        select employee_number, avg(overall_score) as pm4_overall_score,
         from {{ ref("int_performance_management__observation_details") }}
         where
             academic_year = {{ var("current_academic_year") }}
             and overall_score is not null
             and form_term in ('PM2', 'PM3')
-        group by internal_id
+        group by employee_number
     )
 
 select
@@ -30,7 +28,7 @@ select
     b.worker_group_value as benefits_eligibility_class_description,
     b.wage_law_coverage_short_name as flsa_description,
     b.ethnicity_long_name as eeo_ethnic_description,
-    b.mail as mail,
+    b.mail,
     b.user_principal_name as userprincipalname,
     b.report_to_employee_number as manager_df_employee_number,
     b.report_to_preferred_name_lastfirst as manager_name,
@@ -50,5 +48,5 @@ from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__expected_next_year_salary") }} as s
     on b.employee_number = s.employee_number
-left join pm_scores as p on b.employee_number = p.internal_id
+left join pm_scores as p on b.employee_number = p.employee_number
 where b.assignment_status not in ('Terminated', 'Deceased')

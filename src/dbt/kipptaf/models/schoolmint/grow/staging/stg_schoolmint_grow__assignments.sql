@@ -15,9 +15,6 @@ select
     _id as assignment_id,
     `name`,
     district,
-    cast(created as timestamp) as created,
-    cast(lastmodified as timestamp) as last_modified,
-    cast(archivedat as timestamp) as archived_at,
     coachingactivity as coaching_activity,
     excludefrombank as exclude_from_bank,
     goaltype as goal_type,
@@ -48,5 +45,11 @@ select
 
     {# repeated records #}
     tags,
+
+    timestamp(created) as created,
+    timestamp(lastmodified) as last_modified,
+    timestamp(archivedat) as archived_at,
+
+    date(timestamp(created), '{{ var("local_timezone") }}') as created_date_local,
 from deduplicate
 where _dagster_partition_archived = 'f'
