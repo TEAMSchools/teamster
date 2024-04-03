@@ -71,7 +71,7 @@ jobs:
           cache: pip
 
       - name: Install dbt
-        run: pip install setuptools pyarrow "dbt-bigquery>=${{ inputs.dbt-version }}"
+        run: pip install setuptools "dbt-bigquery>=${{ inputs.dbt-version }}"
 
       - name: dbt deps
         run: dbt deps --project-dir=./src/dbt/${{ inputs.code-location }}
