@@ -11,6 +11,8 @@ select
 
     'Coaching Tool: Coach ETR and Reflection' as form_long_name,
 
+    concat(academic_year, pm_term) as rubric_id,
+    concat(academic_year, pm_term, employee_number) as observation_id,
     concat(pm_term, ' (Coach)') as form_short_name,
 
     case

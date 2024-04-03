@@ -33,11 +33,11 @@ from {{ ref("base_people__staff_roster") }} as sr
 cross join {{ ref("stg_reporting__terms") }} as rt
 left join
     {{ ref("stg_schoolmint_grow__users") }} as u
-    on sr.employee_number = safe_cast(u.internal_id as int64)
+    on sr.employee_number = u.internal_id_int
 left join
     {{ ref("stg_schoolmint_grow__assignments") }} as a
     on u.user_id = a.user_id
-    and safe_cast(a.created as date) between rt.start_date and rt.end_date
+    and a.created_date_local between rt.start_date and rt.end_date
 left join
     {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
     on a.assignment_id = t.assignment_id

@@ -69,9 +69,7 @@ left join
     {{ ref("base_people__staff_roster_history") }} as srh
     on sr.employee_number = srh.employee_number
     and od.observed_at
-    between safe_cast(srh.work_assignment_start_date as date) and safe_cast(
-        srh.work_assignment_end_date as date
-    )
+    between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
 left join
     {{ ref("base_people__staff_roster") }} as sr2
     on od.observer_employee_number = sr2.employee_number
