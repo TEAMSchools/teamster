@@ -189,6 +189,8 @@ select
     fs.performance as mastery_indicator,
     fs.performance as mastery_number,
 
+    sf.territory,
+
     if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
@@ -287,6 +289,11 @@ left join
     and co.academic_year = fs.academic_year
     and subj.fast_subject = fs.assessment_subject
     and administration_window = fs.administration_window
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on co.student_number = sf.student_number
+    and co.academic_year = sf.academic_year
+    and subj.iready_subject = sf.iready_subject
 where
     co.region = 'Miami'
     and co.is_enrolled_y1
