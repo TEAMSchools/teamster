@@ -123,7 +123,12 @@ with
     ),
 
     mia_territory as (
-        select a.student_school_id as student_number, r.roster_name as territory,
+        select
+            a.student_school_id as student_number,
+            r.roster_name as territory,
+            row_number() over (
+                partition by a.student_school_id order by r.roster_id asc
+            ) as rn_territory,
         from {{ ref("stg_deanslist__rosters") }} as r
         left join
             {{ ref("stg_deanslist__roster_assignments") }} as a
@@ -213,5 +218,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
     and sj.grad_unpivot_subject = a.subject
     and a.values_column = 'M'
-left join mia_territory as mt on co.student_number = mt.student_number
+left join
+    mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
