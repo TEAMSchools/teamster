@@ -1,6 +1,7 @@
 with
     ada_group as (
         select
+            att._dbt_source_relation,
             att.studentid,
             att.yearid,
 
@@ -18,10 +19,11 @@ with
             {{ extract_code_location("att") }} = 'kippmiami'
             and att.membershipvalue = 1
             and att.attendancevalue = 1
-        group by att.studentid, att.yearid, fte.name
+        group by att._dbt_source_relation, att.studentid, att.yearid, fte.name
     )
 
 select
+    _dbt_source_relation,
     studentid,
     yearid,
     if(attendancevalue_fte2 = 1.0, true, false) as is_present_fte2,
