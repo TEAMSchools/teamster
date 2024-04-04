@@ -118,7 +118,7 @@ select
     enr.cc_academic_year as academic_year,
     enr.cc_course_number as course_number,
     enr.cc_sectionid as sectionid,
-    enr.sections_dcid as sections_dcid,
+    enr.sections_dcid,
     enr.sections_section_number as section_number,
     enr.teacher_lastfirst as teacher_name,
     enr.courses_course_name as course_name,
