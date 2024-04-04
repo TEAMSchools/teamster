@@ -80,6 +80,9 @@ with
 
             sgs.grade_points as sg_grade_points,
 
+            fg.gradelastupdate,
+            fg.whomodifiedid,
+            
             fg.citizenship,
             fg.comment_value,
 
@@ -175,6 +178,8 @@ with
             fg_letter_grade_adjusted,
             fg_percent_adjusted,
             fg_grade_points,
+            gradelastupdate,
+            whomodifiedid,
             citizenship,
             comment_value,
 
@@ -246,6 +251,8 @@ with
             term_weighted_points_possible,
             y1_weighted_points_possible_running,
             y1_weighted_points_possible,
+            gradelastupdate,
+            whomodifiedid,
             citizenship,
             comment_value,
 
@@ -321,6 +328,8 @@ with
             y1_weighted_points_possible_running,
             y1_weighted_points_possible,
             y1_weighted_points_valid_running,
+            gradelastupdate,
+            whomodifiedid,
             citizenship,
             comment_value,
 
@@ -404,6 +413,8 @@ select
     y1.y1_weighted_points_earned_running,
     y1.y1_weighted_points_earned_adjusted_running,
     y1.y1_weighted_points_valid_running,
+    y1.gradelastupdate,
+    y1.whomodifiedid,
     y1.citizenship,
     y1.comment_value,
 
@@ -411,6 +422,8 @@ select
     y1gs.letter_grade as y1_letter_grade,
 
     y1gsu.grade_points as y1_grade_points_unweighted,
+
+    u.lastfirst as whomodified_name,
 
     if(
         y1.y1_percent_grade < 0.500, 'F*', y1gs.letter_grade
@@ -453,3 +466,5 @@ left join
     on y1.courses_gradescaleid_unweighted = y1gsu.gradescaleid
     and y1.y1_percent_grade_adjusted
     between y1gsu.min_cutoffpercentage and y1gsu.max_cutoffpercentage
+left join {{ ref('stg_powerschool__users') }} as u
+    on y1.whomodifiedid = u.dcid
