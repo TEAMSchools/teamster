@@ -151,7 +151,7 @@ with
 
         union distinct
 
-        select u.user_id, r.role_id as role_id, r.name as role_name,
+        select u.user_id, r.role_id, r.name as role_name,
         from {{ ref("base_people__staff_roster") }} as s
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u
