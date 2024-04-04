@@ -1,9 +1,60 @@
 with
-    sec_gfs as (
+    school_config as (
+        select gsch.schoolsdcid, gsch.yearid, gsfa.gradeformulasetid,
+        from {{ ref("stg_powerschool__gradeschoolconfig") }} as gsch
+        inner join
+            {{ ref("stg_powerschool__gradeschoolformulaassoc") }} as gsfa
+            on gsch.gradeschoolconfigid = gsfa.gradeschoolconfigid
+            and gsfa.isdefaultformulaset = 1
+    ),
+
+    grade_calc as (
+        select
+            gct.gradecalculationtypeid,
+            gct.gradeformulasetid,
+            gct.yearid,
+            gct.abbreviation,
+            gct.storecode,
+            gct.type,
+
+            gcsa.schoolsdcid,
+        from {{ ref("stg_powerschool__gradecalculationtype") }} as gct
+        inner join
+            {{ ref("stg_powerschool__gradecalcschoolassoc") }} as gcsa
+            on gct.gradecalculationtypeid = gcsa.gradecalculationtypeid
+    ),
+
+    category_weight as (
+        select
+            gcfw.gradecalcformulaweightid,
+            gcfw.gradecalculationtypeid,
+            gcfw.teachercategoryid,
+            gcfw.districtteachercategoryid,
+            gcfw.weight,
+            gcfw.type,
+
+            coalesce(tc.name, dtc.name) as `name`,
+            coalesce(tc.defaultscoretype, dtc.defaultscoretype) as defaultscoretype,
+            coalesce(tc.isinfinalgrades, dtc.isinfinalgrades) as isinfinalgrades,
+        from {{ ref("stg_powerschool__gradecalcformulaweight") }} as gcfw
+        left join
+            {{ ref("stg_powerschool__teachercategory") }} as tc
+            on gcfw.teachercategoryid = tc.teachercategoryid
+        left join
+            {{ ref("stg_powerschool__districtteachercategory") }} as dtc
+            on gcfw.districtteachercategoryid = dtc.districtteachercategoryid
+    ),
+
+    sec as (
         select
             sec.sections_dcid,
             sec.sections_schoolid,
             sec.sections_termid,
+
+            sch.dcid as schools_dcid,
+
+            t.yearid,
+            t.abbreviation as term_abbreviation,
 
             coalesce(
                 gsec.gradeformulasetid, gsfa.gradeformulasetid, 0
@@ -12,28 +63,27 @@ with
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sec.sections_schoolid = sch.school_number
+        inner join
+            {{ ref("stg_powerschool__terms") }} as t
+            on sec.sections_termid = t.id
+            and sec.sections_schoolid = t.schoolid
         left join
             {{ ref("stg_powerschool__gradesectionconfig") }} as gsec
             on sec.sections_dcid = gsec.sectionsdcid
             and gsec.type = 'Admin'
         left join
-            {{ ref("stg_powerschool__gradeschoolconfig") }} as gsch
-            on sch.dcid = gsch.schoolsdcid
-            and sec.terms_yearid = gsch.yearid
-        left join
-            {{ ref("stg_powerschool__gradeschoolformulaassoc") }} as gsfa
-            on gsch.gradeschoolconfigid = gsfa.gradeschoolconfigid
-            and gsfa.isdefaultformulaset = 1
+            school_config as gsfa
+            on sch.dcid = gsfa.schoolsdcid
+            and t.yearid = gsfa.yearid
         where
-            {# PTP #}
+            /* PTP */
             sec.sections_gradebooktype = 2
     )
 
 select
-    sgfs.sections_dcid,
-    sgfs.grade_formula_set_id,
-
-    t.abbreviation as term_abbreviation,
+    sec.sections_dcid,
+    sec.grade_formula_set_id,
+    sec.term_abbreviation,
 
     tb.storecode,
     tb.date1 as term_start_date,
@@ -44,6 +94,9 @@ select
     gcfw.weight as grade_calc_formula_weight,
     gcfw.teachercategoryid as teacher_category_id,
     gcfw.districtteachercategoryid as district_teacher_category_id,
+    gcfw.defaultscoretype as default_score_type,
+
+    coalesce(gcfw.isinfinalgrades, 0) as is_in_final_grades,
 
     coalesce(
         gct.gradecalculationtypeid, gcfw.gradecalcformulaweightid, -1
@@ -56,32 +109,21 @@ select
         gct.gradecalculationtypeid,
         -1
     ) as category_id,
-    coalesce(tc.name, dtc.name, gct.type) as category_name,
-    coalesce(tc.defaultscoretype, dtc.defaultscoretype) as default_score_type,
-    coalesce(tc.isinfinalgrades, dtc.isinfinalgrades, 0) as is_in_final_grades,
-from sec_gfs as sgfs
-inner join
-    {{ ref("stg_powerschool__terms") }} as t
-    on sgfs.sections_termid = t.id
-    and sgfs.sections_schoolid = t.schoolid
+    coalesce(gcfw.name, gct.type) as category_name,
+from sec
 inner join
     {{ ref("stg_powerschool__termbins") }} as tb
-    on t.schoolid = tb.schoolid
-    and t.id = tb.termid
+    on sec.sections_schoolid = tb.schoolid
+    and sec.sections_termid = tb.termid
 left join
     {{ ref("stg_powerschool__gradeformulaset") }} as gfs
-    on sgfs.grade_formula_set_id = gfs.gradeformulasetid
+    on sec.grade_formula_set_id = gfs.gradeformulasetid
 left join
-    {{ ref("stg_powerschool__gradecalculationtype") }} as gct
-    on sgfs.grade_formula_set_id = gct.gradeformulasetid
-    and t.abbreviation = gct.abbreviation
+    grade_calc as gct
+    on sec.schools_dcid = gct.schoolsdcid
+    and sec.yearid = gct.yearid
+    and sec.term_abbreviation = gct.abbreviation
+    and sec.grade_formula_set_id = gct.gradeformulasetid
     and tb.storecode = gct.storecode
 left join
-    {{ ref("stg_powerschool__gradecalcformulaweight") }} as gcfw
-    on gct.gradecalculationtypeid = gcfw.gradecalculationtypeid
-left join
-    {{ ref("stg_powerschool__teachercategory") }} as tc
-    on gcfw.teachercategoryid = tc.teachercategoryid
-left join
-    {{ ref("stg_powerschool__districtteachercategory") }} as dtc
-    on gcfw.districtteachercategoryid = dtc.districtteachercategoryid
+    category_weight as gcfw on gct.gradecalculationtypeid = gcfw.gradecalculationtypeid

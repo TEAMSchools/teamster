@@ -189,6 +189,8 @@ select
     fs.performance as mastery_indicator,
     fs.performance as mastery_number,
 
+    sf.territory,
+
     if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
@@ -238,6 +240,7 @@ left join
     {{ ref("int_students__fldoe_fte") }} as fte
     on co.studentid = fte.studentid
     and co.yearid = fte.yearid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="fte") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number
@@ -287,6 +290,11 @@ left join
     and co.academic_year = fs.academic_year
     and subj.fast_subject = fs.assessment_subject
     and administration_window = fs.administration_window
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on co.student_number = sf.student_number
+    and co.academic_year = sf.academic_year
+    and subj.iready_subject = sf.iready_subject
 where
     co.region = 'Miami'
     and co.is_enrolled_y1
