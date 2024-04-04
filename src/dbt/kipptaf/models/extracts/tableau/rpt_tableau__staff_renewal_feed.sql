@@ -30,7 +30,7 @@ select
     b.worker_group_value as benefits_eligibility_class_description,
     b.wage_law_coverage_short_name as flsa_description,
     b.ethnicity_long_name as eeo_ethnic_description,
-    b.mail as mail,
+    b.mail,
     b.user_principal_name as userprincipalname,
     b.report_to_employee_number as manager_df_employee_number,
     b.report_to_preferred_name_lastfirst as manager_name,

@@ -317,8 +317,8 @@ with
             od.text_box,
             od.rn_submission,
 
-            os.etr_score as etr_score,
-            os.so_score as so_score,
+            os.etr_score,
+            os.so_score,
 
             /* 2023 direct SMG overall score is messed up */
             if(
