@@ -1,1 +1,0 @@
-op://Data Team/dbt Cloud Credentials - Teamster/dbt_cloud.yml
