@@ -81,7 +81,7 @@ with
             sgs.grade_points as sg_grade_points,
 
             fg.gradelastupdate,
-            fg.whomodifiedid,            
+            fg.whomodifiedid,
             fg.citizenship,
             fg.comment_value,
 
@@ -465,5 +465,4 @@ left join
     on y1.courses_gradescaleid_unweighted = y1gsu.gradescaleid
     and y1.y1_percent_grade_adjusted
     between y1gsu.min_cutoffpercentage and y1gsu.max_cutoffpercentage
-left join {{ ref('stg_powerschool__users') }} as u
-    on y1.whomodifiedid = u.dcid
+left join {{ ref("stg_powerschool__users") }} as u on y1.whomodifiedid = u.dcid
