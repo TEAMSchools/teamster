@@ -7,8 +7,8 @@ select
     cum.cumulative_y1_gpa as gpa_cum,
     cum.cumulative_y1_gpa_projected as gpa_cum_projected,
 
-    gpa.gpa_term as gpa_term,
-    gpa.gpa_y1 as gpa_y1,
+    gpa.gpa_term,
+    gpa.gpa_y1,
 
     p.overall_status as promo_status_overall,
     p.attendance_status as promo_status_attendance,

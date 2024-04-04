@@ -240,6 +240,7 @@ left join
     {{ ref("int_students__fldoe_fte") }} as fte
     on co.studentid = fte.studentid
     and co.yearid = fte.yearid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="fte") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number
