@@ -76,7 +76,16 @@ with
             fg.term_percent_grade_adjusted_rt4,
             fg.y1_percent_grade_adjusted,
 
-            round(fg.need_60, 0) as need_60,
+            round(
+                coalesce(
+                    lead(fg.need_60, 1) over (
+                        partition by enr.cc_studentid, enr.cc_course_number
+                        order by enr.term_name
+                    ),
+                    fg.need_60
+                ),
+                0
+            ) as need_60,
 
             if(
                 enr.code_location = 'kippmiami' and enr.grade_level = 0,
