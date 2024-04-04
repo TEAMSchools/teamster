@@ -2,7 +2,6 @@ with
     all_scores as (
         select
             employee_number,
-            observation_id,
             academic_year,
             form_term,
             etr_score,
@@ -17,43 +16,15 @@ with
         union all
 
         select distinct
-            employee_number,
-            observation_id,
+            safe_cast(internal_id as int) as employee_number,
             academic_year,
             form_term,
             etr_score,
             so_score,
             overall_score,
-            case
-                when etr_score >= 3.5
-                then 4
-                when etr_score >= 2.745
-                then 3
-                when etr_score >= 1.745
-                then 2
-                when etr_score < 1.75
-                then 1
-            end as etr_tier,
-            case
-                when so_score >= 3.5
-                then 4
-                when so_score >= 2.945
-                then 3
-                when so_score >= 1.945
-                then 2
-                when so_score < 1.95
-                then 1
-            end as so_tier,
-            case
-                when overall_score >= 3.5
-                then 4
-                when overall_score >= 2.745
-                then 3
-                when overall_score >= 1.745
-                then 2
-                when overall_score < 1.75
-                then 1
-            end as overall_tier,
+            etr_tier,
+            so_tier,
+            overall_tier,
             case
                 when form_term = 'PM1'
                 then date(academic_year, 10, 1)
@@ -63,13 +34,12 @@ with
                 then date(academic_year + 1, 3, 1)
             end as eval_date,
         from {{ ref("int_performance_management__observation_details") }}
-        where form_type = 'PM' and rn_submission = 1 and academic_year >= 2023
+        where form_type = 'PM' and rn_submission = 1
 
         union all
 
         select
-            employee_number,
-            null as observation_id,
+            safe_cast(internal_id as int) as employee_number,
             academic_year,
             'PM4' as form_term,
             avg(etr_score) as etr_score,
@@ -112,13 +82,11 @@ with
             and form_term in ('PM2', 'PM3')
             and rn_submission = 1
             and overall_score is not null
-            and academic_year >= 2023
-        group by employee_number, academic_year
+        group by internal_id, academic_year
     )
 
 select
     employee_number,
-    observation_id,
     academic_year,
     form_term as pm_term,
     etr_score,
