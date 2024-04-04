@@ -1,0 +1,9 @@
+version: 1
+
+models:
+  - name: base_powerschool__student_enrollments
+    description: <markdown_string>
+    columns:
+      - name: student_number
+        description: "Unique student identifier. For students registered during and after the 2018-19 school year, 
+        the student_number is 6 digits in length, with the first digit indicating the student's region: 1 being Newark, 2 being Camden, and 3 being Miami."
