@@ -51,7 +51,7 @@ select
 from {{ ref("int_performance_management__observation_details") }} as od
 left join
     {{ ref("base_people__staff_roster_history") }} as sr
-    on od.internal_id = safe_cast(sr.employee_number as string)
+    on od.internal_id = sr.employee_number
     and coalesce(
         od.observed_at,
         od.start_date
