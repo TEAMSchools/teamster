@@ -81,8 +81,7 @@ with
             sgs.grade_points as sg_grade_points,
 
             fg.gradelastupdate,
-            fg.whomodifiedid,
-            
+            fg.whomodifiedid,            
             fg.citizenship,
             fg.comment_value,
 
