@@ -145,64 +145,70 @@ with
 
     final_grades as (
         select
-            cc_studentid,
-            cc_schoolid,
-            cc_yearid,
-            cc_academic_year,
-            cc_dateenrolled,
-            cc_dateleft,
-            cc_sectionid,
-            cc_course_number,
-            cc_abs_termid,
-            courses_course_name,
-            courses_credittype,
-            courses_credit_hours,
-            courses_excludefromgpa,
-            courses_gradescaleid,
-            courses_gradescaleid_unweighted,
-            is_dropped_section,
-            storecode,
-            termbin_start_date,
-            termbin_end_date,
-            termbin_is_current,
-            term_weighted_points_possible,
-            sg_letter_grade,
-            sg_exclude_from_gpa,
-            sg_exclude_from_graduation,
-            sg_percent,
-            sg_potential_credit_hours,
-            sg_grade_points,
-            fg_letter_grade,
-            fg_percent,
-            fg_letter_grade_adjusted,
-            fg_percent_adjusted,
-            fg_grade_points,
-            gradelastupdate,
-            whomodifiedid,
-            citizenship,
-            comment_value,
+            enr.cc_studentid,
+            enr.cc_schoolid,
+            enr.cc_yearid,
+            enr.cc_academic_year,
+            enr.cc_dateenrolled,
+            enr.cc_dateleft,
+            enr.cc_sectionid,
+            enr.cc_course_number,
+            enr.cc_abs_termid,
+            enr.courses_course_name,
+            enr.courses_credittype,
+            enr.courses_credit_hours,
+            enr.courses_excludefromgpa,
+            enr.courses_gradescaleid,
+            enr.courses_gradescaleid_unweighted,
+            enr.is_dropped_section,
+            enr.storecode,
+            enr.termbin_start_date,
+            enr.termbin_end_date,
+            enr.termbin_is_current,
+            enr.term_weighted_points_possible,
+            enr.sg_letter_grade,
+            enr.sg_exclude_from_gpa,
+            enr.sg_exclude_from_graduation,
+            enr.sg_percent,
+            enr.sg_potential_credit_hours,
+            enr.sg_grade_points,
+            enr.fg_letter_grade,
+            enr.fg_percent,
+            enr.fg_letter_grade_adjusted,
+            enr.fg_percent_adjusted,
+            enr.fg_grade_points,
+            enr.gradelastupdate,
+            enr.whomodifiedid,
+            enr.citizenship,
+            enr.comment_value,
+            u.lastfirst as whomodified_name,
 
             coalesce(
-                sg_potential_credit_hours, courses_credit_hours
+                enr.sg_potential_credit_hours, enr.courses_credit_hours
             ) as potential_credit_hours,
-            coalesce(sg_exclude_from_gpa, courses_excludefromgpa) as exclude_from_gpa,
-            coalesce(sg_exclude_from_graduation, 0) as exclude_from_graduation,
-            coalesce(sg_letter_grade, fg_letter_grade) as term_letter_grade,
             coalesce(
-                sg_letter_grade, fg_letter_grade_adjusted
+                enr.sg_exclude_from_gpa, enr.courses_excludefromgpa
+            ) as exclude_from_gpa,
+            coalesce(enr.sg_exclude_from_graduation, 0) as exclude_from_graduation,
+            coalesce(enr.sg_letter_grade, enr.fg_letter_grade) as term_letter_grade,
+            coalesce(
+                enr.sg_letter_grade, enr.fg_letter_grade_adjusted
             ) as term_letter_grade_adjusted,
-            coalesce(sg_percent, fg_percent) as term_percent_grade,
-            coalesce(sg_percent, fg_percent_adjusted) as term_percent_grade_adjusted,
-            coalesce(sg_grade_points, fg_grade_points) as term_grade_points,
+            coalesce(enr.sg_percent, enr.fg_percent) as term_percent_grade,
+            coalesce(
+                enr.sg_percent, enr.fg_percent_adjusted
+            ) as term_percent_grade_adjusted,
+            coalesce(enr.sg_grade_points, enr.fg_grade_points) as term_grade_points,
 
-            sum(term_weighted_points_possible) over (
-                partition by cc_course_number, cc_studentid, cc_yearid
+            sum(enr.term_weighted_points_possible) over (
+                partition by enr.cc_course_number, enr.cc_studentid, enr.cc_yearid
             ) as y1_weighted_points_possible,
-            sum(term_weighted_points_possible) over (
-                partition by cc_course_number, cc_studentid, cc_yearid
-                order by termbin_end_date asc
+            sum(enr.term_weighted_points_possible) over (
+                partition by enr.cc_course_number, enr.cc_studentid, enr.cc_yearid
+                order by enr.termbin_end_date asc
             ) as y1_weighted_points_possible_running,
-        from enr_grades
+        from enr_grades as enr
+        left join {{ ref("stg_powerschool__users") }} as u on enr.whomodifiedid = u.dcid
         where rn_enr_fg = 1
     ),
 
@@ -422,8 +428,6 @@ select
 
     y1gsu.grade_points as y1_grade_points_unweighted,
 
-    u.lastfirst as whomodified_name,
-
     if(
         y1.y1_percent_grade < 0.500, 'F*', y1gs.letter_grade
     ) as y1_letter_grade_adjusted,
@@ -465,4 +469,3 @@ left join
     on y1.courses_gradescaleid_unweighted = y1gsu.gradescaleid
     and y1.y1_percent_grade_adjusted
     between y1gsu.min_cutoffpercentage and y1gsu.max_cutoffpercentage
-left join {{ ref("stg_powerschool__users") }} as u on y1.whomodifiedid = u.dcid
