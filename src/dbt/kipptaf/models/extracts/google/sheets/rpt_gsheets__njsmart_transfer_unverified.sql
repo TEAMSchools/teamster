@@ -1,4 +1,6 @@
 select
+    co.student_number,
+    co.state_studentnumber,
     co.lastfirst as student_name,
     co.grade_level as last_kipp_grade_level,
     co.region as last_kipp_region,
