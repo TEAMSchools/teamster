@@ -85,6 +85,8 @@ with
             fg.citizenship,
             fg.comment_value,
 
+            u.lastfirst as whomodified_name,
+
             if(
                 sg.potentialcrhrs != 0.0, sg.potentialcrhrs, null
             ) as sg_potential_credit_hours,
@@ -141,47 +143,47 @@ with
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as fgs
             on te.courses_gradescaleid = fgs.gradescaleid
             and fg.percent between fgs.min_cutoffpercentage and fgs.max_cutoffpercentage
+        left join {{ ref("stg_powerschool__users") }} as u on enr.whomodifiedid = u.dcid
     ),
 
     final_grades as (
         select
-            enr.cc_studentid,
-            enr.cc_schoolid,
-            enr.cc_yearid,
-            enr.cc_academic_year,
-            enr.cc_dateenrolled,
-            enr.cc_dateleft,
-            enr.cc_sectionid,
-            enr.cc_course_number,
-            enr.cc_abs_termid,
-            enr.courses_course_name,
-            enr.courses_credittype,
-            enr.courses_credit_hours,
-            enr.courses_excludefromgpa,
-            enr.courses_gradescaleid,
-            enr.courses_gradescaleid_unweighted,
-            enr.is_dropped_section,
-            enr.storecode,
-            enr.termbin_start_date,
-            enr.termbin_end_date,
-            enr.termbin_is_current,
-            enr.term_weighted_points_possible,
-            enr.sg_letter_grade,
-            enr.sg_exclude_from_gpa,
-            enr.sg_exclude_from_graduation,
-            enr.sg_percent,
-            enr.sg_potential_credit_hours,
-            enr.sg_grade_points,
-            enr.fg_letter_grade,
-            enr.fg_percent,
-            enr.fg_letter_grade_adjusted,
-            enr.fg_percent_adjusted,
-            enr.fg_grade_points,
-            enr.gradelastupdate,
-            enr.whomodifiedid,
-            enr.citizenship,
-            enr.comment_value,
-            u.lastfirst as whomodified_name,
+            cc_studentid,
+            cc_schoolid,
+            cc_yearid,
+            cc_academic_year,
+            cc_dateenrolled,
+            cc_dateleft,
+            cc_sectionid,
+            cc_course_number,
+            cc_abs_termid,
+            courses_course_name,
+            courses_credittype,
+            courses_credit_hours,
+            courses_excludefromgpa,
+            courses_gradescaleid,
+            courses_gradescaleid_unweighted,
+            is_dropped_section,
+            storecode,
+            termbin_start_date,
+            termbin_end_date,
+            termbin_is_current,
+            term_weighted_points_possible,
+            sg_letter_grade,
+            sg_exclude_from_gpa,
+            sg_exclude_from_graduation,
+            sg_percent,
+            sg_potential_credit_hours,
+            sg_grade_points,
+            fg_letter_grade,
+            fg_percent,
+            fg_letter_grade_adjusted,
+            fg_percent_adjusted,
+            fg_grade_points,
+            gradelastupdate,
+            whomodifiedid,
+            citizenship,
+            comment_value,
 
             coalesce(
                 enr.sg_potential_credit_hours, enr.courses_credit_hours
@@ -207,9 +209,8 @@ with
                 partition by enr.cc_course_number, enr.cc_studentid, enr.cc_yearid
                 order by enr.termbin_end_date asc
             ) as y1_weighted_points_possible_running,
-        from enr_grades as enr
-        left join {{ ref("stg_powerschool__users") }} as u on enr.whomodifiedid = u.dcid
-        where enr.rn_enr_fg = 1
+        from enr_grades
+        where rn_enr_fg = 1
     ),
 
     fg_running as (
