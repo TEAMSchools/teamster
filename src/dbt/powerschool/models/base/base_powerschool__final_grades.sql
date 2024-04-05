@@ -209,7 +209,7 @@ with
             ) as y1_weighted_points_possible_running,
         from enr_grades as enr
         left join {{ ref("stg_powerschool__users") }} as u on enr.whomodifiedid = u.dcid
-        where rn_enr_fg = 1
+        where enr.rn_enr_fg = 1
     ),
 
     fg_running as (
