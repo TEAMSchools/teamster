@@ -12,8 +12,6 @@ from pendulum.datetime import DateTime
 from zenpy import Zenpy
 from zenpy.lib.exception import RecordNotFoundException
 
-from teamster.core.utils.functions import get_avro_record_schema
-
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .schema import ASSET_FIELDS
 
@@ -33,11 +31,7 @@ def ticket_metrics_archive(
     context: AssetExecutionContext, zendesk: ResourceParam[Zenpy]
 ):
     data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
-    schema = parse_schema(
-        schema=get_avro_record_schema(
-            name="ticket_metrics", fields=ASSET_FIELDS["ticket_metrics"]
-        )
-    )
+    schema = parse_schema(schema=ASSET_FIELDS["ticket_metrics"])
 
     partition_key: DateTime = pendulum.parse(context.partition_key)  # type: ignore
 

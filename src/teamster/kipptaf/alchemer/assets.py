@@ -1,4 +1,5 @@
 import json
+import pathlib
 import time
 
 import pendulum
@@ -50,6 +51,10 @@ def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
     data = [json.loads(s=data_str)]
     schema = get_avro_record_schema(name="survey", fields=SURVEY_FIELDS)
 
+    fp = pathlib.Path("env/alchemer/survey.json")
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    json.dump(obj=data, fp=fp.open(mode="w"))
+
     yield Output(value=(data, schema), metadata={"record_count": 1})
 
     yield check_avro_schema_valid(
@@ -78,6 +83,10 @@ def survey_question(
         fields=get_survey_question_fields(namespace="surveyquestion", depth=2),
     )
 
+    fp = pathlib.Path("env/alchemer/survey_question.json")
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    json.dump(obj=data, fp=fp.open(mode="w"))
+
     yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
     yield check_avro_schema_valid(
@@ -103,6 +112,10 @@ def survey_campaign(
     schema = get_avro_record_schema(
         name="survey_campaign", fields=SURVEY_CAMPAIGN_FIELDS
     )
+
+    fp = pathlib.Path("env/alchemer/survey_campaign.json")
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    json.dump(obj=data, fp=fp.open(mode="w"))
 
     yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
@@ -159,6 +172,10 @@ def survey_response(
     schema = get_avro_record_schema(
         name="survey_response", fields=SURVEY_RESPONSE_FIELDS
     )
+
+    fp = pathlib.Path("env/alchemer/survey_response.json")
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    json.dump(obj=data, fp=fp.open(mode="w"))
 
     yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
