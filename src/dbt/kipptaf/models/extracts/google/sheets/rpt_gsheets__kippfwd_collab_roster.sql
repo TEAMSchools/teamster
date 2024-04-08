@@ -85,6 +85,7 @@ left join
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cn
     on ktc.contact_id = cn.contact_id
+    and cn.academic_year = {{ var("current_academic_year") }}
 left join
     {{ ref("stg_kippadb__subsequent_financial_aid_award") }} as fa
     on ei.ugrad_enrollment_id = fa.enrollment
