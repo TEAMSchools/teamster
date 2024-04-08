@@ -71,10 +71,10 @@ select  -- noqa: disable=ST06
     fa.stafford_loan_unsubsidized,
     fa.other_private_loan,
 
-    fa.parent_plus_loan
-    + fa.stafford_loan_subsidized
-    + fa.stafford_loan_unsubsidized
-    + fa.other_private_loan as total_loan_amount,
+    coalesce(fa.parent_plus_loan, 0)
+    + coalesce(fa.stafford_loan_subsidized, 0)
+    + coalesce(fa.stafford_loan_unsubsidized, 0)
+    + coalesce(fa.other_private_loan, 0) as total_loan_amount,
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
     matriculated_application as app
