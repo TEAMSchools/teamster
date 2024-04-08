@@ -4,7 +4,7 @@ with
             ur.user_id,
             ur.role_name,
 
-            u.internal_id,
+            u.internal_id_int as internal_id,
 
             rt.type as form_type,
             rt.code as form_term,
@@ -13,10 +13,11 @@ with
             rt.end_date,
             rt.academic_year,
         from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
-        left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
-        left join
+        inner join
+            {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
+        inner join
             {{ ref("stg_reporting__terms") }} as rt on ur.role_name = rt.grade_band
-        where ur.role_name like '%Teacher%'
+        where ur.role_name = 'Teacher'
     ),
 
     observations as (
@@ -317,8 +318,8 @@ with
             od.text_box,
             od.rn_submission,
 
-            os.etr_score as etr_score,
-            os.so_score as so_score,
+            os.etr_score,
+            os.so_score,
 
             /* 2023 direct SMG overall score is messed up */
             if(
