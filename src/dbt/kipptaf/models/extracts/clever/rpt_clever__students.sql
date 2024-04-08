@@ -4,13 +4,13 @@ select
     safe_cast(sr.student_number as string) as student_id,
     safe_cast(sr.student_number as string) as student_number,
     if(sr.region = 'Miami', sr.fleid, sr.state_studentnumber) as state_id,
-    sr.last_name as last_name,
-    sr.middle_name as middle_name,
-    sr.first_name as first_name,
+    sr.last_name,
+    sr.middle_name,
+    sr.first_name,
     if(
         sr.grade_level = 0, 'Kindergarten', safe_cast(sr.grade_level as string)
     ) as grade,
-    sr.gender as gender,
+    sr.gender,
     sr.cohort as graduation_year,
     format_date('%m/%d/%Y', sr.dob) as dob,
     sr.ethnicity as race,

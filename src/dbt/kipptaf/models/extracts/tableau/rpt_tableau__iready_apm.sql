@@ -92,6 +92,7 @@ select
     f.state_test_proficiency,
     f.nj_student_tier,
     f.is_exempt_iready,
+    f.territory,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 

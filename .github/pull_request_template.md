@@ -13,6 +13,16 @@
 
 - [ ] <kbd>Format</kbd> has been run on all modified files
 
+- [ ] Ensure you are using the `union_dataset_join_clause()` macro for queries that employ any
+      models from these datasets:
+  - deanslist
+  - edplan
+  - iready
+  - pearson
+  - powerschool
+  - renlearn
+  - titan
+
 ## Troubleshooting
 
 - [SqlFluff Rules Reference](https://docs.sqlfluff.com/en/stable/rules.html)

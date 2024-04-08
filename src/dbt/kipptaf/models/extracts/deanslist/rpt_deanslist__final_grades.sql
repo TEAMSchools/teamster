@@ -76,7 +76,16 @@ with
             fg.term_percent_grade_adjusted_rt4,
             fg.y1_percent_grade_adjusted,
 
-            round(fg.need_60, 0) as need_60,
+            round(
+                coalesce(
+                    lead(fg.need_60, 1) over (
+                        partition by enr.cc_studentid, enr.cc_course_number
+                        order by enr.term_name
+                    ),
+                    fg.need_60
+                ),
+                0
+            ) as need_60,
 
             if(
                 enr.code_location = 'kippmiami' and enr.grade_level = 0,
@@ -118,7 +127,7 @@ select
     enr.cc_academic_year as academic_year,
     enr.cc_course_number as course_number,
     enr.cc_sectionid as sectionid,
-    enr.sections_dcid as sections_dcid,
+    enr.sections_dcid,
     enr.sections_section_number as section_number,
     enr.teacher_lastfirst as teacher_name,
     enr.courses_course_name as course_name,
