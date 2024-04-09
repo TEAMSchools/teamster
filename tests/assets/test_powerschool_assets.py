@@ -56,6 +56,7 @@ def _test_asset(
         .value
         > 0
     )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_asset_powerschool_cc():

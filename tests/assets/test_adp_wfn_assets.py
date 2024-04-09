@@ -26,3 +26,4 @@ def test_adp_wfn_asset():
         .value
         > 0
     )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""

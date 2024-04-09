@@ -1,5 +1,4 @@
 import json
-import pathlib
 import time
 
 import pendulum
@@ -11,21 +10,16 @@ from dagster import (
     ResourceParam,
     asset,
 )
+from py_avro_schema import generate
 from requests.exceptions import HTTPError
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
-    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
 from .. import CODE_LOCATION
-from .schema import (
-    SURVEY_CAMPAIGN_FIELDS,
-    SURVEY_FIELDS,
-    SURVEY_RESPONSE_FIELDS,
-    get_survey_question_fields,
-)
+from .schema import Survey, SurveyCampaign, SurveyQuestion, SurveyResponse
 
 key_prefix = [CODE_LOCATION, "alchemer"]
 asset_kwargs = {
@@ -46,14 +40,8 @@ partitions_def = DynamicPartitionsDefinition(name=f"{CODE_LOCATION}_alchemer_sur
 def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]):
     survey = alchemer.survey.get(id=context.partition_key)
 
-    data_str = json.dumps(obj=survey.data).replace("soft-required", "soft_required")
-
-    data = [json.loads(s=data_str)]
-    schema = get_avro_record_schema(name="survey", fields=SURVEY_FIELDS)
-
-    fp = pathlib.Path("env/alchemer/survey.json")
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(obj=data, fp=fp.open(mode="w"))
+    data = [survey.data]
+    schema = json.loads(generate(py_type=Survey, namespace="survey"))
 
     yield Output(value=(data, schema), metadata={"record_count": 1})
 
@@ -75,17 +63,7 @@ def survey_question(
 
     data = survey.question.list(params={"resultsperpage": 500})
 
-    data_str = json.dumps(obj=data).replace("soft-required", "soft_required")
-
-    data = json.loads(s=data_str)
-    schema = get_avro_record_schema(
-        name="survey_question",
-        fields=get_survey_question_fields(namespace="surveyquestion", depth=2),
-    )
-
-    fp = pathlib.Path("env/alchemer/survey_question.json")
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(obj=data, fp=fp.open(mode="w"))
+    schema = json.loads(generate(py_type=SurveyQuestion, namespace="survey_question"))
 
     yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
@@ -109,13 +87,7 @@ def survey_campaign(
     survey = alchemer.survey.get(id=context.partition_key)
 
     data = survey.campaign.list(params={"resultsperpage": 500})
-    schema = get_avro_record_schema(
-        name="survey_campaign", fields=SURVEY_CAMPAIGN_FIELDS
-    )
-
-    fp = pathlib.Path("env/alchemer/survey_campaign.json")
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(obj=data, fp=fp.open(mode="w"))
+    schema = json.loads(generate(py_type=SurveyCampaign, namespace="survey_campaign"))
 
     yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
@@ -169,13 +141,7 @@ def survey_response(
         # resultsperpage can produce a 500 error
         data = survey_response_obj.list()
 
-    schema = get_avro_record_schema(
-        name="survey_response", fields=SURVEY_RESPONSE_FIELDS
-    )
-
-    fp = pathlib.Path("env/alchemer/survey_response.json")
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(obj=data, fp=fp.open(mode="w"))
+    schema = json.loads(generate(py_type=SurveyResponse, namespace="survey_response"))
 
     yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
@@ -216,8 +182,8 @@ def survey_response_disqualified(
         # resultsperpage can produce a 500 error
         data = survey_response_obj.list()
 
-    schema = get_avro_record_schema(
-        name="survey_response_disqualified", fields=SURVEY_RESPONSE_FIELDS
+    schema = json.loads(
+        generate(py_type=SurveyResponse, namespace="survey_response_disqualified")
     )
 
     yield Output(value=(data, schema), metadata={"record_count": len(data)})
