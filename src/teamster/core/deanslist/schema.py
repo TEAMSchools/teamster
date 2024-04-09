@@ -466,33 +466,33 @@ class Student(BaseModel):
 
 
 class ReconcileAttendance(BaseModel):
-    AttendanceBehavior: str | None = None
-    AttendanceDate: str | None = None
-    SchoolName: str | None = None
-    StudentFirst: str | None = None
-    StudentID: int | None = None
-    StudentLast: str | None = None
-    SubmittedAt: str | None = None
-    SubmittedFn: str | None = None
-    SubmittedLn: str | None = None
-    UNNAMED_9: str | None = None
+    attendancebehavior: str | None = None
+    attendancedate: str | None = None
+    schoolname: str | None = None
+    studentfirst: str | None = None
+    studentid: int | None = None
+    studentlast: str | None = None
+    submittedat: str | None = None
+    submittedfn: str | None = None
+    submittedln: str | None = None
+    unnamed_9: str | None = None
 
 
 class ReconcileSuspensions(BaseModel):
-    AttendanceBehavior: str | None = None
-    AttendanceDate: str | None = None
-    ConEnd: str | None = None
-    ConSequence: str | None = None
-    ConStart: str | None = None
-    DLIncidentID: int | None = None
-    SchoolName: str | None = None
-    StudentFirst: str | None = None
-    StudentID: int | None = None
-    StudentLast: str | None = None
-    SubmittedAt: str | None = None
-    SubmittedFn: str | None = None
-    SubmittedLn: str | None = None
-    UNNAMED_13: str | None = None
+    attendancebehavior: str | None = None
+    attendancedate: str | None = None
+    conend: str | None = None
+    consequence: str | None = None
+    constart: str | None = None
+    dlincidentid: int | None = None
+    schoolname: str | None = None
+    studentfirst: str | None = None
+    studentid: int | None = None
+    studentlast: str | None = None
+    submittedat: str | None = None
+    submittedfn: str | None = None
+    submittedln: str | None = None
+    unnamed_13: str | None = None
 
 
 ASSET_FIELDS = {
