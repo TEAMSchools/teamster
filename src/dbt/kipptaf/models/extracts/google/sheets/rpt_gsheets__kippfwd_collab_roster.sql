@@ -1,16 +1,17 @@
 with
-    ccdm as (  -- noqa: ST03
-        select contact, `date`,
-        from {{ ref("stg_kippadb__contact_note") }}
-        where `subject` = 'CCDM'
-    ),
+    matriculated_application as (
+        select
+            applicant,
+            id as application_id,
+            name as application_name,
+            matriculation_decision,
+            type as application_type,
+            intended_degree_type,
+            account_name as application_account_name,
 
-    ccdm_deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="ccdm", partition_by="contact", order_by="date desc"
-            )
-        }}
+            row_number() over (partition by applicant order by id asc) as rn_applicant,
+        from {{ ref("base_kippadb__application") }}
+        where matriculation_decision = 'Matriculated (Intent to Enroll)'
     )
 
 select  -- noqa: disable=ST06
@@ -52,40 +53,39 @@ select  -- noqa: disable=ST06
     ktc.contact_college_match_display_gpa as college_match_display_gpa,
     ktc.contact_highest_act_score as highest_act_score,
 
-    app.id as application_id,
-    app.name as application_name,
+    app.application_id,
+    app.application_name,
     app.matriculation_decision,
 
-    if(cn.contact is null, 'No', 'Yes') as `CCDM Complete`,
+    coalesce(cn.ccdm, 0) as `CCDM Complete`,
 
-    if(ktc.contact_college_match_display_gpa >= 3.0, 1, 0) as gpa_higher_than_3,
+    app.application_account_name,
+    app.application_type,
+    app.intended_degree_type,
 
-    if(ac.x6_yr_minority_completion_rate < 50, 1, 0) as minor_grad_rate_under50,
+    fa.unmet_need,
+    fa.pell_grant,
+    fa.tap as tag,
+    fa.parent_plus_loan,
+    fa.stafford_loan_subsidized,
+    fa.stafford_loan_unsubsidized,
+    fa.other_private_loan,
 
-    if(
-        ktc.contact_college_match_display_gpa between 2.5 and 2.9, 1, 0
-    ) as gpa_between_25_29,
-
-    if(ac.x6_yr_minority_completion_rate < 40, 1, 0) as minor_grad_rate_under40,
-
-    if(
-        ktc.contact_college_match_display_gpa >= 3.0
-        and ac.x6_yr_minority_completion_rate < 50,
-        1,
-        0
-    ) as undermatch_3gpa,
-    if(
-        ktc.contact_college_match_display_gpa between 2.5 and 2.9
-        and ac.x6_yr_minority_completion_rate < 40,
-        1,
-        0
-    ) as undermatch_25_29gpa,
+    coalesce(fa.parent_plus_loan, 0)
+    + coalesce(fa.stafford_loan_subsidized, 0)
+    + coalesce(fa.stafford_loan_unsubsidized, 0)
+    + coalesce(fa.other_private_loan, 0) as total_loan_amount,
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
-    {{ ref("base_kippadb__application") }} as app
+    matriculated_application as app
     on ktc.contact_id = app.applicant
-    and app.matriculation_decision = 'Matriculated (Intent to Enroll)'
+    and app.rn_applicant = 1
 left join
     {{ ref("int_kippadb__enrollment_pivot") }} as ei on ktc.contact_id = ei.student
-left join {{ ref("stg_kippadb__account") }} as ac on ei.ugrad_nces_id = ac.nces_id
-left join ccdm_deduplicate as cn on ktc.contact_id = cn.contact
+left join
+    {{ ref("int_kippadb__contact_note_rollup") }} as cn
+    on ktc.contact_id = cn.contact_id
+    and cn.academic_year = {{ var("current_academic_year") }}
+left join
+    {{ ref("stg_kippadb__subsequent_financial_aid_award") }} as fa
+    on ei.ugrad_enrollment_id = fa.enrollment

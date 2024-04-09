@@ -263,7 +263,7 @@ workspace:
 
   # Specifies the timeout when creating a new Kubernetes deployment for a code server.
   #
-  # If not set, defaults to 5 minutes.
+  # If not set, defaults to 300 seconds.
   deploymentStartupTimeout: ~
 
   # Specifies an amount of time that the agent will wait for an image to fail to pull
