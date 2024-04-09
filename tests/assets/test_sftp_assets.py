@@ -20,7 +20,6 @@ from teamster.core.resources import (
 )
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.core.utils.functions import get_avro_record_schema
 from teamster.kipptaf.resources import (
     SSH_RESOURCE_ACHIEVE3K,
     SSH_RESOURCE_CLEVER_REPORTS,
@@ -47,9 +46,7 @@ def _test_asset(
         remote_dir=remote_dir,
         remote_file_regex=remote_file_regex,
         ssh_resource_key=next(iter(ssh_resource.keys())),
-        avro_schema=get_avro_record_schema(
-            name=asset_name, fields=asset_fields[asset_name]
-        ),
+        avro_schema=asset_fields[asset_name],
         partitions_def=partitions_def,
         **kwargs,
     )

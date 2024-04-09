@@ -117,12 +117,3 @@ def check_avro_schema_valid(asset_key, records, schema):
         metadata={"extras": MetadataValue.text(", ".join(extras))},
         severity=AssetCheckSeverity.WARN,
     )
-
-
-def get_avro_record_schema(name: str, fields: list, namespace: str | None = None):
-    return {
-        "type": "record",
-        "name": f"{name.replace('-', '_').replace('/', '_')}_record",
-        "namespace": namespace,
-        "fields": fields,
-    }
