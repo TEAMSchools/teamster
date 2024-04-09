@@ -2,8 +2,12 @@ version: 1
 
 models:
   - name: base_powerschool__student_enrollments
-    description: <markdown_string>
+    description: This view is a complete enrollment history of all students with enrollments in PowerSchool. The exception to this are students
+    with the same entry and exit dates in PowerSchool ("no-show" students who never attended a KTAF school) and students with an "inactive" 
+    enrollment status in PowerSchool (primarily used for duplicate records). It also includes all key demographic data for students and student
+    identifiers. Current enrollment records come from stg_powerschool__students and previous enrollments come from stg_powerschool__reenrollments.
     columns:
       - name: student_number
-        description: "Unique student identifier. For students registered during and after the 2018-19 school year, 
-        the student_number is 6 digits in length, with the first digit indicating the student's region: 1 being Newark, 2 being Camden, and 3 being Miami."
+        description: Unique student identifier. For students registered during and after the 2018-19 school year, 
+        the student_number is 6 digits in length, with the first digit indicating the student's region: 1 being Newark, 
+        2 being Camden, and 3 being Miami. "Source:" stg_powerschool__students.
