@@ -46,19 +46,20 @@ with
             od.so6,
             od.so7,
             od.so8,
+
             rt.end_date,
         from {{ ref("stg_performance_management__outlier_detection") }} as od
         inner join
             {{ ref("stg_reporting__terms") }} as rt
             on rt.type = 'PM'
-            and rt.name not like '%(Self)%'
+            and rt.name like '%Coach ETR%'
             and od.academic_year = rt.academic_year
             and od.form_term = rt.code
     ),
 
     score_aggs as (
         select
-            obs.internal_id,
+            obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
             obs.form_term,
@@ -73,11 +74,11 @@ with
             {{ ref("base_people__staff_roster_history") }} as srh
             on obs.rn_submission = 1
             and obs.form_long_name = 'Coaching Tool: Coach ETR and Reflection'
-            and safe_cast(obs.internal_id as int) = srh.employee_number
-            and safe_cast(obs.observed_at as timestamp)
+            and obs.employee_number = srh.employee_number
+            and timestamp(obs.observed_at)
             between srh.work_assignment_start_date and srh.work_assignment_end_date
         group by
-            obs.internal_id,
+            obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
             obs.form_term,
@@ -133,7 +134,7 @@ select
     srh.job_title as observer_job_title,
     srh.home_work_location_name as observer_location,
     srh.report_to_preferred_name_lastfirst as observer_manager,
-    sa.internal_id as teacher_employee_number,
+    sa.employee_number as teacher_employee_number,
     sa.preferred_name_lastfirst as teacher_name,
     sa.department_home_name as teacher_department,
     sa.job_title as teacher_job_title,
@@ -162,7 +163,7 @@ from score_dates as sd
 inner join
     {{ ref("base_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
-    and safe_cast(sd.end_date as timestamp)
+    and timestamp(sd.end_date)
     between srh.work_assignment_start_date and srh.work_assignment_end_date
 inner join
     score_aggs as sa
