@@ -1,19 +1,4 @@
 with
-    years as (
-        select
-            date_day as effective_date,
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="date_day", start_month=7, year_source="start"
-                )
-            }} as academic_year,
-        from {{ ref("utils__date_spine") }}
-        where
-            extract(month from date_day) = 4
-            and extract(day from date_day) = 30
-            and extract(year from date_day) >= 2016
-    ),
-
     additional_earnings_clean as (
         select distinct
             employee_number,
@@ -32,33 +17,33 @@ with
     )
 
 select
-    eh.employee_number,
-    eh.work_assignment_start_date as effective_start_date,
-    eh.work_assignment_end_date as effective_end_date,
-    eh.assignment_status as position_status,
-    eh.business_unit_home_name as business_unit,
-    eh.home_work_location_name as location,
-    eh.department_home_name as home_department,
-    eh.job_title as job_title,
-    eh.base_remuneration_annual_rate_amount_amount_value as annual_salary,
+    hd.employee_number,
+    hd.work_assignment_start_date as effective_start_date,
+    hd.work_assignment_end_date as effective_end_date,
+    hd.historic_position_status as position_status,
+    hd.historic_legal_entity as business_unit,
+    hd.historic_location as location,
+    hd.historic_dept as home_department,
+    hd.historic_role as job_title,
+    hd.historic_salary as annual_salary,
 
-    y.academic_year,
+    hd.academic_year,
 
-    cw.worker_id as adp_associate_id,
-    cw.position_id as position_id,
-    cw.assignment_status as current_status,
-    cw.payroll_group_code as company_code,
-    cw.payroll_file_number as file_number,
-    cw.preferred_name_given_name as preferred_first_name,
-    cw.preferred_name_family_name as preferred_last_name,
-    cw.legal_name_given_name as legal_first_name,
-    cw.legal_name_family_name as legal_last_name,
-    cw.race_ethnicity_reporting as primary_race_ethnicity_reporting,
-    cw.gender_identity as gender,
-    cw.management_position_indicator as is_manager,
-    cw.worker_original_hire_date as original_hire_date,
-    cw.worker_rehire_date as rehire_date,
-    cw.worker_termination_date as termination_date,
+    hd.adp_associate_id,
+    hd.current_position_id as position_id,
+    hd.current_status as current_status,
+    hd.payroll_group_code as company_code,
+    hd.payroll_file_number as file_number,
+    hd.preferred_first_name as preferred_first_name,
+    hd.preferred_last_name as preferred_last_name,
+    hd.legal_first_name,
+    hd.legal_last_name,
+    hd.race_ethnicity_reporting as primary_race_ethnicity_reporting,
+    hd.gender,
+    hd.management_position_indicator as is_manager,
+    hd.worker_original_hire_date as original_hire_date,
+    hd.worker_rehire_date as rehire_date,
+    hd.worker_termination_date as termination_date,
 
     ly.business_unit_home_name as last_year_business_unit,
     ly.job_title as last_year_job_title,
@@ -76,38 +61,17 @@ select
     ) as rn_curr,
 
     {# TODO: add archival salary data #}
-    null as last_year_salary,
+    ly.historic_salary as last_year_salary,
     null as original_salary_upon_hire,
 
     pm.overall_score as most_recent_pm_score,
     pm.overall_tier as most_recent_pm_tier,
     null as is_currently_certified_nj_only,
-from {{ ref("base_people__staff_roster_history") }} as eh
-inner join
-    years as y
-    on y.effective_date
-    between safe_cast(eh.work_assignment_start_date as date) and safe_cast(
-        eh.work_assignment_end_date as date
-    )
-inner join
-    {{ ref("base_people__staff_roster") }} as cw
-    on eh.employee_number = cw.employee_number
-    and date_add(
-        coalesce(
-            cw.worker_termination_date, current_date('{{ var("local_timezone") }}')
-        ),
-        interval 1 year
-    )
-    > y.effective_date
+from {{ ref("int_people__historic_data_as_of_april30_annually") }} as hd
 left join
-    {{ ref("base_people__staff_roster_history") }} as ly
-    on eh.employee_number = ly.employee_number
-    and date_sub(
-        y.effective_date,
-        interval 1 year
-    ) between safe_cast(ly.work_assignment_start_date as date) and safe_cast(
-        ly.work_assignment_end_date as date
-    )
+    {{ ref("int_people__historic_data_as_of_april30_annually") }} as ly
+    on hd.employee_number = ly.employee_number
+    and ly.academic_year = (hd.academic_year - 1)
 left join
     {{ ref("int_people__years_experience") }} as ye
     on eh.employee_number = ye.employee_number
@@ -116,8 +80,3 @@ left join
     additional_earnings as ae
     on eh.employee_number = ae.employee_number
     and y.academic_year = ae.academic_year
-left join
-    {{ ref("int_performance_management__overall_scores") }} as pm
-    on pm.employee_number = eh.employee_number
-    and pm.academic_year = y.academic_year
-    and pm.pm_term = 'PM4'
