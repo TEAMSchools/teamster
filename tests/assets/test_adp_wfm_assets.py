@@ -25,7 +25,8 @@ def _test_asset(asset_name, report_name, hyperfind, symbolic_ids, date_partition
     with instance_for_test() as instance:
         if isinstance(date_partitions_def, DynamicPartitionsDefinition):
             instance.add_dynamic_partitions(
-                partitions_def_name=date_partitions_def.name, partition_keys=["foo"]
+                partitions_def_name=date_partitions_def.name,  # type: ignore
+                partition_keys=["foo"],
             )
 
             partition_keys = asset.partitions_def.get_partition_keys(
@@ -47,10 +48,13 @@ def _test_asset(asset_name, report_name, hyperfind, symbolic_ids, date_partition
         )
 
     assert result.success
-
-    event = result.get_asset_materialization_events()[0]
-
-    assert event.event_specific_data.materialization.metadata["records"].value > 0
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["records"]  # type: ignore
+        .value
+        > 0
+    )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_asset_adp_workforce_manager_accrual_reporting_period_summary():
