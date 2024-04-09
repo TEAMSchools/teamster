@@ -14,8 +14,6 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
-from teamster.core.utils.functions import get_avro_record_schema
-
 from .. import CODE_LOCATION
 from .schema import ASSET_FIELDS
 
@@ -128,9 +126,7 @@ def get_isolation_forest(df: pandas.DataFrame):
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
     partition_key: MultiPartitionKey = context.partition_key  # type: ignore
-    schema = get_avro_record_schema(
-        name="outlier_detection", fields=ASSET_FIELDS["outlier_detection"]
-    )
+    schema = ASSET_FIELDS["outlier_detection"]
 
     # load data from extract view
     with db_bigquery.get_client() as bq:
