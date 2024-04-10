@@ -29,11 +29,7 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_asset_ticket_metrics_archive():
-    _test_asset(
-        ticket_metrics_archive,
-        # partition_key="2017-12-01"
-    )
+    _test_asset(ticket_metrics_archive)

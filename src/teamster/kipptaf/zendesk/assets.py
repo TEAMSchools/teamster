@@ -4,10 +4,11 @@ import pendulum
 from dagster import (
     AssetExecutionContext,
     MonthlyPartitionsDefinition,
+    Output,
     ResourceParam,
     asset,
 )
-from fastavro import parse_schema, writer
+from fastavro import block_reader, parse_schema, writer
 from pendulum.datetime import DateTime
 from zenpy import Zenpy
 from zenpy.lib.exception import RecordNotFoundException
@@ -82,7 +83,13 @@ def ticket_metrics_archive(
 
     fo.close()
 
-    return data_filepath
+    try:
+        with data_filepath.open(mode="rb") as f:
+            num_records = sum(block.num_records for block in block_reader(f))
+    except FileNotFoundError:
+        num_records = 0
+
+    yield Output(value=data_filepath, metadata={"records": num_records})
 
 
 _all = [
