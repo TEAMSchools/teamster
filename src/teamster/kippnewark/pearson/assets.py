@@ -13,18 +13,19 @@ from .. import CODE_LOCATION
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
-njgpa_assets = [
-    build_sftp_asset(
-        asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
-        avro_schema=ASSET_FIELDS[a["asset_name"]],
-        ssh_resource_key="ssh_couchdrop",
-        partitions_def=MultiPartitionsDefinition(
-            {k: StaticPartitionsDefinition(v) for k, v in a["partition_keys"].items()}
-        ),
-        **a,
-    )
-    for a in config_from_files([f"{config_dir}/njgpa.yaml"])["assets"]
-]
+njgpa = build_sftp_asset(
+    asset_key=[CODE_LOCATION, "pearson", "njgpa"],
+    remote_dir="/teamster-kippnewark/couchdrop/pearson/njgpa",
+    remote_file_regex="pc(?P<administration>\w+)(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv",
+    avro_schema=ASSET_FIELDS["njgpa"],
+    ssh_resource_key="ssh_couchdrop",
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "fiscal_year": StaticPartitionsDefinition(["22", "23"]),
+            "administration": StaticPartitionsDefinition(["spr", "fbk"]),
+        }
+    ),
+)
 
 all_assets = [
     build_sftp_asset(
@@ -38,6 +39,6 @@ all_assets = [
 ]
 
 _all = [
+    njgpa,
     *all_assets,
-    *njgpa_assets,
 ]

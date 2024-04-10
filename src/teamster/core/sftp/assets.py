@@ -1,4 +1,6 @@
+import json
 import os
+import pathlib
 import re
 import zipfile
 
@@ -42,7 +44,7 @@ def compose_regex(regexp, context: AssetExecutionContext):
         return regexp
 
     try:
-        partitions_def = context.asset_partitions_def_for_output()
+        partitions_def = context.assets_def.partitions_def
     except DagsterInvariantViolationError:
         return regexp
 
@@ -165,6 +167,10 @@ def build_sftp_asset(
 
                     records = df.to_dict(orient="records")
                     metadata = {"records": df.shape[0]}
+
+        fp = pathlib.Path(f"env/{asset_key[1]}/{asset_key[-1]}.json")
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        json.dump(obj=records, fp=fp.open("w"))
 
         yield Output(value=(records, avro_schema), metadata=metadata)
 
