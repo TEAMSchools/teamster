@@ -7,7 +7,7 @@ from teamster.kipptaf.adp.workforce_now.api.assets import workers
 from teamster.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
 
 
-def test_adp_wfn_asset():
+def test_workers():
     partition_keys = workers.partitions_def.get_partition_keys()
 
     result = materialize(

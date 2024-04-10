@@ -181,18 +181,6 @@ class Info(BaseModel):
     documentTitle: str | None = None
 
 
-class Form(BaseModel):
-    formId: str | None = None
-    revisionId: str | None = None
-    responderUri: str | None = None
-    linkedSheetId: str | None = None
-
-    info: Info | None = None
-    settings: FormSettings | None = None
-
-    items: list[Item | None] | None = None
-
-
 class Grade(BaseModel):
     score: float | None = None
     correct: bool | None = None
@@ -236,7 +224,24 @@ class Response(BaseModel):
     answers: dict[str, Answer] | None = None
 
 
+class Form(BaseModel):
+    formId: str | None = None
+    revisionId: str | None = None
+    responderUri: str | None = None
+    linkedSheetId: str | None = None
+
+    info: Info | None = None
+    settings: FormSettings | None = None
+
+    items: list[Item | None] | None = None
+
+
+class Responses(BaseModel):
+    nextPageToken: str | None = None
+    responses: list[Response | None] | None = None
+
+
 ASSET_FIELDS = {
     "form": json.loads(generate(py_type=Form, namespace="form")),
-    "responses": json.loads(generate(py_type=Response, namespace="response")),
+    "responses": json.loads(generate(py_type=Responses, namespace="response")),
 }

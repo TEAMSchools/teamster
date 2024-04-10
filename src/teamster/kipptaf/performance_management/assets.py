@@ -14,6 +14,11 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_schema_valid_check_spec,
+)
+
 from .. import CODE_LOCATION
 from .schema import ASSET_FIELDS
 
@@ -123,6 +128,11 @@ def get_isolation_forest(df: pandas.DataFrame):
         }
     ),
     output_required=False,
+    check_specs=[
+        get_avro_schema_valid_check_spec(
+            [CODE_LOCATION, "performance_management", "outlier_detection"]
+        )
+    ],
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
     partition_key: MultiPartitionKey = context.partition_key  # type: ignore
@@ -198,6 +208,10 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     data = df_current.to_dict(orient="records")
 
     yield Output(value=(data, schema), metadata={"records": df_current.shape[0]})
+
+    yield check_avro_schema_valid(
+        asset_key=context.asset_key, records=data, schema=schema
+    )
 
 
 _all = [

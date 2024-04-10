@@ -1,15 +1,10 @@
 from dagster import materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.ldap.assets import build_ldap_asset
 from teamster.kipptaf.resources import LDAP_RESOURCE
 
 
-def _test_ldap_asset(name, search_base, search_filter):
-    asset = build_ldap_asset(
-        name=name, search_base=search_base, search_filter=search_filter
-    )
-
+def _test_ldap_asset(asset):
     result = materialize(
         assets=[asset],
         resources={

@@ -173,6 +173,14 @@ class Homework(BaseModel):
     Assignment: str | None = None
 
 
+class Action(BaseModel):
+    ActionID: str | None = None
+    ActionName: str | None = None
+    PointValue: str | None = None
+    SAID: str | None = None
+    SourceID: str | None = None
+
+
 class Penalty(BaseModel):
     IncidentID: str | None = None
     IncidentPenaltyID: str | None = None
@@ -246,7 +254,7 @@ class Incident(BaseModel):
     CloseTS: Date | None = None
     DL_LASTUPDATE: Date | None = None
 
-    Actions: list[str | None] | None = None
+    Actions: list[Action | None] | None = None
     Penalties: list[Penalty | None] | None = None
     Custom_Fields: list[CustomField | None] | None = None
 
