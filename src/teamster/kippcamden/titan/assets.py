@@ -32,7 +32,7 @@ for asset in config_from_files(
         build_sftp_asset(
             asset_key=[CODE_LOCATION, "titan", asset_name],
             ssh_resource_key="ssh_titan",
-            avro_schema=ASSET_FIELDS,
+            avro_schema=ASSET_FIELDS[asset_name],
             partitions_def=StaticPartitionsDefinition(partition_keys),
             **asset,
         )

@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+from py_avro_schema import Option, generate
 from pydantic import BaseModel, Field
 
 
@@ -219,6 +219,10 @@ class FSA(BaseModel):
 
 
 ASSET_FIELDS = {
-    "fast": json.loads(generate(py_type=FAST, namespace="fast")),
-    "fsa": json.loads(generate(py_type=FSA, namespace="fsa")),
+    "fast": json.loads(
+        generate(py_type=FAST, namespace="fast", options=Option.USE_FIELD_ALIAS)
+    ),
+    "fsa": json.loads(
+        generate(py_type=FSA, namespace="fsa", options=Option.USE_FIELD_ALIAS)
+    ),
 }
