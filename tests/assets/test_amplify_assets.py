@@ -3,30 +3,14 @@ import random
 from dagster import materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.kipptaf.amplify.assets import build_mclass_asset
+from teamster.kipptaf.amplify.assets import mclass_assets
 from teamster.kipptaf.resources import MCLASS_RESOURCE
-from teamster.staging import LOCAL_TIMEZONE
-
-BASE_DYD_PAYLOAD = {
-    "accounts": "1300588536",
-    "districts": "1300588535",
-    "roster_option": "2",  # On Test Day
-    "dyd_assessments": "7_D8",  # DIBELS 8th Edition
-    "tracking_id": None,
-}
 
 
-def _test_asset(asset_name, dyd_payload, partition_start_date):
-    asset = build_mclass_asset(
-        name=asset_name,
-        dyd_payload=dyd_payload,
-        partitions_def=FiscalYearPartitionsDefinition(
-            start_date=partition_start_date, timezone=LOCAL_TIMEZONE.name, start_month=7
-        ),
-    )
+def _test_asset(assets, asset_name):
+    asset = [a for a in assets if a.key.path[-1] == asset_name][0]
 
-    partition_keys = asset.partitions_def.get_partition_keys()
+    partition_keys = asset.partitions_def.get_partition_keys()  # type: ignore
 
     result = materialize(
         assets=[asset],
@@ -48,16 +32,8 @@ def _test_asset(asset_name, dyd_payload, partition_start_date):
 
 
 def test_mclass_asset_benchmark_student_summary():
-    _test_asset(
-        asset_name="benchmark_student_summary",
-        partition_start_date="2022-07-01",
-        dyd_payload={"dyd_results": "BM", **BASE_DYD_PAYLOAD},
-    )
+    _test_asset(assets=mclass_assets, asset_name="benchmark_student_summary")
 
 
 def test_mclass_asset_pm_student_summary():
-    _test_asset(
-        asset_name="pm_student_summary",
-        partition_start_date="2022-07-01",
-        dyd_payload={"dyd_results": "PM", **BASE_DYD_PAYLOAD},
-    )
+    _test_asset(assets=mclass_assets, asset_name="pm_student_summary")

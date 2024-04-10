@@ -11,7 +11,6 @@ from dagster import (
     Output,
     StaticPartitionsDefinition,
     asset,
-    config_from_files,
 )
 from numpy import nan
 from pandas import read_csv
@@ -33,7 +32,6 @@ def build_adp_wfm_asset(
     hyperfind,
     symbolic_ids,
     date_partitions_def: DailyPartitionsDefinition | DynamicPartitionsDefinition,
-    partition_start_date=None,
 ) -> AssetsDefinition:
     asset_key = [CODE_LOCATION, "adp_workforce_manager", asset_name]
 
@@ -135,29 +133,35 @@ def build_adp_wfm_asset(
     return _asset
 
 
-config_dir = f"src/teamster/{CODE_LOCATION}/adp/workforce_manager/config"
+accrual_reporting_period_summary = build_adp_wfm_asset(
+    asset_name="accrual_reporting_period_summary",
+    report_name="AccrualReportingPeriodSummary",
+    hyperfind="All Home",
+    symbolic_ids=["Today"],
+    date_partitions_def=DailyPartitionsDefinition(
+        start_date="2023-05-17",
+        timezone=LOCAL_TIMEZONE.name,
+        fmt="%Y-%m-%d",
+        end_offset=1,
+    ),
+)
+
+time_details = build_adp_wfm_asset(
+    asset_name="time_details",
+    report_name="TimeDetails",
+    hyperfind="All Home",
+    symbolic_ids=["Previous_SchedPeriod", "Current_SchedPeriod"],
+    date_partitions_def=DynamicPartitionsDefinition(
+        name=f"{CODE_LOCATION}__adp_workforce_manager__time_details_date"
+    ),
+)
 
 adp_wfm_assets_daily = [
-    build_adp_wfm_asset(
-        date_partitions_def=DailyPartitionsDefinition(
-            start_date=a["partition_start_date"],
-            timezone=LOCAL_TIMEZONE.name,
-            fmt="%Y-%m-%d",
-            end_offset=1,
-        ),
-        **a,
-    )
-    for a in config_from_files([f"{config_dir}/wfm-assets-daily.yaml"])["assets"]
+    accrual_reporting_period_summary,
 ]
 
 adp_wfm_assets_dynamic = [
-    build_adp_wfm_asset(
-        date_partitions_def=DynamicPartitionsDefinition(
-            name=f"{CODE_LOCATION}__adp_workforce_manager__{a['asset_name']}_date"
-        ),
-        **a,
-    )
-    for a in config_from_files([f"{config_dir}/wfm-assets-dynamic.yaml"])["assets"]
+    time_details,
 ]
 
 _all = [

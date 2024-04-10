@@ -483,6 +483,10 @@ class MeetingTypeTag(GenericTag):
     additionalFields: list[AdditionalField | None] | None = None
 
 
+class AssignmentPresetTag(GenericTag):
+    type: str | None = None
+
+
 class UserTypeTag(GenericTag):
     expectations: Expectations | None = None
 
@@ -715,7 +719,7 @@ ASSET_FIELDS = {
     ),
     "generic-tags/assignmentpresets": json.loads(
         generate(
-            py_type=GenericTag,
+            py_type=AssignmentPresetTag,
             namespace="assignmentpreset",
             options=Option.USE_FIELD_ALIAS,
         )
