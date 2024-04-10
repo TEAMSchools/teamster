@@ -24,10 +24,7 @@ class CustomField(BaseModel):
     nameCode: Code
 
 
-class CodeField(CustomField):
-    codeValue: str | None = None
-    longName: str | None = None
-    shortName: str | None = None
+class CodeField(CustomField, Code): ...
 
 
 class DateField(CustomField):
