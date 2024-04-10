@@ -8,33 +8,30 @@ from dagster import (
 
 from teamster.core.pearson.schema import ASSET_FIELDS
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.utils.functions import get_avro_record_schema
 
 from .. import CODE_LOCATION
 
 config_path = pathlib.Path(__file__).parent / "config"
 
-njgpa_assets = [
-    build_sftp_asset(
-        asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
-        avro_schema=get_avro_record_schema(
-            name=a["asset_name"], fields=ASSET_FIELDS[a["asset_name"]]
-        ),
-        ssh_resource_key="ssh_couchdrop",
-        partitions_def=MultiPartitionsDefinition(
-            {k: StaticPartitionsDefinition(v) for k, v in a["partition_keys"].items()}
-        ),
-        **a,
-    )
-    for a in config_from_files([f"{config_path}/njgpa.yaml"])["assets"]
-]
+njgpa = build_sftp_asset(
+    asset_key=[CODE_LOCATION, "pearson", "njgpa"],
+    remote_dir="/teamster-kippcamden/couchdrop/pearson/njgpa",
+    remote_file_regex="pc(?P<administration>\w+)(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv",
+    avro_schema=ASSET_FIELDS["njgpa"],
+    ssh_resource_key="ssh_couchdrop",
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "fiscal_year": StaticPartitionsDefinition(["23"]),
+            "administration": StaticPartitionsDefinition(["spr", "fbk"]),
+        }
+    ),
+)
+
 
 all_assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
-        avro_schema=get_avro_record_schema(
-            name=a["asset_name"], fields=ASSET_FIELDS[a["asset_name"]]
-        ),
+        avro_schema=ASSET_FIELDS[a["asset_name"]],
         ssh_resource_key="ssh_couchdrop",
         partitions_def=StaticPartitionsDefinition(a["partition_keys"]),
         **a,
@@ -43,6 +40,6 @@ all_assets = [
 ]
 
 _all = [
+    njgpa,
     *all_assets,
-    *njgpa_assets,
 ]
