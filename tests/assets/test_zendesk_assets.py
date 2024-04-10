@@ -25,7 +25,7 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]  # type: ignore
+        .event_specific_data.materialization.metadata["records"]  # type: ignore
         .value
         > 0
     )
