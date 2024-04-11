@@ -42,7 +42,7 @@ def compose_regex(regexp, context: AssetExecutionContext):
         return regexp
 
     try:
-        partitions_def = context.asset_partitions_def_for_output()
+        partitions_def = context.assets_def.partitions_def
     except DagsterInvariantViolationError:
         return regexp
 
