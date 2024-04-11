@@ -1,6 +1,6 @@
 import json
 
-import py_avro_schema
+from py_avro_schema import Option, generate
 from pydantic import BaseModel, Field
 
 
@@ -24,7 +24,10 @@ class CustomField(BaseModel):
     nameCode: Code
 
 
-class CodeField(CustomField, Code): ...
+class CodeField(CustomField):
+    codeValue: str | None = None
+    longName: str | None = None
+    shortName: str | None = None
 
 
 class DateField(CustomField):
@@ -302,9 +305,5 @@ class Worker(BaseModel):
 
 
 WORKER_SCHEMA = json.loads(
-    py_avro_schema.generate(
-        py_type=Worker,
-        namespace="worker",
-        options=py_avro_schema.Option.USE_FIELD_ALIAS,
-    )
+    generate(py_type=Worker, namespace="worker", options=Option.USE_FIELD_ALIAS)
 )
