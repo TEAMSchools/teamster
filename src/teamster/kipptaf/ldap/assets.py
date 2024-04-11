@@ -4,12 +4,13 @@ from dagster import AssetExecutionContext, Output, asset, config_from_files
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
+    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
 from .. import CODE_LOCATION
 from .resources import LdapResource
-from .schema import ASSET_SCHEMA
+from .schema import ASSET_FIELDS
 
 # via http://www.phpldaptools.com/reference/Default-Schema-Attributes
 ARRAY_ATTRIBUTES = [
@@ -95,7 +96,9 @@ def build_ldap_asset(
 
             entries.append({**primitive_items, **array_items})
 
-        schema = ASSET_SCHEMA[asset_name]
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
 
         yield Output(
             value=(entries, schema),

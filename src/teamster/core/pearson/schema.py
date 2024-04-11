@@ -1,945 +1,1372 @@
-import json
+PARCC_FIELDS = [
+    {"name": "accountabledistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "accountabledistrictname", "type": ["null", "string"], "default": None},
+    {
+        "name": "accountableorganizationaltype",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "accountableschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "accountableschoolname", "type": ["null", "string"], "default": None},
+    {
+        "name": "administrationdirectionsclarifiedinstudentsnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "administrationdirectionsreadaloudinstudentsnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "alternaterepresentationpapertest",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "americanindianoralaskanative",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "answermasking", "type": ["null", "string"], "default": None},
+    {
+        "name": "answersrecordedintestbooklet",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "asian", "type": ["null", "string"], "default": None},
+    {"name": "aslvideo", "type": ["null", "string"], "default": None},
+    {"name": "assessmentgrade", "type": ["null", "string"], "default": None},
+    {"name": "assessmentyear", "type": ["null", "string"], "default": None},
+    {
+        "name": "assistivetechnologynonscreenreader",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "assistivetechnologyscreenreader",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "batteryformid", "type": ["null", "string"], "default": None},
+    {"name": "birthdate", "type": ["null", "string"], "default": None},
+    {"name": "blackorafricanamerican", "type": ["null", "string"], "default": None},
+    {"name": "braillewithtactilegraphics", "type": ["null", "string"], "default": None},
+    {
+        "name": "calculationdeviceandmathematicstools",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "classname", "type": ["null", "string"], "default": None},
+    {"name": "closedcaptioningforela", "type": ["null", "string"], "default": None},
+    {"name": "colorcontrast", "type": ["null", "double"], "default": None},
+    {
+        "name": "datefirstenrolledinusschool",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "economicdisadvantagestatus", "type": ["null", "string"], "default": None},
+    {"name": "elaccommodation", "type": ["null", "string"], "default": None},
+    {"name": "elaconstructedresponse", "type": ["null", "double"], "default": None},
+    {
+        "name": "elaselectedresponseortechnologyenhanceditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "electronicbrailleresponse", "type": ["null", "string"], "default": None},
+    {"name": "elexemptfromtakingela", "type": ["null", "string"], "default": None},
+    {"name": "emergencyaccommodation", "type": ["null", "double"], "default": None},
+    {
+        "name": "englishlearneraccommodatedresponses",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "englishlearnerel", "type": ["null", "string"], "default": None},
+    {"name": "extendedtime", "type": ["null", "string"], "default": None},
+    {"name": "federalraceethnicity", "type": ["null", "long"], "default": None},
+    {"name": "filler10", "type": ["null", "string"], "default": None},
+    {"name": "filler11", "type": ["null", "string"], "default": None},
+    {"name": "filler12", "type": ["null", "string"], "default": None},
+    {"name": "filler13", "type": ["null", "string"], "default": None},
+    {"name": "filler14", "type": ["null", "string"], "default": None},
+    {"name": "filler15", "type": ["null", "string"], "default": None},
+    {"name": "filler16", "type": ["null", "string"], "default": None},
+    {"name": "filler17", "type": ["null", "string"], "default": None},
+    {"name": "filler18", "type": ["null", "string"], "default": None},
+    {"name": "filler19", "type": ["null", "string"], "default": None},
+    {"name": "filler2", "type": ["null", "string"], "default": None},
+    {"name": "filler20", "type": ["null", "string"], "default": None},
+    {"name": "filler21", "type": ["null", "string"], "default": None},
+    {"name": "filler22", "type": ["null", "string"], "default": None},
+    {"name": "filler23", "type": ["null", "string"], "default": None},
+    {"name": "filler24", "type": ["null", "string"], "default": None},
+    {"name": "filler25", "type": ["null", "string"], "default": None},
+    {"name": "filler26", "type": ["null", "string"], "default": None},
+    {"name": "filler3", "type": ["null", "string"], "default": None},
+    {"name": "filler4", "type": ["null", "string"], "default": None},
+    {"name": "filler5", "type": ["null", "string"], "default": None},
+    {"name": "filler6", "type": ["null", "string"], "default": None},
+    {"name": "filler7", "type": ["null", "string"], "default": None},
+    {"name": "filler8", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_1", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_10", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_11", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_12", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_13", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_14", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_15", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_2", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_3", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_4", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_5", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_6", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_7", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_8", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_9", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield", "type": ["null", "string"], "default": None},
+    {
+        "name": "firsthighschoolmathassessment",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "firstname", "type": ["null", "string"], "default": None},
+    {"name": "formeriep", "type": ["null", "string"], "default": None},
+    {"name": "frequentbreaks", "type": ["null", "string"], "default": None},
+    {"name": "gender", "type": ["null", "string"], "default": None},
+    {"name": "gradelevelwhenassessed", "type": ["null", "long"], "default": None},
+    {"name": "hispanicorlatinoethnicity", "type": ["null", "string"], "default": None},
+    {"name": "home_language", "type": ["null", "string"], "default": None},
+    {"name": "homeless", "type": ["null", "string"], "default": None},
+    {"name": "humanreaderorhumansigner", "type": ["null", "double"], "default": None},
+    {
+        "name": "humansignerfortestdirections",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "iepexemptfrompassing", "type": ["null", "string"], "default": None},
+    {"name": "largeprint", "type": ["null", "string"], "default": None},
+    {"name": "lastorsurname", "type": ["null", "string"], "default": None},
+    {"name": "localstudentidentifier", "type": ["null", "double"], "default": None},
+    {
+        "name": "mathematicsscienceaccommodatedresponse",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "middlename", "type": ["null", "string"], "default": None},
+    {"name": "migrantstatus", "type": ["null", "string"], "default": None},
+    {"name": "monitortestresponse", "type": ["null", "string"], "default": None},
+    {"name": "multipletestregistration", "type": ["null", "string"], "default": None},
+    {
+        "name": "nativehawaiianorotherpacificislander",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "njelstatus", "type": ["null", "string"], "default": None},
+    {"name": "njnotattemptflag", "type": ["null", "string"], "default": None},
+    {"name": "nottestedcode", "type": ["null", "string"], "default": None},
+    {"name": "nottestedreason", "type": ["null", "double"], "default": None},
+    {"name": "onlinepcr1", "type": ["null", "string"], "default": None},
+    {"name": "onlinepcr2", "type": ["null", "string"], "default": None},
+    {"name": "paperattemptcreatedate", "type": ["null", "string"], "default": None},
+    {"name": "paperformid", "type": ["null", "string"], "default": None},
+    {"name": "paperpcr1", "type": ["null", "double"], "default": None},
+    {"name": "paperpcr2", "type": ["null", "double"], "default": None},
+    {
+        "name": "papersection1numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "papersection1totaltestitems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "papersection2numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "papersection2totaltestitems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "papersection3numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "papersection3totaltestitems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "papersection4numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "papersection4totaltestitems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "period", "type": ["null", "string"], "default": None},
+    {"name": "primarydisabilitytype", "type": ["null", "string"], "default": None},
+    {"name": "refreshablebrailledisplay", "type": ["null", "string"], "default": None},
+    {"name": "reportsuppressionaction", "type": ["null", "string"], "default": None},
+    {"name": "reportsuppressioncode", "type": ["null", "string"], "default": None},
+    {"name": "retest", "type": ["null", "string"], "default": None},
+    {"name": "rosterflag", "type": ["null", "string"], "default": None},
+    {"name": "separatealternatelocation", "type": ["null", "string"], "default": None},
+    {
+        "name": "shipreportdistrictcode",
+        "type": ["null", "long", "float"],
+        "default": None,
+    },
+    {
+        "name": "shipreportschoolcode",
+        "type": ["null", "long", "float"],
+        "default": None,
+    },
+    {"name": "smallgrouptesting", "type": ["null", "string"], "default": None},
+    {"name": "spanishtransadaptation", "type": ["null", "string"], "default": None},
+    {"name": "specialeducationplacement", "type": ["null", "double"], "default": None},
+    {
+        "name": "specializedequipmentorfurniture",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "specifiedareaorsetting", "type": ["null", "string"], "default": None},
+    {
+        "name": "speechtotextandwordprediction",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "staffmemberidentifier",
+        "type": ["null", "double", "string"],
+        "default": None,
+    },
+    {"name": "statestudentidentifier", "type": ["null", "long"], "default": None},
+    {
+        "name": "studentassessmentidentifier",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "studentreadsassessmentaloudtoself",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "studenttestuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentunit1testuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentunit2testuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentunit3testuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentwithdisabilities", "type": ["null", "string"], "default": None},
+    {"name": "subclaim1category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim1categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim2category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim2categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim3category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim3categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim4category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim4categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim5category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim5categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subject", "type": ["null", "string"], "default": None},
+    {"name": "summativeflag", "type": ["null", "string"], "default": None},
+    {"name": "testadministration", "type": ["null", "string"], "default": None},
+    {
+        "name": "testadministrator",
+        "type": ["null", "double", "string"],
+        "default": None,
+    },
+    {"name": "testattemptednessflag", "type": ["null", "string"], "default": None},
+    {"name": "testcode", "type": ["null", "string"], "default": None},
+    {"name": "testcsemprobablerange", "type": ["null", "double"], "default": None},
+    {
+        "name": "testcsemprobablerangeifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testingdistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "testingdistrictname", "type": ["null", "string"], "default": None},
+    {"name": "testingorganizationaltype", "type": ["null", "long"], "default": None},
+    {"name": "testingschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "testingschoolname", "type": ["null", "string"], "default": None},
+    {"name": "testperformancelevel", "type": ["null", "double"], "default": None},
+    {
+        "name": "testperformancelevelifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testreadingcsem", "type": ["null", "double"], "default": None},
+    {
+        "name": "testreadingcsemifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testreadingscalescore", "type": ["null", "double"], "default": None},
+    {
+        "name": "testreadingscalescoreifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testscalescore", "type": ["null", "double"], "default": None},
+    {
+        "name": "testscalescoreifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testscorecomplete", "type": ["null", "double"], "default": None},
+    {"name": "teststatus", "type": ["null", "string"], "default": None},
+    {"name": "testwritingcsem", "type": ["null", "double"], "default": None},
+    {
+        "name": "testwritingcsemifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testwritingscalescore", "type": ["null", "double"], "default": None},
+    {
+        "name": "testwritingscalescoreifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "texttospeech", "type": ["null", "double"], "default": None},
+    {"name": "timeofday", "type": ["null", "string"], "default": None},
+    {"name": "totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "totaltestitemsattempted", "type": ["null", "double"], "default": None},
+    {"name": "twoormoreraces", "type": ["null", "string"], "default": None},
+    {"name": "uniqueaccommodation", "type": ["null", "string"], "default": None},
+    {"name": "unit1formid", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit1numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "unit1onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit1onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit1totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "unit2formid", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit2numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "unit2onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit2onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit2totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "unit3formid", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit3numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "unit3onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit3onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit3totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "voidscorecode", "type": ["null", "string"], "default": None},
+    {"name": "voidscorereason", "type": ["null", "double"], "default": None},
+    {"name": "white", "type": ["null", "string"], "default": None},
+    {"name": "wordprediction", "type": ["null", "string"], "default": None},
+    {
+        "name": "wordtoworddictionaryenglishnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "languagecode", "type": ["null", "string"], "default": None},
+    {
+        "name": "elalselectedresponseortechnologyenhanceditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "elalconstructedresponse", "type": ["null", "double"], "default": None},
+    {"name": "sex", "type": ["null", "string"], "default": None},
+    {"name": "elexemptfromtakingelal", "type": ["null", "string"], "default": None},
+    {"name": "filler1", "type": ["null", "string"], "default": None},
+    {"name": "closedcaptioningforelal", "type": ["null", "string"], "default": None},
+    {"name": "answersrecordedintestbook", "type": ["null", "string"], "default": None},
+    {"name": "brailleresponse", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_16", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_17", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield1", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield2", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield4", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield5", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield7", "type": ["null", "string"], "default": None},
+    {"name": "giftedandtalented", "type": ["null", "string"], "default": None},
+    {"name": "mathematicsresponse", "type": ["null", "double"], "default": None},
+    {"name": "mathematicsresponseel", "type": ["null", "double"], "default": None},
+    {"name": "onlineformid", "type": ["null", "string"], "default": None},
+    {"name": "parccstudentidentifier", "type": ["null", "string"], "default": None},
+    {"name": "percentofitemsattempted", "type": ["null", "string"], "default": None},
+    {
+        "name": "refreshablebrailledisplayforelal",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "responsibleaccountabledistrictcode",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {
+        "name": "responsibleaccountableschoolcode",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "responsibledistrictname", "type": ["null", "string"], "default": None},
+    {
+        "name": "responsibleorganizationaltype",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "responsibleschoolname", "type": ["null", "string"], "default": None},
+    {
+        "name": "spanishtransadaptationofthemathematicsassessment",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "stateabbreviation", "type": ["null", "string"], "default": None},
+    {"name": "statefield1", "type": ["null", "string"], "default": None},
+    {"name": "statefield10", "type": ["null", "string"], "default": None},
+    {"name": "statefield11", "type": ["null", "string"], "default": None},
+    {"name": "statefield12", "type": ["null", "string"], "default": None},
+    {"name": "statefield13", "type": ["null", "string"], "default": None},
+    {"name": "statefield14", "type": ["null", "string"], "default": None},
+    {"name": "statefield15", "type": ["null", "string"], "default": None},
+    {"name": "statefield2", "type": ["null", "string"], "default": None},
+    {"name": "statefield3", "type": ["null", "string"], "default": None},
+    {"name": "statefield4", "type": ["null", "string"], "default": None},
+    {"name": "statefield5", "type": ["null", "string"], "default": None},
+    {"name": "statefield6", "type": ["null", "double", "string"], "default": None},
+    {"name": "statefield7", "type": ["null", "double"], "default": None},
+    {"name": "statefield8", "type": ["null", "double"], "default": None},
+    {"name": "statefield9", "type": ["null", "double", "string"], "default": None},
+    {"name": "studentunit4testuuid", "type": ["null", "string"], "default": None},
+    {
+        "name": "titleiiilimitedenglishproficientparticipationstatus",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit4formid", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit4numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "unit4onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit4onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit4totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "wordpredictionforelal", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_18", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_19", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_20", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_21", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_22", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_23", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_24", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_25", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_26", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_27", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_28", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_29", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_30", "type": ["null", "string"], "default": None},
+    {"name": "responsibledistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "responsibleschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "smalltestinggroup", "type": ["null", "string"], "default": None},
+    {
+        "name": "studentreadsassessmentaloudtothemselves",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "attemptcreatedate", "type": ["null", "string"], "default": None},
+    {"name": "filler", "type": ["null", "string"], "default": None},
+    {"name": "filler_1", "type": ["null", "string"], "default": None},
+    {"name": "filler_10", "type": ["null", "string"], "default": None},
+    {"name": "filler_11", "type": ["null", "string"], "default": None},
+    {"name": "filler_2", "type": ["null", "string"], "default": None},
+    {"name": "filler_3", "type": ["null", "string"], "default": None},
+    {"name": "filler_4", "type": ["null", "string"], "default": None},
+    {"name": "filler_5", "type": ["null", "string"], "default": None},
+    {"name": "filler_6", "type": ["null", "string"], "default": None},
+    {"name": "filler_7", "type": ["null", "string"], "default": None},
+    {"name": "filler_8", "type": ["null", "string"], "default": None},
+    {"name": "filler_9", "type": ["null", "string"], "default": None},
+    {"name": "paperunit1totaltestitems", "type": ["null", "string"], "default": None},
+    {
+        "name": "responsibleorganizationcodetype",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "subclaim6category", "type": ["null", "string"], "default": None},
+    {
+        "name": "translationofthemathematicsassessment",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "filler27", "type": ["null", "string"], "default": None},
+    {"name": "filler28", "type": ["null", "string"], "default": None},
+    {"name": "filler29", "type": ["null", "string"], "default": None},
+    {"name": "filler30", "type": ["null", "string"], "default": None},
+    {"name": "filler31", "type": ["null", "string"], "default": None},
+    {"name": "filler32", "type": ["null", "string"], "default": None},
+    {"name": "filler33", "type": ["null", "string"], "default": None},
+    {"name": "filler34", "type": ["null", "string"], "default": None},
+    {"name": "filler35", "type": ["null", "string"], "default": None},
+    {"name": "filler36", "type": ["null", "string"], "default": None},
+    {"name": "filler37", "type": ["null", "string"], "default": None},
+    {"name": "filler38", "type": ["null", "string"], "default": None},
+    {"name": "filler39", "type": ["null", "string"], "default": None},
+]
 
-import py_avro_schema
-from pydantic import BaseModel
+NJSLA_FIELDS = [
+    {"name": "accountabledistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "accountabledistrictname", "type": ["null", "string"], "default": None},
+    {
+        "name": "accountableorganizationaltype",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "accountableschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "accountableschoolname", "type": ["null", "string"], "default": None},
+    {
+        "name": "administrationdirectionsclarifiedinstudentsnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "administrationdirectionsreadaloudinstudentsnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "alternaterepresentationpapertest",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "americanindianoralaskanative",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "answermasking", "type": ["null", "string"], "default": None},
+    {
+        "name": "answersrecordedintestbooklet",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "answersrecordedintest_booklet",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "asian", "type": ["null", "string"], "default": None},
+    {"name": "aslvideo", "type": ["null", "string"], "default": None},
+    {"name": "assessmentgrade", "type": ["null", "string"], "default": None},
+    {"name": "assessmentyear", "type": ["null", "string"], "default": None},
+    {
+        "name": "assistivetechnologynonscreenreader",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "assistivetechnologyscreenreader",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "birthdate", "type": ["null", "string"], "default": None},
+    {"name": "blackorafricanamerican", "type": ["null", "string"], "default": None},
+    {"name": "braillewithtactilegraphics", "type": ["null", "string"], "default": None},
+    {"name": "claimcode", "type": ["null", "string"], "default": None},
+    {"name": "classname", "type": ["null", "string"], "default": None},
+    {"name": "colorcontrast", "type": ["null", "double"], "default": None},
+    {
+        "name": "critiquingpracticesperformancelevel",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "datefirstenrolledinusschool",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "earthandspacescienceperformancelevel",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "economicdisadvantagestatus", "type": ["null", "string"], "default": None},
+    {"name": "elaccommodation", "type": ["null", "string"], "default": None},
+    {"name": "electronicbrailleresponse", "type": ["null", "string"], "default": None},
+    {"name": "emergencyaccommodation", "type": ["null", "double"], "default": None},
+    {
+        "name": "englishlearneraccommodatedresponses",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "englishlearnerel", "type": ["null", "string"], "default": None},
+    {"name": "extendedtime", "type": ["null", "string"], "default": None},
+    {"name": "federalraceethnicity", "type": ["null", "long"], "default": None},
+    {"name": "filler_1", "type": ["null", "string"], "default": None},
+    {"name": "filler_10", "type": ["null", "string"], "default": None},
+    {"name": "filler_11", "type": ["null", "string"], "default": None},
+    {"name": "filler_12", "type": ["null", "string"], "default": None},
+    {"name": "filler_13", "type": ["null", "string"], "default": None},
+    {"name": "filler_14", "type": ["null", "string"], "default": None},
+    {"name": "filler_15", "type": ["null", "string"], "default": None},
+    {"name": "filler_16", "type": ["null", "string"], "default": None},
+    {"name": "filler_17", "type": ["null", "string"], "default": None},
+    {"name": "filler_18", "type": ["null", "string"], "default": None},
+    {"name": "filler_19", "type": ["null", "string"], "default": None},
+    {"name": "filler_2", "type": ["null", "string"], "default": None},
+    {"name": "filler_20", "type": ["null", "string"], "default": None},
+    {"name": "filler_21", "type": ["null", "string"], "default": None},
+    {"name": "filler_22", "type": ["null", "string"], "default": None},
+    {"name": "filler_23", "type": ["null", "string"], "default": None},
+    {"name": "filler_24", "type": ["null", "string"], "default": None},
+    {"name": "filler_25", "type": ["null", "string"], "default": None},
+    {"name": "filler_26", "type": ["null", "string"], "default": None},
+    {"name": "filler_27", "type": ["null", "string"], "default": None},
+    {"name": "filler_28", "type": ["null", "string"], "default": None},
+    {"name": "filler_29", "type": ["null", "string"], "default": None},
+    {"name": "filler_3", "type": ["null", "string"], "default": None},
+    {"name": "filler_30", "type": ["null", "string"], "default": None},
+    {"name": "filler_31", "type": ["null", "string"], "default": None},
+    {"name": "filler_32", "type": ["null", "string"], "default": None},
+    {"name": "filler_33", "type": ["null", "string"], "default": None},
+    {"name": "filler_34", "type": ["null", "string"], "default": None},
+    {"name": "filler_35", "type": ["null", "string"], "default": None},
+    {"name": "filler_36", "type": ["null", "string"], "default": None},
+    {"name": "filler_37", "type": ["null", "string"], "default": None},
+    {"name": "filler_38", "type": ["null", "string"], "default": None},
+    {"name": "filler_39", "type": ["null", "string"], "default": None},
+    {"name": "filler_4", "type": ["null", "string"], "default": None},
+    {"name": "filler_40", "type": ["null", "string"], "default": None},
+    {"name": "filler_41", "type": ["null", "string"], "default": None},
+    {"name": "filler_42", "type": ["null", "string"], "default": None},
+    {"name": "filler_43", "type": ["null", "string"], "default": None},
+    {"name": "filler_44", "type": ["null", "string"], "default": None},
+    {"name": "filler_45", "type": ["null", "string"], "default": None},
+    {"name": "filler_46", "type": ["null", "string"], "default": None},
+    {"name": "filler_47", "type": ["null", "string"], "default": None},
+    {"name": "filler_48", "type": ["null", "string"], "default": None},
+    {"name": "filler_49", "type": ["null", "string"], "default": None},
+    {"name": "filler_5", "type": ["null", "string"], "default": None},
+    {"name": "filler_50", "type": ["null", "string"], "default": None},
+    {"name": "filler_51", "type": ["null", "string"], "default": None},
+    {"name": "filler_52", "type": ["null", "string"], "default": None},
+    {"name": "filler_53", "type": ["null", "string"], "default": None},
+    {"name": "filler_54", "type": ["null", "string"], "default": None},
+    {"name": "filler_55", "type": ["null", "string"], "default": None},
+    {"name": "filler_56", "type": ["null", "string"], "default": None},
+    {"name": "filler_57", "type": ["null", "string"], "default": None},
+    {"name": "filler_58", "type": ["null", "string"], "default": None},
+    {"name": "filler_59", "type": ["null", "string"], "default": None},
+    {"name": "filler_6", "type": ["null", "string"], "default": None},
+    {"name": "filler_60", "type": ["null", "string"], "default": None},
+    {"name": "filler_61", "type": ["null", "string"], "default": None},
+    {"name": "filler_62", "type": ["null", "string"], "default": None},
+    {"name": "filler_63", "type": ["null", "string"], "default": None},
+    {"name": "filler_64", "type": ["null", "string"], "default": None},
+    {"name": "filler_65", "type": ["null", "string"], "default": None},
+    {"name": "filler_66", "type": ["null", "string"], "default": None},
+    {"name": "filler_67", "type": ["null", "string"], "default": None},
+    {"name": "filler_68", "type": ["null", "string"], "default": None},
+    {"name": "filler_69", "type": ["null", "string"], "default": None},
+    {"name": "filler_7", "type": ["null", "string"], "default": None},
+    {"name": "filler_70", "type": ["null", "string"], "default": None},
+    {"name": "filler_71", "type": ["null", "string"], "default": None},
+    {"name": "filler_72", "type": ["null", "string"], "default": None},
+    {"name": "filler_73", "type": ["null", "string"], "default": None},
+    {"name": "filler_74", "type": ["null", "string"], "default": None},
+    {"name": "filler_75", "type": ["null", "string"], "default": None},
+    {"name": "filler_76", "type": ["null", "string"], "default": None},
+    {"name": "filler_77", "type": ["null", "string"], "default": None},
+    {"name": "filler_78", "type": ["null", "string"], "default": None},
+    {"name": "filler_79", "type": ["null", "string"], "default": None},
+    {"name": "filler_8", "type": ["null", "string"], "default": None},
+    {"name": "filler_80", "type": ["null", "string"], "default": None},
+    {"name": "filler_81", "type": ["null", "string"], "default": None},
+    {"name": "filler_82", "type": ["null", "string"], "default": None},
+    {"name": "filler_83", "type": ["null", "string"], "default": None},
+    {"name": "filler_84", "type": ["null", "string"], "default": None},
+    {"name": "filler_9", "type": ["null", "string"], "default": None},
+    {"name": "filler", "type": ["null", "string"], "default": None},
+    {
+        "name": "firsthighschoolmathassessment",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "firstname", "type": ["null", "string"], "default": None},
+    {"name": "formeriep", "type": ["null", "string"], "default": None},
+    {"name": "formid", "type": ["null", "string"], "default": None},
+    {"name": "frequentbreaks", "type": ["null", "string"], "default": None},
+    {"name": "gender", "type": ["null", "string"], "default": None},
+    {"name": "gradelevelwhenassessed", "type": ["null", "long"], "default": None},
+    {"name": "hispanicorlatinoethnicity", "type": ["null", "string"], "default": None},
+    {"name": "homelanguage", "type": ["null", "string"], "default": None},
+    {"name": "homeless", "type": ["null", "string"], "default": None},
+    {"name": "humanreaderorhumansigner", "type": ["null", "double"], "default": None},
+    {
+        "name": "humansignerfortestdirections",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "investigatingpracticesperformancelevel",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "largeprint", "type": ["null", "string"], "default": None},
+    {"name": "lastorsurname", "type": ["null", "string"], "default": None},
+    {
+        "name": "lifescienceperformancelevel",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "localstudentidentifier", "type": ["null", "long"], "default": None},
+    {
+        "name": "mathematicsscienceaccommodatedresponse",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "middlename", "type": ["null", "string"], "default": None},
+    {"name": "migrantstatus", "type": ["null", "string"], "default": None},
+    {"name": "monitortestresponse", "type": ["null", "string"], "default": None},
+    {"name": "multipletestregistration", "type": ["null", "string"], "default": None},
+    {
+        "name": "nativehawaiianorotherpacificislander",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "njelstatus", "type": ["null", "string"], "default": None},
+    {"name": "nottestedcode", "type": ["null", "string"], "default": None},
+    {"name": "nottestedreason", "type": ["null", "double"], "default": None},
+    {"name": "percentofitemsattempted", "type": ["null", "long"], "default": None},
+    {"name": "period", "type": ["null", "string"], "default": None},
+    {
+        "name": "physicalscienceperformancelevel",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "primarydisabilitytype", "type": ["null", "string"], "default": None},
+    {"name": "reportsuppressionaction", "type": ["null", "string"], "default": None},
+    {"name": "reportsuppressioncode", "type": ["null", "string"], "default": None},
+    {"name": "retest", "type": ["null", "string"], "default": None},
+    {"name": "rosterflag", "type": ["null", "string"], "default": None},
+    {
+        "name": "sensemakingpracticesperformancelevel",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "separatealternatelocation", "type": ["null", "string"], "default": None},
+    {"name": "shipreportdistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "shipreportschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "smallgrouptesting", "type": ["null", "string"], "default": None},
+    {"name": "spanishtransadaptation", "type": ["null", "string"], "default": None},
+    {"name": "specialeducationplacement", "type": ["null", "double"], "default": None},
+    {
+        "name": "specializedequipmentorfurniture",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "specifiedareaorsetting", "type": ["null", "string"], "default": None},
+    {
+        "name": "speechtotextandwordprediction",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "staffmemberidentifier", "type": ["null", "double"], "default": None},
+    {"name": "statestudentidentifier", "type": ["null", "long"], "default": None},
+    {
+        "name": "studentassessmentidentifier",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "studentreadsassessmentaloudtoself",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "studenttestuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentwithdisabilities", "type": ["null", "string"], "default": None},
+    {"name": "subject", "type": ["null", "string"], "default": None},
+    {"name": "summativeflag", "type": ["null", "string"], "default": None},
+    {"name": "testadministration", "type": ["null", "string"], "default": None},
+    {"name": "testadministrator", "type": ["null", "double"], "default": None},
+    {"name": "testattemptednessflag", "type": ["null", "string"], "default": None},
+    {"name": "testcode", "type": ["null", "string"], "default": None},
+    {"name": "testcsemprobablerange", "type": ["null", "double"], "default": None},
+    {"name": "testformat", "type": ["null", "string"], "default": None},
+    {"name": "testingdistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "testingdistrictname", "type": ["null", "string"], "default": None},
+    {"name": "testingorganizationaltype", "type": ["null", "long"], "default": None},
+    {"name": "testingschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "testingschoolname", "type": ["null", "string"], "default": None},
+    {"name": "testperformancelevel", "type": ["null", "double"], "default": None},
+    {"name": "testscalescore", "type": ["null", "double"], "default": None},
+    {"name": "testscorecomplete", "type": ["null", "double"], "default": None},
+    {"name": "teststatus", "type": ["null", "string"], "default": None},
+    {"name": "texttospeech", "type": ["null", "double"], "default": None},
+    {"name": "timeofday", "type": ["null", "string"], "default": None},
+    {"name": "totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "totaltestitemsattempted", "type": ["null", "double"], "default": None},
+    {"name": "twoormoreraces", "type": ["null", "string"], "default": None},
+    {"name": "uniqueaccommodation", "type": ["null", "string"], "default": None},
+    {"name": "unit1onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit1onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit2onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit2onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit3onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit3onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit4onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit4onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "voidscorecode", "type": ["null", "string"], "default": None},
+    {"name": "voidscorereason", "type": ["null", "double"], "default": None},
+    {"name": "white", "type": ["null", "string"], "default": None},
+    {"name": "wordprediction", "type": ["null", "string"], "default": None},
+    {
+        "name": "wordtoworddictionaryenglishnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "filler_85", "type": ["null", "string"], "default": None},
+    {
+        "name": "mathematics_scienceaccommodatedresponse",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {
+        "name": "first_high_school_math_assessment",
+        "type": ["null", "string"],
+        "default": None,
+    },
+]
 
+NJGPA_FIELDS = [
+    {"name": "accountabledistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "accountabledistrictname", "type": ["null", "string"], "default": None},
+    {
+        "name": "accountableorganizationaltype",
+        "type": ["null", "long"],
+        "default": None,
+    },
+    {"name": "accountableschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "accountableschoolname", "type": ["null", "string"], "default": None},
+    {
+        "name": "administrationdirectionsclarifiedinstudentsnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "administrationdirectionsreadaloudinstudentsnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "alternaterepresentationpapertest",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "americanindianoralaskanative",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "answermasking", "type": ["null", "string"], "default": None},
+    {
+        "name": "answersrecordedintestbooklet",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "asian", "type": ["null", "string"], "default": None},
+    {"name": "aslvideo", "type": ["null", "string"], "default": None},
+    {"name": "assessmentgrade", "type": ["null", "string"], "default": None},
+    {"name": "assessmentyear", "type": ["null", "string"], "default": None},
+    {
+        "name": "assistivetechnologynonscreenreader",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "assistivetechnologyscreenreader",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "batteryformid", "type": ["null", "string"], "default": None},
+    {"name": "birthdate", "type": ["null", "string"], "default": None},
+    {"name": "blackorafricanamerican", "type": ["null", "string"], "default": None},
+    {"name": "braillewithtactilegraphics", "type": ["null", "string"], "default": None},
+    {
+        "name": "calculationdeviceandmathematicstools",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "classname", "type": ["null", "string"], "default": None},
+    {"name": "closedcaptioningforela", "type": ["null", "string"], "default": None},
+    {"name": "colorcontrast", "type": ["null", "string"], "default": None},
+    {
+        "name": "datefirstenrolledinusschool",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "economicdisadvantagestatus", "type": ["null", "string"], "default": None},
+    {"name": "elaccommodation", "type": ["null", "string"], "default": None},
+    {"name": "elaconstructedresponse", "type": ["null", "double"], "default": None},
+    {
+        "name": "elaselectedresponseortechnologyenhanceditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "electronicbrailleresponse", "type": ["null", "string"], "default": None},
+    {"name": "elexemptfromtakingela", "type": ["null", "string"], "default": None},
+    {"name": "emergencyaccommodation", "type": ["null", "string"], "default": None},
+    {
+        "name": "englishlearneraccommodatedresponses",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "englishlearnerel", "type": ["null", "string"], "default": None},
+    {"name": "extendedtime", "type": ["null", "string"], "default": None},
+    {"name": "federalraceethnicity", "type": ["null", "long"], "default": None},
+    {
+        "name": "firsthighschoolmathassessment",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "firstname", "type": ["null", "string"], "default": None},
+    {"name": "formeriep", "type": ["null", "string"], "default": None},
+    {"name": "frequentbreaks", "type": ["null", "string"], "default": None},
+    {"name": "gender", "type": ["null", "string"], "default": None},
+    {"name": "gradelevelwhenassessed", "type": ["null", "long"], "default": None},
+    {"name": "hispanicorlatinoethnicity", "type": ["null", "string"], "default": None},
+    {"name": "home_language", "type": ["null", "string"], "default": None},
+    {"name": "homeless", "type": ["null", "string"], "default": None},
+    {"name": "humanreaderorhumansigner", "type": ["null", "string"], "default": None},
+    {
+        "name": "humansignerfortestdirections",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "iepexemptfrompassing", "type": ["null", "string"], "default": None},
+    {"name": "largeprint", "type": ["null", "string"], "default": None},
+    {"name": "lastorsurname", "type": ["null", "string"], "default": None},
+    {"name": "localstudentidentifier", "type": ["null", "long"], "default": None},
+    {
+        "name": "mathematicsscienceaccommodatedresponse",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "middlename", "type": ["null", "string"], "default": None},
+    {"name": "migrantstatus", "type": ["null", "string"], "default": None},
+    {"name": "monitortestresponse", "type": ["null", "string"], "default": None},
+    {"name": "multipletestregistration", "type": ["null", "string"], "default": None},
+    {
+        "name": "nativehawaiianorotherpacificislander",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "njelstatus", "type": ["null", "string"], "default": None},
+    {"name": "njnotattemptflag", "type": ["null", "string"], "default": None},
+    {"name": "nottestedcode", "type": ["null", "string"], "default": None},
+    {"name": "nottestedreason", "type": ["null", "double"], "default": None},
+    {"name": "onlinepcr1", "type": ["null", "string"], "default": None},
+    {"name": "onlinepcr2", "type": ["null", "string"], "default": None},
+    {"name": "paperattemptcreatedate", "type": ["null", "string"], "default": None},
+    {"name": "paperformid", "type": ["null", "string"], "default": None},
+    {"name": "paperpcr1", "type": ["null", "string"], "default": None},
+    {"name": "paperpcr2", "type": ["null", "string"], "default": None},
+    {
+        "name": "papersection1numberofattempteditems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "papersection1totaltestitems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "papersection2numberofattempteditems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "papersection2totaltestitems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "papersection3numberofattempteditems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "papersection3totaltestitems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "papersection4numberofattempteditems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "papersection4totaltestitems",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "period", "type": ["null", "string"], "default": None},
+    {"name": "primarydisabilitytype", "type": ["null", "string"], "default": None},
+    {"name": "refreshablebrailledisplay", "type": ["null", "string"], "default": None},
+    {"name": "reportsuppressionaction", "type": ["null", "string"], "default": None},
+    {"name": "reportsuppressioncode", "type": ["null", "string"], "default": None},
+    {"name": "retest", "type": ["null", "string"], "default": None},
+    {"name": "rosterflag", "type": ["null", "string"], "default": None},
+    {"name": "separatealternatelocation", "type": ["null", "string"], "default": None},
+    {"name": "shipreportdistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "shipreportschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "smallgrouptesting", "type": ["null", "string"], "default": None},
+    {"name": "spanishtransadaptation", "type": ["null", "string"], "default": None},
+    {"name": "specialeducationplacement", "type": ["null", "double"], "default": None},
+    {
+        "name": "specializedequipmentorfurniture",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "specifiedareaorsetting", "type": ["null", "string"], "default": None},
+    {
+        "name": "speechtotextandwordprediction",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "staffmemberidentifier",
+        "type": ["null", "long", "double"],
+        "default": None,
+    },
+    {"name": "statestudentidentifier", "type": ["null", "long"], "default": None},
+    {
+        "name": "studentassessmentidentifier",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "studentreadsassessmentaloudtoself",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "studenttestuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentunit1testuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentunit2testuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentunit3testuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentuuid", "type": ["null", "string"], "default": None},
+    {"name": "studentwithdisabilities", "type": ["null", "string"], "default": None},
+    {"name": "subclaim1category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim1categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim2category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim2categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim3category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim3categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim4category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim4categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subclaim5category", "type": ["null", "double"], "default": None},
+    {
+        "name": "subclaim5categoryifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "subject", "type": ["null", "string"], "default": None},
+    {"name": "summativeflag", "type": ["null", "string"], "default": None},
+    {"name": "testadministration", "type": ["null", "string"], "default": None},
+    {"name": "testadministrator", "type": ["null", "long", "double"], "default": None},
+    {"name": "testattemptednessflag", "type": ["null", "string"], "default": None},
+    {"name": "testcode", "type": ["null", "string"], "default": None},
+    {"name": "testcsemprobablerange", "type": ["null", "double"], "default": None},
+    {
+        "name": "testcsemprobablerangeifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testingdistrictcode", "type": ["null", "long"], "default": None},
+    {"name": "testingdistrictname", "type": ["null", "string"], "default": None},
+    {"name": "testingorganizationaltype", "type": ["null", "long"], "default": None},
+    {"name": "testingschoolcode", "type": ["null", "long"], "default": None},
+    {"name": "testingschoolname", "type": ["null", "string"], "default": None},
+    {"name": "testperformancelevel", "type": ["null", "double"], "default": None},
+    {
+        "name": "testperformancelevelifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testreadingcsem", "type": ["null", "double"], "default": None},
+    {
+        "name": "testreadingcsemifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testreadingscalescore", "type": ["null", "double"], "default": None},
+    {
+        "name": "testreadingscalescoreifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testscalescore", "type": ["null", "double"], "default": None},
+    {
+        "name": "testscalescoreifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testscorecomplete", "type": ["null", "double"], "default": None},
+    {"name": "teststatus", "type": ["null", "string"], "default": None},
+    {"name": "testwritingcsem", "type": ["null", "double"], "default": None},
+    {
+        "name": "testwritingcsemifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "testwritingscalescore", "type": ["null", "double"], "default": None},
+    {
+        "name": "testwritingscalescoreifnotattempted",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "texttospeech", "type": ["null", "double"], "default": None},
+    {"name": "timeofday", "type": ["null", "string"], "default": None},
+    {"name": "totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "totaltestitemsattempted", "type": ["null", "double"], "default": None},
+    {"name": "twoormoreraces", "type": ["null", "string"], "default": None},
+    {"name": "uniqueaccommodation", "type": ["null", "string"], "default": None},
+    {"name": "unit1formid", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit1numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "unit1onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit1onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit1totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "unit2formid", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit2numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "unit2onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit2onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit2totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "unit3formid", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit3numberofattempteditems",
+        "type": ["null", "double"],
+        "default": None,
+    },
+    {"name": "unit3onlinetestenddatetime", "type": ["null", "string"], "default": None},
+    {
+        "name": "unit3onlineteststartdatetime",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "unit3totaltestitems", "type": ["null", "double"], "default": None},
+    {"name": "voidscorecode", "type": ["null", "string"], "default": None},
+    {"name": "voidscorereason", "type": ["null", "string"], "default": None},
+    {"name": "white", "type": ["null", "string"], "default": None},
+    {"name": "wordprediction", "type": ["null", "string"], "default": None},
+    {
+        "name": "wordtoworddictionaryenglishnativelanguage",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {"name": "filler10", "type": ["null", "string"], "default": None},
+    {"name": "filler11", "type": ["null", "string"], "default": None},
+    {"name": "filler12", "type": ["null", "string"], "default": None},
+    {"name": "filler13", "type": ["null", "string"], "default": None},
+    {"name": "filler14", "type": ["null", "string"], "default": None},
+    {"name": "filler15", "type": ["null", "string"], "default": None},
+    {"name": "filler16", "type": ["null", "string"], "default": None},
+    {"name": "filler17", "type": ["null", "string"], "default": None},
+    {"name": "filler18", "type": ["null", "string"], "default": None},
+    {"name": "filler19", "type": ["null", "string"], "default": None},
+    {"name": "filler2", "type": ["null", "string"], "default": None},
+    {"name": "filler20", "type": ["null", "string"], "default": None},
+    {"name": "filler21", "type": ["null", "string"], "default": None},
+    {"name": "filler22", "type": ["null", "string"], "default": None},
+    {"name": "filler23", "type": ["null", "string"], "default": None},
+    {"name": "filler24", "type": ["null", "string"], "default": None},
+    {"name": "filler25", "type": ["null", "string"], "default": None},
+    {"name": "filler26", "type": ["null", "string"], "default": None},
+    {"name": "filler27", "type": ["null", "string"], "default": None},
+    {"name": "filler28", "type": ["null", "string"], "default": None},
+    {"name": "filler29", "type": ["null", "string"], "default": None},
+    {"name": "filler3", "type": ["null", "string"], "default": None},
+    {"name": "filler30", "type": ["null", "string"], "default": None},
+    {"name": "filler31", "type": ["null", "string"], "default": None},
+    {"name": "filler32", "type": ["null", "string"], "default": None},
+    {"name": "filler33", "type": ["null", "string"], "default": None},
+    {"name": "filler34", "type": ["null", "string"], "default": None},
+    {"name": "filler35", "type": ["null", "string"], "default": None},
+    {"name": "filler36", "type": ["null", "string"], "default": None},
+    {"name": "filler37", "type": ["null", "string"], "default": None},
+    {"name": "filler38", "type": ["null", "string"], "default": None},
+    {"name": "filler39", "type": ["null", "string"], "default": None},
+    {"name": "filler4", "type": ["null", "string"], "default": None},
+    {"name": "filler5", "type": ["null", "string"], "default": None},
+    {"name": "filler6", "type": ["null", "string"], "default": None},
+    {"name": "filler7", "type": ["null", "string"], "default": None},
+    {"name": "filler8", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_1", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_10", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_11", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_12", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_13", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_14", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_15", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_2", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_3", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_4", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_5", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_6", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_7", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_8", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield_9", "type": ["null", "string"], "default": None},
+    {"name": "fillerfield", "type": ["null", "string"], "default": None},
+    {"name": "filler", "type": ["null", "string"], "default": None},
+    {"name": "filler_1", "type": ["null", "string"], "default": None},
+    {"name": "filler_10", "type": ["null", "string"], "default": None},
+    {"name": "filler_11", "type": ["null", "string"], "default": None},
+    {"name": "filler_12", "type": ["null", "string"], "default": None},
+    {"name": "filler_13", "type": ["null", "string"], "default": None},
+    {"name": "filler_14", "type": ["null", "string"], "default": None},
+    {"name": "filler_15", "type": ["null", "string"], "default": None},
+    {"name": "filler_16", "type": ["null", "string"], "default": None},
+    {"name": "filler_17", "type": ["null", "string"], "default": None},
+    {"name": "filler_18", "type": ["null", "string"], "default": None},
+    {"name": "filler_19", "type": ["null", "string"], "default": None},
+    {"name": "filler_2", "type": ["null", "string"], "default": None},
+    {"name": "filler_20", "type": ["null", "string"], "default": None},
+    {"name": "filler_21", "type": ["null", "string"], "default": None},
+    {"name": "filler_22", "type": ["null", "string"], "default": None},
+    {"name": "filler_23", "type": ["null", "string"], "default": None},
+    {"name": "filler_24", "type": ["null", "string"], "default": None},
+    {"name": "filler_25", "type": ["null", "string"], "default": None},
+    {"name": "filler_26", "type": ["null", "string"], "default": None},
+    {"name": "filler_27", "type": ["null", "string"], "default": None},
+    {"name": "filler_28", "type": ["null", "string"], "default": None},
+    {"name": "filler_29", "type": ["null", "string"], "default": None},
+    {"name": "filler_3", "type": ["null", "string"], "default": None},
+    {"name": "filler_30", "type": ["null", "string"], "default": None},
+    {"name": "filler_31", "type": ["null", "string"], "default": None},
+    {"name": "filler_32", "type": ["null", "string"], "default": None},
+    {"name": "filler_33", "type": ["null", "string"], "default": None},
+    {"name": "filler_34", "type": ["null", "string"], "default": None},
+    {"name": "filler_35", "type": ["null", "string"], "default": None},
+    {"name": "filler_36", "type": ["null", "string"], "default": None},
+    {"name": "filler_37", "type": ["null", "string"], "default": None},
+    {"name": "filler_38", "type": ["null", "string"], "default": None},
+    {"name": "filler_39", "type": ["null", "string"], "default": None},
+    {"name": "filler_4", "type": ["null", "string"], "default": None},
+    {"name": "filler_40", "type": ["null", "string"], "default": None},
+    {"name": "filler_41", "type": ["null", "string"], "default": None},
+    {"name": "filler_42", "type": ["null", "string"], "default": None},
+    {"name": "filler_43", "type": ["null", "string"], "default": None},
+    {"name": "filler_44", "type": ["null", "string"], "default": None},
+    {"name": "filler_45", "type": ["null", "string"], "default": None},
+    {"name": "filler_46", "type": ["null", "string"], "default": None},
+    {"name": "filler_47", "type": ["null", "string"], "default": None},
+    {"name": "filler_48", "type": ["null", "string"], "default": None},
+    {"name": "filler_49", "type": ["null", "string"], "default": None},
+    {"name": "filler_5", "type": ["null", "string"], "default": None},
+    {"name": "filler_50", "type": ["null", "string"], "default": None},
+    {"name": "filler_51", "type": ["null", "string"], "default": None},
+    {"name": "filler_6", "type": ["null", "string"], "default": None},
+    {"name": "filler_7", "type": ["null", "string"], "default": None},
+    {"name": "filler_8", "type": ["null", "string"], "default": None},
+    {"name": "filler_9", "type": ["null", "string"], "default": None},
+]
 
-class PARCC(BaseModel):
-    accountabledistrictcode: int | None = None
-    accountabledistrictname: str | None = None
-    accountableorganizationaltype: int | None = None
-    accountableschoolcode: int | None = None
-    accountableschoolname: str | None = None
-    administrationdirectionsclarifiedinstudentsnativelanguage: str | None = None
-    administrationdirectionsreadaloudinstudentsnativelanguage: str | None = None
-    alternaterepresentationpapertest: str | None = None
-    americanindianoralaskanative: str | None = None
-    answermasking: str | None = None
-    answersrecordedintestbook: str | None = None
-    answersrecordedintestbooklet: str | None = None
-    asian: str | None = None
-    aslvideo: str | None = None
-    assessmentgrade: str | None = None
-    assessmentyear: str | None = None
-    assistivetechnologynonscreenreader: str | None = None
-    assistivetechnologyscreenreader: str | None = None
-    attemptcreatedate: str | None = None
-    batteryformid: str | None = None
-    birthdate: str | None = None
-    blackorafricanamerican: str | None = None
-    brailleresponse: str | None = None
-    braillewithtactilegraphics: str | None = None
-    calculationdeviceandmathematicstools: str | None = None
-    classname: str | None = None
-    closedcaptioningforela: str | None = None
-    closedcaptioningforelal: str | None = None
-    colorcontrast: float | None = None
-    datefirstenrolledinusschool: str | None = None
-    economicdisadvantagestatus: str | None = None
-    elaccommodation: str | None = None
-    elaconstructedresponse: float | None = None
-    elalconstructedresponse: float | None = None
-    elalselectedresponseortechnologyenhanceditems: float | None = None
-    elaselectedresponseortechnologyenhanceditems: float | None = None
-    electronicbrailleresponse: str | None = None
-    elexemptfromtakingela: str | None = None
-    elexemptfromtakingelal: str | None = None
-    emergencyaccommodation: float | None = None
-    englishlearneraccommodatedresponses: float | None = None
-    englishlearnerel: str | None = None
-    extendedtime: str | None = None
-    federalraceethnicity: int | None = None
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_2: str | None = None
-    filler_3: str | None = None
-    filler_4: str | None = None
-    filler_5: str | None = None
-    filler_6: str | None = None
-    filler_7: str | None = None
-    filler_8: str | None = None
-    filler_9: str | None = None
-    filler: str | None = None
-    filler1: str | None = None
-    filler10: str | None = None
-    filler11: str | None = None
-    filler12: str | None = None
-    filler13: str | None = None
-    filler14: str | None = None
-    filler15: str | None = None
-    filler16: str | None = None
-    filler17: str | None = None
-    filler18: str | None = None
-    filler19: str | None = None
-    filler2: str | None = None
-    filler20: str | None = None
-    filler21: str | None = None
-    filler22: str | None = None
-    filler23: str | None = None
-    filler24: str | None = None
-    filler25: str | None = None
-    filler26: str | None = None
-    filler27: str | None = None
-    filler28: str | None = None
-    filler29: str | None = None
-    filler3: str | None = None
-    filler30: str | None = None
-    filler31: str | None = None
-    filler32: str | None = None
-    filler33: str | None = None
-    filler34: str | None = None
-    filler35: str | None = None
-    filler36: str | None = None
-    filler37: str | None = None
-    filler38: str | None = None
-    filler39: str | None = None
-    filler4: str | None = None
-    filler5: str | None = None
-    filler6: str | None = None
-    filler7: str | None = None
-    filler8: str | None = None
-    fillerfield_1: str | None = None
-    fillerfield_10: str | None = None
-    fillerfield_11: str | None = None
-    fillerfield_12: str | None = None
-    fillerfield_13: str | None = None
-    fillerfield_14: str | None = None
-    fillerfield_15: str | None = None
-    fillerfield_16: str | None = None
-    fillerfield_17: str | None = None
-    fillerfield_18: str | None = None
-    fillerfield_19: str | None = None
-    fillerfield_2: str | None = None
-    fillerfield_20: str | None = None
-    fillerfield_21: str | None = None
-    fillerfield_22: str | None = None
-    fillerfield_23: str | None = None
-    fillerfield_24: str | None = None
-    fillerfield_25: str | None = None
-    fillerfield_26: str | None = None
-    fillerfield_27: str | None = None
-    fillerfield_28: str | None = None
-    fillerfield_29: str | None = None
-    fillerfield_3: str | None = None
-    fillerfield_30: str | None = None
-    fillerfield_4: str | None = None
-    fillerfield_5: str | None = None
-    fillerfield_6: str | None = None
-    fillerfield_7: str | None = None
-    fillerfield_8: str | None = None
-    fillerfield_9: str | None = None
-    fillerfield: str | None = None
-    fillerfield1: str | None = None
-    fillerfield2: str | None = None
-    fillerfield4: str | None = None
-    fillerfield5: str | None = None
-    fillerfield7: str | None = None
-    firsthighschoolmathassessment: str | None = None
-    firstname: str | None = None
-    formeriep: str | None = None
-    frequentbreaks: str | None = None
-    gender: str | None = None
-    giftedandtalented: str | None = None
-    gradelevelwhenassessed: int | None = None
-    hispanicorlatinoethnicity: str | None = None
-    home_language: str | None = None
-    homeless: str | None = None
-    humanreaderorhumansigner: float | None = None
-    humansignerfortestdirections: str | None = None
-    iepexemptfrompassing: str | None = None
-    languagecode: str | None = None
-    largeprint: str | None = None
-    lastorsurname: str | None = None
-    localstudentidentifier: float | None = None
-    mathematicsresponse: float | None = None
-    mathematicsresponseel: float | None = None
-    mathematicsscienceaccommodatedresponse: float | None = None
-    middlename: str | None = None
-    migrantstatus: str | None = None
-    monitortestresponse: str | None = None
-    multipletestregistration: str | None = None
-    nativehawaiianorotherpacificislander: str | None = None
-    njelstatus: str | None = None
-    njnotattemptflag: str | None = None
-    nottestedcode: str | None = None
-    nottestedreason: float | None = None
-    onlineformid: str | None = None
-    onlinepcr1: str | None = None
-    onlinepcr2: str | None = None
-    paperattemptcreatedate: str | None = None
-    paperformid: str | None = None
-    paperpcr1: float | None = None
-    paperpcr2: float | None = None
-    papersection1numberofattempteditems: float | None = None
-    papersection1totaltestitems: float | None = None
-    papersection2numberofattempteditems: float | None = None
-    papersection2totaltestitems: float | None = None
-    papersection3numberofattempteditems: float | None = None
-    papersection3totaltestitems: float | None = None
-    papersection4numberofattempteditems: float | None = None
-    papersection4totaltestitems: float | None = None
-    paperunit1totaltestitems: str | None = None
-    parccstudentidentifier: str | None = None
-    percentofitemsattempted: str | None = None
-    period: str | None = None
-    primarydisabilitytype: str | None = None
-    refreshablebrailledisplay: str | None = None
-    refreshablebrailledisplayforelal: str | None = None
-    reportsuppressionaction: str | None = None
-    reportsuppressioncode: str | None = None
-    responsibleaccountabledistrictcode: int | None = None
-    responsibleaccountableschoolcode: int | None = None
-    responsibledistrictcode: int | None = None
-    responsibledistrictname: str | None = None
-    responsibleorganizationaltype: int | None = None
-    responsibleorganizationcodetype: int | None = None
-    responsibleschoolcode: int | None = None
-    responsibleschoolname: str | None = None
-    retest: str | None = None
-    rosterflag: str | None = None
-    separatealternatelocation: str | None = None
-    sex: str | None = None
-    smallgrouptesting: str | None = None
-    smalltestinggroup: str | None = None
-    spanishtransadaptation: str | None = None
-    spanishtransadaptationofthemathematicsassessment: str | None = None
-    specialeducationplacement: float | None = None
-    specializedequipmentorfurniture: str | None = None
-    specifiedareaorsetting: str | None = None
-    speechtotextandwordprediction: str | None = None
-    stateabbreviation: str | None = None
-    statefield1: str | None = None
-    statefield10: str | None = None
-    statefield11: str | None = None
-    statefield12: str | None = None
-    statefield13: str | None = None
-    statefield14: str | None = None
-    statefield15: str | None = None
-    statefield2: str | None = None
-    statefield3: str | None = None
-    statefield4: str | None = None
-    statefield5: str | None = None
-    statefield7: float | None = None
-    statefield8: float | None = None
-    statestudentidentifier: int | None = None
-    studentassessmentidentifier: str | None = None
-    studentreadsassessmentaloudtoself: str | None = None
-    studentreadsassessmentaloudtothemselves: str | None = None
-    studenttestuuid: str | None = None
-    studentunit1testuuid: str | None = None
-    studentunit2testuuid: str | None = None
-    studentunit3testuuid: str | None = None
-    studentunit4testuuid: str | None = None
-    studentuuid: str | None = None
-    studentwithdisabilities: str | None = None
-    subclaim1category: float | None = None
-    subclaim1categoryifnotattempted: str | None = None
-    subclaim2category: float | None = None
-    subclaim2categoryifnotattempted: str | None = None
-    subclaim3category: float | None = None
-    subclaim3categoryifnotattempted: str | None = None
-    subclaim4category: float | None = None
-    subclaim4categoryifnotattempted: str | None = None
-    subclaim5category: float | None = None
-    subclaim5categoryifnotattempted: str | None = None
-    subclaim6category: str | None = None
-    subject: str | None = None
-    summativeflag: str | None = None
-    testadministration: str | None = None
-    testattemptednessflag: str | None = None
-    testcode: str | None = None
-    testcsemprobablerange: float | None = None
-    testcsemprobablerangeifnotattempted: str | None = None
-    testingdistrictcode: int | None = None
-    testingdistrictname: str | None = None
-    testingorganizationaltype: int | None = None
-    testingschoolcode: int | None = None
-    testingschoolname: str | None = None
-    testperformancelevel: float | None = None
-    testperformancelevelifnotattempted: str | None = None
-    testreadingcsem: float | None = None
-    testreadingcsemifnotattempted: str | None = None
-    testreadingscalescore: float | None = None
-    testreadingscalescoreifnotattempted: str | None = None
-    testscalescore: float | None = None
-    testscalescoreifnotattempted: str | None = None
-    testscorecomplete: float | None = None
-    teststatus: str | None = None
-    testwritingcsem: float | None = None
-    testwritingcsemifnotattempted: str | None = None
-    testwritingscalescore: float | None = None
-    testwritingscalescoreifnotattempted: str | None = None
-    texttospeech: float | None = None
-    timeofday: str | None = None
-    titleiiilimitedenglishproficientparticipationstatus: str | None = None
-    totaltestitems: float | None = None
-    totaltestitemsattempted: float | None = None
-    translationofthemathematicsassessment: str | None = None
-    twoormoreraces: str | None = None
-    uniqueaccommodation: str | None = None
-    unit1formid: str | None = None
-    unit1numberofattempteditems: float | None = None
-    unit1onlinetestenddatetime: str | None = None
-    unit1onlineteststartdatetime: str | None = None
-    unit1totaltestitems: float | None = None
-    unit2formid: str | None = None
-    unit2numberofattempteditems: float | None = None
-    unit2onlinetestenddatetime: str | None = None
-    unit2onlineteststartdatetime: str | None = None
-    unit2totaltestitems: float | None = None
-    unit3formid: str | None = None
-    unit3numberofattempteditems: float | None = None
-    unit3onlinetestenddatetime: str | None = None
-    unit3onlineteststartdatetime: str | None = None
-    unit3totaltestitems: float | None = None
-    unit4formid: str | None = None
-    unit4numberofattempteditems: float | None = None
-    unit4onlinetestenddatetime: str | None = None
-    unit4onlineteststartdatetime: str | None = None
-    unit4totaltestitems: float | None = None
-    voidscorecode: str | None = None
-    voidscorereason: float | None = None
-    white: str | None = None
-    wordprediction: str | None = None
-    wordpredictionforelal: str | None = None
-    wordtoworddictionaryenglishnativelanguage: str | None = None
-
-    shipreportdistrictcode: int | float | None = None
-    shipreportschoolcode: int | float | None = None
-    staffmemberidentifier: float | str | None = None
-    testadministrator: float | str | None = None
-    statefield6: float | str | None = None
-    statefield9: float | str | None = None
-
-
-class NJSLA(BaseModel):
-    accountabledistrictcode: int | None = None
-    accountabledistrictname: str | None = None
-    accountableorganizationaltype: int | None = None
-    accountableschoolcode: int | None = None
-    accountableschoolname: str | None = None
-    administrationdirectionsclarifiedinstudentsnativelanguage: str | None = None
-    administrationdirectionsreadaloudinstudentsnativelanguage: str | None = None
-    alternaterepresentationpapertest: str | None = None
-    americanindianoralaskanative: str | None = None
-    answermasking: str | None = None
-    answersrecordedintest_booklet: str | None = None
-    answersrecordedintestbooklet: str | None = None
-    asian: str | None = None
-    aslvideo: str | None = None
-    assessmentgrade: str | None = None
-    assessmentyear: str | None = None
-    assistivetechnologynonscreenreader: str | None = None
-    assistivetechnologyscreenreader: str | None = None
-    batteryformid: str | None = None
-    birthdate: str | None = None
-    blackorafricanamerican: str | None = None
-    braillewithtactilegraphics: str | None = None
-    calculationdeviceandmathematicstools: str | None = None
-    claimcode: str | None = None
-    classname: str | None = None
-    closedcaptioningforela: str | None = None
-    colorcontrast: float | None = None
-    critiquingpracticesperformancelevel: str | None = None
-    datefirstenrolledinusschool: str | None = None
-    earthandspacescienceperformancelevel: str | None = None
-    economicdisadvantagestatus: str | None = None
-    elaccommodation: str | None = None
-    elaconstructedresponse: float | None = None
-    elaselectedresponseortechnologyenhanceditems: float | None = None
-    electronicbrailleresponse: str | None = None
-    elexemptfromtakingela: str | None = None
-    emergencyaccommodation: float | None = None
-    englishlearneraccommodatedresponses: float | None = None
-    englishlearnerel: str | None = None
-    extendedtime: str | None = None
-    federalraceethnicity: int | None = None
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_12: str | None = None
-    filler_13: str | None = None
-    filler_14: str | None = None
-    filler_15: str | None = None
-    filler_16: str | None = None
-    filler_17: str | None = None
-    filler_18: str | None = None
-    filler_19: str | None = None
-    filler_2: str | None = None
-    filler_20: str | None = None
-    filler_21: str | None = None
-    filler_22: str | None = None
-    filler_23: str | None = None
-    filler_24: str | None = None
-    filler_25: str | None = None
-    filler_26: str | None = None
-    filler_27: str | None = None
-    filler_28: str | None = None
-    filler_29: str | None = None
-    filler_3: str | None = None
-    filler_30: str | None = None
-    filler_31: str | None = None
-    filler_32: str | None = None
-    filler_33: str | None = None
-    filler_34: str | None = None
-    filler_35: str | None = None
-    filler_36: str | None = None
-    filler_37: str | None = None
-    filler_38: str | None = None
-    filler_39: str | None = None
-    filler_4: str | None = None
-    filler_40: str | None = None
-    filler_41: str | None = None
-    filler_42: str | None = None
-    filler_43: str | None = None
-    filler_44: str | None = None
-    filler_45: str | None = None
-    filler_46: str | None = None
-    filler_47: str | None = None
-    filler_48: str | None = None
-    filler_49: str | None = None
-    filler_5: str | None = None
-    filler_50: str | None = None
-    filler_51: str | None = None
-    filler_52: str | None = None
-    filler_53: str | None = None
-    filler_54: str | None = None
-    filler_55: str | None = None
-    filler_56: str | None = None
-    filler_57: str | None = None
-    filler_58: str | None = None
-    filler_59: str | None = None
-    filler_6: str | None = None
-    filler_60: str | None = None
-    filler_61: str | None = None
-    filler_62: str | None = None
-    filler_63: str | None = None
-    filler_64: str | None = None
-    filler_65: str | None = None
-    filler_66: str | None = None
-    filler_67: str | None = None
-    filler_68: str | None = None
-    filler_69: str | None = None
-    filler_7: str | None = None
-    filler_70: str | None = None
-    filler_71: str | None = None
-    filler_72: str | None = None
-    filler_73: str | None = None
-    filler_74: str | None = None
-    filler_75: str | None = None
-    filler_76: str | None = None
-    filler_77: str | None = None
-    filler_78: str | None = None
-    filler_79: str | None = None
-    filler_8: str | None = None
-    filler_80: str | None = None
-    filler_81: str | None = None
-    filler_82: str | None = None
-    filler_83: str | None = None
-    filler_84: str | None = None
-    filler_85: str | None = None
-    filler_9: str | None = None
-    filler: str | None = None
-    first_high_school_math_assessment: str | None = None
-    firsthighschoolmathassessment: str | None = None
-    firstname: str | None = None
-    formeriep: str | None = None
-    formid: str | None = None
-    frequentbreaks: str | None = None
-    gender: str | None = None
-    gradelevelwhenassessed: int | None = None
-    hispanicorlatinoethnicity: str | None = None
-    home_language: str | None = None
-    homelanguage: str | None = None
-    homeless: str | None = None
-    humanreaderorhumansigner: float | None = None
-    humansignerfortestdirections: str | None = None
-    iepexemptfrompassing: str | None = None
-    investigatingpracticesperformancelevel: str | None = None
-    largeprint: str | None = None
-    lastorsurname: str | None = None
-    lifescienceperformancelevel: str | None = None
-    localstudentidentifier: float | None = None
-    mathematics_scienceaccommodatedresponse: float | None = None
-    mathematicsscienceaccommodatedresponse: float | None = None
-    middlename: str | None = None
-    migrantstatus: str | None = None
-    monitortestresponse: str | None = None
-    multipletestregistration: str | None = None
-    nativehawaiianorotherpacificislander: str | None = None
-    njelstatus: str | None = None
-    nottestedcode: str | None = None
-    nottestedreason: float | None = None
-    onlinepcr1: str | None = None
-    onlinepcr2: str | None = None
-    paperattemptcreatedate: str | None = None
-    paperformid: str | None = None
-    paperpcr1: float | None = None
-    paperpcr2: float | None = None
-    papersection1numberofattempteditems: float | None = None
-    papersection1totaltestitems: float | None = None
-    papersection2numberofattempteditems: float | None = None
-    papersection2totaltestitems: float | None = None
-    papersection3numberofattempteditems: float | None = None
-    papersection3totaltestitems: float | None = None
-    papersection4numberofattempteditems: float | None = None
-    papersection4totaltestitems: float | None = None
-    percentofitemsattempted: int | None = None
-    period: str | None = None
-    physicalscienceperformancelevel: str | None = None
-    primarydisabilitytype: str | None = None
-    reportsuppressionaction: str | None = None
-    reportsuppressioncode: str | None = None
-    retest: str | None = None
-    rosterflag: str | None = None
-    sensemakingpracticesperformancelevel: str | None = None
-    separatealternatelocation: str | None = None
-    shipreportdistrictcode: int | None = None
-    shipreportschoolcode: int | None = None
-    smallgrouptesting: str | None = None
-    spanishtransadaptation: str | None = None
-    specialeducationplacement: float | None = None
-    specializedequipmentorfurniture: str | None = None
-    specifiedareaorsetting: str | None = None
-    speechtotextandwordprediction: str | None = None
-    staffmemberidentifier: float | None = None
-    statestudentidentifier: int | None = None
-    studentassessmentidentifier: str | None = None
-    studentreadsassessmentaloudtoself: str | None = None
-    studenttestuuid: str | None = None
-    studentunit1testuuid: str | None = None
-    studentunit2testuuid: str | None = None
-    studentunit3testuuid: str | None = None
-    studentuuid: str | None = None
-    studentwithdisabilities: str | None = None
-    subclaim1category: float | None = None
-    subclaim2category: float | None = None
-    subclaim3category: float | None = None
-    subclaim4category: float | None = None
-    subclaim5category: float | None = None
-    subject: str | None = None
-    summativeflag: str | None = None
-    testadministration: str | None = None
-    testadministrator: float | None = None
-    testattemptednessflag: str | None = None
-    testcode: str | None = None
-    testcsemprobablerange: float | None = None
-    testformat: str | None = None
-    testingdistrictcode: int | None = None
-    testingdistrictname: str | None = None
-    testingorganizationaltype: int | None = None
-    testingschoolcode: int | None = None
-    testingschoolname: str | None = None
-    testperformancelevel: float | None = None
-    testreadingcsem: float | None = None
-    testreadingscalescore: float | None = None
-    testscalescore: float | None = None
-    testscorecomplete: float | None = None
-    teststatus: str | None = None
-    testwritingcsem: float | None = None
-    testwritingscalescore: float | None = None
-    texttospeech: float | None = None
-    timeofday: str | None = None
-    totaltestitems: float | None = None
-    totaltestitemsattempted: float | None = None
-    twoormoreraces: str | None = None
-    uniqueaccommodation: str | None = None
-    unit1formid: str | None = None
-    unit1numberofattempteditems: float | None = None
-    unit1onlinetestenddatetime: str | None = None
-    unit1onlineteststartdatetime: str | None = None
-    unit1totaltestitems: float | None = None
-    unit2formid: str | None = None
-    unit2numberofattempteditems: float | None = None
-    unit2onlinetestenddatetime: str | None = None
-    unit2onlineteststartdatetime: str | None = None
-    unit2totaltestitems: float | None = None
-    unit3formid: str | None = None
-    unit3numberofattempteditems: float | None = None
-    unit3onlinetestenddatetime: str | None = None
-    unit3onlineteststartdatetime: str | None = None
-    unit3totaltestitems: float | None = None
-    unit4onlinetestenddatetime: str | None = None
-    unit4onlineteststartdatetime: str | None = None
-    voidscorecode: str | None = None
-    voidscorereason: float | None = None
-    white: str | None = None
-    wordprediction: str | None = None
-    wordtoworddictionaryenglishnativelanguage: str | None = None
-
-    # completely null fields
-    filler10: str | None = None
-    filler11: str | None = None
-    filler12: str | None = None
-    filler13: str | None = None
-    filler14: str | None = None
-    filler15: str | None = None
-    filler16: str | None = None
-    filler17: str | None = None
-    filler18: str | None = None
-    filler19: str | None = None
-    filler2: str | None = None
-    filler20: str | None = None
-    filler21: str | None = None
-    filler22: str | None = None
-    filler23: str | None = None
-    filler24: str | None = None
-    filler25: str | None = None
-    filler26: str | None = None
-    filler27: str | None = None
-    filler28: str | None = None
-    filler29: str | None = None
-    filler3: str | None = None
-    filler30: str | None = None
-    filler31: str | None = None
-    filler32: str | None = None
-    filler33: str | None = None
-    filler34: str | None = None
-    filler35: str | None = None
-    filler36: str | None = None
-    filler37: str | None = None
-    filler38: str | None = None
-    filler39: str | None = None
-    filler4: str | None = None
-    filler5: str | None = None
-    filler6: str | None = None
-    filler7: str | None = None
-    filler8: str | None = None
-    fillerfield_1: str | None = None
-    fillerfield_10: str | None = None
-    fillerfield_11: str | None = None
-    fillerfield_12: str | None = None
-    fillerfield_13: str | None = None
-    fillerfield_14: str | None = None
-    fillerfield_15: str | None = None
-    fillerfield_2: str | None = None
-    fillerfield_3: str | None = None
-    fillerfield_4: str | None = None
-    fillerfield_5: str | None = None
-    fillerfield_6: str | None = None
-    fillerfield_7: str | None = None
-    fillerfield_8: str | None = None
-    fillerfield_9: str | None = None
-    fillerfield: str | None = None
-    njnotattemptflag: str | None = None
-    refreshablebrailledisplay: str | None = None
-    subclaim1categoryifnotattempted: str | None = None
-    subclaim2categoryifnotattempted: str | None = None
-    subclaim3categoryifnotattempted: str | None = None
-    subclaim4categoryifnotattempted: str | None = None
-    subclaim5categoryifnotattempted: str | None = None
-    testcsemprobablerangeifnotattempted: str | None = None
-    testperformancelevelifnotattempted: str | None = None
-    testreadingcsemifnotattempted: str | None = None
-    testreadingscalescoreifnotattempted: str | None = None
-    testscalescoreifnotattempted: str | None = None
-    testwritingcsemifnotattempted: str | None = None
-    testwritingscalescoreifnotattempted: str | None = None
-
-
-class NJGPA(BaseModel):
-    accountabledistrictcode: int | None = None
-    accountabledistrictname: str | None = None
-    accountableorganizationaltype: int | None = None
-    accountableschoolcode: int | None = None
-    accountableschoolname: str | None = None
-    administrationdirectionsclarifiedinstudentsnativelanguage: str | None = None
-    administrationdirectionsreadaloudinstudentsnativelanguage: str | None = None
-    alternaterepresentationpapertest: str | None = None
-    americanindianoralaskanative: str | None = None
-    answermasking: str | None = None
-    answersrecordedintestbooklet: str | None = None
-    asian: str | None = None
-    aslvideo: str | None = None
-    assessmentgrade: str | None = None
-    assessmentyear: str | None = None
-    assistivetechnologynonscreenreader: str | None = None
-    assistivetechnologyscreenreader: str | None = None
-    batteryformid: str | None = None
-    birthdate: str | None = None
-    blackorafricanamerican: str | None = None
-    braillewithtactilegraphics: str | None = None
-    calculationdeviceandmathematicstools: str | None = None
-    classname: str | None = None
-    closedcaptioningforela: str | None = None
-    colorcontrast: str | None = None
-    datefirstenrolledinusschool: str | None = None
-    economicdisadvantagestatus: str | None = None
-    elaccommodation: str | None = None
-    elaconstructedresponse: float | None = None
-    elaselectedresponseortechnologyenhanceditems: float | None = None
-    electronicbrailleresponse: str | None = None
-    elexemptfromtakingela: str | None = None
-    emergencyaccommodation: str | None = None
-    englishlearneraccommodatedresponses: str | None = None
-    englishlearnerel: str | None = None
-    extendedtime: str | None = None
-    federalraceethnicity: int | None = None
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_12: str | None = None
-    filler_13: str | None = None
-    filler_14: str | None = None
-    filler_15: str | None = None
-    filler_16: str | None = None
-    filler_17: str | None = None
-    filler_18: str | None = None
-    filler_19: str | None = None
-    filler_2: str | None = None
-    filler_20: str | None = None
-    filler_21: str | None = None
-    filler_22: str | None = None
-    filler_23: str | None = None
-    filler_24: str | None = None
-    filler_25: str | None = None
-    filler_26: str | None = None
-    filler_27: str | None = None
-    filler_28: str | None = None
-    filler_29: str | None = None
-    filler_3: str | None = None
-    filler_30: str | None = None
-    filler_31: str | None = None
-    filler_32: str | None = None
-    filler_33: str | None = None
-    filler_34: str | None = None
-    filler_35: str | None = None
-    filler_36: str | None = None
-    filler_37: str | None = None
-    filler_38: str | None = None
-    filler_39: str | None = None
-    filler_4: str | None = None
-    filler_40: str | None = None
-    filler_41: str | None = None
-    filler_42: str | None = None
-    filler_43: str | None = None
-    filler_44: str | None = None
-    filler_45: str | None = None
-    filler_46: str | None = None
-    filler_47: str | None = None
-    filler_48: str | None = None
-    filler_49: str | None = None
-    filler_5: str | None = None
-    filler_50: str | None = None
-    filler_51: str | None = None
-    filler_6: str | None = None
-    filler_7: str | None = None
-    filler_8: str | None = None
-    filler_9: str | None = None
-    filler: str | None = None
-    filler10: str | None = None
-    filler11: str | None = None
-    filler12: str | None = None
-    filler13: str | None = None
-    filler14: str | None = None
-    filler15: str | None = None
-    filler16: str | None = None
-    filler17: str | None = None
-    filler18: str | None = None
-    filler19: str | None = None
-    filler2: str | None = None
-    filler20: str | None = None
-    filler21: str | None = None
-    filler22: str | None = None
-    filler23: str | None = None
-    filler24: str | None = None
-    filler25: str | None = None
-    filler26: str | None = None
-    filler27: str | None = None
-    filler28: str | None = None
-    filler29: str | None = None
-    filler3: str | None = None
-    filler30: str | None = None
-    filler31: str | None = None
-    filler32: str | None = None
-    filler33: str | None = None
-    filler34: str | None = None
-    filler35: str | None = None
-    filler36: str | None = None
-    filler37: str | None = None
-    filler38: str | None = None
-    filler39: str | None = None
-    filler4: str | None = None
-    filler5: str | None = None
-    filler6: str | None = None
-    filler7: str | None = None
-    filler8: str | None = None
-    fillerfield_1: str | None = None
-    fillerfield_10: str | None = None
-    fillerfield_11: str | None = None
-    fillerfield_12: str | None = None
-    fillerfield_13: str | None = None
-    fillerfield_14: str | None = None
-    fillerfield_15: str | None = None
-    fillerfield_2: str | None = None
-    fillerfield_3: str | None = None
-    fillerfield_4: str | None = None
-    fillerfield_5: str | None = None
-    fillerfield_6: str | None = None
-    fillerfield_7: str | None = None
-    fillerfield_8: str | None = None
-    fillerfield_9: str | None = None
-    fillerfield: str | None = None
-    firsthighschoolmathassessment: str | None = None
-    firstname: str | None = None
-    formeriep: str | None = None
-    frequentbreaks: str | None = None
-    gender: str | None = None
-    gradelevelwhenassessed: int | None = None
-    hispanicorlatinoethnicity: str | None = None
-    home_language: str | None = None
-    homeless: str | None = None
-    humanreaderorhumansigner: str | None = None
-    humansignerfortestdirections: str | None = None
-    iepexemptfrompassing: str | None = None
-    largeprint: str | None = None
-    lastorsurname: str | None = None
-    localstudentidentifier: int | None = None
-    mathematicsscienceaccommodatedresponse: float | None = None
-    middlename: str | None = None
-    migrantstatus: str | None = None
-    monitortestresponse: str | None = None
-    multipletestregistration: str | None = None
-    nativehawaiianorotherpacificislander: str | None = None
-    njelstatus: str | None = None
-    njnotattemptflag: str | None = None
-    nottestedcode: str | None = None
-    nottestedreason: float | None = None
-    onlinepcr1: str | None = None
-    onlinepcr2: str | None = None
-    paperattemptcreatedate: str | None = None
-    paperformid: str | None = None
-    paperpcr1: str | None = None
-    paperpcr2: str | None = None
-    papersection1numberofattempteditems: str | None = None
-    papersection1totaltestitems: str | None = None
-    papersection2numberofattempteditems: str | None = None
-    papersection2totaltestitems: str | None = None
-    papersection3numberofattempteditems: str | None = None
-    papersection3totaltestitems: str | None = None
-    papersection4numberofattempteditems: str | None = None
-    papersection4totaltestitems: str | None = None
-    period: str | None = None
-    primarydisabilitytype: str | None = None
-    refreshablebrailledisplay: str | None = None
-    reportsuppressionaction: str | None = None
-    reportsuppressioncode: str | None = None
-    retest: str | None = None
-    rosterflag: str | None = None
-    separatealternatelocation: str | None = None
-    shipreportdistrictcode: int | None = None
-    shipreportschoolcode: int | None = None
-    smallgrouptesting: str | None = None
-    spanishtransadaptation: str | None = None
-    specialeducationplacement: float | None = None
-    specializedequipmentorfurniture: str | None = None
-    specifiedareaorsetting: str | None = None
-    speechtotextandwordprediction: str | None = None
-    statestudentidentifier: int | None = None
-    studentassessmentidentifier: str | None = None
-    studentreadsassessmentaloudtoself: str | None = None
-    studenttestuuid: str | None = None
-    studentunit1testuuid: str | None = None
-    studentunit2testuuid: str | None = None
-    studentunit3testuuid: str | None = None
-    studentuuid: str | None = None
-    studentwithdisabilities: str | None = None
-    subclaim1category: float | None = None
-    subclaim1categoryifnotattempted: str | None = None
-    subclaim2category: float | None = None
-    subclaim2categoryifnotattempted: str | None = None
-    subclaim3category: float | None = None
-    subclaim3categoryifnotattempted: str | None = None
-    subclaim4category: float | None = None
-    subclaim4categoryifnotattempted: str | None = None
-    subclaim5category: float | None = None
-    subclaim5categoryifnotattempted: str | None = None
-    subject: str | None = None
-    summativeflag: str | None = None
-    testadministration: str | None = None
-    testattemptednessflag: str | None = None
-    testcode: str | None = None
-    testcsemprobablerange: float | None = None
-    testcsemprobablerangeifnotattempted: str | None = None
-    testingdistrictcode: int | None = None
-    testingdistrictname: str | None = None
-    testingorganizationaltype: int | None = None
-    testingschoolcode: int | None = None
-    testingschoolname: str | None = None
-    testperformancelevel: float | None = None
-    testperformancelevelifnotattempted: str | None = None
-    testreadingcsem: float | None = None
-    testreadingcsemifnotattempted: str | None = None
-    testreadingscalescore: float | None = None
-    testreadingscalescoreifnotattempted: str | None = None
-    testscalescore: float | None = None
-    testscalescoreifnotattempted: str | None = None
-    testscorecomplete: float | None = None
-    teststatus: str | None = None
-    testwritingcsem: float | None = None
-    testwritingcsemifnotattempted: str | None = None
-    testwritingscalescore: float | None = None
-    testwritingscalescoreifnotattempted: str | None = None
-    texttospeech: float | None = None
-    timeofday: str | None = None
-    totaltestitems: float | None = None
-    totaltestitemsattempted: float | None = None
-    twoormoreraces: str | None = None
-    uniqueaccommodation: str | None = None
-    unit1formid: str | None = None
-    unit1numberofattempteditems: float | None = None
-    unit1onlinetestenddatetime: str | None = None
-    unit1onlineteststartdatetime: str | None = None
-    unit1totaltestitems: float | None = None
-    unit2formid: str | None = None
-    unit2numberofattempteditems: float | None = None
-    unit2onlinetestenddatetime: str | None = None
-    unit2onlineteststartdatetime: str | None = None
-    unit2totaltestitems: float | None = None
-    unit3formid: str | None = None
-    unit3numberofattempteditems: float | None = None
-    unit3onlinetestenddatetime: str | None = None
-    unit3onlineteststartdatetime: str | None = None
-    unit3totaltestitems: float | None = None
-    voidscorecode: str | None = None
-    voidscorereason: str | None = None
-    white: str | None = None
-    wordprediction: str | None = None
-    wordtoworddictionaryenglishnativelanguage: str | None = None
-
-    staffmemberidentifier: int | float | None = None
-    testadministrator: int | float | None = None
-
-
-"""
-helper classes for backwards compatibility
-"""
-
-
-class parcc_record(PARCC): ...
-
-
-class njsla_record(NJSLA): ...
-
-
-class njsla_science_record(NJSLA): ...
-
-
-class njgpa_record(NJGPA): ...
-
-
-ASSET_SCHEMA = {
-    "parcc": json.loads(
-        py_avro_schema.generate(py_type=parcc_record, namespace="parcc")
-    ),
-    "njsla": json.loads(
-        py_avro_schema.generate(py_type=njsla_record, namespace="njsla")
-    ),
-    "njsla_science": json.loads(
-        py_avro_schema.generate(py_type=njsla_science_record, namespace="njsla_science")
-    ),
-    "njgpa": json.loads(
-        py_avro_schema.generate(py_type=njgpa_record, namespace="njgpa")
-    ),
+ASSET_FIELDS = {
+    "parcc": PARCC_FIELDS,
+    "njsla": PARCC_FIELDS,
+    "njsla_science": NJSLA_FIELDS,
+    "njgpa": NJGPA_FIELDS,
 }

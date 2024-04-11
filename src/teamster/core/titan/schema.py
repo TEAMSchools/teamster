@@ -1,52 +1,47 @@
-import json
+PERSON_DATA_FIELDS = [
+    {"name": "eligibility_benefit_type", "type": ["null", "string"], "default": None},
+    {"name": "eligibility_end_date", "type": ["null", "string"], "default": None},
+    {"name": "eligibility_start_date", "type": ["null", "string"], "default": None},
+    {"name": "eligibility", "type": ["null", "long", "string"], "default": None},
+    {"name": "is_directly_certified", "type": ["null", "boolean"], "default": None},
+    {"name": "person_identifier", "type": ["null", "long"], "default": None},
+    {"name": "total_balance", "type": ["null", "string", "double"], "default": None},
+    {
+        "name": "total_positive_balance",
+        "type": ["null", "string", "double"],
+        "default": None,
+    },
+    {
+        "name": "application_academic_school_year",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "application_approved_benefit_type",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "eligibility_determination_reason",
+        "type": ["null", "string"],
+        "default": None,
+    },
+    {
+        "name": "total_negative_balance",
+        "type": ["null", "string", "double"],
+        "default": None,
+    },
+]
 
-import py_avro_schema
-from pydantic import BaseModel
+INCOME_FORM_DATA_FIELDS = [
+    {"name": "student_identifier", "type": ["null", "long"], "default": None},
+    {"name": "eligibility_result", "type": ["null", "long", "string"], "default": None},
+    {"name": "academic_year", "type": ["null", "string"], "default": None},
+    {"name": "reference_code", "type": ["null", "string"], "default": None},
+    {"name": "date_signed", "type": ["null", "string"], "default": None},
+]
 
-
-class PersonData(BaseModel):
-    eligibility_benefit_type: str | None = None
-    eligibility_end_date: str | None = None
-    eligibility_start_date: str | None = None
-    is_directly_certified: bool | None = None
-    person_identifier: int | None = None
-    application_academic_school_year: str | None = None
-    application_approved_benefit_type: str | None = None
-    eligibility_determination_reason: str | None = None
-
-    eligibility: int | str | None = None
-    total_balance: str | float | None = None
-    total_positive_balance: str | float | None = None
-    total_negative_balance: str | float | None = None
-
-
-class IncomeFormData(BaseModel):
-    student_identifier: int | None = None
-    academic_year: str | None = None
-    reference_code: str | None = None
-    date_signed: str | None = None
-
-    eligibility_result: int | str | None = None
-
-
-"""
-helper classes for backwards compatibility
-"""
-
-
-class person_data_record(PersonData): ...
-
-
-class income_form_data_record(IncomeFormData): ...
-
-
-ASSET_SCHEMA = {
-    "person_data": json.loads(
-        py_avro_schema.generate(py_type=person_data_record, namespace="person_data")
-    ),
-    "income_form_data": json.loads(
-        py_avro_schema.generate(
-            py_type=income_form_data_record, namespace="income_form_data"
-        )
-    ),
+ASSET_FIELDS = {
+    "person_data": PERSON_DATA_FIELDS,
+    "income_form_data": INCOME_FORM_DATA_FIELDS,
 }
