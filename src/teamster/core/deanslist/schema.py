@@ -76,6 +76,10 @@ class StudentModel(BaseModel):
     StudentLastName: str | None = None
 
 
+class student_record(StudentModel):
+    """helper class for backwards compatibility"""
+
+
 class CommLog(BaseModel):
     RecordID: int | None = None
     RecordType: str | None = None
@@ -100,7 +104,7 @@ class CommLog(BaseModel):
     IsDraft: bool | None = None
     ThirdPartyName: str | None = None
 
-    Student: StudentModel | None = None
+    Student: student_record | None = None
 
     Followups: list[str | None] | None = None
 
@@ -503,27 +507,31 @@ class ReconcileSuspensions(BaseModel):
     unnamed_13: str | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class behavior_record(Behavior):
+    """helper class for backwards compatibility"""
 
 
-class behavior_record(Behavior): ...
+class comm_log_record(CommLog):
+    """helper class for backwards compatibility"""
 
 
-class comm_log_record(CommLog): ...
+class followups_record(Followup):
+    """helper class for backwards compatibility"""
 
 
-class followups_record(Followup): ...
+class homework_record(Homework):
+    """helper class for backwards compatibility"""
 
 
-class homework_record(Homework): ...
+class incidents_record(Incident):
+    """helper class for backwards compatibility"""
 
 
-class incidents_record(Incident): ...
-
-
-pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+pas_options = (
+    py_avro_schema.Option.NO_DOC
+    | py_avro_schema.Option.NO_AUTO_NAMESPACE
+    | py_avro_schema.Option.USE_FIELD_ALIAS
+)
 
 ASSET_SCHEMA = {
     "followups": json.loads(py_avro_schema.generate(py_type=Followup)),
