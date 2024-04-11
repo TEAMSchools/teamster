@@ -1,3 +1,5 @@
+{{ config(materialized="view") }}
+
 with
     years as (
         select
@@ -14,7 +16,7 @@ with
     )
 
 select
-    s.employee_number as employee_number,
+    s.employee_number,
     s.worker_id as adp_associate_id,
     s.preferred_name_given_name as preferred_first_name,
     s.preferred_name_family_name as preferred_last_name,
@@ -51,7 +53,6 @@ select
     e.assignment_status as historic_position_status,
 
     pm.pm_term,
-
     pm.etr_score,
     pm.etr_tier,
     pm.so_score,
