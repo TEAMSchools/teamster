@@ -3,7 +3,6 @@ import random
 import pendulum
 from dagster import MonthlyPartitionsDefinition, materialize
 
-from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.resources import (
     DB_POWERSCHOOL,
     get_io_manager_gcs_file,
@@ -12,23 +11,8 @@ from teamster.core.resources import (
 from teamster.staging import LOCAL_TIMEZONE
 
 
-def _test_asset(
-    asset_name,
-    partitions_def=None,
-    partition_column=None,
-    select_columns: list | None = None,
-):
-    if select_columns is None:
-        select_columns = ["*"]
-
-    asset = build_powerschool_table_asset(
-        code_location="staging",
-        local_timezone=LOCAL_TIMEZONE,
-        asset_name=asset_name,
-        partitions_def=partitions_def,
-        partition_column=partition_column,
-        select_columns=select_columns,
-    )
+def _test_asset(assets, asset_name):
+    asset = [a for a in assets if a.key.path[-1] == asset_name][0]
 
     if asset.partitions_def is not None:
         partition_keys = asset.partitions_def.get_partition_keys()
@@ -56,6 +40,7 @@ def _test_asset(
         .value
         > 0
     )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_asset_powerschool_cc():
