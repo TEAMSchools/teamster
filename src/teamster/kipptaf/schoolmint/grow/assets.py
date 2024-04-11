@@ -12,6 +12,7 @@ from dagster import (
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
+    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
@@ -61,7 +62,9 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
         )
 
         records = endpoint_content["data"]
-        schema = ASSET_FIELDS[asset_name]
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
 
         yield Output(
             value=(records, schema), metadata={"records": endpoint_content["count"]}
