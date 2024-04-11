@@ -242,17 +242,17 @@ class Incident(BaseModel):
     SendAlert: bool | None = None
     Infraction: str | None = None
     ReturnPeriod: str | None = None
-    HearingDate: str | None = None
     HearingTime: str | None = None
     UpdateStaffSchoolID: str | None = None
 
+    CloseTS: Date | None = None
+    CreateTS: Date | None = None
+    DL_LASTUPDATE: Date | None = None
+    HearingDate: Date | None = None
     IssueTS: Date | None = None
     ReturnDate: Date | None = None
-    CreateTS: Date | None = None
-    UpdateTS: Date | None = None
     ReviewTS: Date | None = None
-    CloseTS: Date | None = None
-    DL_LASTUPDATE: Date | None = None
+    UpdateTS: Date | None = None
 
     Actions: list[Action | None] | None = None
     Penalties: list[Penalty | None] | None = None
@@ -523,40 +523,32 @@ class homework_record(Homework): ...
 class incidents_record(Incident): ...
 
 
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
 ASSET_SCHEMA = {
-    "behavior": json.loads(
-        py_avro_schema.generate(py_type=behavior_record, namespace="behavior")
-    ),
-    "comm-log": json.loads(
-        py_avro_schema.generate(py_type=comm_log_record, namespace="comm_log")
-    ),
-    "followups": json.loads(
-        py_avro_schema.generate(py_type=Followup, namespace="followup")
-    ),
-    "homework": json.loads(
-        py_avro_schema.generate(py_type=homework_record, namespace="homework")
-    ),
-    "incidents": json.loads(
-        py_avro_schema.generate(py_type=incidents_record, namespace="incident")
-    ),
-    "lists": json.loads(py_avro_schema.generate(py_type=ListModel, namespace="list")),
-    "roster-assignments": json.loads(
-        py_avro_schema.generate(py_type=RosterAssignment, namespace="roster_assignment")
-    ),
-    "rosters": json.loads(py_avro_schema.generate(py_type=Roster, namespace="roster")),
-    "students": json.loads(
-        py_avro_schema.generate(py_type=Student, namespace="student")
-    ),
-    "terms": json.loads(py_avro_schema.generate(py_type=Term, namespace="term")),
-    "users": json.loads(py_avro_schema.generate(py_type=User, namespace="user")),
+    "followups": json.loads(py_avro_schema.generate(py_type=Followup)),
+    "lists": json.loads(py_avro_schema.generate(py_type=ListModel)),
+    "roster-assignments": json.loads(py_avro_schema.generate(py_type=RosterAssignment)),
+    "rosters": json.loads(py_avro_schema.generate(py_type=Roster)),
+    "students": json.loads(py_avro_schema.generate(py_type=Student)),
+    "terms": json.loads(py_avro_schema.generate(py_type=Term)),
+    "users": json.loads(py_avro_schema.generate(py_type=User)),
     "reconcile_attendance": json.loads(
-        py_avro_schema.generate(
-            py_type=ReconcileAttendance, namespace="reconcile_attendance"
-        )
+        py_avro_schema.generate(py_type=ReconcileAttendance)
     ),
     "reconcile_suspensions": json.loads(
-        py_avro_schema.generate(
-            py_type=ReconcileSuspensions, namespace="reconcile_suspension"
-        )
+        py_avro_schema.generate(py_type=ReconcileSuspensions)
+    ),
+    "behavior": json.loads(
+        py_avro_schema.generate(py_type=behavior_record, options=pas_options)
+    ),
+    "comm-log": json.loads(
+        py_avro_schema.generate(py_type=comm_log_record, options=pas_options)
+    ),
+    "homework": json.loads(
+        py_avro_schema.generate(py_type=homework_record, options=pas_options)
+    ),
+    "incidents": json.loads(
+        py_avro_schema.generate(py_type=incidents_record, options=pas_options)
     ),
 }
