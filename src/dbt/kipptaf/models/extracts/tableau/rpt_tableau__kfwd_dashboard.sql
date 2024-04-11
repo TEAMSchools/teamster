@@ -309,6 +309,7 @@ select
     c.contact_last_successful_contact as last_successful_contact_date,
     c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
     c.contact_last_outreach as last_outreach_date,
+    c.bgp,
 
     ay.academic_year,
 

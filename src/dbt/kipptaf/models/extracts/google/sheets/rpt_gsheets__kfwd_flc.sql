@@ -53,6 +53,7 @@ select  -- noqa: ST06
         then '<2.00'
     end as hs_gpa_bands,
     coalesce(e.is_ea_ed, false) as is_ea_ed,
+    kt.bgp,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -68,4 +69,4 @@ left join early as e on kt.contact_id = e.applicant
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-    and co.grade_level = 11
+    and co.grade_level >= 9
