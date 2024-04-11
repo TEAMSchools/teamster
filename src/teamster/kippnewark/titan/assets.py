@@ -4,7 +4,7 @@ import pendulum
 from dagster import StaticPartitionsDefinition, config_from_files
 
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.titan.schema import ASSET_FIELDS
+from teamster.core.titan.schema import ASSET_SCHEMA
 from teamster.core.utils.classes import FiscalYear
 
 from .. import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
@@ -32,7 +32,7 @@ for asset in config_from_files(
         build_sftp_asset(
             asset_key=[CODE_LOCATION, "titan", asset_name],
             ssh_resource_key="ssh_titan",
-            avro_schema=ASSET_FIELDS[asset_name],
+            avro_schema=ASSET_SCHEMA[asset_name],
             partitions_def=StaticPartitionsDefinition(partition_keys),
             **asset,
         )

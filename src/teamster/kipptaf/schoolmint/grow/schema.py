@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import Option, generate
+import py_avro_schema
 from pydantic import BaseModel, Field
 
 
@@ -711,108 +711,177 @@ class Video(Ref, Timestamp):
     videoNotes: list[VideoNote | None] | None = None
 
 
-ASSET_FIELDS = {
+"""
+helper classes for backwards compatibility
+"""
+
+
+class assignments_record(Assignment): ...
+
+
+class observations_record(Observation): ...
+
+
+ASSET_SCHEMA = {
     "assignments": json.loads(
-        generate(
-            py_type=Assignment, namespace="assignment", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=assignments_record,
+            namespace="assignment",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/assignmentpresets": json.loads(
-        generate(
+        py_avro_schema.generate(
             py_type=AssignmentPresetTag,
             namespace="assignmentpreset",
-            options=Option.USE_FIELD_ALIAS,
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/courses": json.loads(
-        generate(py_type=GenericTag, namespace="course", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="course",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "generic-tags/eventtag1": json.loads(
-        generate(
-            py_type=GenericTag, namespace="eventtag", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="eventtag",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/goaltypes": json.loads(
-        generate(
-            py_type=GenericTag, namespace="goaltype", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="goaltype",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/grades": json.loads(
-        generate(py_type=GenericTag, namespace="grade", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="grade",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "generic-tags/measurementgroups": json.loads(
-        generate(
+        py_avro_schema.generate(
             py_type=GenericTag,
             namespace="measurementgroup",
-            options=Option.USE_FIELD_ALIAS,
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/meetingtypes": json.loads(
-        generate(
+        py_avro_schema.generate(
             py_type=MeetingTypeTag,
             namespace="meetingtype",
-            options=Option.USE_FIELD_ALIAS,
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/observationtypes": json.loads(
-        generate(
+        py_avro_schema.generate(
             py_type=GenericTag,
             namespace="observationtype",
-            options=Option.USE_FIELD_ALIAS,
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/rubrictag1": json.loads(
-        generate(
-            py_type=GenericTag, namespace="rubrictag", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="rubrictag",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/schooltag1": json.loads(
-        generate(
-            py_type=GenericTag, namespace="schooltag", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="schooltag",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/tags": json.loads(
-        generate(py_type=GenericTag, namespace="tag", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="tag",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "generic-tags/usertag1": json.loads(
-        generate(
-            py_type=GenericTag, namespace="usertag", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=GenericTag,
+            namespace="usertag",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "generic-tags/usertypes": json.loads(
-        generate(
-            py_type=UserTypeTag, namespace="usertype", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=UserTypeTag,
+            namespace="usertype",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "informals": json.loads(
-        generate(py_type=Informal, namespace="informal", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=Informal,
+            namespace="informal",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "measurements": json.loads(
-        generate(
-            py_type=Measurement, namespace="measurement", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=Measurement,
+            namespace="measurement",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "meetings": json.loads(
-        generate(py_type=Meeting, namespace="meeting", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=Meeting,
+            namespace="meeting",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "observations": json.loads(
-        generate(
-            py_type=Observation, namespace="observation", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=observations_record,
+            namespace="observation",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
     "roles": json.loads(
-        generate(py_type=Role, namespace="role", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=Role,
+            namespace="role",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "rubrics": json.loads(
-        generate(py_type=Rubric, namespace="rubric", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=Rubric,
+            namespace="rubric",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "schools": json.loads(
-        generate(py_type=School, namespace="school", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=School,
+            namespace="school",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "users": json.loads(
-        generate(py_type=User, namespace="user", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=User,
+            namespace="user",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
     "videos": json.loads(
-        generate(py_type=Video, namespace="video", options=Option.USE_FIELD_ALIAS)
+        py_avro_schema.generate(
+            py_type=Video,
+            namespace="video",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
     ),
 }

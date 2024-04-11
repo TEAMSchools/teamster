@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -37,49 +37,18 @@ class NJSmartPowerschool(BaseModel):
     state_studentnumber: int | float | None = None
 
 
-class NJSmartPowerschoolArchive(BaseModel):
-    academic_year: int | None = None
-    case_manager: str | None = None
-    effective_date: str | None = None
-    effective_end_date: str | None = None
-    file: str | None = None
-    iepbegin_date: str | None = None
-    iepend_date: str | None = None
-    iepgraduation_attendance: str | None = None
-    iepgraduation_course_requirement: str | None = None
-    line: int | None = None
-    nj_se_consenttoimplementdate: str | None = None
-    nj_se_delayreason: float | None = None
-    nj_se_eligibilityddate: str | None = None
-    nj_se_initialiepmeetingdate: str | None = None
-    nj_se_lastiepmeetingdate: str | None = None
-    nj_se_parental_consentobtained: str | None = None
-    nj_se_parentalconsentdate: str | None = None
-    nj_se_placement: float | None = None
-    nj_se_reevaluationdate: str | None = None
-    nj_se_referraldate: str | None = None
-    nj_timeinregularprogram: str | None = None
-    rn_stu_yr: int | None = None
-    row_hash: str | None = None
-    special_education_code: str | None = None
-    special_education: float | None = None
-    spedlep: str | None = None
-    state_studentnumber: float | None = None
-    student_number: float | None = None
-    ti_serv_counseling: str | None = None
-    ti_serv_occup: str | None = None
-    ti_serv_other: str | None = None
-    ti_serv_physical: str | None = None
-    ti_serv_speech: str | None = None
+"""
+helper classes for backwards compatibility
+"""
 
 
-ASSET_FIELDS = {
+class njsmart_powerschool_record(NJSmartPowerschool): ...
+
+
+ASSET_SCHEMA = {
     "njsmart_powerschool": json.loads(
-        generate(py_type=NJSmartPowerschool, namespace="njsmart_powerschool")
-    ),
-    "njsmart_powerschool_archive": json.loads(
-        generate(
-            py_type=NJSmartPowerschoolArchive, namespace="njsmart_powerschool_archive"
+        py_avro_schema.generate(
+            py_type=njsmart_powerschool_record, namespace="njsmart_powerschool"
         )
-    ),
+    )
 }

@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -35,8 +35,18 @@ class TicketMetric(BaseModel):
     requester_wait_time_in_minutes: Minutes | None = None
 
 
-ASSET_FIELDS = {
+"""
+helper classes for backwards compatibility
+"""
+
+
+class ticket_metrics_record(TicketMetric): ...
+
+
+ASSET_SCHEMA = {
     "ticket_metrics": json.loads(
-        generate(py_type=TicketMetric, namespace="ticket_metric")
+        py_avro_schema.generate(
+            py_type=ticket_metrics_record, namespace="ticket_metric"
+        )
     ),
 }

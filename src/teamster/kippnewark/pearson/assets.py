@@ -6,7 +6,7 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.pearson.schema import ASSET_FIELDS
+from teamster.core.pearson.schema import ASSET_SCHEMA
 from teamster.core.sftp.assets import build_sftp_asset
 
 from .. import CODE_LOCATION
@@ -17,7 +17,7 @@ njgpa = build_sftp_asset(
     asset_key=[CODE_LOCATION, "pearson", "njgpa"],
     remote_dir="/teamster-kippnewark/couchdrop/pearson/njgpa",
     remote_file_regex="pc(?P<administration>\w+)(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv",
-    avro_schema=ASSET_FIELDS["njgpa"],
+    avro_schema=ASSET_SCHEMA["njgpa"],
     ssh_resource_key="ssh_couchdrop",
     partitions_def=MultiPartitionsDefinition(
         {
@@ -30,7 +30,7 @@ njgpa = build_sftp_asset(
 all_assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
-        avro_schema=ASSET_FIELDS[a["asset_name"]],
+        avro_schema=ASSET_SCHEMA[a["asset_name"]],
         ssh_resource_key="ssh_couchdrop",
         partitions_def=StaticPartitionsDefinition(a["partition_keys"]),
         **a,

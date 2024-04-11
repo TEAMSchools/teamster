@@ -17,7 +17,7 @@ from teamster.core.utils.functions import (
 
 from ... import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import SchoolMintGrowResource
-from .schema import ASSET_FIELDS
+from .schema import ASSET_SCHEMA
 
 
 def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
@@ -61,7 +61,7 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
         )
 
         records = endpoint_content["data"]
-        schema = ASSET_FIELDS[asset_name]
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(
             value=(records, schema), metadata={"records": endpoint_content["count"]}

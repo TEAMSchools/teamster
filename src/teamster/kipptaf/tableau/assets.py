@@ -22,7 +22,7 @@ from teamster.core.utils.functions import (
 
 from .. import CODE_LOCATION
 from .resources import TableauServerResource
-from .schema import ASSET_FIELDS
+from .schema import ASSET_SCHEMA
 
 config = config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])
 
@@ -32,7 +32,7 @@ asset_name = workbook_asset_def["name"]
 
 asset_key = [*workbook_asset_def["key_prefix"], asset_name]
 
-WORKBOOK_ASSET_SCHEMA = ASSET_FIELDS[asset_name]
+WORKBOOK_ASSET_SCHEMA = ASSET_SCHEMA[asset_name]
 
 
 @asset(

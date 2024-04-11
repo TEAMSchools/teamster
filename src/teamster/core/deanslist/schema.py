@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -503,24 +503,60 @@ class ReconcileSuspensions(BaseModel):
     unnamed_13: str | None = None
 
 
-ASSET_FIELDS = {
-    "behavior": json.loads(generate(py_type=Behavior, namespace="behavior")),
-    "comm-log": json.loads(generate(py_type=CommLog, namespace="comm_log")),
-    "followups": json.loads(generate(py_type=Followup, namespace="followup")),
-    "homework": json.loads(generate(py_type=Homework, namespace="homework")),
-    "incidents": json.loads(generate(py_type=Incident, namespace="incident")),
-    "lists": json.loads(generate(py_type=ListModel, namespace="list")),
-    "roster-assignments": json.loads(
-        generate(py_type=RosterAssignment, namespace="roster_assignment")
+"""
+helper classes for backwards compatibility
+"""
+
+
+class behavior_record(Behavior): ...
+
+
+class comm_log_record(CommLog): ...
+
+
+class followups_record(Followup): ...
+
+
+class homework_record(Homework): ...
+
+
+class incidents_record(Incident): ...
+
+
+ASSET_SCHEMA = {
+    "behavior": json.loads(
+        py_avro_schema.generate(py_type=behavior_record, namespace="behavior")
     ),
-    "rosters": json.loads(generate(py_type=Roster, namespace="roster")),
-    "students": json.loads(generate(py_type=Student, namespace="student")),
-    "terms": json.loads(generate(py_type=Term, namespace="term")),
-    "users": json.loads(generate(py_type=User, namespace="user")),
+    "comm-log": json.loads(
+        py_avro_schema.generate(py_type=comm_log_record, namespace="comm_log")
+    ),
+    "followups": json.loads(
+        py_avro_schema.generate(py_type=Followup, namespace="followup")
+    ),
+    "homework": json.loads(
+        py_avro_schema.generate(py_type=homework_record, namespace="homework")
+    ),
+    "incidents": json.loads(
+        py_avro_schema.generate(py_type=incidents_record, namespace="incident")
+    ),
+    "lists": json.loads(py_avro_schema.generate(py_type=ListModel, namespace="list")),
+    "roster-assignments": json.loads(
+        py_avro_schema.generate(py_type=RosterAssignment, namespace="roster_assignment")
+    ),
+    "rosters": json.loads(py_avro_schema.generate(py_type=Roster, namespace="roster")),
+    "students": json.loads(
+        py_avro_schema.generate(py_type=Student, namespace="student")
+    ),
+    "terms": json.loads(py_avro_schema.generate(py_type=Term, namespace="term")),
+    "users": json.loads(py_avro_schema.generate(py_type=User, namespace="user")),
     "reconcile_attendance": json.loads(
-        generate(py_type=ReconcileAttendance, namespace="reconcile_attendance")
+        py_avro_schema.generate(
+            py_type=ReconcileAttendance, namespace="reconcile_attendance"
+        )
     ),
     "reconcile_suspensions": json.loads(
-        generate(py_type=ReconcileSuspensions, namespace="reconcile_suspension")
+        py_avro_schema.generate(
+            py_type=ReconcileSuspensions, namespace="reconcile_suspension"
+        )
     ),
 }

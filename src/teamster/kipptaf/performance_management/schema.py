@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -53,8 +53,8 @@ class OutlierDetection(BaseModel):
     pc2_variance_explained_global: float | None = None
 
 
-ASSET_FIELDS = {
+ASSET_SCHEMA = {
     "outlier_detection": json.loads(
-        generate(py_type=OutlierDetection, namespace="outlier_detection")
+        py_avro_schema.generate(py_type=OutlierDetection, namespace="outlier_detection")
     ),
 }

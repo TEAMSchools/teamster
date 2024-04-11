@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -912,9 +912,34 @@ class NJGPA(BaseModel):
     testadministrator: int | float | None = None
 
 
-ASSET_FIELDS = {
-    "parcc": json.loads(generate(py_type=PARCC, namespace="parcc")),
-    "njsla": json.loads(generate(py_type=NJSLA, namespace="njsla")),
-    "njsla_science": json.loads(generate(py_type=NJSLA, namespace="njsla_science")),
-    "njgpa": json.loads(generate(py_type=NJGPA, namespace="njgpa")),
+"""
+helper classes for backwards compatibility
+"""
+
+
+class parcc_record(PARCC): ...
+
+
+class njsla_record(NJSLA): ...
+
+
+class njsla_science_record(NJSLA): ...
+
+
+class njgpa_record(NJGPA): ...
+
+
+ASSET_SCHEMA = {
+    "parcc": json.loads(
+        py_avro_schema.generate(py_type=parcc_record, namespace="parcc")
+    ),
+    "njsla": json.loads(
+        py_avro_schema.generate(py_type=njsla_record, namespace="njsla")
+    ),
+    "njsla_science": json.loads(
+        py_avro_schema.generate(py_type=njsla_science_record, namespace="njsla_science")
+    ),
+    "njgpa": json.loads(
+        py_avro_schema.generate(py_type=njgpa_record, namespace="njgpa")
+    ),
 }

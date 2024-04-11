@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -29,17 +29,24 @@ class IncomeFormData(BaseModel):
     eligibility_result: int | str | None = None
 
 
+"""
+helper classes for backwards compatibility
+"""
+
+
 class person_data_record(PersonData): ...
 
 
 class income_form_data_record(IncomeFormData): ...
 
 
-ASSET_FIELDS = {
+ASSET_SCHEMA = {
     "person_data": json.loads(
-        generate(py_type=person_data_record, namespace="person_data")
+        py_avro_schema.generate(py_type=person_data_record, namespace="person_data")
     ),
     "income_form_data": json.loads(
-        generate(py_type=income_form_data_record, namespace="income_form_data")
+        py_avro_schema.generate(
+            py_type=income_form_data_record, namespace="income_form_data"
+        )
     ),
 }

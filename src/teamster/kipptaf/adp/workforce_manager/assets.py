@@ -23,7 +23,7 @@ from teamster.core.utils.functions import (
 
 from ... import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import AdpWorkforceManagerResource
-from .schema import ASSET_FIELDS
+from .schema import ASSET_SCHEMA
 
 
 def build_adp_wfm_asset(
@@ -122,7 +122,7 @@ def build_adp_wfm_asset(
         row_count = df.shape[0]
 
         records = df.to_dict(orient="records")
-        schema = ASSET_FIELDS[asset_name]
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(value=(records, schema), metadata={"records": row_count})
 

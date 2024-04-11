@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -165,13 +165,15 @@ class User(DirectoryBaseModel):
     phones: list[Phone | None] | None = None
 
 
-ASSET_FIELDS = {
-    "groups": json.loads(generate(py_type=Group, namespace="group")),
-    "members": json.loads(generate(py_type=Member, namespace="member")),
-    "orgunits": json.loads(generate(py_type=OrgUnits, namespace="orgunits")),
-    "role_assignments": json.loads(
-        generate(py_type=RoleAssignment, namespace="role_assignment")
+ASSET_SCHEMA = {
+    "groups": json.loads(py_avro_schema.generate(py_type=Group, namespace="group")),
+    "members": json.loads(py_avro_schema.generate(py_type=Member, namespace="member")),
+    "orgunits": json.loads(
+        py_avro_schema.generate(py_type=OrgUnits, namespace="orgunits")
     ),
-    "roles": json.loads(generate(py_type=Role, namespace="role")),
-    "users": json.loads(generate(py_type=User, namespace="user")),
+    "role_assignments": json.loads(
+        py_avro_schema.generate(py_type=RoleAssignment, namespace="role_assignment")
+    ),
+    "roles": json.loads(py_avro_schema.generate(py_type=Role, namespace="role")),
+    "users": json.loads(py_avro_schema.generate(py_type=User, namespace="user")),
 }

@@ -9,7 +9,7 @@ from teamster.core.utils.functions import (
 
 from .. import CODE_LOCATION
 from .resources import LdapResource
-from .schema import ASSET_FIELDS
+from .schema import ASSET_SCHEMA
 
 # via http://www.phpldaptools.com/reference/Default-Schema-Attributes
 ARRAY_ATTRIBUTES = [
@@ -95,7 +95,7 @@ def build_ldap_asset(
 
             entries.append({**primitive_items, **array_items})
 
-        schema = ASSET_FIELDS[asset_name]
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(
             value=(entries, schema),

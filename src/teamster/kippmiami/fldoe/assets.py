@@ -9,13 +9,13 @@ from dagster import (
 from teamster.core.sftp.assets import build_sftp_asset
 
 from .. import CODE_LOCATION
-from .schema import ASSET_FIELDS
+from .schema import ASSET_SCHEMA
 
 _all = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "fldoe", a["asset_name"]],
         ssh_resource_key="ssh_couchdrop",
-        avro_schema=ASSET_FIELDS[a["asset_name"]],
+        avro_schema=ASSET_SCHEMA[a["asset_name"]],
         partitions_def=MultiPartitionsDefinition(
             {
                 "school_year_term": StaticPartitionsDefinition(

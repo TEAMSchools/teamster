@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -33,8 +33,18 @@ class GeneralLedger(BaseModel):
     location_id: str | int | float | None = None
 
 
-ASSET_FIELDS = {
+"""
+helper classes for backwards compatibility
+"""
+
+
+class general_ledger_file_record(GeneralLedger): ...
+
+
+ASSET_SCHEMA = {
     "general_ledger_file": json.loads(
-        generate(py_type=GeneralLedger, namespace="general_ledger_file")
+        py_avro_schema.generate(
+            py_type=general_ledger_file_record, namespace="general_ledger_file"
+        )
     ),
 }

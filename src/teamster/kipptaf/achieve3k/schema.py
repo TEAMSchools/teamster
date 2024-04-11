@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -65,6 +65,16 @@ class Student(BaseModel):
     writing_assignments: float | None = None
 
 
-ASSET_FIELDS = {
-    "students": json.loads(generate(py_type=Student, namespace="student")),
+"""
+helper classes for backwards compatibility
+"""
+
+
+class students_record(Student): ...
+
+
+ASSET_SCHEMA = {
+    "students": json.loads(
+        py_avro_schema.generate(py_type=students_record, namespace="student")
+    ),
 }
