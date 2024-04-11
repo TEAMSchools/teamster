@@ -1,44 +1,23 @@
 import random
 
-from dagster import (
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    materialize,
-)
+from dagster import materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.resources import SCHOOLMINT_GROW_RESOURCE
-from teamster.kipptaf.schoolmint.grow.assets import build_schoolmint_grow_asset
-from teamster.staging import LOCAL_TIMEZONE
-
-STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["f"])
+from teamster.kipptaf.schoolmint.grow.assets import _all
 
 
-def _test_asset(asset_name, partition_start_date=None):
-    if partition_start_date is not None:
-        partitions_def = MultiPartitionsDefinition(
-            {
-                "archived": STATIC_PARTITONS_DEF,
-                "last_modified": DailyPartitionsDefinition(
-                    start_date=partition_start_date,
-                    timezone=LOCAL_TIMEZONE.name,
-                    end_offset=1,
-                ),
-            }
-        )
-    else:
-        partitions_def = STATIC_PARTITONS_DEF
+def _test_asset(assets, asset_name, partition_key=None):
+    asset = [a for a in assets if a.key.path[-1] == asset_name][0]
 
-    asset = build_schoolmint_grow_asset(
-        asset_name=asset_name, partitions_def=partitions_def
-    )
+    if partition_key is None:
+        partition_keys = asset.partitions_def.get_partition_keys()
 
-    partition_keys = asset.partitions_def.get_partition_keys()
+        partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
 
     result = materialize(
         assets=[asset],
-        partition_key=partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))],
+        partition_key=partition_key,
         resources={
             "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
             "schoolmint_grow": SCHOOLMINT_GROW_RESOURCE,
@@ -52,63 +31,102 @@ def _test_asset(asset_name, partition_start_date=None):
         .value
         > 0
     )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
-def test_asset_schoolmint_grow_generic_tags():
-    assets = [
-        "generic-tags/assignmentpresets",
-        "generic-tags/courses",
-        "generic-tags/eventtag1",
-        "generic-tags/goaltypes",
-        "generic-tags/grades",
-        "generic-tags/measurementgroups",
-        "generic-tags/meetingtypes",
-        "generic-tags/observationtypes",
-        "generic-tags/rubrictag1",
-        "generic-tags/schooltag1",
-        "generic-tags/tags",
-        "generic-tags/usertag1",
-        "generic-tags/usertypes",
-    ]
+def test_asset_schoolmint_grow_generic_tags_assignmentpresets():
+    _test_asset(
+        assets=_all, asset_name="generic_tags_assignmentpresets", partition_key="f"
+    )
 
-    _test_asset(asset_name=assets[random.randint(a=0, b=(len(assets) - 1))])
+
+def test_asset_schoolmint_grow_generic_tags_courses():
+    _test_asset(assets=_all, asset_name="generic_tags_courses", partition_key="f")
+
+
+def test_asset_schoolmint_grow_generic_tags_eventtag1():
+    _test_asset(assets=_all, asset_name="generic_tags_eventtag1", partition_key="t")
+
+
+def test_asset_schoolmint_grow_generic_tags_goaltypes():
+    _test_asset(assets=_all, asset_name="generic_tags_goaltypes", partition_key="f")
+
+
+def test_asset_schoolmint_grow_generic_tags_grades():
+    _test_asset(assets=_all, asset_name="generic_tags_grades", partition_key="f")
+
+
+def test_asset_schoolmint_grow_generic_tags_measurementgroups():
+    _test_asset(
+        assets=_all, asset_name="generic_tags_measurementgroups", partition_key="f"
+    )
+
+
+def test_asset_schoolmint_grow_generic_tags_meetingtypes():
+    _test_asset(assets=_all, asset_name="generic_tags_meetingtypes", partition_key="f")
+
+
+def test_asset_schoolmint_grow_generic_tags_observationtypes():
+    _test_asset(
+        assets=_all, asset_name="generic_tags_observationtypes", partition_key="f"
+    )
+
+
+def test_asset_schoolmint_grow_generic_tags_rubrictag1():
+    _test_asset(assets=_all, asset_name="generic_tags_rubrictag1", partition_key="f")
+
+
+def test_asset_schoolmint_grow_generic_tags_schooltag1():
+    _test_asset(assets=_all, asset_name="generic_tags_schooltag1", partition_key="f")
+
+
+def test_asset_schoolmint_grow_generic_tags_tags():
+    _test_asset(assets=_all, asset_name="generic_tags_tags", partition_key="f")
+
+
+def test_asset_schoolmint_grow_generic_tags_usertag1():
+    _test_asset(assets=_all, asset_name="generic_tags_usertag1", partition_key="t")
+
+
+def test_asset_schoolmint_grow_generic_tags_usertypes():
+    _test_asset(assets=_all, asset_name="generic_tags_usertypes", partition_key="f")
 
 
 def test_asset_schoolmint_grow_informals():
-    _test_asset(asset_name="informals")
+    _test_asset(assets=_all, asset_name="informals")
 
 
 def test_asset_schoolmint_grow_measurements():
-    _test_asset(asset_name="measurements")
+    _test_asset(assets=_all, asset_name="measurements")
 
 
 def test_asset_schoolmint_grow_meetings():
-    _test_asset(asset_name="meetings")
+    _test_asset(assets=_all, asset_name="meetings")
 
 
 def test_asset_schoolmint_grow_roles():
-    _test_asset(asset_name="roles")
+    _test_asset(assets=_all, asset_name="roles")
 
 
 def test_asset_schoolmint_grow_rubrics():
-    _test_asset(asset_name="rubrics")
+    _test_asset(assets=_all, asset_name="rubrics")
 
 
 def test_asset_schoolmint_grow_schools():
-    _test_asset(asset_name="schools")
+    _test_asset(assets=_all, asset_name="schools")
 
 
 def test_asset_schoolmint_grow_users():
-    _test_asset(asset_name="users")
+    _test_asset(assets=_all, asset_name="users")
 
 
 def test_asset_schoolmint_grow_videos():
-    _test_asset(asset_name="videos")
+    _test_asset(assets=_all, asset_name="videos")
 
 
 def test_asset_schoolmint_grow_observations():
-    _test_asset(asset_name="observations", partition_start_date="2023-07-31")
+    _test_asset(assets=_all, asset_name="observations")
 
 
 def test_asset_schoolmint_grow_assignments():
-    _test_asset(asset_name="assignments", partition_start_date="2023-07-31")
+    _test_asset(assets=_all, asset_name="assignments")
