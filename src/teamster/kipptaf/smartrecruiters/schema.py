@@ -1,6 +1,6 @@
 import json
 
-import py_avro_schema
+from py_avro_schema import generate
 from pydantic import BaseModel
 
 
@@ -113,14 +113,10 @@ class OfferedHired(BaseModel):
     taf_current_or_former_kipp_employee: str | None = None
 
 
-ASSET_SCHEMA = {
-    "applicants": json.loads(
-        py_avro_schema.generate(py_type=Applicant, namespace="applicant")
-    ),
-    "applications": json.loads(
-        py_avro_schema.generate(py_type=Application, namespace="application")
-    ),
+ASSET_FIELDS = {
+    "applicants": json.loads(generate(py_type=Applicant, namespace="applicant")),
+    "applications": json.loads(generate(py_type=Application, namespace="application")),
     "offered_hired": json.loads(
-        py_avro_schema.generate(py_type=OfferedHired, namespace="offered_hired")
+        generate(py_type=OfferedHired, namespace="offered_hired")
     ),
 }

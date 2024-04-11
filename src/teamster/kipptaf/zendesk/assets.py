@@ -4,17 +4,18 @@ import pendulum
 from dagster import (
     AssetExecutionContext,
     MonthlyPartitionsDefinition,
-    Output,
     ResourceParam,
     asset,
 )
-from fastavro import block_reader, parse_schema, writer
+from fastavro import parse_schema, writer
 from pendulum.datetime import DateTime
 from zenpy import Zenpy
 from zenpy.lib.exception import RecordNotFoundException
 
+from teamster.core.utils.functions import get_avro_record_schema
+
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .schema import ASSET_SCHEMA
+from .schema import ASSET_FIELDS
 
 
 @asset(
@@ -32,7 +33,11 @@ def ticket_metrics_archive(
     context: AssetExecutionContext, zendesk: ResourceParam[Zenpy]
 ):
     data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
-    schema = parse_schema(schema=ASSET_SCHEMA["ticket_metrics"])
+    schema = parse_schema(
+        schema=get_avro_record_schema(
+            name="ticket_metrics", fields=ASSET_FIELDS["ticket_metrics"]
+        )
+    )
 
     partition_key: DateTime = pendulum.parse(context.partition_key)  # type: ignore
 
@@ -83,13 +88,7 @@ def ticket_metrics_archive(
 
     fo.close()
 
-    try:
-        with data_filepath.open(mode="rb") as f:
-            num_records = sum(block.num_records for block in block_reader(f))
-    except FileNotFoundError:
-        num_records = 0
-
-    yield Output(value=data_filepath, metadata={"records": num_records})
+    return data_filepath
 
 
 _all = [

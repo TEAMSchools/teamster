@@ -9,12 +9,13 @@ from slugify import slugify
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
+    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import MClassResource
-from .schema import ASSET_SCHEMA
+from .schema import ASSET_FIELDS
 
 
 def build_mclass_asset(name, partitions_def, dyd_payload):
@@ -48,7 +49,9 @@ def build_mclass_asset(name, partitions_def, dyd_payload):
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 
         records = df.to_dict(orient="records")
-        schema = ASSET_SCHEMA[asset_name]
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
 
         yield Output(value=(records, schema), metadata={"records": df.shape[0]})
 

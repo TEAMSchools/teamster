@@ -23,13 +23,11 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # type: ignore
-        .value
-        > 0
-    )
 
 
 def test_asset_ticket_metrics_archive():
-    _test_asset(ticket_metrics_archive)
+    _test_asset(
+        ticket_metrics_archive,
+        partition_key="2017-12-01",
+        # partition_key="2016-12-01",
+    )
