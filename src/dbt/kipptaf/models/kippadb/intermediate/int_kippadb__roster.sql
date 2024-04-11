@@ -1,23 +1,6 @@
 {%- set ref_contact = ref("base_kippadb__contact") -%}
 
 with
-    bgp as (
-        select
-            contact,
-            subject as bgp,
-            row_number() over (partition by contact order by date desc) as rn_bgp,
-        from {{ ref("stg_kippadb__contact_note") }}
-        where
-            subject in (
-                'BGP: 2-year',
-                'BGP: 4-year',
-                'BGP: CTE',
-                'BGP: Workforce',
-                'BGP: Unknown',
-                'BGP: Military'
-            )
-    ),
-
     roster as (
         select
             se.student_number,
@@ -105,12 +88,9 @@ with
                 when c.contact_kipp_ms_graduate and not c.contact_kipp_hs_graduate
                 then 'TAF'
             end as ktc_status,
-
-            coalesce(b.bgp, 'No BGP') as bgp,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
             {{ ref_contact }} as c on se.student_number = c.contact_school_specific_id
-        left join bgp as b on c.contact_id = b.contact and b.rn_bgp = 1
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 
