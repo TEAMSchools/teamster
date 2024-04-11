@@ -2,12 +2,13 @@ from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, a
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
+    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
 from ... import CODE_LOCATION
 from .resources import GoogleFormsResource
-from .schema import ASSET_SCHEMA
+from .schema import ASSET_FIELDS
 
 FORM_IDS = [
     "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",  # staff info
@@ -35,7 +36,7 @@ asset_kwargs = {
 )
 def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.get_form(form_id=context.partition_key)
-    schema = ASSET_SCHEMA["form"]
+    schema = get_avro_record_schema(name="form", fields=ASSET_FIELDS["form"])
 
     yield Output(value=([data], schema), metadata={"record_count": len(data)})
 
@@ -51,7 +52,7 @@ def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
 )
 def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.list_responses(form_id=context.partition_key)
-    schema = ASSET_SCHEMA["responses"]
+    schema = get_avro_record_schema(name="responses", fields=ASSET_FIELDS["responses"])
 
     yield Output(
         value=([data], schema), metadata={"record_count": len(data.get("responses"))}

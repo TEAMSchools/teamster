@@ -28,6 +28,15 @@ def regex_pattern_replace(pattern: str, replacements: dict):
     return pattern
 
 
+def get_avro_record_schema(name: str, fields: list, namespace: str | None = None):
+    return {
+        "type": "record",
+        "name": f"{name.replace('-', '_').replace('/', '_')}_record",
+        "namespace": namespace,
+        "fields": fields,
+    }
+
+
 def parse_partition_key(partition_key, dimension=None):
     try:
         date_formats = iter(
@@ -84,6 +93,46 @@ def get_partition_key_path(partition_key, path):
 def partition_key_to_vars(partition_key):
     path = get_partition_key_path(partition_key=partition_key, path=[])
     return {"partition_path": "/".join(path)}
+
+
+def get_avro_type(value):
+    if isinstance(value, bool):
+        return ["boolean"]
+    elif isinstance(value, int):
+        return ["int", "long"]
+    elif isinstance(value, float):
+        return ["float", "double"]
+    elif isinstance(value, bytes):
+        return ["bytes"]
+    elif isinstance(value, list):
+        return infer_avro_schema_fields(value)
+    elif isinstance(value, dict):
+        return infer_avro_schema_fields([value])
+    elif isinstance(value, str):
+        return ["string"]
+
+
+def infer_avro_schema_fields(list_of_dicts):
+    all_keys = set().union(*(d.keys() for d in list_of_dicts))
+
+    types = {}
+    while all_keys:
+        d = next(iter(list_of_dicts))
+
+        for k in all_keys.copy():
+            v = d.get(k)
+
+            avro_type = get_avro_type(v)
+            if avro_type:
+                types[k] = avro_type
+                all_keys.remove(k)
+
+    fields = []
+    for k, v in types.items():
+        v.insert(0, "null")
+        fields.append({"name": k, "type": v})
+
+    return fields
 
 
 def get_dagster_cloud_instance(dagster_home_path):
