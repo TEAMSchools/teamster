@@ -6,6 +6,7 @@ from dagster import (
 )
 
 from teamster.core.sftp.assets import build_sftp_asset
+from teamster.core.utils.functions import get_avro_record_schema
 
 from ... import CODE_LOCATION
 from .schema import ASSET_FIELDS
@@ -18,7 +19,9 @@ general_ledger_file = build_sftp_asset(
     remote_dir="/teamster-kipptaf/couchdrop/adp/payroll",
     remote_file_regex=r"adp_payroll_(?P<date>\d+)_(?P<group_code>\w+)\.csv",
     ssh_resource_key="ssh_couchdrop",
-    avro_schema=ASSET_FIELDS[asset_name],
+    avro_schema=get_avro_record_schema(
+        name=asset_name, fields=ASSET_FIELDS[asset_name]
+    ),
     partitions_def=MultiPartitionsDefinition(
         {
             "group_code": StaticPartitionsDefinition(["2Z3", "3LE", "47S", "9AM"]),

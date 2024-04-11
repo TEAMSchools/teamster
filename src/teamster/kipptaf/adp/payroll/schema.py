@@ -1,40 +1,35 @@
-import json
-
-from py_avro_schema import generate
-from pydantic import BaseModel
-
-
-class GeneralLedger(BaseModel):
-    credit: float | None = None
-    customer_id: str | None = None
-    date: str | None = None
-    debit: float | None = None
-    description: str | None = None
-    document: str | None = None
-    employee_name: str | None = None
-    file_number: int | None = None
-    gldimdonor_restriction: str | None = None
-    gldimfunction: str | None = None
-    glentry_classid: int | None = None
-    item_id: str | None = None
-    job_title: int | None = None
-    journal: str | None = None
-    line_no: int | None = None
-    memo: str | None = None
-    position_id: str | None = None
-    reference_no: int | None = None
-    sourceentity: str | None = None
-    state: str | None = None
-    vendor_id: str | None = None
-
-    acct_no: str | int | None = None
-    dept_id: int | float | None = None
-    glentry_projectid: int | float | None = None
-    location_id: str | int | float | None = None
-
+GENERAL_LEDGER_FILE_FIELDS = [
+    {"name": "acct_no", "type": ["null", "string", "long"], "default": None},
+    {"name": "credit", "type": ["null", "double"], "default": None},
+    {"name": "customer_id", "type": ["null", "string"], "default": None},
+    {"name": "date", "type": ["null", "string"], "default": None},
+    {"name": "debit", "type": ["null", "double"], "default": None},
+    {"name": "dept_id", "type": ["null", "long", "double"], "default": None},
+    {"name": "description", "type": ["null", "string"], "default": None},
+    {"name": "document", "type": ["null", "string"], "default": None},
+    {"name": "employee_name", "type": ["null", "string"], "default": None},
+    {"name": "file_number", "type": ["null", "long"], "default": None},
+    {"name": "gldimdonor_restriction", "type": ["null", "string"], "default": None},
+    {"name": "gldimfunction", "type": ["null", "string"], "default": None},
+    {"name": "glentry_classid", "type": ["null", "long"], "default": None},
+    {"name": "glentry_projectid", "type": ["null", "long", "double"], "default": None},
+    {"name": "item_id", "type": ["null", "string"], "default": None},
+    {"name": "job_title", "type": ["null", "long"], "default": None},
+    {"name": "journal", "type": ["null", "string"], "default": None},
+    {"name": "line_no", "type": ["null", "long"], "default": None},
+    {"name": "memo", "type": ["null", "string"], "default": None},
+    {"name": "position_id", "type": ["null", "string"], "default": None},
+    {"name": "reference_no", "type": ["null", "long"], "default": None},
+    {"name": "sourceentity", "type": ["null", "string"], "default": None},
+    {"name": "state", "type": ["null", "string"], "default": None},
+    {"name": "vendor_id", "type": ["null", "string"], "default": None},
+    {
+        "name": "location_id",
+        "type": ["null", "string", "long", "double"],
+        "default": None,
+    },
+]
 
 ASSET_FIELDS = {
-    "general_ledger_file": json.loads(
-        generate(py_type=GeneralLedger, namespace="general_ledger_file")
-    ),
+    "general_ledger_file": GENERAL_LEDGER_FILE_FIELDS,
 }
