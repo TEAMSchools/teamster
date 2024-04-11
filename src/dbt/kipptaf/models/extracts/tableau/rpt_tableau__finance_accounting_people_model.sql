@@ -26,16 +26,14 @@ select
     hd.historic_dept as home_department,
     hd.historic_role as job_title,
     hd.historic_salary as annual_salary,
-
     hd.academic_year,
-
     hd.adp_associate_id,
     hd.current_position_id as position_id,
-    hd.current_status as current_status,
+    hd.current_status,
     hd.payroll_group_code as company_code,
     hd.payroll_file_number as file_number,
-    hd.preferred_first_name as preferred_first_name,
-    hd.preferred_last_name as preferred_last_name,
+    hd.preferred_first_name,
+    hd.preferred_last_name,
     hd.legal_first_name,
     hd.legal_last_name,
     hd.race_ethnicity_reporting as primary_race_ethnicity_reporting,
@@ -44,29 +42,28 @@ select
     hd.worker_original_hire_date as original_hire_date,
     hd.worker_rehire_date as rehire_date,
     hd.worker_termination_date as termination_date,
+    hd.overall_score as most_recent_pm_score,
+    hd.overall_tier as most_recent_pm_tier,
 
     ly.business_unit_home_name as last_year_business_unit,
     ly.job_title as last_year_job_title,
+    ly.historic_salary as last_year_salary,
 
     ye.years_at_kipp_total as years_at_kipp_total_current,
+
+    ae.additional_earnings_total as additional_earnings_summed,
+
+    null as original_salary_upon_hire,
+    null as is_currently_certified_nj_only,
+
     ye.years_teaching_at_kipp
     + coalesce(cw.years_teaching_in_njfl, 0)
     + coalesce(cw.years_teaching_outside_njfl, 0) as years_teaching_total_current,
-
-    ae.additional_earnings_total as additional_earnings_summed,
 
     row_number() over (
         partition by cw.employee_number
         order by y.academic_year desc, eh.assignment_status asc
     ) as rn_curr,
-
-    {# TODO: add archival salary data #}
-    ly.historic_salary as last_year_salary,
-    null as original_salary_upon_hire,
-
-    pm.overall_score as most_recent_pm_score,
-    pm.overall_tier as most_recent_pm_tier,
-    null as is_currently_certified_nj_only,
 from {{ ref("int_people__historic_data_as_of_april30_annually") }} as hd
 left join
     {{ ref("int_people__historic_data_as_of_april30_annually") }} as ly
