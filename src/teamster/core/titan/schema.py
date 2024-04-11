@@ -41,9 +41,6 @@ INCOME_FORM_DATA_FIELDS = [
     {"name": "date_signed", "type": ["null", "string"], "default": None},
 ]
 
-IncomeFormData.__name__ = "income_form_data_record"
-PersonData.__name__ = "person_data_record"
-
 ASSET_FIELDS = {
     "person_data": PERSON_DATA_FIELDS,
     "income_form_data": INCOME_FORM_DATA_FIELDS,
