@@ -17,6 +17,7 @@ from slugify import slugify
 from teamster.core.definitions.external_asset import external_assets_from_specs
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
+    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
@@ -32,7 +33,9 @@ asset_name = workbook_asset_def["name"]
 
 asset_key = [*workbook_asset_def["key_prefix"], asset_name]
 
-WORKBOOK_ASSET_SCHEMA = ASSET_FIELDS[asset_name]
+WORKBOOK_ASSET_SCHEMA = get_avro_record_schema(
+    name=asset_name, fields=ASSET_FIELDS[asset_name]
+)
 
 
 @asset(

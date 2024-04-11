@@ -11,6 +11,7 @@ from dagster import (
     Output,
     StaticPartitionsDefinition,
     asset,
+    config_from_files,
 )
 from numpy import nan
 from pandas import read_csv
@@ -18,6 +19,7 @@ from slugify import slugify
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
+    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
@@ -32,6 +34,7 @@ def build_adp_wfm_asset(
     hyperfind,
     symbolic_ids,
     date_partitions_def: DailyPartitionsDefinition | DynamicPartitionsDefinition,
+    partition_start_date=None,
 ) -> AssetsDefinition:
     asset_key = [CODE_LOCATION, "adp_workforce_manager", asset_name]
 
@@ -51,7 +54,7 @@ def build_adp_wfm_asset(
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
-        symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]  # type:ignore
+        symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]
 
         symbolic_period_record = [
             sp
@@ -122,7 +125,9 @@ def build_adp_wfm_asset(
         row_count = df.shape[0]
 
         records = df.to_dict(orient="records")
-        schema = ASSET_FIELDS[asset_name]
+        schema = get_avro_record_schema(
+            name=asset_name, fields=ASSET_FIELDS[asset_name]
+        )
 
         yield Output(value=(records, schema), metadata={"records": row_count})
 
@@ -133,35 +138,29 @@ def build_adp_wfm_asset(
     return _asset
 
 
-accrual_reporting_period_summary = build_adp_wfm_asset(
-    asset_name="accrual_reporting_period_summary",
-    report_name="AccrualReportingPeriodSummary",
-    hyperfind="All Home",
-    symbolic_ids=["Today"],
-    date_partitions_def=DailyPartitionsDefinition(
-        start_date="2023-05-17",
-        timezone=LOCAL_TIMEZONE.name,
-        fmt="%Y-%m-%d",
-        end_offset=1,
-    ),
-)
-
-time_details = build_adp_wfm_asset(
-    asset_name="time_details",
-    report_name="TimeDetails",
-    hyperfind="All Home",
-    symbolic_ids=["Previous_SchedPeriod", "Current_SchedPeriod"],
-    date_partitions_def=DynamicPartitionsDefinition(
-        name=f"{CODE_LOCATION}__adp_workforce_manager__time_details_date"
-    ),
-)
+config_dir = f"src/teamster/{CODE_LOCATION}/adp/workforce_manager/config"
 
 adp_wfm_assets_daily = [
-    accrual_reporting_period_summary,
+    build_adp_wfm_asset(
+        date_partitions_def=DailyPartitionsDefinition(
+            start_date=a["partition_start_date"],
+            timezone=LOCAL_TIMEZONE.name,
+            fmt="%Y-%m-%d",
+            end_offset=1,
+        ),
+        **a,
+    )
+    for a in config_from_files([f"{config_dir}/wfm-assets-daily.yaml"])["assets"]
 ]
 
 adp_wfm_assets_dynamic = [
-    time_details,
+    build_adp_wfm_asset(
+        date_partitions_def=DynamicPartitionsDefinition(
+            name=f"{CODE_LOCATION}__adp_workforce_manager__{a['asset_name']}_date"
+        ),
+        **a,
+    )
+    for a in config_from_files([f"{config_dir}/wfm-assets-dynamic.yaml"])["assets"]
 ]
 
 _all = [
