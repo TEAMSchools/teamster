@@ -1,0 +1,10 @@
+assets:
+  - asset_name: njgpa
+    remote_dir: /teamster-kippcamden/couchdrop/pearson/njgpa
+    remote_file_regex: pc(?P<administration>\w+)(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv
+    partition_keys:
+      fiscal_year:
+        - "23"
+      administration:
+        - spr
+        - fbk

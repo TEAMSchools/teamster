@@ -1,37 +1,33 @@
-import json
+CORE_FIELDS = [
+    {"name": "sis_id", "type": ["null", "string", "long"], "default": None},
+    {"name": "clever_user_id", "type": ["null", "string"], "default": None},
+    {"name": "clever_school_id", "type": ["null", "string"], "default": None},
+    {"name": "school_name", "type": ["null", "string"], "default": None},
+    {"name": "staff_id", "type": ["null", "string", "long"], "default": None},
+    {
+        "name": "date",
+        "type": ["null", "string"],
+        "default": None,
+        "logicalType": "date",
+    },
+]
 
-from py_avro_schema import generate
-from pydantic import BaseModel
+RESOURCE_USAGE_FIELDS = [
+    *CORE_FIELDS,
+    {"name": "resource_type", "type": ["null", "string"], "default": None},
+    {"name": "resource_name", "type": ["null", "string"], "default": None},
+    {"name": "resource_id", "type": ["null", "string"], "default": None},
+    {"name": "num_access", "type": ["null", "long"], "default": None},
+]
 
-
-class CleverCore(BaseModel):
-    clever_school_id: str | None = None
-    clever_user_id: str | None = None
-    date: str | None = None
-    school_name: str | None = None
-
-    sis_id: str | int | None = None
-    staff_id: str | int | None = None
-
-
-class ResourceUsage(CleverCore):
-    num_access: int | None = None
-    resource_id: str | None = None
-    resource_name: str | None = None
-    resource_type: str | None = None
-
-
-class DailyParticipation(CleverCore):
-    active: bool | None = None
-    num_logins: int | None = None
-    num_resources_accessed: int | None = None
-
+DAILY_PARTICIPATION_FIELDS = [
+    *CORE_FIELDS,
+    {"name": "active", "type": ["null", "boolean"], "default": None},
+    {"name": "num_logins", "type": ["null", "long"], "default": None},
+    {"name": "num_resources_accessed", "type": ["null", "long"], "default": None},
+]
 
 ASSET_FIELDS = {
-    "daily_participation": json.loads(
-        generate(py_type=DailyParticipation, namespace="daily_participation")
-    ),
-    "resource_usage": json.loads(
-        generate(py_type=ResourceUsage, namespace="resource_usage")
-    ),
+    "daily_participation": DAILY_PARTICIPATION_FIELDS,
+    "resource_usage": RESOURCE_USAGE_FIELDS,
 }
