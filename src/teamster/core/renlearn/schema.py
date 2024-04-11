@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -410,16 +410,45 @@ class FastStar(FastStarCore):
     Attempts_G3: str | int | None = None
 
 
-ASSET_FIELDS = {
+"""
+helper classes for backwards compatibility
+"""
+
+
+class accelerated_reader_record(AcceleratedReader): ...
+
+
+class fast_star_record(FastStar): ...
+
+
+class star_dashboard_standards_record(StarDashboardStandard): ...
+
+
+class star_record(STAR): ...
+
+
+class star_skill_area_record(StarSkillArea): ...
+
+
+ASSET_SCHEMA = {
     "accelerated_reader": json.loads(
-        generate(py_type=AcceleratedReader, namespace="accelerated_reader")
+        py_avro_schema.generate(
+            py_type=accelerated_reader_record, namespace="accelerated_reader"
+        )
     ),
-    "star": json.loads(generate(py_type=STAR, namespace="star")),
+    "fast_star": json.loads(
+        py_avro_schema.generate(py_type=fast_star_record, namespace="fast_star")
+    ),
     "star_dashboard_standards": json.loads(
-        generate(py_type=StarDashboardStandard, namespace="star_dashboard_standards")
+        py_avro_schema.generate(
+            py_type=star_dashboard_standards_record,
+            namespace="star_dashboard_standards",
+        )
     ),
+    "star": json.loads(py_avro_schema.generate(py_type=star_record, namespace="star")),
     "star_skill_area": json.loads(
-        generate(py_type=StarSkillArea, namespace="star_skill_area")
+        py_avro_schema.generate(
+            py_type=star_skill_area_record, namespace="star_skill_area"
+        )
     ),
-    "fast_star": json.loads(generate(py_type=FastStar, namespace="fast_star")),
 }

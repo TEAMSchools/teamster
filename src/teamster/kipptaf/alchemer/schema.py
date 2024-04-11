@@ -1,5 +1,7 @@
+import json
 from typing import Union
 
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -250,3 +252,32 @@ class Survey(BaseModel):
 
     links: dict[str, str | None] | None = None
     title_ml: dict[str, str | None] | None = None
+
+
+"""
+helper classes for backwards compatibility
+"""
+
+
+class survey_response_record(SurveyResponse): ...
+
+
+SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, namespace="survey"))
+
+SURVEY_CAMPAIGN_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SurveyCampaign, namespace="survey_campaign")
+)
+
+SURVEY_QUESTION_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SurveyQuestion, namespace="survey_question")
+)
+
+SURVEY_RESPONSE_DQ_SCHEMA = json.loads(
+    py_avro_schema.generate(
+        py_type=SurveyResponse, namespace="survey_response_disqualified"
+    )
+)
+
+SURVEY_RESPONSE_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=survey_response_record, namespace="survey_response")
+)

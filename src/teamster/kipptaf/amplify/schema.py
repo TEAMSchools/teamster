@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -130,11 +130,28 @@ class PMStudentSummary(DYDModel):
     score: int | float | None = None
 
 
-ASSET_FIELDS = {
+"""
+helper classes for backwards compatibility
+"""
+
+
+class benchmark_student_summary_record(BenchmarkStudentSummary): ...
+
+
+class pm_student_summary_record(PMStudentSummary): ...
+
+
+ASSET_SCHEMA = {
     "benchmark_student_summary": json.loads(
-        generate(py_type=BenchmarkStudentSummary, namespace="benchmark_student_summary")
+        py_avro_schema.generate(
+            py_type=benchmark_student_summary_record,
+            namespace="benchmark_student_summary",
+        )
     ),
     "pm_student_summary": json.loads(
-        generate(py_type=PMStudentSummary, namespace="pm_student_summary")
+        py_avro_schema.generate(
+            py_type=pm_student_summary_record,
+            namespace="pm_student_summary",
+        )
     ),
 }

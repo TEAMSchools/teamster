@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -241,7 +241,9 @@ class Responses(BaseModel):
     responses: list[Response | None] | None = None
 
 
-ASSET_FIELDS = {
-    "form": json.loads(generate(py_type=Form, namespace="form")),
-    "responses": json.loads(generate(py_type=Responses, namespace="response")),
+ASSET_SCHEMA = {
+    "form": json.loads(py_avro_schema.generate(py_type=Form, namespace="form")),
+    "responses": json.loads(
+        py_avro_schema.generate(py_type=Responses, namespace="response")
+    ),
 }

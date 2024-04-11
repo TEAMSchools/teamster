@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -94,15 +94,19 @@ class EmployeeWorkAssignment(BaseModel):
     work_assignment_effective_start: str | None = None
 
 
-ASSET_FIELDS = {
-    "employees": json.loads(generate(py_type=Employee, namespace="employee")),
+ASSET_SCHEMA = {
+    "employees": json.loads(
+        py_avro_schema.generate(py_type=Employee, namespace="employee")
+    ),
     "employee_manager": json.loads(
-        generate(py_type=EmployeeManager, namespace="employee_manager")
+        py_avro_schema.generate(py_type=EmployeeManager, namespace="employee_manager")
     ),
     "employee_status": json.loads(
-        generate(py_type=EmployeeStatus, namespace="employee_status")
+        py_avro_schema.generate(py_type=EmployeeStatus, namespace="employee_status")
     ),
     "employee_work_assignment": json.loads(
-        generate(py_type=EmployeeWorkAssignment, namespace="employee_work_assignment")
+        py_avro_schema.generate(
+            py_type=EmployeeWorkAssignment, namespace="employee_work_assignment"
+        )
     ),
 }

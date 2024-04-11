@@ -1,10 +1,10 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
-class AdditionalEarning(BaseModel):
+class AdditionalEarnings(BaseModel):
     additional_earnings_code: str | None = None
     check_voucher_number: str | int | None = None
     cost_number_description: str | None = None
@@ -18,14 +18,14 @@ class AdditionalEarning(BaseModel):
     additional_earnings_description: str | None = None
 
 
-class ComprehensiveBenefit(BaseModel):
+class ComprehensiveBenefits(BaseModel):
     position_id: str | None = None
     plan_type: str | None = None
     plan_name: str | None = None
     coverage_level: str | None = None
 
 
-class PensionBenefit(BaseModel):
+class PensionBenefitsEnrollments(BaseModel):
     employee_number: float | None = None
     position_id: str | None = None
     plan_type: str | None = None
@@ -34,16 +34,21 @@ class PensionBenefit(BaseModel):
     effective_date: str | None = None
 
 
-ASSET_FIELDS = {
+ASSET_SCHEMA = {
     "additional_earnings_report": json.loads(
-        generate(py_type=AdditionalEarning, namespace="additional_earnings_report")
+        py_avro_schema.generate(
+            py_type=AdditionalEarnings, namespace="additional_earnings_report"
+        )
     ),
     "comprehensive_benefits_report": json.loads(
-        generate(
-            py_type=ComprehensiveBenefit, namespace="comprehensive_benefits_report"
+        py_avro_schema.generate(
+            py_type=ComprehensiveBenefits, namespace="comprehensive_benefits_report"
         )
     ),
     "pension_and_benefits_enrollments": json.loads(
-        generate(py_type=PensionBenefit, namespace="pension_and_benefits_enrollments")
+        py_avro_schema.generate(
+            py_type=PensionBenefitsEnrollments,
+            namespace="pension_and_benefits_enrollments",
+        )
     ),
 }

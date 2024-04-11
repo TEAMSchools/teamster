@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import Option, generate
+import py_avro_schema
 from pydantic import BaseModel, Field
 
 
@@ -254,11 +254,13 @@ class Group(BaseModel):
     proxyAddresses: list[str | None] | None = None
 
 
-ASSET_FIELDS = {
+ASSET_SCHEMA = {
     "user_person": json.loads(
-        generate(
-            py_type=UserPerson, namespace="user_person", options=Option.USE_FIELD_ALIAS
+        py_avro_schema.generate(
+            py_type=UserPerson,
+            namespace="user_person",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
-    "group": json.loads(generate(py_type=Group, namespace="group")),
+    "group": json.loads(py_avro_schema.generate(py_type=Group, namespace="group")),
 }

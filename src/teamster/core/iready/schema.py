@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -353,19 +353,44 @@ class PersonalizedInstruction(BaseModel):
     user_name: str | None = None
 
 
-ASSET_FIELDS = {
+"""
+helper classes for backwards compatibility
+"""
+
+
+class diagnostic_and_instruction_record(DiagnosticInstruction): ...
+
+
+class diagnostic_results_record(DiagnosticResults): ...
+
+
+class instructional_usage_data_record(InstructionalUsage): ...
+
+
+class personalized_instruction_by_lesson_record(PersonalizedInstruction): ...
+
+
+ASSET_SCHEMA = {
     "diagnostic_and_instruction": json.loads(
-        generate(py_type=DiagnosticInstruction, namespace="diagnostic_and_instruction")
+        py_avro_schema.generate(
+            py_type=diagnostic_and_instruction_record,
+            namespace="diagnostic_and_instruction",
+        )
     ),
     "diagnostic_results": json.loads(
-        generate(py_type=DiagnosticResults, namespace="diagnostic_results")
+        py_avro_schema.generate(
+            py_type=diagnostic_results_record, namespace="diagnostic_results"
+        )
     ),
     "instructional_usage_data": json.loads(
-        generate(py_type=InstructionalUsage, namespace="instructional_usage_data")
+        py_avro_schema.generate(
+            py_type=instructional_usage_data_record,
+            namespace="instructional_usage_data",
+        )
     ),
     "personalized_instruction_by_lesson": json.loads(
-        generate(
-            py_type=PersonalizedInstruction,
+        py_avro_schema.generate(
+            py_type=personalized_instruction_by_lesson_record,
             namespace="personalized_instruction_by_lesson",
         )
     ),

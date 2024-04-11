@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -27,6 +27,16 @@ class Workbook(BaseModel):
     views: list[View | None] | None = None
 
 
-ASSET_FIELDS = {
-    "workbook": json.loads(generate(py_type=Workbook, namespace="workbook")),
+"""
+helper classes for backwards compatibility
+"""
+
+
+class workbook_record(Workbook): ...
+
+
+ASSET_SCHEMA = {
+    "workbook": json.loads(
+        py_avro_schema.generate(py_type=workbook_record, namespace="workbook")
+    ),
 }

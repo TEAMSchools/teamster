@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import generate
+import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -34,12 +34,25 @@ class TimeDetail(BaseModel):
     transaction_start_date_time: str | None = None
 
 
-ASSET_FIELDS = {
+"""
+helper classes for backwards compatibility
+"""
+
+
+class accrual_reporting_period_summary_record(AccrualReportingPeriodSummary): ...
+
+
+class time_details_record(TimeDetail): ...
+
+
+ASSET_SCHEMA = {
     "accrual_reporting_period_summary": json.loads(
-        generate(
-            py_type=AccrualReportingPeriodSummary,
+        py_avro_schema.generate(
+            py_type=accrual_reporting_period_summary_record,
             namespace="accrual_reporting_period_summary",
         )
     ),
-    "time_details": json.loads(generate(py_type=TimeDetail, namespace="time_detail")),
+    "time_details": json.loads(
+        py_avro_schema.generate(py_type=time_details_record, namespace="time_detail")
+    ),
 }

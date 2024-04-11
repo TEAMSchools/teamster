@@ -10,7 +10,7 @@ from dagster import (
 )
 
 from teamster.core.deanslist.resources import DeansListResource
-from teamster.core.deanslist.schema import ASSET_FIELDS
+from teamster.core.deanslist.schema import ASSET_SCHEMA
 from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
@@ -50,7 +50,7 @@ def build_deanslist_static_partition_asset(
         )
 
         data = endpoint_content["data"]
-        schema = ASSET_FIELDS[asset_name]
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(
             value=(data, schema), metadata={"records": endpoint_content["row_count"]}
@@ -116,7 +116,7 @@ def build_deanslist_multi_partition_asset(
         )
 
         data = endpoint_content["data"]
-        schema = ASSET_FIELDS[asset_name]
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(
             value=(data, schema), metadata={"records": endpoint_content["row_count"]}

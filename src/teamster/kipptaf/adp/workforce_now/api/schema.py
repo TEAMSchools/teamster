@@ -1,6 +1,6 @@
 import json
 
-from py_avro_schema import Option, generate
+import py_avro_schema
 from pydantic import BaseModel, Field
 
 
@@ -302,5 +302,9 @@ class Worker(BaseModel):
 
 
 WORKER_SCHEMA = json.loads(
-    generate(py_type=Worker, namespace="worker", options=Option.USE_FIELD_ALIAS)
+    py_avro_schema.generate(
+        py_type=Worker,
+        namespace="worker",
+        options=py_avro_schema.Option.USE_FIELD_ALIAS,
+    )
 )

@@ -14,7 +14,7 @@ from teamster.core.utils.functions import (
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import MClassResource
-from .schema import ASSET_FIELDS
+from .schema import ASSET_SCHEMA
 
 
 def build_mclass_asset(name, partitions_def, dyd_payload):
@@ -48,7 +48,7 @@ def build_mclass_asset(name, partitions_def, dyd_payload):
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
 
         records = df.to_dict(orient="records")
-        schema = ASSET_FIELDS[asset_name]
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(value=(records, schema), metadata={"records": df.shape[0]})
 

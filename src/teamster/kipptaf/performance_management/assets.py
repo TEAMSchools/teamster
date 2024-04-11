@@ -20,7 +20,7 @@ from teamster.core.utils.functions import (
 )
 
 from .. import CODE_LOCATION
-from .schema import ASSET_FIELDS
+from .schema import ASSET_SCHEMA
 
 FIT_TRANSFORM_COLUMNS = [
     "etr1a",
@@ -136,7 +136,7 @@ def get_isolation_forest(df: pandas.DataFrame):
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
     partition_key: MultiPartitionKey = context.partition_key  # type: ignore
-    schema = ASSET_FIELDS["outlier_detection"]
+    schema = ASSET_SCHEMA["outlier_detection"]
 
     # load data from extract view
     with db_bigquery.get_client() as bq:

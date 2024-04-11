@@ -1,4 +1,3 @@
-import json
 import time
 
 import pendulum
@@ -10,7 +9,6 @@ from dagster import (
     ResourceParam,
     asset,
 )
-from py_avro_schema import generate
 from requests.exceptions import HTTPError
 
 from teamster.core.utils.functions import (
@@ -19,7 +17,13 @@ from teamster.core.utils.functions import (
 )
 
 from .. import CODE_LOCATION
-from .schema import Survey, SurveyCampaign, SurveyQuestion, SurveyResponse
+from .schema import (
+    SURVEY_CAMPAIGN_SCHEMA,
+    SURVEY_QUESTION_SCHEMA,
+    SURVEY_RESPONSE_DQ_SCHEMA,
+    SURVEY_RESPONSE_SCHEMA,
+    SURVEY_SCHEMA,
+)
 
 key_prefix = [CODE_LOCATION, "alchemer"]
 asset_kwargs = {
@@ -41,12 +45,11 @@ def survey(context: OpExecutionContext, alchemer: ResourceParam[AlchemerSession]
     survey = alchemer.survey.get(id=context.partition_key)
 
     data = [survey.data]
-    schema = json.loads(generate(py_type=Survey, namespace="survey"))
 
-    yield Output(value=(data, schema), metadata={"record_count": 1})
+    yield Output(value=(data, SURVEY_SCHEMA), metadata={"record_count": 1})
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=SURVEY_SCHEMA
     )
 
 
@@ -63,12 +66,12 @@ def survey_question(
 
     data = survey.question.list(params={"resultsperpage": 500})
 
-    schema = json.loads(generate(py_type=SurveyQuestion, namespace="survey_question"))
-
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(
+        value=(data, SURVEY_QUESTION_SCHEMA), metadata={"record_count": len(data)}
+    )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=SURVEY_QUESTION_SCHEMA
     )
 
 
@@ -87,12 +90,13 @@ def survey_campaign(
     survey = alchemer.survey.get(id=context.partition_key)
 
     data = survey.campaign.list(params={"resultsperpage": 500})
-    schema = json.loads(generate(py_type=SurveyCampaign, namespace="survey_campaign"))
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(
+        value=(data, SURVEY_CAMPAIGN_SCHEMA), metadata={"record_count": len(data)}
+    )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=SURVEY_CAMPAIGN_SCHEMA
     )
 
 
@@ -141,12 +145,12 @@ def survey_response(
         # resultsperpage can produce a 500 error
         data = survey_response_obj.list()
 
-    schema = json.loads(generate(py_type=SurveyResponse, namespace="survey_response"))
-
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(
+        value=(data, SURVEY_RESPONSE_SCHEMA), metadata={"record_count": len(data)}
+    )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=SURVEY_RESPONSE_SCHEMA
     )
 
 
@@ -182,14 +186,12 @@ def survey_response_disqualified(
         # resultsperpage can produce a 500 error
         data = survey_response_obj.list()
 
-    schema = json.loads(
-        generate(py_type=SurveyResponse, namespace="survey_response_disqualified")
+    yield Output(
+        value=(data, SURVEY_RESPONSE_DQ_SCHEMA), metadata={"record_count": len(data)}
     )
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
-
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=SURVEY_RESPONSE_DQ_SCHEMA
     )
 
 

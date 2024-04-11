@@ -6,7 +6,7 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.renlearn.schema import ASSET_FIELDS
+from teamster.core.renlearn.schema import ASSET_SCHEMA
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
@@ -16,7 +16,7 @@ _all = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "renlearn", a["asset_name"]],
         ssh_resource_key="ssh_renlearn",
-        avro_schema=ASSET_FIELDS[a["asset_name"]],
+        avro_schema=ASSET_SCHEMA[a["asset_name"]],
         slugify_cols=False,
         partitions_def=MultiPartitionsDefinition(
             {
