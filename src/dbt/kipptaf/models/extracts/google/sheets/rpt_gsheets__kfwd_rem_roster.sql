@@ -104,6 +104,10 @@ select  -- noqa: ST06
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
+
+    r.contact_actual_college_graduation_date,
+    ei.ba_status,
+    ei.aa_status,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
