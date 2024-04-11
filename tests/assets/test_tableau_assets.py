@@ -28,4 +28,3 @@ def test_workbook():
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""

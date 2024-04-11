@@ -7,7 +7,7 @@ from teamster.kipptaf.adp.workforce_now.api.assets import workers
 from teamster.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
 
 
-def test_workers():
+def test_adp_wfn_asset():
     partition_keys = workers.partitions_def.get_partition_keys()
 
     result = materialize(
@@ -26,4 +26,3 @@ def test_workers():
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""

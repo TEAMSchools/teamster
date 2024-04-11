@@ -20,7 +20,7 @@ from teamster.core.utils.functions import (
 
 from .. import CODE_LOCATION
 from .resources import SmartRecruitersResource
-from .schema import ASSET_SCHEMA
+from .schema import ASSET_FIELDS
 
 
 def build_smartrecruiters_report_asset(
@@ -82,7 +82,7 @@ def build_smartrecruiters_report_asset(
         # context.log.debug(df.dtypes)
 
         records = df.to_dict(orient="records")
-        schema = ASSET_SCHEMA[asset_name]
+        schema = ASSET_FIELDS[asset_name]
 
         yield Output(value=(records, schema), metadata={"records": df.shape[0]})
 

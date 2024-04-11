@@ -14,6 +14,7 @@ from dagster_gcp import GCSResource
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.core.utils.functions import get_avro_record_schema
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
@@ -37,7 +38,12 @@ def build_test_asset_avro(
         ),
     )
     def _asset():
-        yield Output(value=(output_data, output_schema_fields))
+        yield Output(
+            value=(
+                output_data,
+                get_avro_record_schema(name="test", fields=output_schema_fields),
+            )
+        )
 
     return _asset
 
@@ -70,8 +76,8 @@ def _test_asset_handle_output_path(
     ][0]
 
     assert (
-        handled_output_event.event_specific_data.metadata["path"].value  # type: ignore
-    ) == expected_path
+        handled_output_event.event_specific_data.metadata["path"].value == expected_path
+    )
 
 
 def test_avro_handle_asset():
