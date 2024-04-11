@@ -29,6 +29,9 @@ class IncomeFormData(BaseModel):
     eligibility_result: int | str | None = None
 
 
+IncomeFormData.__name__ = "income_form_data_record"
+PersonData.__name__ = "person_data_record"
+
 ASSET_FIELDS = {
     "person_data": json.loads(generate(py_type=PersonData, namespace="person_data")),
     "income_form_data": json.loads(
