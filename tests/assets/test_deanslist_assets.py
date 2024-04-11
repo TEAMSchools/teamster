@@ -1,98 +1,12 @@
 import random
 
-from dagster import (
-    MonthlyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    materialize,
-)
+from dagster import materialize
 
-from teamster.core.deanslist.assets import (
-    build_deanslist_multi_partition_asset,
-    build_deanslist_static_partition_asset,
-)
 from teamster.core.resources import DEANSLIST_RESOURCE, get_io_manager_gcs_avro
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.staging import LOCAL_TIMEZONE
-
-STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(
-    [
-        "120",
-        "121",
-        "122",
-        "123",
-        "124",
-        "125",
-        "126",
-        "127",
-        "128",
-        "129",
-        "130",
-        "378",
-        "380",
-        "472",
-        "473",
-        "522",
-        "523",
-        "525",
-        "652",
-    ]
-)
 
 
-def _test_asset(
-    partition_type,
-    asset_name,
-    api_version,
-    params: dict | None = None,
-    partition_key: str | None = None,
-):
-    if params is None:
-        params = {}
-
-    if partition_type == "monthly":
-        asset = build_deanslist_multi_partition_asset(
-            code_location="staging",
-            asset_name=asset_name,
-            partitions_def=MultiPartitionsDefinition(
-                partitions_defs={
-                    "date": MonthlyPartitionsDefinition(
-                        start_date="2016-07-01",
-                        timezone=LOCAL_TIMEZONE.name,
-                        end_offset=1,
-                    ),
-                    "school": STATIC_PARTITIONS_DEF,
-                }
-            ),
-            api_version=api_version,
-            params=params,
-        )
-    elif partition_type == "fiscal":
-        asset = build_deanslist_multi_partition_asset(
-            code_location="staging",
-            asset_name=asset_name,
-            partitions_def=MultiPartitionsDefinition(
-                partitions_defs={
-                    "date": FiscalYearPartitionsDefinition(
-                        start_date="2016-07-01",
-                        start_month=7,
-                        timezone=LOCAL_TIMEZONE.name,
-                        end_offset=1,
-                    ),
-                    "school": STATIC_PARTITIONS_DEF,
-                }
-            ),
-            api_version=api_version,
-            params=params,
-        )
-    else:
-        asset = build_deanslist_static_partition_asset(
-            code_location="staging",
-            asset_name=asset_name,
-            partitions_def=STATIC_PARTITIONS_DEF,
-            api_version=api_version,
-            params=params,
-        )
+def _test_asset(assets, asset_name, partition_key: str | None = None):
+    asset = [a for a in assets if a.key.path[-1] == asset_name][0]
 
     if partition_key is None:
         partition_keys = asset.partitions_def.get_partition_keys()
@@ -109,106 +23,208 @@ def _test_asset(
     )
 
     assert result.success
-
-    for asset_materialization_event in result.get_asset_materialization_events():
-        event_specific_data = asset_materialization_event.event_specific_data
-        materialization = event_specific_data.materialization  # type: ignore
-        records = materialization.metadata["records"]
-        records_value: int = records.value  # type: ignore
-
-        assert records_value > 0
-
-
-def test_asset_deanslist_lists():
-    _test_asset(partition_type="static", asset_name="lists", api_version="v1")
-
-
-def test_asset_deanslist_terms():
-    _test_asset(partition_type="static", asset_name="terms", api_version="v1")
-
-
-def test_asset_deanslist_roster_assignments():
-    _test_asset(
-        partition_type="static", asset_name="roster-assignments", api_version="beta"
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["records"]  # type: ignore
+        .value
+        > 0
     )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
-def test_asset_deanslist_users():
-    _test_asset(
-        partition_type="static",
-        asset_name="users",
-        api_version="v1",
-        params={"IncludeInactive": "Y"},
-    )
+def test_asset_deanslist_lists_kippnewark():
+    from teamster.kippnewark.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="lists")
 
 
-def test_asset_deanslist_rosters():
-    _test_asset(
-        partition_type="static",
-        asset_name="rosters",
-        api_version="v1",
-        params={"show_inactive": "Y"},
-    )
+def test_asset_deanslist_terms_kippnewark():
+    from teamster.kippnewark.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="terms")
 
 
-def test_asset_deanslist_behavior():
-    _test_asset(
-        partition_type="monthly",
-        asset_name="behavior",
-        api_version="v1",
-        params={
-            "StartDate": "{start_date}",
-            "EndDate": "{end_date}",
-            "IncludeDeleted": "Y",
-        },
-    )
+def test_asset_deanslist_roster_assignments_kippnewark():
+    from teamster.kippnewark.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="roster_assignments")
 
 
-def test_asset_deanslist_homework():
-    _test_asset(
-        partition_type="monthly",
-        asset_name="homework",
-        api_version="v1",
-        params={
-            "StartDate": "{start_date}",
-            "EndDate": "{end_date}",
-            "IncludeDeleted": "Y",
-        },
-    )
+def test_asset_deanslist_users_kippnewark():
+    from teamster.kippnewark.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="users")
 
 
-def test_asset_deanslist_incidents():
-    _test_asset(
-        partition_type="monthly",
-        asset_name="incidents",
-        api_version="v1",
-        params={"IncludeDeleted": "Y", "cf": "Y"},
-        partition_key="2024-02-01|473",
-    )
+def test_asset_deanslist_rosters_kippnewark():
+    from teamster.kippnewark.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="rosters")
 
 
-def test_asset_deanslist_comm_log():
-    _test_asset(
-        partition_type="fiscal",
-        asset_name="comm-log",
-        api_version="v1",
-        params={"IncludeDeleted": "Y", "IncludePrevEnrollments": "Y"},
-    )
+def test_asset_deanslist_students_kippnewark():
+    from teamster.kippnewark.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="students")
 
 
-def test_asset_deanslist_followups():
-    _test_asset(partition_type="fiscal", asset_name="followups", api_version="v1")
+def test_asset_deanslist_behavior_kippnewark():
+    from teamster.kippnewark.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="behavior")
 
 
-def test_asset_deanslist_students():
-    _test_asset(
-        partition_type="static",
-        asset_name="students",
-        api_version="v1",
-        params={
-            "IncludeCustomFields": "Y",
-            "IncludeUnenrolled": "Y",
-            "IncludeParents": "Y",
-        },
-        partition_key="473",
-    )
+def test_asset_deanslist_homework_kippnewark():
+    from teamster.kippnewark.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="homework")
+
+
+def test_asset_deanslist_incidents_kippnewark():
+    from teamster.kippnewark.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="incidents")
+
+
+def test_asset_deanslist_comm_log_kippnewark():
+    from teamster.kippnewark.deanslist.assets import multi_partition_fiscal_assets
+
+    _test_asset(assets=multi_partition_fiscal_assets, asset_name="comm_log")
+
+
+def test_asset_deanslist_followups_kippnewark():
+    from teamster.kippnewark.deanslist.assets import multi_partition_fiscal_assets
+
+    _test_asset(assets=multi_partition_fiscal_assets, asset_name="followups")
+
+
+def test_asset_deanslist_lists_kippcamden():
+    from teamster.kippnewark.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="lists")
+
+
+def test_asset_deanslist_terms_kippcamden():
+    from teamster.kippcamden.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="terms")
+
+
+def test_asset_deanslist_roster_assignments_kippcamden():
+    from teamster.kippcamden.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="roster_assignments")
+
+
+def test_asset_deanslist_users_kippcamden():
+    from teamster.kippcamden.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="users")
+
+
+def test_asset_deanslist_rosters_kippcamden():
+    from teamster.kippcamden.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="rosters")
+
+
+def test_asset_deanslist_students_kippcamden():
+    from teamster.kippcamden.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="students")
+
+
+def test_asset_deanslist_behavior_kippcamden():
+    from teamster.kippcamden.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="behavior")
+
+
+def test_asset_deanslist_homework_kippcamden():
+    from teamster.kippcamden.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="homework")
+
+
+def test_asset_deanslist_incidents_kippcamden():
+    from teamster.kippcamden.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="incidents")
+
+
+def test_asset_deanslist_comm_log_kippcamden():
+    from teamster.kippcamden.deanslist.assets import multi_partition_fiscal_assets
+
+    _test_asset(assets=multi_partition_fiscal_assets, asset_name="comm_log")
+
+
+def test_asset_deanslist_followups_kippcamden():
+    from teamster.kippcamden.deanslist.assets import multi_partition_fiscal_assets
+
+    _test_asset(assets=multi_partition_fiscal_assets, asset_name="followups")
+
+
+def test_asset_deanslist_lists_kippmiami():
+    from teamster.kippmiami.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="lists")
+
+
+def test_asset_deanslist_terms_kippmiami():
+    from teamster.kippmiami.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="terms")
+
+
+def test_asset_deanslist_roster_assignments_kippmiami():
+    from teamster.kippmiami.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="roster_assignments")
+
+
+def test_asset_deanslist_users_kippmiami():
+    from teamster.kippmiami.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="users")
+
+
+def test_asset_deanslist_rosters_kippmiami():
+    from teamster.kippmiami.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="rosters")
+
+
+def test_asset_deanslist_students_kippmiami():
+    from teamster.kippmiami.deanslist.assets import static_partition_assets
+
+    _test_asset(assets=static_partition_assets, asset_name="students")
+
+
+def test_asset_deanslist_behavior_kippmiami():
+    from teamster.kippmiami.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="behavior")
+
+
+def test_asset_deanslist_homework_kippmiami():
+    from teamster.kippmiami.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="homework")
+
+
+def test_asset_deanslist_incidents_kippmiami():
+    from teamster.kippmiami.deanslist.assets import multi_partition_monthly_assets
+
+    _test_asset(assets=multi_partition_monthly_assets, asset_name="incidents")
+
+
+def test_asset_deanslist_comm_log_kippmiami():
+    from teamster.kippmiami.deanslist.assets import multi_partition_fiscal_assets
+
+    _test_asset(assets=multi_partition_fiscal_assets, asset_name="comm_log")
+
+
+def test_asset_deanslist_followups_kippmiami():
+    from teamster.kippmiami.deanslist.assets import multi_partition_fiscal_assets
+
+    _test_asset(assets=multi_partition_fiscal_assets, asset_name="followups")
