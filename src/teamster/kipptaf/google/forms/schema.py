@@ -1,872 +1,249 @@
-from teamster.core.utils.functions import get_avro_record_schema
+import json
 
-INFO_FIELDS = [
-    {"name": "title", "type": ["null", "string"], "default": None},
-    {"name": "documentTitle", "type": ["null", "string"], "default": None},
-    {"name": "description", "type": ["null", "string"], "default": None},
-]
-
-QUIZ_SETTING_FIELDS = [
-    {"name": "isQuiz", "type": ["null", "boolean"], "default": None},
-]
-
-FORM_SETTING_FIELDS = [
-    {
-        "name": "quizSettings",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="quiz_settings",
-                fields=QUIZ_SETTING_FIELDS,
-                namespace="form_setting.quiz_settings",
-            ),
-        ],
-        "default": None,
-    }
-]
-
-MEDIA_PROPERTY_FIELDS = [
-    {"name": "width", "type": ["null", "long"], "default": None},
-    {
-        "name": "alignment",
-        "type": [
-            "null",
-            {
-                "name": "alignment_enum",
-                "type": "enum",
-                "symbols": ["ALIGNMENT_UNSPECIFIED", "LEFT", "RIGHT", "CENTER"],
-            },
-        ],
-        "default": None,
-    },
-]
+import py_avro_schema
+from pydantic import BaseModel
 
 
-def get_image_fields(namespace):
-    return [
-        {"name": "contentUri", "type": ["null", "string"], "default": None},
-        {"name": "altText", "type": ["null", "string"], "default": None},
-        {"name": "sourceUri", "type": ["null", "string"], "default": None},
-        {
-            "name": "properties",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="media_properties",
-                    fields=MEDIA_PROPERTY_FIELDS,
-                    namespace=namespace,
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class CorrectAnswer(BaseModel):
+    value: str | None = None
 
 
-def get_option_fields(namespace):
-    return [
-        {"name": "value", "type": ["null", "string"], "default": None},
-        {"name": "isOther", "type": ["null", "boolean"], "default": None},
-        {"name": "goToSectionId", "type": ["null", "string"], "default": None},
-        {
-            "name": "goToAction",
-            "type": [
-                "null",
-                {
-                    "name": "go_to_action_enum",
-                    "type": "enum",
-                    "symbols": [
-                        "GO_TO_ACTION_UNSPECIFIED",
-                        "NEXT_SECTION",
-                        "RESTART_FORM",
-                        "SUBMIT_FORM",
-                    ],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "image",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="image",
-                    fields=get_image_fields(namespace=f"{namespace}.option.image"),
-                    namespace=f"{namespace}.option.image",
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class CorrectAnswers(BaseModel):
+    answers: list[CorrectAnswer | None] | None = None
 
 
-def get_choice_question_fields(namespace):
-    return [
-        {"name": "shuffle", "type": ["null", "boolean"], "default": None},
-        {
-            "name": "type",
-            "type": [
-                "null",
-                {
-                    "name": "choice_question_type_enum",
-                    "type": "enum",
-                    "symbols": [
-                        "CHOICE_TYPE_UNSPECIFIED",
-                        "RADIO",
-                        "CHECKBOX",
-                        "DROP_DOWN",
-                    ],
-                },
-            ],
-            "default": None,
-        },
-        {
-            "name": "options",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="option",
-                        fields=get_option_fields(
-                            f"{namespace}.choice_question.options"
-                        ),
-                        namespace=f"{namespace}.choice_question.options",
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-    ]
+class TextLink(BaseModel):
+    uri: str | None = None
+    displayText: str | None = None
 
 
-TEXT_QUESTION_FIELDS = [
-    {"name": "paragraph", "type": ["null", "boolean"], "default": None},
-]
-
-SCALE_QUESTION_FIELDS = [
-    {"name": "low", "type": ["null", "long"], "default": None},
-    {"name": "high", "type": ["null", "long"], "default": None},
-    {"name": "lowLabel", "type": ["null", "string"], "default": None},
-    {"name": "highLabel", "type": ["null", "string"], "default": None},
-]
-
-DATE_QUESTION_FIELDS = [
-    {"name": "includeTime", "type": ["null", "boolean"], "default": None},
-    {"name": "includeYear", "type": ["null", "boolean"], "default": None},
-]
-
-TIME_QUESTION_FIELDS = [
-    {"name": "duration", "type": ["null", "boolean"], "default": None},
-]
-
-FILE_UPLOAD_QUESTION_FIELDS = [
-    {"name": "folderId", "type": ["null", "string"], "default": None},
-    {"name": "maxFiles", "type": ["null", "long"], "default": None},
-    {"name": "maxFileSize", "type": ["null", "string"], "default": None},
-    {
-        "name": "types",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": {
-                    "name": "file_upload_question_type_enum",
-                    "type": "enum",
-                    "symbols": [
-                        "FILE_TYPE_UNSPECIFIED",
-                        "ANY",
-                        "DOCUMENT",
-                        "PRESENTATION",
-                        "SPREADSHEET",
-                        "DRAWING",
-                        "PDF",
-                        "IMAGE",
-                        "VIDEO",
-                        "AUDIO",
-                    ],
-                },
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
-
-ROW_QUESTION_FIELDS = [
-    {"name": "title", "type": ["null", "string"], "default": None},
-]
-
-TEXT_LINK_FIELDS = [
-    {"name": "uri", "type": ["null", "string"], "default": None},
-    {"name": "displayText", "type": ["null", "string"], "default": None},
-]
-
-VIDEO_LINK_FIELDS = [
-    {"name": "displayText", "type": ["null", "string"], "default": None},
-    {"name": "youtubeUri", "type": ["null", "string"], "default": None},
-]
+class VideoLink(BaseModel):
+    displayText: str | None = None
+    youtubeUri: str | None = None
 
 
-def get_extra_material_fields(namespace):
-    return [
-        {
-            "name": "link",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="text_link", fields=TEXT_LINK_FIELDS, namespace=namespace
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "video",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="video_link", fields=VIDEO_LINK_FIELDS, namespace=namespace
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class ExtraMaterial(BaseModel):
+    link: TextLink | None = None
+    video: VideoLink | None = None
 
 
-def get_feedback_fields(namespace):
-    return [
-        {"name": "text", "type": ["null", "string"], "default": None},
-        {
-            "name": "material",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="extra_material",
-                        fields=get_extra_material_fields(namespace=namespace),
-                        namespace=namespace,
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        },
-    ]
+class Feedback(BaseModel):
+    text: str | None = None
+    material: list[ExtraMaterial | None] | None = None
 
 
-ANSWER_FIELDS = [
-    {"name": "value", "type": ["null", "string"], "default": None},
-]
+class QuizSettings(BaseModel):
+    isQuiz: bool | None = None
 
 
-def get_correct_answers_fields(namespace):
-    return [
-        {
-            "name": "answers",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": get_avro_record_schema(
-                        name="answer",
-                        fields=ANSWER_FIELDS,
-                        namespace=f"{namespace}.correct_answers.answers",
-                    ),
-                    "default": [],
-                },
-            ],
-            "default": None,
-        }
-    ]
+class MediaProperties(BaseModel):
+    alignment: str | None = None
+    width: int | None = None
 
 
-def get_grading_fields(namespace):
-    return [
-        {"name": "pointValue", "type": ["null", "long"], "default": None},
-        {
-            "name": "correctAnswers",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="correct_answers",
-                    fields=get_correct_answers_fields(
-                        namespace=f"{namespace}.grading.correct_answers"
-                    ),
-                    namespace=f"{namespace}.grading.correct_answers",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "whenRight",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="when_right",
-                    fields=get_feedback_fields(
-                        namespace=f"{namespace}.grading.when_right"
-                    ),
-                    namespace=f"{namespace}.grading.when_right",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "whenWrong",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="when_wrong",
-                    fields=get_feedback_fields(
-                        namespace=f"{namespace}.grading.when_wrong"
-                    ),
-                    namespace=f"{namespace}.grading.when_wrong",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "generalFeedback",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="general_feedback",
-                    fields=get_feedback_fields(
-                        namespace=f"{namespace}.grading.general_feedback"
-                    ),
-                    namespace=f"{namespace}.grading.general_feedback",
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class Video(BaseModel):
+    youtubeUri: str | None = None
+    properties: MediaProperties | None = None
 
 
-def get_question_fields(namespace):
-    return [
-        {"name": "questionId", "type": ["null", "string"], "default": None},
-        {"name": "required", "type": ["null", "boolean"], "default": None},
-        {
-            "name": "grading",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="grading",
-                    fields=get_grading_fields(
-                        namespace=f"{namespace}.question.grading"
-                    ),
-                    namespace=f"{namespace}.question.grading",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "choiceQuestion",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="choice_question",
-                    fields=get_choice_question_fields(
-                        namespace=f"{namespace}.question.choice_question"
-                    ),
-                    namespace=f"{namespace}.question.choice_question",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "textQuestion",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="text_question",
-                    fields=TEXT_QUESTION_FIELDS,
-                    namespace=f"{namespace}.question.text_question",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "scaleQuestion",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="scale_question",
-                    fields=SCALE_QUESTION_FIELDS,
-                    namespace=f"{namespace}.question.scale_question",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "dateQuestion",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="date_question",
-                    fields=DATE_QUESTION_FIELDS,
-                    namespace=f"{namespace}.question.date_question",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "timeQuestion",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="time_question",
-                    fields=TIME_QUESTION_FIELDS,
-                    namespace=f"{namespace}.question.time_question",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "fileUploadQuestion",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="file_upload_question",
-                    fields=FILE_UPLOAD_QUESTION_FIELDS,
-                    namespace=f"{namespace}.question.file_upload_question",
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "rowQuestion",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="row_question",
-                    fields=ROW_QUESTION_FIELDS,
-                    namespace=f"{namespace}.question.row_question",
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class Image(BaseModel):
+    contentUri: str | None = None
+    altText: str | None = None
+    sourceUri: str | None = None
+    properties: MediaProperties | None = None
 
 
-QUESTION_ITEM_FIELDS = [
-    {
-        "name": "question",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="row_question",
-                fields=get_question_fields(namespace="question_item.question"),
-                namespace="question_item.question",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "image",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="image",
-                fields=get_image_fields(namespace="question_item.image"),
-                namespace="question_item.image",
-            ),
-        ],
-        "default": None,
-    },
-]
+class Option(BaseModel):
+    value: str | None = None
+    isOther: bool | None = None
+    goToAction: str | None = None
+    goToSectionId: str | None = None
+    image: Image | None = None
 
-GRID_FIELDS = [
-    {"name": "shuffleQuestions", "type": ["null", "boolean"], "default": None},
-    {
-        "name": "columns",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="choice_question",
-                fields=get_choice_question_fields(namespace="grid.columns"),
-                namespace="grid.columns",
-            ),
-        ],
-        "default": None,
-    },
-]
 
-QUESTION_GROUP_ITEM_FIELDS = [
-    {
-        "name": "image",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="image",
-                fields=get_image_fields(namespace="question_group_item.image"),
-                namespace="question_group_item.image",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "grid",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="grid", fields=GRID_FIELDS, namespace="question_group_item.grid"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "questions",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="question",
-                    fields=get_question_fields(
-                        namespace="question_group_item.questions"
-                    ),
-                    namespace="question_group_item.questions",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
+class Columns(BaseModel):
+    type: str | None = None
+    options: list[Option | None] | None = None
 
-IMAGE_ITEM_FIELDS = [
-    {
-        "name": "image",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="image",
-                fields=get_image_fields(namespace="image_item.image"),
-                namespace="image_item.image",
-            ),
-        ],
-        "default": None,
-    }
-]
 
-VIDEO_FIELDS = [
-    {"name": "youtubeUri", "type": ["null", "string"], "default": None},
-    {
-        "name": "properties",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="media_properties",
-                fields=MEDIA_PROPERTY_FIELDS,
-                namespace="video.properties",
-            ),
-        ],
-        "default": None,
-    },
-]
+class Grid(BaseModel):
+    columns: Columns | None = None
 
-VIDEO_ITEM_FIELDS = [
-    {"name": "caption", "type": ["null", "string"], "default": None},
-    {
-        "name": "video",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="video", fields=VIDEO_FIELDS, namespace="video_item.video"
-            ),
-        ],
-        "default": None,
-    },
-]
 
-PAGE_BREAK_ITEM_FIELDS = []
+class ChoiceQuestion(BaseModel):
+    type: str | None = None
+    shuffle: bool | None = None
 
-TEXT_ITEM_FIELDS = []
+    options: list[Option | None] | None = None
 
-ITEM_FIELDS = [
-    {"name": "itemId", "type": ["null", "string"], "default": None},
-    {"name": "title", "type": ["null", "string"], "default": None},
-    {"name": "description", "type": ["null", "string"], "default": None},
-    {
-        "name": "questionItem",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="question_item",
-                fields=QUESTION_ITEM_FIELDS,
-                namespace="item.question_item",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "questionGroupItem",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="question_group_item",
-                fields=QUESTION_GROUP_ITEM_FIELDS,
-                namespace="item.question_group_item",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "pageBreakItem",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="page_break_item",
-                fields=PAGE_BREAK_ITEM_FIELDS,
-                namespace="item.page_break_item",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "textItem",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="text_item",
-                fields=TEXT_ITEM_FIELDS,
-                namespace="item.text_item",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "imageItem",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="image_item",
-                fields=IMAGE_ITEM_FIELDS,
-                namespace="item.image_item",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "videoItem",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="video_item",
-                fields=VIDEO_ITEM_FIELDS,
-                namespace="item.video_item",
-            ),
-        ],
-        "default": None,
-    },
-]
 
-FORM_FIELDS = [
-    {"name": "formId", "type": ["null", "string"], "default": None},
-    {"name": "revisionId", "type": ["null", "string"], "default": None},
-    {"name": "responderUri", "type": ["null", "string"], "default": None},
-    {"name": "linkedSheetId", "type": ["null", "string"], "default": None},
-    {
-        "name": "info",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="info", fields=INFO_FIELDS, namespace="form.info"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "settings",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="settings", fields=FORM_SETTING_FIELDS, namespace="form.settings"
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "items",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="item", fields=ITEM_FIELDS, namespace="form.items"
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
+class Grading(BaseModel):
+    pointValue: int | None = None
+    correctAnswers: CorrectAnswers | None = None
+    whenRight: Feedback | None = None
+    whenWrong: Feedback | None = None
+    generalFeedback: Feedback | None = None
 
-GRADE_FIELDS = [
-    {"name": "score", "type": ["null", "double"], "default": None},
-    {"name": "correct", "type": ["null", "boolean"], "default": None},
-    {
-        "name": "feedback",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="feedback",
-                fields=get_feedback_fields(
-                    namespace="response.responses.answers.grade.feedback"
-                ),
-                namespace="response.responses.answers.grade.feedback",
-            ),
-        ],
-        "default": None,
-    },
-]
 
-TEXT_ANSWER_FIELDS = [
-    {"name": "value", "type": ["null", "string"], "default": None},
-]
+class DateQuestion(BaseModel):
+    includeTime: bool | None = None
+    includeYear: bool | None = None
 
-TEXT_ANSWERS_FIELDS = [
-    {
-        "name": "answers",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="text_answer",
-                    fields=TEXT_ANSWER_FIELDS,
-                    namespace="response.responses.answers.text_answers.answers",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
 
-FILE_UPLOAD_ANSWER_FIELDS = [
-    {"name": "fileId", "type": ["null", "string"], "default": None},
-    {"name": "fileName", "type": ["null", "string"], "default": None},
-    {"name": "mimeType", "type": ["null", "string"], "default": None},
-]
+class FileUploadQuestion(BaseModel):
+    folderId: str | None = None
+    maxFiles: int | None = None
+    maxFileSize: str | None = None
 
-FILE_UPLOAD_ANSWERS_FIELDS = [
-    {
-        "name": "answers",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="file_upload_answer",
-                    fields=FILE_UPLOAD_ANSWER_FIELDS,
-                    namespace="response.responses.answers.file_upload_answers.answers",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
+    types: list[str | None] | None = None
 
-RESPONSE_ANSWER_FIELDS = [
-    {"name": "questionId", "type": ["null", "string"], "default": None},
-    {
-        "name": "grade",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="grade",
-                fields=GRADE_FIELDS,
-                namespace="response.responses.answers.grade",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "textAnswers",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="text_answers",
-                fields=TEXT_ANSWERS_FIELDS,
-                namespace="response.responses.answers.text_answers",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "fileUploadAnswers",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="file_upload_answer",
-                fields=FILE_UPLOAD_ANSWERS_FIELDS,
-                namespace="response.responses.answers.file_upload_answers",
-            ),
-        ],
-        "default": None,
-    },
-]
 
-FORM_RESPONSE_FIELDS = [
-    {"name": "formId", "type": ["null", "string"], "default": None},
-    {"name": "responseId", "type": ["null", "string"], "default": None},
-    {"name": "respondentEmail", "type": ["null", "string"], "default": None},
-    {"name": "totalScore", "type": ["null", "double"], "default": None},
-    {
-        "name": "createTime",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "lastSubmittedTime",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "answers",
-        "type": [
-            "null",
-            {
-                "type": "map",
-                "values": get_avro_record_schema(
-                    name="answer",
-                    fields=RESPONSE_ANSWER_FIELDS,
-                    namespace="response.responses.answers",
-                ),
-                "default": {},
-            },
-        ],
-        "default": None,
-    },
-]
+class RowQuestion(BaseModel):
+    title: str | None = None
 
-RESPONSE_FIELDS = [
-    {"name": "nextPageToken", "type": ["null", "string"], "default": None},
-    {
-        "name": "responses",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="form_response",
-                    fields=FORM_RESPONSE_FIELDS,
-                    namespace="response.responses",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
 
-ASSET_FIELDS = {
-    "form": FORM_FIELDS,
-    "responses": RESPONSE_FIELDS,
+class ScaleQuestion(BaseModel):
+    low: int | None = None
+    high: int | None = None
+    lowLabel: str | None = None
+    highLabel: str | None = None
+
+
+class TextQuestion(BaseModel):
+    paragraph: bool | None = None
+
+
+class TimeQuestion(BaseModel):
+    duration: bool | None = None
+
+
+class Question(BaseModel):
+    questionId: str | None = None
+    required: bool | None = None
+
+    choiceQuestion: ChoiceQuestion | None = None
+    dateQuestion: DateQuestion | None = None
+    fileUploadQuestion: FileUploadQuestion | None = None
+    grading: Grading | None = None
+    rowQuestion: RowQuestion | None = None
+    scaleQuestion: ScaleQuestion | None = None
+    textQuestion: TextQuestion | None = None
+    timeQuestion: TimeQuestion | None = None
+
+
+class QuestionGroupItem(BaseModel):
+    grid: Grid | None = None
+    image: Image | None = None
+
+    questions: list[Question | None] | None = None
+
+
+class QuestionItem(BaseModel):
+    question: Question | None = None
+    image: Image | None = None
+
+
+class ImageItem(BaseModel):
+    image: Image | None = None
+
+
+class VideoItem(BaseModel):
+    caption: str | None = None
+    video: Video | None = None
+
+
+class PageBreakItem(BaseModel): ...
+
+
+class TextItem(BaseModel): ...
+
+
+class Item(BaseModel):
+    itemId: str | None = None
+    title: str | None = None
+    description: str | None = None
+
+    imageItem: ImageItem | None = None
+    pageBreakItem: PageBreakItem | None = None
+    questionGroupItem: QuestionGroupItem | None = None
+    questionItem: QuestionItem | None = None
+    textItem: TextItem | None = None
+    videoItem: VideoItem | None = None
+
+
+class FormSettings(BaseModel):
+    quizSettings: QuizSettings | None = None
+
+
+class Info(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    documentTitle: str | None = None
+
+
+class Grade(BaseModel):
+    score: float | None = None
+    correct: bool | None = None
+    feedback: Feedback | None = None
+
+
+class TextAnswer(BaseModel):
+    value: str | None = None
+
+
+class TextAnswers(BaseModel):
+    answers: list[TextAnswer | None] | None = None
+
+
+class FileUploadAnswer(BaseModel):
+    fileId: str | None = None
+    fileName: str | None = None
+    mimeType: str | None = None
+
+
+class FileUploadAnswers(BaseModel):
+    answers: list[FileUploadAnswer | None] | None = None
+
+
+class Answer(BaseModel):
+    questionId: str | None = None
+
+    grade: Grade | None = None
+    textAnswers: TextAnswers | None = None
+    fileUploadAnswers: FileUploadAnswers | None = None
+
+
+class Response(BaseModel):
+    formId: str | None = None
+    responseId: str | None = None
+    createTime: str | None = None
+    lastSubmittedTime: str | None = None
+    respondentEmail: str | None = None
+    totalScore: float | None = None
+
+    answers: dict[str, Answer] | None = None
+
+
+class Form(BaseModel):
+    formId: str | None = None
+    revisionId: str | None = None
+    responderUri: str | None = None
+    linkedSheetId: str | None = None
+
+    info: Info | None = None
+    settings: FormSettings | None = None
+
+    items: list[Item | None] | None = None
+
+
+class Responses(BaseModel):
+    nextPageToken: str | None = None
+    responses: list[Response | None] | None = None
+
+
+ASSET_SCHEMA = {
+    "form": json.loads(py_avro_schema.generate(py_type=Form, namespace="form")),
+    "responses": json.loads(
+        py_avro_schema.generate(py_type=Responses, namespace="response")
+    ),
 }
