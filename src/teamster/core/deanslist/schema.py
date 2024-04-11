@@ -242,17 +242,17 @@ class Incident(BaseModel):
     SendAlert: bool | None = None
     Infraction: str | None = None
     ReturnPeriod: str | None = None
-    HearingDate: str | None = None
     HearingTime: str | None = None
     UpdateStaffSchoolID: str | None = None
 
+    CloseTS: Date | None = None
+    CreateTS: Date | None = None
+    DL_LASTUPDATE: Date | None = None
+    HearingDate: Date | None = None
     IssueTS: Date | None = None
     ReturnDate: Date | None = None
-    CreateTS: Date | None = None
-    UpdateTS: Date | None = None
     ReviewTS: Date | None = None
-    CloseTS: Date | None = None
-    DL_LASTUPDATE: Date | None = None
+    UpdateTS: Date | None = None
 
     Actions: list[Action | None] | None = None
     Penalties: list[Penalty | None] | None = None
@@ -524,11 +524,7 @@ class incidents_record(Incident): ...
 
 
 ASSET_SCHEMA = {
-    "behavior": json.loads(py_avro_schema.generate(py_type=behavior_record)),
-    "comm-log": json.loads(py_avro_schema.generate(py_type=comm_log_record)),
     "followups": json.loads(py_avro_schema.generate(py_type=Followup)),
-    "homework": json.loads(py_avro_schema.generate(py_type=homework_record)),
-    "incidents": json.loads(py_avro_schema.generate(py_type=incidents_record)),
     "lists": json.loads(py_avro_schema.generate(py_type=ListModel)),
     "roster-assignments": json.loads(py_avro_schema.generate(py_type=RosterAssignment)),
     "rosters": json.loads(py_avro_schema.generate(py_type=Roster)),
@@ -540,5 +536,25 @@ ASSET_SCHEMA = {
     ),
     "reconcile_suspensions": json.loads(
         py_avro_schema.generate(py_type=ReconcileSuspensions)
+    ),
+    "behavior": json.loads(
+        py_avro_schema.generate(
+            py_type=behavior_record, options=py_avro_schema.Option.NO_DOC
+        )
+    ),
+    "comm-log": json.loads(
+        py_avro_schema.generate(
+            py_type=comm_log_record, options=py_avro_schema.Option.NO_DOC
+        )
+    ),
+    "homework": json.loads(
+        py_avro_schema.generate(
+            py_type=homework_record, options=py_avro_schema.Option.NO_DOC
+        )
+    ),
+    "incidents": json.loads(
+        py_avro_schema.generate(
+            py_type=incidents_record, options=py_avro_schema.Option.NO_DOC
+        )
     ),
 }
