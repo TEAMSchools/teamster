@@ -363,75 +363,78 @@ class User(BaseModel):
 
 
 class EnrollmentObject(BaseModel):
+    EnrollmentID: str
+    GradeLevelID: str
+    GradeLevelName: str
+    DepartmentID: str
+    DepartmentName: str
+    BehaviorPlanID: str
+    BehaviorPlanName: str
+    GradeLevelKey: str
+
+    StartDate: Date
+    EndDate: Date
+
     AcademicYearID: str | None = None
-    BehaviorPlanID: str | None = None
-    BehaviorPlanName: str | None = None
     CreateByName: str | None = None
     CreateDate: str | None = None
-    DepartmentID: str | None = None
-    DepartmentName: str | None = None
-    EnrollmentID: str | None = None
-    GradeLevelID: str | None = None
-    GradeLevelKey: str | None = None
-    GradeLevelName: str | None = None
     TermByName: str | None = None
     TermDate: str | None = None
     YearName: str | None = None
 
-    StartDate: Date | None = None
-    EndDate: Date | None = None
-
 
 class PhoneNumber(BaseModel):
-    AutoDial: bool | None = None
-    AutoSMS: bool | None = None
-    Label: str | None = None
-    PhoneNumber: str | None = None
-    SPhoneID: str | None = None
+    SPhoneID: str
+    PhoneNumber: str
+    Label: str
+    AutoDial: bool
+    AutoSMS: bool
+
     TextDeliverability: str | None = None
 
 
 class Parent(BaseModel):
-    AutoEmail: bool | None = None
-    AutoLanguageCode: str | None = None
-    CanPickup: bool | None = None
-    Email: str | None = None
-    FirstName: str | None = None
-    Guardian: bool | None = None
+    SParentID: str
+    StudentID: str
+    FirstName: str
+    MiddleName: str
+    LastName: str
+    Relationship: str
+    Guardian: bool
+    IsEmergency: bool
+    ResidesWith: bool
+    CanPickup: bool
+    ReceivesMail: bool
+    Email: str
+    AutoEmail: bool
+    Provider: str
+    AutoLanguageCode: str
+
+    PhoneNumbers: list[PhoneNumber]
+
     IntegrationKey: str | None = None
-    IsEmergency: bool | None = None
+    LanguageID: str | None = None
     Language: str | None = None
     LanguageCode: str | None = None
-    LanguageID: str | None = None
-    LastName: str | None = None
     log: str | None = None
-    MiddleName: str | None = None
-    Provider: str | None = None
-    ReceivesMail: bool | None = None
-    Relationship: str | None = None
-    ResidesWith: bool | None = None
     Sort: str | None = None
-    SParentID: str | None = None
-    StudentID: str | None = None
-
-    PhoneNumbers: list[PhoneNumber] | None = None
 
 
 class Student(BaseModel):
     BehaviorPlan: str | None = None
-    BirthDate: int | str | None = None
+    BirthDate: int | str
     CellPhone: str | None = None
-    City: str | None = None
-    Department: str | None = None
+    City: str
+    Department: str
     DepartmentID: str | None = None
     DLPS_ValidationCode: str | None = None
     ELLStatus: str | None = None
     Email: str | None = None
     Emoji: str | None = None
     EnrollmentID: str | None = None
-    EnrollmentStatus: str | None = None
-    Ethnicity: str | None = None
-    FirstName: str | None = None
+    EnrollmentStatus: str
+    Ethnicity: str
+    FirstName: str
     Gender: str | None = None
     GenderLetter: str | None = None
     GradeLevel: str | None = None
@@ -446,26 +449,26 @@ class Student(BaseModel):
     HomeroomID: str | None = None
     IntegrationID: str | None = None
     Is504: bool | None = None
-    IsNSLP: str | None = None
-    LastName: str | None = None
-    LegalFirstName: str | None = None
+    IsNSLP: str
+    LastName: str
+    LegalFirstName: str
     MessageMerge1: str | None = None
     MessageMerge2: str | None = None
     MessageMerge3: str | None = None
-    MiddleName: str | None = None
+    MiddleName: str
     PhotoFile: str | None = None
     PhotoFileUrl: str | None = None
     PreferredName: str | None = None
     Pronouns: str | None = None
     SecondaryIntegrationID: str | None = None
-    SecondaryStudentID: str | None = None
+    SecondaryStudentID: str
     SourceSchoolID: str | None = None
     SPEDPlan: str | None = None
-    State: str | None = None
-    StreetAddress1: str | None = None
+    State: str
+    StreetAddress1: str
     StreetAddress2: str | None = None
-    StudentID: str | None = None
-    StudentSchoolID: str | None = None
+    StudentID: str
+    StudentSchoolID: str
     TransportationNotes: str | None = None
     ZipCode: str | None = None
 
@@ -527,11 +530,7 @@ class incidents_record(Incident):
     """helper class for backwards compatibility"""
 
 
-pas_options = (
-    py_avro_schema.Option.NO_DOC
-    | py_avro_schema.Option.NO_AUTO_NAMESPACE
-    | py_avro_schema.Option.USE_FIELD_ALIAS
-)
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
 ASSET_SCHEMA = {
     "followups": json.loads(py_avro_schema.generate(py_type=Followup)),
