@@ -9,6 +9,30 @@ class Minutes(BaseModel):
     business: int | None = None
 
 
+class agent_wait_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class first_resolution_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class full_resolution_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class on_hold_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class reply_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class requester_wait_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
 class TicketMetric(BaseModel):
     id: int | None = None
     ticket_id: int | None = None
@@ -27,20 +51,20 @@ class TicketMetric(BaseModel):
     status_updated_at: str | None = None
     updated_at: str | None = None
 
-    agent_wait_time_in_minutes: Minutes | None = None
-    first_resolution_time_in_minutes: Minutes | None = None
-    full_resolution_time_in_minutes: Minutes | None = None
-    on_hold_time_in_minutes: Minutes | None = None
-    reply_time_in_minutes: Minutes | None = None
-    requester_wait_time_in_minutes: Minutes | None = None
+    agent_wait_time_in_minutes: agent_wait_time_in_minutes_record | None = None
+    first_resolution_time_in_minutes: first_resolution_time_in_minutes_record | None = (
+        None
+    )
+    full_resolution_time_in_minutes: full_resolution_time_in_minutes_record | None = (
+        None
+    )
+    on_hold_time_in_minutes: on_hold_time_in_minutes_record | None = None
+    reply_time_in_minutes: reply_time_in_minutes_record | None = None
+    requester_wait_time_in_minutes: requester_wait_time_in_minutes_record | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
-
-
-class ticket_metrics_record(TicketMetric): ...
+class ticket_metrics_record(TicketMetric):
+    """helper class for backwards compatibility"""
 
 
 ASSET_SCHEMA = {
