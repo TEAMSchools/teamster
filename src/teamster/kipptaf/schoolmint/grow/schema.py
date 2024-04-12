@@ -398,7 +398,7 @@ class Checkbox(BaseModel):
     value: bool | None = None
 
 
-class ObservationScoreFields(BaseModel):
+class ObservationScore(BaseModel):
     measurement: str | None = None
     measurementGroup: str | None = None
     valueText: str | None = None
@@ -593,7 +593,7 @@ class Observation(Ref, Timestamp):
     eventLog: list[str | None] | None = None
     files: list[str | None] | None = None
 
-    observationScores: list[ObservationScoreFields | None] | None = None
+    observationScores: list[ObservationScore | None] | None = None
     magicNotes: list[MagicNote | None] | None = None
     videoNotes: list[VideoNote | None] | None = None
     attachments: list[Attachment | None] | None = None
@@ -711,15 +711,117 @@ class Video(Ref, Timestamp):
     videoNotes: list[VideoNote | None] | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class creator_record(UserRef):
+    """helper classes for backwards compatibility"""
 
 
-class assignments_record(Assignment): ...
+class parent_record(Ref):
+    """helper classes for backwards compatibility"""
 
 
-class observations_record(Observation): ...
+class progress_record(Progress):
+    """helper classes for backwards compatibility"""
+
+
+class user_record(UserRef):
+    """helper classes for backwards compatibility"""
+
+
+class tag_record(Tag):
+    """helper classes for backwards compatibility"""
+
+
+class assignments_record(Assignment):
+    """helper classes for backwards compatibility"""
+
+    creator: creator_record | None = None
+    parent: parent_record | None = None
+    progress: progress_record | None = None
+    user: user_record | None = None
+
+    tags: list[tag_record | None] | None = None
+
+
+class rubric_record(Ref):
+    """helper classes for backwards compatibility"""
+
+
+class observer_record(UserRef):
+    """helper classes for backwards compatibility"""
+
+
+class teacher_record(UserRef):
+    """helper classes for backwards compatibility"""
+
+
+class tag_note_1_record(TagNote):
+    """helper classes for backwards compatibility"""
+
+
+class tag_note_2_record(TagNote):
+    """helper classes for backwards compatibility"""
+
+
+class tag_note_3_record(TagNote):
+    """helper classes for backwards compatibility"""
+
+
+class tag_note_4_record(TagNote):
+    """helper classes for backwards compatibility"""
+
+
+class teaching_assignment_record(TeachingAssignment):
+    """helper classes for backwards compatibility"""
+
+
+class magic_note_record(MagicNote):
+    """helper classes for backwards compatibility"""
+
+
+class video_note_record(VideoNote):
+    """helper classes for backwards compatibility"""
+
+
+class attachment_record(Attachment):
+    """helper classes for backwards compatibility"""
+
+
+class video_record(VideoRef):
+    """helper classes for backwards compatibility"""
+
+
+class checkbox_record(Checkbox):
+    """helper classes for backwards compatibility"""
+
+
+class text_box_record(TextBox):
+    """helper classes for backwards compatibility"""
+
+
+class observation_score_record(ObservationScore):
+    """helper classes for backwards compatibility"""
+
+    checkboxes: list[checkbox_record | None] | None = None
+    textBoxes: list[text_box_record | None] | None = None
+
+
+class observations_record(Observation):
+    """helper classes for backwards compatibility"""
+
+    rubric: rubric_record | None = None
+    observer: observer_record | None = None
+    teacher: teacher_record | None = None
+    tagNotes1: tag_note_1_record | None = None
+    tagNotes2: tag_note_2_record | None = None
+    tagNotes3: tag_note_3_record | None = None
+    tagNotes4: tag_note_4_record | None = None
+    teachingAssignment: teaching_assignment_record | None = None
+
+    observationScores: list[observation_score_record | None] | None = None
+    magicNotes: list[magic_note_record | None] | None = None
+    videoNotes: list[video_note_record | None] | None = None
+    attachments: list[attachment_record | None] | None = None
+    videos: list[video_record | None] | None = None
 
 
 ASSET_SCHEMA = {

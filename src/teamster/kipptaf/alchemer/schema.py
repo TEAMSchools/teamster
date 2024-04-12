@@ -20,20 +20,6 @@ class DataQuality(BaseModel):
     opentext: OpenText | None = None
 
 
-class Answer(BaseModel):
-    answer_id: int | str | None = None
-    answer: str | None = None
-    id: int | None = None
-    original_answer: str | None = None
-    parent: int | None = None
-    question: str | None = None
-    section_id: int | None = None
-    shown: bool | None = None
-    type: str | None = None
-
-    subquestions: dict[str, Union["Answer", dict[str, "Answer"], None]] | None = None
-
-
 class Team(BaseModel):
     id: str | None = None
     name: str | None = None
@@ -150,6 +136,28 @@ class SurveyOption(BaseModel):
     title: dict[str, str | int | None] | None = None
 
 
+class Answer(BaseModel):
+    signature: str | None = None
+    name: str | None = None
+
+
+class SurveyData(BaseModel):
+    answer_id: int | str | None = None
+    id: int | None = None
+    original_answer: str | None = None
+    parent: int | None = None
+    question: str | None = None
+    section_id: int | None = None
+    shown: bool | None = None
+    type: str | None = None
+
+    answer: str | Answer | None = None
+
+    subquestions: (
+        dict[str, Union["SurveyData", dict[str, "SurveyData"], None]] | None
+    ) = None
+
+
 class SurveyQuestion(BaseModel):
     base_type: str | None = None
     comment: bool | None = None
@@ -227,7 +235,7 @@ class SurveyResponse(BaseModel):
     url_variables: list[str | None] | dict[str, str | URLVariable | None] | None = []
     data_quality: list[str | None] | DataQuality | None = []
 
-    survey_data: list[str | None] | dict[str, Answer | None] | None = []
+    survey_data: list[str | None] | dict[str, SurveyData | None] | None = []
 
 
 class Survey(BaseModel):
@@ -254,8 +262,24 @@ class Survey(BaseModel):
     title_ml: dict[str, str | None] | None = None
 
 
+class answer_record(Answer):
+    """helper class for backwards compatibility"""
+
+
+class survey_data_record(SurveyData):
+    """helper class for backwards compatibility"""
+
+    answer: str | answer_record | None = None
+    subquestions: (
+        dict[str, Union["survey_data_record", dict[str, "survey_data_record"], None]]
+        | None
+    ) = None
+
+
 class survey_response_record(SurveyResponse):
     """helper class for backwards compatibility"""
+
+    survey_data: list[str | None] | dict[str, survey_data_record | None] | None = []
 
 
 SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, namespace="survey"))
