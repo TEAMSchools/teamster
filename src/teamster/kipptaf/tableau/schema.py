@@ -13,6 +13,10 @@ class View(BaseModel):
     total_views: int | None = None
 
 
+class view_record(View):
+    """helper class for backwards compatibility"""
+
+
 class Workbook(BaseModel):
     content_url: str | None = None
     id: str | None = None
@@ -24,15 +28,11 @@ class Workbook(BaseModel):
     show_tabs: bool | None = None
     webpage_url: str | None = None
 
-    views: list[View | None] | None = None
+    views: list[view_record | None] | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
-
-
-class workbook_record(Workbook): ...
+class workbook_record(Workbook):
+    """helper class for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

@@ -254,12 +254,8 @@ class Survey(BaseModel):
     title_ml: dict[str, str | None] | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
-
-
-class survey_response_record(SurveyResponse): ...
+class survey_response_record(SurveyResponse):
+    """helper class for backwards compatibility"""
 
 
 SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, namespace="survey"))
