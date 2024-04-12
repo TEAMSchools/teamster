@@ -44,7 +44,7 @@ select  -- noqa: disable=ST06
     ) as `Mailing Address`,
     if(ktc.contact_most_recent_iep_date is not null, true, false) as `IEP`,
     ktc.powerschool_is_504 as `504 Plan`,
-    ktc.contact_df_has_fafsa as `FAFSA Complete`,
+    if(ktc.contact_latest_fafsa_date >= '2023-11-01', 'Yes', 'No') as `FAFSA Complete`,
     if(
         ktc.contact_latest_state_financial_aid_app_date is not null, 'Yes', 'No'
     ) as `HESAA Complete`,
