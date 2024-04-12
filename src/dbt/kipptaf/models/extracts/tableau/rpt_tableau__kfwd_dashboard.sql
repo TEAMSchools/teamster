@@ -268,6 +268,23 @@ with
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
         group by student_number
+    ),
+
+    bgp as (
+        select
+            contact,
+            subject as bgp,
+            row_number() over (partition by contact order by date desc) as rn_bgp,
+        from {{ ref("stg_kippadb__contact_note") }}
+        where
+            subject in (
+                'BGP: 2-year',
+                'BGP: 4-year',
+                'BGP: CTE',
+                'BGP: Workforce',
+                'BGP: Unknown',
+                'BGP: Military'
+            )
     )
 
 select
@@ -589,6 +606,7 @@ select
         true,
         false
     ) as has_ecc_enrollment,
+    coalesce(bg.bgp, 'No BGP') as bgp,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -635,6 +653,7 @@ left join
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
 left join es_grad as e on e.student_number = c.student_number
+left join bgp as bg on c.contact_id = bg.contact and bg.rn_bgp = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
