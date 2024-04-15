@@ -10,11 +10,10 @@ from dagster import (
 )
 
 from teamster.core.deanslist.resources import DeansListResource
-from teamster.core.deanslist.schema import ASSET_FIELDS
+from teamster.core.deanslist.schema import ASSET_SCHEMA
 from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
-    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
 
@@ -51,12 +50,7 @@ def build_deanslist_static_partition_asset(
         )
 
         data = endpoint_content["data"]
-        if asset_name == "students":
-            schema = ASSET_FIELDS[asset_name]
-        else:
-            schema = get_avro_record_schema(
-                name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-            )
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(
             value=(data, schema), metadata={"records": endpoint_content["row_count"]}
@@ -121,12 +115,9 @@ def build_deanslist_multi_partition_asset(
             params=request_params,
         )
 
+        schema = ASSET_SCHEMA[asset_name]
         data = endpoint_content["data"]
         row_count = endpoint_content["row_count"]
-
-        schema = get_avro_record_schema(
-            name=asset_name, fields=ASSET_FIELDS[asset_name][api_version]
-        )
 
         yield Output(value=(data, schema), metadata={"records": row_count})
 
