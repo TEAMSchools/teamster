@@ -557,10 +557,6 @@ class behavior_record(Behavior):
     """helper class for backwards compatibility"""
 
 
-class comm_log_record(CommLog):
-    """helper class for backwards compatibility"""
-
-
 class followups_record(Followup):
     """helper class for backwards compatibility"""
 
@@ -576,6 +572,7 @@ class incidents_record(Incident):
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
 ASSET_SCHEMA = {
+    "comm-log": json.loads(py_avro_schema.generate(py_type=CommLog)),
     "lists": json.loads(py_avro_schema.generate(py_type=ListModel)),
     "roster-assignments": json.loads(py_avro_schema.generate(py_type=RosterAssignment)),
     "rosters": json.loads(py_avro_schema.generate(py_type=Roster)),
@@ -590,9 +587,6 @@ ASSET_SCHEMA = {
     ),
     "behavior": json.loads(
         py_avro_schema.generate(py_type=behavior_record, options=pas_options)
-    ),
-    "comm-log": json.loads(
-        py_avro_schema.generate(py_type=comm_log_record, options=pas_options)
     ),
     "followups": json.loads(
         py_avro_schema.generate(py_type=followups_record, options=pas_options)
