@@ -1,786 +1,303 @@
-from teamster.core.utils.functions import get_avro_record_schema
+import json
+from typing import Union
 
-ATOM_FIELDS = [
-    {"name": "type", "type": ["null", "string"], "default": None},
-    {
-        "name": "value",
-        "type": ["null", "string", {"type": "array", "items": "string", "default": []}],
-        "default": None,
-    },
-]
-
-SHOW_RULE_FIELDS = [
-    {"name": "id", "type": ["null", "string"], "default": None},
-    {"name": "operator", "type": ["null", "string"], "default": None},
-    {
-        "name": "same_page_skus",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
-        "default": None,
-    },
-]
-
-SURVEY_OPTION_PROPERTY_FIELDS = [
-    {"name": "all", "type": ["null", "boolean"], "default": None},
-    {"name": "checked", "type": ["null", "boolean"], "default": None},
-    {"name": "dependent", "type": ["null", "string"], "default": None},
-    {"name": "disabled", "type": ["null", "boolean"], "default": None},
-    {"name": "fixed", "type": ["null", "boolean"], "default": None},
-    {"name": "na", "type": ["null", "boolean"], "default": None},
-    {"name": "none", "type": ["null", "boolean"], "default": None},
-    {"name": "other", "type": ["null", "boolean"], "default": None},
-    {"name": "otherrequired", "type": ["null", "boolean"], "default": None},
-    {"name": "requireother", "type": ["null", "boolean"], "default": None},
-    {"name": "piping_exclude", "type": ["null", "string"], "default": None},
-    {"name": "show_rules_logic_map", "type": ["null", "string"], "default": None},
-    # {
-    #     "name": "left_label",
-    #     "aliases": ["left-label"],
-    #     "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
-    #     "default": None,
-    # },
-    # {
-    #     "name": "right_label",
-    #     "aliases": ["right-label"],
-    #     "type": ["null", {"type": "map", "values": ["null", "string"], "default": {}}],
-    #     "default": None,
-    # },
-]
-
-SURVEY_OPTION_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {"name": "value", "type": ["null", "string"], "default": None},
-    {
-        "name": "title",
-        "type": ["null", {"type": "map", "values": ["string", "int"], "default": {}}],
-        "default": None,
-    },
-]
-
-SURVEY_QUESTION_PROPERTY_FIELDS = [
-    {"name": "break_after", "type": ["null", "boolean"], "default": None},
-    {"name": "custom_css", "type": ["null", "string"], "default": None},
-    {"name": "data_json", "type": ["null", "boolean"], "default": None},
-    {"name": "data_type", "type": ["null", "string"], "default": None},
-    {"name": "disabled", "type": ["null", "boolean"], "default": None},
-    {"name": "element_style", "type": ["null", "string"], "default": None},
-    {"name": "exclude_number", "type": ["null", "string"], "default": None},
-    {"name": "extentions", "type": ["null", "string"], "default": None},
-    {"name": "force_currency", "type": ["null", "boolean"], "default": None},
-    {"name": "force_int", "type": ["null", "boolean"], "default": None},
-    {"name": "force_numeric", "type": ["null", "boolean"], "default": None},
-    {"name": "force_percent", "type": ["null", "boolean"], "default": None},
-    {"name": "hidden", "type": ["null", "boolean"], "default": None},
-    {"name": "hide_after_response", "type": ["null", "boolean"], "default": None},
-    {"name": "labels_right", "type": ["null", "boolean"], "default": None},
-    {"name": "map_key", "type": ["null", "string"], "default": None},
-    {"name": "max_number", "type": ["null", "string"], "default": None},
-    {"name": "maxfiles", "type": ["null", "string"], "default": None},
-    {"name": "min_answers_per_row", "type": ["null", "string"], "default": None},
-    {"name": "min_number", "type": ["null", "string"], "default": None},
-    {"name": "minimum_response", "type": ["null", "int"], "default": None},
-    {"name": "only_whole_num", "type": ["null", "boolean"], "default": None},
-    {"name": "option_sort", "type": ["null", "string"], "default": None},
-    {"name": "orientation", "type": ["null", "string"], "default": None},
-    {"name": "required", "type": ["null", "boolean"], "default": None},
-    {"name": "show_title", "type": ["null", "boolean"], "default": None},
-    {"name": "sizelimit", "type": ["null", "int"], "default": None},
-    {"name": "soft_required", "type": ["null", "boolean"], "default": None},
-    {"name": "sub_questions", "type": ["null", "int"], "default": None},
-    {"name": "subtype", "type": ["null", "string"], "default": None},
-    {"name": "url", "type": ["null", "string"], "default": None},
-    {
-        "name": "question_description_above",
-        "type": ["null", "boolean"],
-        "default": None,
-    },
-    {
-        "name": "defaulttext",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "question_description",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "limits",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
-        "default": None,
-    },
-    {
-        "name": "placeholder",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "inputmask",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "outbound",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": {"type": "map", "values": "string", "default": {}},
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "messages",
-        "type": [
-            "null",
-            {
-                "type": "map",
-                "values": [
-                    {"type": "array", "items": "string", "default": []},
-                    {"type": "map", "values": "string", "default": {}},
-                ],
-                "default": {},
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "message",
-        "type": [
-            "null",
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-]
-
-SURVEY_QUESTION_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {"name": "base_type", "type": ["null", "string"], "default": None},
-    {"name": "type", "type": ["null", "string"], "default": None},
-    {"name": "shortname", "type": ["null", "string"], "default": None},
-    {"name": "has_showhide_deps", "type": ["null", "boolean"], "default": None},
-    {"name": "comment", "type": ["null", "boolean"], "default": None},
-    {
-        "name": "description",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
-        "default": None,
-    },
-    {
-        "name": "varname",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "title",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
-        "default": None,
-    },
-]
-
-SURVEY_PAGE_PROPERTY_FIELDS = [
-    {"name": "hidden", "type": ["null", "boolean"], "default": None},
-    {"name": "piped_from", "type": ["null", "string"], "default": None},
-    # {
-    #     "name": "page_group",
-    #     "aliases": ["page-group"],
-    #     "type": ["null", "string"],
-    #     "default": None,
-    # },
-]
-
-SURVEY_TEAM_FIELDS = [
-    {"name": "id", "type": ["null", "string"], "default": None},
-    {"name": "name", "type": ["null", "string"], "default": None},
-]
-
-ACTION_FIELDS = [
-    {"name": "jump", "type": ["null", "string"]},
-    {"name": "redirect", "type": ["null", "boolean"]},
-    {"name": "save_data", "type": ["null", "boolean"]},
-    {"name": "complete", "type": ["null", "boolean"]},
-    {"name": "disqualify", "type": ["null", "boolean"]},
-]
-
-SURVEY_CAMPAIGN_FIELDS = [
-    {"name": "close_message", "type": ["null", "string"], "default": None},
-    {"name": "id", "type": ["null", "string"], "default": None},
-    {"name": "invite_id", "type": ["null", "string"], "default": None},
-    {"name": "language", "type": ["null", "string"], "default": None},
-    {"name": "limit_responses", "type": ["null", "string"], "default": None},
-    {"name": "link_type", "type": ["null", "string"], "default": None},
-    {"name": "name", "type": ["null", "string"], "default": None},
-    {"name": "primary_theme_content", "type": ["null", "string"], "default": None},
-    {"name": "primary_theme_options", "type": ["null", "string"], "default": None},
-    {"name": "SSL", "type": ["null", "string"], "default": None},
-    {"name": "status", "type": ["null", "string"], "default": None},
-    {"name": "subtype", "type": ["null", "string"], "default": None},
-    {"name": "token_variables", "type": ["null", "string"], "default": None},
-    {"name": "type", "type": ["null", "string"], "default": None},
-    {"name": "uri", "type": ["null", "string"], "default": None},
-    {
-        "name": "date_created",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-    {
-        "name": "date_modified",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-    {
-        "name": "link_close_date",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-    {
-        "name": "link_open_date",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-]
-
-SURVEY_DATA_ANSWER_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {"name": "option", "type": ["null", "string"], "default": None},
-    {"name": "rank", "type": ["null", "string"], "default": None},
-]
-
-SURVEY_DATA_OPTIONS_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {"name": "option", "type": ["null", "string"], "default": None},
-    {"name": "answer", "type": ["null", "string"], "default": None},
-    {"name": "original_answer", "type": ["null", "string"], "default": None},
-]
+import py_avro_schema
+from pydantic import BaseModel
 
 
-def get_atom_fields(namespace, depth=1):
-    if depth > 0:
-        return [
-            {
-                "name": "atom",
-                "type": [
-                    "null",
-                    get_avro_record_schema(
-                        name="atom",
-                        fields=[
-                            *ATOM_FIELDS,
-                            *SHOW_RULE_FIELDS,
-                            *get_atom_fields(
-                                namespace=f"{namespace}.atom", depth=(depth - 1)
-                            ),
-                        ],
-                        namespace=namespace,
-                    ),
-                ],
-                "default": None,
-            },
-            {
-                "name": "atom2",
-                "type": [
-                    "null",
-                    get_avro_record_schema(
-                        name="atom2",
-                        fields=[
-                            *ATOM_FIELDS,
-                            *SHOW_RULE_FIELDS,
-                            *get_atom_fields(
-                                namespace=f"{namespace}.atom2", depth=(depth - 1)
-                            ),
-                        ],
-                        namespace=namespace,
-                    ),
-                ],
-                "default": None,
-            },
-        ]
-    else:
-        return []
+class URLVariable(BaseModel):
+    key: str | None = None
+    type: str | None = None
+    value: str | None = None
 
 
-def get_rule_fields(namespace):
-    return [
-        {
-            "name": "logic",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="rule",
-                    fields=[
-                        *SHOW_RULE_FIELDS,
-                        *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.rule", depth=1),
-                    ],
-                    namespace=namespace,
-                ),
-            ],
-            "default": None,
-        },
-        {"name": "logic_map", "type": ["null", "string"], "default": None},
-        {
-            "name": "actions",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="action", fields=ACTION_FIELDS, namespace=namespace
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class OpenText(BaseModel):
+    onewordrequiredessay: dict[str, int | None] | None = None
+    gibberish: list[str | None] | dict[str, int | None] | None = []
 
 
-def get_survey_question_property_fields(namespace):
-    return [
-        *SURVEY_QUESTION_PROPERTY_FIELDS,
-        {
-            "name": "show_rules",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="show_rule",
-                    fields=[
-                        *SHOW_RULE_FIELDS,
-                        *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=1),
-                    ],
-                    namespace=namespace,
-                ),
-            ],
-            "default": None,
-        },
-        {
-            "name": "rules",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="rule",
-                    fields=get_rule_fields(namespace=f"{namespace}.rule"),
-                    namespace=namespace,
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class DataQuality(BaseModel):
+    opentext: OpenText | None = None
 
 
-def get_survey_option_property_fields(namespace):
-    return [
-        *SURVEY_OPTION_PROPERTY_FIELDS,
-        {
-            "name": "show_rules",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="show_rule",
-                    fields=[
-                        *SHOW_RULE_FIELDS,
-                        *ATOM_FIELDS,
-                        *get_atom_fields(namespace=f"{namespace}.show_rule", depth=1),
-                    ],
-                    namespace=namespace,
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class Team(BaseModel):
+    id: str | None = None
+    name: str | None = None
 
 
-def get_survey_option_fields(namespace):
-    return [
-        *SURVEY_OPTION_FIELDS,
-        {
-            "name": "properties",
-            "type": [
-                "null",
-                get_avro_record_schema(
-                    name="property",
-                    fields=get_survey_option_property_fields(
-                        namespace=f"{namespace}.property"
-                    ),
-                    namespace=namespace,
-                ),
-            ],
-            "default": None,
-        },
-    ]
+class Statistics(BaseModel):
+    Partial: int | None = None
+    Disqualified: int | None = None
+    Deleted: int | None = None
+    Complete: int | None = None
+    TestData: str | None = None
 
 
-def get_survey_question_fields(namespace, depth=1):
-    if depth > 0:
-        return [
-            *SURVEY_QUESTION_FIELDS,
-            {
-                "name": "properties",
-                "type": [
-                    "null",
-                    get_avro_record_schema(
-                        name="property",
-                        fields=get_survey_question_property_fields(
-                            namespace=f"{namespace}.property"
-                        ),
-                        namespace=namespace,
-                    ),
-                ],
-                "default": None,
-            },
-            {
-                "name": "options",
-                "type": [
-                    "null",
-                    {
-                        "type": "array",
-                        "items": get_avro_record_schema(
-                            name="option",
-                            fields=get_survey_option_fields(
-                                namespace=f"{namespace}.option"
-                            ),
-                            namespace=namespace,
-                        ),
-                        "default": [],
-                    },
-                ],
-                "default": None,
-            },
-            {
-                "name": "sub_questions",
-                "type": [
-                    "null",
-                    {
-                        "type": "array",
-                        "items": get_avro_record_schema(
-                            name="question",
-                            fields=get_survey_question_fields(
-                                namespace=f"{namespace}.sub_question",
-                                depth=(depth - 1),
-                            ),
-                            namespace=namespace,
-                        ),
-                        "default": [],
-                    },
-                ],
-                "default": None,
-            },
-        ]
-    else:
-        return []
+class PageProperties(BaseModel):
+    hidden: bool | None = None
+    piped_from: str | None = None
 
 
-SURVEY_PAGE_FIELDS = [
-    {"name": "id", "type": ["null", "int"], "default": None},
-    {
-        "name": "title",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "description",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {"type": "map", "values": "string", "default": {}},
-        ],
-        "default": None,
-    },
-    {
-        "name": "properties",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            get_avro_record_schema(
-                name="property",
-                fields=SURVEY_PAGE_PROPERTY_FIELDS,
-                namespace="survey.page",
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "questions",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="question",
-                    fields=get_survey_question_fields(
-                        namespace="survey.page.question", depth=2
-                    ),
-                    namespace="survey.page",
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
+class Messages(BaseModel):
+    center_label: list[str | None] | dict[str, str | None] | None = []
+    configurator_button_text: list[str | None] | dict[str, str | None] | None = []
+    configurator_complete: list[str | None] | dict[str, str | None] | None = []
+    configurator_error: list[str | None] | dict[str, str | None] | None = []
+    conjoint_best_label: list[str | None] | dict[str, str | None] | None = []
+    conjoint_card_label: list[str | None] | dict[str, str | None] | None = []
+    conjoint_error_label: list[str | None] | dict[str, str | None] | None = []
+    conjoint_none_label: list[str | None] | dict[str, str | None] | None = []
+    conjoint_worst_label: list[str | None] | dict[str, str | None] | None = []
+    inputmask: list[str | None] | dict[str, str | None] | None = []
+    l_extreme_label: list[str | None] | dict[str, str | None] | None = []
+    left_label: list[str | None] | dict[str, str | None] | None = []
+    maxdiff_attribute_label: list[str | None] | dict[str, str | None] | None = []
+    maxdiff_best_label: list[str | None] | dict[str, str | None] | None = []
+    maxdiff_of: list[str | None] | dict[str, str | None] | None = []
+    maxdiff_sets_message: list[str | None] | dict[str, str | None] | None = []
+    maxdiff_worst_label: list[str | None] | dict[str, str | None] | None = []
+    na_text: list[str | None] | dict[str, str | None] | None = []
+    payment_button_text: list[str | None] | dict[str, str | None] | None = []
+    r_extreme_label: list[str | None] | dict[str, str | None] | None = []
+    right_label: list[str | None] | dict[str, str | None] | None = []
+    th_content: list[str | None] | dict[str, str | None] | None = []
 
-SURVEY_FIELDS = [
-    {"name": "auto_close", "type": ["null", "string"], "default": None},
-    {"name": "blockby", "type": ["null", "string"], "default": None},
-    {"name": "forward_only", "type": ["null", "boolean"], "default": None},
-    {"name": "id", "type": ["null", "string"], "default": None},
-    {"name": "internal_title", "type": ["null", "string"], "default": None},
-    {"name": "overall_quota", "type": ["null", "string"], "default": None},
-    {"name": "status", "type": ["null", "string"], "default": None},
-    {"name": "theme", "type": ["null", "string"], "default": None},
-    {"name": "title", "type": ["null", "string"], "default": None},
-    {"name": "type", "type": ["null", "string"], "default": None},
-    {
-        "name": "created_on",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-    {
-        "name": "modified_on",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-    {
-        "name": "languages",
-        "type": ["null", {"type": "array", "items": "string", "default": []}],
-        "default": None,
-    },
-    {
-        "name": "statistics",
-        "type": ["null", {"type": "map", "values": ["string", "int"], "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "title_ml",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "links",
-        "type": ["null", {"type": "map", "values": "string", "default": {}}],
-        "default": None,
-    },
-    {
-        "name": "team",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(name="team", fields=SURVEY_TEAM_FIELDS),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "pages",
-        "type": [
-            "null",
-            {
-                "type": "array",
-                "items": get_avro_record_schema(
-                    name="page", fields=SURVEY_PAGE_FIELDS, namespace="survey"
-                ),
-                "default": [],
-            },
-        ],
-        "default": None,
-    },
-]
+    # payment_description: list[str | None] | dict[str, str | None] | None = Field(
+    #     default=[], alias="payment-description"
+    # )
+    # payment_summary: list[str | None] | dict[str, str | None] | None = Field(
+    #     default=[], alias="payment-summary"
+    # )
 
 
-def get_survey_data_fields(namespace, depth=1):
-    if depth > 0:
-        return [
-            {"name": "id", "type": ["null", "int"], "default": None},
-            {"name": "type", "type": ["null", "string"], "default": None},
-            {"name": "parent", "type": ["null", "int"], "default": None},
-            {"name": "question", "type": ["null", "string"], "default": None},
-            {"name": "section_id", "type": ["null", "int"], "default": None},
-            {"name": "original_answer", "type": ["null", "string"], "default": None},
-            {"name": "answer_id", "type": ["null", "int", "string"], "default": None},
-            {"name": "shown", "type": ["null", "boolean"], "default": None},
-            {
-                "name": "answer",
-                "type": [
-                    "null",
-                    "string",
-                    {
-                        "type": "map",
-                        "values": [
-                            "string",
-                            get_avro_record_schema(
-                                name="answer",
-                                fields=SURVEY_DATA_ANSWER_FIELDS,
-                                namespace=namespace,
-                            ),
-                        ],
-                        "default": {},
-                    },
-                ],
-                "default": None,
-            },
-            {
-                "name": "options",
-                "type": [
-                    "null",
-                    {
-                        "type": "map",
-                        "values": get_avro_record_schema(
-                            name="option",
-                            fields=SURVEY_DATA_OPTIONS_FIELDS,
-                            namespace=namespace,
-                        ),
-                        "default": {},
-                    },
-                ],
-                "default": None,
-            },
-            {
-                "name": "subquestions",
-                "type": [
-                    "null",
-                    {
-                        "type": "map",
-                        "values": [
-                            get_avro_record_schema(
-                                name="subquestion",
-                                fields=get_survey_data_fields(
-                                    namespace=f"{namespace}.subquestion",
-                                    depth=(depth - 1),
-                                ),
-                                namespace=namespace,
-                            ),
-                            {
-                                "type": "map",
-                                "values": get_avro_record_schema(
-                                    name="subquestion_map",
-                                    fields=get_survey_data_fields(
-                                        namespace=f"{namespace}.subquestion_map",
-                                        depth=(depth - 1),
-                                    ),
-                                    namespace=namespace,
-                                ),
-                                "default": {},
-                            },
-                        ],
-                        "default": {},
-                    },
-                ],
-                "default": None,
-            },
-        ]
-    else:
-        return []
+class Atom(BaseModel):
+    type: str | None = None
+    value: str | None = None
 
 
-SURVEY_RESPONSE_FIELDS = [
-    {"name": "id", "type": ["null", "string"], "default": None},
-    {"name": "status", "type": ["null", "string"], "default": None},
-    {"name": "contact_id", "type": ["null", "string"], "default": None},
-    {"name": "is_test_data", "type": ["null", "string"], "default": None},
-    {"name": "session_id", "type": ["null", "string"], "default": None},
-    {"name": "language", "type": ["null", "string"], "default": None},
-    {"name": "link_id", "type": ["null", "string"], "default": None},
-    {"name": "ip_address", "type": ["null", "string"], "default": None},
-    {"name": "referer", "type": ["null", "string"], "default": None},
-    {"name": "user_agent", "type": ["null", "string"], "default": None},
-    {"name": "response_time", "type": ["null", "long"], "default": None},
-    {"name": "comments", "type": ["null", "string"], "default": None},
-    {"name": "longitude", "type": ["null", "string"], "default": None},
-    {"name": "latitude", "type": ["null", "string"], "default": None},
-    {"name": "country", "type": ["null", "string"], "default": None},
-    {"name": "city", "type": ["null", "string"], "default": None},
-    {"name": "region", "type": ["null", "string"], "default": None},
-    {"name": "postal", "type": ["null", "string"], "default": None},
-    {"name": "dma", "type": ["null", "string"], "default": None},
-    {
-        "name": "date_submitted",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-    {
-        "name": "date_started",
-        "type": ["null", "string"],
-        "default": None,
-        "logicalType": "timestamp-micros",
-    },
-    {
-        "name": "url_variables",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {
-                "type": "map",
-                "values": ["string", {"type": "map", "values": "string"}],
-                "default": {},
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "survey_data",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {
-                "type": "map",
-                "values": get_avro_record_schema(
-                    name="survey_data",
-                    fields=get_survey_data_fields(namespace="surveyresponse", depth=2),
-                ),
-                "default": {},
-            },
-        ],
-        "default": None,
-    },
-    {
-        "name": "data_quality",
-        "type": [
-            "null",
-            {"type": "array", "items": "string", "default": []},
-            {
-                "type": "map",
-                "values": [
-                    "null",
-                    {"type": "array", "items": "string", "default": []},
-                    {
-                        "type": "map",
-                        "values": [
-                            "int",
-                            {"type": "array", "items": "string", "default": []},
-                            {
-                                "type": "map",
-                                "values": [
-                                    "int",
-                                    {"type": "array", "items": "string", "default": []},
-                                ],
-                                "default": {},
-                            },
-                        ],
-                        "default": {},
-                    },
-                ],
-                "default": {},
-            },
-            # get_avro_record_schema(name="data_quality", fields=DATA_QUALITY_FIELDS),
-        ],
-        "default": None,
-    },
-]
+class Atom2(BaseModel):
+    type: str | None = None
+
+    value: str | list[str | None] | None = []
+
+
+class ShowRules(BaseModel):
+    id: str | None = None
+    operator: str | None = None
+
+    atom: Atom | None = None
+    atom2: Atom2 | None = None
+
+    same_page_skus: list[str | None] | None = []
+
+
+class QuestionProperties(BaseModel):
+    break_after: bool | None = None
+    custom_css: str | None = None
+    disabled: bool | None = None
+    exclude_number: str | None = None
+    hidden: bool | None = None
+    hide_after_response: bool | None = None
+    labels_right: bool | None = None
+    map_key: str | None = None
+    option_sort: str | None = None
+    orientation: str | None = None
+    question_description_above: bool | None = None
+    required: bool | None = None
+    show_title: bool | None = None
+    soft_required: bool | None = None
+    subtype: str | None = None
+    url: str | None = None
+    # soft-required: bool | None = None
+
+    messages: Messages | None = None
+    show_rules: ShowRules | None = None
+
+    defaulttext: dict[str, str | None] | None = None
+    question_description: dict[str, str | None] | None = None
+
+    inputmask: list[str | None] | dict[str, str | None] | None = []
+
+
+class OptionProperties(BaseModel):
+    disabled: bool | None = None
+    piping_exclude: str | None = None
+    # show_rules_logic_map: None = None
+
+    show_rules: ShowRules | None = None
+
+
+class SurveyOption(BaseModel):
+    id: int | None = None
+    value: str | None = None
+
+    properties: OptionProperties | None = None
+
+    title: dict[str, str | int | None] | None = None
+
+
+class Answer(BaseModel):
+    signature: str | None = None
+    name: str | None = None
+
+
+class SurveyData(BaseModel):
+    answer_id: int | str | None = None
+    id: int | None = None
+    original_answer: str | None = None
+    parent: int | None = None
+    question: str | None = None
+    section_id: int | None = None
+    shown: bool | None = None
+    type: str | None = None
+
+    answer: str | Answer | None = None
+
+    subquestions: (
+        dict[str, Union["SurveyData", dict[str, "SurveyData"], None]] | None
+    ) = None
+
+
+class SurveyQuestion(BaseModel):
+    base_type: str | None = None
+    comment: bool | None = None
+    has_showhide_deps: bool | None = None
+    id: int | None = None
+    shortname: str | None = None
+    type: str | None = None
+
+    properties: QuestionProperties | None = None
+
+    description: list[str | None] | None = []
+    options: list[SurveyOption | None] | None = None
+    sub_questions: list["SurveyQuestion"] | None = None
+
+    title: dict[str, str | None] | None = None
+
+    varname: list[str | None] | dict[str, str | None] | None = []
+
+
+class SurveyPage(BaseModel):
+    id: int | None = None
+
+    title: list[str | None] | dict[str, str | None] | None = []
+    description: list[str | None] | dict[str, str | None] | None = []
+
+    properties: list[str | None] | PageProperties | None = []
+    questions: list[SurveyQuestion | None] | None = None
+
+
+class SurveyCampaign(BaseModel):
+    close_message: str | None = None
+    date_created: str | None = None
+    date_modified: str | None = None
+    id: str | None = None
+    invite_id: str | None = None
+    language: str | None = None
+    limit_responses: str | None = None
+    link_close_date: str | None = None
+    link_open_date: str | None = None
+    link_type: str | None = None
+    name: str | None = None
+    primary_theme_content: str | None = None
+    primary_theme_options: str | None = None
+    SSL: str | None = None
+    status: str | None = None
+    subtype: str | None = None
+    token_variables: str | None = None
+    type: str | None = None
+    uri: str | None = None
+
+
+class SurveyResponse(BaseModel):
+    city: str | None = None
+    comments: str | None = None
+    contact_id: str | None = None
+    country: str | None = None
+    date_started: str | None = None
+    date_submitted: str | None = None
+    dma: str | None = None
+    id: str | None = None
+    ip_address: str | None = None
+    is_test_data: str | None = None
+    language: str | None = None
+    latitude: str | None = None
+    link_id: str | None = None
+    longitude: str | None = None
+    postal: str | None = None
+    referer: str | None = None
+    region: str | None = None
+    response_time: int | None = None
+    session_id: str | None = None
+    status: str | None = None
+    user_agent: str | None = None
+
+    url_variables: list[str | None] | dict[str, str | URLVariable | None] | None = []
+    data_quality: list[str | None] | DataQuality | None = []
+
+    survey_data: list[str | None] | dict[str, SurveyData | None] | None = []
+
+
+class Survey(BaseModel):
+    auto_close: str | None = None
+    blockby: str | None = None
+    created_on: str | None = None
+    forward_only: bool | None = None
+    id: str | None = None
+    internal_title: str | None = None
+    modified_on: str | None = None
+    overall_quota: str | None = None
+    status: str | None = None
+    theme: str | None = None
+    title: str | None = None
+    type: str | None = None
+
+    statistics: Statistics | None = None
+
+    languages: list[str | None] | None = None
+    pages: list[SurveyPage | None] | None = None
+    team: list[Team | None] | None = None
+
+    links: dict[str, str | None] | None = None
+    title_ml: dict[str, str | None] | None = None
+
+
+class answer_record(Answer):
+    """helper class for backwards compatibility"""
+
+
+class survey_data_record(SurveyData):
+    """helper class for backwards compatibility"""
+
+    answer: str | answer_record | None = None
+    subquestions: (
+        dict[str, Union["survey_data_record", dict[str, "survey_data_record"], None]]
+        | None
+    ) = None
+
+
+class survey_response_record(SurveyResponse):
+    """helper class for backwards compatibility"""
+
+    survey_data: list[str | None] | dict[str, survey_data_record | None] | None = []
+
+
+SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, namespace="survey"))
+
+SURVEY_CAMPAIGN_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SurveyCampaign, namespace="survey_campaign")
+)
+
+SURVEY_QUESTION_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SurveyQuestion, namespace="survey_question")
+)
+
+SURVEY_RESPONSE_DQ_SCHEMA = json.loads(
+    py_avro_schema.generate(
+        py_type=SurveyResponse, namespace="survey_response_disqualified"
+    )
+)
+
+SURVEY_RESPONSE_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=survey_response_record, namespace="survey_response")
+)
