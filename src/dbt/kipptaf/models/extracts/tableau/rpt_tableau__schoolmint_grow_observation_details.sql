@@ -1,3 +1,16 @@
+with
+    final_tier as (
+        select
+            employee_number,
+            academic_year,
+            overall_score as final_score,
+            overall_tier as final_tier,
+            pm_term,
+        from {{ ref("int_performance_management__overall_scores") }} as os
+        where pm_term = 'PM4'
+
+    )
+
 select
     sr.employee_number,
     sr.sam_account_name,
@@ -34,6 +47,9 @@ select
     os.etr_tier,
     os.so_tier,
     os.overall_tier,
+
+    ft.final_score,
+    ft.final_tier,
 
     coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
     coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
@@ -73,7 +89,13 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as sr2
     on od.observer_employee_number = sr2.employee_number
+left join
+    final_tier as ft
+    on sr.employee_number = ft.employee_number
+    and od.academic_year = ft.academic_year
+    and rt.type = 'PM'
 where
     (sr.job_title like '%Teacher%' or sr.job_title = 'Learning Specialist')
     and sr.assignment_status not in ('Terminated', 'Deceased')
     and rt.type in ('PM', 'O3', 'WT')
+
