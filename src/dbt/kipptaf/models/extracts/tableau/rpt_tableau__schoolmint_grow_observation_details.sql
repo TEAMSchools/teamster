@@ -6,7 +6,7 @@ with
             overall_score as final_score,
             overall_tier as final_tier,
             pm_term,
-        from {{ ref("int_performance_management__overall_scores") }} as os
+        from {{ ref("int_performance_management__overall_scores") }}
         where pm_term = 'PM4'
 
     )
