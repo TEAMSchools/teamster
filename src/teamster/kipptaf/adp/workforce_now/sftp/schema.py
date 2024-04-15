@@ -1,43 +1,54 @@
-ADDITIONAL_EARNING_FIELDS = [
-    {"name": "additional_earnings_code", "type": ["null", "string"], "default": None},
-    {
-        "name": "check_voucher_number",
-        "type": ["null", "string", "long"],
-        "default": None,
-    },
-    {"name": "cost_number_description", "type": ["null", "string"], "default": None},
-    {"name": "cost_number", "type": ["null", "string"], "default": None},
-    {"name": "employee_number", "type": ["null", "double"], "default": None},
-    {"name": "file_number_pay_statements", "type": ["null", "long"], "default": None},
-    {"name": "gross_pay", "type": ["null", "string"], "default": None},
-    {"name": "pay_date", "type": ["null", "string"], "default": None},
-    {"name": "payroll_company_code", "type": ["null", "string"], "default": None},
-    {"name": "position_status", "type": ["null", "string"], "default": None},
-    {
-        "name": "additional_earnings_description",
-        "type": ["null", "string"],
-        "default": None,
-    },
-]
+import json
 
-COMPREHENSIVE_BENEFIT_FIELDS = [
-    {"name": "position_id", "type": ["null", "string"], "default": None},
-    {"name": "plan_type", "type": ["null", "string"], "default": None},
-    {"name": "plan_name", "type": ["null", "string"], "default": None},
-    {"name": "coverage_level", "type": ["null", "string"], "default": None},
-]
+import py_avro_schema
+from pydantic import BaseModel
 
-PENSION_BENEFIT_FIELDS = [
-    {"name": "employee_number", "type": ["null", "double"], "default": None},
-    {"name": "position_id", "type": ["null", "string"], "default": None},
-    {"name": "plan_type", "type": ["null", "string"], "default": None},
-    {"name": "plan_name", "type": ["null", "string"], "default": None},
-    {"name": "coverage_level", "type": ["null", "string"], "default": None},
-    {"name": "effective_date", "type": ["null", "string"], "default": None},
-]
 
-ASSET_FIELDS = {
-    "additional_earnings_report": ADDITIONAL_EARNING_FIELDS,
-    "comprehensive_benefits_report": COMPREHENSIVE_BENEFIT_FIELDS,
-    "pension_and_benefits_enrollments": PENSION_BENEFIT_FIELDS,
+class AdditionalEarnings(BaseModel):
+    additional_earnings_code: str | None = None
+    check_voucher_number: str | int | None = None
+    cost_number_description: str | None = None
+    cost_number: str | None = None
+    employee_number: float | None = None
+    file_number_pay_statements: int | None = None
+    gross_pay: str | None = None
+    pay_date: str | None = None
+    payroll_company_code: str | None = None
+    position_status: str | None = None
+    additional_earnings_description: str | None = None
+
+
+class ComprehensiveBenefits(BaseModel):
+    position_id: str | None = None
+    plan_type: str | None = None
+    plan_name: str | None = None
+    coverage_level: str | None = None
+
+
+class PensionBenefitsEnrollments(BaseModel):
+    employee_number: float | None = None
+    position_id: str | None = None
+    plan_type: str | None = None
+    plan_name: str | None = None
+    coverage_level: str | None = None
+    effective_date: str | None = None
+
+
+ASSET_SCHEMA = {
+    "additional_earnings_report": json.loads(
+        py_avro_schema.generate(
+            py_type=AdditionalEarnings, namespace="additional_earnings_report"
+        )
+    ),
+    "comprehensive_benefits_report": json.loads(
+        py_avro_schema.generate(
+            py_type=ComprehensiveBenefits, namespace="comprehensive_benefits_report"
+        )
+    ),
+    "pension_and_benefits_enrollments": json.loads(
+        py_avro_schema.generate(
+            py_type=PensionBenefitsEnrollments,
+            namespace="pension_and_benefits_enrollments",
+        )
+    ),
 }
