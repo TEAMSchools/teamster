@@ -34,15 +34,12 @@ class TimeDetail(BaseModel):
     transaction_start_date_time: str | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class accrual_reporting_period_summary_record(AccrualReportingPeriodSummary):
+    """helper classes for backwards compatibility"""
 
 
-class accrual_reporting_period_summary_record(AccrualReportingPeriodSummary): ...
-
-
-class time_details_record(TimeDetail): ...
+class time_details_record(TimeDetail):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

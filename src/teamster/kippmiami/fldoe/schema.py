@@ -218,15 +218,12 @@ class FSA(BaseModel):
     field_pass: str | None = Field(default=None, alias="pass")
 
 
-"""
-helper classes for backwards compatibility
-"""
+class fast_record(FAST):
+    """helper classes for backwards compatibility"""
 
 
-class fast_record(FAST): ...
-
-
-class fsa_record(FSA): ...
+class fsa_record(FSA):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

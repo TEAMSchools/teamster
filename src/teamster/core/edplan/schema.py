@@ -37,12 +37,8 @@ class NJSmartPowerschool(BaseModel):
     state_studentnumber: int | float | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
-
-
-class njsmart_powerschool_record(NJSmartPowerschool): ...
+class njsmart_powerschool_record(NJSmartPowerschool):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

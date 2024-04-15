@@ -912,21 +912,20 @@ class NJGPA(BaseModel):
     testadministrator: int | float | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class parcc_record(PARCC):
+    """helper classes for backwards compatibility"""
 
 
-class parcc_record(PARCC): ...
+class njsla_record(NJSLA):
+    """helper classes for backwards compatibility"""
 
 
-class njsla_record(NJSLA): ...
+class njsla_science_record(NJSLA):
+    """helper classes for backwards compatibility"""
 
 
-class njsla_science_record(NJSLA): ...
-
-
-class njgpa_record(NJGPA): ...
+class njgpa_record(NJGPA):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

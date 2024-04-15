@@ -353,21 +353,20 @@ class PersonalizedInstruction(BaseModel):
     user_name: str | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class diagnostic_and_instruction_record(DiagnosticInstruction):
+    """helper classes for backwards compatibility"""
 
 
-class diagnostic_and_instruction_record(DiagnosticInstruction): ...
+class diagnostic_results_record(DiagnosticResults):
+    """helper classes for backwards compatibility"""
 
 
-class diagnostic_results_record(DiagnosticResults): ...
+class instructional_usage_data_record(InstructionalUsage):
+    """helper classes for backwards compatibility"""
 
 
-class instructional_usage_data_record(InstructionalUsage): ...
-
-
-class personalized_instruction_by_lesson_record(PersonalizedInstruction): ...
+class personalized_instruction_by_lesson_record(PersonalizedInstruction):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

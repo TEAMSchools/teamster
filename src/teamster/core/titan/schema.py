@@ -29,15 +29,12 @@ class IncomeFormData(BaseModel):
     eligibility_result: int | str | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class person_data_record(PersonData):
+    """helper classes for backwards compatibility"""
 
 
-class person_data_record(PersonData): ...
-
-
-class income_form_data_record(IncomeFormData): ...
+class income_form_data_record(IncomeFormData):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {
