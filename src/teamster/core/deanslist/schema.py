@@ -575,7 +575,6 @@ class incidents_record(Incident):
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
 ASSET_SCHEMA = {
-    "followups": json.loads(py_avro_schema.generate(py_type=Followup)),
     "lists": json.loads(py_avro_schema.generate(py_type=ListModel)),
     "roster-assignments": json.loads(py_avro_schema.generate(py_type=RosterAssignment)),
     "rosters": json.loads(py_avro_schema.generate(py_type=Roster)),
@@ -594,6 +593,7 @@ ASSET_SCHEMA = {
     "comm-log": json.loads(
         py_avro_schema.generate(py_type=comm_log_record, options=pas_options)
     ),
+    "followups": json.loads(py_avro_schema.generate(py_type=followups_record)),
     "homework": json.loads(
         py_avro_schema.generate(py_type=homework_record, options=pas_options)
     ),
