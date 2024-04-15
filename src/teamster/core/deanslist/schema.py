@@ -76,10 +76,6 @@ class CommLogStudent(BaseModel):
     StudentSchoolID: str | None = None
 
 
-class student_record(CommLogStudent):
-    """helper class for backwards compatibility"""
-
-
 class CommLog(BaseModel):
     CallDateTime: str | None = None
     CallStatus: str | None = None
@@ -104,7 +100,7 @@ class CommLog(BaseModel):
     Topic: str | None = None
     UserID: int | None = None
 
-    Student: student_record | None = None
+    Student: CommLogStudent | None = None
 
     Followups: list[str | None] | None = None
 
@@ -193,7 +189,6 @@ class Penalty(BaseModel):
     PenaltyName: str | None = None
     StartDate: str | None = None
     EndDate: str | None = None
-    NumDays: int | None = None
     NumPeriods: str | None = None
     IsSuspension: bool | None = None
     IsReportable: bool | None = None
@@ -201,49 +196,7 @@ class Penalty(BaseModel):
     Print: bool | None = None
     StudentID: str | None = None
 
-
-class CloseTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class CreateTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class DL_LASTUPDATE_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class HearingDate_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class IssueTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class ReturnDate_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class ReviewTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class UpdateTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class action_record(Action):
-    """helper class for backwards compatibility"""
-
-
-class custom_field_record(CustomField):
-    """helper class for backwards compatibility"""
-
-
-class penalty_record(Penalty):
-    """helper class for backwards compatibility"""
+    NumDays: int | float | None = None
 
 
 class Incident(BaseModel):
@@ -293,18 +246,18 @@ class Incident(BaseModel):
     UpdateStaffSchoolID: str | None = None
     UpdateTitle: str | None = None
 
-    CloseTS: CloseTS_record | None = None
-    CreateTS: CreateTS_record | None = None
-    DL_LASTUPDATE: DL_LASTUPDATE_record | None = None
-    HearingDate: HearingDate_record | None = None
-    IssueTS: IssueTS_record | None = None
-    ReturnDate: ReturnDate_record | None = None
-    ReviewTS: ReviewTS_record | None = None
-    UpdateTS: UpdateTS_record | None = None
+    CloseTS: Date | None = None
+    CreateTS: Date | None = None
+    DL_LASTUPDATE: Date | None = None
+    HearingDate: Date | None = None
+    IssueTS: Date | None = None
+    ReturnDate: Date | None = None
+    ReviewTS: Date | None = None
+    UpdateTS: Date | None = None
 
-    Actions: list[action_record | None] | None = None
-    Penalties: list[penalty_record | None] | None = None
-    Custom_Fields: list[custom_field_record | None] | None = None
+    Actions: list[Action | None] | None = None
+    Penalties: list[Penalty | None] | None = None
+    Custom_Fields: list[CustomField | None] | None = None
 
 
 class ListModel(BaseModel):
@@ -552,11 +505,51 @@ class ReconcileSuspensions(BaseModel):
     unnamed_13: str | None = None
 
 
-class behavior_record(Behavior):
+class CloseTS_record(Date):
     """helper class for backwards compatibility"""
 
 
-class comm_log_record(CommLog):
+class CreateTS_record(Date):
+    """helper class for backwards compatibility"""
+
+
+class DL_LASTUPDATE_record(Date):
+    """helper class for backwards compatibility"""
+
+
+class HearingDate_record(Date):
+    """helper class for backwards compatibility"""
+
+
+class IssueTS_record(Date):
+    """helper class for backwards compatibility"""
+
+
+class ReturnDate_record(Date):
+    """helper class for backwards compatibility"""
+
+
+class ReviewTS_record(Date):
+    """helper class for backwards compatibility"""
+
+
+class UpdateTS_record(Date):
+    """helper class for backwards compatibility"""
+
+
+class action_record(Action):
+    """helper class for backwards compatibility"""
+
+
+class custom_field_record(CustomField):
+    """helper class for backwards compatibility"""
+
+
+class penalty_record(Penalty):
+    """helper class for backwards compatibility"""
+
+
+class behavior_record(Behavior):
     """helper class for backwards compatibility"""
 
 
@@ -571,11 +564,24 @@ class homework_record(Homework):
 class incidents_record(Incident):
     """helper class for backwards compatibility"""
 
+    CloseTS: CloseTS_record | None = None
+    CreateTS: CreateTS_record | None = None
+    DL_LASTUPDATE: DL_LASTUPDATE_record | None = None
+    HearingDate: HearingDate_record | None = None
+    IssueTS: IssueTS_record | None = None
+    ReturnDate: ReturnDate_record | None = None
+    ReviewTS: ReviewTS_record | None = None
+    UpdateTS: UpdateTS_record | None = None
+
+    Actions: list[action_record | None] | None = None
+    Penalties: list[penalty_record | None] | None = None
+    Custom_Fields: list[custom_field_record | None] | None = None
+
 
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
 ASSET_SCHEMA = {
-    "followups": json.loads(py_avro_schema.generate(py_type=Followup)),
+    "comm-log": json.loads(py_avro_schema.generate(py_type=CommLog)),
     "lists": json.loads(py_avro_schema.generate(py_type=ListModel)),
     "roster-assignments": json.loads(py_avro_schema.generate(py_type=RosterAssignment)),
     "rosters": json.loads(py_avro_schema.generate(py_type=Roster)),
@@ -591,8 +597,8 @@ ASSET_SCHEMA = {
     "behavior": json.loads(
         py_avro_schema.generate(py_type=behavior_record, options=pas_options)
     ),
-    "comm-log": json.loads(
-        py_avro_schema.generate(py_type=comm_log_record, options=pas_options)
+    "followups": json.loads(
+        py_avro_schema.generate(py_type=followups_record, options=pas_options)
     ),
     "homework": json.loads(
         py_avro_schema.generate(py_type=homework_record, options=pas_options)
