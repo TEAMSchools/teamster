@@ -54,7 +54,6 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
-    
 
 union all
 
@@ -115,4 +114,3 @@ inner join
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
     between eh.work_assignment_start_date and eh.work_assignment_end_date
-    
