@@ -193,13 +193,14 @@ class Penalty(BaseModel):
     PenaltyName: str | None = None
     StartDate: str | None = None
     EndDate: str | None = None
-    NumDays: int | None = None
     NumPeriods: str | None = None
     IsSuspension: bool | None = None
     IsReportable: bool | None = None
     SAID: str | None = None
     Print: bool | None = None
     StudentID: str | None = None
+
+    NumDays: int | float | None = None
 
 
 class CloseTS_record(Date):
