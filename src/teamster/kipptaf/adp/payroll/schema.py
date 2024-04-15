@@ -33,12 +33,8 @@ class GeneralLedger(BaseModel):
     location_id: str | int | float | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
-
-
-class general_ledger_file_record(GeneralLedger): ...
+class general_ledger_file_record(GeneralLedger):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

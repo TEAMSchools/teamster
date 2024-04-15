@@ -130,15 +130,12 @@ class PMStudentSummary(DYDModel):
     score: int | float | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class benchmark_student_summary_record(BenchmarkStudentSummary):
+    """helper classes for backwards compatibility"""
 
 
-class benchmark_student_summary_record(BenchmarkStudentSummary): ...
-
-
-class pm_student_summary_record(PMStudentSummary): ...
+class pm_student_summary_record(PMStudentSummary):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

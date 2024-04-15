@@ -410,24 +410,24 @@ class FastStar(FastStarCore):
     Attempts_G3: str | int | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
+class accelerated_reader_record(AcceleratedReader):
+    """helper classes for backwards compatibility"""
 
 
-class accelerated_reader_record(AcceleratedReader): ...
+class fast_star_record(FastStar):
+    """helper classes for backwards compatibility"""
 
 
-class fast_star_record(FastStar): ...
+class star_dashboard_standards_record(StarDashboardStandard):
+    """helper classes for backwards compatibility"""
 
 
-class star_dashboard_standards_record(StarDashboardStandard): ...
+class star_record(STAR):
+    """helper classes for backwards compatibility"""
 
 
-class star_record(STAR): ...
-
-
-class star_skill_area_record(StarSkillArea): ...
+class star_skill_area_record(StarSkillArea):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {

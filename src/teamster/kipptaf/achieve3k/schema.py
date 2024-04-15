@@ -65,12 +65,8 @@ class Student(BaseModel):
     writing_assignments: float | None = None
 
 
-"""
-helper classes for backwards compatibility
-"""
-
-
-class students_record(Student): ...
+class students_record(Student):
+    """helper classes for backwards compatibility"""
 
 
 ASSET_SCHEMA = {
