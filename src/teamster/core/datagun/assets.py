@@ -83,12 +83,9 @@ def load_sftp(
     file_name,
     destination_path,
 ):
-    # context.log.debug(requests.get(url="https://api.ipify.org").text)
-
-    conn = ssh.get_connection()
-
-    with conn.open_sftp() as sftp:
+    with ssh.get_connection().open_sftp() as sftp:
         sftp.chdir(".")
+
         cwd_path = pathlib.Path(str(sftp.getcwd()))
 
         if destination_path != "":
@@ -119,6 +116,7 @@ def load_sftp(
         else:
             # if destination_path given, chdir after confirming
             if destination_path:
+                context.log.info(f"Changing directory to {destination_filepath.parent}")
                 sftp.chdir(str(destination_filepath.parent))
 
             with sftp.file(filename=file_name, mode="w") as f:
