@@ -594,7 +594,9 @@ ASSET_SCHEMA = {
     "comm-log": json.loads(
         py_avro_schema.generate(py_type=comm_log_record, options=pas_options)
     ),
-    "followups": json.loads(py_avro_schema.generate(py_type=followups_record)),
+    "followups": json.loads(
+        py_avro_schema.generate(py_type=followups_record, options=pas_options)
+    ),
     "homework": json.loads(
         py_avro_schema.generate(py_type=homework_record, options=pas_options)
     ),
