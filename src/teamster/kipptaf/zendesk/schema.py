@@ -1,132 +1,76 @@
-from teamster.core.utils.functions import get_avro_record_schema
+import json
 
-MINUTE_FIELDS = [
-    {"name": "calendar", "type": ["null", "long"], "default": None},
-    {"name": "business", "type": ["null", "long"], "default": None},
-]
+import py_avro_schema
+from pydantic import BaseModel
 
-TICKET_METRIC_FIELDS = [
-    {"name": "id", "type": ["null", "long"], "default": None},
-    {"name": "ticket_id", "type": ["null", "long"], "default": None},
-    {"name": "assignee_stations", "type": ["null", "long"], "default": None},
-    {"name": "group_stations", "type": ["null", "long"], "default": None},
-    {"name": "reopens", "type": ["null", "long"], "default": None},
-    {"name": "replies", "type": ["null", "long"], "default": None},
-    {"name": "url", "type": ["null", "string"], "default": None},
-    {
-        "name": "assignee_updated_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "assigned_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "created_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "initially_assigned_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "latest_comment_added_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "requester_updated_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "solved_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "status_updated_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "updated_at",
-        "type": ["null", "string"],
-        "logicalType": "timestamp",
-        "default": None,
-    },
-    {
-        "name": "agent_wait_time_in_minutes",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="agent_wait_time_in_minutes", fields=MINUTE_FIELDS
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "first_resolution_time_in_minutes",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="first_resolution_time_in_minutes", fields=MINUTE_FIELDS
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "full_resolution_time_in_minutes",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="full_resolution_time_in_minutes", fields=MINUTE_FIELDS
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "on_hold_time_in_minutes",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="on_hold_time_in_minutes", fields=MINUTE_FIELDS
-            ),
-        ],
-        "default": None,
-    },
-    {
-        "name": "reply_time_in_minutes",
-        "type": [
-            "null",
-            get_avro_record_schema(name="reply_time_in_minutes", fields=MINUTE_FIELDS),
-        ],
-        "default": None,
-    },
-    {
-        "name": "requester_wait_time_in_minutes",
-        "type": [
-            "null",
-            get_avro_record_schema(
-                name="requester_wait_time_in_minutes", fields=MINUTE_FIELDS
-            ),
-        ],
-        "default": None,
-    },
-]
 
-ASSET_FIELDS = {
-    "ticket_metrics": TICKET_METRIC_FIELDS,
+class Minutes(BaseModel):
+    calendar: int | None = None
+    business: int | None = None
+
+
+class agent_wait_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class first_resolution_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class full_resolution_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class on_hold_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class reply_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class requester_wait_time_in_minutes_record(Minutes):
+    """helper class for backwards compatibility"""
+
+
+class TicketMetric(BaseModel):
+    id: int | None = None
+    ticket_id: int | None = None
+    assignee_stations: int | None = None
+    group_stations: int | None = None
+    reopens: int | None = None
+    replies: int | None = None
+    url: str | None = None
+    assignee_updated_at: str | None = None
+    assigned_at: str | None = None
+    created_at: str | None = None
+    initially_assigned_at: str | None = None
+    latest_comment_added_at: str | None = None
+    requester_updated_at: str | None = None
+    solved_at: str | None = None
+    status_updated_at: str | None = None
+    updated_at: str | None = None
+
+    agent_wait_time_in_minutes: agent_wait_time_in_minutes_record | None = None
+    first_resolution_time_in_minutes: first_resolution_time_in_minutes_record | None = (
+        None
+    )
+    full_resolution_time_in_minutes: full_resolution_time_in_minutes_record | None = (
+        None
+    )
+    on_hold_time_in_minutes: on_hold_time_in_minutes_record | None = None
+    reply_time_in_minutes: reply_time_in_minutes_record | None = None
+    requester_wait_time_in_minutes: requester_wait_time_in_minutes_record | None = None
+
+
+class ticket_metrics_record(TicketMetric):
+    """helper class for backwards compatibility"""
+
+
+ASSET_SCHEMA = {
+    "ticket_metrics": json.loads(
+        py_avro_schema.generate(
+            py_type=ticket_metrics_record, namespace="ticket_metric"
+        )
+    ),
 }
