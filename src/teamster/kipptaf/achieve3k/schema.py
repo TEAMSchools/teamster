@@ -1,124 +1,76 @@
-STUDENT_FIELDS = [
-    {"name": "activities", "type": ["null", "double"], "default": None},
-    {"name": "after_school_logins", "type": ["null", "double"], "default": None},
-    {"name": "average_first_try_score", "type": ["null", "double"], "default": None},
-    {"name": "average_weekly_activities", "type": ["null", "double"], "default": None},
-    {"name": "current_lexile_level", "type": ["null", "double"], "default": None},
-    {"name": "current_reading_level", "type": ["null", "double"], "default": None},
-    {"name": "district_id", "type": ["null", "long"], "default": None},
-    {"name": "district_school_id", "type": ["null", "string"], "default": None},
-    {"name": "district_status", "type": ["null", "string"], "default": None},
-    {"name": "district", "type": ["null", "string"], "default": None},
-    {"name": "editions", "type": ["null", "string"], "default": None},
-    {"name": "ell", "type": ["null", "string"], "default": None},
-    {"name": "expected_lexile_growth", "type": ["null", "string"], "default": None},
-    {"name": "first_login", "type": ["null", "string"], "default": None},
-    {"name": "grade", "type": ["null", "long"], "default": None},
-    {"name": "invalid_activities", "type": ["null", "double"], "default": None},
-    {"name": "language_id", "type": ["null", "long"], "default": None},
-    {"name": "language", "type": ["null", "string"], "default": None},
-    {"name": "last_login", "type": ["null", "string"], "default": None},
-    {"name": "manual_adjustments", "type": ["null", "string"], "default": None},
-    {"name": "passing_activities", "type": ["null", "double"], "default": None},
-    {"name": "program_hours", "type": ["null", "double"], "default": None},
-    {"name": "program", "type": ["null", "string"], "default": None},
-    {"name": "purchasing_entity", "type": ["null", "string"], "default": None},
-    {"name": "school_id", "type": ["null", "long"], "default": None},
-    {"name": "school", "type": ["null", "string"], "default": None},
-    {"name": "sped", "type": ["null", "string"], "default": None},
-    {"name": "student_id", "type": ["null", "long"], "default": None},
-    {"name": "student_name", "type": ["null", "string"], "default": None},
-    {"name": "top_career_cluster", "type": ["null", "string"], "default": None},
-    {"name": "top_career_name", "type": ["null", "string"], "default": None},
-    {"name": "total_activities", "type": ["null", "double"], "default": None},
-    {"name": "total_logins", "type": ["null", "double"], "default": None},
-    {"name": "user_id", "type": ["null", "long"], "default": None},
-    {"name": "writing_assignments", "type": ["null", "double"], "default": None},
-    {"name": "pre_test_lexile", "type": ["null", "double"], "default": None},
-    {"name": "pre_test_percentile_rank", "type": ["null", "double"], "default": None},
-    {"name": "pre_test_reading_level", "type": ["null", "double"], "default": None},
-    {
-        "name": "pre_test_normal_curve_equivalent",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "pre_test_date",
-        "type": ["null", "string"],
-        "logicalType": "date",
-        "default": None,
-    },
-    {
-        "name": "college_and_career_readiness_pre_test",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {"name": "interim_percentile_rank", "type": ["null", "double"], "default": None},
-    {"name": "interim_test_lexile", "type": ["null", "double"], "default": None},
-    {"name": "interim_test_reading_level", "type": ["null", "double"], "default": None},
-    {
-        "name": "interim_normal_curve_equivalent",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "interim_test_date",
-        "type": ["null", "string"],
-        "logicalType": "date",
-        "default": None,
-    },
-    {
-        "name": "college_and_career_readiness_interim_test",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {"name": "post_test_lexile", "type": ["null", "double"], "default": None},
-    {"name": "post_test_percentile_rank", "type": ["null", "double"], "default": None},
-    {"name": "post_test_reading_level", "type": ["null", "double"], "default": None},
-    {
-        "name": "post_test_normal_curve_equivalent",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "post_test_date",
-        "type": ["null", "string"],
-        "logicalType": "date",
-        "default": None,
-    },
-    {
-        "name": "college_and_career_readiness_post_test",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "reading_connections_summarization",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "reading_connections_generate_questions",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "reading_connections_setting_the_purpose",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "college_and_career_readiness_current",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "last_adjustment_date",
-        "type": ["null", "string"],
-        "logicalType": "date",
-        "default": None,
-    },
-]
+import json
 
-ASSET_FIELDS = {
-    "students": STUDENT_FIELDS,
+import py_avro_schema
+from pydantic import BaseModel
+
+
+class Student(BaseModel):
+    activities: float | None = None
+    after_school_logins: float | None = None
+    average_first_try_score: float | None = None
+    average_weekly_activities: float | None = None
+    college_and_career_readiness_current: str | None = None
+    college_and_career_readiness_interim_test: str | None = None
+    college_and_career_readiness_post_test: str | None = None
+    college_and_career_readiness_pre_test: str | None = None
+    current_lexile_level: float | None = None
+    current_reading_level: float | None = None
+    district_id: int | None = None
+    district_school_id: str | None = None
+    district_status: str | None = None
+    district: str | None = None
+    editions: str | None = None
+    ell: str | None = None
+    expected_lexile_growth: str | None = None
+    first_login: str | None = None
+    grade: int | None = None
+    interim_normal_curve_equivalent: float | None = None
+    interim_percentile_rank: float | None = None
+    interim_test_date: str | None = None
+    interim_test_lexile: float | None = None
+    interim_test_reading_level: float | None = None
+    invalid_activities: float | None = None
+    language_id: int | None = None
+    language: str | None = None
+    last_adjustment_date: str | None = None
+    last_login: str | None = None
+    manual_adjustments: str | None = None
+    passing_activities: float | None = None
+    post_test_date: str | None = None
+    post_test_lexile: float | None = None
+    post_test_normal_curve_equivalent: float | None = None
+    post_test_percentile_rank: float | None = None
+    post_test_reading_level: float | None = None
+    pre_test_date: str | None = None
+    pre_test_lexile: float | None = None
+    pre_test_normal_curve_equivalent: float | None = None
+    pre_test_percentile_rank: float | None = None
+    pre_test_reading_level: float | None = None
+    program_hours: float | None = None
+    program: str | None = None
+    purchasing_entity: str | None = None
+    reading_connections_generate_questions: float | None = None
+    reading_connections_setting_the_purpose: float | None = None
+    reading_connections_summarization: float | None = None
+    school_id: int | None = None
+    school: str | None = None
+    sped: str | None = None
+    student_id: int | None = None
+    student_name: str | None = None
+    top_career_cluster: str | None = None
+    top_career_name: str | None = None
+    total_activities: float | None = None
+    total_logins: float | None = None
+    user_id: int | None = None
+    writing_assignments: float | None = None
+
+
+class students_record(Student):
+    """helper classes for backwards compatibility"""
+
+
+ASSET_SCHEMA = {
+    "students": json.loads(
+        py_avro_schema.generate(py_type=students_record, namespace="student")
+    ),
 }
