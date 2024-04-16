@@ -369,28 +369,25 @@ class personalized_instruction_by_lesson_record(PersonalizedInstruction):
     """helper classes for backwards compatibility"""
 
 
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
 ASSET_SCHEMA = {
     "diagnostic_and_instruction": json.loads(
         py_avro_schema.generate(
-            py_type=diagnostic_and_instruction_record,
-            namespace="diagnostic_and_instruction",
+            py_type=diagnostic_and_instruction_record, options=pas_options
         )
     ),
     "diagnostic_results": json.loads(
-        py_avro_schema.generate(
-            py_type=diagnostic_results_record, namespace="diagnostic_results"
-        )
+        py_avro_schema.generate(py_type=diagnostic_results_record, options=pas_options)
     ),
     "instructional_usage_data": json.loads(
         py_avro_schema.generate(
-            py_type=instructional_usage_data_record,
-            namespace="instructional_usage_data",
+            py_type=instructional_usage_data_record, options=pas_options
         )
     ),
     "personalized_instruction_by_lesson": json.loads(
         py_avro_schema.generate(
-            py_type=personalized_instruction_by_lesson_record,
-            namespace="personalized_instruction_by_lesson",
+            py_type=personalized_instruction_by_lesson_record, options=pas_options
         )
     ),
 }
