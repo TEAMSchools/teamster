@@ -15,7 +15,7 @@ _all = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "iready", a["asset_name"]],
         ssh_resource_key="ssh_iready",
-        avro_schema=ASSET_SCHEMA,
+        avro_schema=ASSET_SCHEMA[a["asset_name"]],
         partitions_def=MultiPartitionsDefinition(
             {
                 "subject": StaticPartitionsDefinition(["ela", "math"]),
