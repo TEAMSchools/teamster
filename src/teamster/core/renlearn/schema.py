@@ -430,25 +430,24 @@ class star_skill_area_record(StarSkillArea):
     """helper classes for backwards compatibility"""
 
 
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
 ASSET_SCHEMA = {
     "accelerated_reader": json.loads(
-        py_avro_schema.generate(
-            py_type=accelerated_reader_record, namespace="accelerated_reader"
-        )
+        py_avro_schema.generate(py_type=accelerated_reader_record, options=pas_options)
     ),
     "fast_star": json.loads(
-        py_avro_schema.generate(py_type=fast_star_record, namespace="fast_star")
+        py_avro_schema.generate(py_type=fast_star_record, options=pas_options)
     ),
     "star_dashboard_standards": json.loads(
         py_avro_schema.generate(
-            py_type=star_dashboard_standards_record,
-            namespace="star_dashboard_standards",
+            py_type=star_dashboard_standards_record, options=pas_options
         )
     ),
-    "star": json.loads(py_avro_schema.generate(py_type=star_record, namespace="star")),
+    "star": json.loads(
+        py_avro_schema.generate(py_type=star_record, options=pas_options)
+    ),
     "star_skill_area": json.loads(
-        py_avro_schema.generate(
-            py_type=star_skill_area_record, namespace="star_skill_area"
-        )
+        py_avro_schema.generate(py_type=star_skill_area_record, options=pas_options)
     ),
 }
