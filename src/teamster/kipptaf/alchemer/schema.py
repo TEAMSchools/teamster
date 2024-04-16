@@ -299,5 +299,8 @@ SURVEY_RESPONSE_DQ_SCHEMA = json.loads(
 )
 
 SURVEY_RESPONSE_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=survey_response_record, namespace="survey_response")
+    py_avro_schema.generate(
+        py_type=survey_response_record,
+        options=py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+    )
 )
