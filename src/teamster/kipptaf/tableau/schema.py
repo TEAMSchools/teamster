@@ -35,8 +35,10 @@ class workbook_record(Workbook):
     """helper class for backwards compatibility"""
 
 
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
 ASSET_SCHEMA = {
     "workbook": json.loads(
-        py_avro_schema.generate(py_type=workbook_record, namespace="workbook")
+        py_avro_schema.generate(py_type=workbook_record, options=pas_options)
     ),
 }
