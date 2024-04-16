@@ -928,17 +928,19 @@ class njgpa_record(NJGPA):
     """helper classes for backwards compatibility"""
 
 
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
 ASSET_SCHEMA = {
     "parcc": json.loads(
-        py_avro_schema.generate(py_type=parcc_record, namespace="parcc")
+        py_avro_schema.generate(py_type=parcc_record, options=pas_options)
     ),
     "njsla": json.loads(
-        py_avro_schema.generate(py_type=njsla_record, namespace="njsla")
+        py_avro_schema.generate(py_type=njsla_record, options=pas_options)
     ),
     "njsla_science": json.loads(
-        py_avro_schema.generate(py_type=njsla_science_record, namespace="njsla_science")
+        py_avro_schema.generate(py_type=njsla_science_record, options=pas_options)
     ),
     "njgpa": json.loads(
-        py_avro_schema.generate(py_type=njgpa_record, namespace="njgpa")
+        py_avro_schema.generate(py_type=njgpa_record, options=pas_options)
     ),
 }
