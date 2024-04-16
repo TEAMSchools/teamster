@@ -48,8 +48,8 @@ select
     os.so_tier,
     os.overall_tier,
 
-    ft.final_score,
-    ft.final_tier,
+    case when rt.code = 'PM3' then ft.final_score end as final_score,
+    case when rt.code = 'PM3' then ft.final_tier end as final_tier,
 
     coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
     coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
