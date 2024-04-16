@@ -71,6 +71,10 @@ class students_record(Student):
 
 ASSET_SCHEMA = {
     "students": json.loads(
-        py_avro_schema.generate(py_type=students_record, namespace="student")
+        py_avro_schema.generate(
+            py_type=students_record,
+            options=py_avro_schema.Option.NO_DOC
+            | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+        )
     ),
 }
