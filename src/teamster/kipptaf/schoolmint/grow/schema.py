@@ -731,17 +731,6 @@ class tag_record(Tag):
     """helper classes for backwards compatibility"""
 
 
-class assignments_record(Assignment):
-    """helper classes for backwards compatibility"""
-
-    creator: creator_record | None = None
-    parent: parent_record | None = None
-    progress: progress_record | None = None
-    user: user_record | None = None
-
-    tags: list[tag_record | None] | None = None
-
-
 class rubric_record(Ref):
     """helper classes for backwards compatibility"""
 
@@ -805,6 +794,17 @@ class observation_score_record(ObservationScore):
     textBoxes: list[text_box_record | None] | None = None
 
 
+class assignments_record(Assignment):
+    """helper classes for backwards compatibility"""
+
+    creator: creator_record | None = None
+    parent: parent_record | None = None
+    progress: progress_record | None = None
+    user: user_record | None = None
+
+    tags: list[tag_record | None] | None = None
+
+
 class observations_record(Observation):
     """helper classes for backwards compatibility"""
 
@@ -825,13 +825,6 @@ class observations_record(Observation):
 
 
 ASSET_SCHEMA = {
-    "assignments": json.loads(
-        py_avro_schema.generate(
-            py_type=assignments_record,
-            namespace="assignment",
-            options=py_avro_schema.Option.USE_FIELD_ALIAS,
-        )
-    ),
     "generic-tags/assignmentpresets": json.loads(
         py_avro_schema.generate(
             py_type=AssignmentPresetTag,
@@ -944,13 +937,6 @@ ASSET_SCHEMA = {
             options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
-    "observations": json.loads(
-        py_avro_schema.generate(
-            py_type=observations_record,
-            namespace="observation",
-            options=py_avro_schema.Option.USE_FIELD_ALIAS,
-        )
-    ),
     "roles": json.loads(
         py_avro_schema.generate(
             py_type=Role,
@@ -984,6 +970,24 @@ ASSET_SCHEMA = {
             py_type=Video,
             namespace="video",
             options=py_avro_schema.Option.USE_FIELD_ALIAS,
+        )
+    ),
+    "assignments": json.loads(
+        py_avro_schema.generate(
+            py_type=assignments_record,
+            namespace="assignment",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS
+            | py_avro_schema.Option.NO_DOC
+            | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+        )
+    ),
+    "observations": json.loads(
+        py_avro_schema.generate(
+            py_type=observations_record,
+            namespace="observation",
+            options=py_avro_schema.Option.USE_FIELD_ALIAS
+            | py_avro_schema.Option.NO_DOC
+            | py_avro_schema.Option.NO_AUTO_NAMESPACE,
         )
     ),
 }
