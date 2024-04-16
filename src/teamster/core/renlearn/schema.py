@@ -1,613 +1,453 @@
-CORE_FIELDS = [
-    {"name": "Asian", "type": ["null", "string"], "default": None},
-    {"name": "BlackOrAfricanAmerican", "type": ["null", "string"], "default": None},
-    {"name": "ClassCode", "type": ["null", "string"], "default": None},
-    {"name": "ClassRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "ClassSourcedID", "type": ["null", "string"], "default": None},
-    {"name": "CourseCode", "type": ["null", "string"], "default": None},
-    {"name": "CourseName", "type": ["null", "string"], "default": None},
-    {"name": "CourseRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "CourseSourcedID", "type": ["null", "string"], "default": None},
-    {"name": "CurrentGrade", "type": ["null", "long", "string"], "default": None},
-    {"name": "DistrictIdentifier", "type": ["null", "double"], "default": None},
-    {"name": "DistrictName", "type": ["null", "string"], "default": None},
-    {"name": "DistrictRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "DistrictSourcedID", "type": ["null", "string"], "default": None},
-    {"name": "DistrictStateID", "type": ["null", "double", "long"], "default": None},
-    {"name": "EnrollmentStatus", "type": ["null", "string"], "default": None},
-    {"name": "Gender", "type": ["null", "string"], "default": None},
-    {"name": "GroupID", "type": ["null", "string"], "default": None},
-    {"name": "GroupOrClassName", "type": ["null", "string"], "default": None},
-    {"name": "HispanicOrLatino", "type": ["null", "string"], "default": None},
-    {"name": "MultiRace", "type": ["null", "string"], "default": None},
-    {"name": "RenaissanceClientID", "type": ["null", "long"], "default": None},
-    {"name": "SchoolIdentifier", "type": ["null", "long"], "default": None},
-    {"name": "SchoolName", "type": ["null", "string"], "default": None},
-    {"name": "SchoolRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "SchoolSourcedID", "type": ["null", "string"], "default": None},
-    {"name": "SchoolStateID", "type": ["null", "double", "long"], "default": None},
-    {"name": "SchoolYear", "type": ["null", "string"], "default": None},
-    {"name": "StudentEmail", "type": ["null", "double"], "default": None},
-    {"name": "StudentFirstName", "type": ["null", "string"], "default": None},
-    {"name": "StudentIdentifier", "type": ["null", "long", "double"], "default": None},
-    {"name": "StudentLastName", "type": ["null", "string"], "default": None},
-    {"name": "StudentMiddleName", "type": ["null", "string"], "default": None},
-    {"name": "StudentRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "StudentSourcedID", "type": ["null", "long", "double"], "default": None},
-    {"name": "StudentStateID", "type": ["null", "double", "string"], "default": None},
-    {"name": "StudentUserID", "type": ["null", "long", "float"], "default": None},
-    {"name": "TeacherEmail", "type": ["null", "string"], "default": None},
-    {"name": "TeacherFirstName", "type": ["null", "string"], "default": None},
-    {"name": "TeacherIdentifier", "type": ["null", "string"], "default": None},
-    {"name": "TeacherLastName", "type": ["null", "string"], "default": None},
-    {"name": "TeacherMiddleName", "type": ["null", "double"], "default": None},
-    {"name": "TeacherRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "TeacherSourcedID", "type": ["null", "string"], "default": None},
-    {"name": "TeacherStateID", "type": ["null", "double", "long"], "default": None},
-    {"name": "TeacherUserID", "type": ["null", "string"], "default": None},
-    {"name": "White", "type": ["null", "string"], "default": None},
-    {
-        "name": "AmericanIndianOrAlaskaNative",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "NativeHawaiianOrOtherPacificIslander",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "SchoolYearStartDate",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "SchoolYearEndDate",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "BirthDate",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-]
+import json
 
-ACCELERATED_READER_FIELDS = [
-    *CORE_FIELDS,
-    {"name": "QuizNumber", "type": ["null", "double"], "default": None},
-    {"name": "ContentLanguage", "type": ["null", "string"], "default": None},
-    {"name": "ContentTitle", "type": ["null", "string"], "default": None},
-    {"name": "Author", "type": ["null", "string"], "default": None},
-    {"name": "FictionNonFiction", "type": ["null", "string"], "default": None},
-    {"name": "InterestLevel", "type": ["null", "string"], "default": None},
-    {"name": "BookLevel", "type": ["null", "double"], "default": None},
-    {"name": "QuestionsPresented", "type": ["null", "double"], "default": None},
-    {"name": "QuestionsCorrect", "type": ["null", "double"], "default": None},
-    {"name": "PercentCorrect", "type": ["null", "double"], "default": None},
-    {"name": "PointsPossible", "type": ["null", "double"], "default": None},
-    {"name": "PointsEarned", "type": ["null", "double"], "default": None},
-    {"name": "Passed", "type": ["null", "boolean"], "default": None},
-    {"name": "TWI", "type": ["null", "string"], "default": None},
-    {"name": "BookRating", "type": ["null", "double"], "default": None},
-    {"name": "AudioUsed", "type": ["null", "double", "string"], "default": None},
-    {"name": "QuizDeleted", "type": ["null", "long"], "default": None},
-    {"name": "WordCount", "type": ["null", "double"], "default": None},
-    {"name": "QuizType", "type": ["null", "string"], "default": None},
-    {"name": "LexileMeasure", "type": ["null", "string", "int"], "default": None},
-    {"name": "LexileLevel", "type": ["null", "double"], "default": None},
-    {
-        "name": "DateQuizCompleted",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "DateQuizCompletedLocal",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-]
+import py_avro_schema
+from pydantic import BaseModel
 
-STAR_FIELDS = [
-    *CORE_FIELDS,
-    {"name": "ACTBenchmarkCategory", "type": ["null", "double"], "default": None},
-    {"name": "AssessmentID", "type": ["null", "string"], "default": None},
-    {"name": "AssessmentNumber", "type": ["null", "long"], "default": None},
-    {"name": "AssessmentStatus", "type": ["null", "string"], "default": None},
-    {"name": "AssessmentType", "type": ["null", "string"], "default": None},
-    {"name": "CurrentSGP", "type": ["null", "double"], "default": None},
-    {"name": "DeactivationReason", "type": ["null", "double"], "default": None},
-    {"name": "ExtraTime", "type": ["null", "string"], "default": None},
-    {"name": "Grade", "type": ["null", "long", "string"], "default": None},
-    {"name": "GradeEquivalent", "type": ["null", "double", "string"], "default": None},
-    {"name": "GradePlacement", "type": ["null", "double"], "default": None},
-    {"name": "NormalCurveEquivalent", "type": ["null", "double"], "default": None},
-    {"name": "OpenGrowthScore", "type": ["null", "double"], "default": None},
-    {"name": "PercentileRank", "type": ["null", "long"], "default": None},
-    {"name": "RaschScore", "type": ["null", "double"], "default": None},
-    {"name": "SATBenchmarkCategory", "type": ["null", "double"], "default": None},
-    {"name": "ScaledScore", "type": ["null", "long"], "default": None},
-    {"name": "SchoolBenchmarkCategoryLevel", "type": ["null", "long"], "default": None},
-    {"name": "SchoolBenchmarkProficient", "type": ["null", "string"], "default": None},
-    {"name": "ScreeningPeriodWindowName", "type": ["null", "string"], "default": None},
-    {"name": "StandardErrorOfMeasurement", "type": ["null", "double"], "default": None},
-    {"name": "StateBenchmarkCategoryName", "type": ["null", "string"], "default": None},
-    {"name": "StateBenchmarkProficient", "type": ["null", "string"], "default": None},
-    {"name": "StudentDisplayID", "type": ["null", "long", "double"], "default": None},
-    {"name": "TakenAt", "type": ["null", "string"], "default": None},
-    {"name": "TakenAtByIPAddress", "type": ["null", "double"], "default": None},
-    {"name": "TeacherDisplayID", "type": ["null", "string"], "default": None},
-    {"name": "TotalCorrect", "type": ["null", "double"], "default": None},
-    {"name": "TotalPossible", "type": ["null", "double"], "default": None},
-    {"name": "TotalTimeInSeconds", "type": ["null", "long"], "default": None},
-    {"name": "UnifiedScore", "type": ["null", "long"], "default": None},
-    {
-        "name": "LaunchDate",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "CompletedDate",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "CompletedDateLocal",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "PartnershipForAssessmentOfReadinessForCollegeAndCareers",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "ScreeningWindowStartDate",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "ScreeningWindowEndDate",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-millis",
-        "default": None,
-    },
-    {
-        "name": "StateBenchmarkCategoryLevel",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StateBenchmarkMinScaledScore",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StateBenchmarkMaxScaledScore",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "SmarterBalancedAssessmentConsortium",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StudentGrowthPercentileFallFall",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StudentGrowthPercentileFallSpring",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StudentGrowthPercentileFallWinter",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StudentGrowthPercentileSpringFall",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StudentGrowthPercentileSpringSpring",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StudentGrowthPercentileWinterSpring",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "RenaissanceBenchmarkCategoryName",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "RenaissanceBenchmarkCategoryLevel",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "RenaissanceBenchmarkCategoryNumberOfLevels",
-        "type": ["null", "long", "float"],
-        "default": None,
-    },
-    {
-        "name": "RenaissanceBenchmarkCategoryMinPercentileRank",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "RenaissanceBenchmarkCategoryMaxPercentileRank",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "StateBenchmarkAssessmentName",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "StateBenchmarkNumberOfCategoryLevels",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "DistrictBenchmarkCategoryName",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "DistrictBenchmarkProficient",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "DistrictBenchmarkCategoryLevel",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "DistrictBenchmarkNumberOfCategoryLevels",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "DistrictBenchmarkMinPercentileRank",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "DistrictBenchmarkMaxPercentileRank",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "SchoolBenchmarkCategoryName",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "SchoolBenchmarkNumberOfCategoryLevels",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "SchoolBenchmarkMinPercentileRank",
-        "type": ["null", "long"],
-        "default": None,
-    },
-    {
-        "name": "SchoolBenchmarkMaxPercentileRank",
-        "type": ["null", "long"],
-        "default": None,
-    },
+
+class RenLearningCore(BaseModel):
+    Asian: str | None = None
+    BlackOrAfricanAmerican: str | None = None
+    ClassCode: str | None = None
+    ClassRenaissanceID: str | None = None
+    ClassSourcedID: str | None = None
+    CourseCode: str | None = None
+    CourseName: str | None = None
+    CourseRenaissanceID: str | None = None
+    CourseSourcedID: str | None = None
+    DistrictIdentifier: float | None = None
+    DistrictName: str | None = None
+    DistrictRenaissanceID: str | None = None
+    DistrictSourcedID: str | None = None
+    EnrollmentStatus: str | None = None
+    Gender: str | None = None
+    GroupID: str | None = None
+    GroupOrClassName: str | None = None
+    HispanicOrLatino: str | None = None
+    MultiRace: str | None = None
+    RenaissanceClientID: int | None = None
+    SchoolIdentifier: int | None = None
+    SchoolName: str | None = None
+    SchoolRenaissanceID: str | None = None
+    SchoolSourcedID: str | None = None
+    SchoolYear: str | None = None
+    StudentEmail: float | None = None
+    StudentFirstName: str | None = None
+    StudentLastName: str | None = None
+    StudentMiddleName: str | None = None
+    StudentRenaissanceID: str | None = None
+    TeacherEmail: str | None = None
+    TeacherFirstName: str | None = None
+    TeacherIdentifier: str | None = None
+    TeacherLastName: str | None = None
+    TeacherMiddleName: float | None = None
+    TeacherRenaissanceID: str | None = None
+    TeacherSourcedID: str | None = None
+    TeacherUserID: str | None = None
+    White: str | None = None
+    AmericanIndianOrAlaskaNative: str | None = None
+    NativeHawaiianOrOtherPacificIslander: str | None = None
+    SchoolYearStartDate: str | None = None
+    SchoolYearEndDate: str | None = None
+    BirthDate: str | None = None
+
+    CurrentGrade: int | str | None = None
+    DistrictStateID: float | int | None = None
+    SchoolStateID: float | int | None = None
+    StudentIdentifier: int | float | None = None
+    StudentSourcedID: int | float | None = None
+    StudentStateID: float | str | None = None
+    StudentUserID: int | float | None = None
+    TeacherStateID: float | int | None = None
+
+
+class AcceleratedReader(RenLearningCore):
+    QuizNumber: float | None = None
+    ContentLanguage: str | None = None
+    ContentTitle: str | None = None
+    Author: str | None = None
+    FictionNonFiction: str | None = None
+    InterestLevel: str | None = None
+    BookLevel: float | None = None
+    QuestionsPresented: float | None = None
+    QuestionsCorrect: float | None = None
+    PercentCorrect: float | None = None
+    PointsPossible: float | None = None
+    PointsEarned: float | None = None
+    Passed: bool | None = None
+    TWI: str | None = None
+    BookRating: float | None = None
+    QuizDeleted: int | None = None
+    WordCount: float | None = None
+    QuizType: str | None = None
+    LexileLevel: float | None = None
+    DateQuizCompleted: str | None = None
+    DateQuizCompletedLocal: str | None = None
+
+    AudioUsed: float | str | None = None
+    LexileMeasure: str | int | None = None
+
+
+class STAR(RenLearningCore):
+    ACTBenchmarkCategory: float | None = None
+    AssessmentID: str | None = None
+    AssessmentNumber: int | None = None
+    AssessmentStatus: str | None = None
+    AssessmentType: str | None = None
+    CurrentSGP: float | None = None
+    DeactivationReason: float | None = None
+    ExtraTime: str | None = None
+    GradePlacement: float | None = None
+    NormalCurveEquivalent: float | None = None
+    OpenGrowthScore: float | None = None
+    PercentileRank: int | None = None
+    RaschScore: float | None = None
+    SATBenchmarkCategory: float | None = None
+    ScaledScore: int | None = None
+    SchoolBenchmarkCategoryLevel: int | None = None
+    SchoolBenchmarkProficient: str | None = None
+    ScreeningPeriodWindowName: str | None = None
+    StandardErrorOfMeasurement: float | None = None
+    StateBenchmarkCategoryName: str | None = None
+    StateBenchmarkProficient: str | None = None
+    TakenAt: str | None = None
+    TakenAtByIPAddress: float | None = None
+    TeacherDisplayID: str | None = None
+    TotalCorrect: float | None = None
+    TotalPossible: float | None = None
+    TotalTimeInSeconds: int | None = None
+    UnifiedScore: int | None = None
+    LaunchDate: str | None = None
+    CompletedDate: str | None = None
+    CompletedDateLocal: str | None = None
+    PartnershipForAssessmentOfReadinessForCollegeAndCareers: float | None = None
+    ScreeningWindowStartDate: str | None = None
+    ScreeningWindowEndDate: str | None = None
+    StateBenchmarkCategoryLevel: float | None = None
+    StateBenchmarkMinScaledScore: float | None = None
+    StateBenchmarkMaxScaledScore: float | None = None
+    SmarterBalancedAssessmentConsortium: float | None = None
+    StudentGrowthPercentileFallFall: float | None = None
+    StudentGrowthPercentileFallSpring: float | None = None
+    StudentGrowthPercentileFallWinter: float | None = None
+    StudentGrowthPercentileSpringFall: float | None = None
+    StudentGrowthPercentileSpringSpring: float | None = None
+    StudentGrowthPercentileWinterSpring: float | None = None
+    RenaissanceBenchmarkCategoryName: str | None = None
+    RenaissanceBenchmarkCategoryLevel: float | None = None
+    RenaissanceBenchmarkCategoryMinPercentileRank: float | None = None
+    RenaissanceBenchmarkCategoryMaxPercentileRank: float | None = None
+    StateBenchmarkAssessmentName: str | None = None
+    StateBenchmarkNumberOfCategoryLevels: float | None = None
+    DistrictBenchmarkCategoryName: str | None = None
+    DistrictBenchmarkProficient: str | None = None
+    DistrictBenchmarkCategoryLevel: int | None = None
+    DistrictBenchmarkNumberOfCategoryLevels: int | None = None
+    DistrictBenchmarkMinPercentileRank: int | None = None
+    DistrictBenchmarkMaxPercentileRank: int | None = None
+    SchoolBenchmarkCategoryName: str | None = None
+    SchoolBenchmarkNumberOfCategoryLevels: int | None = None
+    SchoolBenchmarkMinPercentileRank: int | None = None
+    SchoolBenchmarkMaxPercentileRank: int | None = None
     # Math
-    {"name": "Audio", "type": ["null", "double", "string"], "default": None},
-    {"name": "Quantile", "type": ["null", "string"], "default": None},
+    Quantile: str | None = None
     # Reading
-    {"name": "InstructionalReadingLevel", "type": ["null", "string"], "default": None},
-    {"name": "Lexile", "type": ["null", "string"], "default": None},
-    {"name": "Grade3_AssessmentAttempts", "type": ["null", "long"], "default": None},
-    {"name": "Grade3_PassingStatus", "type": ["null", "double"], "default": None},
-    {"name": "Grade3_PassingScore", "type": ["null", "double"], "default": None},
-    {
-        "name": "EstimatedOralReadingFluency",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "LowerZoneOfProximalDevelopment",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "UpperZoneOfProximalDevelopment",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "LowerLexileZoneOfProximalDevelopment",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {
-        "name": "UpperLexileZoneOfProximalDevelopment",
-        "type": ["null", "double"],
-        "default": None,
-    },
+    InstructionalReadingLevel: str | None = None
+    Lexile: str | None = None
+    Grade3_AssessmentAttempts: int | None = None
+    Grade3_PassingStatus: float | None = None
+    Grade3_PassingScore: float | None = None
+    EstimatedOralReadingFluency: float | None = None
+    LowerZoneOfProximalDevelopment: float | None = None
+    UpperZoneOfProximalDevelopment: float | None = None
+    LowerLexileZoneOfProximalDevelopment: float | None = None
+    UpperLexileZoneOfProximalDevelopment: float | None = None
     # early literacy
-    {"name": "LiteracyClassification", "type": ["null", "string"], "default": None},
-    {"name": "LexileRange", "type": ["null", "string"], "default": None},
-]
+    LiteracyClassification: str | None = None
+    LexileRange: str | None = None
 
-STAR_DASHBOARD_STANDARD_FIELDS = [
-    {"name": "AssessmentID", "type": ["null", "string"], "default": None},
-    {"name": "CompletedDate", "type": ["null", "string"], "default": None},
-    {"name": "CompletedDateLocal", "type": ["null", "string"], "default": None},
-    {"name": "DomainConfidenceLevel", "type": ["null", "double"], "default": None},
-    {"name": "DomainGroup", "type": ["null", "string"], "default": None},
-    {"name": "DomainMasteryLevel", "type": ["null", "double"], "default": None},
-    {"name": "DomainName", "type": ["null", "string"], "default": None},
-    {"name": "DomainPercentMastery", "type": ["null", "double"], "default": None},
-    {"name": "LaunchDate", "type": ["null", "string"], "default": None},
-    {"name": "RenaissanceClientID", "type": ["null", "long"], "default": None},
-    {"name": "SchoolYear", "type": ["null", "string"], "default": None},
-    {"name": "StandardConfidenceLevel", "type": ["null", "string"], "default": None},
-    {"name": "StandardDescription", "type": ["null", "string"], "default": None},
-    {"name": "StandardMasteryLevel", "type": ["null", "string"], "default": None},
-    {"name": "StandardName", "type": ["null", "string"], "default": None},
-    {"name": "StandardPercentMastery", "type": ["null", "long"], "default": None},
-    {"name": "StudentIdentifier", "type": ["null", "long"], "default": None},
-    {"name": "StudentRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "StudentSourcedID", "type": ["null", "long"], "default": None},
-    {"name": "StudentStateID", "type": ["null", "string"], "default": None},
-    {"name": "StudentUserID", "type": ["null", "long"], "default": None},
-]
+    Grade: int | str | None = None
+    GradeEquivalent: float | str | None
+    StudentDisplayID: int | float | None
+    RenaissanceBenchmarkCategoryNumberOfLevels: int | float | None = None
+    Audio: float | str | None = None
 
-STAR_SKILL_AREA_FIELDS = [
-    {"name": "AssessmentID", "type": ["null", "string"], "default": None},
-    {"name": "CompletedDate", "type": ["null", "string"], "default": None},
-    {"name": "CompletedDateLocal", "type": ["null", "string"], "default": None},
-    {"name": "DomainName", "type": ["null", "string"], "default": None},
-    {"name": "DomainScore", "type": ["null", "long"], "default": None},
-    {"name": "FamilyName", "type": ["null", "string"], "default": None},
-    {"name": "LaunchDate", "type": ["null", "string"], "default": None},
-    {"name": "RenaissanceClientID", "type": ["null", "long"], "default": None},
-    {"name": "SchoolYear", "type": ["null", "string"], "default": None},
-    {"name": "SkillAreaName", "type": ["null", "string"], "default": None},
-    {"name": "StudentIdentifier", "type": ["null", "long"], "default": None},
-    {"name": "StudentRenaissanceID", "type": ["null", "string"], "default": None},
-    {"name": "StudentSourcedID", "type": ["null", "long"], "default": None},
-    {"name": "StudentStateID", "type": ["null", "string"], "default": None},
-    {"name": "StudentUserID", "type": ["null", "long"], "default": None},
-    {
-        "name": "SkillAreaMasteryScore",
-        "type": ["null", "long"],
-        "default": None,
-    },
-]
 
-FAST_STAR_CORE_FIELDS = [
-    {"name": "AchievementLevel", "type": ["null", "string"], "default": None},
-    {"name": "AssessmentName", "type": ["null", "string"], "default": None},
-    {"name": "FAST_Equivalent_Score", "type": ["null", "long"], "default": None},
-    {"name": "FAST_ES_Max", "type": ["null", "double"], "default": None},
-    {"name": "FAST_ES_Min", "type": ["null", "double"], "default": None},
-    {"name": "FAST_NOL", "type": ["null", "double"], "default": None},
-    {"name": "FileDate", "type": ["null", "string"], "default": None},
-    {"name": "Level3_or_Above", "type": ["null", "string"], "default": None},
-    {"name": "SchoolType", "type": ["null", "string"], "default": None},
-    {"name": "Assess_Num", "type": ["null", "long"], "default": None},
-    {"name": "Assess_Status", "type": ["null", "string"], "default": None},
-    {"name": "CBTFlag", "type": ["null", "string"], "default": None},
-    {"name": "CID", "type": ["null", "string"], "default": None},
-    {"name": "ClassCode", "type": ["null", "string"], "default": None},
-    {"name": "ClientID", "type": ["null", "long"], "default": None},
-    {"name": "Cname", "type": ["null", "string"], "default": None},
-    {"name": "CompletedDate", "type": ["null", "string"], "default": None},
-    {"name": "CompletedDateLocal", "type": ["null", "string"], "default": None},
-    {"name": "CurrentSGP", "type": ["null", "double"], "default": None},
-    {"name": "DBM_Level", "type": ["null", "long"], "default": None},
-    {"name": "DBMC_NOL", "type": ["null", "long"], "default": None},
-    {"name": "DBMC_PR_Max", "type": ["null", "long"], "default": None},
-    {"name": "DBMC_PR_Min", "type": ["null", "long"], "default": None},
-    {"name": "DBMC", "type": ["null", "string"], "default": None},
-    {"name": "DBMP", "type": ["null", "string"], "default": None},
-    {"name": "DIS", "type": ["null", "long"], "default": None},
-    {"name": "DisName", "type": ["null", "string"], "default": None},
-    {"name": "DOB", "type": ["null", "long"], "default": None},
-    {"name": "Email_S", "type": ["null", "string"], "default": None},
-    {"name": "Email_T", "type": ["null", "string"], "default": None},
-    {"name": "Enrolled", "type": ["null", "string"], "default": None},
-    {"name": "EstORF", "type": ["null", "double"], "default": None},
-    {"name": "EthHisp", "type": ["null", "string"], "default": None},
-    {"name": "Exempted_Absence", "type": ["null", "string"], "default": None},
-    {"name": "Exempted_FailedPrac", "type": ["null", "string"], "default": None},
-    {"name": "Exempted_NonEngSpeaker", "type": ["null", "string"], "default": None},
-    {"name": "Exempted_WrongTest", "type": ["null", "string"], "default": None},
-    {"name": "ExtraTime", "type": ["null", "string"], "default": None},
-    {"name": "FirstName_T", "type": ["null", "string"], "default": None},
-    {"name": "FirstName", "type": ["null", "string"], "default": None},
-    {"name": "FLEID", "type": ["null", "string"], "default": None},
-    {"name": "Gender", "type": ["null", "string"], "default": None},
-    {"name": "GID_RID", "type": ["null", "string"], "default": None},
-    {"name": "Gname", "type": ["null", "string"], "default": None},
-    {"name": "Grade_E", "type": ["null", "double", "string"], "default": None},
-    {"name": "Grade_P", "type": ["null", "double"], "default": None},
-    {"name": "Grade_T", "type": ["null", "string"], "default": None},
-    {"name": "GUID", "type": ["null", "string"], "default": None},
-    {"name": "LastName_T", "type": ["null", "string"], "default": None},
-    {"name": "LastName", "type": ["null", "string"], "default": None},
-    {"name": "LaunchDate", "type": ["null", "string"], "default": None},
-    {"name": "MI_T", "type": ["null", "string"], "default": None},
-    {"name": "MI", "type": ["null", "string"], "default": None},
-    {"name": "MultiRace", "type": ["null", "string"], "default": None},
-    {"name": "NCE", "type": ["null", "double"], "default": None},
-    {"name": "PaperAccommodations", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Answer_Eliminator", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Audio_Options", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Calculator", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Color_Scheme", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Contrast_Overlay", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Enlarge_Text", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Highlighter", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Line_Reader", "type": ["null", "string"], "default": None},
-    {
-        "name": "PNP_Other_Assistive_Technology",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {"name": "PNP_Screen_Reader", "type": ["null", "string"], "default": None},
-    {"name": "PNP_Unlimited_Time", "type": ["null", "string"], "default": None},
-    {"name": "PR", "type": ["null", "long"], "default": None},
-    {"name": "RaceA", "type": ["null", "string"], "default": None},
-    {"name": "RaceB", "type": ["null", "string"], "default": None},
-    {"name": "RaceI", "type": ["null", "string"], "default": None},
-    {"name": "RaceP", "type": ["null", "string"], "default": None},
-    {"name": "RaceW", "type": ["null", "string"], "default": None},
-    {"name": "RBM_Level", "type": ["null", "long"], "default": None},
-    {"name": "RBMC_NOL", "type": ["null", "long"], "default": None},
-    {"name": "RBMC_PR_Max", "type": ["null", "long"], "default": None},
-    {"name": "RBMC_PR_Min", "type": ["null", "long"], "default": None},
-    {"name": "RBMC", "type": ["null", "string"], "default": None},
-    {"name": "Reported", "type": ["null", "string"], "default": None},
-    {"name": "SBM_Level", "type": ["null", "long"], "default": None},
-    {"name": "SBM", "type": ["null", "string"], "default": None},
-    {"name": "SBMC_NOL", "type": ["null", "long"], "default": None},
-    {"name": "SBMC_SS_Max", "type": ["null", "long"], "default": None},
-    {"name": "SBMC_SS_Min", "type": ["null", "long"], "default": None},
-    {"name": "SBMC", "type": ["null", "string"], "default": None},
-    {"name": "SBMP", "type": ["null", "string"], "default": None},
-    {"name": "SCH", "type": ["null", "long"], "default": None},
-    {"name": "SchBM_Level", "type": ["null", "long"], "default": None},
-    {"name": "SchBMC_NOL", "type": ["null", "long"], "default": None},
-    {"name": "SchBMC_PR_Max", "type": ["null", "long"], "default": None},
-    {"name": "SchBMC_PR_Min", "type": ["null", "long"], "default": None},
-    {"name": "SchBMC", "type": ["null", "string"], "default": None},
-    {"name": "SchBMP", "type": ["null", "string"], "default": None},
-    {"name": "SchName", "type": ["null", "string"], "default": None},
-    {"name": "SchoolYear_ED", "type": ["null", "string"], "default": None},
-    {"name": "SchoolYear_SD", "type": ["null", "string"], "default": None},
-    {"name": "SchoolYear", "type": ["null", "string"], "default": None},
-    {"name": "SEM", "type": ["null", "double"], "default": None},
-    {"name": "SGP_FF", "type": ["null", "double"], "default": None},
-    {"name": "SGP_FS", "type": ["null", "double"], "default": None},
-    {"name": "SGP_FW", "type": ["null", "double"], "default": None},
-    {"name": "SGP_SF", "type": ["null", "double"], "default": None},
-    {"name": "SGP_SS", "type": ["null", "double"], "default": None},
-    {"name": "SGP_WS", "type": ["null", "double"], "default": None},
-    {"name": "Sgrade", "type": ["null", "string"], "default": None},
-    {"name": "SID_SID", "type": ["null", "long"], "default": None},
-    {"name": "SW_ED", "type": ["null", "string"], "default": None},
-    {"name": "SW_Name", "type": ["null", "string"], "default": None},
-    {"name": "SW_SD", "type": ["null", "string"], "default": None},
-    {"name": "TestingIP", "type": ["null", "string"], "default": None},
-    {"name": "TestingSite", "type": ["null", "string"], "default": None},
-    {"name": "TestName", "type": ["null", "string"], "default": None},
-    {"name": "TID_RID", "type": ["null", "string"], "default": None},
-    {"name": "TID", "type": ["null", "long"], "default": None},
-    {"name": "TotalCorrect", "type": ["null", "double"], "default": None},
-    {"name": "TotalPossible", "type": ["null", "double"], "default": None},
-    {"name": "TotalTime", "type": ["null", "long"], "default": None},
-    {"name": "UnifiedScore", "type": ["null", "long"], "default": None},
-]
+class StarDashboardStandard(BaseModel):
+    AssessmentID: str | None = None
+    CompletedDate: str | None = None
+    CompletedDateLocal: str | None = None
+    DomainConfidenceLevel: float | None = None
+    DomainGroup: str | None = None
+    DomainMasteryLevel: float | None = None
+    DomainName: str | None = None
+    DomainPercentMastery: float | None = None
+    LaunchDate: str | None = None
+    RenaissanceClientID: int | None = None
+    SchoolYear: str | None = None
+    StandardConfidenceLevel: str | None = None
+    StandardDescription: str | None = None
+    StandardMasteryLevel: str | None = None
+    StandardName: str | None = None
+    StandardPercentMastery: int | None = None
+    StudentIdentifier: int | None = None
+    StudentRenaissanceID: str | None = None
+    StudentSourcedID: int | None = None
+    StudentStateID: str | None = None
+    StudentUserID: int | None = None
 
-FAST_STAR_FIELDS = [
-    *FAST_STAR_CORE_FIELDS,
+
+class StarSkillArea(BaseModel):
+    AssessmentID: str | None = None
+    CompletedDate: str | None = None
+    CompletedDateLocal: str | None = None
+    DomainName: str | None = None
+    DomainScore: int | None = None
+    FamilyName: str | None = None
+    LaunchDate: str | None = None
+    RenaissanceClientID: int | None = None
+    SchoolYear: str | None = None
+    SkillAreaName: str | None = None
+    StudentIdentifier: int | None = None
+    StudentRenaissanceID: str | None = None
+    StudentSourcedID: int | None = None
+    StudentStateID: str | None = None
+    StudentUserID: int | None = None
+    SkillAreaMasteryScore: int | None = None
+
+
+class FastStarCore(BaseModel):
+    AchievementLevel: str | None = None
+    AssessmentName: str | None = None
+    FAST_Equivalent_Score: int | None = None
+    FAST_ES_Max: float | None = None
+    FAST_ES_Min: float | None = None
+    FAST_NOL: float | None = None
+    FileDate: str | None = None
+    Level3_or_Above: str | None = None
+    SchoolType: str | None = None
+    Assess_Num: int | None = None
+    Assess_Status: str | None = None
+    CBTFlag: str | None = None
+    CID: str | None = None
+    ClassCode: str | None = None
+    ClientID: int | None = None
+    Cname: str | None = None
+    CompletedDate: str | None = None
+    CompletedDateLocal: str | None = None
+    CurrentSGP: float | None = None
+    DBM_Level: int | None = None
+    DBMC_NOL: int | None = None
+    DBMC_PR_Max: int | None = None
+    DBMC_PR_Min: int | None = None
+    DBMC: str | None = None
+    DBMP: str | None = None
+    DIS: int | None = None
+    DisName: str | None = None
+    DOB: int | None = None
+    Email_S: str | None = None
+    Email_T: str | None = None
+    Enrolled: str | None = None
+    EstORF: float | None = None
+    EthHisp: str | None = None
+    Exempted_Absence: str | None = None
+    Exempted_FailedPrac: str | None = None
+    Exempted_NonEngSpeaker: str | None = None
+    Exempted_WrongTest: str | None = None
+    ExtraTime: str | None = None
+    FirstName_T: str | None = None
+    FirstName: str | None = None
+    FLEID: str | None = None
+    Gender: str | None = None
+    GID_RID: str | None = None
+    Gname: str | None = None
+    Grade_P: float | None = None
+    Grade_T: str | None = None
+    GUID: str | None = None
+    LastName_T: str | None = None
+    LastName: str | None = None
+    LaunchDate: str | None = None
+    MI_T: str | None = None
+    MI: str | None = None
+    MultiRace: str | None = None
+    NCE: float | None = None
+    PaperAccommodations: str | None = None
+    PNP_Answer_Eliminator: str | None = None
+    PNP_Audio_Options: str | None = None
+    PNP_Calculator: str | None = None
+    PNP_Color_Scheme: str | None = None
+    PNP_Contrast_Overlay: str | None = None
+    PNP_Enlarge_Text: str | None = None
+    PNP_Highlighter: str | None = None
+    PNP_Line_Reader: str | None = None
+    PNP_Other_Assistive_Technology: str | None = None
+    PNP_Screen_Reader: str | None = None
+    PNP_Unlimited_Time: str | None = None
+    PR: int | None = None
+    RaceA: str | None = None
+    RaceB: str | None = None
+    RaceI: str | None = None
+    RaceP: str | None = None
+    RaceW: str | None = None
+    RBM_Level: int | None = None
+    RBMC_NOL: int | None = None
+    RBMC_PR_Max: int | None = None
+    RBMC_PR_Min: int | None = None
+    RBMC: str | None = None
+    Reported: str | None = None
+    SBM_Level: int | None = None
+    SBM: str | None = None
+    SBMC_NOL: int | None = None
+    SBMC_SS_Max: int | None = None
+    SBMC_SS_Min: int | None = None
+    SBMC: str | None = None
+    SBMP: str | None = None
+    SCH: int | None = None
+    SchBM_Level: int | None = None
+    SchBMC_NOL: int | None = None
+    SchBMC_PR_Max: int | None = None
+    SchBMC_PR_Min: int | None = None
+    SchBMC: str | None = None
+    SchBMP: str | None = None
+    SchName: str | None = None
+    SchoolYear_ED: str | None = None
+    SchoolYear_SD: str | None = None
+    SchoolYear: str | None = None
+    SEM: float | None = None
+    SGP_FF: float | None = None
+    SGP_FS: float | None = None
+    SGP_FW: float | None = None
+    SGP_SF: float | None = None
+    SGP_SS: float | None = None
+    SGP_WS: float | None = None
+    Sgrade: str | None = None
+    SID_SID: int | None = None
+    SW_ED: str | None = None
+    SW_Name: str | None = None
+    SW_SD: str | None = None
+    TestingIP: str | None = None
+    TestingSite: str | None = None
+    TestName: str | None = None
+    TID_RID: str | None = None
+    TID: int | None = None
+    TotalCorrect: float | None = None
+    TotalPossible: float | None = None
+    TotalTime: int | None = None
+    UnifiedScore: int | None = None
+
+    Grade_E: float | str | None = None
+
+
+class FastStar(FastStarCore):
     # Math
-    {"name": "Quantile", "type": ["null", "string"], "default": None},
+    Quantile: str | None = None
     # Reading
-    {"name": "Attempts_G3", "type": ["null", "string", "long"], "default": None},
-    {"name": "IRL", "type": ["null", "string"], "default": None},
-    {"name": "Lexile", "type": ["null", "string"], "default": None},
-    {"name": "PassingScore_G3", "type": ["null", "string"], "default": None},
-    {"name": "PassingStatus_G3", "type": ["null", "string"], "default": None},
-    {"name": "ZPD_Lexile_Lower", "type": ["null", "double"], "default": None},
-    {"name": "ZPD_Lexile_Upper", "type": ["null", "double"], "default": None},
-    {"name": "ZPD_Lower", "type": ["null", "double"], "default": None},
-    {"name": "ZPD_Upper", "type": ["null", "double"], "default": None},
+    IRL: str | None = None
+    Lexile: str | None = None
+    PassingScore_G3: str | None = None
+    PassingStatus_G3: str | None = None
+    ZPD_Lexile_Lower: float | None = None
+    ZPD_Lexile_Upper: float | None = None
+    ZPD_Lower: float | None = None
+    ZPD_Upper: float | None = None
     # Early Literacy
-    {"name": "LexileRange", "type": ["null", "string"], "default": None},
-    {"name": "LitClassification", "type": ["null", "string"], "default": None},
+    LexileRange: str | None = None
+    LitClassification: str | None = None
     # Early Literacy - Domains
-    {"name": "SubDomain_AP", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_AP_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_AP_SkillSet_B", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_AP_SkillSet_C", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_CW", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_CW_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_CW_SkillSet_B", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_CW_SkillSet_C", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_CW_SkillSet_D", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_EN", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_EN_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_EN_SkillSet_B", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_EN_SkillSet_C", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_EN_SkillSet_D", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_EN_SkillSet_E", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_B", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_C", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_D", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_E", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_F", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_G", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PA_SkillSet_H", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PC", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PC_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_B", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_C", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_D", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_E", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_F", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_G", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_H", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_I", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_J", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_K", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_PH_SkillSet_L", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_SA", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_SA_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_SA_SkillSet_B", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_SA_SkillSet_C", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_SA_SkillSet_D", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_SC", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_SC_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_VO", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_VO_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_VO_SkillSet_B", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_VO_SkillSet_C", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_VS", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_VS_SkillSet_A", "type": ["null", "long"], "default": None},
-    {"name": "SubDomain_VS_SkillSet_B", "type": ["null", "long"], "default": None},
-]
+    SubDomain_AP: int | None = None
+    SubDomain_AP_SkillSet_A: int | None = None
+    SubDomain_AP_SkillSet_B: int | None = None
+    SubDomain_AP_SkillSet_C: int | None = None
+    SubDomain_CW: int | None = None
+    SubDomain_CW_SkillSet_A: int | None = None
+    SubDomain_CW_SkillSet_B: int | None = None
+    SubDomain_CW_SkillSet_C: int | None = None
+    SubDomain_CW_SkillSet_D: int | None = None
+    SubDomain_EN: int | None = None
+    SubDomain_EN_SkillSet_A: int | None = None
+    SubDomain_EN_SkillSet_B: int | None = None
+    SubDomain_EN_SkillSet_C: int | None = None
+    SubDomain_EN_SkillSet_D: int | None = None
+    SubDomain_EN_SkillSet_E: int | None = None
+    SubDomain_PA: int | None = None
+    SubDomain_PA_SkillSet_A: int | None = None
+    SubDomain_PA_SkillSet_B: int | None = None
+    SubDomain_PA_SkillSet_C: int | None = None
+    SubDomain_PA_SkillSet_D: int | None = None
+    SubDomain_PA_SkillSet_E: int | None = None
+    SubDomain_PA_SkillSet_F: int | None = None
+    SubDomain_PA_SkillSet_G: int | None = None
+    SubDomain_PA_SkillSet_H: int | None = None
+    SubDomain_PC: int | None = None
+    SubDomain_PC_SkillSet_A: int | None = None
+    SubDomain_PH: int | None = None
+    SubDomain_PH_SkillSet_A: int | None = None
+    SubDomain_PH_SkillSet_B: int | None = None
+    SubDomain_PH_SkillSet_C: int | None = None
+    SubDomain_PH_SkillSet_D: int | None = None
+    SubDomain_PH_SkillSet_E: int | None = None
+    SubDomain_PH_SkillSet_F: int | None = None
+    SubDomain_PH_SkillSet_G: int | None = None
+    SubDomain_PH_SkillSet_H: int | None = None
+    SubDomain_PH_SkillSet_I: int | None = None
+    SubDomain_PH_SkillSet_J: int | None = None
+    SubDomain_PH_SkillSet_K: int | None = None
+    SubDomain_PH_SkillSet_L: int | None = None
+    SubDomain_SA: int | None = None
+    SubDomain_SA_SkillSet_A: int | None = None
+    SubDomain_SA_SkillSet_B: int | None = None
+    SubDomain_SA_SkillSet_C: int | None = None
+    SubDomain_SA_SkillSet_D: int | None = None
+    SubDomain_SC: int | None = None
+    SubDomain_SC_SkillSet_A: int | None = None
+    SubDomain_VO: int | None = None
+    SubDomain_VO_SkillSet_A: int | None = None
+    SubDomain_VO_SkillSet_B: int | None = None
+    SubDomain_VO_SkillSet_C: int | None = None
+    SubDomain_VS: int | None = None
+    SubDomain_VS_SkillSet_A: int | None = None
+    SubDomain_VS_SkillSet_B: int | None = None
 
-FAST_STAR_DOMAIN_FIELDS = [
-    *FAST_STAR_CORE_FIELDS,
-]
+    Attempts_G3: str | int | None = None
 
-ASSET_FIELDS = {
-    "accelerated_reader": ACCELERATED_READER_FIELDS,
-    "star": STAR_FIELDS,
-    "star_dashboard_standards": STAR_DASHBOARD_STANDARD_FIELDS,
-    "star_skill_area": STAR_SKILL_AREA_FIELDS,
-    "fast_star": FAST_STAR_FIELDS,
+
+class accelerated_reader_record(AcceleratedReader):
+    """helper classes for backwards compatibility"""
+
+
+class fast_star_record(FastStar):
+    """helper classes for backwards compatibility"""
+
+
+class star_dashboard_standards_record(StarDashboardStandard):
+    """helper classes for backwards compatibility"""
+
+
+class star_record(STAR):
+    """helper classes for backwards compatibility"""
+
+
+class star_skill_area_record(StarSkillArea):
+    """helper classes for backwards compatibility"""
+
+
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
+ASSET_SCHEMA = {
+    "accelerated_reader": json.loads(
+        py_avro_schema.generate(py_type=accelerated_reader_record, options=pas_options)
+    ),
+    "fast_star": json.loads(
+        py_avro_schema.generate(py_type=fast_star_record, options=pas_options)
+    ),
+    "star_dashboard_standards": json.loads(
+        py_avro_schema.generate(
+            py_type=star_dashboard_standards_record, options=pas_options
+        )
+    ),
+    "star": json.loads(
+        py_avro_schema.generate(py_type=star_record, options=pas_options)
+    ),
+    "star_skill_area": json.loads(
+        py_avro_schema.generate(py_type=star_skill_area_record, options=pas_options)
+    ),
 }
