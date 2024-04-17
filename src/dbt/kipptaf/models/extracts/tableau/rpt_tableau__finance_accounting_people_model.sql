@@ -77,5 +77,5 @@ left join
     and y.academic_year = ye.academic_year
 left join
     additional_earnings as ae
-    on eh.employee_number = ae.employee_number
+    on hd.employee_number = ae.employee_number
     and y.academic_year = ae.academic_year
