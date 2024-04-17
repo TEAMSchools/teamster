@@ -2,10 +2,15 @@
 
 with
     years as (
-        select effective_date, extract(year from effective_date) - 1 as academic_year,
+        select effective_date, 
+               extract(year from effective_date) - 1 as academic_year,
         from
             unnest(
-                generate_date_array("2003-04-30", date({{ var("current_academic_year") }}+1, 4, 30), interval 1 year)
+                generate_date_array(
+                    "2003-04-30",
+                    date({{ var("current_academic_year") }} + 1, 4, 30),
+                    interval 1 year
+                )
             ) as effective_date
     )
 
@@ -76,4 +81,4 @@ left join
     {{ ref("int_performance_management__overall_scores") }} as pm
     on s.employee_number = pm.employee_number
     and y.academic_year = pm.academic_year
-    and pm.pm_term = 'PM4'
+    and pm.pm_term = "PM4"
