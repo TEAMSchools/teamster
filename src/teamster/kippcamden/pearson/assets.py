@@ -11,7 +11,7 @@ from teamster.core.sftp.assets import build_sftp_asset
 
 from .. import CODE_LOCATION
 
-config_path = pathlib.Path(__file__).parent / "config"
+config_dir = pathlib.Path(__file__).parent / "config"
 
 njgpa = build_sftp_asset(
     asset_key=[CODE_LOCATION, "pearson", "njgpa"],
@@ -36,7 +36,7 @@ all_assets = [
         partitions_def=StaticPartitionsDefinition(a["partition_keys"]),
         **a,
     )
-    for a in config_from_files([f"{config_path}/assets.yaml"])["assets"]
+    for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
 ]
 
 _all = [
