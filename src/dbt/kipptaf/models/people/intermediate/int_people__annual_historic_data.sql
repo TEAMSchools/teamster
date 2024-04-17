@@ -2,17 +2,11 @@
 
 with
     years as (
-        select
-            extract(year from date_day) as academic_year,
-            if(
-                extract(year from date_day) = {{ var("current_academic_year") }}
-                and extract(month from current_date('{{ var("local_timezone") }}'))
-                not in (5, 6),
-                current_date('{{ var("local_timezone") }}'),
-                date((extract(year from date_day) + 1), 4, 30)
-            ) as effective_date,
-        from {{ ref("utils__date_spine") }}
-        where extract(month from date_day) = 7 and extract(day from date_day) = 1
+        select effective_date, extract(year from effective_date) - 1 as academic_year,
+        from
+            unnest(
+                generate_date_array("2003-04-30", date({{ var("current_academic_year") }}+1, 4, 30), interval 1 year)
+            ) as effective_date
     )
 
 select

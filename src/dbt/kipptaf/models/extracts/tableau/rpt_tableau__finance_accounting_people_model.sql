@@ -55,14 +55,14 @@ select
     ye.years_teaching_total,
 
     lag(hd.historic_legal_entity, 1) over (
-        partition by hd.employee_number order by hd.academic_year asc
+        partition by hd.employee_number order by hd.academic_year desc
     ) as last_year_business_unit,
 
     lag(hd.historic_role, 1) over (
-        partition by hd.employee_number order by hd.academic_year asc
+        partition by hd.employee_number order by hd.academic_year desc
     ) last_year_job_title,
     lag(hd.historic_salary, 1) over (
-        partition by hd.employee_number order by hd.academic_year asc
+        partition by hd.employee_number order by hd.academic_year desc
     ) as last_year_salary,
 
     row_number() over (
