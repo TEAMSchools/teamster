@@ -73,7 +73,7 @@ select
         currentgrade.string_value, safe_cast(currentgrade.long_value as string)
     ) as `current_grade`,
     coalesce(
-        lexilemeasure.string_value, safe_cast(lexilemeasure.int_value as string)
+        lexilemeasure.string_value, safe_cast(lexilemeasure.long_value as string)
     ) as `lexile_measure`,
     coalesce(
         studentstateid.string_value, safe_cast(studentstateid.double_value as string)
@@ -91,7 +91,7 @@ select
         studentsourcedid.long_value, safe_cast(studentsourcedid.double_value as int)
     ) as `student_sourced_id`,
     coalesce(
-        studentuserid.long_value, safe_cast(studentuserid.float_value as int)
+        studentuserid.long_value, safe_cast(studentuserid.double_value as int)
     ) as `student_user_id`,
     coalesce(
         teacherstateid.long_value, safe_cast(teacherstateid.double_value as int)
