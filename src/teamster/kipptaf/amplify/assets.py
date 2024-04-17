@@ -1,7 +1,6 @@
-import pathlib
 from io import StringIO
 
-from dagster import AssetExecutionContext, Output, asset, config_from_files
+from dagster import AssetExecutionContext, Output, asset
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -16,15 +15,28 @@ from .. import CODE_LOCATION, LOCAL_TIMEZONE
 from .resources import MClassResource
 from .schema import ASSET_SCHEMA
 
+PARTITIONS_DEF = FiscalYearPartitionsDefinition(
+    start_date="2022-07-01", timezone=LOCAL_TIMEZONE.name, start_month=7
+)
 
-def build_mclass_asset(name, partitions_def, dyd_payload):
+DYD_PAYLOAD = {
+    "accounts": "1300588536",
+    "districts": "1300588535",
+    "roster_option": "2",  # On Test Day
+    "dyd_assessments": "7_D8",  # DIBELS 8th Edition
+    "tracking_id": None,
+}
+
+
+def build_mclass_asset(name, dyd_results):
     asset_key = [CODE_LOCATION, "amplify", name]
+    dyd_payload = {**DYD_PAYLOAD, "dyd_results": dyd_results}
 
     @asset(
         key=[CODE_LOCATION, "amplify", name],
         metadata={"dyd_payload": dyd_payload},
         io_manager_key="io_manager_gcs_avro",
-        partitions_def=partitions_def,
+        partitions_def=PARTITIONS_DEF,
         group_name="amplify",
         compute_kind="amplify",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
@@ -59,21 +71,13 @@ def build_mclass_asset(name, partitions_def, dyd_payload):
     return _asset
 
 
-mclass_assets = [
-    build_mclass_asset(
-        name=a["name"],
-        dyd_payload=a["dyd_payload"],
-        partitions_def=FiscalYearPartitionsDefinition(
-            start_date=a["partition_start_date"],
-            timezone=LOCAL_TIMEZONE.name,
-            start_month=7,
-        ),
-    )
-    for a in config_from_files(
-        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
-    )["assets"]
-]
+benchmark_student_summary = build_mclass_asset(
+    name="benchmark_student_summary", dyd_results="BM"
+)
+
+pm_student_summary = build_mclass_asset(name="pm_student_summary", dyd_results="PM")
 
 _all = [
-    *mclass_assets,
+    benchmark_student_summary,
+    pm_student_summary,
 ]

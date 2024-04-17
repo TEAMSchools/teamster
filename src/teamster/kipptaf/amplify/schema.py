@@ -10,7 +10,6 @@ class DYDModel(BaseModel):
     approved_accommodations: str | None = None
     assessing_teacher_name: str | None = None
     assessment_edition: str | None = None
-    assessment_grade: str | None = None
     assessment: str | None = None
     classed: str | None = None
     client_date: str | None = None
@@ -22,7 +21,6 @@ class DYDModel(BaseModel):
     ell_status: str | None = None
     english_proficiency: str | None = None
     enrollment_date: str | None = None
-    enrollment_grade: str | None = None
     external_program: str | None = None
     gender: str | None = None
     home_language: str | None = None
@@ -53,7 +51,9 @@ class DYDModel(BaseModel):
     sync_date: str | None = None
     title_1: str | None = None
 
+    enrollment_grade: str | int | None = None
     assessing_teacher_staff_id: str | float | None = None
+    assessment_grade: str | int | None = None
     official_teacher_staff_id: int | str | None = None
     primary_id_student_id_district_id: int | float | None = None
 
@@ -138,17 +138,15 @@ class pm_student_summary_record(PMStudentSummary):
     """helper classes for backwards compatibility"""
 
 
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
 ASSET_SCHEMA = {
     "benchmark_student_summary": json.loads(
         py_avro_schema.generate(
-            py_type=benchmark_student_summary_record,
-            namespace="benchmark_student_summary",
+            py_type=benchmark_student_summary_record, options=pas_options
         )
     ),
     "pm_student_summary": json.loads(
-        py_avro_schema.generate(
-            py_type=pm_student_summary_record,
-            namespace="pm_student_summary",
-        )
+        py_avro_schema.generate(py_type=pm_student_summary_record, options=pas_options)
     ),
 }
