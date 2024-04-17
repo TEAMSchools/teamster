@@ -27,7 +27,6 @@ njgpa = build_sftp_asset(
     ),
 )
 
-
 all_assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
