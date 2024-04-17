@@ -14,7 +14,7 @@ dependencies = [
   "dagster-ssh<1",
   "dagster-fivetran<1",
   "dagster-airbyte<1",
-  "dbt-bigquery<1.8",
+  "dbt-bigquery>=1.7,<1.8",
   "fastavro>=1.9.0",
   "cramjam>=2.7.0",
   "alchemer>=0.6.1",
@@ -51,6 +51,7 @@ validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster i
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 post_install = { shell = "pdm export --prod -o requirements.txt" }
+json2py = { shell = "bash .pdm/scripts/json2py.sh" }
 
 [tool.pyright]
 venvPath = ".venv"

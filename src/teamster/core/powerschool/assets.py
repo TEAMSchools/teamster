@@ -88,21 +88,18 @@ def build_powerschool_table_asset(
             .where(text(constructed_where))
         )
 
-        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
-
-        try:
-            context.log.info("Starting SSH tunnel")
+        with ssh_powerschool.get_tunnel(
+            remote_port=1521, local_port=1521
+        ) as ssh_tunnel:
             ssh_tunnel.start()
 
             file_path: pathlib.Path = db_powerschool.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
             )  # type: ignore
 
-            try:
-                with file_path.open(mode="rb") as f:
-                    num_records = sum(block.num_records for block in block_reader(f))
-            except FileNotFoundError:
-                num_records = 0
+        try:
+            with file_path.open(mode="rb") as f:
+                num_records = sum(block.num_records for block in block_reader(f))
 
             yield Output(
                 value=file_path,
@@ -111,8 +108,7 @@ def build_powerschool_table_asset(
                     "latest_materialization_timestamp": now.timestamp(),
                 },
             )
-        finally:
-            context.log.info("Stopping SSH tunnel")
-            ssh_tunnel.stop()
+        except FileNotFoundError:
+            pass
 
     return _asset
