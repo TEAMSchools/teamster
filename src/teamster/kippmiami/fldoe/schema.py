@@ -226,19 +226,15 @@ class fsa_record(FSA):
     """helper classes for backwards compatibility"""
 
 
+pas_options = (
+    py_avro_schema.Option.NO_DOC
+    | py_avro_schema.Option.NO_AUTO_NAMESPACE
+    | py_avro_schema.Option.USE_FIELD_ALIAS
+)
+
 ASSET_SCHEMA = {
     "fast": json.loads(
-        py_avro_schema.generate(
-            py_type=fast_record,
-            namespace="fast",
-            options=py_avro_schema.Option.USE_FIELD_ALIAS,
-        )
+        py_avro_schema.generate(py_type=fast_record, options=pas_options)
     ),
-    "fsa": json.loads(
-        py_avro_schema.generate(
-            py_type=fsa_record,
-            namespace="fsa",
-            options=py_avro_schema.Option.USE_FIELD_ALIAS,
-        )
-    ),
+    "fsa": json.loads(py_avro_schema.generate(py_type=fsa_record, options=pas_options)),
 }
