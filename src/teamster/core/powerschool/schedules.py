@@ -35,17 +35,15 @@ def build_powerschool_schedule(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ) -> RunRequest | None:
-        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
+        asset_selection = []
 
-        try:
-            context.log.info("Starting SSH tunnel")
+        with ssh_powerschool.get_tunnel(
+            remote_port=1521, local_port=1521
+        ) as ssh_tunnel:
             ssh_tunnel.start()
 
-            asset_selection = []
             for asset in asset_defs:
                 context.log.info(asset.key)
-
-                is_requested = False
 
                 latest_materialization_event = (
                     context.instance.get_latest_materialization_event(asset.key)
@@ -68,7 +66,7 @@ def build_powerschool_schedule(
                 )
 
                 if latest_materialization_datetime.timestamp() == 0:
-                    is_requested = True
+                    asset_selection.append(asset.key)
                 else:
                     partition_column = asset.metadata_by_key[asset.key][
                         "partition_column"
@@ -83,8 +81,7 @@ def build_powerschool_schedule(
                     [(count,)] = db_powerschool.engine.execute_query(
                         query=text(
                             # trunk-ignore(bandit/B608)
-                            "SELECT COUNT(*) "
-                            f"FROM {asset.key.path[-1]} "
+                            f"SELECT COUNT(*) FROM {asset.key.path[-1]} "
                             f"WHERE {partition_column} >= "
                             f"TO_TIMESTAMP('{latest_materialization_fmt}', "
                             "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
@@ -96,14 +93,7 @@ def build_powerschool_schedule(
                     context.log.info(f"count: {count}")
 
                     if int(count) > 0:
-                        is_requested = True
-
-                if is_requested:
-                    asset_selection.append(asset.key)
-
-        finally:
-            context.log.info("Stopping SSH tunnel")
-            ssh_tunnel.stop()
+                        asset_selection.append(asset.key)
 
         if asset_selection:
             return RunRequest(run_key=schedule_name, asset_selection=asset_selection)
