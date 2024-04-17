@@ -69,8 +69,9 @@ class students_record(Student):
     """helper classes for backwards compatibility"""
 
 
-ASSET_SCHEMA = {
-    "students": json.loads(
-        py_avro_schema.generate(py_type=students_record, namespace="student")
-    ),
-}
+STUDENT_SCHEMA = json.loads(
+    py_avro_schema.generate(
+        py_type=students_record,
+        options=py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+    )
+)

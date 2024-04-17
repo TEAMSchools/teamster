@@ -70,7 +70,9 @@ class ticket_metrics_record(TicketMetric):
 ASSET_SCHEMA = {
     "ticket_metrics": json.loads(
         py_avro_schema.generate(
-            py_type=ticket_metrics_record, namespace="ticket_metric"
+            py_type=ticket_metrics_record,
+            options=py_avro_schema.Option.NO_DOC
+            | py_avro_schema.Option.NO_AUTO_NAMESPACE,
         )
     ),
 }
