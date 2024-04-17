@@ -2,8 +2,7 @@
 
 with
     years as (
-        select effective_date, 
-               extract(year from effective_date) - 1 as academic_year,
+        select effective_date, extract(year from effective_date) - 1 as academic_year,
         from
             unnest(
                 generate_date_array(
@@ -62,7 +61,7 @@ select
     coalesce(
         s.worker_rehire_date, s.worker_original_hire_date
     ) as most_recent_hire_date,
-    if(s.ethnicity_long_name = 'Hispanic or Latino', true, false) as is_hispanic,
+    if(s.ethnicity_long_name = "Hispanic or Latino", true, false) as is_hispanic,
 from {{ ref("base_people__staff_roster") }} as s
 inner join
     years as y
