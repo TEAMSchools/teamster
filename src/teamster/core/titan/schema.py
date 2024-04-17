@@ -37,13 +37,13 @@ class income_form_data_record(IncomeFormData):
     """helper classes for backwards compatibility"""
 
 
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
 ASSET_SCHEMA = {
     "person_data": json.loads(
-        py_avro_schema.generate(py_type=person_data_record, namespace="person_data")
+        py_avro_schema.generate(py_type=person_data_record, options=pas_options)
     ),
     "income_form_data": json.loads(
-        py_avro_schema.generate(
-            py_type=income_form_data_record, namespace="income_form_data"
-        )
+        py_avro_schema.generate(py_type=income_form_data_record, options=pas_options)
     ),
 }
