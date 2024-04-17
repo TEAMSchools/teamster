@@ -13,10 +13,6 @@ class View(BaseModel):
     total_views: int | None = None
 
 
-class view_record(View):
-    """helper class for backwards compatibility"""
-
-
 class Workbook(BaseModel):
     content_url: str | None = None
     id: str | None = None
@@ -28,17 +24,26 @@ class Workbook(BaseModel):
     show_tabs: bool | None = None
     webpage_url: str | None = None
 
-    views: list[view_record | None] | None = None
+    views: list[View | None] | None = None
+
+
+class view_record(View):
+    """helper class for backwards compatibility"""
 
 
 class workbook_record(Workbook):
     """helper class for backwards compatibility"""
 
+    views: list[view_record | None] | None = None
 
-pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
-ASSET_SCHEMA = {
-    "workbook": json.loads(
-        py_avro_schema.generate(py_type=workbook_record, options=pas_options)
-    ),
-}
+WORKBOOK_SCHEMA = json.loads(
+    py_avro_schema.generate(
+        py_type=workbook_record,
+        namespace="workbook",
+        options=py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+    )
+)
+
+# remove top-level namespace for backwards compatibility
+del WORKBOOK_SCHEMA["namespace"]
