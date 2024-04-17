@@ -36,4 +36,4 @@ select
     null as ay_unapproved_tardies,
     null as ay_approved_left_early,
     null as ay_unapproved_left_early,
-from {{ ref("int_people__historic_data_as_of_april30_annually") }} as hd
+from {{ ref("int_people__annual_historic_data") }} as hd

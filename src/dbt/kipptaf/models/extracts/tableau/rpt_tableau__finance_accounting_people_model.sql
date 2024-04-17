@@ -56,17 +56,19 @@ select
     null as original_salary_upon_hire,
     null as is_currently_certified_nj_only,
 
-    ye.years_teaching_at_kipp
-    + coalesce(cw.years_teaching_in_njfl, 0)
-    + coalesce(cw.years_teaching_outside_njfl, 0) as years_teaching_total_current,
+    ye.years_teaching_total,
+
+    lag(business_unit_home_name, 1) over (
+        partition by hd.employee_number order by hd.academic_year desc
+    ),
 
     row_number() over (
         partition by cw.employee_number
         order by y.academic_year desc, eh.assignment_status asc
     ) as rn_curr,
-from {{ ref("int_people__historic_data_as_of_april30_annually") }} as hd
+from {{ ref("int_people__annual_historic_data") }} as hd
 left join
-    {{ ref("int_people__historic_data_as_of_april30_annually") }} as ly
+    {{ ref("int_people__annual_historic_data") }} as ly
     on hd.employee_number = ly.employee_number
     and ly.academic_year = (hd.academic_year - 1)
 left join
