@@ -3,13 +3,14 @@ import random
 from dagster import materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.amplify.assets import mclass_assets
+from teamster.kipptaf.amplify.assets import (
+    benchmark_student_summary,
+    pm_student_summary,
+)
 from teamster.kipptaf.resources import MCLASS_RESOURCE
 
 
-def _test_asset(assets, asset_name):
-    asset = [a for a in assets if a.key.path[-1] == asset_name][0]
-
+def _test_asset(asset):
     partition_keys = asset.partitions_def.get_partition_keys()  # type: ignore
 
     result = materialize(
@@ -32,8 +33,8 @@ def _test_asset(assets, asset_name):
 
 
 def test_mclass_asset_benchmark_student_summary():
-    _test_asset(assets=mclass_assets, asset_name="benchmark_student_summary")
+    _test_asset(benchmark_student_summary)
 
 
 def test_mclass_asset_pm_student_summary():
-    _test_asset(assets=mclass_assets, asset_name="pm_student_summary")
+    _test_asset(pm_student_summary)
