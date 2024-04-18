@@ -838,7 +838,7 @@ ASSIGNMENT_SCHEMA = json.loads(
     )
 )
 assignment_parent = [f for f in ASSIGNMENT_SCHEMA["fields"] if f["name"] == "parent"][0]
-assignment_parent["namespace"] = "assignment"
+assignment_parent["type"][1]["namespace"] = "assignment"
 
 ASSET_SCHEMA = {
     "generic-tags/assignmentpresets": json.loads(
