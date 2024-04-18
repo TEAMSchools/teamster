@@ -1,4 +1,4 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG, define_asset_job
+from dagster import define_asset_job
 
 from .assets import (
     blissbook_extract_assets,
@@ -16,9 +16,7 @@ blissbook_extract_asset_job = define_asset_job(
 )
 
 clever_extract_asset_job = define_asset_job(
-    name="datagun_clever_extract_asset_job",
-    selection=clever_extract_assets,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+    name="datagun_clever_extract_asset_job", selection=clever_extract_assets
 )
 
 coupa_extract_asset_job = define_asset_job(
@@ -26,9 +24,7 @@ coupa_extract_asset_job = define_asset_job(
 )
 
 deanslist_extract_asset_job = define_asset_job(
-    name="datagun_deanslist_extract_asset_job",
-    selection=deanslist_extract_assets,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 30)},
+    name="datagun_deanslist_extract_asset_job", selection=deanslist_extract_assets
 )
 
 egencia_extract_asset_job = define_asset_job(
@@ -36,9 +32,7 @@ egencia_extract_asset_job = define_asset_job(
 )
 
 idauto_extract_asset_job = define_asset_job(
-    name="datagun_idauto_extract_asset_job",
-    selection=idauto_extract_assets,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+    name="datagun_idauto_extract_asset_job", selection=idauto_extract_assets
 )
 
 illuminate_extract_asset_job = define_asset_job(

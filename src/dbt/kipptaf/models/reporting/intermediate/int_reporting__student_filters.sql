@@ -15,16 +15,13 @@ with
     ),
 
     intervention_nj as (
-        select
-            st.local_student_id as student_number,
-
-            regexp_extract(g.group_name, r'Bucket 2 - (Math|Reading) -') as subject,
-        from {{ source("illuminate", "group_student_aff") }} as s
+        select st.local_student_id as student_number, g.nj_intervention_subject,
+        from {{ ref("stg_illuminate__group_student_aff") }} as s
         inner join
-            {{ source("illuminate", "groups") }} as g
+            {{ ref("stg_illuminate__groups") }} as g
             on s.group_id = g.group_id
-            and g.group_name like 'Bucket 2%'
-        left join
+            and g.nj_intervention_tier = 2
+        inner join
             {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
         where
             s.end_date is null
@@ -155,7 +152,7 @@ select
     coalesce(db.moy, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy, 'No Test') as dibels_eoy_composite,
 
-    if(nj.subject is not null, true, false) as bucket_two,
+    if(nj.nj_intervention_subject is not null, true, false) as bucket_two,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -170,7 +167,7 @@ select
         then 'Bucket 1'
         when co.grade_level >= 4 and py.njsla_proficiency = 'At/Above'
         then 'Bucket 1'
-        when nj.subject is not null
+        when nj.nj_intervention_subject is not null
         then 'Bucket 2'
     end as nj_student_tier,
 
@@ -184,7 +181,7 @@ cross join subjects as sj
 left join
     intervention_nj as nj
     on co.student_number = nj.student_number
-    and sj.iready_subject = nj.subject
+    and sj.iready_subject = nj.nj_intervention_subject
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
