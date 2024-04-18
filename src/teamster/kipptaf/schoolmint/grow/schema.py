@@ -31,12 +31,6 @@ class Progress(BaseModel):
     field_id: str | None = Field(None, alias="_id")
 
 
-class TextBox(BaseModel):
-    key: str | None = None
-    label: str | None = None
-    value: str | None = None
-
-
 class Content(BaseModel):
     left: str | None = None
     right: str | None = None
@@ -396,6 +390,12 @@ class VideoRef(BaseModel):
 class Checkbox(BaseModel):
     label: str | None = None
     value: bool | None = None
+
+
+class TextBox(BaseModel):
+    key: str | None = None
+    label: str | None = None
+    value: str | None = None
 
 
 class ObservationScore(BaseModel):
@@ -979,7 +979,6 @@ ASSET_SCHEMA = {
     "assignments": json.loads(
         py_avro_schema.generate(
             py_type=assignments_record,
-            namespace="assignment",
             options=py_avro_schema.Option.USE_FIELD_ALIAS
             | py_avro_schema.Option.NO_DOC
             | py_avro_schema.Option.NO_AUTO_NAMESPACE,
@@ -988,7 +987,6 @@ ASSET_SCHEMA = {
     "observations": json.loads(
         py_avro_schema.generate(
             py_type=observations_record,
-            namespace="observation",
             options=py_avro_schema.Option.USE_FIELD_ALIAS
             | py_avro_schema.Option.NO_DOC
             | py_avro_schema.Option.NO_AUTO_NAMESPACE,
