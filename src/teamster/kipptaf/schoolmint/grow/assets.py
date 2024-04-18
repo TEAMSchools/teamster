@@ -14,10 +14,9 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
-
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .resources import SchoolMintGrowResource
-from .schema import ASSET_SCHEMA
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.kipptaf.schoolmint.grow.schema import ASSET_SCHEMA
 
 
 def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
@@ -32,7 +31,7 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
         key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
-        group_name="schoolmint_grow",
+        group_name="schoolmint",
         compute_kind="schoolmint_grow",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )

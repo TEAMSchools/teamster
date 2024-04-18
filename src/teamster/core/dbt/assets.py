@@ -46,7 +46,7 @@ def build_dbt_external_source_assets(
     outs = {
         source["name"]: AssetOut(
             key=dagster_dbt_translator.get_asset_key(source),
-            group_name=source["source_name"],
+            group_name=dagster_dbt_translator.get_group_name(source),
             dagster_type=Nothing,
             description=dagster_dbt_translator.get_description(source),
             is_required=False,

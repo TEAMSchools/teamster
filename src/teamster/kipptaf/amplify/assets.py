@@ -1,6 +1,6 @@
 from io import StringIO
 
-from dagster import AssetExecutionContext, Output, asset
+from dagster import MAX_RUNTIME_SECONDS_TAG, AssetExecutionContext, Output, asset
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -28,7 +28,7 @@ DYD_PAYLOAD = {
 }
 
 
-def build_mclass_asset(name, dyd_results):
+def build_mclass_asset(name, dyd_results, op_tags=None):
     asset_key = [CODE_LOCATION, "amplify", name]
     dyd_payload = {**DYD_PAYLOAD, "dyd_results": dyd_results}
 
@@ -39,6 +39,7 @@ def build_mclass_asset(name, dyd_results):
         partitions_def=PARTITIONS_DEF,
         group_name="amplify",
         compute_kind="amplify",
+        op_tags=op_tags,
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, mclass: MClassResource):
@@ -72,7 +73,9 @@ def build_mclass_asset(name, dyd_results):
 
 
 benchmark_student_summary = build_mclass_asset(
-    name="benchmark_student_summary", dyd_results="BM"
+    name="benchmark_student_summary",
+    dyd_results="BM",
+    op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 15)},
 )
 
 pm_student_summary = build_mclass_asset(name="pm_student_summary", dyd_results="PM")
