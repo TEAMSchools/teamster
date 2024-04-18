@@ -8,16 +8,25 @@ with
             {{
                 dbt_utils.star(
                     from=src_aer,
-                    except=["pay_date", "gross_pay", "check_voucher_number"],
+                    except=[
+                        "employee_number",
+                        "pay_date",
+                        "gross_pay",
+                        "check_voucher_number",
+                    ],
                 )
             }},
 
-            parse_date('%m/%d/%Y', pay_date) as pay_date,
+            safe_cast(employee_number as int) as employee_number,
             concat(payroll_company_code, file_number_pay_statements) as position_id,
+
+            parse_date('%m/%d/%Y', pay_date) as pay_date,
+
             coalesce(
                 safe_cast(check_voucher_number.long_value as string),
                 check_voucher_number.string_value
             ) as check_voucher_number,
+
             safe_cast(
                 regexp_replace(gross_pay, r'[^\d\.-]', '') as numeric
             ) as gross_pay,
