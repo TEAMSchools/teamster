@@ -31,12 +31,6 @@ class Progress(BaseModel):
     field_id: str | None = Field(None, alias="_id")
 
 
-class TextBox(BaseModel):
-    key: str | None = None
-    label: str | None = None
-    value: str | None = None
-
-
 class Content(BaseModel):
     left: str | None = None
     right: str | None = None
@@ -398,6 +392,12 @@ class Checkbox(BaseModel):
     value: bool | None = None
 
 
+class TextBox(BaseModel):
+    key: str | None = None
+    label: str | None = None
+    value: str | None = None
+
+
 class ObservationScore(BaseModel):
     measurement: str | None = None
     measurementGroup: str | None = None
@@ -484,6 +484,10 @@ class MeetingTypeTag(GenericTag):
 
 
 class AssignmentPresetTag(GenericTag):
+    type: str | None = None
+
+
+class TagTag(GenericTag):
     type: str | None = None
 
 
@@ -731,17 +735,6 @@ class tag_record(Tag):
     """helper classes for backwards compatibility"""
 
 
-class assignments_record(Assignment):
-    """helper classes for backwards compatibility"""
-
-    creator: creator_record | None = None
-    parent: parent_record | None = None
-    progress: progress_record | None = None
-    user: user_record | None = None
-
-    tags: list[tag_record | None] | None = None
-
-
 class rubric_record(Ref):
     """helper classes for backwards compatibility"""
 
@@ -805,6 +798,17 @@ class observation_score_record(ObservationScore):
     textBoxes: list[text_box_record | None] | None = None
 
 
+class assignments_record(Assignment):
+    """helper classes for backwards compatibility"""
+
+    creator: creator_record | None = None
+    parent: parent_record | None = None
+    progress: progress_record | None = None
+    user: user_record | None = None
+
+    tags: list[tag_record | None] | None = None
+
+
 class observations_record(Observation):
     """helper classes for backwards compatibility"""
 
@@ -824,14 +828,19 @@ class observations_record(Observation):
     videos: list[video_record | None] | None = None
 
 
+# add namespace to assignment.parent for backwards compatibility
+ASSIGNMENT_SCHEMA = json.loads(
+    py_avro_schema.generate(
+        py_type=assignments_record,
+        options=py_avro_schema.Option.USE_FIELD_ALIAS
+        | py_avro_schema.Option.NO_DOC
+        | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+    )
+)
+assignment_parent = [f for f in ASSIGNMENT_SCHEMA["fields"] if f["name"] == "parent"][0]
+assignment_parent["type"][1]["namespace"] = "assignment"
+
 ASSET_SCHEMA = {
-    "assignments": json.loads(
-        py_avro_schema.generate(
-            py_type=assignments_record,
-            namespace="assignment",
-            options=py_avro_schema.Option.USE_FIELD_ALIAS,
-        )
-    ),
     "generic-tags/assignmentpresets": json.loads(
         py_avro_schema.generate(
             py_type=AssignmentPresetTag,
@@ -904,7 +913,7 @@ ASSET_SCHEMA = {
     ),
     "generic-tags/tags": json.loads(
         py_avro_schema.generate(
-            py_type=GenericTag,
+            py_type=TagTag,
             namespace="tag",
             options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
@@ -944,13 +953,6 @@ ASSET_SCHEMA = {
             options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
-    "observations": json.loads(
-        py_avro_schema.generate(
-            py_type=observations_record,
-            namespace="observation",
-            options=py_avro_schema.Option.USE_FIELD_ALIAS,
-        )
-    ),
     "roles": json.loads(
         py_avro_schema.generate(
             py_type=Role,
@@ -986,4 +988,13 @@ ASSET_SCHEMA = {
             options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
+    "observations": json.loads(
+        py_avro_schema.generate(
+            py_type=observations_record,
+            options=py_avro_schema.Option.USE_FIELD_ALIAS
+            | py_avro_schema.Option.NO_DOC
+            | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+        )
+    ),
+    "assignments": ASSIGNMENT_SCHEMA,
 }
