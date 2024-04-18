@@ -487,6 +487,10 @@ class AssignmentPresetTag(GenericTag):
     type: str | None = None
 
 
+class TagTag(GenericTag):
+    type: str | None = None
+
+
 class UserTypeTag(GenericTag):
     expectations: Expectations | None = None
 
@@ -897,7 +901,7 @@ ASSET_SCHEMA = {
     ),
     "generic-tags/tags": json.loads(
         py_avro_schema.generate(
-            py_type=GenericTag,
+            py_type=TagTag,
             namespace="tag",
             options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
