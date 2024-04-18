@@ -39,17 +39,19 @@ with
         group by student_id, subject
     ),
 
+    pre_filter_qaf as (
+        select powerschool_student_number, subject_area, module_number, percent_correct,
+        from {{ ref("int_assessments__response_rollup") }}
+        where module_type = 'QAF' and academic_year = 2023 and response_type = 'overall'
+    ),
+
     qaf_pct_correct as (
         select powerschool_student_number, subject_area, qaf1, qaf2, qaf3, qaf4,
         from
-            {{ ref("int_assessments__response_rollup") }} pivot (
+            pre_filter_qaf pivot (
                 max(percent_correct) for module_number
                 in ('QAF1', 'QAF2', 'QAF3', 'QAF4')
             )
-        where
-            module_type = 'QAF'
-            and academic_year = {{ var("current_academic_year") }}
-            and response_type = 'overall'
     ),
 
     scale_crosswalk as (
