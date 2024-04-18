@@ -1,4 +1,4 @@
-from dagster import config_from_files
+from dagster import MAX_RUNTIME_SECONDS_TAG, config_from_files
 
 from teamster.core.datagun.assets import (
     build_bigquery_extract_sftp_asset,
@@ -19,7 +19,10 @@ blissbook_extract_assets = [
 
 clever_extract_assets = [
     build_bigquery_extract_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+        **a,
     )
     for a in config_from_files([f"{config_dir}/clever.yaml"])["assets"]
 ]
@@ -54,19 +57,29 @@ littlesis_extract_assets = [
 ]
 
 # BQ query
-deanslist_extract_assets = [
-    build_bigquery_query_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
-    for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]
-]
-
 idauto_extract_assets = [
     build_bigquery_query_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+        **a,
     )
     for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
 ]
+
+deanslist_extract_assets = []
+for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]:
+    op_tags = a.pop("op_tags", {})
+
+    dl_asset = build_bigquery_query_sftp_asset(
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 30), **op_tags},
+        **a,
+    )
+
+    deanslist_extract_assets.append(dl_asset)
+
 
 _all = [
     *blissbook_extract_assets,
