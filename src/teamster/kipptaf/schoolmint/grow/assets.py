@@ -32,7 +32,7 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
         key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
-        group_name="schoolmint_grow",
+        group_name="schoolmint",
         compute_kind="schoolmint_grow",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
