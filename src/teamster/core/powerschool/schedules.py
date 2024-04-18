@@ -1,6 +1,5 @@
 import pendulum
 from dagster import (
-    MAX_RUNTIME_SECONDS_TAG,
     AssetsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
@@ -18,9 +17,7 @@ def build_powerschool_schedule(
 ):
     job_name = f"{code_location}_powerschool_schedule_job"
 
-    job = define_asset_job(
-        name=job_name, selection=asset_defs, tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)}
-    )
+    job = define_asset_job(name=job_name, selection=asset_defs)
 
     schedule_name = f"{job_name}_schedule"
 
