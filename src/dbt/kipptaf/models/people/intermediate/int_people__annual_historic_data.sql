@@ -6,7 +6,7 @@ with
         from
             unnest(
                 generate_date_array(
-                    "2003-04-30",
+                    '2003-04-30',
                     date({{ var("current_academic_year") }} + 1, 4, 30),
                     interval 1 year
                 )
@@ -61,7 +61,7 @@ select
     coalesce(
         s.worker_rehire_date, s.worker_original_hire_date
     ) as most_recent_hire_date,
-    if(s.ethnicity_long_name = "Hispanic or Latino", true, false) as is_hispanic,
+    if(s.ethnicity_long_name = 'Hispanic or Latino', true, false) as is_hispanic,
 from {{ ref("base_people__staff_roster") }} as s
 inner join
     years as y
@@ -80,4 +80,4 @@ left join
     {{ ref("int_performance_management__overall_scores") }} as pm
     on s.employee_number = pm.employee_number
     and y.academic_year = pm.academic_year
-    and pm.pm_term = "PM4"
+    and pm.pm_term = 'PM4'
