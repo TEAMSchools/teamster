@@ -828,6 +828,18 @@ class observations_record(Observation):
     videos: list[video_record | None] | None = None
 
 
+# add namespace to assignment.parent for backwards compatibility
+ASSIGNMENT_SCHEMA = json.loads(
+    py_avro_schema.generate(
+        py_type=assignments_record,
+        options=py_avro_schema.Option.USE_FIELD_ALIAS
+        | py_avro_schema.Option.NO_DOC
+        | py_avro_schema.Option.NO_AUTO_NAMESPACE,
+    )
+)
+assignment_parent = [f for f in ASSIGNMENT_SCHEMA["fields"] if f["name"] == "parent"][0]
+assignment_parent["namespace"] = "assignment"
+
 ASSET_SCHEMA = {
     "generic-tags/assignmentpresets": json.loads(
         py_avro_schema.generate(
@@ -976,14 +988,6 @@ ASSET_SCHEMA = {
             options=py_avro_schema.Option.USE_FIELD_ALIAS,
         )
     ),
-    "assignments": json.loads(
-        py_avro_schema.generate(
-            py_type=assignments_record,
-            options=py_avro_schema.Option.USE_FIELD_ALIAS
-            | py_avro_schema.Option.NO_DOC
-            | py_avro_schema.Option.NO_AUTO_NAMESPACE,
-        )
-    ),
     "observations": json.loads(
         py_avro_schema.generate(
             py_type=observations_record,
@@ -992,4 +996,5 @@ ASSET_SCHEMA = {
             | py_avro_schema.Option.NO_AUTO_NAMESPACE,
         )
     ),
+    "assignments": ASSIGNMENT_SCHEMA,
 }
