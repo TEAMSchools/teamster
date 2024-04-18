@@ -15,12 +15,19 @@ with
     ),
 
     intervention_nj as (
-        select st.local_student_id as student_number, g.nj_intervention_subject,
+        select
+            st.local_student_id as student_number,
+            g.nj_intervention_subject,
+            row_number() over (
+                partition by st.local_student_id, g.nj_intervention_subject
+                order by s.gsa_id desc
+            ) as rn_bucket,
         from {{ ref("stg_illuminate__group_student_aff") }} as s
         inner join
             {{ ref("stg_illuminate__groups") }} as g
             on s.group_id = g.group_id
             and g.nj_intervention_tier = 2
+            and g.group_id in (925, 924, 922, 923, 943, 944)
         inner join
             {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
         where
@@ -182,6 +189,7 @@ left join
     intervention_nj as nj
     on co.student_number = nj.student_number
     and sj.iready_subject = nj.nj_intervention_subject
+    and nj.rn_bucket = 1
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
