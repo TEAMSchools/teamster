@@ -12,7 +12,7 @@ class URLVariable(BaseModel):
 
 
 class OpenText(BaseModel):
-    onewordrequiredessay: dict[str, int | None] | None = None
+    onewordrequiredessay: list[str | None] | dict[str, int | None] | None = []
     gibberish: list[str | None] | dict[str, int | None] | None = []
 
 
@@ -113,10 +113,9 @@ class QuestionProperties(BaseModel):
     messages: Messages | None = None
     show_rules: ShowRules | None = None
 
-    defaulttext: dict[str, str | None] | None = None
-    question_description: dict[str, str | None] | None = None
-
+    defaulttext: list[str | None] | dict[str, str | None] | None = []
     inputmask: list[str | None] | dict[str, str | None] | None = []
+    question_description: list[str | None] | dict[str, str | None] | None = []
 
 
 class OptionProperties(BaseModel):
@@ -169,6 +168,7 @@ class SurveyQuestion(BaseModel):
     properties: QuestionProperties | None = None
 
     description: list[str | None] | None = []
+
     options: list[SurveyOption | None] | None = None
     sub_questions: list["SurveyQuestion"] | None = None
 
@@ -180,11 +180,12 @@ class SurveyQuestion(BaseModel):
 class SurveyPage(BaseModel):
     id: int | None = None
 
+    questions: list[SurveyQuestion | None] | None = None
+
     title: list[str | None] | dict[str, str | None] | None = []
     description: list[str | None] | dict[str, str | None] | None = []
 
     properties: list[str | None] | PageProperties | None = []
-    questions: list[SurveyQuestion | None] | None = None
 
 
 class SurveyCampaign(BaseModel):
@@ -232,10 +233,11 @@ class SurveyResponse(BaseModel):
     status: str | None = None
     user_agent: str | None = None
 
-    url_variables: list[str | None] | dict[str, str | URLVariable | None] | None = []
     data_quality: list[str | None] | DataQuality | None = []
 
     survey_data: list[str | None] | dict[str, SurveyData | None] | None = []
+
+    url_variables: list[str | None] | dict[str, str | URLVariable | None] | None = []
 
 
 class Survey(BaseModel):
