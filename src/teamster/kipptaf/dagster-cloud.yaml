@@ -51,16 +51,6 @@ locations:
                 cpu: 750m
                 memory: 2.0Gi
             env:
-              - name: ACHIEVE3K_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-achieve3k-sftp
-                    key: password
-              - name: ACHIEVE3K_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-achieve3k-sftp
-                    key: username
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -294,16 +284,6 @@ locations:
         run_k8s_config:
           container_config:
             env:
-              - name: ACHIEVE3K_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-achieve3k-sftp
-                    key: password
-              - name: ACHIEVE3K_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-achieve3k-sftp
-                    key: username
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:

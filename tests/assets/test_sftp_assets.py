@@ -4,7 +4,7 @@ from dagster import EnvVar, instance_for_test, materialize
 
 from teamster.core.resources import SSH_COUCHDROP, SSH_IREADY, get_io_manager_gcs_avro
 from teamster.core.ssh.resources import SSHResource
-from teamster.kipptaf.resources import SSH_RESOURCE_ACHIEVE3K, SSH_RESOURCE_DEANSLIST
+from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
 
 def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
@@ -381,22 +381,6 @@ def test_asset_titan_income_form_data_kippnewark():
             )
         },
     )
-
-
-def test_asset_achieve3k_students_kipptaf():
-    from teamster.kipptaf.achieve3k.assets import students
-
-    with instance_for_test() as instance:
-        instance.add_dynamic_partitions(
-            partitions_def_name=students.partitions_def.name,  # type: ignore
-            partition_keys=["2024-04-01"],
-        )
-
-        _test_asset(
-            asset=students,
-            ssh_resource={"ssh_achieve3k": SSH_RESOURCE_ACHIEVE3K},
-            instance=instance,
-        )
 
 
 def test_asset_deanslist_reconcile_attendance_kipptaf():
