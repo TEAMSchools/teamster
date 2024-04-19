@@ -27,7 +27,14 @@ with
             {{ ref("stg_illuminate__groups") }} as g
             on s.group_id = g.group_id
             and g.nj_intervention_tier = 2
-            and g.group_id in (925, 924, 922, 923, 943, 944)
+            and g.group_name in (
+                'Bucket 2 - Math - HS',
+                'Bucket 2 - Reading - HS',
+                'Bucket 2 - Reading - Gr5-8',
+                'Bucket 2 - Math - Gr5-8',
+                'Bucket 2 - Reading - GrK-4',
+                'Bucket 2 - Math - GrK-4'
+            )
         inner join
             {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
         where
