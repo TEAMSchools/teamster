@@ -436,22 +436,22 @@ select
         - divided by current term weight
     */
     (
-        (y1.y1_weighted_points_valid_running * 0.900)
+        (y1.y1_weighted_points_possible_running * 0.900)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_90,
     (
-        (y1.y1_weighted_points_valid_running * 0.800)
+        (y1.y1_weighted_points_possible_running * 0.800)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_80,
     (
-        (y1.y1_weighted_points_valid_running * 0.700)
+        (y1.y1_weighted_points_possible_running * 0.700)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_70,
     (
-        (y1.y1_weighted_points_valid_running * 0.600)
+        (y1.y1_weighted_points_possible_running * 0.600)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_60,
