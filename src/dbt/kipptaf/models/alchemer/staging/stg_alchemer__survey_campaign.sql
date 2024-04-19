@@ -4,6 +4,7 @@ with
     parse_partition_key as (  -- noqa: ST03
         select
             *,
+
             safe_cast(
                 regexp_extract(
                     safe_cast(_dagster_partition_key as string), r'\d+', 1, 1
@@ -26,10 +27,12 @@ with
     campaign_clean as (
         select
             survey_id,
+
             safe_cast(id as int) as id,
             safe_cast(invite_id as int) as invite_id,
             safe_cast(limit_responses as int) as limit_responses,
             safe_cast(`ssl` as boolean) as `ssl`,
+
             safe_cast(
                 date_created as timestamp format 'YYYY-MM-DD HH24:MI:SS'
                 at time zone '{{ var("local_timezone") }}'
@@ -46,6 +49,7 @@ with
                 link_close_date as timestamp format 'YYYY-MM-DD HH24:MI:SS'
                 at time zone '{{ var("local_timezone") }}'
             ) as link_close_date,
+
             {{
                 dbt_utils.star(
                     from=src_campaign,
@@ -67,6 +71,7 @@ with
 
 select
     *,
+
     {{
         teamster_utils.date_to_fiscal_year(
             date_field="link_open_date", start_month=7, year_source="end"

@@ -9,29 +9,31 @@ select
     sr.status as response_status,
     sr.date_started as response_date_started,
     sr.date_submitted as response_date_submitted,
-    date(sr.date_started) as response_date_started_date,
-    date(sr.date_submitted) as response_date_submitted_date,
     sr.response_time,
 
     sq.id as question_id,
     sq.shortname as question_short_name,
     sq.title_english as question_title_english,
     sq.type as question_type,
+
+    srd.string_value as response_string_value,
+    srd.option_value as response_option_value,
+    srd.rank_value as response_rank_value,
+
+    sc.fiscal_year as campaign_fiscal_year,
+    sc.name as campaign_name,
+    sc.link_close_date as campaign_link_close_date,
+
+    date(sr.date_started) as response_date_started_date,
+    date(sr.date_submitted) as response_date_submitted_date,
+
+    coalesce(srd.string_value, srd.option_value, srd.rank_value) as response_value,
+
     if(
         sq.shortname in unnest({{ var("alchemer_survey_identifier_short_names") }}),
         true,
         false
     ) as is_identifier_question,
-    srd.string_value as response_string_value,
-    srd.map_value as response_map_value,
-    srd.option_value as response_option_value,
-    srd.rank_value as response_rank_value,
-    coalesce(
-        srd.string_value, srd.map_value, srd.option_value, srd.rank_value
-    ) as response_value,
-    sc.fiscal_year as campaign_fiscal_year,
-    sc.name as campaign_name,
-    sc.link_close_date as campaign_link_close_date,
 from {{ ref("stg_alchemer__survey") }} as s
 inner join {{ ref("stg_alchemer__survey_response") }} as sr on s.id = sr.survey_id
 inner join {{ ref("stg_alchemer__survey_question") }} as sq on s.id = sq.survey_id
