@@ -99,12 +99,6 @@ ZENDESK_RESOURCE = Zenpy(
     token=EnvVar("ZENDESK_TOKEN").get_value(),
 )
 
-SSH_RESOURCE_ACHIEVE3K = SSHResource(
-    remote_host="xfer.achieve3000.com",
-    username=EnvVar("ACHIEVE3K_SFTP_USERNAME"),
-    password=EnvVar("ACHIEVE3K_SFTP_PASSWORD"),
-)
-
 SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     # remote_host="sftp.kippnj.org",
     remote_host="204.8.89.221",

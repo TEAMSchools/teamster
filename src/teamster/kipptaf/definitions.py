@@ -13,7 +13,6 @@ from teamster.core.resources import (
 
 from . import (
     CODE_LOCATION,
-    achieve3k,
     adp,
     airbyte,
     alchemer,
@@ -38,7 +37,6 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
-            achieve3k,
             adp,
             airbyte,
             alchemer,
@@ -74,7 +72,6 @@ defs = Definitions(
         *tableau.schedules,
     ],
     sensors=[
-        *achieve3k.sensors,
         *adp.sensors,
         *airbyte.sensors,
         *alchemer.sensors,
@@ -108,7 +105,6 @@ defs = Definitions(
         "tableau": resources.TABLEAU_SERVER_RESOURCE,
         "zendesk": resources.ZENDESK_RESOURCE,
         # ssh
-        "ssh_achieve3k": resources.SSH_RESOURCE_ACHIEVE3K,
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
         "ssh_blissbook": resources.SSH_RESOURCE_BLISSBOOK,
         "ssh_clever": resources.SSH_RESOURCE_CLEVER,
