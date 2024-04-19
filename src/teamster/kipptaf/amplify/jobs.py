@@ -1,13 +1,8 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG, define_asset_job
+from dagster import define_asset_job
 
-from .assets import mclass_assets
+from .assets import _all
 
-mclass_asset_job = define_asset_job(
-    name="mclass_asset_job",
-    selection=mclass_assets,
-    partitions_def=mclass_assets[0].partitions_def,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 15)},
-)
+mclass_asset_job = define_asset_job(name="mclass_asset_job", selection=_all)
 
 _all = [
     mclass_asset_job,

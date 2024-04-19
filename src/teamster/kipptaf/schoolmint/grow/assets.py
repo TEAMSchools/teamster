@@ -12,13 +12,11 @@ from dagster import (
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
-    get_avro_record_schema,
     get_avro_schema_valid_check_spec,
 )
-
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .resources import SchoolMintGrowResource
-from .schema import ASSET_FIELDS
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.kipptaf.schoolmint.grow.schema import ASSET_SCHEMA
 
 
 def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
@@ -33,7 +31,7 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
         key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
-        group_name="schoolmint_grow",
+        group_name="schoolmint",
         compute_kind="schoolmint_grow",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
@@ -62,9 +60,7 @@ def build_schoolmint_grow_asset(asset_name, partitions_def) -> AssetsDefinition:
         )
 
         records = endpoint_content["data"]
-        schema = get_avro_record_schema(
-            name=asset_name, fields=ASSET_FIELDS[asset_name]
-        )
+        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(
             value=(records, schema), metadata={"records": endpoint_content["count"]}

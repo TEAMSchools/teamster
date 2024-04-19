@@ -7,6 +7,9 @@ sources:
       - stage_external_sources
     tables:
       - name: src_schoolmint_grow__rubrics
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/*"
           options:
@@ -15,6 +18,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__schools
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/*"
           options:
@@ -23,6 +29,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__users
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/*"
           options:
@@ -30,6 +39,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__videos
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/*"
           options:
@@ -37,6 +49,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_assignmentpresets
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_assignmentpresets/*"
@@ -46,6 +61,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_courses
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_courses/*"
           options:
@@ -54,6 +72,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_grades
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_grades/*"
           options:
@@ -62,6 +83,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_measurementgroups
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_measurementgroups/*"
@@ -71,6 +95,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_observationtypes
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_observationtypes/*"
@@ -80,6 +107,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_tags
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_tags/*"
           options:
@@ -88,6 +118,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_meetingtypes
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_meetingtypes/*"
@@ -97,6 +130,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__informals
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/*"
           options:
@@ -105,6 +141,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__measurements
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/*"
           options:
@@ -113,6 +152,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__meetings
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/*"
           options:
@@ -121,6 +163,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__roles
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/*"
           options:
@@ -128,6 +173,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__observations
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/*"
           options:
@@ -136,6 +184,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__assignments
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/*"
           options:
@@ -144,6 +195,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_eventtag1
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_eventtag1/*"
           options:
@@ -152,6 +206,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_goaltypes
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_goaltypes/*"
           options:
@@ -160,6 +217,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_rubrictag1
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_rubrictag1/*"
           options:
@@ -168,6 +228,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_schooltag1
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_schooltag1/*"
           options:
@@ -176,6 +239,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_usertag1
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertag1/*"
           options:
@@ -184,6 +250,9 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_schoolmint_grow__generic_tags_usertypes
+        meta:
+          dagster:
+            group: schoolmint
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertypes/*"
           options:
