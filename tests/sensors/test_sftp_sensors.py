@@ -54,15 +54,6 @@ def test_sensor_renlearn():
     _test_sensor(sftp_sensor=sftp_sensor, ssh_renlearn=SSH_RENLEARN)
 
 
-def test_sensor_achieve3k():
-    from teamster.kipptaf.achieve3k.sensors import achieve3k_sftp_sensor
-    from teamster.kipptaf.resources import SSH_RESOURCE_ACHIEVE3K
-
-    _test_sensor(
-        sftp_sensor=achieve3k_sftp_sensor, ssh_achieve3k=SSH_RESOURCE_ACHIEVE3K
-    )
-
-
 def test_sensor_deanslist():
     from teamster.kipptaf.deanslist.sensors import deanslist_sftp_sensor
     from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST

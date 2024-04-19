@@ -4,8 +4,6 @@ import pathlib
 from dagster import AssetExecutionContext, asset
 
 ENVS = [
-    "ACHIEVE3K_SFTP_PASSWORD",
-    "ACHIEVE3K_SFTP_USERNAME",
     "ADP_SFTP_PASSWORD",
     "ADP_SFTP_USERNAME",
     "ADP_WFM_APP_KEY",
