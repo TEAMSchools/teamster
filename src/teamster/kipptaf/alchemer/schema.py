@@ -282,13 +282,22 @@ class survey_response_record(SurveyResponse):
     survey_data: list[str | None] | dict[str, survey_data_record | None] | None = []
 
 
-SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey))
-SURVEY_CAMPAIGN_SCHEMA = json.loads(py_avro_schema.generate(py_type=SurveyCampaign))
-SURVEY_QUESTION_SCHEMA = json.loads(py_avro_schema.generate(py_type=SurveyQuestion))
-SURVEY_RESPONSE_DQ_SCHEMA = json.loads(py_avro_schema.generate(py_type=SurveyResponse))
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
+
+SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, options=pas_options))
+
+SURVEY_CAMPAIGN_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SurveyCampaign, options=pas_options)
+)
+
+SURVEY_QUESTION_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SurveyQuestion, options=pas_options)
+)
+
+SURVEY_RESPONSE_DQ_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SurveyResponse, options=pas_options)
+)
+
 SURVEY_RESPONSE_SCHEMA = json.loads(
-    py_avro_schema.generate(
-        py_type=survey_response_record,
-        options=py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE,
-    )
+    py_avro_schema.generate(py_type=survey_response_record, options=pas_options)
 )
