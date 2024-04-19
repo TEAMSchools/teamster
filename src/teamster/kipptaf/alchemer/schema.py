@@ -135,28 +135,6 @@ class SurveyOption(BaseModel):
     title: dict[str, str | int | None] | None = None
 
 
-class Answer(BaseModel):
-    signature: str | None = None
-    name: str | None = None
-
-
-class SurveyData(BaseModel):
-    answer_id: int | str | None = None
-    id: int | None = None
-    original_answer: str | None = None
-    parent: int | None = None
-    question: str | None = None
-    section_id: int | None = None
-    shown: bool | None = None
-    type: str | None = None
-
-    answer: str | Answer | None = None
-
-    subquestions: (
-        dict[str, Union["SurveyData", dict[str, "SurveyData"], None]] | None
-    ) = None
-
-
 class SurveyQuestion(BaseModel):
     base_type: str | None = None
     comment: bool | None = None
@@ -210,6 +188,67 @@ class SurveyCampaign(BaseModel):
     uri: str | None = None
 
 
+class SurveyDataOption(BaseModel):
+    id: int | None = None
+    option: str | None = None
+    answer: str | None = None
+
+
+class OptionAnswer(BaseModel):
+    id: int | None = None
+    option: str | None = None
+    rank: str | None = None
+
+
+class SignatureAnswer(BaseModel):
+    signature: str | None = None
+    name: str | None = None
+
+
+class Dot(BaseModel):
+    answer: str | None = None
+    color: str | None = None
+    comment: str | None = None
+    gridX: int | None = None
+    gridY: int | None = None
+    id: str | None = None
+    x: int | None = None
+    xPercent: str | None = None
+    y: int | None = None
+    yPercent: str | None = None
+
+
+class HeatMapAnswerResponse(BaseModel):
+    imageW: int | None = None
+    imageH: int | None = None
+
+    dots: list[Dot | None] | None = None
+
+
+class HeatMapAnswer(BaseModel):
+    response: HeatMapAnswerResponse | None = None
+
+
+class Answer(BaseModel):
+    answer_id: int | str | None = None
+    comments: str | None = None
+    id: int | None = None
+    original_answer: str | None = None
+    parent: int | None = None
+    question: str | None = None
+    section_id: int | None = None
+    shown: bool | None = None
+    type: str | None = None
+
+    options: dict[str, SurveyDataOption | None] | None = None
+
+    answer: (
+        str | SignatureAnswer | HeatMapAnswer | dict[str, OptionAnswer | None] | None
+    ) = None
+
+    subquestions: dict[str, Union["Answer", dict[str, "Answer"], None]] | None = None
+
+
 class SurveyResponse(BaseModel):
     city: str | None = None
     comments: str | None = None
@@ -235,7 +274,7 @@ class SurveyResponse(BaseModel):
 
     data_quality: list[str | None] | DataQuality | None = []
 
-    survey_data: list[str | None] | dict[str, SurveyData | None] | None = []
+    survey_data: list[str | None] | dict[str, Answer | None] | None = []
 
     url_variables: list[str | None] | dict[str, str | URLVariable | None] | None = []
 
