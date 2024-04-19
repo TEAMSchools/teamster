@@ -4,6 +4,7 @@ select
     asec.assignmentid,
     asec.name,
     asec.duedate,
+    asec.scoretype,
     asec.totalpointvalue,
     asec.extracreditpoints,
     asec.weight,
