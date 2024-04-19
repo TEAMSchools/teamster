@@ -10,6 +10,21 @@ def _add_dynamic_partitions(partitions_def_name: str, partition_keys: list):
     )
 
 
+def _delete_dynamic_partitions(partitions_def_name: str):
+    instance = get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
+
+    dynamic_partitions = instance.get_dynamic_partitions(partitions_def_name)
+
+    for partition_key in dynamic_partitions:
+        instance.delete_dynamic_partition(
+            partitions_def_name=partitions_def_name, partition_key=partition_key
+        )
+
+
+def _test_delete_dynamic_partitions_alchemer():
+    _delete_dynamic_partitions("kipptaf_alchemer_survey_response")
+
+
 def test_code_versions():
     instance = get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
 

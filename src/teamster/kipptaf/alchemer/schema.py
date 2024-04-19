@@ -262,42 +262,22 @@ class Survey(BaseModel):
     title_ml: dict[str, str | None] | None = None
 
 
-class answer_record(Answer):
-    """helper class for backwards compatibility"""
+pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
-
-class survey_data_record(SurveyData):
-    """helper class for backwards compatibility"""
-
-    answer: str | answer_record | None = None
-    subquestions: (
-        dict[str, Union["survey_data_record", dict[str, "survey_data_record"], None]]
-        | None
-    ) = None
-
-
-class survey_response_record(SurveyResponse):
-    """helper class for backwards compatibility"""
-
-    survey_data: list[str | None] | dict[str, survey_data_record | None] | None = []
-
-
-SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, namespace="survey"))
+SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, options=pas_options))
 
 SURVEY_CAMPAIGN_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=SurveyCampaign, namespace="survey_campaign")
+    py_avro_schema.generate(py_type=SurveyCampaign, options=pas_options)
 )
 
 SURVEY_QUESTION_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=SurveyQuestion, namespace="survey_question")
+    py_avro_schema.generate(py_type=SurveyQuestion, options=pas_options)
 )
 
 SURVEY_RESPONSE_DQ_SCHEMA = json.loads(
-    py_avro_schema.generate(
-        py_type=SurveyResponse, namespace="survey_response_disqualified"
-    )
+    py_avro_schema.generate(py_type=SurveyResponse, options=pas_options)
 )
 
 SURVEY_RESPONSE_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=survey_response_record, namespace="survey_response")
+    py_avro_schema.generate(py_type=SurveyResponse, options=pas_options)
 )
