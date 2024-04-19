@@ -98,7 +98,7 @@ with
             t.type as form_type,
             t.academic_year,
             if(
-                m.observed_at <= date(2023, 07, 01), sp.overall_score, m.overall_score
+                m.observed_at >= date(2023, 07, 01), sp.overall_score, m.overall_score
             ) as overall_score,
         from measurements as m
         inner join
