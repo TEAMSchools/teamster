@@ -282,22 +282,10 @@ class survey_response_record(SurveyResponse):
     survey_data: list[str | None] | dict[str, survey_data_record | None] | None = []
 
 
-SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, namespace="survey"))
-
-SURVEY_CAMPAIGN_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=SurveyCampaign, namespace="survey_campaign")
-)
-
-SURVEY_QUESTION_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=SurveyQuestion, namespace="survey_question")
-)
-
-SURVEY_RESPONSE_DQ_SCHEMA = json.loads(
-    py_avro_schema.generate(
-        py_type=SurveyResponse, namespace="survey_response_disqualified"
-    )
-)
-
+SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey))
+SURVEY_CAMPAIGN_SCHEMA = json.loads(py_avro_schema.generate(py_type=SurveyCampaign))
+SURVEY_QUESTION_SCHEMA = json.loads(py_avro_schema.generate(py_type=SurveyQuestion))
+SURVEY_RESPONSE_DQ_SCHEMA = json.loads(py_avro_schema.generate(py_type=SurveyResponse))
 SURVEY_RESPONSE_SCHEMA = json.loads(
     py_avro_schema.generate(
         py_type=survey_response_record,
