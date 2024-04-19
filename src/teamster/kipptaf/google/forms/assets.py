@@ -57,7 +57,8 @@ def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource)
     schema = ASSET_SCHEMA["responses"]
 
     yield Output(
-        value=([data], schema), metadata={"record_count": len(data.get("responses"))}
+        value=([data], schema),
+        metadata={"record_count": len(data.get("responses", []))},
     )
 
     yield check_avro_schema_valid(
