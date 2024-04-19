@@ -21,7 +21,7 @@ def _delete_dynamic_partitions(partitions_def_name: str):
         )
 
 
-def test_delete_dynamic_partitions_alchemer():
+def _test_delete_dynamic_partitions_alchemer():
     _delete_dynamic_partitions("kipptaf_alchemer_survey_response")
 
 
