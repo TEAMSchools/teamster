@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   prerun:
-    runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
+    runs-on: ubuntu-latest
     outputs:
       result: ${{ steps.prerun.outputs.result }}
     steps:
@@ -232,7 +232,7 @@ jobs:
             -keep=1 -tag-filter-any=.* -grace=30m
 
   deploy:
-    runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
+    runs-on: ubuntu-latest
     needs:
       - prerun
       - dbt
