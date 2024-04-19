@@ -276,6 +276,7 @@ with
                 partition by cc_studentid, cc_course_number, cc_yearid
                 order by termbin_end_date asc
             ) as y1_weighted_points_earned_adjusted_running,
+
             sum(
                 if(term_percent_grade is not null, term_weighted_points_possible, null)
             ) over (
@@ -357,6 +358,17 @@ with
                 0
             ) as y1_percent_grade_adjusted,
 
+            sum(
+                if(
+                    term_weighted_points_earned_adjusted_running is not null,
+                    term_weighted_points_possible,
+                    null
+                )
+            ) over (
+                partition by cc_course_number, cc_studentid, cc_yearid
+                order by termbin_end_date asc
+            ) as y1_weighted_points_need_to_get_running,
+
             lag(term_weighted_points_earned_adjusted_running, 1, 0.000) over (
                 partition by cc_studentid, cc_yearid, cc_course_number
                 order by termbin_end_date asc
@@ -436,22 +448,22 @@ select
         - divided by current term weight
     */
     (
-        (y1.y1_weighted_points_possible_running * 0.900)
+        (y1.y1_weighted_points_need_to_get_running * 0.900)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_90,
     (
-        (y1.y1_weighted_points_possible_running * 0.800)
+        (y1.y1_weighted_points_need_to_get_running * 0.800)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_80,
     (
-        (y1.y1_weighted_points_possible_running * 0.700)
+        (y1.y1_weighted_points_need_to_get_running * 0.700)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_70,
     (
-        (y1.y1_weighted_points_possible_running * 0.600)
+        (y1.y1_weighted_points_need_to_get_running * 0.600)
         - y1.term_weighted_points_earned_adjusted_running_lag
     )
     / (y1.term_weighted_points_possible / 100.000) as need_60,
