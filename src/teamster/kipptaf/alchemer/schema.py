@@ -262,26 +262,6 @@ class Survey(BaseModel):
     title_ml: dict[str, str | None] | None = None
 
 
-class answer_record(Answer):
-    """helper class for backwards compatibility"""
-
-
-class survey_data_record(SurveyData):
-    """helper class for backwards compatibility"""
-
-    answer: str | answer_record | None = None
-    subquestions: (
-        dict[str, Union["survey_data_record", dict[str, "survey_data_record"], None]]
-        | None
-    ) = None
-
-
-class survey_response_record(SurveyResponse):
-    """helper class for backwards compatibility"""
-
-    survey_data: list[str | None] | dict[str, survey_data_record | None] | None = []
-
-
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
 SURVEY_SCHEMA = json.loads(py_avro_schema.generate(py_type=Survey, options=pas_options))
@@ -299,5 +279,5 @@ SURVEY_RESPONSE_DQ_SCHEMA = json.loads(
 )
 
 SURVEY_RESPONSE_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=survey_response_record, options=pas_options)
+    py_avro_schema.generate(py_type=SurveyResponse, options=pas_options)
 )
