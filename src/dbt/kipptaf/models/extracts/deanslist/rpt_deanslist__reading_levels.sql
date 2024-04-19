@@ -2,12 +2,12 @@ with
     student_k_2 as (
         select
             _dbt_source_relation,
-            region as region,
+            region,
             schoolid as school_id,
             school_name as school,
-            school_abbreviation as school_abbreviation,
+            school_abbreviation,
             studentid as student_id,
-            student_number as student_number,
+            student_number,
             lastfirst as student_name,
             first_name as student_first_name,
             last_name as student_last_name,

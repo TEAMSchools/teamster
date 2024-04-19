@@ -81,7 +81,7 @@ def test_asset_schoolmint_grow_generic_tags_schooltag1():
 
 
 def test_asset_schoolmint_grow_generic_tags_tags():
-    _test_asset(assets=_all, asset_name="generic_tags_tags", partition_key="f")
+    _test_asset(assets=_all, asset_name="generic_tags_tags", partition_key="t")
 
 
 def test_asset_schoolmint_grow_generic_tags_usertag1():

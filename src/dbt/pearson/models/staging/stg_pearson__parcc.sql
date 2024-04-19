@@ -117,11 +117,11 @@ select
     ) as statefield9,
     coalesce(
         shipreportschoolcode.long_value,
-        safe_cast(shipreportschoolcode.float_value as int)
+        safe_cast(shipreportschoolcode.double_value as int)
     ) as shipreportschoolcode,
     coalesce(
         shipreportdistrictcode.long_value,
-        safe_cast(shipreportdistrictcode.float_value as int)
+        safe_cast(shipreportdistrictcode.double_value as int)
     ) as shipreportdistrictcode,
 
     safe_cast(left(assessmentyear, 4) as int) as academic_year,
