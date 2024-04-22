@@ -48,12 +48,12 @@ lint:
     - isort@5.13.2
     - markdownlint@0.39.0
     - osv-scanner@1.7.2
-    - oxipng@9.0.0
+    - oxipng@9.1.0
     - prettier@3.2.5
-    - ruff@0.4.0
+    - ruff@0.4.1
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - sqlfluff@3.0.4
+    - sqlfluff@3.0.5
     - sqlfmt@0.21.2
     - svgo@3.2.0
     - taplo@0.8.1
