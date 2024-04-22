@@ -27,7 +27,7 @@ with
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
-        inner join
+        left join
             {{ ref("stg_schoolmint_grow__users") }} as u2 on o.observer_id = u2.user_id
         left join
             {{ ref("stg_schoolmint_grow__observations_history__observation_scores") }}
@@ -105,8 +105,8 @@ with
             {{ ref("stg_reporting__terms") }} as t
             on regexp_contains(m.form_long_name, t.name)
             and m.observed_at between t.start_date and t.end_date
-            and t.lockbox_date
-            between m.last_modified_date and m.last_modified_date_lead
+            --and t.lockbox_date
+            --between m.last_modified_date and m.last_modified_date_lead
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
 
         union all
@@ -178,3 +178,5 @@ select
         then 1
     end as rn_submission,
 from observation_details
+where employee_number = 300099
+and academic_year = 2023
