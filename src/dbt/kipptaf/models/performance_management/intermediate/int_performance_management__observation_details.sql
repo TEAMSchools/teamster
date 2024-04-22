@@ -105,8 +105,8 @@ with
             {{ ref("stg_reporting__terms") }} as t
             on regexp_contains(m.form_long_name, t.name)
             and m.observed_at between t.start_date and t.end_date
-         and t.lockbox_date
-         between m.last_modified_date and m.last_modified_date_lead
+            and t.lockbox_date
+            between m.last_modified_date and m.last_modified_date_lead
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
 
         union all
