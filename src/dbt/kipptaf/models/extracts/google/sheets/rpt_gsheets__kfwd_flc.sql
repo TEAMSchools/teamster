@@ -85,6 +85,7 @@ select  -- noqa: ST06
     co.grade_level,
     coalesce(bg.bgp, 'No BGP') as bgp,
     kt.contact_expected_hs_graduation,
+    coalesce(cn.ccdm, 0) as ccdm_complete,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -100,6 +101,10 @@ left join early as e on kt.contact_id = e.applicant
 left join
     matriculated_application as m on kt.contact_id = m.applicant and m.rn_applicant = 1
 left join bgp as bg on kt.contact_id = bg.contact and bg.rn_bgp = 1
+left join
+    {{ ref("int_kippadb__contact_note_rollup") }} as cn
+    on kt.contact_id = cn.contact_id
+    and cn.academic_year = {{ var("current_academic_year") }}
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
