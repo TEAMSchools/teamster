@@ -84,6 +84,7 @@ select  -- noqa: ST06
     m.matriculated_ecc,
     co.grade_level,
     coalesce(bg.bgp, 'No BGP') as bgp,
+    kt.contact_expected_hs_graduation,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
