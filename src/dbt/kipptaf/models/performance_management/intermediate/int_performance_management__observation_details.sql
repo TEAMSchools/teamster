@@ -27,7 +27,7 @@ with
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
-        inner join
+        left join
             {{ ref("stg_schoolmint_grow__users") }} as u2 on o.observer_id = u2.user_id
         left join
             {{ ref("stg_schoolmint_grow__observations_history__observation_scores") }}
