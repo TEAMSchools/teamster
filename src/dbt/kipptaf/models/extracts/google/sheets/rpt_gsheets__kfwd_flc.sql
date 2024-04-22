@@ -17,11 +17,13 @@ with
         select
             applicant,
             adjusted_6_year_minority_graduation_rate as matriculated_ecc,
+            intended_degree_type,
+            account_type,
+            matriculation_decision,
             row_number() over (partition by applicant order by id asc) as rn_applicant,
         from {{ ref("base_kippadb__application") }}
-        where
-            matriculation_decision = 'Matriculated (Intent to Enroll)'
-            and intended_degree_type = "Bachelor's (4-year)"
+        where matriculation_decision = 'Matriculated (Intent to Enroll)'
+
     ),
 
     bgp as (
@@ -82,6 +84,9 @@ select  -- noqa: ST06
     end as hs_gpa_bands,
     coalesce(e.is_ea_ed, false) as is_ea_ed,
     m.matriculated_ecc,
+    m.matriculation_decision,
+    m.intended_degree_type,
+    m.account_type,
     co.grade_level,
     coalesce(bg.bgp, 'No BGP') as bgp,
     kt.contact_expected_hs_graduation,
