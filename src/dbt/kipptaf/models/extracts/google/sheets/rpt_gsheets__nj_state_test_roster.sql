@@ -117,6 +117,5 @@ where
     and rn_year = 1
     and region != 'Miami'
     and (grade_level between 3 and 9 or grade_level = 11)
-    and not (is_self_contained and special_education_code in ('CMI', 'CMO', 'CSE'))
     and school_level != 'OD'
     and test_code is not null
