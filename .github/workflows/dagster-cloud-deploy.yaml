@@ -232,7 +232,7 @@ jobs:
             -keep=1 -tag-filter-any=.* -grace=30m
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - prerun
       - dbt
