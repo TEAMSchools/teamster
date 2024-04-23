@@ -53,8 +53,35 @@ class OutlierDetection(BaseModel):
     pc2_variance_explained_global: float | None = None
 
 
-ASSET_SCHEMA = {
-    "outlier_detection": json.loads(
-        py_avro_schema.generate(py_type=OutlierDetection, namespace="outlier_detection")
-    ),
-}
+class ObservationDetail(BaseModel):
+    academic_year: int | None = None
+    employee_number: int | None = None
+    etr_score: float | None = None
+    form_long_name: str | None = None
+    form_term: str | None = None
+    form_type: str | None = None
+    glows: str | None = None
+    grows: str | None = None
+    measurement_name: str | None = None
+    observation_id: str | None = None
+    observed_at: str | None = None
+    observer_employee_number: int | None = None
+    overall_score: float | None = None
+    rn_submission: int | None = None
+    row_score_value: float | None = None
+    rubric_id: str | None = None
+    score_measurement_id: str | None = None
+    score_measurement_shortname: str | None = None
+    score_measurement_type: str | None = None
+    so_score: float | None = None
+    teacher_id: str | None = None
+    text_box: str | None = None
+
+
+OUTLIER_DETECTION_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=OutlierDetection, namespace="outlier_detection")
+)
+
+OBSERVATION_DETAILS_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=ObservationDetail)
+)
