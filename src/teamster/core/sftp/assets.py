@@ -1,4 +1,6 @@
+import json
 import os
+import pathlib
 import re
 import zipfile
 
@@ -165,6 +167,10 @@ def build_sftp_asset(
 
                     records = df.to_dict(orient="records")
                     metadata = {"records": df.shape[0]}
+
+        fp = pathlib.Path(f"env/{group_name}/{file_match}")
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        json.dump(obj=records, fp=fp.open("w"))
 
         yield Output(value=(records, avro_schema), metadata=metadata)
 
