@@ -21,7 +21,7 @@ model_sql = """
 {% raw %}}}{% endraw %}
 """
 
-template = Environment(loader=BaseLoader).from_string(source=model_sql)
+template = Environment(loader=BaseLoader, autoescape=True).from_string(source=model_sql)  # type: ignore
 
 source_filepath = pathlib.Path("kipptaf/models/powerschool/sources.yml")
 
