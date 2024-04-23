@@ -33,14 +33,12 @@ select
     od.glows,
     od.grows,
     od.score_measurement_id,
-    od.row_score_value,
     od.measurement_name,
     od.text_box,
     od.score_measurement_type,
     od.score_measurement_shortname,
     od.etr_score,
     od.so_score,
-    od.overall_score,
     od.academic_year as od_academic_year,
     od.rn_submission,
 
@@ -50,6 +48,11 @@ select
 
     case when rt.code = 'PM3' then ft.final_score end as final_score,
     case when rt.code = 'PM3' then ft.final_tier end as final_tier,
+    case
+        when rt.academic_year <= 2023 and form_type = 'PM'
+        then od.locked_row_score
+        else od.row_score_value
+    end as row_score_value,
 
     coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
     coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
@@ -69,6 +72,11 @@ select
         srh.worker_original_hire_date, sr.worker_original_hire_date
     ) as worker_original_hire_date,
     coalesce(srh.assignment_status, sr.assignment_status) as assignment_status,
+    case
+        when rt.academic_year <= 2023 and form_type = 'PM'
+        then od.locked_overall_score
+        else od.overall_score
+    end as overall_score,
 
 from {{ ref("base_people__staff_roster") }} as sr
 cross join {{ ref("stg_reporting__terms") }} as rt
