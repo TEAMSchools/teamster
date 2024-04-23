@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 base_url = "https://docs.powerschool.com"
 current_link = "/PSDD/powerschool-tables"
 
+# trunk-ignore(bandit/B113)
 children_json = requests.get(
     url=f"{base_url}/rest/scroll-viewport/1.0/tree/children",
     params={
@@ -31,6 +32,7 @@ for child in children:
     if link in ["/PSDD/powerschool-tables/auditing-tables-fields"]:
         continue
 
+    # trunk-ignore(bandit/B113)
     child_page = requests.get(f"{base_url}{link}")
 
     soup = BeautifulSoup(markup=child_page.text, features="lxml")
