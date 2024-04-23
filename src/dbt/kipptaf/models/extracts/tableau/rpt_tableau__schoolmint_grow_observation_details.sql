@@ -33,7 +33,11 @@ select
     od.glows,
     od.grows,
     od.score_measurement_id,
-    od.row_score_value,
+    case
+        when rt.academic_year <= 2023 and form_type = 'PM'
+        then od.locked_row_score
+        else od.row_score_value
+    end as row_score_value,
     od.measurement_name,
     od.text_box,
     od.score_measurement_type,
@@ -41,7 +45,9 @@ select
     od.etr_score,
     od.so_score,
     case
-        when rt.academic_year <= 2023 then od.locked_overall_score else od.overall_score
+        when rt.academic_year <= 2023 and form_type = 'PM'
+        then od.locked_overall_score
+        else od.overall_score
     end as overall_score,
     od.academic_year as od_academic_year,
     od.rn_submission,
