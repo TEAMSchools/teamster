@@ -98,4 +98,4 @@ where
     (sr.job_title like '%Teacher%' or sr.job_title = 'Learning Specialist')
     and sr.assignment_status not in ('Terminated', 'Deceased')
     and rt.type in ('PM', 'O3', 'WT')
-    and od.rn_submission = 1
+    and (od.rn_submission = 1 or od.rn_submission is null)
