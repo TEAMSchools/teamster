@@ -48,7 +48,7 @@ lint:
     - isort@5.13.2
     - markdownlint@0.39.0
     - osv-scanner@1.7.2
-    - oxipng@9.1.0
+    - oxipng@9.1.1
     - prettier@3.2.5
     - ruff@0.4.1
     - shellcheck@0.10.0
