@@ -33,11 +33,6 @@ select
     od.glows,
     od.grows,
     od.score_measurement_id,
-    case
-        when rt.academic_year <= 2023 and form_type = 'PM'
-        then od.locked_row_score
-        else od.row_score_value
-    end as row_score_value,
     od.measurement_name,
     od.text_box,
     od.score_measurement_type,
@@ -53,6 +48,11 @@ select
 
     case when rt.code = 'PM3' then ft.final_score end as final_score,
     case when rt.code = 'PM3' then ft.final_tier end as final_tier,
+    case
+        when rt.academic_year <= 2023 and form_type = 'PM'
+        then od.locked_row_score
+        else od.row_score_value
+    end as row_score_value,
 
     coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
     coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
