@@ -1,191 +1,112 @@
-EMPLOYEE_FIELDS = [
-    {"name": "file", "type": ["null", "string"], "default": None},
-    {"name": "line", "type": ["null", "long"], "default": None},
-    {"name": "df_employee_number", "type": ["null", "long"], "default": None},
-    {"name": "preferred_last_name", "type": ["null", "string"], "default": None},
-    {"name": "common_name", "type": ["null", "string"], "default": None},
-    {"name": "last_name", "type": ["null", "string"], "default": None},
-    {"name": "first_name", "type": ["null", "string"], "default": None},
-    {"name": "ethnicity", "type": ["null", "string"], "default": None},
-    {"name": "gender", "type": ["null", "string"], "default": None},
-    {
-        "name": "primary_on_site_department_entity",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {"name": "primary_on_site_department", "type": ["null", "string"], "default": None},
-    {"name": "primary_site_entity", "type": ["null", "string"], "default": None},
-    {"name": "primary_site", "type": ["null", "string"], "default": None},
-    {"name": "legal_entity_name", "type": ["null", "string"], "default": None},
-    {"name": "primary_job", "type": ["null", "string"], "default": None},
-    {"name": "position_title", "type": ["null", "string"], "default": None},
-    {"name": "status", "type": ["null", "string"], "default": None},
-    {"name": "status_reason", "type": ["null", "string"], "default": None},
-    {"name": "mobile_number", "type": ["null", "string"], "default": None},
-    {"name": "address", "type": ["null", "string"], "default": None},
-    {"name": "city", "type": ["null", "string"], "default": None},
-    {"name": "state", "type": ["null", "string"], "default": None},
-    {"name": "postal_code", "type": ["null", "double"], "default": None},
-    {"name": "paytype", "type": ["null", "string"], "default": None},
-    {"name": "payclass", "type": ["null", "string"], "default": None},
-    {
-        "name": "jobs_and_positions_flsa_status",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {"name": "is_manager", "type": ["null", "string"], "default": None},
-    {
-        "name": "employee_s_manager_s_df_emp_number_id",
-        "type": ["null", "double"],
-        "default": None,
-    },
-    {"name": "salesforce_id", "type": ["null", "string"], "default": None},
-    {"name": "adp_associate_id", "type": ["null", "string"], "default": None},
-    {"name": "grades_taught", "type": ["null", "string"], "default": None},
-    {"name": "subjects_taught", "type": ["null", "string"], "default": None},
-    {"name": "job_family", "type": ["null", "string"], "default": None},
-    {"name": "annual_salary", "type": ["null", "double"], "default": None},
-    {
-        "name": "primary_on_site_department_clean",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {"name": "primary_site_clean", "type": ["null", "string"], "default": None},
-    {"name": "legal_entity_name_clean", "type": ["null", "string"], "default": None},
-    {"name": "adp_associate_id_clean", "type": ["null", "string"], "default": None},
-    {
-        "name": "birth_date",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "original_hire_date",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "position_effective_from_date",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "position_effective_to_date",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "rehire_date",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "termination_date",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "fivetran_synced",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "modified",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-]
+import json
 
-EMPLOYEE_MANAGER_FIELDS = [
-    {"name": "employee_reference_code", "type": ["null", "long"], "default": None},
-    {"name": "employee_display_name", "type": ["null", "string"], "default": None},
-    {"name": "manager_employee_number", "type": ["null", "long"], "default": None},
-    {"name": "manager_display_name", "type": ["null", "string"], "default": None},
-    {"name": "manager_derived_method", "type": ["null", "string"], "default": None},
-    {"name": "description", "type": ["null", "string"], "default": None},
-    {"name": "app_user_login_id", "type": ["null", "long"], "default": None},
-    {
-        "name": "application_user_employee_display_name",
-        "type": ["null", "string"],
-        "default": None,
-    },
-    {
-        "name": "manager_effective_end",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "manager_effective_start",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "manager_last_modified_timestamp",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-]
+import py_avro_schema
+from pydantic import BaseModel
 
-EMPLOYEE_STATUS_FIELDS = [
-    {"name": "number", "type": ["null", "long"], "default": None},
-    {"name": "first_name", "type": ["null", "string"], "default": None},
-    {"name": "last_name", "type": ["null", "string"], "default": None},
-    {"name": "base_salary", "type": ["null", "double"], "default": None},
-    {"name": "status", "type": ["null", "string"], "default": None},
-    {"name": "status_reason_description", "type": ["null", "string"], "default": None},
-    {
-        "name": "effective_start",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "effective_end",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-]
 
-EMPLOYEE_WORK_ASSIGNMENT = [
-    {"name": "employee_reference_code", "type": ["null", "long"], "default": None},
-    {"name": "employee_display_name", "type": ["null", "string"], "default": None},
-    {"name": "primary_work_assignment", "type": ["null", "boolean"], "default": None},
-    {"name": "job_name", "type": ["null", "string"], "default": None},
-    {"name": "department_name", "type": ["null", "string"], "default": None},
-    {"name": "flsa_status_name", "type": ["null", "string"], "default": None},
-    {"name": "job_family_name", "type": ["null", "string"], "default": None},
-    {"name": "pay_class_name", "type": ["null", "string"], "default": None},
-    {"name": "pay_type_name", "type": ["null", "string"], "default": None},
-    {"name": "physical_location_name", "type": ["null", "string"], "default": None},
-    {"name": "legal_entity_name", "type": ["null", "string"], "default": None},
-    {
-        "name": "work_assignment_effective_start",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-    {
-        "name": "work_assignment_effective_end",
-        "type": ["null", "string"],
-        "logicalType": "timestamp-micros",
-        "default": None,
-    },
-]
+class Employee(BaseModel):
+    address: str | None = None
+    adp_associate_id_clean: str | None = None
+    adp_associate_id: str | None = None
+    annual_salary: float | None = None
+    birth_date: str | None = None
+    city: str | None = None
+    common_name: str | None = None
+    df_employee_number: int | None = None
+    employee_s_manager_s_df_emp_number_id: float | None = None
+    ethnicity: str | None = None
+    file: str | None = None
+    first_name: str | None = None
+    fivetran_synced: str | None = None
+    gender: str | None = None
+    grades_taught: str | None = None
+    is_manager: str | None = None
+    job_family: str | None = None
+    jobs_and_positions_flsa_status: str | None = None
+    last_name: str | None = None
+    legal_entity_name_clean: str | None = None
+    legal_entity_name: str | None = None
+    line: int | None = None
+    mobile_number: str | None = None
+    modified: str | None = None
+    original_hire_date: str | None = None
+    payclass: str | None = None
+    paytype: str | None = None
+    position_effective_from_date: str | None = None
+    position_effective_to_date: str | None = None
+    position_title: str | None = None
+    postal_code: float | None = None
+    preferred_last_name: str | None = None
+    primary_job: str | None = None
+    primary_on_site_department_clean: str | None = None
+    primary_on_site_department_entity: str | None = None
+    primary_on_site_department: str | None = None
+    primary_site_clean: str | None = None
+    primary_site_entity: str | None = None
+    primary_site: str | None = None
+    rehire_date: str | None = None
+    salesforce_id: str | None = None
+    state: str | None = None
+    status_reason: str | None = None
+    status: str | None = None
+    subjects_taught: str | None = None
+    termination_date: str | None = None
 
-ASSET_FIELDS = {
-    "employees": EMPLOYEE_FIELDS,
-    "employee_manager": EMPLOYEE_MANAGER_FIELDS,
-    "employee_status": EMPLOYEE_STATUS_FIELDS,
-    "employee_work_assignment": EMPLOYEE_WORK_ASSIGNMENT,
+
+class EmployeeManager(BaseModel):
+    app_user_login_id: int | None = None
+    application_user_employee_display_name: str | None = None
+    description: str | None = None
+    employee_display_name: str | None = None
+    employee_reference_code: int | None = None
+    manager_derived_method: str | None = None
+    manager_display_name: str | None = None
+    manager_effective_end: str | None = None
+    manager_effective_start: str | None = None
+    manager_employee_number: int | None = None
+    manager_last_modified_timestamp: str | None = None
+
+
+class EmployeeStatus(BaseModel):
+    base_salary: float | None = None
+    effective_end: str | None = None
+    effective_start: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    number: int | None = None
+    status_reason_description: str | None = None
+    status: str | None = None
+
+
+class EmployeeWorkAssignment(BaseModel):
+    department_name: str | None = None
+    employee_display_name: str | None = None
+    employee_reference_code: int | None = None
+    flsa_status_name: str | None = None
+    job_family_name: str | None = None
+    job_name: str | None = None
+    legal_entity_name: str | None = None
+    pay_class_name: str | None = None
+    pay_type_name: str | None = None
+    physical_location_name: str | None = None
+    primary_work_assignment: bool | None = None
+    work_assignment_effective_end: str | None = None
+    work_assignment_effective_start: str | None = None
+
+
+ASSET_SCHEMA = {
+    "employees": json.loads(
+        py_avro_schema.generate(py_type=Employee, namespace="employee")
+    ),
+    "employee_manager": json.loads(
+        py_avro_schema.generate(py_type=EmployeeManager, namespace="employee_manager")
+    ),
+    "employee_status": json.loads(
+        py_avro_schema.generate(py_type=EmployeeStatus, namespace="employee_status")
+    ),
+    "employee_work_assignment": json.loads(
+        py_avro_schema.generate(
+            py_type=EmployeeWorkAssignment, namespace="employee_work_assignment"
+        )
+    ),
 }

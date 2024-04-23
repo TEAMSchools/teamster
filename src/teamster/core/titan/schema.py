@@ -30,11 +30,11 @@ class IncomeFormData(BaseModel):
 
 
 class person_data_record(PersonData):
-    """helper classes for backwards compatibility"""
+    """helper class for backwards compatibility"""
 
 
 class income_form_data_record(IncomeFormData):
-    """helper classes for backwards compatibility"""
+    """helper class for backwards compatibility"""
 
 
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
