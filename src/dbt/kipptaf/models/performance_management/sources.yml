@@ -9,14 +9,16 @@ sources:
       - name: src_performance_management__scores_overall_archive
         external:
           location:
-            "{{ var('couchdrop_cloud_storage_uri_base') }}/performance-management/scores-overall.csv"
+            "{{ var('couchdrop_cloud_storage_uri_base')
+            }}/performance-management/archive/scores-overall.csv"
           options:
             format: CSV
             skip_leading_rows: 1
       - name: src_performance_management__scores_detail_archive
         external:
           location:
-            "{{ var('couchdrop_cloud_storage_uri_base') }}/performance-management/scores-detail.csv"
+            "{{ var('couchdrop_cloud_storage_uri_base')
+            }}/performance-management/archive/scores-detail.csv"
           options:
             format: CSV
             skip_leading_rows: 1
@@ -26,5 +28,14 @@ sources:
           options:
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_performance_management__observation_details
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/"
             format: AVRO
             enable_logical_types: true
