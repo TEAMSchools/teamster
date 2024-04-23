@@ -44,11 +44,6 @@ select
     od.score_measurement_shortname,
     od.etr_score,
     od.so_score,
-    case
-        when rt.academic_year <= 2023 and form_type = 'PM'
-        then od.locked_overall_score
-        else od.overall_score
-    end as overall_score,
     od.academic_year as od_academic_year,
     od.rn_submission,
 
@@ -77,6 +72,11 @@ select
         srh.worker_original_hire_date, sr.worker_original_hire_date
     ) as worker_original_hire_date,
     coalesce(srh.assignment_status, sr.assignment_status) as assignment_status,
+    case
+        when rt.academic_year <= 2023 and form_type = 'PM'
+        then od.locked_overall_score
+        else od.overall_score
+    end as overall_score,
 
 from {{ ref("base_people__staff_roster") }} as sr
 cross join {{ ref("stg_reporting__terms") }} as rt
