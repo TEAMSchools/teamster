@@ -1,190 +1,103 @@
 with
-    measurements as (
-        select
-            o.observation_id,
-            o.teacher_id,
-            o.rubric_name as form_long_name,
-            o.rubric_id,
-            o.score as overall_score,
-            o.observed_at_date_local as observed_at,
-            o.list_two_column_a_str as glows,
-            o.list_two_column_b_str as grows,
-
-            u.internal_id_int as employee_number,
-
-            u2.internal_id_int as observer_employee_number,
-
-            ohos.measurement as score_measurement_id,
-            ohos.value_score as row_score_value,
-            ohos.last_modified_date,
-            ohos.last_modified_date_lead,
-
-            m.name as measurement_name,
-            m.type as score_measurement_type,
-            m.short_name as score_measurement_shortname,
-
-            b.value_clean as text_box,
-        from {{ ref("stg_schoolmint_grow__observations") }} as o
-        inner join
-            {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
-        left join
-            {{ ref("stg_schoolmint_grow__users") }} as u2 on o.observer_id = u2.user_id
-        left join
-            {{ ref("stg_schoolmint_grow__observations_history__observation_scores") }}
-            as ohos
-            on o.observation_id = ohos.observation_id
-        left join
-            {{ ref("stg_schoolmint_grow__measurements") }} as m
-            on ohos.measurement = m.measurement_id
-        left join
-            {{
-                ref(
-                    "stg_schoolmint_grow__observations__observation_scores__text_boxes"
-                )
-            }} as b
-            on ohos.observation_id = b.observation_id
-            and ohos.measurement = b.measurement
-        where
-            o.is_published
-            /* 2023 is first year with new rubric*/
-            and o.observed_at_date_local >= date(2023, 07, 01)
-    ),
-
-    /* for 2024, move 2023 scores to archive view, delete CTEs*/
-    pm_overall_scores_avg as (
-        select
-            observation_id,
-            score_measurement_type,
-
-            avg(row_score_value) as score_measurement_score,
-        from measurements
-        where score_measurement_type in ('etr', 's&o')
-        group by observation_id, score_measurement_type
-    ),
-
-    pm_overall_scores_pivot as (
-        select
-            p.observation_id,
-            p.etr as etr_score,
-            p.so as so_score,
-            coalesce((0.8 * p.etr) + (0.2 * p.so), p.etr, p.so) as overall_score,
-        from
-            pm_overall_scores_avg pivot (
-                avg(score_measurement_score) for score_measurement_type
-                in ('etr', 's&o' as `so`)
-            ) as p
-    ),
-
-    observation_details as (
-        select
-            m.employee_number,
-            m.observer_employee_number,
-            m.observation_id,
-            m.teacher_id,
-            m.form_long_name,
-            m.rubric_id,
-            m.observed_at,
-            m.glows,
-            m.grows,
-            m.score_measurement_id,
-            m.row_score_value,
-            od.row_score_value as locked_row_score,
-            m.measurement_name,
-            m.text_box,
-            m.score_measurement_type,
-            m.score_measurement_shortname,
-            sp.etr_score,
-            sp.so_score,
-            t.code as form_term,
-            t.type as form_type,
-            t.academic_year,
-            if(
-                m.observed_at >= date(2023, 07, 01), sp.overall_score, m.overall_score
-            ) as overall_score,
-            od.overall_score as locked_overall_score,
-        from measurements as m
-        inner join
-            {{ ref("stg_reporting__terms") }} as t
-            on regexp_contains(m.form_long_name, t.name)
-            and m.observed_at between t.start_date and t.end_date
-            and t.lockbox_date
-            between m.last_modified_date and m.last_modified_date_lead
-        left join
-            {{ ref("stg_performance_management__observation_details") }} as od
-            on m.observation_id = od.observation_id
-            and m.score_measurement_id = od.score_measurement_id
-        left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
-
-        union all
-
+    final_tier as (
         select
             employee_number,
-            observer_employee_number,
-            observation_id,
-
-            null as teacher_id,
-
-            form_long_name,
-            rubric_id,
-            observed_at,
-
-            null as glows,
-            null as grows,
-
-            measurement_name as score_measurement_id,
-            row_score_value,
-            row_score_value as locked_row_score,
-            measurement_name,
-
-            null as text_box,
-
-            score_type as score_measurement_type,
-            measurement_name as score_measurement_shortname,
-            etr_score,
-            so_score,
-            form_term,
-
-            'PM' as form_type,
-
             academic_year,
-            overall_score,
-            overall_score as locked_overall_score,
-        from {{ ref("int_performance_management__scores_archive") }}
+            overall_score as final_score,
+            overall_tier as final_tier,
+            pm_term,
+        from {{ ref("int_performance_management__overall_scores") }}
+        where pm_term = 'PM4'
+
     )
 
 select
-    employee_number,
-    observer_employee_number,
-    observation_id,
-    teacher_id,
-    form_long_name,
-    rubric_id,
-    observed_at,
-    glows,
-    grows,
-    score_measurement_id,
-    row_score_value,
-    locked_row_score,
-    measurement_name,
-    text_box,
-    score_measurement_type,
-    score_measurement_shortname,
-    etr_score,
-    so_score,
-    overall_score,
-    locked_overall_score,
-    form_term,
-    form_type,
-    academic_year,
+    sr.employee_number,
+    sr.sam_account_name,
+    sr.report_to_sam_account_name,
 
+    rt.type as form_type,
+    rt.code as form_term,
+    rt.name as form_long_name,
+    rt.academic_year,
+    rt.start_date,
+    rt.lockbox_date,
+
+    sr2.preferred_name_lastfirst as observer_name,
+
+    od.observer_employee_number,
+    od.observation_id,
+    od.teacher_id,
+    od.rubric_id,
+    od.observed_at,
+    od.glows,
+    od.grows,
+    od.score_measurement_id,
+    od.row_score_value,
+    od.measurement_name,
+    od.text_box,
+    od.score_measurement_type,
+    od.score_measurement_shortname,
+    od.etr_score,
+    od.so_score,
     case
-        when academic_year >= 2023 and form_type = 'PM'
-        then
-            row_number() over (
-                partition by rubric_id, form_term, employee_number, score_measurement_id
-                order by observed_at desc
-            )
-        when academic_year < 2023 and form_type = 'PM'
-        then 1
-    end as rn_submission,
-from observation_details
+        when rt.academic_year <= 2023 then od.locked_overall_score else od.overall_score
+    end as overall_score,
+    od.academic_year as od_academic_year,
+    od.rn_submission,
+
+    os.etr_tier,
+    os.so_tier,
+    os.overall_tier,
+
+    case when rt.code = 'PM3' then ft.final_score end as final_score,
+    case when rt.code = 'PM3' then ft.final_tier end as final_tier,
+
+    coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
+    coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
+    coalesce(srh.home_work_location_name, sr.home_work_location_name) as location,
+    coalesce(
+        srh.home_work_location_grade_band, sr.home_work_location_grade_band
+    ) as grade_band,
+    coalesce(srh.department_home_name, sr.department_home_name) as department,
+    coalesce(
+        srh.primary_grade_level_taught, sr.primary_grade_level_taught
+    ) as grade_taught,
+    coalesce(srh.job_title, sr.job_title) as job_title,
+    coalesce(
+        srh.report_to_preferred_name_lastfirst, sr.report_to_preferred_name_lastfirst
+    ) as manager,
+    coalesce(
+        srh.worker_original_hire_date, sr.worker_original_hire_date
+    ) as worker_original_hire_date,
+    coalesce(srh.assignment_status, sr.assignment_status) as assignment_status,
+
+from {{ ref("base_people__staff_roster") }} as sr
+cross join {{ ref("stg_reporting__terms") }} as rt
+left join
+    {{ ref("int_performance_management__observation_details") }} as od
+    on sr.employee_number = od.employee_number
+    and rt.code = od.form_term
+    and rt.academic_year = od.academic_year
+    and regexp_contains(od.form_long_name, rt.name)
+left join
+    {{ ref("int_performance_management__overall_scores") }} as os
+    on od.observation_id = os.observation_id
+left join
+    {{ ref("base_people__staff_roster_history") }} as srh
+    on sr.employee_number = srh.employee_number
+    and od.observed_at
+    between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
+left join
+    {{ ref("base_people__staff_roster") }} as sr2
+    on od.observer_employee_number = sr2.employee_number
+left join
+    final_tier as ft
+    on sr.employee_number = ft.employee_number
+    and od.academic_year = ft.academic_year
+    and rt.type = 'PM'
+where
+    (sr.job_title like '%Teacher%' or sr.job_title = 'Learning Specialist')
+    and sr.assignment_status not in ('Terminated', 'Deceased')
+    and rt.type in ('PM', 'O3', 'WT')
+    and (od.rn_submission = 1 or od.rn_submission is null)
