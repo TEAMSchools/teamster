@@ -14,13 +14,16 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
+from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
-
-from .. import CODE_LOCATION
-from .schema import ASSET_SCHEMA
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.performance_management.schema import (
+    OBSERVATION_DETAILS_SCHEMA,
+    OUTLIER_DETECTION_SCHEMA,
+)
 
 FIT_TRANSFORM_COLUMNS = [
     "etr1a",
@@ -136,7 +139,6 @@ def get_isolation_forest(df: pandas.DataFrame):
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
     partition_key: MultiPartitionKey = context.partition_key  # type: ignore
-    schema = ASSET_SCHEMA["outlier_detection"]
 
     # load data from extract view
     with db_bigquery.get_client() as bq:
@@ -166,7 +168,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
 
     # exit if no data for partition
     if df_current.shape[0] == 0:
-        return Output(value=([], schema), metadata={"records": 0})
+        return Output(value=([], OUTLIER_DETECTION_SCHEMA), metadata={"records": 0})
 
     df_current.reset_index(inplace=True, drop=True)
 
@@ -207,13 +209,31 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
 
     data = df_current.to_dict(orient="records")
 
-    yield Output(value=(data, schema), metadata={"records": df_current.shape[0]})
+    yield Output(
+        value=(data, OUTLIER_DETECTION_SCHEMA),
+        metadata={"records": df_current.shape[0]},
+    )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=OUTLIER_DETECTION_SCHEMA
     )
 
 
+observation_details = build_sftp_asset(
+    asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
+    remote_dir="/teamster-kipptaf/couchdrop/performance-management/observation-details",
+    remote_file_regex="(?P<academic_year>)\/(?P<term>)\/\w+\.csv",
+    avro_schema=OBSERVATION_DETAILS_SCHEMA,
+    ssh_resource_key="ssh_couchdrop",
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "academic_year": StaticPartitionsDefinition(["2023"]),
+            "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
+        }
+    ),
+)
+
 _all = [
     outlier_detection,
+    observation_details,
 ]
