@@ -88,6 +88,7 @@ with
             m.grows,
             m.score_measurement_id,
             m.row_score_value,
+            od.row_score_value as locked_row_score,
             m.measurement_name,
             m.text_box,
             m.score_measurement_type,
@@ -100,6 +101,7 @@ with
             if(
                 m.observed_at >= date(2023, 07, 01), sp.overall_score, m.overall_score
             ) as overall_score,
+            od.overall_score as locked_overall_score,
         from measurements as m
         inner join
             {{ ref("stg_reporting__terms") }} as t
@@ -107,6 +109,10 @@ with
             and m.observed_at between t.start_date and t.end_date
             and t.lockbox_date
             between m.last_modified_date and m.last_modified_date_lead
+        left join
+            {{ ref("stg_performance_management__observation_details") }} as od
+            on m.observation_id = od.observation_id
+            and m.score_measurement_id = od.score_measurement_id
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
 
         union all
@@ -127,6 +133,7 @@ with
 
             measurement_name as score_measurement_id,
             row_score_value,
+            row_score_value as locked_row_score,
             measurement_name,
 
             null as text_box,
@@ -141,6 +148,7 @@ with
 
             academic_year,
             overall_score,
+            overall_score as locked_overall_score,
         from {{ ref("int_performance_management__scores_archive") }}
     )
 
@@ -156,6 +164,7 @@ select
     grows,
     score_measurement_id,
     row_score_value,
+    locked_row_score,
     measurement_name,
     text_box,
     score_measurement_type,
@@ -163,6 +172,7 @@ select
     etr_score,
     so_score,
     overall_score,
+    locked_overall_score,
     form_term,
     form_type,
     academic_year,
