@@ -40,7 +40,11 @@ select
     od.score_measurement_shortname,
     od.etr_score,
     od.so_score,
-    od.overall_score,
+    case
+        when rt.academic_year <= 2023
+        then od.locked_overall_score
+        else od.overall_score
+    end as overall_score,
     od.academic_year as od_academic_year,
     od.rn_submission,
 

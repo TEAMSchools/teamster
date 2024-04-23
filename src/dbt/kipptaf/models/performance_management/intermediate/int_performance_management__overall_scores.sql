@@ -23,7 +23,9 @@ with
             form_term,
             etr_score,
             so_score,
-            overall_score,
+            case
+                when academic_year <= 2023 then locked_overall_score else overall_score
+            end as overall_score,
             case
                 when etr_score >= 3.495
                 then 4
