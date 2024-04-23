@@ -25,7 +25,7 @@ with
             so_score,
             overall_score,
             case
-                when etr_score >= 3.5
+                when etr_score >= 3.495
                 then 4
                 when etr_score >= 2.745
                 then 3
@@ -35,7 +35,7 @@ with
                 then 1
             end as etr_tier,
             case
-                when so_score >= 3.5
+                when so_score >= 3.495
                 then 4
                 when so_score >= 2.945
                 then 3
@@ -45,7 +45,7 @@ with
                 then 1
             end as so_tier,
             case
-                when overall_score >= 3.5
+                when overall_score >= 3.495
                 then 4
                 when overall_score >= 2.745
                 then 3
@@ -76,7 +76,7 @@ with
             avg(so_score) as so_score,
             avg(overall_score) as overall_score,
             case
-                when avg(etr_score) >= 3.5
+                when avg(etr_score) >= 3.495
                 then 4
                 when avg(etr_score) >= 2.745
                 then 3
@@ -86,7 +86,7 @@ with
                 then 1
             end as etr_tier,
             case
-                when avg(so_score) >= 3.5
+                when avg(so_score) >= 3.495
                 then 4
                 when avg(so_score) >= 2.945
                 then 3
@@ -96,7 +96,7 @@ with
                 then 1
             end as so_tier,
             case
-                when avg(overall_score) >= 3.5
+                when avg(overall_score) >= 3.495
                 then 4
                 when avg(overall_score) >= 2.745
                 then 3
