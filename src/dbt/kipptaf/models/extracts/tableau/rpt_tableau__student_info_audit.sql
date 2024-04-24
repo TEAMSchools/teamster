@@ -288,4 +288,4 @@ inner join
     on se.student_number = ceo.students_student_number
     and se.academic_year = ceo.cc_academic_year
     and {{ union_dataset_join_clause(left_alias="se", right_alias="ceo") }}
-where se.enroll_status = 0 and ceo.cc_course_number <> 'LOG300'
+where se.enroll_status = 0 and ceo.cc_course_number != 'LOG300'
