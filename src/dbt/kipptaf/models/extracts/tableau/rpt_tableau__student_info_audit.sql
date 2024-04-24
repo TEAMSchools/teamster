@@ -49,7 +49,7 @@ with
             if(se.dob is null, 1, 0) as missing_dob_flag,
 
             safe_cast(cec.sectionid_count as string) as sectionid_count,
-            if(cec.sectionid_count <= 3, true, false) as underenrollment_flag,
+            if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
 
             -- noqa: disable=CV10
             case
@@ -288,3 +288,4 @@ inner join
     on se.student_number = ceo.students_student_number
     and se.academic_year = ceo.cc_academic_year
     and {{ union_dataset_join_clause(left_alias="se", right_alias="ceo") }}
+where se.enroll_status = 0 and ceo.cc_course_number <> 'LOG300'
