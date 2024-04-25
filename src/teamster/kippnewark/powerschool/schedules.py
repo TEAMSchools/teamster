@@ -11,6 +11,7 @@ last_modified_schedule = build_powerschool_schedule(
     cron_schedule="0 * * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     asset_defs=full_assets,
+    max_runtime_seconds=(60 * 7),
 )
 
 nonpartition_asset_job_schedule = ScheduleDefinition(
