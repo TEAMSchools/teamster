@@ -73,6 +73,7 @@ defs = Definitions(
         *tableau.schedules,
     ],
     sensors=[
+        *adp.sensors,
         *airbyte.sensors,
         *alchemer.sensors,
         *couchdrop.sensors,
