@@ -247,6 +247,7 @@ select
     'NA' as assessment_title,
 
     o.administration_round,
+    o.test_academic_year,
     o.subject_area,
     o.test_date,
 
@@ -302,6 +303,7 @@ select
     'NA' as assessment_title,
 
     o.administration_round,
+    o.test_academic_year,
     o.subject_area,
     o.test_date,
 
@@ -355,6 +357,7 @@ select
     p.assessment_id,
     p.assessment_title,
     p.administration_round,
+    p.test_academic_year,
     p.subject_area,
     p.test_date,
     p.response_type,
