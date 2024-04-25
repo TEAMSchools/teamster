@@ -17,7 +17,6 @@ schedules = [
 ]
 
 sensors = [
-    *payroll.sensors,
     *workforce_now.sensors,
 ]
 

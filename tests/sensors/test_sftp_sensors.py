@@ -63,10 +63,28 @@ def test_sensor_deanslist():
     )
 
 
-def test_sensor_adp_payroll():
-    from teamster.kipptaf.adp.payroll.sensors import adp_payroll_sftp_sensor
+def test_sensor_couchdrop_kipptaf():
+    from teamster.kipptaf.couchdrop.sensors import couchdrop_sftp_sensor
 
-    _test_sensor(sftp_sensor=adp_payroll_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+
+
+def test_sensor_couchdrop_kippcamden():
+    from teamster.kippcamden.couchdrop.sensors import couchdrop_sftp_sensor
+
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+
+
+def test_sensor_couchdrop_kippmiami():
+    from teamster.kippmiami.couchdrop.sensors import couchdrop_sftp_sensor
+
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+
+
+def test_sensor_couchdrop_kippnewark():
+    from teamster.kippnewark.couchdrop.sensors import couchdrop_sftp_sensor
+
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
 
 
 """

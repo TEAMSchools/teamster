@@ -17,6 +17,7 @@ from . import (
     airbyte,
     alchemer,
     amplify,
+    couchdrop,
     datagun,
     dayforce,
     deanslist,
@@ -72,9 +73,9 @@ defs = Definitions(
         *tableau.schedules,
     ],
     sensors=[
-        *adp.sensors,
         *airbyte.sensors,
         *alchemer.sensors,
+        *couchdrop.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
         *sheets.sensors,
