@@ -222,7 +222,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
 observation_details = build_sftp_asset(
     asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
     remote_dir="/teamster-kipptaf/couchdrop/performance-management/observation-details",
-    remote_file_regex="(?P<academic_year>)\/(?P<term>)\/\w+\.csv",
+    remote_file_regex="(?P<academic_year>\d+)\/(?P<term>PM\d)\/\w+\.csv",
     avro_schema=OBSERVATION_DETAILS_SCHEMA,
     ssh_resource_key="ssh_couchdrop",
     partitions_def=MultiPartitionsDefinition(
@@ -233,7 +233,7 @@ observation_details = build_sftp_asset(
     ),
 )
 
-_all = [
-    outlier_detection,
-    observation_details,
+__all__ = [
+    "outlier_detection",
+    "observation_details",
 ]
