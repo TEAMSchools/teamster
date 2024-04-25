@@ -1,10 +1,10 @@
 version: 0.1
 cli:
-  version: 1.21.0
+  version: 1.22.0
 plugins:
   sources:
     - id: trunk
-      ref: v1.4.5
+      ref: v1.5.0
       uri: https://github.com/trunk-io/plugins
 lint:
   disabled:
@@ -57,7 +57,7 @@ lint:
     - sqlfmt@0.21.2
     - svgo@3.2.0
     - taplo@0.8.1
-    - trufflehog@3.71.0
+    - trufflehog@3.74.0
     - yamllint@1.35.1
   definitions:
     - name: ruff
