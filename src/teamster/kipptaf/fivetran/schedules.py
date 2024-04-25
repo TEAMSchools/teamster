@@ -5,8 +5,7 @@ from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 
 @job
-def fivetran_job():
-    ...
+def fivetran_job(): ...
 
 
 def build_fivetran_start_sync_schedule(
