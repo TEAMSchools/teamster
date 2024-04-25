@@ -24,6 +24,7 @@ with
 
             adb.contact_id,
             adb.ktc_cohort,
+            adb.contact_owner_name,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -224,6 +225,7 @@ select
     e.advisor_lastfirst,
     e.contact_id,
     e.ktc_cohort,
+    e.contact_owner_name,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -292,6 +294,7 @@ select
     e.advisor_lastfirst,
     e.contact_id,
     e.ktc_cohort,
+    e.contact_owner_name,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -360,6 +363,7 @@ select
     e.advisor_lastfirst,
     e.contact_id,
     e.ktc_cohort,
+    e.contact_owner_name,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
