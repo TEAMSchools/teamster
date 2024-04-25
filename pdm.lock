@@ -1133,17 +1133,17 @@ files = [
 
 [[package]]
 name = "grpcio-status"
-version = "1.62.1"
+version = "1.62.2"
 requires_python = ">=3.6"
 summary = "Status proto mapping for gRPC"
 dependencies = [
     "googleapis-common-protos>=1.5.5",
-    "grpcio>=1.62.1",
+    "grpcio>=1.62.2",
     "protobuf>=4.21.6",
 ]
 files = [
-    {file = "grpcio-status-1.62.1.tar.gz", hash = "sha256:3431c8abbab0054912c41df5c72f03ddf3b7a67be8a287bb3c18a3456f96ff77"},
-    {file = "grpcio_status-1.62.1-py3-none-any.whl", hash = "sha256:af0c3ab85da31669f21749e8d53d669c061ebc6ce5637be49a46edcb7aa8ab17"},
+    {file = "grpcio-status-1.62.2.tar.gz", hash = "sha256:62e1bfcb02025a1cd73732a2d33672d3e9d0df4d21c12c51e0bbcaf09bab742a"},
+    {file = "grpcio_status-1.62.2-py3-none-any.whl", hash = "sha256:206ddf0eb36bc99b033f03b2c8e95d319f0044defae9b41ae21408e7e0cda48f"},
 ]
 
 [[package]]
