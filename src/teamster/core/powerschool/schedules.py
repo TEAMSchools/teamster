@@ -1,5 +1,6 @@
 import pendulum
 from dagster import (
+    MAX_RUNTIME_SECONDS_TAG,
     AssetsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
@@ -13,7 +14,11 @@ from teamster.core.ssh.resources import SSHResource
 
 
 def build_powerschool_schedule(
-    code_location, cron_schedule, execution_timezone, asset_defs: list[AssetsDefinition]
+    code_location,
+    cron_schedule,
+    execution_timezone,
+    asset_defs: list[AssetsDefinition],
+    max_runtime_seconds,
 ):
     job_name = f"{code_location}_powerschool_schedule_job"
 
@@ -93,6 +98,10 @@ def build_powerschool_schedule(
                         asset_selection.append(asset.key)
 
         if asset_selection:
-            return RunRequest(run_key=schedule_name, asset_selection=asset_selection)
+            return RunRequest(
+                run_key=schedule_name,
+                asset_selection=asset_selection,
+                tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
+            )
 
     return _schedule

@@ -1,5 +1,6 @@
 import pendulum
 from dagster import (
+    MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
     AssetsDefinition,
     MonthlyPartitionsDefinition,
@@ -20,6 +21,7 @@ def build_powerschool_sensor(
     asset_selection: list[AssetsDefinition],
     asset_defs: list[AssetsDefinition],
     execution_timezone,
+    max_runtime_seconds,
     minimum_interval_seconds=None,
 ):
     @sensor(
@@ -120,6 +122,7 @@ def build_powerschool_sensor(
                                     run_key=f"{asset.key.to_python_identifier()}_{partition_key}_{hour_ts}",
                                     asset_selection=[asset.key],
                                     partition_key=partition_key,
+                                    tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
                                 )
                                 for partition_key in partition_keys
                             ]
@@ -134,6 +137,7 @@ def build_powerschool_sensor(
                                             [*asset.key.path[:-1], "storedgrades_dcid"]
                                         )
                                     ],
+                                    tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
                                 )
                             )
 
