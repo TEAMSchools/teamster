@@ -16,9 +16,19 @@ with
             max(is_accepted_aa) as is_accepted_aa,
             max(is_accepted_ba) as is_accepted_ba,
             max(is_accepted_certificate) as is_accepted_certificate,
+            max(is_early_action_decision) as is_early_action_decision,
 
             sum(if(is_submitted, 1, 0)) as n_submitted,
             sum(if(is_accepted, 1, 0)) as n_accepted,
+
+            max(
+                case
+                    when is_early_action_decision and is_accepted
+                    then true
+                    when is_early_action_decision and not is_accepted
+                    then false
+                end
+            ) as is_accepted_early,
 
             round(
                 avg(
@@ -378,6 +388,8 @@ select
     ar.ecc_matriculated_min,
     ar.ecc_accepted_avg,
     ar.ecc_accepted_min,
+    ar.is_early_action_decision,
+    ar.is_accepted_early,
 
     cnr.as1,
     cnr.as2,
