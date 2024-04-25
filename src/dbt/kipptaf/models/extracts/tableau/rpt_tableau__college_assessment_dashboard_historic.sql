@@ -357,7 +357,7 @@ select
     p.assessment_id,
     p.assessment_title,
     p.administration_round,
-    p.test_academic_year,
+    null as test_academic_year,
     p.subject_area,
     p.test_date,
     p.response_type,
