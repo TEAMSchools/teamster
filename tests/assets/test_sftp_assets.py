@@ -96,7 +96,9 @@ def test_pearson_njsla_kippcamden():
 
     asset = [a for a in assets if a.key.path[-1] == "njsla"][0]
 
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+    _test_asset(
+        asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}, partition_key="19"
+    )
 
 
 def test_pearson_njsla_science_kippnewark():
