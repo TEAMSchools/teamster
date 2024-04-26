@@ -4,6 +4,9 @@ assets:
     remote_file_regex: \d+\/PM\d\/\w+-\w+(?P<grade_level_subject>Grade\dFAST(?:ELAReading|Mathematics))\w+(?P<school_year_term>SY\d+PM\d)\.csv
     partition_keys:
       school_year_term:
+        - SY23PM1
+        - SY23PM2
+        - SY23PM3
         - SY24PM1
         - SY24PM2
         - SY24PM3
