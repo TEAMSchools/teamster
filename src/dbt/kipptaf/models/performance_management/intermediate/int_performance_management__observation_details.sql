@@ -9,10 +9,9 @@ with
             o.observed_at_date_local as observed_at,
             o.list_two_column_a_str as glows,
             o.list_two_column_b_str as grows,
+            o.observer_email,
 
             u.internal_id_int as employee_number,
-
-            u2.internal_id_int as observer_employee_number,
 
             ohos.measurement as score_measurement_id,
             ohos.value_score as row_score_value,
@@ -24,11 +23,11 @@ with
             m.short_name as score_measurement_shortname,
 
             b.value_clean as text_box,
+
+            srh.employee_number as observer_employee_number,
         from {{ ref("stg_schoolmint_grow__observations") }} as o
         inner join
             {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
-        left join
-            {{ ref("stg_schoolmint_grow__users") }} as u2 on o.observer_id = u2.user_id
         left join
             {{ ref("stg_schoolmint_grow__observations_history__observation_scores") }}
             as ohos
@@ -44,6 +43,11 @@ with
             }} as b
             on ohos.observation_id = b.observation_id
             and ohos.measurement = b.measurement
+        left join
+            {{ ref("base_people__staff_roster_history") }} as srh
+            on o.observer_email = srh.google_email
+            and o.observed_at
+            between srh.work_assignment_start_date and srh.work_assignment_end_date
         where
             o.is_published
             /* 2023 is first year with new rubric*/
@@ -121,31 +125,23 @@ with
             employee_number,
             observer_employee_number,
             observation_id,
-
             null as teacher_id,
-
             form_long_name,
             rubric_id,
             observed_at,
-
             null as glows,
             null as grows,
-
             measurement_name as score_measurement_id,
             row_score_value,
             row_score_value as locked_row_score,
             measurement_name,
-
             null as text_box,
-
             score_type as score_measurement_type,
             measurement_name as score_measurement_shortname,
             etr_score,
             so_score,
             form_term,
-
             'PM' as form_type,
-
             academic_year,
             overall_score,
             overall_score as locked_overall_score,

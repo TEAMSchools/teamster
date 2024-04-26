@@ -1,4 +1,4 @@
-from .assets import __all__ as assets
+from .assets import assets
 
 __all__ = [
     "assets",
