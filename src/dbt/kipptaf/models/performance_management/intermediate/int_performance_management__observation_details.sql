@@ -75,7 +75,7 @@ with
     observation_details as (
         select
             m.employee_number,
-            sr.employee_number as observer_employee_number,
+            srh.employee_number as observer_employee_number,
             m.observation_id,
             m.teacher_id,
             m.form_long_name,
@@ -111,8 +111,9 @@ with
             on m.observation_id = od.observation_id
             and m.score_measurement_id = od.score_measurement_id
         left join
-            {{ ref("base_people__staff_roster") }} as sr
+            {{ ref("base_people__staff_roster_history") }} as srh
             on m.observer_email = srh.google_email
+            and safe_cast(m.observed_at as timestamp) between srh.work_assignment_start_date and srh.work_assignment_end_date
         left join pm_overall_scores_pivot as sp on m.observation_id = sp.observation_id
 
         union all
@@ -180,3 +181,4 @@ select
         then 1
     end as rn_submission,
 from observation_details
+where observer_employee_number = 102471
