@@ -1,5 +1,5 @@
-from .assets import _all as assets
+from .assets import assets
 
-_all = [
-    assets,
+__all__ = [
+    "assets",
 ]

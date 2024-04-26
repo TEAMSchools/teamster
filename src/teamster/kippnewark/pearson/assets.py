@@ -27,7 +27,7 @@ njgpa = build_sftp_asset(
     ),
 )
 
-all_assets = [
+static_partition_assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
         avro_schema=ASSET_SCHEMA[a["asset_name"]],
@@ -38,7 +38,7 @@ all_assets = [
     for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
 ]
 
-_all = [
+assets = [
     njgpa,
-    *all_assets,
+    *static_partition_assets,
 ]
