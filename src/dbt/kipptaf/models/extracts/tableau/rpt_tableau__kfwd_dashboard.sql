@@ -23,9 +23,9 @@ with
 
             max(
                 case
-                    when is_early_action_decision and is_accepted
+                    when is_early_action_decision and is_submitted and is_accepted
                     then true
-                    when is_early_action_decision and not is_accepted
+                    when is_early_action_decision and is_submitted and not is_accepted
                     then false
                 end
             ) as is_accepted_early,
