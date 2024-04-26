@@ -18,7 +18,7 @@ blissbook_extract_asset_job = define_asset_job(
 clever_extract_asset_job = define_asset_job(
     name="datagun_clever_extract_asset_job",
     selection=clever_extract_assets,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 3)},
+    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 4)},
 )
 
 coupa_extract_asset_job = define_asset_job(
