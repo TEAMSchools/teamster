@@ -2,18 +2,30 @@ import json
 import re
 
 import pendulum
-from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
+from dagster import (
+    AssetsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    RunRequest,
+    SensorEvaluationContext,
+    SensorResult,
+    StaticPartitionsDefinition,
+    sensor,
+)
 
 from teamster.core.ssh.resources import SSHResource
 
 
-def build_couchdrop_sftp_sensor(code_location, local_timezone, assets):
+def build_couchdrop_sftp_sensor(
+    code_location, local_timezone, assets: list[AssetsDefinition]
+):
     @sensor(
         name=f"{code_location}_couchdrop_sftp_sensor",
         minimum_interval_seconds=(60 * 10),
         asset_selection=assets,
     )
     def _sensor(context: SensorEvaluationContext, ssh_couchdrop: SSHResource):
+        run_requests = []
         now = pendulum.now(tz=local_timezone)
         cursor: dict = json.loads(context.cursor or "{}")
 
@@ -25,35 +37,43 @@ def build_couchdrop_sftp_sensor(code_location, local_timezone, assets):
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
 
-        asset_selection = []
         for asset in assets:
-            asset_metadata = asset.metadata_by_key[asset.key]
-            asset_identifier = asset.key.to_string()
+            asset_identifier = asset.key.to_python_identifier()
+            metadata_by_key = asset.metadata_by_key[asset.key]
+
             context.log.info(asset_identifier)
+            pattern = re.compile(
+                pattern=f"{metadata_by_key["remote_dir"]}/{metadata_by_key["remote_file_regex"]}"
+            )
 
-            last_run = cursor.get(asset_identifier, 0)
-
-            for f in files:
-                match = re.match(
-                    pattern=f"{asset_metadata["remote_dir"]}/{asset_metadata["remote_file_regex"]}",
-                    string=f.filepath,
-                )
-
-                if match is not None:
-                    context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    if f.st_mtime > last_run and f.st_size > 0:
-                        asset_selection.append(asset.key)
-
-                    cursor[asset_identifier] = now.timestamp()
-
-        run_requests = []
-        if asset_selection:
-            run_requests = [
-                RunRequest(
-                    run_key=f"{context.sensor_name}_{now.timestamp()}",
-                    asset_selection=asset_selection,
-                )
+            file_matches = [
+                f
+                for f in files
+                if pattern.match(string=f.filepath)
+                and f.st_mtime > cursor.get(asset_identifier, 0)
+                and f.st_size > 0
             ]
+
+            for f in file_matches:
+                cursor[asset_identifier] = now.timestamp()
+
+                match = pattern.match(string=f.filepath)
+
+                if isinstance(asset.partitions_def, MultiPartitionsDefinition):
+                    partition_key = MultiPartitionKey(match.groupdict())
+                elif isinstance(asset.partitions_def, StaticPartitionsDefinition):
+                    partition_key = match.group(1)
+                else:
+                    partition_key = None
+
+                context.log.info(f"{f.filename}: {partition_key}")
+                run_requests.append(
+                    RunRequest(
+                        run_key=f"{context.sensor_name}_{now.timestamp()}",
+                        asset_selection=[asset.key],
+                        partition_key=partition_key,
+                    )
+                )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
