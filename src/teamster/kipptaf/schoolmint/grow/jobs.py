@@ -1,4 +1,4 @@
-from dagster import RunConfig, define_asset_job, job
+from dagster import MAX_RUNTIME_SECONDS_TAG, RunConfig, define_asset_job, job
 
 from ...google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
 from .assets import multi_partition_assets, static_partition_assets
@@ -27,6 +27,7 @@ static_partition_asset_job = define_asset_job(
     name="schoolmint_grow_static_partition_asset_job",
     selection=static_partition_assets,
     partitions_def=static_partition_assets[0].partitions_def,
+    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
 )
 
 multi_partition_asset_job = define_asset_job(
