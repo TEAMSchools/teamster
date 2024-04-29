@@ -93,19 +93,6 @@ with
         where e.rn_year = 1 and e.school_level = 'HS' and e.schoolid != 999999
     ),
 
-    psat10_unpivot as (
-        select local_student_id as contact, test_date, score_type, score,
-        from
-            {{ ref("stg_illuminate__psat") }} unpivot (
-                score for score_type in (
-                    psat10_ebrw,
-                    psat10_math_test_score,
-                    psat10_reading_test_score,
-                    psat10_total_score
-                )
-            )
-    ),
-
     college_assessments_official as (
         select
             contact,
@@ -163,10 +150,14 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+
         union all
+
         select
             contact,
+
             'PSAT10' as scope,
+
             test_date,
             score as scale_score,
 
@@ -199,12 +190,15 @@ with
                 else 'NA'
             end as course_discipline,
 
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="test_date", start_month=7, year_source="start"
-                )
-            }} as test_academic_year,
-        from psat10_unpivot
+            academic_year as test_academic_year,
+        from {{ ref("int_illuminate__psat_unpivot") }}
+        where
+            score_type in (
+                'psat10_ebrw',
+                'psat10_math_test_score',
+                'psat10_reading_test_score',
+                'psat10_total_score'
+            )
     )
 
 select

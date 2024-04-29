@@ -322,14 +322,14 @@ select
     words_context_usr_percentile,
     writing_lang_usr_percentile,
 
-    safe_cast(total_score as numeric) as psat10_total_score,
-    safe_cast(math_test_score as numeric) as psat10_math_test_score,
+    safe_cast(total_score as numeric) as total_score,
+    safe_cast(math_test_score as numeric) as math_test_score,
     safe_cast(history_cross_test_score as numeric) as history_cross_test_score,
-    safe_cast(reading_test_score as numeric) as psat10_reading_test_score,
+    safe_cast(reading_test_score as numeric) as reading_test_score,
     safe_cast(science_cross_test_score as numeric) as science_cross_test_score,
     safe_cast(writing_test_score as numeric) as writing_test_score,
-    safe_cast(eb_read_write_section_score as numeric) as psat10_ebrw,
-    safe_cast(math_section_score as numeric) as psat10_math,
+    safe_cast(eb_read_write_section_score as numeric) as eb_read_write_section_score,
+    safe_cast(math_section_score as numeric) as math_section_score,
     safe_cast(advanced_math_subscore as numeric) as advanced_math_subscore,
     safe_cast(command_evidence_subscore as numeric) as command_evidence_subscore,
     safe_cast(english_conv_subscore as numeric) as english_conv_subscore,
@@ -343,7 +343,7 @@ select
     coalesce(psat_2023_gradeassessed, psat_2024_gradeassessed) as grade_assessed,
     coalesce(
         psat_2023_firstchoicemajor, psat_2024_firstchoicemajor
-    ) as first_choic_emajor,
+    ) as first_choice_major,
     coalesce(psat_2023_gpa, psat_2024_gpa) as gpa,
     coalesce(
         psat_2023_numyearsgrade912, psat_2024_numyearsgrade912
@@ -375,4 +375,10 @@ select
     coalesce(psat_2023_apusgovpol, psat_2024_apusgovpol) as ap_us_gov_pol,
     coalesce(psat_2023_apushist, psat_2024_apushist) as ap_us_hist,
     coalesce(psat_2023_apworldhist, psat_2024_apworldhist) as ap_world_hist,
+
+    {{
+        teamster_utils.date_to_fiscal_year(
+            date_field="test_date", start_month=7, year_source="start"
+        )
+    }} as academic_year,
 from combined_years

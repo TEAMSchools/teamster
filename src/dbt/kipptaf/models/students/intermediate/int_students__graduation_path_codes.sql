@@ -83,20 +83,6 @@ with
         where b.name = 'NJGPA'
     ),
 
-    psat10_unpivot as (
-        select local_student_id, score_type, score,
-        from
-            {{ ref("stg_illuminate__psat") }} unpivot (
-                score for score_type in (
-                    psat10_ebrw,
-                    psat10_math_test_score,
-                    psat10_math,
-                    psat10_reading_test_score
-                )
-            )
-        where score_type not in ('total_score', 'writing_test_score')
-    ),
-
     act_sat_psat10_official as (
         select
             contact,
@@ -136,7 +122,9 @@ with
 
         select
             local_student_id as contact,
+
             'PSAT10' as test_type,
+
             case
                 when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
                 then 'ELA'
@@ -152,7 +140,14 @@ with
                 then true
                 else false
             end as met_pathway_requirement,
-        from psat10_unpivot
+        from {{ ref("int_illuminate__psat_unpivot") }}
+        where
+            score_type in (
+                'psat10_ebrw',
+                'psat10_math_test_score',
+                'psat10_math',
+                'psat10_reading_test_score'
+            )
     ),
 
     act_sat_psat10_pivot as (
