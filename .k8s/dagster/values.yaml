@@ -66,6 +66,23 @@ dagsterCloud:
   # servers fails with a retryable error.
   # backoffFactor: 0.5
 
+  # Optionally customize the socket_options that are passed in to the underlying HTTP connection
+  # pool used to send HTTP requests to Dagster Cloud.
+  #
+  # See https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html for the expected
+  # format. socketOptions should be a list of lists, where each inner list has three elements. The
+  # list values can either be string name of socket attributes (like "IPPROTO_TCP") or the integer
+  # value of that attribute. Omitting the `socketOptions` key will use the default urllib3 socket
+  # options (setting TCP_NODELAY to 1) - be sure to explicitly include
+  # ["IPPROTO_TCP", "TCP_NODELAY", 1] if you are overridding socketOptions and want to include
+  # the default options as well.
+  #
+  # Example:
+  # socketOptions:
+  #   - ["IPPROTO_TCP", "TCP_NODELAY", 1]
+  #   - ["SOL_SOCKET", "SO_KEEPALIVE", 1],
+  #   - [6, 257, 7]
+
   # Optionally configure the agent process requests for code locations annotated with a specific agent queue.
   # Examples:
   #
