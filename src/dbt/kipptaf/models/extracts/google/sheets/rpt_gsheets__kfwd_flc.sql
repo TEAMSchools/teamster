@@ -91,6 +91,12 @@ select  -- noqa: ST06
     coalesce(bg.bgp, 'No BGP') as bgp,
     kt.contact_expected_hs_graduation,
     coalesce(cn.ccdm, 0) as ccdm_complete,
+    kt.ktc_status,
+    case
+        when kt.ktc_status not like 'TAF%' and co.enroll_status = 0
+        then 'KIPP Enrolled'
+        else kt.ktc_status
+    end as taf_enroll_status,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -110,8 +116,4 @@ left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cn
     on kt.contact_id = cn.contact_id
     and cn.academic_year = {{ var("current_academic_year") }}
-where
-    co.academic_year = {{ var("current_academic_year") }}
-    and co.rn_year = 1
-    and co.grade_level >= 9
-    and co.grade_level != 99
+where co.rn_undergrad = 1 and co.grade_level != 99
