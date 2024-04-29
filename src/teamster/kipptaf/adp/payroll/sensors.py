@@ -96,6 +96,6 @@ def adp_payroll_sftp_sensor(
     )
 
 
-_all = [
+__all__ = [
     adp_payroll_sftp_sensor,
 ]

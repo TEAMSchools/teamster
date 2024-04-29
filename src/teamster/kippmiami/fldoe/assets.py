@@ -11,7 +11,7 @@ from teamster.core.sftp.assets import build_sftp_asset
 from .. import CODE_LOCATION
 from .schema import ASSET_SCHEMA
 
-_all = [
+assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "fldoe", a["asset_name"]],
         ssh_resource_key="ssh_couchdrop",
