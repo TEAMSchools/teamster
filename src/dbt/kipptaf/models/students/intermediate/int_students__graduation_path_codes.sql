@@ -64,7 +64,7 @@ with
                 then 'English Language Arts'
                 when 'MATGP'
                 then 'Mathematics'
-            end as subject,
+            end as `subject`,
         from {{ ref("stg_powerschool__test") }} as b
         left join
             {{ ref("stg_powerschool__studenttest") }} as s
@@ -184,7 +184,7 @@ with
         select
             localstudentidentifier as student_number,
             safe_cast(statestudentidentifier as string) as state_studentnumber,
-            subject,
+            `subject`,
             testcode,
             testscalescore,
             case
@@ -199,11 +199,11 @@ with
             student_number,
             state_studentnumber,
             testcode,
-            subject,
+            `subject`,
             discipline,
             max(testscalescore) as testscalescore,
         from njgpa
-        group by student_number, state_studentnumber, testcode, subject, discipline
+        group by student_number, state_studentnumber, testcode, `subject`, discipline
     ),
 
     roster as (
