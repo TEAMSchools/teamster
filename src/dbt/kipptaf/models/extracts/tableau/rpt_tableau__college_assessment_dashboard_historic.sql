@@ -1,14 +1,18 @@
 with
     base_courses as (
-        -- this CTE and the following one were added to help figure out which base
-        -- course to pick for a student, since not all of them have CCR, and not all
-        -- have HR, so i wrote this to try to catch everyone possible
+        /*
+            this CTE and the following one were added to help figure out which base
+            course to pick for a student, since not all of them have CCR, and not all
+            have HR, so i wrote this to try to catch everyone possible
+        */
         select
             _dbt_source_relation,
             cc_academic_year,
             students_student_number as student_number,
             courses_course_name,
+
             if(courses_course_name = 'HR', 2, 1) as course_rank,
+
             min(if(courses_course_name = 'HR', 2, 1)) over (
                 partition by cc_academic_year, students_student_number
             ) as expected_course_rank,
@@ -101,19 +105,6 @@ with
             and ec.courses_course_name_expected is not null
     ),
 
-    psat10_unpivot as (
-        select local_student_id as contact, test_date, score_type, score,
-        from
-            {{ ref("stg_illuminate__psat") }} unpivot (
-                score for score_type in (
-                    eb_read_write_section_score,
-                    math_test_score,
-                    reading_test_score,
-                    total_score
-                )
-            )
-    ),
-
     college_assessments_official as (
         select
             contact,
@@ -171,15 +162,19 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+
         union all
+
         select
-            contact,
+            safe_cast(local_student_id as string) as contact,
+
             'PSAT10' as scope,
+
             test_date,
             score as scale_score,
 
             row_number() over (
-                partition by contact, score_type order by score desc
+                partition by local_student_id, score_type order by score desc
             ) as rn_highest,
 
             'Official' as test_type,
@@ -190,29 +185,32 @@ with
 
             case
                 score_type
-                when 'total_score'
+                when 'psat10_total_score'
                 then 'Composite'
-                when 'reading_test_score'
+                when 'psat10_reading_test_score'
                 then 'Reading'
-                when 'math_test_score'
+                when 'psat10_math_test_score'
                 then 'Math'
-                when 'eb_read_write_section_score'
+                when 'psat10_ebrw'
                 then 'Writing and Language Test'
             end as subject_area,
             case
-                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
                 then 'ENG'
-                when score_type = 'math_test_score'
+                when score_type = 'psat10_math_test_score'
                 then 'MATH'
                 else 'NA'
             end as course_discipline,
 
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="test_date", start_month=7, year_source="start"
-                )
-            }} as test_academic_year,
-        from psat10_unpivot
+            academic_year as test_academic_year,
+        from {{ ref("int_illuminate__psat_unpivot") }}
+        where
+            score_type in (
+                'psat10_ebrw',
+                'psat10_math_test_score',
+                'psat10_math',
+                'psat10_reading_test_score'
+            )
     )
 
 select
@@ -247,6 +245,7 @@ select
     'NA' as assessment_title,
 
     o.administration_round,
+    o.test_academic_year,
     o.subject_area,
     o.test_date,
 
@@ -260,7 +259,6 @@ select
 
     o.scale_score,
     o.rn_highest,
-
 from roster as e
 left join
     college_assessments_official as o
@@ -302,6 +300,7 @@ select
     'NA' as assessment_title,
 
     o.administration_round,
+    o.test_academic_year,
     o.subject_area,
     o.test_date,
 
@@ -315,7 +314,6 @@ select
 
     o.scale_score,
     o.rn_highest,
-
 from roster as e
 left join
     college_assessments_official as o
@@ -355,6 +353,7 @@ select
     p.assessment_id,
     p.assessment_title,
     p.administration_round,
+    p.academic_year as test_academic_year,
     p.subject_area,
     p.test_date,
     p.response_type,
@@ -369,7 +368,6 @@ select
         partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
     ) as rn_highest,
-
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
