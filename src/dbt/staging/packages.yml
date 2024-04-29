@@ -1,5 +1,5 @@
 packages:
   # https://github.com/dbt-labs/dbt-external-tables
   - package: dbt-labs/dbt_external_tables
-    version: 0.8.7
+    version: 0.9.0
   - local: ../deanslist
