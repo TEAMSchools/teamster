@@ -64,7 +64,7 @@ with
                 then 'English Language Arts'
                 when 'MATGP'
                 then 'Mathematics'
-            end as subject,
+            end as `subject`,
         from {{ ref("stg_powerschool__test") }} as b
         left join
             {{ ref("stg_powerschool__studenttest") }} as s
@@ -81,20 +81,6 @@ with
             and t.testscoreid = r.id
             and {{ union_dataset_join_clause(left_alias="s", right_alias="r") }}
         where b.name = 'NJGPA'
-    ),
-
-    psat10_unpivot as (
-        select local_student_id, score_type, score,
-        from
-            {{ ref("stg_illuminate__psat") }} unpivot (
-                score for score_type in (
-                    eb_read_write_section_score,
-                    math_test_score,
-                    math_section_score,
-                    reading_test_score
-                )
-            )
-        where score_type not in ('total_score', 'writing_test_score')
     ),
 
     act_sat_psat10_official as (
@@ -136,24 +122,32 @@ with
 
         select
             local_student_id as contact,
+
             'PSAT10' as test_type,
+
             case
-                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
                 then 'ELA'
                 else 'Math'
             end as discipline,
             case
                 when
-                    score_type in ('reading_test_score', 'math_test_score')
+                    score_type
+                    in ('psat10_reading_test_score', 'psat10_math_test_score')
                     and score >= 21
                 then true
-                when
-                    score_type in ('math_section_score', 'eb_read_write_section_score')
-                    and score >= 420
+                when score_type in ('psat10_math', 'psat10_ebrw') and score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
-        from psat10_unpivot
+        from {{ ref("int_illuminate__psat_unpivot") }}
+        where
+            score_type in (
+                'psat10_ebrw',
+                'psat10_math_test_score',
+                'psat10_math',
+                'psat10_reading_test_score'
+            )
     ),
 
     act_sat_psat10_pivot as (
@@ -190,7 +184,7 @@ with
         select
             localstudentidentifier as student_number,
             safe_cast(statestudentidentifier as string) as state_studentnumber,
-            subject,
+            `subject`,
             testcode,
             testscalescore,
             case
@@ -205,11 +199,11 @@ with
             student_number,
             state_studentnumber,
             testcode,
-            subject,
+            `subject`,
             discipline,
             max(testscalescore) as testscalescore,
         from njgpa
-        group by student_number, state_studentnumber, testcode, subject, discipline
+        group by student_number, state_studentnumber, testcode, `subject`, discipline
     ),
 
     roster as (

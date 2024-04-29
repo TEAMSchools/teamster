@@ -263,7 +263,6 @@ jobs:
       - name: Initialize build session
         id: ci-init
         uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@v0.1
-        if: needs.prerun.outputs.result != 'skip'
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
           dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_YAML_PATH }}

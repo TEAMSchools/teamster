@@ -31,7 +31,7 @@ with
             e.enroll_status,
             e.is_out_of_district,
             e.gender,
-            e.lunch_status as lunch_status,
+            e.lunch_status,
 
             m.ms_attended,
 
@@ -70,7 +70,7 @@ with
             gender,
             is_504,
             lep_status,
-            lunch_status as lunch_status,
+            lunch_status,
             case
                 ethnicity when 'T' then 'T' when 'H' then 'H' else ethnicity
             end as race_ethnicity,
