@@ -17,13 +17,13 @@ schedules = [
 ]
 
 sensors = [
-    *payroll.sensors,
     *workforce_now.sensors,
+    *payroll.sensors,
 ]
 
-_all = [
-    assets,
-    jobs,
-    schedules,
-    sensors,
+__all__ = [
+    "assets",
+    "jobs",
+    "schedules",
+    "sensors",
 ]

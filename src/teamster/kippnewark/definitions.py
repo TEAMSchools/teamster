@@ -20,6 +20,7 @@ from teamster.core.resources import (
 
 from . import (
     CODE_LOCATION,
+    couchdrop,
     datagun,
     dbt,
     deanslist,
@@ -55,6 +56,7 @@ defs = Definitions(
         *powerschool.schedules,
     ],
     sensors=[
+        *couchdrop.sensors,
         *edplan.sensors,
         *iready.sensors,
         *powerschool.sensors,

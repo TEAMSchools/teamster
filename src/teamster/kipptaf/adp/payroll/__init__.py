@@ -1,7 +1,7 @@
 from .assets import _all as assets
-from .sensors import _all as sensors
+from .sensors import __all__ as sensors
 
-_all = [
-    assets,
-    sensors,
+__all__ = [
+    "assets",
+    "sensors",
 ]

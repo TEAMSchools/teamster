@@ -23,13 +23,44 @@ with
 
             max(
                 case
-                    when is_early_action_decision and is_accepted
+                    when is_early_action_decision and is_submitted and is_accepted
                     then true
-                    when is_early_action_decision and not is_accepted
+                    when is_early_action_decision and is_submitted and not is_accepted
                     then false
                 end
             ) as is_accepted_early,
-
+            max(
+                case
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 60
+                    then true
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and not is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 60
+                    then false
+                end
+            ) as is_accepted_early_ecc_60_plus,
+            max(
+                case
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 90
+                    then true
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and not is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 90
+                    then false
+                end
+            ) as is_accepted_early_ecc_90_plus,
             round(
                 avg(
                     case
@@ -390,6 +421,8 @@ select
     ar.ecc_accepted_min,
     ar.is_early_action_decision,
     ar.is_accepted_early,
+    ar.is_accepted_early_ecc_60_plus,
+    ar.is_accepted_early_ecc_90_plus,
 
     cnr.as1,
     cnr.as2,

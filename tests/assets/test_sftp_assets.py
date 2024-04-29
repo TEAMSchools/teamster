@@ -82,49 +82,53 @@ def test_pearson_njgpa_kippnewark():
 
 
 def test_pearson_njsla_kippnewark():
-    from teamster.kippnewark.pearson.assets import all_assets
+    from teamster.kippnewark.pearson.assets import assets
 
-    asset = [a for a in all_assets if a.key.path[-1] == "njsla"][0]
+    asset = [a for a in assets if a.key.path[-1] == "njsla"][0]
 
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+    _test_asset(
+        asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}, partition_key="19"
+    )
 
 
 def test_pearson_njsla_kippcamden():
-    from teamster.kippcamden.pearson.assets import all_assets
+    from teamster.kippcamden.pearson.assets import assets
 
-    asset = [a for a in all_assets if a.key.path[-1] == "njsla"][0]
+    asset = [a for a in assets if a.key.path[-1] == "njsla"][0]
 
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+    _test_asset(
+        asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}, partition_key="19"
+    )
 
 
 def test_pearson_njsla_science_kippnewark():
-    from teamster.kippnewark.pearson.assets import all_assets
+    from teamster.kippnewark.pearson.assets import assets
 
-    asset = [a for a in all_assets if a.key.path[-1] == "njsla_science"][0]
+    asset = [a for a in assets if a.key.path[-1] == "njsla_science"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_pearson_njsla_science_kippcamden():
-    from teamster.kippcamden.pearson.assets import all_assets
+    from teamster.kippcamden.pearson.assets import assets
 
-    asset = [a for a in all_assets if a.key.path[-1] == "njsla_science"][0]
+    asset = [a for a in assets if a.key.path[-1] == "njsla_science"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_pearson_parcc_kippnewark():
-    from teamster.kippnewark.pearson.assets import all_assets
+    from teamster.kippnewark.pearson.assets import assets
 
-    asset = [a for a in all_assets if a.key.path[-1] == "parcc"][0]
+    asset = [a for a in assets if a.key.path[-1] == "parcc"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_pearson_parcc_kippcamden():
-    from teamster.kippcamden.pearson.assets import all_assets
+    from teamster.kippcamden.pearson.assets import assets
 
-    asset = [a for a in all_assets if a.key.path[-1] == "parcc"][0]
+    asset = [a for a in assets if a.key.path[-1] == "parcc"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
@@ -259,17 +263,17 @@ def test_renlearn_fast_star_kippmiami():
 
 
 def test_fldoe_fast_kippmiami():
-    from teamster.kippmiami.fldoe.assets import _all
+    from teamster.kippmiami.fldoe.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "fast"][0]
+    asset = [a for a in assets if a.key.path[-1] == "fast"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_fldoe_fsa_kippmiami():
-    from teamster.kippmiami.fldoe.assets import _all
+    from teamster.kippmiami.fldoe.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "fsa"][0]
+    asset = [a for a in assets if a.key.path[-1] == "fsa"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
