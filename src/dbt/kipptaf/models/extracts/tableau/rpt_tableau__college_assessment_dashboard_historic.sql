@@ -166,13 +166,15 @@ with
         union all
 
         select
-            contact,
+            safe_cast(local_student_id as string) as contact,
+
             'PSAT10' as scope,
+
             test_date,
             score as scale_score,
 
             row_number() over (
-                partition by contact, score_type order by score desc
+                partition by local_student_id, score_type order by score desc
             ) as rn_highest,
 
             'Official' as test_type,
