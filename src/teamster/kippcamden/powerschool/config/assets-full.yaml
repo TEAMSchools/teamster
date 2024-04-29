@@ -4,8 +4,6 @@ assets:
     partition_column: transaction_date
   - asset_name: courses
     partition_column: transaction_date
-  - asset_name: prefs
-    partition_column: transaction_date
   - asset_name: schools
     partition_column: transaction_date
   - asset_name: sections

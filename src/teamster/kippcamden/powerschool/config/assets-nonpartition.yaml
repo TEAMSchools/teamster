@@ -1,5 +1,5 @@
+# not partitionable
 assets:
-  # not partitionable
   - asset_name: attendance_code
   - asset_name: attendance_conversion_items
   - asset_name: bell_schedule
@@ -9,6 +9,7 @@ assets:
   - asset_name: gen
   - asset_name: log
   - asset_name: period
+  - asset_name: prefs
   - asset_name: reenrollments
   - asset_name: spenrollments
   - asset_name: studenttest
