@@ -129,7 +129,9 @@ with
             end as discipline,
         from {{ ref("stg_pearson__njgpa") }}
         where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
+
         union all
+
         select
             localstudentidentifier,
             statestudentidentifier,
@@ -157,19 +159,6 @@ with
             discipline
     ),
 
-    psat10_unpivot as (
-        select local_student_id, score_type, score,
-        from
-            {{ ref("stg_illuminate__psat") }} unpivot (
-                score for score_type in (
-                    psat10_ebrw,
-                    psat10_math_test_score,
-                    psat10_math,
-                    psat10_reading_test_score
-                )
-            )
-    ),
-
     act_sat_psat10_official as (
         select
             contact,
@@ -190,7 +179,7 @@ with
                 then 'Math Test'
                 when score_type = 'sat_ebrw'
                 then 'EBRW'
-            end as subject,
+            end as `subject`,
             case
                 when score_type in ('act_reading', 'act_math') and score >= 17
                 then true
@@ -220,8 +209,11 @@ with
 
         select
             local_student_id as contact,
+
             'PSAT10' as test_type,
+
             score,
+
             case
                 when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
                 then 'ELA'
@@ -236,7 +228,7 @@ with
                 then 'Math Test'
                 when score_type = 'psat10_ebrw'
                 then 'EBRW'
-            end as subject,
+            end as `subject`,
             case
                 when
                     score_type
@@ -247,7 +239,14 @@ with
                 then true
                 else false
             end as met_pathway_requirement,
-        from psat10_unpivot
+        from {{ ref("int_illuminate__psat_unpivot") }}
+        where
+            score_type in (
+                'psat10_ebrw',
+                'psat10_math_test_score',
+                'psat10_math',
+                'psat10_reading_test_score'
+            )
     ),
 
     grad_options_append_final as (
@@ -262,7 +261,9 @@ with
             'State Assessment' as pathway_option,
         from roster as r
         inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
+
         union all
+
         select
             r.student_number,
 
@@ -275,7 +276,9 @@ with
         from roster as r
         inner join act_sat_psat10_official as a on r.kippadb_contact_id = a.contact
         where a.test_type in ('ACT', 'SAT')
+
         union all
+
         select
             r.student_number,
 
@@ -289,7 +292,9 @@ with
         inner join
             act_sat_psat10_official as a on cast(r.student_number as string) = a.contact
         where a.test_type = 'PSAT10'
+
         union all
+
         select
             r.student_number,
 
