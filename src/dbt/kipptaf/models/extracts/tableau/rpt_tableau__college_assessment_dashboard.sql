@@ -98,10 +98,10 @@ with
         from
             {{ ref("stg_illuminate__psat") }} unpivot (
                 score for score_type in (
-                    eb_read_write_section_score,
-                    math_test_score,
-                    reading_test_score,
-                    total_score
+                    psat10_ebrw,
+                    psat10_math_test_score,
+                    psat10_reading_test_score,
+                    psat10_total_score
                 )
             )
     ),
@@ -182,19 +182,19 @@ with
 
             case
                 score_type
-                when 'total_score'
+                when 'psat10_total_score'
                 then 'Composite'
-                when 'reading_test_score'
+                when 'psat10_reading_test_score'
                 then 'Reading'
-                when 'math_test_score'
+                when 'psat10_math_test_score'
                 then 'Math'
-                when 'eb_read_write_section_score'
+                when 'psat10_ebrw'
                 then 'Writing and Language Test'
             end as subject_area,
             case
-                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
                 then 'ENG'
-                when score_type = 'math_test_score'
+                when score_type = 'psat10_math_test_score'
                 then 'MATH'
                 else 'NA'
             end as course_discipline,

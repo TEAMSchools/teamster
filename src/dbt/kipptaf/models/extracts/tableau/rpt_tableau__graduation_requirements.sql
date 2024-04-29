@@ -162,10 +162,10 @@ with
         from
             {{ ref("stg_illuminate__psat") }} unpivot (
                 score for score_type in (
-                    eb_read_write_section_score,
-                    math_test_score,
-                    math_section_score,
-                    reading_test_score
+                    psat10_ebrw,
+                    psat10_math_test_score,
+                    psat10_math,
+                    psat10_reading_test_score
                 )
             )
     ),
@@ -223,28 +223,27 @@ with
             'PSAT10' as test_type,
             score,
             case
-                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
                 then 'ELA'
                 else 'Math'
             end as discipline,
             case
-                when score_type = 'reading_test_score'
+                when score_type = 'psat10_reading_test_score'
                 then 'Reading'
-                when score_type = 'math_section_score'
+                when score_type = 'psat10_math'
                 then 'Math'
-                when score_type = 'math_test_score'
+                when score_type = 'psat10_math_test_score'
                 then 'Math Test'
-                when score_type = 'eb_read_write_section_score'
+                when score_type = 'psat10_ebrw'
                 then 'EBRW'
             end as subject,
             case
                 when
-                    score_type in ('reading_test_score', 'math_test_score')
+                    score_type
+                    in ('psat10_reading_test_score', 'psat10_math_test_score')
                     and score >= 21
                 then true
-                when
-                    score_type in ('math_section_score', 'eb_read_write_section_score')
-                    and score >= 420
+                when score_type in ('psat10_math', 'psat10_ebrw') and score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
@@ -355,6 +354,7 @@ select
     c.njgpa_pass,
     c.act,
     c.sat,
+    c.psat10,
     c.final_grad_path,
 from roster as r
 left join
