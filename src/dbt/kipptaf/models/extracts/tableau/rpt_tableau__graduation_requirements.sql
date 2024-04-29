@@ -80,7 +80,7 @@ with
                 then 'English Language Arts'
                 when 'MATGP'
                 then 'Mathematics'
-            end as subject,
+            end as `subject`,
         from {{ ref("stg_powerschool__test") }} as b
         left join
             {{ ref("stg_powerschool__studenttest") }} as s
@@ -121,7 +121,7 @@ with
         select
             localstudentidentifier,
             statestudentidentifier,
-            subject,
+            `subject`,
             testcode,
             testscalescore,
             case
@@ -129,11 +129,13 @@ with
             end as discipline,
         from {{ ref("stg_pearson__njgpa") }}
         where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
+
         union all
+
         select
             localstudentidentifier,
             statestudentidentifier,
-            subject,
+            `subject`,
             testcode,
             testscalescore,
             discipline,
@@ -145,7 +147,7 @@ with
             localstudentidentifier,
             statestudentidentifier,
             testcode,
-            subject,
+            `subject`,
             discipline,
             max(testscalescore) as testscalescore,
         from njgpa
@@ -153,21 +155,8 @@ with
             localstudentidentifier,
             statestudentidentifier,
             testcode,
-            subject,
+            `subject`,
             discipline
-    ),
-
-    psat10_unpivot as (
-        select local_student_id, score_type, score,
-        from
-            {{ ref("stg_illuminate__psat") }} unpivot (
-                score for score_type in (
-                    eb_read_write_section_score,
-                    math_test_score,
-                    math_section_score,
-                    reading_test_score
-                )
-            )
     ),
 
     act_sat_psat10_official as (
@@ -190,7 +179,7 @@ with
                 then 'Math Test'
                 when score_type = 'sat_ebrw'
                 then 'EBRW'
-            end as subject,
+            end as `subject`,
             case
                 when score_type in ('act_reading', 'act_math') and score >= 17
                 then true
@@ -220,35 +209,44 @@ with
 
         select
             local_student_id as contact,
+
             'PSAT10' as test_type,
+
             score,
+
             case
-                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
                 then 'ELA'
                 else 'Math'
             end as discipline,
             case
-                when score_type = 'reading_test_score'
+                when score_type = 'psat10_reading_test_score'
                 then 'Reading'
-                when score_type = 'math_section_score'
+                when score_type = 'psat10_math'
                 then 'Math'
-                when score_type = 'math_test_score'
+                when score_type = 'psat10_math_test_score'
                 then 'Math Test'
-                when score_type = 'eb_read_write_section_score'
+                when score_type = 'psat10_ebrw'
                 then 'EBRW'
-            end as subject,
+            end as `subject`,
             case
                 when
-                    score_type in ('reading_test_score', 'math_test_score')
+                    score_type
+                    in ('psat10_reading_test_score', 'psat10_math_test_score')
                     and score >= 21
                 then true
-                when
-                    score_type in ('math_section_score', 'eb_read_write_section_score')
-                    and score >= 420
+                when score_type in ('psat10_math', 'psat10_ebrw') and score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
-        from psat10_unpivot
+        from {{ ref("int_illuminate__psat_unpivot") }}
+        where
+            score_type in (
+                'psat10_ebrw',
+                'psat10_math_test_score',
+                'psat10_math',
+                'psat10_reading_test_score'
+            )
     ),
 
     grad_options_append_final as (
@@ -263,7 +261,9 @@ with
             'State Assessment' as pathway_option,
         from roster as r
         inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
+
         union all
+
         select
             r.student_number,
 
@@ -276,7 +276,9 @@ with
         from roster as r
         inner join act_sat_psat10_official as a on r.kippadb_contact_id = a.contact
         where a.test_type in ('ACT', 'SAT')
+
         union all
+
         select
             r.student_number,
 
@@ -290,14 +292,18 @@ with
         inner join
             act_sat_psat10_official as a on cast(r.student_number as string) = a.contact
         where a.test_type = 'PSAT10'
+
         union all
+
         select
             r.student_number,
 
             case
                 a.subject when 'ela' then 'ELA' when 'math' then 'Math'
             end as discipline,
-            case a.subject when 'ela' then 'ELA' when 'math' then 'Math' end as subject,
+            case
+                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
+            end as `subject`,
             a.values_column as `value`,
             a.met_requirement as met_pathway_requirement,
             case
@@ -355,6 +361,7 @@ select
     c.njgpa_pass,
     c.act,
     c.sat,
+    c.psat10,
     c.final_grad_path,
 from roster as r
 left join
