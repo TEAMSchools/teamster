@@ -80,7 +80,7 @@ with
                 then 'English Language Arts'
                 when 'MATGP'
                 then 'Mathematics'
-            end as subject,
+            end as `subject`,
         from {{ ref("stg_powerschool__test") }} as b
         left join
             {{ ref("stg_powerschool__studenttest") }} as s
@@ -121,7 +121,7 @@ with
         select
             localstudentidentifier,
             statestudentidentifier,
-            subject,
+            `subject`,
             testcode,
             testscalescore,
             case
@@ -135,7 +135,7 @@ with
         select
             localstudentidentifier,
             statestudentidentifier,
-            subject,
+            `subject`,
             testcode,
             testscalescore,
             discipline,
@@ -147,7 +147,7 @@ with
             localstudentidentifier,
             statestudentidentifier,
             testcode,
-            subject,
+            `subject`,
             discipline,
             max(testscalescore) as testscalescore,
         from njgpa
@@ -155,7 +155,7 @@ with
             localstudentidentifier,
             statestudentidentifier,
             testcode,
-            subject,
+            `subject`,
             discipline
     ),
 
@@ -301,7 +301,9 @@ with
             case
                 a.subject when 'ela' then 'ELA' when 'math' then 'Math'
             end as discipline,
-            case a.subject when 'ela' then 'ELA' when 'math' then 'Math' end as subject,
+            case
+                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
+            end as `subject`,
             a.values_column as `value`,
             a.met_requirement as met_pathway_requirement,
             case
