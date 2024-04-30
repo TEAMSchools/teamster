@@ -1,4 +1,4 @@
-import json
+"""import json
 import pathlib
 
 import fastavro
@@ -17,3 +17,4 @@ avro_reader = fastavro.reader(fo=fp.open(mode="rb"))
 record = next(avro_reader)
 
 print(record)
+"""
