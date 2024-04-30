@@ -21,3 +21,14 @@ select
 from {{ ref("base_iready__diagnostic_results") }}
 where test_round = 'EOY' and rn_subj_round = 1
 group by academic_year_int, subject, student_grade
+
+union all
+
+select
+    academic_year,
+    concat('FAST ', lower(assessment_subject), ' proficiency') as domain,
+    assessment_grade as grade_level,
+    round(avg(if(is_proficient, 1, 0)), 2) as pct_met,
+from {{ ref("stg_fldoe__fast") }}
+where administration_window = 'PM3'
+group by academic_year, assessment_subject, assessment_grade
