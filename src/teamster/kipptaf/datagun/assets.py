@@ -4,6 +4,7 @@ from teamster.core.datagun.assets import (
     build_bigquery_extract_sftp_asset,
     build_bigquery_query_sftp_asset,
 )
+from teamster.kipptaf.adp.payroll.assets import GENERAL_LEDGER_FILE_PARTITIONS_DEF
 
 from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
@@ -52,6 +53,21 @@ littlesis_extract_assets = [
     )
     for a in config_from_files([f"{config_dir}/littlesis.yaml"])["assets"]
 ]
+
+intacct_extract_asset = build_bigquery_extract_sftp_asset(
+    code_location=CODE_LOCATION,
+    timezone=LOCAL_TIMEZONE,
+    dataset_config={
+        "dataset_id": "kipptaf_extracts",
+        "table_id": "rpt_gsheets__intact_integration_file",
+    },
+    file_config={"stem": "test", "suffix": "csv"},
+    destination_config={
+        "name": "couchdrop",
+        "path": "/accounting/Data Integration/Accounting/intacct-gl-file",
+    },
+    partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
+)
 
 # BQ query
 deanslist_extract_assets = [
