@@ -1,7 +1,7 @@
 import json
 import pathlib
 
-from dagster import AssetExecutionContext, materialize
+from dagster import AssetExecutionContext, AssetMaterialization, materialize
 from dagster_dbt import DbtCliResource, dbt_assets
 
 from teamster.core.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
@@ -11,19 +11,23 @@ MANIFEST = json.loads(
     s=pathlib.Path("src/dbt/kipptaf/target/manifest.json").read_text()
 )
 
-dagster_dbt_translator = CustomDagsterDbtTranslator(
-    asset_key_prefix="staging", source_asset_key_prefix="staging"
+MANIFEST_NODES = MANIFEST["nodes"]
+
+DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(
+    asset_key_prefix="kipptaf", source_asset_key_prefix="kipptaf"
 )
 
 
 @dbt_assets(
     manifest=MANIFEST,
     exclude="tag:stage_external_sources",
-    dagster_dbt_translator=dagster_dbt_translator,
+    dagster_dbt_translator=DAGSTER_DBT_TRANSLATOR,
 )
 def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+    asset_materialization_keys = []
+
     latest_code_versions = context.instance.get_latest_materialization_code_versions(
-        asset_keys=context.selected_asset_keys
+        asset_keys=list(context.selected_asset_keys)
     )
 
     new_code_version_asset_keys = [
@@ -32,21 +36,40 @@ def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         if current_code_version != latest_code_versions.get(asset_key)
     ]
 
-    for asset_key in context.selected_asset_keys:
-        context.log.info(asset_key)
-        # if manifest node config.materialized is not view (keep)
-        # if view:
-        #   if asset key is updated (keep)
-        #   if any upstream asset keys have updated (keep)
-        # else yield materialization
+    new_code_version_node_names = set()
+    for a in new_code_version_asset_keys:
+        new_code_version_node_names.add(f"model.{a.path[0]}.{a.path[-1]}")
 
-    dbt_parse = dbt_cli.cli(args=["compile"], context=context)
-    yield from dbt_parse.stream()
+    for output_name in context.selected_output_names:
+        node = [
+            v for k, v in MANIFEST_NODES.items() if k.replace(".", "_") == output_name
+        ][0]
+
+        node_asset_key = DAGSTER_DBT_TRANSLATOR.get_asset_key(node)
+
+        if node["config"]["materialized"] != "view":
+            pass
+        elif node_asset_key in new_code_version_asset_keys:
+            pass
+        elif set(node["depends_on"]["nodes"]) in new_code_version_node_names:
+            pass
+        else:
+            context.selected_asset_keys.remove(node_asset_key)  # type: ignore
+
+    if context.selected_asset_keys:
+        dbt_parse = dbt_cli.cli(args=["compile"], context=context)
+
+        yield from dbt_parse.stream()
+    else:
+        for asset_key in asset_materialization_keys:
+            yield AssetMaterialization(asset_key=asset_key)
 
 
 def test_dbt_assets():
     result = materialize(
-        assets=[_dbt_assets], resources={"dbt_cli": get_dbt_cli_resource("staging")}
+        assets=[_dbt_assets],
+        resources={"dbt_cli": get_dbt_cli_resource("kipptaf")},
+        selection=["kipptaf/tableau/rpt_tableau__assessment_dashboard"],
     )
 
     assert result.success
