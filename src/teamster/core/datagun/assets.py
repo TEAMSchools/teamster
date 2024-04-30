@@ -201,6 +201,7 @@ def build_bigquery_extract_sftp_asset(
     destination_config,
     extract_job_config: dict | None = None,
     op_tags: dict | None = None,
+    partitions_def=None,
 ):
     if extract_job_config is None:
         extract_job_config = {}
@@ -222,6 +223,7 @@ def build_bigquery_extract_sftp_asset(
         key=[code_location, "extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
+        partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="datagun",
         compute_kind="datagun",
