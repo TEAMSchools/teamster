@@ -1,4 +1,4 @@
-from dagster import config_from_files
+from dagster import AutoMaterializePolicy, config_from_files
 
 from teamster.core.datagun.assets import (
     build_bigquery_extract_sftp_asset,
@@ -107,6 +107,7 @@ intacct_extract = build_bigquery_query_sftp_asset(
         "path": "/data-team/Data Integration/Couchdrop/Accounting/Intacct",
     },
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
+    auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
 
 assets = [
