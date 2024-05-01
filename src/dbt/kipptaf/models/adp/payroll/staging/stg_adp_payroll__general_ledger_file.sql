@@ -15,6 +15,7 @@ select
     position_id,
     employee_name,
     job_title,
+    _dagster_partition_date,
     _dagster_partition_group_code as group_code,
 
     parse_date('%m/%d/%Y', `date`) as `date`,
