@@ -1,18 +1,18 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, define_asset_job
 
 from .assets import (
-    blissbook_extract_assets,
+    blissbook_extract,
     clever_extract_assets,
-    coupa_extract_assets,
+    coupa_extract,
     deanslist_extract_assets,
-    egencia_extract_assets,
-    idauto_extract_assets,
+    egencia_extract,
+    idauto_extract,
     illuminate_extract_assets,
-    littlesis_extract_assets,
+    littlesis_extract,
 )
 
 blissbook_extract_asset_job = define_asset_job(
-    name="datagun_blissbook_extract_asset_job", selection=blissbook_extract_assets
+    name="datagun_blissbook_extract_asset_job", selection=[blissbook_extract]
 )
 
 clever_extract_asset_job = define_asset_job(
@@ -22,7 +22,7 @@ clever_extract_asset_job = define_asset_job(
 )
 
 coupa_extract_asset_job = define_asset_job(
-    name="datagun_coupa_extract_asset_job", selection=coupa_extract_assets
+    name="datagun_coupa_extract_asset_job", selection=[coupa_extract]
 )
 
 deanslist_extract_asset_job = define_asset_job(
@@ -32,12 +32,12 @@ deanslist_extract_asset_job = define_asset_job(
 )
 
 egencia_extract_asset_job = define_asset_job(
-    name="datagun_egencia_extract_asset_job", selection=egencia_extract_assets
+    name="datagun_egencia_extract_asset_job", selection=[egencia_extract]
 )
 
 idauto_extract_asset_job = define_asset_job(
     name="datagun_idauto_extract_asset_job",
-    selection=idauto_extract_assets,
+    selection=[idauto_extract],
     tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
 )
 
@@ -46,10 +46,10 @@ illuminate_extract_asset_job = define_asset_job(
 )
 
 littlesis_extract_asset_job = define_asset_job(
-    name="datagun_littlesis_extract_asset_job", selection=littlesis_extract_assets
+    name="datagun_littlesis_extract_asset_job", selection=[littlesis_extract]
 )
 
-_all = [
+jobs = [
     blissbook_extract_asset_job,
     clever_extract_asset_job,
     coupa_extract_asset_job,

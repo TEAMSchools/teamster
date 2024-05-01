@@ -1,9 +1,0 @@
-assets:
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_blissbook__employee_list
-    file_config:
-      stem: members
-      suffix: csv
-    destination_config:
-      name: blissbook
