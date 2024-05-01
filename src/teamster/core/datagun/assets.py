@@ -5,26 +5,21 @@ import pathlib
 import re
 
 import pendulum
-from dagster import AssetExecutionContext, AssetKey, asset
+from dagster import AssetExecutionContext, AssetKey, MultiPartitionsDefinition, asset
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
-from pendulum.datetime import DateTime
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import CustomJSONEncoder
 
 
-def construct_file_name(file_stem: str, file_suffix: str, now: DateTime):
-    file_stem_fmt = file_stem.format(
-        today=now.to_date_string(), now=str(now.timestamp()).replace(".", "_")
-    )
-
-    return f"{file_stem_fmt}.{file_suffix}"
+def format_file_name(stem: str, suffix: str, **substitutions):
+    return f"{stem.format(**substitutions)}.{suffix}"
 
 
-def construct_query(query_type, query_value, now) -> str:
+def construct_query(query_type, query_value) -> str:
     if query_type == "text":
         return query_value
     elif query_type == "file":
@@ -36,9 +31,7 @@ def construct_query(query_type, query_value, now) -> str:
                 *[literal_column(text=col) for col in query_value.get("select", ["*"])]
             )
             .select_from(table(**query_value["table"]))
-            .where(
-                text(query_value.get("where", "").format(today=now.to_date_string()))
-            )
+            .where(*[text(w) for w in query_value.get("where", "")])
         )
     else:
         raise
@@ -129,7 +122,9 @@ def build_bigquery_query_sftp_asset(
     query_config,
     file_config,
     destination_config,
-    op_tags: dict | None = None,
+    op_tags: dict[str, str] | None = None,
+    partitions_def=None,
+    auto_materialize_policy=None,
 ):
     query_type = query_config["type"]
     query_value = query_config["value"]
@@ -151,17 +146,34 @@ def build_bigquery_query_sftp_asset(
         deps=[AssetKey([code_location, "extracts", query_value["table"]["name"]])],
         metadata={**query_config, **file_config},
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
+        partitions_def=partitions_def,
         op_tags=op_tags,
+        auto_materialize_policy=auto_materialize_policy,
         group_name="datagun",
         compute_kind="datagun",
     )
     def _asset(context: AssetExecutionContext):
         now = pendulum.now(tz=timezone)
 
-        file_name = construct_file_name(
-            file_stem=file_stem, file_suffix=file_suffix, now=now
+        if context.has_partition_key and isinstance(
+            context.assets_def.partitions_def, MultiPartitionsDefinition
+        ):
+            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            query_value["where"] = [
+                f"{k.dimension_name} = '{k.partition_key}'"
+                for k in context.partition_key.dimension_keys  # type: ignore
+            ]
+        else:
+            substitutions = {
+                "now": str(now.timestamp()).replace(".", "_"),
+                "today": now.to_date_string(),
+            }
+
+        file_name = format_file_name(
+            stem=file_stem, suffix=file_suffix, **substitutions
         )
-        query = construct_query(query_type=query_type, query_value=query_value, now=now)
+
+        query = construct_query(query_type=query_type, query_value=query_value)
 
         db_bigquery: bigquery.Client = next(context.resources.db_bigquery)
 
@@ -201,6 +213,7 @@ def build_bigquery_extract_sftp_asset(
     destination_config,
     extract_job_config: dict | None = None,
     op_tags: dict | None = None,
+    partitions_def=None,
 ):
     if extract_job_config is None:
         extract_job_config = {}
@@ -222,13 +235,26 @@ def build_bigquery_extract_sftp_asset(
         key=[code_location, "extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
+        partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="datagun",
         compute_kind="datagun",
     )
     def _asset(context: AssetExecutionContext):
-        file_name = construct_file_name(
-            file_stem=file_stem, file_suffix=file_suffix, now=pendulum.now(tz=timezone)
+        now = pendulum.now(tz=timezone)
+
+        if context.has_partition_key and isinstance(
+            context.assets_def.partitions_def, MultiPartitionsDefinition
+        ):
+            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+        else:
+            substitutions = {
+                "now": str(now.timestamp()).replace(".", "_"),
+                "today": now.to_date_string(),
+            }
+
+        file_name = format_file_name(
+            stem=file_stem, suffix=file_suffix, **substitutions
         )
 
         # establish gcs blob
@@ -304,8 +330,20 @@ def build_bigquery_extract_asset(
     def _asset(
         context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource
     ):
-        file_name = construct_file_name(
-            file_stem=file_stem, file_suffix=file_suffix, now=pendulum.now(tz=timezone)
+        now = pendulum.now(tz=timezone)
+
+        if context.has_partition_key and isinstance(
+            context.assets_def.partitions_def, MultiPartitionsDefinition
+        ):
+            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+        else:
+            substitutions = {
+                "now": str(now.timestamp()).replace(".", "_"),
+                "today": now.to_date_string(),
+            }
+
+        file_name = format_file_name(
+            stem=file_stem, suffix=file_suffix, **substitutions
         )
 
         # establish gcs blob

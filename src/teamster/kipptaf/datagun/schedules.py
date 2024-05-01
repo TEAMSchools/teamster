@@ -60,7 +60,7 @@ littlesis_extract_assets_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-_all = [
+schedules = [
     blissbook_extract_assets_schedule,
     clever_extract_assets_schedule,
     coupa_extract_assets_schedule,
