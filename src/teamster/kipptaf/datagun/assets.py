@@ -32,7 +32,6 @@ coupa_extract_assets = [
     for a in config_from_files([f"{config_dir}/coupa.yaml"])["assets"]
 ]
 
-
 egencia_extract_assets = [
     build_bigquery_extract_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
@@ -54,21 +53,6 @@ littlesis_extract_assets = [
     for a in config_from_files([f"{config_dir}/littlesis.yaml"])["assets"]
 ]
 
-intacct_extract_asset = build_bigquery_extract_sftp_asset(
-    code_location=CODE_LOCATION,
-    timezone=LOCAL_TIMEZONE,
-    dataset_config={
-        "dataset_id": "kipptaf_extracts",
-        "table_id": "rpt_gsheets__intact_integration_file",
-    },
-    file_config={"stem": "test", "suffix": "csv"},
-    destination_config={
-        "name": "couchdrop",
-        "path": "/accounting/Data Integration/Accounting/intacct-gl-file",
-    },
-    partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
-)
-
 # BQ query
 deanslist_extract_assets = [
     build_bigquery_query_sftp_asset(
@@ -84,6 +68,25 @@ idauto_extract_assets = [
     for a in config_from_files([f"{config_dir}/idauto.yaml"])["assets"]
 ]
 
+intacct_extract_asset = build_bigquery_query_sftp_asset(
+    code_location=CODE_LOCATION,
+    timezone=LOCAL_TIMEZONE,
+    query_config={
+        "type": "schema",
+        "value": {
+            "table": {
+                "name": "rpt_gsheets__intacct_integration_file",
+                "schema": "kipptaf_extracts",
+            }
+        },
+    },
+    file_config={"stem": "adp_payroll_{date}_{group_code}", "suffix": "csv"},
+    destination_config={
+        "name": "couchdrop",
+        "path": "/data-team/Data Integration/Couchdrop/Accounting/Intacct",
+    },
+    partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
+)
 
 _all = [
     *blissbook_extract_assets,
