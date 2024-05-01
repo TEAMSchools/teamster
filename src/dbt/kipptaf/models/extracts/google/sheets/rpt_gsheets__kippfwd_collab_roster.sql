@@ -8,6 +8,7 @@ with
             type as application_type,
             intended_degree_type,
             account_name as application_account_name,
+            adjusted_6_year_minority_graduation_rate,
 
             row_number() over (partition by applicant order by id asc) as rn_applicant,
         from {{ ref("base_kippadb__application") }}
@@ -75,6 +76,38 @@ select  -- noqa: disable=ST06
     + coalesce(fa.stafford_loan_subsidized, 0)
     + coalesce(fa.stafford_loan_unsubsidized, 0)
     + coalesce(fa.other_private_loan, 0) as total_loan_amount,
+    case
+        when ktc.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when ktc.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when ktc.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when ktc.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when ktc.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
+    case
+        when
+            ktc.contact_college_match_display_gpa >= 3.50
+            and app.adjusted_6_year_minority_graduation_rate < 68
+        then true
+        when
+            ktc.contact_college_match_display_gpa >= 3.00
+            and app.adjusted_6_year_minority_graduation_rate < 60
+        then true
+        when
+            ktc.contact_college_match_display_gpa >= 2.50
+            and app.adjusted_6_year_minority_graduation_rate < 55
+        then true
+        when
+            ktc.contact_college_match_display_gpa < 2.50
+            or ktc.contact_college_match_display_gpa is null
+            or app.adjusted_6_year_minority_graduation_rate is null
+        then null
+        else false
+    end as is_undermatch,
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
     matriculated_application as app
