@@ -1,9 +1,10 @@
-from teamster.core.utils.functions import get_dagster_cloud_instance
+from dagster import DagsterInstance
+
 from teamster.kipptaf.dbt.assets import dbt_assets
 
 
 def _add_dynamic_partitions(partitions_def_name: str, partition_keys: list):
-    instance = get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
+    instance = DagsterInstance.get()
 
     instance.add_dynamic_partitions(
         partitions_def_name=partitions_def_name, partition_keys=partition_keys
@@ -11,7 +12,7 @@ def _add_dynamic_partitions(partitions_def_name: str, partition_keys: list):
 
 
 def _delete_dynamic_partitions(partitions_def_name: str):
-    instance = get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
+    instance = DagsterInstance.get()
 
     dynamic_partitions = instance.get_dynamic_partitions(partitions_def_name)
 
@@ -26,7 +27,7 @@ def _test_delete_dynamic_partitions_alchemer():
 
 
 def test_code_versions():
-    instance = get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
+    instance = DagsterInstance.get()
 
     latest_code_versions = instance.get_latest_materialization_code_versions(
         asset_keys=list(dbt_assets.code_versions_by_key.keys())
