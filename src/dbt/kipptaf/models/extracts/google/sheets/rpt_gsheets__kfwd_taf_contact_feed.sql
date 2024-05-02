@@ -2,6 +2,7 @@ select
     r.student_number as ps_student_number,
     r.contact_id as sf_contact_id,
     r.lastfirst as student_name,
+    r.ktc_cohort as sf_cohort,
     r.contact_birthdate as dob,
     r.exit_school_name,
     r.exit_date,
