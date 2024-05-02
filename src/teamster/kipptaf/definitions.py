@@ -10,8 +10,7 @@ from teamster.core.resources import (
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
 )
-
-from . import (
+from teamster.kipptaf import (
     CODE_LOCATION,
     adp,
     airbyte,
@@ -20,8 +19,10 @@ from . import (
     couchdrop,
     datagun,
     dayforce,
+    dbt,
     deanslist,
     fivetran,
+    google,
     ldap,
     performance_management,
     resources,
@@ -30,9 +31,6 @@ from . import (
     tableau,
     zendesk,
 )
-from .dbt import assets as dbt_assets
-from .dbt.schedules import _all as dbt_schedules
-from .google import directory, forms, sheets
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -44,15 +42,13 @@ defs = Definitions(
             amplify,
             datagun,
             dayforce,
-            dbt_assets,
+            dbt,
             deanslist,
-            directory,
             fivetran,
-            forms,
+            google,
             ldap,
             performance_management,
             schoolmint,
-            sheets,
             smartrecruiters,
             tableau,
             zendesk,
@@ -63,10 +59,9 @@ defs = Definitions(
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
-        *dbt_schedules,
-        *directory.schedules,
+        *dbt.schedules,
         *fivetran.schedules,
-        *forms.schedules,
+        *google.schedules,
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
@@ -79,7 +74,7 @@ defs = Definitions(
         *couchdrop.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
-        *sheets.sensors,
+        *google.sensors,
         *tableau.sensors,
     ],
     resources={

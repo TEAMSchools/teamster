@@ -1,8 +1,8 @@
 from dagster import RunRequest, ScheduleEvaluationContext, schedule
 
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import FORM_IDS
-from .jobs import google_forms_asset_job
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.google.forms.assets import FORM_IDS
+from teamster.kipptaf.google.forms.jobs import google_forms_asset_job
 
 
 @schedule(
@@ -20,6 +20,6 @@ def google_forms_asset_job_schedule(context: ScheduleEvaluationContext):
         )
 
 
-_all = [
+schedules = [
     google_forms_asset_job_schedule,
 ]

@@ -3,9 +3,8 @@ import re
 from dagster import AssetSpec
 
 from teamster.core.definitions.external_asset import external_assets_from_specs
-
-from ... import CODE_LOCATION
-from ...dbt.manifest import dbt_manifest
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.dbt.assets import manifest
 
 
 def build_google_sheets_asset_spec(source_name, name, uri, range_name):
@@ -27,7 +26,7 @@ specs = [
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
-    for source in dbt_manifest["sources"].values()
+    for source in manifest["sources"].values()
     if source.get("external")
     and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
 ]
@@ -36,6 +35,6 @@ google_sheets_assets = external_assets_from_specs(
     specs=specs, compute_kind="googlesheets"
 )
 
-_all = [
+assets = [
     *google_sheets_assets,
 ]

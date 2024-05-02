@@ -4,10 +4,9 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
-
-from ... import CODE_LOCATION
-from .resources import GoogleFormsResource
-from .schema import ASSET_SCHEMA
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.google.forms.resources import GoogleFormsResource
+from teamster.kipptaf.google.forms.schema import ASSET_SCHEMA
 
 FORM_IDS = [
     "15xuEO72xhyhhv8K0qKbkSV864-DetXhmWsxKyS7ai50",  # KTAF support
@@ -66,7 +65,7 @@ def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource)
     )
 
 
-_all = [
+assets = [
     form,
     responses,
 ]
