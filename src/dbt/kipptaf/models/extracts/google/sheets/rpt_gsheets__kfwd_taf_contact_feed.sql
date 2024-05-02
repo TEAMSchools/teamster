@@ -40,6 +40,7 @@ select
     co.contact_2_phone_mobile as ps_contact_2_phone_mobile,
     co.contact_2_phone_primary as ps_contact_2_phone_primary,
     co.contact_2_phone_work as ps_contact_2_phone_work,
+    co.region,
 
     concat(co.street, ' ', co.city, ', ', co.state, ' ', co.zip) as ps_home_address,
 from {{ ref("int_kippadb__roster") }} as r
