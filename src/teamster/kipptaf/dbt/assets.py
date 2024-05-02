@@ -24,7 +24,6 @@ adp_payroll_dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     select="source:adp_payroll+",
-    exclude="tag:stage_external_sources",
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
 )
 
