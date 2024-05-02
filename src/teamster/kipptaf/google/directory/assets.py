@@ -4,10 +4,9 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
-
-from ... import CODE_LOCATION
-from .resources import GoogleDirectoryResource
-from .schema import ASSET_SCHEMA
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
+from teamster.kipptaf.google.directory.schema import ASSET_SCHEMA
 
 key_prefix = [CODE_LOCATION, "google", "directory"]
 asset_kwargs = {
@@ -134,7 +133,7 @@ google_directory_partitioned_assets = [
     members,
 ]
 
-_all = [
+assets = [
     groups,
     members,
     orgunits,
