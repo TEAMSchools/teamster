@@ -1,6 +1,6 @@
 from dagster import OpExecutionContext, op
 
-from .resources import GoogleDirectoryResource
+from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
 
 
 @op

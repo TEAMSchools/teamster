@@ -1,7 +1,7 @@
-from .assets import _all as assets
-from .schedules import _all as schedules
+from .assets import assets
+from .schedules import schedules
 
-_all = [
-    assets,
-    schedules,
+__all__ = [
+    "assets",
+    "schedules",
 ]

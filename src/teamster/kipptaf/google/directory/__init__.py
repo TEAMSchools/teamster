@@ -1,9 +1,9 @@
-from .assets import _all as assets
-from .jobs import _all as jobs
-from .schedules import _all as schedules
+from teamster.kipptaf.google.directory.assets import assets
+from teamster.kipptaf.google.directory.jobs import jobs
+from teamster.kipptaf.google.directory.schedules import schedules
 
-_all = [
-    assets,
-    jobs,
-    schedules,
+__all__ = [
+    "assets",
+    "jobs",
+    "schedules",
 ]
