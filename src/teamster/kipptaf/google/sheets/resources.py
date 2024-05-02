@@ -1,8 +1,10 @@
 import pathlib
 
 import google.auth
-import gspread
 from dagster import ConfigurableResource, InitResourceContext
+from gspread.auth import authorize, service_account
+from gspread.client import Client
+from gspread.exceptions import SpreadsheetNotFound
 from gspread.utils import rowcol_to_a1
 from pydantic import PrivateAttr
 
@@ -10,11 +12,11 @@ from pydantic import PrivateAttr
 class GoogleSheetsResource(ConfigurableResource):
     service_account_file_path: str | None = None
 
-    _client: gspread.Client = PrivateAttr()
+    _client: Client = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         if self.service_account_file_path is not None:
-            self._client = gspread.service_account(
+            self._client = service_account(
                 filename=pathlib.Path(self.service_account_file_path)
             )
         else:
@@ -25,7 +27,7 @@ class GoogleSheetsResource(ConfigurableResource):
                 ]
             )
 
-            self._client = gspread.authorize(credentials=credentials)
+            self._client = authorize(credentials=credentials)
 
     def open(self, **kwargs):
         kwargs_keys = kwargs.keys()
@@ -40,7 +42,7 @@ class GoogleSheetsResource(ConfigurableResource):
     def open_or_create_sheet(self, **kwargs):
         try:
             spreadsheet = self.open(**kwargs)
-        except gspread.exceptions.SpreadsheetNotFound as e:
+        except SpreadsheetNotFound as e:
             context = self.get_resource_context()
 
             context.log.warning(e)

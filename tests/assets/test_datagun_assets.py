@@ -1,11 +1,10 @@
 import random
 
 import pendulum
-from dagster import AssetsDefinition, MultiPartitionKey, materialize
+from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
 from teamster.core.datagun.assets import format_file_name
 from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
-from teamster.core.utils.functions import get_dagster_cloud_instance
 from teamster.staging import LOCAL_TIMEZONE
 
 
@@ -116,8 +115,6 @@ def test_format_file_name_multi_partition():
 
 
 def test_intacct_extract_asset():
-    from teamster.kipptaf.datagun.assets import intacct_extract_asset
+    from teamster.kipptaf.datagun.assets import intacct_extract
 
-    instance = get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
-
-    _test_asset(asset=intacct_extract_asset, instance=instance)
+    _test_asset(asset=intacct_extract, instance=DagsterInstance.get())
