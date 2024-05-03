@@ -75,6 +75,11 @@ with
                 then 'ELAGP'
                 when subj = 'ENG'
                 then concat('ELA', '0', co.grade_level)
+                when
+                    subj = 'SCI'
+                    and co.grade_level in (5, 8, 11)
+                    and nj.math_state_assessment_name = '3'
+                then null
                 when subj = 'SCI' and co.grade_level in (5, 8)
                 then concat('SC', '0', co.grade_level)
                 when subj = 'SCI' and co.grade_level = 11
@@ -113,7 +118,7 @@ select
     ) as session_name,
 from roster
 where
-    academic_year = 2023
+    academic_year = {{ var("current_academic_year") }}
     and rn_year = 1
     and region != 'Miami'
     and (grade_level between 3 and 9 or grade_level = 11)
