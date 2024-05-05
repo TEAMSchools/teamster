@@ -54,19 +54,20 @@ SURVEY_IDS = [
 ]
 
 
-def _test_asset(asset, partition_keys):
+def _test_asset(asset, partition_key=None):
+    if partition_key is None:
+        partition_key = SURVEY_IDS[random.randint(a=0, b=(len(SURVEY_IDS) - 1))]
+
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
             partitions_def_name=asset.partitions_def.name,  # type: ignore
-            partition_keys=partition_keys,
+            partition_keys=SURVEY_IDS,
         )
 
         result = materialize(
             assets=[asset],
             instance=instance,
-            partition_key=partition_keys[
-                random.randint(a=0, b=(len(partition_keys) - 1))
-            ],
+            partition_key=partition_key,
             resources={
                 "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
                 "alchemer": ALCHEMER_RESOURCE,
@@ -84,22 +85,16 @@ def _test_asset(asset, partition_keys):
 
 
 def test_asset_alchemer_survey():
-    _test_asset(asset=survey, partition_keys=SURVEY_IDS)
-
-
-def test_asset_alchemer_survey_campaign():
-    _test_asset(asset=survey_campaign, partition_keys=SURVEY_IDS)
+    _test_asset(asset=survey)
 
 
 def test_asset_alchemer_survey_question():
-    _test_asset(asset=survey_question, partition_keys=SURVEY_IDS)
+    _test_asset(asset=survey_question, partition_key="7151740")
+
+
+def test_asset_alchemer_survey_campaign():
+    _test_asset(asset=survey_campaign)
 
 
 def test_asset_alchemer_survey_response():
-    _test_asset(
-        asset=survey_response,
-        partition_keys=[
-            # "4561288_1625115600",
-            "4561325_1656651600"
-        ],
-    )
+    _test_asset(asset=survey_response, partition_key="4561325_1656651600")
