@@ -1,12 +1,8 @@
-from dagster import build_schedule_context
-
-from teamster.core.utils.functions import get_dagster_cloud_instance
+from dagster import DagsterInstance, build_schedule_context
 
 
 def _test_dbt_code_version_schedule(schedule):
-    context = build_schedule_context(
-        instance=get_dagster_cloud_instance("/workspaces/teamster/.dagster/home")
-    )
+    context = build_schedule_context(instance=DagsterInstance.get())
 
     output = schedule(context=context)
 

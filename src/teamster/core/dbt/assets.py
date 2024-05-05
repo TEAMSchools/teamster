@@ -20,11 +20,15 @@ from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 from teamster.core.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 
-def build_dbt_assets(dbt_manifest, dagster_dbt_translator):
+def build_dbt_assets(
+    manifest, dagster_dbt_translator, select="fqn:*", exclude=None, partitions_def=None
+):
     @dbt_assets(
-        manifest=dbt_manifest,
-        exclude="tag:stage_external_sources",
+        manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
+        select=select,
+        exclude=exclude,
+        partitions_def=partitions_def,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         dbt_build = dbt_cli.cli(args=["build"], context=context)

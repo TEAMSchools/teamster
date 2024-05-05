@@ -10,6 +10,6 @@ dbt_code_version_schedule = build_dbt_code_version_schedule(
     dbt_assets=dbt_assets,
 )
 
-_all = [
+schedules = [
     dbt_code_version_schedule,
 ]

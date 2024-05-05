@@ -1,12 +1,8 @@
-import os
-import pathlib
-
 import pendulum
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
-    DagsterInstance,
     MetadataValue,
     MultiPartitionKey,
 )
@@ -84,14 +80,6 @@ def get_partition_key_path(partition_key, path):
 def partition_key_to_vars(partition_key):
     path = get_partition_key_path(partition_key=partition_key, path=[])
     return {"partition_path": "/".join(path)}
-
-
-def get_dagster_cloud_instance(dagster_home_path):
-    os.environ["DAGSTER_HOME"] = dagster_home_path
-
-    pathlib.Path(dagster_home_path).mkdir(parents=True, exist_ok=True)
-
-    return DagsterInstance.get()
 
 
 def get_avro_schema_valid_check_spec(asset):

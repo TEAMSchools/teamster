@@ -4,6 +4,7 @@ with
             student,
             cumulative_credits_earned,
             credits_required_for_graduation,
+            gpa,
             row_number() over (
                 partition by student order by transcript_date desc
             ) as rn_transcript,
@@ -108,6 +109,14 @@ select  -- noqa: ST06
     if(
         r.contact_actual_college_graduation_date is not null, true, false
     ) as is_graduated,
+
+    r.first_name,
+    r.last_name,
+    r.contact_home_phone,
+    r.contact_mobile_phone,
+    r.contact_email,
+    r.contact_secondary_email,
+    gpa.gpa,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student

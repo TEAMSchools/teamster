@@ -1,7 +1,7 @@
 from dagster import ScheduleDefinition
 
-from ... import LOCAL_TIMEZONE
-from .jobs import (
+from teamster.kipptaf import LOCAL_TIMEZONE
+from teamster.kipptaf.google.directory.jobs import (
     google_directory_nonpartitioned_asset_job,
     google_directory_role_assignments_sync_job,
     google_directory_user_sync_job,
@@ -25,7 +25,7 @@ google_directory_user_sync_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-_all = [
+schedules = [
     google_directory_nonpartitioned_asset_schedule,
     google_directory_role_assignments_sync_schedule,
     google_directory_user_sync_schedule,
