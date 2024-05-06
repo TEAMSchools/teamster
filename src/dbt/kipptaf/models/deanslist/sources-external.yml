@@ -12,9 +12,21 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - deanslist
+              - reconcile_attendance
       - name: src_deanslist__reconcile_suspensions
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_suspensions/*"
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - deanslist
+              - reconcile_suspensions

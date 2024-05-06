@@ -36,6 +36,6 @@ def workers(context: AssetExecutionContext, adp_wfn: AdpWorkforceNowResource):
     )
 
 
-_all = [
+assets = [
     workers,
 ]

@@ -30,7 +30,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            dep_key:
+            parent_asset_key_path:
               - kipptaf
               - google_forms
               - form_items_extension
