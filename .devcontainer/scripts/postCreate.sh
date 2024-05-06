@@ -3,7 +3,9 @@
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install bash-completion &&
+  sudo apt-get -y --no-install-recommends install \
+    bash-completion \
+    google-cloud-cli-gke-gcloud-auth-plugin &&
   rm -rf /var/lib/apt/lists/*
 
 # create env folder
