@@ -5,7 +5,7 @@ from .assets import nonpartition_assets
 powerschool_nonpartition_asset_job = define_asset_job(
     name="powerschool_nonpartition_asset_job",
     selection=nonpartition_assets,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 3)},
+    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 4)},
 )
 
 _all = [
