@@ -36,6 +36,7 @@ select
     null as match_type,
     null as application_admission_type,
     null as application_submission_status,
+    null as matriculation_decision,
 
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
@@ -135,6 +136,7 @@ select
     a.match_type,
     a.application_admission_type,
     a.application_submission_status,
+    a.matriculation_decision,
 
     null as is_ecc_enrollment,
     null as is_ugrad_enrollment,
