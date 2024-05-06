@@ -11,13 +11,13 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
-  # Optionally customize the socket_options that are passed in to the underlying HTTP
-  # connection pool used to send HTTP requests to Dagster Cloud.
-  socketOptions:
-    - [SOL_SOCKET, SO_KEEPALIVE, 1]
-    - [IPPROTO_TCP, TCPKEEPIDLE, 11]
-    - [IPPROTO_TCP, TCPKEEPINTVL, 7]
-    - [IPPROTO_TCP, TCPKEEPCNT, 5]
+  # # Optionally customize the socket_options that are passed in to the underlying HTTP
+  # # connection pool used to send HTTP requests to Dagster Cloud.
+  # socketOptions:
+  #   - [SOL_SOCKET, SO_KEEPALIVE, 1]
+  #   - [IPPROTO_TCP, TCPKEEPIDLE, 11]
+  #   - [IPPROTO_TCP, TCPKEEPINTVL, 7]
+  #   - [IPPROTO_TCP, TCPKEEPCNT, 5]
 
   # # Optionally specify the timeout in seconds to use when making requests to Dagster
   # # Cloud servers.
