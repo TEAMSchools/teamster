@@ -13,3 +13,9 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/tableau/workbook/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - tableau
+              - workbook

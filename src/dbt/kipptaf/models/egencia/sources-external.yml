@@ -23,6 +23,12 @@ sources:
             data_type: STRING
           - name: egencia_traveler_group
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - egencia
+              - traveler_groups
       - name: src_egencia__travel_managers
         external:
           options:
@@ -34,3 +40,9 @@ sources:
         columns:
           - name: employee_number
             data_type: INT
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - egencia
+              - travel_managers

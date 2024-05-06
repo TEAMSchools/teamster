@@ -12,9 +12,21 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - ldap
+              - user_person
       - name: src_ldap__group
         external:
           location: "{{ var('cloud_storage_uri_base') }}/ldap/group/*"
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - ldap
+              - group

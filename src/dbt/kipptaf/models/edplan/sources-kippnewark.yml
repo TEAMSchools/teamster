@@ -1,32 +1,6 @@
 version: 2
 
 sources:
-  - name: kippcamden_edplan
-    tables:
-      - name: stg_edplan__njsmart_powerschool
-        meta:
-          dagster:
-            group: edplan
-            asset_key:
-              - kippcamden
-              - edplan
-              - stg_edplan__njsmart_powerschool
-      - name: stg_edplan__njsmart_powerschool_archive
-        meta:
-          dagster:
-            group: edplan
-            asset_key:
-              - kippcamden
-              - edplan
-              - stg_edplan__njsmart_powerschool_archive
-      - name: int_edplan__njsmart_powerschool_union
-        meta:
-          dagster:
-            group: edplan
-            asset_key:
-              - kippcamden
-              - edplan
-              - int_edplan__njsmart_powerschool_union
   - name: kippnewark_edplan
     tables:
       - name: stg_edplan__njsmart_powerschool

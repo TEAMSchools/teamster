@@ -16,7 +16,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            dep_key:
+            parent_asset_key_path:
               - kipptaf
               - adp
               - payroll

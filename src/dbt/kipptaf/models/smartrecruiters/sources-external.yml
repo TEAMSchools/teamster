@@ -12,15 +12,21 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - smartrecruiters
+              - applicants
       - name: src_smartrecruiters__applications
         external:
           location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applications/*"
           options:
             format: AVRO
             enable_logical_types: true
-      # - name: src_smartrecruiters__offered_hired
-      #   external:
-      #     location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/offered_hired/*"
-      #     options:
-      #       format: AVRO
-      #       enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - smartrecruiters
+              - applications

@@ -14,6 +14,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
             sheet_range: src_finance__enrollment_targets
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - finance
+              - enrollment_targets
       - name: src_finance__payroll_code_mapping
         external:
           options:
@@ -22,3 +28,9 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
             sheet_range: src_finance__payroll_code_mapping
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - finance
+              - payroll_code_mapping
