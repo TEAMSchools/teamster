@@ -7,8 +7,7 @@ from dagster import (
 
 from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 
 config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
 
@@ -80,7 +79,7 @@ partition_assets = [
     *transaction_date_partition_assets,
 ]
 
-_all = [
+assets = [
     *whenmodified_assets,
     *full_assets,
     *nonpartition_assets,

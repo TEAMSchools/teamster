@@ -63,7 +63,7 @@ external_assets:
       id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
   - name: Federal Grants Timesheet Approval
     deps:
-      - [kipptaf, tableau, rpt_tableau_grants_timesheets]
+      - [kipptaf, tableau, rpt_tableau__grants_timesheets]
     metadata:
       id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
   - name: Finance & Accounting Tools & Resources
@@ -118,8 +118,8 @@ external_assets:
       id: 1b363885-e6b2-4396-afff-ece0f8c6c77a
   - name: Newark Home Instruction Tracker
     deps:
-      - [kipptaf, tableau, rpt_tableau__approved_hi]
-      - [kipptaf, tableau, rpt_tableau__hi_approval_queue]
+      - [kipptaf, tableau, rpt_tableau__approved_home_instruction]
+      - [kipptaf, tableau, rpt_tableau__home_instruction_queue]
     metadata:
       id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
   - name: NJ Certification Dashboard (Schools View)

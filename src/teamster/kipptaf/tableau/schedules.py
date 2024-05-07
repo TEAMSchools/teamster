@@ -7,8 +7,8 @@ from dagster import (
     schedule,
 )
 
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import workbook
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.tableau.assets import workbook
 
 job = define_asset_job(
     name=f"{CODE_LOCATION}_tableau_workbook_asset_job", selection=[workbook]
@@ -43,6 +43,6 @@ def tableau_workbook_asset_job_schedule(context: ScheduleEvaluationContext):
         )
 
 
-_all = [
+schedules = [
     tableau_workbook_asset_job_schedule,
 ]
