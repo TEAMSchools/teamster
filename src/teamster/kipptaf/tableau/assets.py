@@ -19,10 +19,9 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
-
-from .. import CODE_LOCATION
-from .resources import TableauServerResource
-from .schema import WORKBOOK_SCHEMA
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.tableau.resources import TableauServerResource
+from teamster.kipptaf.tableau.schema import WORKBOOK_SCHEMA
 
 config = config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])
 
@@ -108,7 +107,7 @@ external_assets: list[AssetsDefinition] = external_assets_from_specs(
     specs=specs, compute_kind="tableau"
 )
 
-_all = [
+assets = [
     workbook,
     *external_assets,
 ]
