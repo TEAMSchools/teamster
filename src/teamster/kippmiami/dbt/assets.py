@@ -17,12 +17,14 @@ dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     exclude="tag:stage_external_sources",
+    name=f"{CODE_LOCATION}_dbt_assets",
 )
 
 external_source_dbt_assets = build_dbt_external_source_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     select="tag:stage_external_sources",
+    name=f"{CODE_LOCATION}_external_source_dbt_assets",
 )
 
 assets = [

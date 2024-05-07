@@ -17,35 +17,28 @@ dagster_dbt_translator = CustomDagsterDbtTranslator(
 dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
-    exclude=" ".join(
-        [
-            "tag:stage_external_sources",
-            "fqn:kipptaf.extracts.google.sheets.rpt_gsheets__intacct_integration_file",
-            "fqn:kipptaf.adp.payroll.staging.stg_adp_payroll__general_ledger_file",
-        ]
-    ),
+    name=f"{CODE_LOCATION}_dbt_assets",
+    exclude="tag:stage_external_sources source:adp_payroll+",
 )
 
 adp_payroll_dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
+    name=f"{CODE_LOCATION}_adp_payroll_dbt_assets",
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
-    select=" ".join(
-        [
-            "fqn:kipptaf.extracts.google.sheets.rpt_gsheets__intacct_integration_file",
-            "fqn:kipptaf.adp.payroll.staging.stg_adp_payroll__general_ledger_file",
-        ]
-    ),
+    select="source:adp_payroll+",
 )
 
 external_source_dbt_assets = build_dbt_external_source_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
+    name=f"{CODE_LOCATION}_external_source_dbt_assets",
     select="tag:stage_external_sources",
+    exclude="src_adp_payroll__general_ledger_file",
 )
 
 assets = [
     dbt_assets,
-    # adp_payroll_dbt_assets,
+    adp_payroll_dbt_assets,
     external_source_dbt_assets,
 ]
