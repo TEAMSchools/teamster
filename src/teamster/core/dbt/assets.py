@@ -7,14 +7,20 @@ from teamster.core.dbt.asset_decorator import dbt_external_source_assets
 
 
 def build_dbt_assets(
-    manifest, dagster_dbt_translator, select="fqn:*", exclude=None, partitions_def=None
+    manifest,
+    dagster_dbt_translator,
+    select="fqn:*",
+    exclude=None,
+    partitions_def=None,
+    name=None,
 ):
     @dbt_assets(
         manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
         select=select,
         exclude=exclude,
+        name=name,
         partitions_def=partitions_def,
+        dagster_dbt_translator=dagster_dbt_translator,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         dbt_build = dbt_cli.cli(args=["build"], context=context)
@@ -25,14 +31,20 @@ def build_dbt_assets(
 
 
 def build_dbt_external_source_assets(
-    manifest, dagster_dbt_translator, select="fqn:*", exclude=None, partitions_def=None
+    manifest,
+    dagster_dbt_translator,
+    select="fqn:*",
+    exclude=None,
+    partitions_def=None,
+    name=None,
 ):
     @dbt_external_source_assets(
         manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
         select=select,
         exclude=exclude,
+        name=name,
         partitions_def=partitions_def,
+        dagster_dbt_translator=dagster_dbt_translator,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         source_selection = [
