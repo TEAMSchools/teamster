@@ -19,7 +19,7 @@ dbt_assets = build_dbt_assets(
     exclude="tag:stage_external_sources",
 )
 
-dbt_external_source_assets = build_dbt_external_source_assets(
+external_source_dbt_assets = build_dbt_external_source_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     select="tag:stage_external_sources",
@@ -27,5 +27,5 @@ dbt_external_source_assets = build_dbt_external_source_assets(
 
 assets = [
     dbt_assets,
-    dbt_external_source_assets,
+    external_source_dbt_assets,
 ]
