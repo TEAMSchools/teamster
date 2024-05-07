@@ -10,7 +10,10 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     multi_asset,
 )
-from dagster_dbt.asset_decorator import get_dbt_multi_asset_args
+from dagster_dbt.asset_decorator import (
+    DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
+    get_dbt_multi_asset_args,
+)
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
@@ -24,19 +27,13 @@ from dagster_dbt.utils import (
     select_unique_ids_from_manifest,
 )
 
-DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
-    "The following dbt resources are configured with identical Dagster asset keys."
-    " Please ensure that each dbt resource generates a unique Dagster asset key."
-    " See the reference for configuring Dagster asset keys for your dbt project:"
-    " https://docs.dagster.io/integrations/dbt/reference#customizing-asset-keys."
-)
-
 
 def get_dbt_multi_asset_deps(
     dbt_nodes: Mapping[str, Any],
     dbt_unique_id_deps: Mapping[str, frozenset[str]],
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> tuple[Sequence[AssetDep], dict[str, set[AssetKey]]]:
+    """Forked from dagster_dbt.asset_decorator.get_dbt_multi_asset_args"""
     deps: set[AssetDep] = set()
     internal_asset_deps: dict[str, set[AssetKey]] = {}
 
