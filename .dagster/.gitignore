@@ -1,3 +1,4 @@
 *
 !.gitignore
-!home/dagster.yaml
+!.dagster/home/dagster.yaml
+!.dagster/home/dagster-cloud.yaml
