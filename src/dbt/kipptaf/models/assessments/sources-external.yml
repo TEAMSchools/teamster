@@ -23,6 +23,12 @@ sources:
             data_type: STRING
           - name: adb_test_subject
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - ap_course_crosswalk
       - name: src_assessments__course_subject_crosswalk
         external:
           options:
@@ -31,6 +37,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__course_subject_crosswalk
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - course_subject_crosswalk
       - name: src_assessments__internal_assessment_scopes
         external:
           options:
@@ -39,6 +51,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__internal_assessment_scopes
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - internal_assessment_scopes
       - name: src_assessments__iready_crosswalk
         external:
           options:
@@ -47,6 +65,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__iready_crosswalk
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - iready_crosswalk
       - name: src_assessments__academic_goals
         external:
           options:
@@ -55,6 +79,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__academic_goals
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - academic_goals
       - name: src_assessments__act_scale_score_key
         external:
           options:
@@ -63,6 +93,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__act_scale_score_key
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - act_scale_score_key
       - name: src_assessments__qbls_power_standards
         external:
           options:
@@ -71,6 +107,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__qbls_power_standards
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - qbls_power_standards
       - name: src_assessments__mclass_dibels_measures
         external:
           options:
@@ -86,6 +128,12 @@ sources:
             data_type: STRING
           - name: description
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - mclass_dibels_measures
       - name: src_assessments__standard_domains
         external:
           options:
@@ -99,6 +147,12 @@ sources:
             data_type: STRING
           - name: standard_domain
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - standard_domains
       - name: src_assessments__state_test_comparison
         external:
           options:
@@ -107,6 +161,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__state_test_comparison
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - state_test_comparison
       - name: src_assessments__college_readiness_expected_tests
         external:
           options:
@@ -115,3 +175,9 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__college_readiness_expected_tests
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - college_readiness_expected_tests

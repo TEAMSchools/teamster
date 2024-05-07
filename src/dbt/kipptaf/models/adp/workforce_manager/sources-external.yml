@@ -21,7 +21,8 @@ sources:
           dagster:
             parent_asset_key_path:
               - kipptaf
-              - adp_workforce_manager
+              - adp
+              - workforce_manager
               - accrual_reporting_period_summary
       - name: src_adp_workforce_manager__time_details
         external:
@@ -35,5 +36,6 @@ sources:
           dagster:
             parent_asset_key_path:
               - kipptaf
-              - adp_workforce_manager
+              - adp
+              - workforce_manager
               - time_details

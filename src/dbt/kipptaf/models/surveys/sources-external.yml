@@ -14,6 +14,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1XCOY8t6dlSaS8NKdZCKCwdMmp_0FRTrBih3a-wyROm4
             sheet_range: src_surveys__staff_info_archive
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - staff_info_archive
       - name: src_surveys__cmo_engagement_regional_survey_detail_archive
         external:
           location:
@@ -41,6 +47,12 @@ sources:
             data_type: STRING
           - name: answer_value
             data_type: NUMERIC
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - cmo_engagement_regional_survey_detail_archive
       - name: src_surveys__manager_survey_detail_archive
         external:
           location:
@@ -48,3 +60,9 @@ sources:
           options:
             format: CSV
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - manager_survey_detail_archive

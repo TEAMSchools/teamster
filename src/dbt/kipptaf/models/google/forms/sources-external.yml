@@ -13,6 +13,13 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google/forms/form/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - google
+              - forms
+              - form
       - name: src_google_forms__responses
         external:
           location: "{{ var('cloud_storage_uri_base') }}/google/forms/responses/*"
@@ -20,6 +27,13 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google/forms/responses/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - google
+              - forms
+              - responses
       - name: src_google_forms__form_items_extension
         external:
           options:
@@ -32,7 +46,8 @@ sources:
           dagster:
             parent_asset_key_path:
               - kipptaf
-              - google_forms
+              - google
+              - forms
               - form_items_extension
         columns:
           - name: form_id

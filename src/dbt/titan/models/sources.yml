@@ -9,6 +9,12 @@ sources:
       - stage_external_sources
     tables:
       - name: src_titan__person_data
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - titan
+              - person_data
         external:
           location: "{{ var('cloud_storage_uri_base') }}/titan/person_data/*"
           options:
@@ -16,6 +22,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_titan__income_form_data
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - titan
+              - income_form_data
         external:
           location: "{{ var('cloud_storage_uri_base') }}/titan/income_form_data/*"
           options:

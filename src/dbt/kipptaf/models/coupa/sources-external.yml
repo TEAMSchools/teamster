@@ -18,6 +18,12 @@ sources:
             data_type: STRING
           - name: coupa_address_name
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - address_name_crosswalk
       - name: src_coupa__school_name_crosswalk
         external:
           options:
@@ -31,6 +37,12 @@ sources:
             data_type: STRING
           - name: coupa_school_name
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - school_name_crosswalk
       - name: src_coupa__school_name_lookup
         external:
           options:
@@ -48,6 +60,12 @@ sources:
             data_type: STRING
           - name: coupa_school_name
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - school_name_lookup
       - name: src_coupa__user_exceptions
         external:
           options:
@@ -61,6 +79,12 @@ sources:
             data_type: INT
           - name: coupa_school_name
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - user_exceptions
       - name: src_coupa__intacct_program_lookup
         external:
           options:
@@ -69,6 +93,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
             sheet_range: src_coupa__intacct_program_lookup
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - intacct_program_lookup
       - name: src_coupa__intacct_location_lookup
         external:
           options:
@@ -86,6 +116,12 @@ sources:
             data_type: STRING
           - name: sage_intacct_location
             data_type: STRING
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - intacct_location_lookup
       - name: src_coupa__intacct_fund_lookup
         external:
           options:
@@ -94,6 +130,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
             sheet_range: src_coupa__intacct_fund_lookup
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - intacct_fund_lookup
       - name: src_coupa__intacct_department_lookup
         external:
           options:
@@ -102,3 +144,9 @@ sources:
               - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
             sheet_range: src_coupa__intacct_department_lookup
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - coupa
+              - intacct_department_lookup
