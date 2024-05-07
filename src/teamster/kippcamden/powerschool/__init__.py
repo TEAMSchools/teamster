@@ -1,11 +1,11 @@
-from .assets import _all as assets
-from .jobs import _all as jobs
-from .schedules import _all as schedules
-from .sensors import _all as sensors
+from teamster.kippcamden.powerschool.assets import assets
+from teamster.kippcamden.powerschool.jobs import jobs
+from teamster.kippcamden.powerschool.schedules import schedules
+from teamster.kippcamden.powerschool.sensors import sensors
 
-_all = [
-    assets,
-    jobs,
-    schedules,
-    sensors,
+__all__ = [
+    "assets",
+    "jobs",
+    "schedules",
+    "sensors",
 ]
