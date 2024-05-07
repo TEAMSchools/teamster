@@ -20,7 +20,7 @@ def build_dbt_code_version_schedule(
         name=schedule_name,
         execution_timezone=execution_timezone,
         job=define_asset_job(name=job_name, selection=[dbt_assets]),
-    )  # type: ignore
+    )
     def _schedule(context: ScheduleEvaluationContext):
         latest_code_versions = (
             context.instance.get_latest_materialization_code_versions(

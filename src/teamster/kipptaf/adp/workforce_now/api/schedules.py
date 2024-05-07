@@ -15,7 +15,7 @@ adp_wfn_api_workers_asset_schedule = build_schedule_from_partitioned_job(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-_all = [
+schedules = [
     adp_wfn_worker_fields_update_schedule,
     adp_wfn_api_workers_asset_schedule,
 ]
