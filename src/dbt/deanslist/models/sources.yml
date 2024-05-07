@@ -9,6 +9,12 @@ sources:
       - stage_external_sources
     tables:
       - name: src_deanslist__behavior
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - behavior
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/behavior/*"
           options:
@@ -16,6 +22,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__comm_log
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - comm_log
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/comm_log/*"
           options:
@@ -23,6 +35,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__followups
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - followups
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/followups/*"
           options:
@@ -30,6 +48,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__homework
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - homework
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/homework/*"
           options:
@@ -37,6 +61,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__incidents
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - incidents
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/incidents/*"
           options:
@@ -44,6 +74,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__lists
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - lists
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/lists/*"
           options:
@@ -51,6 +87,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__roster_assignments
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - roster_assignments
         external:
           location:
             "gs://teamster-{{ project_name }}/dagster/{{ project_name
@@ -62,6 +104,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__rosters
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - rosters
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/rosters/*"
           options:
@@ -69,6 +117,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__terms
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - terms
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/terms/*"
           options:
@@ -76,6 +130,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__users
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - users
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/users/*"
           options:
@@ -83,6 +143,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__students
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - students
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/students/*"
           options:

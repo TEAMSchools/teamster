@@ -12,21 +12,45 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - dayforce
+              - employees
       - name: src_dayforce__employee_manager
         external:
           location: "{{ var('cloud_storage_uri_base') }}/dayforce/employee_manager/*"
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - dayforce
+              - employee_manager
       - name: src_dayforce__employee_status
         external:
           location: "{{ var('cloud_storage_uri_base') }}/dayforce/employee_status/*"
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - dayforce
+              - employee_status
       - name: src_dayforce__employee_work_assignment
         external:
           location: "{{ var('cloud_storage_uri_base') }}/dayforce/employee_work_assignment/*"
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - dayforce
+              - employee_work_assignment

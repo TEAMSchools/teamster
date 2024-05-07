@@ -14,6 +14,12 @@ sources:
           options:
             format: CSV
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - scores_overall_archive
       - name: src_performance_management__scores_detail_archive
         external:
           location:
@@ -22,6 +28,12 @@ sources:
           options:
             format: CSV
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - scores_detail_archive
       - name: src_performance_management__outlier_detection
         external:
           location: "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/*"
@@ -30,6 +42,12 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - outlier_detection
       - name: src_performance_management__observation_details
         external:
           location:
@@ -39,6 +57,12 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - observation_details
       - name: src_performance_management__leadership_development_metrics
         external:
           options:
@@ -47,3 +71,9 @@ sources:
               - https://docs.google.com/spreadsheets/d/1xPzM3XM3-5e343VkH75rz5fsQlO4z0BsPNh3xAWvPQ4
             sheet_range: src_performance_management__leadership_development_metrics
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - leadership_development_metrics

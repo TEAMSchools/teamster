@@ -9,6 +9,12 @@ sources:
       - stage_external_sources
     tables:
       - name: src_edplan__njsmart_powerschool
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - edplan
+              - njsmart_powerschool
         external:
           location: "{{ var('cloud_storage_uri_base') }}/edplan/njsmart_powerschool/*"
           options:
@@ -17,6 +23,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_edplan__njsmart_powerschool_archive
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - edplan
+              - njsmart_powerschool_archive
         external:
           location:
             "{{ var('couchdrop_cloud_storage_uri_base') }}/edplan/njsmart_powerschool_archive/*"

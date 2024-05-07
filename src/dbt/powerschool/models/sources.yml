@@ -9,6 +9,12 @@ sources:
       - stage_external_sources
     tables:
       - name: src_powerschool__assignmentscore
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - assignmentscore
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentscore/*"
           options:
@@ -17,6 +23,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - attendance
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance/*"
           options:
@@ -24,6 +36,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__pgfinalgrades
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - pgfinalgrades
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/pgfinalgrades/*"
           options:
@@ -32,6 +50,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__storedgrades
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - storedgrades
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/storedgrades/*"
           options:
@@ -40,6 +64,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentcategoryassoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - assignmentcategoryassoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentcategoryassoc/*"
           options:
@@ -48,6 +78,12 @@ sources:
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentcategoryassoc/"
       - name: src_powerschool__assignmentsection
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - assignmentsection
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentsection/*"
           options:
@@ -56,258 +92,516 @@ sources:
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentsection/"
       - name: src_powerschool__cc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - cc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/cc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__codeset
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - codeset
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/codeset/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__courses
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - courses
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/courses/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__districtteachercategory
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - districtteachercategory
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/districtteachercategory/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__emailaddress
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - emailaddress
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/emailaddress/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcformulaweight
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradecalcformulaweight
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalcformulaweight/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcschoolassoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradecalcschoolassoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalcschoolassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalculationtype
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradecalculationtype
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalculationtype/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeformulaset
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradeformulaset
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeformulaset/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradescaleitem
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradescaleitem
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradescaleitem/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolconfig
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradeschoolconfig
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeschoolconfig/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolformulaassoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradeschoolformulaassoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeschoolformulaassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradesectionconfig
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradesectionconfig
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradesectionconfig/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__originalcontactmap
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - originalcontactmap
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/originalcontactmap/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__person
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - person
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/person/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddress
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - personaddress
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/personaddress/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddressassoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - personaddressassoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/personaddressassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personemailaddressassoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - personemailaddressassoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/personemailaddressassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personphonenumberassoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - personphonenumberassoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/personphonenumberassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__phonenumber
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - phonenumber
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/phonenumber/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__prefs
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - prefs
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/prefs/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__roledef
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - roledef
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/roledef/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_crs_x
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_crs_x
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_crs_x/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_ren_x
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_ren_x
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_ren_x/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_stu_x
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_stu_x
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_stu_x/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_usr_x
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_usr_x
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_usr_x/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schools
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - schools
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/schools/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schoolstaff
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - schoolstaff
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/schoolstaff/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sections
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - sections
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/sections/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sectionteacher
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - sectionteacher
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/sectionteacher/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactassoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - studentcontactassoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcontactassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactdetail
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - studentcontactdetail
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcontactdetail/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcorefields
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - studentcorefields
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcorefields/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentrace
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - studentrace
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentrace/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__students
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - students
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/students/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__teachercategory
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - teachercategory
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/teachercategory/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__termbins
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - termbins
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/termbins/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__terms
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - terms
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/terms/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - u_clg_et_stu
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_clg_et_stu/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu_alt
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - u_clg_et_stu_alt
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_clg_et_stu_alt/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_def_ext_students
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - u_def_ext_students
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_def_ext_students/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_studentsuserfields
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - u_studentsuserfields
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_studentsuserfields/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__users
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - users
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/users/*"
           options:
@@ -315,102 +609,204 @@ sources:
             enable_logical_types: true
       # not-partitionable
       - name: src_powerschool__attendance_code
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - attendance_code
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance_code/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance_conversion_items
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - attendance_conversion_items
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance_conversion_items/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__bell_schedule
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - bell_schedule
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/bell_schedule/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__calendar_day
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - calendar_day
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/calendar_day/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__cycle_day
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - cycle_day
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/cycle_day/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__fte
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - fte
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/fte/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gen
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gen
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/gen/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__log
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - log
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/log/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__period
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - period
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/period/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__reenrollments
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - reenrollments
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/reenrollments/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__spenrollments
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - spenrollments
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/spenrollments/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__test
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - test
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/test/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__testscore
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - testscore
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/testscore/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studenttest
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - studenttest
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/studenttest/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studenttestscore
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - studenttestscore
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/studenttestscore/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__storedgrades_dcid
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - storedgrades_dcid
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/storedgrades_dcid/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sced_code_mapping
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - sced_code_mapping
         external:
           location: "{{ var('cloud_storage_uri_base') }}/powerschool/sced_code_mapping/*"
           options:

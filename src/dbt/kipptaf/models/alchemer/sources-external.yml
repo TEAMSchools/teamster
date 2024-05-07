@@ -13,6 +13,12 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/alchemer/survey/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - alchemer
+              - survey
       - name: src_alchemer__survey_campaign
         external:
           location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/*"
@@ -21,6 +27,12 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - alchemer
+              - survey_campaign
       - name: src_alchemer__survey_question
         external:
           location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/*"
@@ -29,6 +41,12 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - alchemer
+              - survey_question
       - name: src_alchemer__survey_response
         external:
           location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/*"
@@ -37,6 +55,12 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - alchemer
+              - survey_response
       - name: src_alchemer__survey_response_disqualified
         external:
           location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response_disqualified/*"
@@ -45,6 +69,12 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response_disqualified/"
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - alchemer
+              - survey_response_disqualified
       - name: src_alchemer__response_id_override
         external:
           options:
@@ -53,3 +83,9 @@ sources:
               - https://docs.google.com/spreadsheets/d/15PIpnnKaU2NF42JzjUbnrocL_2F41JOVZP4dYDS7mME
             sheet_range: src_alchemer__response_id_override
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - alchemer
+              - response_id_override
