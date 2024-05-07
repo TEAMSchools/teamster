@@ -1,8 +1,8 @@
 packages:
+  - local: ../kipptaf
+  - local: ../teamster_utils
   - package: dbt-labs/dbt_external_tables
     version: 0.9.0
-  - local: ../deanslist
-  - local: ../teamster_utils
   - package: dbt-labs/dbt_utils
     version: 1.1.1
-sha1_hash: f440f6129819e48cb1300cca983ca6d8842ea792
+sha1_hash: e172db0387139c048730325f09d8200d13f934a8
