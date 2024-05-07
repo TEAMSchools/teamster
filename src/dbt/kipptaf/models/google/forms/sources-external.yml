@@ -17,7 +17,8 @@ sources:
           dagster:
             parent_asset_key_path:
               - kipptaf
-              - google_forms
+              - google
+              - forms
               - form
       - name: src_google_forms__responses
         external:
@@ -30,7 +31,8 @@ sources:
           dagster:
             parent_asset_key_path:
               - kipptaf
-              - google_forms
+              - google
+              - forms
               - responses
       - name: src_google_forms__form_items_extension
         external:
