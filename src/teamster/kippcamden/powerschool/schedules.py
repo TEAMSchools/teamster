@@ -5,12 +5,12 @@ from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kippcamden.powerschool.assets import full_assets
 from teamster.kippcamden.powerschool.jobs import powerschool_nonpartition_asset_job
 
-last_modified_schedule = build_powerschool_schedule(
+powerschool_schedule = build_powerschool_schedule(
     code_location=CODE_LOCATION,
     cron_schedule="0 * * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     asset_defs=full_assets,
-    max_runtime_seconds=(60 * 4),
+    max_runtime_seconds=(60 * 5),
 )
 
 nonpartition_asset_job_schedule = ScheduleDefinition(
@@ -21,6 +21,6 @@ nonpartition_asset_job_schedule = ScheduleDefinition(
 )
 
 schedules = [
-    last_modified_schedule,
+    powerschool_schedule,
     nonpartition_asset_job_schedule,
 ]
