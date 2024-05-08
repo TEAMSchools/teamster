@@ -31,9 +31,20 @@ with
             fr.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
             and fr.question_id = '315a6c37'
     ),
+
     deduped_ri as (
         select
-            *,
+            survey_id,
+            survey_title,
+            survey_response_id,
+            respondent_email,
+            campaign_academic_year,
+            campaign_name,
+            campaign_reporting_term,
+            respondent_df_employee_number,
+            subject_df_employee_number,
+            date_started,
+            date_submitted,
             row_number() over (
                 partition by
                     survey_id,
@@ -42,7 +53,7 @@ with
                     campaign_reporting_term,
                     respondent_df_employee_number,
                     subject_df_employee_number
-            ) as rn_cur
+            ) as rn_cur,
         from response_identifiers
     )
 
