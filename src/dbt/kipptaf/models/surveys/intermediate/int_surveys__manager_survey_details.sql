@@ -17,6 +17,7 @@ with
             ) as subject_df_employee_number,
             timestamp(fr.create_time) as date_started,
             timestamp(fr.last_submitted_time) as date_submitted,
+
         from {{ ref("base_google_forms__form_responses") }} as fr
         left join
             {{ ref("stg_reporting__terms") }} as rt
@@ -29,7 +30,20 @@ with
         where
             fr.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
             and fr.question_id = '315a6c37'
-            and fr.rn_form_item_respondent_submitted_desc = 1
+    ),
+    deduped_ri as (
+        select
+            *,
+            row_number() over (
+                partition by
+                    survey_id,
+                    survey_response_id,
+                    campaign_academic_year,
+                    campaign_reporting_term,
+                    respondent_df_employee_number,
+                    subject_df_employee_number
+            ) as rn_cur
+        from response_identifiers
     )
 
 select
@@ -69,13 +83,14 @@ select
     lower(sr.report_to_sam_account_name) as subject_manager_samaccountname,
     lower(sr.user_principal_name) as subject_userprincipalname,
     lower(sr.report_to_user_principal_name) as subject_manager_userprincipalname,
-from response_identifiers as ri
+from deduped_ri as ri
 inner join
     {{ ref("base_google_forms__form_responses") }} as fr
     on ri.survey_id = fr.form_id
     and ri.survey_response_id = fr.response_id
     and fr.item_abbreviation
     not in ('respondent_employee_number', 'subject_employee_number')
+    and ri.rn_cur = 1
 inner join
     {{ ref("base_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
