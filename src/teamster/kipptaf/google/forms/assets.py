@@ -19,6 +19,8 @@ FORM_IDS = [
     "1tcpnmUoxSb8M1_Nzoe_lVhkrD1Gj09jaX0MNHWGlZQs",  # PM Score Change Approval Form
     "1tuqQIkPX8GfGXdpkNra9shB2Ig_U9CSS7VH1RfuQ_68",  # ITR
     "1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI",  # support
+    "16pr-UXHqY9g4kzB6azIWm0MRQANNspzWtAjvNEVcaUo",  # KIPP Miami Re-Commitment & SCD
+    "15Iq_dMeOmURb68Bg8Uc6j-Fco4N2wix7D8YFfSdCKPE",  # SCD Student Survey
 ]
 
 key_prefix = [CODE_LOCATION, "google", "forms"]
