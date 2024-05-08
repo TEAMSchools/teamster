@@ -1,7 +1,10 @@
 from dagster import define_asset_job
 
-from ... import CODE_LOCATION
-from .assets import adp_wfm_assets_daily, adp_wfm_assets_dynamic
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.adp.workforce_manager.assets import (
+    adp_wfm_assets_daily,
+    adp_wfm_assets_dynamic,
+)
 
 adp_wfm_daily_partition_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}_adp_wfm_daily_partition_asset_job",
@@ -15,7 +18,7 @@ adp_wfm_dynamic_partition_asset_job = define_asset_job(
     partitions_def=adp_wfm_assets_dynamic[0].partitions_def,
 )
 
-_all = [
+jobs = [
     adp_wfm_daily_partition_asset_job,
     adp_wfm_dynamic_partition_asset_job,
 ]
