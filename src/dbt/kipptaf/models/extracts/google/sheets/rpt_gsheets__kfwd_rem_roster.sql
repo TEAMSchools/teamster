@@ -106,9 +106,16 @@ select  -- noqa: ST06
         then '<2.00'
     end as hs_gpa_bands,
 
-    if(
-        r.contact_actual_college_graduation_date is not null, true, false
-    ) as is_graduated,
+    case
+        when ei.ba_status = 'Graduated'
+        then 'BA graduate'
+        when ei.aa_status = 'Graduated'
+        then 'AA graduate'
+        when ei.cte_status = 'Graduated'
+        then 'CTE graduate'
+        when ei.ugrad_enrollment_id is null and ei.cte_enrollment_id is null
+        then 'Never enrolled'
+    end as is_graduated,
 
     r.first_name,
     r.last_name,
