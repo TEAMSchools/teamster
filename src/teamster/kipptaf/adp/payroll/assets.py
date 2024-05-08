@@ -30,6 +30,6 @@ general_ledger_file = build_sftp_asset(
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
 )
 
-_all = [
+assets = [
     general_ledger_file,
 ]
