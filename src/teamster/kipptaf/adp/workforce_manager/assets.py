@@ -20,10 +20,9 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
-
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .resources import AdpWorkforceManagerResource
-from .schema import ASSET_SCHEMA
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
+from teamster.kipptaf.adp.workforce_manager.schema import ASSET_SCHEMA
 
 
 def build_adp_wfm_asset(
@@ -164,7 +163,7 @@ adp_wfm_assets_dynamic = [
     time_details,
 ]
 
-_all = [
+assets = [
     *adp_wfm_assets_daily,
     *adp_wfm_assets_dynamic,
 ]

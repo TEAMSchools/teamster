@@ -5,17 +5,17 @@ from dagster_fivetran import FivetranResource
 from zenpy import Zenpy
 
 from teamster.core.ssh.resources import SSHResource
-
-from .adp.workforce_manager.resources import AdpWorkforceManagerResource
-from .adp.workforce_now.api.resources import AdpWorkforceNowResource
-from .amplify.resources import MClassResource
-from .google.directory.resources import GoogleDirectoryResource
-from .google.forms.resources import GoogleFormsResource
-from .google.sheets.resources import GoogleSheetsResource
-from .ldap.resources import LdapResource
-from .schoolmint.grow.resources import SchoolMintGrowResource
-from .smartrecruiters.resources import SmartRecruitersResource
-from .tableau.resources import TableauServerResource
+from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
+from teamster.kipptaf.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.kipptaf.amplify.resources import MClassResource
+from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
+from teamster.kipptaf.google.drive.resources import GoogleDriveResource
+from teamster.kipptaf.google.forms.resources import GoogleFormsResource
+from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
+from teamster.kipptaf.ldap.resources import LdapResource
+from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.kipptaf.smartrecruiters.resources import SmartRecruitersResource
+from teamster.kipptaf.tableau.resources import TableauServerResource
 
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
@@ -47,6 +47,10 @@ ALCHEMER_RESOURCE = AlchemerSession(
 
 FIVETRAN_RESOURCE = FivetranResource(
     api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
+)
+
+GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
+    service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
 )
 
 GOOGLE_FORMS_RESOURCE = GoogleFormsResource(

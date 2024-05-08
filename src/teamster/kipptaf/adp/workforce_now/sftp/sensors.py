@@ -5,15 +5,14 @@ import pendulum
 from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 
 from teamster.core.ssh.resources import SSHResource
-
-from .... import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import _all as adp_wfn_sftp_assets
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.adp.workforce_now.sftp.assets import assets
 
 
 @sensor(
     name=f"{CODE_LOCATION}_adp_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=adp_wfn_sftp_assets,
+    asset_selection=assets,
 )
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
@@ -29,7 +28,7 @@ def adp_wfn_sftp_sensor(
         return SensorResult(skip_reason=str(e))
 
     run_requests = []
-    for asset in adp_wfn_sftp_assets:
+    for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
         asset_identifier = asset.key.to_python_identifier()
 
@@ -61,6 +60,6 @@ def adp_wfn_sftp_sensor(
     return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
 
-_all = [
+sensors = [
     adp_wfn_sftp_sensor,
 ]

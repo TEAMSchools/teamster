@@ -93,6 +93,7 @@ defs = Definitions(
         "alchemer": resources.ALCHEMER_RESOURCE,
         "fivetran": resources.FIVETRAN_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
+        "google_drive": resources.GOOGLE_DRIVE_RESOURCE,
         "google_forms": resources.GOOGLE_FORMS_RESOURCE,
         "gsheets": resources.GOOGLE_SHEETS_RESOURCE,
         "ldap": resources.LDAP_RESOURCE,
