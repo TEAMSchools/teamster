@@ -13,6 +13,7 @@ def build_dbt_assets(
     exclude=None,
     partitions_def=None,
     name=None,
+    op_tags=None,
 ):
     @dbt_assets(
         manifest=manifest,
@@ -21,6 +22,7 @@ def build_dbt_assets(
         name=name,
         partitions_def=partitions_def,
         dagster_dbt_translator=dagster_dbt_translator,
+        op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         dbt_build = dbt_cli.cli(args=["build"], context=context)
@@ -37,6 +39,7 @@ def build_dbt_external_source_assets(
     exclude=None,
     partitions_def=None,
     name=None,
+    op_tags=None,
 ):
     @dbt_external_source_assets(
         manifest=manifest,
@@ -45,6 +48,7 @@ def build_dbt_external_source_assets(
         name=name,
         partitions_def=partitions_def,
         dagster_dbt_translator=dagster_dbt_translator,
+        op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         source_selection = [
