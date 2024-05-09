@@ -113,7 +113,7 @@ intacct_extract = build_bigquery_query_sftp_asset(
     ).with_rules(
         AutoMaterializeRule.materialize_on_parent_updated(
             AutoMaterializeAssetPartitionsFilter(
-                {"root_asset_key": "kipptaf/adp/payroll/general_ledger_file"}
+                {"root_asset_key": "kipptaf__adp__payroll__general_ledger_file"}
             )
         )
     ),
