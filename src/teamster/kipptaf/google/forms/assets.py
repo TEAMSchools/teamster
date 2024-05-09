@@ -16,7 +16,7 @@ key_prefix = [CODE_LOCATION, "google", "forms"]
 asset_kwargs = {
     "io_manager_key": "io_manager_gcs_avro",
     "group_name": "google_forms",
-    "compute_kind": "google_forms",
+    "compute_kind": "python",
     "partitions_def": GOOGLE_FORMS_PARTITIONS_DEF,
 }
 

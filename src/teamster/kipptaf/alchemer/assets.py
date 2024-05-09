@@ -29,7 +29,7 @@ key_prefix = [CODE_LOCATION, "alchemer"]
 asset_kwargs = {
     "io_manager_key": "io_manager_gcs_avro",
     "group_name": "alchemer",
-    "compute_kind": "alchemer",
+    "compute_kind": "python",
 }
 
 partitions_def = DynamicPartitionsDefinition(name=f"{CODE_LOCATION}_alchemer_survey_id")
