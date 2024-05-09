@@ -41,7 +41,7 @@ def build_powerschool_table_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="powerschool",
-        compute_kind="powerschool",
+        compute_kind="python",
     )
     def _asset(
         context: AssetExecutionContext,

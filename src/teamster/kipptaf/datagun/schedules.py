@@ -1,7 +1,7 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 
-from .. import LOCAL_TIMEZONE
-from .jobs import (
+from teamster.kipptaf import LOCAL_TIMEZONE
+from teamster.kipptaf.datagun.jobs import (
     blissbook_extract_asset_job,
     clever_extract_asset_job,
     coupa_extract_asset_job,

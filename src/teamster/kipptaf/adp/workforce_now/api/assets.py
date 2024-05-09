@@ -15,7 +15,7 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
     key=asset_key,
     io_manager_key="io_manager_gcs_avro",
     group_name="adp_workforce_now",
-    compute_kind="adp",
+    compute_kind="python",
     check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     partitions_def=DailyPartitionsDefinition(
         start_date="01/01/2021", fmt="%m/%d/%Y", timezone=LOCAL_TIMEZONE.name

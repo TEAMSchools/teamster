@@ -73,8 +73,9 @@ def build_sftp_asset(
     auto_materialize_policy=None,
     slugify_cols=True,
     slugify_replacements=(),
+    tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
-    group_name=None,
+    group_name: str | None = None,
     **kwargs,
 ):
     if group_name is None:
@@ -86,11 +87,12 @@ def build_sftp_asset(
         required_resource_keys={ssh_resource_key},
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
+        tags=tags,
         op_tags=op_tags,
         group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
-        compute_kind="sftp",
+        compute_kind="python",
     )
     def _asset(context: AssetExecutionContext):
         ssh: SSHResource = getattr(context.resources, ssh_resource_key)

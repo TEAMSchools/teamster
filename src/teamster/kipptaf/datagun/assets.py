@@ -1,12 +1,16 @@
-from dagster import AutoMaterializePolicy, config_from_files
+from dagster import (
+    AutoMaterializeAssetPartitionsFilter,
+    AutoMaterializePolicy,
+    AutoMaterializeRule,
+    config_from_files,
+)
 
 from teamster.core.datagun.assets import (
     build_bigquery_extract_sftp_asset,
     build_bigquery_query_sftp_asset,
 )
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kipptaf.adp.payroll.assets import GENERAL_LEDGER_FILE_PARTITIONS_DEF
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
 
@@ -106,6 +110,12 @@ intacct_extract = build_bigquery_query_sftp_asset(
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     auto_materialize_policy=AutoMaterializePolicy.eager(
         max_materializations_per_minute=4
+    ).with_rules(
+        AutoMaterializeRule.materialize_on_parent_updated(
+            AutoMaterializeAssetPartitionsFilter(
+                {"root_asset_key": "kipptaf/adp/payroll/general_ledger_file"}
+            )
+        )
     ),
 )
 

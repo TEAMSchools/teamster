@@ -150,7 +150,7 @@ def build_bigquery_query_sftp_asset(
         op_tags=op_tags,
         auto_materialize_policy=auto_materialize_policy,
         group_name="datagun",
-        compute_kind="datagun",
+        compute_kind="python",
     )
     def _asset(context: AssetExecutionContext):
         now = pendulum.now(tz=timezone)
@@ -238,7 +238,7 @@ def build_bigquery_extract_sftp_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="datagun",
-        compute_kind="datagun",
+        compute_kind="python",
     )
     def _asset(context: AssetExecutionContext):
         now = pendulum.now(tz=timezone)
@@ -325,7 +325,7 @@ def build_bigquery_extract_asset(
         deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
         group_name="datagun",
-        compute_kind="datagun",
+        compute_kind="python",
     )
     def _asset(
         context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource

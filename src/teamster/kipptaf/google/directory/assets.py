@@ -12,7 +12,7 @@ key_prefix = [CODE_LOCATION, "google", "directory"]
 asset_kwargs = {
     "io_manager_key": "io_manager_gcs_avro",
     "group_name": "google_directory",
-    "compute_kind": "google_directory",
+    "compute_kind": "python",
 }
 
 
