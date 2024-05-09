@@ -28,7 +28,7 @@ general_ledger_file = build_sftp_asset(
     ssh_resource_key="ssh_couchdrop",
     avro_schema=GENERAL_LEDGER_FILE_SCHEMA,
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
-    tags={"root_asset_key": "kipptaf/adp/payroll/general_ledger_file"},
+    tags={"root_asset_key": "kipptaf__adp__payroll__general_ledger_file"},
 )
 
 assets = [
