@@ -110,12 +110,6 @@ intacct_extract = build_bigquery_query_sftp_asset(
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     auto_materialize_policy=AutoMaterializePolicy.eager(
         max_materializations_per_minute=4
-    ).with_rules(
-        AutoMaterializeRule.materialize_on_parent_updated(
-            AutoMaterializeAssetPartitionsFilter(
-                {"root_asset_key": "kipptaf__adp__payroll__general_ledger_file"}
-            )
-        )
     ),
 )
 

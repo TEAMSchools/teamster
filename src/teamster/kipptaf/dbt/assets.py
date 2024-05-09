@@ -35,7 +35,6 @@ adp_payroll_dbt_assets = build_dbt_assets(
     name=f"{CODE_LOCATION}_adp_payroll_dbt_assets",
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     select="stg_adp_payroll__general_ledger_file+",
-    op_tags={"root_asset_key": "kipptaf__adp__payroll__general_ledger_file"},
 )
 
 adp_payroll_external_source_dbt_assets = build_dbt_external_source_assets(
@@ -44,7 +43,6 @@ adp_payroll_external_source_dbt_assets = build_dbt_external_source_assets(
     name=f"{CODE_LOCATION}_adp_payroll_external_source_dbt_assets",
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     select="source:adp_payroll",
-    op_tags={"root_asset_key": "kipptaf__adp__payroll__general_ledger_file"},
 )
 
 assets = [
