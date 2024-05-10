@@ -44,4 +44,4 @@ where
         scd.family_respondent_number
     )
     is not null
-    and answer is not null
+    and scd.answer is not null
