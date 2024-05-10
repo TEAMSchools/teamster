@@ -18,11 +18,11 @@ DB_POWERSCHOOL = OracleResource(
         driver="oracledb",
         host=EnvVar("PS_DB_HOST"),
         database=EnvVar("PS_DB_DATABASE"),
-        port=int(EnvVar("PS_DB_PORT").get_value()),  # type: ignore
+        port=EnvVar("PS_DB_PORT"),
         username=EnvVar("PS_DB_USERNAME"),
         password=EnvVar("PS_DB_PASSWORD"),
     ),
-    version=EnvVar("PS_DB_VERSION"),
+    version="19.0.0.0.0",
     prefetchrows=100000,
     arraysize=100000,
 )
@@ -48,6 +48,14 @@ SSH_IREADY = SSHResource(
     remote_host=EnvVar("IREADY_SFTP_HOST"),
     username=EnvVar("IREADY_SFTP_USERNAME"),
     password=EnvVar("IREADY_SFTP_PASSWORD"),
+)
+
+SSH_POWERSCHOOL = SSHResource(
+    remote_host=EnvVar("PS_SSH_HOST"),
+    remote_port=EnvVar("PS_SSH_PORT"),
+    username=EnvVar("PS_SSH_USERNAME"),
+    password=EnvVar("PS_SSH_PASSWORD"),
+    tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
 )
 
 SSH_RENLEARN = SSHResource(
@@ -83,13 +91,3 @@ def get_io_manager_gcs_file(code_location):
 
 def get_dbt_cli_resource(code_location):
     return DbtCliResource(project_dir=f"src/dbt/{code_location}")
-
-
-def get_ssh_resource_powerschool(remote_host):
-    return SSHResource(
-        remote_host=remote_host,
-        remote_port=int(EnvVar("PS_SSH_PORT").get_value()),  # type: ignore
-        username=EnvVar("PS_SSH_USERNAME"),
-        password=EnvVar("PS_SSH_PASSWORD"),
-        tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
-    )

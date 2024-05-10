@@ -1,12 +1,11 @@
-from alchemer import AlchemerSession
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 from dagster_fivetran import FivetranResource
-from zenpy import Zenpy
 
 from teamster.core.ssh.resources import SSHResource
 from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
 from teamster.kipptaf.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.kipptaf.alchemer.resources import AlchemerResource
 from teamster.kipptaf.amplify.resources import MClassResource
 from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
 from teamster.kipptaf.google.drive.resources import GoogleDriveResource
@@ -16,10 +15,12 @@ from teamster.kipptaf.ldap.resources import LdapResource
 from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.kipptaf.smartrecruiters.resources import SmartRecruitersResource
 from teamster.kipptaf.tableau.resources import TableauServerResource
+from teamster.kipptaf.zendesk.resources import ZendeskResource
 
 """
 Dagster resources
 """
+
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
     app_key=EnvVar("ADP_WFM_APP_KEY"),
@@ -38,6 +39,13 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
     api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=2, request_timeout=6
+)
+
+ALCHEMER_RESOURCE = AlchemerResource(
+    api_token=EnvVar("ALCHEMER_API_TOKEN"),
+    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
+    api_version="v5",
+    timeout=15,
 )
 
 FIVETRAN_RESOURCE = FivetranResource(
@@ -64,7 +72,7 @@ GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource(
 
 LDAP_RESOURCE = LdapResource(
     host=EnvVar("LDAP_HOST_IP"),
-    port=int(EnvVar("LDAP_PORT").get_value()),  # type: ignore
+    port=EnvVar("LDAP_PORT"),
     user=EnvVar("LDAP_USER"),
     password=EnvVar("LDAP_PASSWORD"),
 )
@@ -91,26 +99,21 @@ TABLEAU_SERVER_RESOURCE = TableauServerResource(
     personal_access_token=EnvVar("TABLEAU_PERSONAL_ACCESS_TOKEN"),
 )
 
+ZENDESK_RESOURCE = ZendeskResource(
+    subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
+    email=EnvVar("ZENDESK_EMAIL"),
+    token=EnvVar("ZENDESK_TOKEN"),
+)
+
 """
 Direct library resources
 """
-ALCHEMER_RESOURCE = AlchemerSession(
-    api_token=EnvVar("ALCHEMER_API_TOKEN").get_value(),
-    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET").get_value(),
-    api_version="v5",
-    time_zone="America/New_York",  # pre-determined by Alchemer
-    timeout=15,
-)
 
-ZENDESK_RESOURCE = Zenpy(
-    subdomain=EnvVar("ZENDESK_SUBDOMAIN").get_value(),
-    email=EnvVar("ZENDESK_EMAIL").get_value(),
-    token=EnvVar("ZENDESK_TOKEN").get_value(),
-)
 
 """
 SSH resources
 """
+
 SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     remote_host=EnvVar("ADP_SFTP_HOST_IP"),
     username=EnvVar("ADP_SFTP_USERNAME"),
@@ -119,7 +122,7 @@ SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
 
 SSH_RESOURCE_BLISSBOOK = SSHResource(
     remote_host=EnvVar("BLISSBOOK_SFTP_HOST"),
-    remote_port=int(EnvVar("BLISSBOOK_SFTP_PORT").get_value()),  # type: ignore
+    remote_port=EnvVar("BLISSBOOK_SFTP_PORT"),
     username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
     password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
 )

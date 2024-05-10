@@ -1,4 +1,4 @@
-from dagster import Definitions, EnvVar, load_assets_from_modules
+from dagster import Definitions, load_assets_from_modules
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.resources import (
@@ -9,13 +9,13 @@ from teamster.core.resources import (
     SSH_COUCHDROP,
     SSH_EDPLAN,
     SSH_IREADY,
+    SSH_POWERSCHOOL,
     SSH_RENLEARN,
     SSH_TITAN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
-    get_ssh_resource_powerschool,
 )
 
 from . import (
@@ -71,14 +71,12 @@ defs = Definitions(
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_edplan": SSH_EDPLAN,
         "ssh_iready": SSH_IREADY,
+        "ssh_powerschool": SSH_POWERSCHOOL,
         "ssh_renlearn": SSH_RENLEARN,
         "ssh_titan": SSH_TITAN,
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
-        "ssh_powerschool": get_ssh_resource_powerschool(
-            remote_host=EnvVar("PS_SSH_HOST")
-        ),
     },
 )
