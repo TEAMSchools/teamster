@@ -1,4 +1,4 @@
-from dagster import Definitions, load_assets_from_modules
+from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_k8s import k8s_job_executor
 
 from teamster.core.resources import (
@@ -78,7 +78,7 @@ defs = Definitions(
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
         "ssh_powerschool": get_ssh_resource_powerschool(
-            remote_host="psteam.kippnj.org"
+            remote_host=EnvVar("PS_SSH_HOST")
         ),
     },
 )

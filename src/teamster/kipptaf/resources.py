@@ -17,6 +17,9 @@ from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.kipptaf.smartrecruiters.resources import SmartRecruitersResource
 from teamster.kipptaf.tableau.resources import TableauServerResource
 
+"""
+Dagster resources
+"""
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
     app_key=EnvVar("ADP_WFM_APP_KEY"),
@@ -37,14 +40,6 @@ AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
     api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=2, request_timeout=6
 )
 
-ALCHEMER_RESOURCE = AlchemerSession(
-    api_token=EnvVar("ALCHEMER_API_TOKEN").get_value(),
-    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET").get_value(),
-    api_version="v5",
-    time_zone="America/New_York",  # determined by Alchemer
-    # timeout=15,
-)
-
 FIVETRAN_RESOURCE = FivetranResource(
     api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
 )
@@ -58,9 +53,9 @@ GOOGLE_FORMS_RESOURCE = GoogleFormsResource(
 )
 
 GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
-    customer_id="C029u7m0n",
+    customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
+    delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
     service_account_file_path="/etc/secret-volume/gcloud_service_account_json",
-    delegated_account="dagster@apps.teamschools.org",
 )
 
 GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource(
@@ -68,9 +63,8 @@ GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource(
 )
 
 LDAP_RESOURCE = LdapResource(
-    # host="ldap1.kippnj.org",
-    host="204.8.89.213",
-    port=636,
+    host=EnvVar("LDAP_HOST_IP"),
+    port=int(EnvVar("LDAP_PORT").get_value()),  # type: ignore
     user=EnvVar("LDAP_USER"),
     password=EnvVar("LDAP_PASSWORD"),
 )
@@ -91,77 +85,83 @@ SMARTRECRUITERS_RESOURCE = SmartRecruitersResource(
 )
 
 TABLEAU_SERVER_RESOURCE = TableauServerResource(
-    server_address="https://tableau.kipp.org",
-    site_id="KIPPNJ",
+    server_address=EnvVar("TABLEAU_SERVER_ADDRESS"),
+    site_id=EnvVar("TABLEAU_SITE_ID"),
     token_name=EnvVar("TABLEAU_TOKEN_NAME"),
     personal_access_token=EnvVar("TABLEAU_PERSONAL_ACCESS_TOKEN"),
 )
 
+"""
+Direct library resources
+"""
+ALCHEMER_RESOURCE = AlchemerSession(
+    api_token=EnvVar("ALCHEMER_API_TOKEN").get_value(),
+    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET").get_value(),
+    api_version="v5",
+    time_zone="America/New_York",  # pre-determined by Alchemer
+    timeout=15,
+)
+
 ZENDESK_RESOURCE = Zenpy(
-    subdomain="teamschools",
+    subdomain=EnvVar("ZENDESK_SUBDOMAIN").get_value(),
     email=EnvVar("ZENDESK_EMAIL").get_value(),
     token=EnvVar("ZENDESK_TOKEN").get_value(),
 )
 
+"""
+SSH resources
+"""
 SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
-    # remote_host="sftp.kippnj.org",
-    remote_host="204.8.89.221",
+    remote_host=EnvVar("ADP_SFTP_HOST_IP"),
     username=EnvVar("ADP_SFTP_USERNAME"),
     password=EnvVar("ADP_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_BLISSBOOK = SSHResource(
-    remote_host="sftp.blissbook.com",
-    remote_port=3022,
+    remote_host=EnvVar("BLISSBOOK_SFTP_HOST"),
+    remote_port=int(EnvVar("BLISSBOOK_SFTP_PORT").get_value()),  # type: ignore
     username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
     password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_CLEVER = SSHResource(
-    remote_host="sftp.clever.com",
+    remote_host=EnvVar("CLEVER_SFTP_HOST"),
     username=EnvVar("CLEVER_SFTP_USERNAME"),
     password=EnvVar("CLEVER_SFTP_PASSWORD"),
 )
 
-SSH_RESOURCE_CLEVER_REPORTS = SSHResource(
-    remote_host="reports-sftp.clever.com",
-    username=EnvVar("CLEVER_REPORTS_SFTP_USERNAME"),
-    password=EnvVar("CLEVER_REPORTS_SFTP_PASSWORD"),
-)
-
 SSH_RESOURCE_COUPA = SSHResource(
-    remote_host="fileshare.coupahost.com",
+    remote_host=EnvVar("COUPA_SFTP_HOST"),
     username=EnvVar("COUPA_SFTP_USERNAME"),
     password=EnvVar("COUPA_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_DEANSLIST = SSHResource(
-    remote_host="sftp.deanslistsoftware.com",
+    remote_host=EnvVar("DEANSLIST_SFTP_HOST"),
     username=EnvVar("DEANSLIST_SFTP_USERNAME"),
     password=EnvVar("DEANSLIST_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_EGENCIA = SSHResource(
-    remote_host="eusftp.egencia.com",
+    remote_host=EnvVar("EGENCIA_SFTP_HOST"),
     username=EnvVar("EGENCIA_SFTP_USERNAME"),
     key_file="/etc/secret-volume/id_rsa_egencia",
 )
 
 SSH_RESOURCE_ILLUMINATE = SSHResource(
-    remote_host="sftp.illuminateed.com",
+    remote_host=EnvVar("ILLUMINATE_SFTP_HOST"),
     username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
     password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_IDAUTO = SSHResource(
-    # remote_host="sftp.kippnj.org",
-    remote_host="204.8.89.221",
+    remote_host=EnvVar("KTAF_SFTP_HOST_IP"),
     username=EnvVar("KTAF_SFTP_USERNAME"),
     password=EnvVar("KTAF_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
-    remote_host="upload.littlesis.app",
+    remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )
