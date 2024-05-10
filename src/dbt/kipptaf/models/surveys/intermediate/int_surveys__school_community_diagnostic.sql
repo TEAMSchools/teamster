@@ -56,7 +56,9 @@ select
     end as survey_audience,
     {{
         teamster_utils.date_to_fiscal_year(
-            date_field="timestamp(fr.last_submitted_time)", start_month=7, year_source="start"
+            date_field="timestamp(fr.last_submitted_time)",
+            start_month=7,
+            year_source="start",
         )
     }} as academic_year,
 
@@ -96,7 +98,9 @@ select
     end as survey_audience,
     {{
         teamster_utils.date_to_fiscal_year(
-            date_field="sr.response_date_submitted", start_month=7, year_source="start"
+            date_field="sr.response_date_submitted",
+            start_month=7,
+            year_source="start",
         )
     }} as academic_year,
 
