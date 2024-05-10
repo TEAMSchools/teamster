@@ -5,7 +5,7 @@ from pydantic import PrivateAttr
 
 class LdapResource(ConfigurableResource):
     host: str
-    port: int
+    port: str
     user: str
     password: str
 
@@ -14,7 +14,7 @@ class LdapResource(ConfigurableResource):
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._server = Server(
-            host=self.host, port=self.port, use_ssl=True, get_info=ALL
+            host=self.host, port=int(self.port), use_ssl=True, get_info=ALL
         )
         self._connection = Connection(
             server=self._server,
