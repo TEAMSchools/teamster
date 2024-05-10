@@ -16,47 +16,48 @@ DB_POWERSCHOOL = OracleResource(
     engine=SqlAlchemyEngineResource(
         dialect="oracle",
         driver="oracledb",
-        username="PSNAVIGATOR",
-        host="localhost",
-        database="PSPRODDB",
-        port=1521,
+        host=EnvVar("PS_DB_HOST"),
+        database=EnvVar("PS_DB_DATABASE"),
+        port=int(EnvVar("PS_DB_PORT").get_value()),  # type: ignore
+        username=EnvVar("PS_DB_USERNAME"),
         password=EnvVar("PS_DB_PASSWORD"),
     ),
-    version="19.0.0.0.0",
+    version=EnvVar("PS_DB_VERSION"),
     prefetchrows=100000,
     arraysize=100000,
 )
 
 DEANSLIST_RESOURCE = DeansListResource(
-    subdomain="kippnj", api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml"
+    subdomain=EnvVar("DEANSLIST_SUBDOMAIN"),
+    api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
 )
 
 SSH_COUCHDROP = SSHResource(
-    remote_host="kipptaf.couchdrop.io",
+    remote_host=EnvVar("COUCHDROP_SFTP_HOST"),
     username=EnvVar("COUCHDROP_SFTP_USERNAME"),
     password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
 )
 
 SSH_EDPLAN = SSHResource(
-    remote_host="secureftp.easyiep.com",
+    remote_host=EnvVar("EDPLAN_SFTP_HOST"),
     username=EnvVar("EDPLAN_SFTP_USERNAME"),
     password=EnvVar("EDPLAN_SFTP_PASSWORD"),
 )
 
 SSH_IREADY = SSHResource(
-    remote_host="prod-sftp-1.aws.cainc.com",
+    remote_host=EnvVar("IREADY_SFTP_HOST"),
     username=EnvVar("IREADY_SFTP_USERNAME"),
     password=EnvVar("IREADY_SFTP_PASSWORD"),
 )
 
 SSH_RENLEARN = SSHResource(
-    remote_host="sftp.renaissance.com",
+    remote_host=EnvVar("RENLEARN_SFTP_HOST"),
     username=EnvVar("RENLEARN_SFTP_USERNAME"),
     password=EnvVar("RENLEARN_SFTP_PASSWORD"),
 )
 
 SSH_TITAN = SSHResource(
-    remote_host="sftp.titank12.com",
+    remote_host=EnvVar("TITAN_SFTP_HOST"),
     username=EnvVar("TITAN_SFTP_USERNAME"),
     password=EnvVar("TITAN_SFTP_PASSWORD"),
 )
