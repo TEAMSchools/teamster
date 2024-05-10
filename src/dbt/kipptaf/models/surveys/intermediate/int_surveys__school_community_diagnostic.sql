@@ -4,7 +4,7 @@ with
         select
             fr1.response_id,
             (
-                select text_value
+                select text_value,
                 from {{ ref("base_google_forms__form_responses") }} as fr2
                 where
                     fr2.response_id = fr1.response_id
@@ -13,13 +13,14 @@ with
         from {{ ref("base_google_forms__form_responses") }} as fr1
         group by fr1.response_id
     ),
+
     /* Student Number from Family Alchemer Survey*/
     family_responses_alchemer as (
         select
             sr1.survey_id,
             sr1.response_id,
             (
-                select response_value
+                select response_value,
                 from {{ ref("base_alchemer__survey_results") }} as sr2
                 where
                     sr2.response_id = sr1.response_id
@@ -110,7 +111,7 @@ left join
     on sr.survey_id = ri.survey_id
     and sr.response_id = ri.response_id
 left join
-    family_responses_alchemer fra
+    family_responses_alchemer as fra
     on sr.survey_id = fra.survey_id
     and sr.response_id = fra.response_id
 where sr.question_short_name like '%scd%'
