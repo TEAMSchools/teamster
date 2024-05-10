@@ -219,9 +219,9 @@ dagster-ssh==0.23.5 \
 db-dtypes==1.2.0 \
     --hash=sha256:3531bb1fb8b5fbab33121fe243ccc2ade16ab2524f4c113b05cc702a1908e6ea \
     --hash=sha256:6320bddd31d096447ef749224d64aab00972ed20e4392d86f7d8b81ad79f7ff0
-dbt-bigquery==1.7.8 \
-    --hash=sha256:aa2e7fc4c39a5becd0a5e1c6947cb950f0b02b10cf047333482bf650077353ba \
-    --hash=sha256:d31bd8ad69b823f562f96dd6ccefee440b1e1d82a259e6b9dc75db1e0fa68e2a
+dbt-bigquery==1.8.0 \
+    --hash=sha256:6f8cd7062df6a36a9a1c6ebe8081e748b159d38b083fa4079265026450ff2fc4 \
+    --hash=sha256:b3999acb6934988f1b8e7dc718a4330c80b1e0803a56ab8cbe205e14c09f15a6
 dbt-core==1.7.14 \
     --hash=sha256:86dc6e84c356f075ae29896ef315c679d9bc49d96ae24124a105d5ecc79de43b \
     --hash=sha256:e142e62d30178d598ad9463b8d162cfa8238806622fee7e63bf8b3236551feec
