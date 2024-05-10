@@ -106,11 +106,6 @@ ZENDESK_RESOURCE = ZendeskResource(
 )
 
 """
-Direct library resources
-"""
-
-
-"""
 SSH resources
 """
 
