@@ -61,7 +61,7 @@ with
         select
             fr.form_id as survey_id,
             fr.response_id,
-            fr.last_submitted_time as response_date_submitted,
+            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
             null as respondent_salesforce_id,
             fr.respondent_email as respondent_user_principal_name,
 
