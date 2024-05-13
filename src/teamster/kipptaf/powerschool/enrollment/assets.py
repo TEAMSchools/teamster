@@ -7,6 +7,6 @@ from teamster.kipptaf.powerschool.enrollment.resources import (
 
 @asset
 def foo(context: AssetExecutionContext, ps_enrollment: PowerSchoolEnrollmentResource):
-    data = ps_enrollment.get(endpoint="publishedactions")
+    data = ps_enrollment.get(endpoint="connection/test")
 
     return data
