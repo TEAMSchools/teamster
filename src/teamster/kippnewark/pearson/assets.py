@@ -8,14 +8,13 @@ from dagster import (
 
 from teamster.core.pearson.schema import ASSET_SCHEMA
 from teamster.core.sftp.assets import build_sftp_asset
-
-from .. import CODE_LOCATION
+from teamster.kippnewark import CODE_LOCATION
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
 njgpa = build_sftp_asset(
     asset_key=[CODE_LOCATION, "pearson", "njgpa"],
-    remote_dir="/teamster-kippnewark/couchdrop/pearson/njgpa",
+    remote_dir="/data-team/kippnewark/pearson/njgpa",
     remote_file_regex="pc(?P<administration>[a-z])(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv",
     avro_schema=ASSET_SCHEMA["njgpa"],
     ssh_resource_key="ssh_couchdrop",

@@ -118,3 +118,13 @@ def test_intacct_extract_asset():
     from teamster.kipptaf.datagun.assets import intacct_extract
 
     _test_asset(asset=intacct_extract, instance=DagsterInstance.get())
+
+
+def test_datagun_powerschool_kippnewark():
+    from teamster.kippnewark.datagun.assets import powerschool_extract_assets
+
+    _test_asset(
+        asset=powerschool_extract_assets[
+            random.randint(a=0, b=(len(powerschool_extract_assets) - 1))
+        ]
+    )
