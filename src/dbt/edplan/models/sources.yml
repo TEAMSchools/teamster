@@ -3,8 +3,7 @@ version: 2
 sources:
   - name: edplan
     schema: "{{ var('edplan_schema', 'edplan') }}"
-    database:
-      "{% if target.type != 'spark' %}{{ var('edplan_database', target.database) }}{% endif %}"
+    database: "{{ var('edplan_database', target.database) }}"
     tags:
       - stage_external_sources
     tables:
@@ -23,15 +22,3 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_edplan__njsmart_powerschool_archive
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - "{{ project_name }}"
-              - edplan
-              - njsmart_powerschool_archive
-        external:
-          location:
-            "{{ var('couchdrop_cloud_storage_uri_base') }}/edplan/njsmart_powerschool_archive/*"
-          options:
-            format: CSV
-            skip_leading_rows: 1

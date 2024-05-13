@@ -31,7 +31,7 @@ def build_couchdrop_sftp_sensor(
 
         try:
             files = ssh_couchdrop.listdir_attr_r(
-                remote_dir=f"/teamster-{code_location}/couchdrop", files=[]
+                remote_dir=f"/data-team/{code_location}", files=[]
             )
         except Exception as e:
             context.log.exception(e)
