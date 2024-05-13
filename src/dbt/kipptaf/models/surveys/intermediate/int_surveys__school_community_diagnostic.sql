@@ -2,36 +2,28 @@
 with
     family_responses_google as (
         select
-            fr1.response_id,
-            (
-                select text_value,
-                from {{ ref("base_google_forms__form_responses") }} as fr2
-                where
-                    fr2.response_id = fr1.response_id
-                    and fr2.item_abbreviation = 'family_respondent_number'
-            ) as respondent_number
-        from {{ ref("base_google_forms__form_responses") }} as fr1
-        group by fr1.response_id
+            response_id,
+            max(
+                if(item_abbreviation = 'family_respondent_number', text_value, null)
+            ) over (partition by text_value order by last_submitted_time)
+            as respondent_number
+        from {{ ref("base_google_forms__form_responses") }}
+        where item_abbreviation = 'family_respondent_number'
     ),
 
     /* Student Number from Family Alchemer Survey*/
     family_responses_alchemer as (
         select
-            sr1.survey_id,
-            sr1.response_id,
-            (
-                select response_value,
-                from {{ ref("base_alchemer__survey_results") }} as sr2
-                where
-                    sr2.response_id = sr1.response_id
-                    and sr2.survey_id = sr1.survey_id
-                    and sr2.question_short_name = 'student_number'
-                    and response_value is not null
-            ) as respondent_number
-        from {{ ref("base_alchemer__survey_results") }} as sr1
-        where survey_id = 6829997
-        group by sr1.survey_id, sr1.response_id
-
+            survey_id,
+            response_id,
+            max(if(question_short_name = 'student_number', response_value, null)) over (
+                partition by response_value order by response_date_submitted_date
+            )
+        from {{ ref("base_alchemer__survey_results") }}
+        where
+            survey_id = 6829997
+            and question_short_name = 'student_number'
+            and response_value is not null
     )
 
 /* School Community Diagnostics from Google Forms*/
@@ -43,10 +35,11 @@ select
     fr.item_abbreviation as question_shortname,
     fr.text_value as answer,
     fr.text_value as answer_value,
-    timestamp(fr.last_submitted_time) as date_submitted,
+    fr.last_submitted_time as date_submitted,
+    fr.academic_year,
     srh.employee_number as staff_respondent_number,
     se.student_number as student_respondent_number,
-    safe_cast(frg.respondent_number as int64) as family_respondent_number,
+    safe_cast(frg.respondent_number as int) as family_respondent_number,
     case
         when fr.info_title like '%Staff%'
         then 'Staff'
@@ -55,13 +48,6 @@ select
         when fr.info_title like '%Family%'
         then 'Family'
     end as survey_audience,
-    {{
-        teamster_utils.date_to_fiscal_year(
-            date_field="timestamp(fr.last_submitted_time)",
-            start_month=7,
-            year_source="start",
-        )
-    }} as academic_year,
 
 from {{ ref("base_google_forms__form_responses") }} as fr
 left join
@@ -77,7 +63,6 @@ where fr.item_abbreviation like '%scd%'
 
 union all
 
-
 /* School Community Diagnostics from Alchemer*/
 select
     safe_cast(sr.survey_id as string) as survey_id,
@@ -88,23 +73,16 @@ select
     sr.response_value as answer,
     sr.response_value as answer_value,
     sr.response_date_submitted as date_submitted,
+    sr.academic_year,
     ri.respondent_employee_number as staff_respondent_number,
     null as student_respondent_number,
-    safe_cast(fra.respondent_number as int64) as family_respondent_number,
+    safe_cast(fra.respondent_number as int) as family_respondent_number,
     case
         when sr.survey_title like '%Engagement%'
         then 'Staff'
         when sr.survey_title like '%Family%'
         then 'Family'
     end as survey_audience,
-    {{
-        teamster_utils.date_to_fiscal_year(
-            date_field="sr.response_date_submitted",
-            start_month=7,
-            year_source="start",
-        )
-    }} as academic_year,
-
 from {{ ref("base_alchemer__survey_results") }} as sr
 left join
     {{ ref("int_surveys__response_identifiers") }} as ri
