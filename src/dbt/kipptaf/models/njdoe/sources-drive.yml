@@ -8,10 +8,16 @@ sources:
     tables:
       - name: src_njdoe__parcc
         external:
-          location: "{{ var('couchdrop_cloud_storage_uri_base') }}/njdoe/parcc/*"
           options:
             format: CSV
             skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1CUuCKKY6UCE6ZB5xgfyWYYhP4oFUMWzJ
+              - https://drive.google.com/open?id=1CUVK7-NENZqDVxxFfhoTEktn5kNNaLse
+              - https://drive.google.com/open?id=1CY_ulR1xo9wIlUGSvrUdSfpvF_TYa4yT
+              - https://drive.google.com/open?id=1CY3HvM2W9Qpiwl5Knc8vdyR29cZnUCO2
+              - https://drive.google.com/open?id=1CZ4TUCeDWwH255En2ZqVg3uRypC4sJv4
+              - https://drive.google.com/open?id=1CZ90QSr7nr82_n2ti976fbh1N8FsecWl
         columns:
           - name: row_num
             data_type: string
