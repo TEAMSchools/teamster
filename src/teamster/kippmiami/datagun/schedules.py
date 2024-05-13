@@ -1,7 +1,7 @@
 from dagster import ScheduleDefinition
 
-from .. import LOCAL_TIMEZONE
-from .jobs import powerschool_extract_asset_job
+from teamster.kippmiami import LOCAL_TIMEZONE
+from teamster.kippmiami.datagun.jobs import powerschool_extract_asset_job
 
 powerschool_extract_assets_schedule = ScheduleDefinition(
     job=powerschool_extract_asset_job,
@@ -9,6 +9,6 @@ powerschool_extract_assets_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-_all = [
+schedules = [
     powerschool_extract_assets_schedule,
 ]
