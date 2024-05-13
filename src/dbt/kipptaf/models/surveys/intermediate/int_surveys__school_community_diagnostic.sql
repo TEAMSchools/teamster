@@ -6,7 +6,7 @@ with
             max(
                 if(item_abbreviation = 'family_respondent_number', text_value, null)
             ) over (partition by text_value order by last_submitted_time)
-            as respondent_number
+            as respondent_number,
         from {{ ref("base_google_forms__form_responses") }}
         where item_abbreviation = 'family_respondent_number'
     ),
@@ -18,7 +18,7 @@ with
             response_id,
             max(if(question_short_name = 'student_number', response_value, null)) over (
                 partition by response_value order by response_date_submitted_date
-            )
+            ) as respondent_number,
         from {{ ref("base_alchemer__survey_results") }}
         where
             survey_id = 6829997
