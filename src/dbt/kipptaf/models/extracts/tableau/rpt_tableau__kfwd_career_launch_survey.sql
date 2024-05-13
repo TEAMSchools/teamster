@@ -69,7 +69,8 @@ with
             fr.item_abbreviation as question_short_name,
             fr.text_value as response_string_value,
         from {{ ref("base_google_forms__form_responses") }} as fr
-        where form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho' -- 'KIPP Forward Career Launch Survey'
+        where form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
+    -- 'KIPP Forward Career Launch Survey'
     ),
 
     survey_pivot as (
