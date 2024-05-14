@@ -40,3 +40,21 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
         response = self._request(method="GET", url=url, **kwargs)
 
         return self._parse_response(response)
+
+    def get_all_records(self, endpoint, *args, **kwargs):
+        records = []
+        page = 1
+
+        while True:
+            kwargs["params"] = {"page": page}
+
+            response = self.get(endpoint, *args, **kwargs)
+
+            records.extend(response["records"])
+
+            if page == response["metaData"]["pageCount"]:
+                break
+            else:
+                page += 1
+
+        return records
