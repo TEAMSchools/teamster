@@ -140,6 +140,8 @@ models:
       +materialized: table
     powerschool:
       +schema: powerschool
+    powerschool_enrollment:
+      +schema: powerschool_enrollment
     renlearn:
       +schema: renlearn
     reporting:
