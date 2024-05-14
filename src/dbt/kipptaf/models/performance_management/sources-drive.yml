@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+  - name: performance_management
+    schema: kipptaf_performance_management
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_performance_management__leadership_development_metrics
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            sheet_range: src_performance_management__leadership_development_metrics
+            skip_leading_rows: 1
+            uris:
+              - https://docs.google.com/spreadsheets/d/1xPzM3XM3-5e343VkH75rz5fsQlO4z0BsPNh3xAWvPQ4
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - leadership_development_metrics
+      - name: src_performance_management__scores_overall_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1BYxk8q_ce4gI10-9clmybhaBivjvsSh3
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - scores_overall_archive
+      - name: src_performance_management__scores_detail_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1BYhAzjOpQ9J1NRiP3twf3Gkahqeen_bo
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - scores_detail_archive
