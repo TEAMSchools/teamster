@@ -59,3 +59,8 @@ def submission_records(
     yield check_avro_schema_valid(
         asset_key=context.asset_key, records=data, schema=SUBMISSION_RECORD_SCHEMA
     )
+
+
+assets = [
+    submission_records,
+]
