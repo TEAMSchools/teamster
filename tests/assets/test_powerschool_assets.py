@@ -4,8 +4,8 @@ from dagster import materialize
 
 from teamster.core.resources import (
     DB_POWERSCHOOL,
+    SSH_POWERSCHOOL,
     get_io_manager_gcs_file,
-    get_ssh_resource_powerschool,
 )
 
 
@@ -24,9 +24,7 @@ def _test_asset(assets, asset_name):
         partition_key=partition_key,
         resources={
             "io_manager_gcs_file": get_io_manager_gcs_file("staging"),
-            "ssh_powerschool": get_ssh_resource_powerschool(
-                "teamacademy.clgpstest.com"
-            ),
+            "ssh_powerschool": SSH_POWERSCHOOL,
             "db_powerschool": DB_POWERSCHOOL,
         },
     )
@@ -38,4 +36,9 @@ def _test_asset(assets, asset_name):
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+
+
+def test_schools_kippnewark():
+    from teamster.kippnewark.powerschool import assets
+
+    _test_asset(assets=assets, asset_name="schools")

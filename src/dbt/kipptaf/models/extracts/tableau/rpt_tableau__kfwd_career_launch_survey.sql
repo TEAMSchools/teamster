@@ -40,8 +40,8 @@ with
 
     survey_data as (
         select
-            ri.survey_id,
-            ri.response_id,
+            safe_cast(ri.survey_id as string) as survey_id,
+            safe_cast(ri.response_id as string) as response_id,
             ri.response_date_submitted,
             ri.respondent_salesforce_id,
             ri.respondent_user_principal_name,
@@ -55,6 +55,22 @@ with
             on ri.survey_id = sr.survey_id
             and ri.response_id = sr.response_id
         where ri.survey_id = 6734664  -- 'KIPP Forward Career Launch Survey'
+
+        union all
+
+        select
+            fr.form_id as survey_id,
+            fr.response_id,
+            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
+            null as respondent_salesforce_id,
+            fr.respondent_email as respondent_user_principal_name,
+
+            fr.info_document_title as survey_title,
+            fr.item_abbreviation as question_short_name,
+            fr.text_value as response_string_value,
+        from {{ ref("base_google_forms__form_responses") }} as fr
+        where form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
+    -- 'KIPP Forward Career Launch Survey'
     ),
 
     survey_pivot as (
