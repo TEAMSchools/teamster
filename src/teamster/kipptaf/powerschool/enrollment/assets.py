@@ -1,11 +1,14 @@
-import json
-import pathlib
-
 from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
 
+from teamster.core.utils.functions import (
+    check_avro_schema_valid,
+    get_avro_schema_valid_check_spec,
+)
+from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
 )
+from teamster.kipptaf.powerschool.enrollment.schema import SUBMISSION_RECORD_SCHEMA
 
 PUBLISHED_ACTION_IDS = [
     "1006",
@@ -31,7 +34,17 @@ PUBLISHED_ACTION_IDS = [
 ]
 
 
-@asset(partitions_def=StaticPartitionsDefinition(PUBLISHED_ACTION_IDS))
+@asset(
+    key=[CODE_LOCATION, "powerschool", "enrollment", "submission_records"],
+    io_manager_key="io_manager_gcs_avro",
+    group_name="powerschool",
+    partitions_def=StaticPartitionsDefinition(PUBLISHED_ACTION_IDS),
+    check_specs=[
+        get_avro_schema_valid_check_spec(
+            [CODE_LOCATION, "powerschool", "enrollment", "submission_records"]
+        )
+    ],
+)
 def submission_records(
     context: AssetExecutionContext, ps_enrollment: PowerSchoolEnrollmentResource
 ):
@@ -39,8 +52,10 @@ def submission_records(
         endpoint=f"publishedactions/{context.partition_key}/submissionrecords"
     )
 
-    fp = pathlib.Path("env/psenr/submission_records.json")
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(obj=data, fp=fp.open("w"))
+    yield Output(
+        value=(data, SUBMISSION_RECORD_SCHEMA), metadata={"records": len(data)}
+    )
 
-    yield Output(value=data, metadata={"records": len(data)})
+    yield check_avro_schema_valid(
+        asset_key=context.asset_key, records=data, schema=SUBMISSION_RECORD_SCHEMA
+    )

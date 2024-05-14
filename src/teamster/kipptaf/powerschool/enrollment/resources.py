@@ -6,6 +6,7 @@ from requests import Session, exceptions
 class PowerSchoolEnrollmentResource(ConfigurableResource):
     api_key: str
     api_version: str = "v1"
+    page_size: int = 50
 
     _base_url: str = PrivateAttr(default="https://registration.powerschool.com/api")
     _client: Session = PrivateAttr(default_factory=Session)
@@ -41,20 +42,23 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
 
         return self._parse_response(response)
 
-    def get_all_records(self, endpoint, *args, **kwargs):
-        records = []
+    def get_all_records(self, endpoint, *args, **kwargs) -> list[dict]:
+        context = self.get_resource_context()
+        kwargs["params"] = {"pagesize": self.page_size}
+
         page = 1
-
+        all_records = []
         while True:
-            kwargs["params"] = {"page": page}
+            kwargs["params"].update({"page": page})
 
-            response = self.get(endpoint, *args, **kwargs)
+            meta_data, records = self.get(endpoint, *args, **kwargs).values()
 
-            records.extend(response["records"])
+            context.log.debug(meta_data)
+            all_records.extend(records)
 
-            if page == response["metaData"]["pageCount"]:
+            if page == meta_data["pageCount"]:
                 break
             else:
                 page += 1
 
-        return records
+        return all_records
