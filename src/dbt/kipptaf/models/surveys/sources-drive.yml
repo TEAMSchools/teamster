@@ -20,14 +20,32 @@ sources:
               - kipptaf
               - surveys
               - staff_info_archive
-      - name: src_surveys__cmo_engagement_regional_survey_detail_archive
+      - name: src_surveys__manager_survey_detail_archive
         external:
-          location:
-            "{{ var('couchdrop_cloud_storage_uri_base')
-            }}/surveys/cmo_engagement_regional_survey_detail_archive.csv"
           options:
             format: CSV
             skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1BBUf3RyA7Y3J6LLBbCh7me75MXujhQcw
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - manager_survey_detail_archive
+      - name: src_surveys__cmo_engagement_regional_survey_detail_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1B9tEe-9tTSD7bQDXcctl97TuJrfOOf3i
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - cmo_engagement_regional_survey_detail_archive
         columns:
           - name: respondent_df_employee_number
             data_type: INTEGER
@@ -47,22 +65,3 @@ sources:
             data_type: STRING
           - name: answer_value
             data_type: NUMERIC
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - surveys
-              - cmo_engagement_regional_survey_detail_archive
-      - name: src_surveys__manager_survey_detail_archive
-        external:
-          location:
-            "{{ var('couchdrop_cloud_storage_uri_base') }}/surveys/manager_survey_detail_archive.csv"
-          options:
-            format: CSV
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - surveys
-              - manager_survey_detail_archive

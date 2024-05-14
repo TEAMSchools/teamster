@@ -85,19 +85,3 @@ def test_sensor_couchdrop_kippnewark():
     from teamster.kippnewark.couchdrop.sensors import couchdrop_sftp_sensor
 
     _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
-
-
-"""
-# ip restricted
-def test_sensor_adp():
-    from teamster.kipptaf.adp.sensors import sftp_sensor
-
-    _test_sensor(
-        sftp_sensor=sftp_sensor,
-        ssh_adp_workforce_now=SSHResource(
-            remote_host="sftp.kippnj.org",
-            username=EnvVar("ADP_SFTP_USERNAME"),
-            password=EnvVar("ADP_SFTP_PASSWORD"),
-        ),
-    )
-"""

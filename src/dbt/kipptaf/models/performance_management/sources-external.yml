@@ -6,34 +6,6 @@ sources:
     tags:
       - stage_external_sources
     tables:
-      - name: src_performance_management__scores_overall_archive
-        external:
-          location:
-            "{{ var('couchdrop_cloud_storage_uri_base')
-            }}/performance-management/archive/scores-overall.csv"
-          options:
-            format: CSV
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - performance_management
-              - scores_overall_archive
-      - name: src_performance_management__scores_detail_archive
-        external:
-          location:
-            "{{ var('couchdrop_cloud_storage_uri_base')
-            }}/performance-management/archive/scores-detail.csv"
-          options:
-            format: CSV
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - performance_management
-              - scores_detail_archive
       - name: src_performance_management__outlier_detection
         external:
           location: "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/*"
@@ -63,17 +35,3 @@ sources:
               - kipptaf
               - performance_management
               - observation_details
-      - name: src_performance_management__leadership_development_metrics
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1xPzM3XM3-5e343VkH75rz5fsQlO4z0BsPNh3xAWvPQ4
-            sheet_range: src_performance_management__leadership_development_metrics
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - performance_management
-              - leadership_development_metrics
