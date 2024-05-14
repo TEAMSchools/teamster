@@ -1,5 +1,3 @@
-{%- set src_response = source("alchemer", "src_alchemer__survey_response") -%}
-
 with
     parse_partition_key as (
         select
@@ -14,7 +12,7 @@ with
             _dagster_partition_key,
 
             regexp_extract(_dagster_partition_key, r'\d+', 1, 1) as survey_id,
-        from {{ src_response }}
+        from {{ source("alchemer", "src_alchemer__survey_response") }}
         where is_test_data = '0' and `status` = 'Complete'
     ),
 
