@@ -53,13 +53,6 @@ with
                 ) as timestamp format 'YYYY-MM-DD HH24:MI:SS'
                 at time zone '{{ var("local_timezone") }}'
             ) as date_submitted,
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="timestamp(date_submitted)",
-                    start_month=7,
-                    year_source="start",
-                )
-            }} as academic_year,
 
         from deduplicate
     )

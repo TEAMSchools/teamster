@@ -6,6 +6,7 @@ select
     fr.item_title as question_title,
     fr.item_abbreviation as question_shortname,
     fr.rn_form_item_respondent_submitted_desc as rn,
+    fr.respondent_email,
 
     rt.code as survey_code,
     rt.type as survey_type,
@@ -45,7 +46,7 @@ select
 
     if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 from {{ ref("base_google_forms__form_responses") }} as fr
-inner join
+left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on fr.respondent_email = eh.google_email
     and timestamp(fr.last_submitted_time)
@@ -65,6 +66,7 @@ select
     sr.question_title_english as question_title,
     sr.question_short_name as question_shortname,
     1 as rn,
+    ri.respondent_mail as respondent_email,
 
     regexp_extract(sr.campaign_name, r'\s(.*)') as survey_code,
     'SURVEY' as survey_type,
@@ -106,11 +108,11 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = sr.survey_title
     and sr.response_date_submitted_date between rt.start_date and rt.end_date
-inner join
+left join
     {{ ref("int_surveys__response_identifiers") }} as ri
     on sr.survey_id = ri.survey_id
     and sr.response_id = ri.response_id
-inner join
+left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
