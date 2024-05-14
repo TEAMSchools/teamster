@@ -64,3 +64,4 @@ where
         select surrogate_key,
         from {{ ref("stg_alchemer__survey_response_disqualified") }}
     )
+    and status = 'Complete'

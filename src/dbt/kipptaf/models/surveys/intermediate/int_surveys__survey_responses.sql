@@ -68,9 +68,9 @@ select
     1 as rn,
     ri.respondent_mail as respondent_email,
 
-    regexp_extract(sr.campaign_name, r'\s(.*)') as survey_code,
+    coalesce(regexp_extract(sr.campaign_name, r'\s(.*)'), rt.code) as survey_code,
     'SURVEY' as survey_type,
-    sr.campaign_fiscal_year - 1 as academic_year,
+    coalesce(sr.campaign_fiscal_year - 1, rt.academic_year) as academic_year,
 
     eh.employee_number,
     eh.preferred_name_lastfirst as respondent_name,
