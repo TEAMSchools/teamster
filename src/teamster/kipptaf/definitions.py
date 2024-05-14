@@ -100,6 +100,7 @@ defs = Definitions(
         "gsheets": resources.GOOGLE_SHEETS_RESOURCE,
         "ldap": resources.LDAP_RESOURCE,
         "mclass": resources.MCLASS_RESOURCE,
+        "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "tableau": resources.TABLEAU_SERVER_RESOURCE,
