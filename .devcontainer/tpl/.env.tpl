@@ -1,5 +1,3 @@
-ACHIEVE3K_SFTP_PASSWORD=op://Data Team/Achieve 3000 SFTP/password
-ACHIEVE3K_SFTP_USERNAME=op://Data Team/Achieve 3000 SFTP/username
 ADP_SFTP_HOST_IP=op://Data Team/ADP Workforce Now SFTP/ip
 ADP_SFTP_PASSWORD=op://Data Team/ADP Workforce Now SFTP/password
 ADP_SFTP_USERNAME=op://Data Team/ADP Workforce Now SFTP/username
@@ -45,8 +43,8 @@ EGENCIA_SFTP_HOST=op://Data Team/Egencia SFTP/host
 EGENCIA_SFTP_USERNAME=op://Data Team/Egencia SFTP/username
 FIVETRAN_API_KEY=op://Data Team/Fivetran API/api key
 FIVETRAN_API_SECRET=op://Data Team/Fivetran API/api secret
-GOOGLE_WORKSPACE_CUSTOMER_ID=op://Data Team/Google/username
-GOOGLE_DIRECTORY_DELEGATED_ACCOUNT=op://Data Team/Google/customer id
+GOOGLE_WORKSPACE_CUSTOMER_ID=op://Data Team/Google Admin Service Account/username
+GOOGLE_DIRECTORY_DELEGATED_ACCOUNT=op://Data Team/Google Admin Service Account/customer id
 ILLUMINATE_SFTP_HOST=op://Data Team/Illuminate SFTP/host
 ILLUMINATE_SFTP_PASSWORD=op://Data Team/Illuminate SFTP/password
 ILLUMINATE_SFTP_USERNAME=op://Data Team/Illuminate SFTP/username
