@@ -13,8 +13,8 @@ from dagster import (
 )
 from requests.exceptions import HTTPError
 
-from .. import CODE_LOCATION
-from .assets import (
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.alchemer.assets import (
     survey,
     survey_metadata_assets,
     survey_response,
@@ -205,7 +205,7 @@ def alchemer_survey_response_asset_sensor(
     )
 
 
-_all = [
+sensors = [
     alchemer_survey_metadata_asset_sensor,
     alchemer_survey_response_asset_sensor,
 ]

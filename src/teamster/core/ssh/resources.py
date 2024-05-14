@@ -7,7 +7,7 @@ from sshtunnel import SSHTunnelForwarder
 
 
 class SSHResource(DagsterSSHResource):
-    remote_port: int = 22
+    remote_port: str = "22"
     tunnel_remote_host: str | None = None
 
     def get_tunnel(
