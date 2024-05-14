@@ -371,6 +371,11 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: site-id
+              - name: PS_ENROLLMENT_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-powerschool-enrollment-api
+                    key: api-key
         run_k8s_config:
           container_config:
             env:
@@ -694,3 +699,8 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: site-id
+              - name: PS_ENROLLMENT_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-powerschool-enrollment-api
+                    key: api-key

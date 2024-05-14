@@ -414,3 +414,10 @@ extraManifests:
       namespace: dagster-cloud
     spec:
       itemPath: vaults/Data Team/items/Google Admin Service Account
+  - apiVersion: onepassword.com/v1
+    kind: OnePasswordItem
+    metadata:
+      name: op-powerschool-enrollment-api
+      namespace: dagster-cloud
+    spec:
+      itemPath: vaults/Data Team/items/PowerSchool Enrollment
