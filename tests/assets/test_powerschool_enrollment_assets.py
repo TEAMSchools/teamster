@@ -2,7 +2,7 @@ import random
 
 from dagster import AssetsDefinition, EnvVar, materialize
 
-from teamster.core.resources import get_io_manager_gcs_file
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.powerschool.enrollment.assets import submission_records
 from teamster.kipptaf.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
@@ -18,9 +18,9 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
     result = materialize(
         assets=[asset],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_file("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
             "ps_enrollment": PowerSchoolEnrollmentResource(
-                api_key=EnvVar("PS_ENROLLMENT_API_KEY")
+                api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
             ),
         },
         partition_key=partition_key,
