@@ -23,7 +23,6 @@ clean-targets: # directories to be removed by `dbt clean`
 vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-staging/dagster/staging
-  couchdrop_cloud_storage_uri_base: gs://teamster-staging/couchdrop
   current_academic_year: 2023
   current_fiscal_year: 2024
   alchemer_survey_identifier_short_names:

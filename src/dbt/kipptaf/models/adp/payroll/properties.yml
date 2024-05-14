@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: stg_adp_payroll__general_ledger_file
+    meta:
+      dagster:
+        auto_materialize_policy:
+          max_materializations_per_minute: 4
