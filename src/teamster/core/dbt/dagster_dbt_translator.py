@@ -2,10 +2,7 @@ from typing import Any, Mapping, Optional
 
 from dagster import AssetKey, AutoMaterializePolicy
 from dagster_dbt import KeyPrefixDagsterDbtTranslator
-from dagster_dbt.asset_utils import (
-    _auto_materialize_policy_fn,
-    default_group_from_dbt_resource_props,
-)
+from dagster_dbt.asset_utils import default_group_from_dbt_resource_props
 
 
 class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
@@ -22,16 +19,18 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
-        auto_materialize_policy = _auto_materialize_policy_fn(
+        auto_materialize_policy_config = (
             dbt_resource_props.get("meta", {})
             .get("dagster", {})
             .get("auto_materialize_policy", {})
         )
 
-        if auto_materialize_policy:
-            return auto_materialize_policy
+        if auto_materialize_policy_config.get("type") == "lazy":
+            return AutoMaterializePolicy.lazy()
         else:
-            return AutoMaterializePolicy.eager()
+            return AutoMaterializePolicy.eager(
+                auto_materialize_policy_config.get("max_materializations_per_minute")
+            )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         code_location = self._asset_key_prefix[0]
