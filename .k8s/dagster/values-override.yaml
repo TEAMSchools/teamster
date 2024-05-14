@@ -407,3 +407,10 @@ extraManifests:
       namespace: dagster-cloud
     spec:
       itemPath: vaults/Data Team/items/Illuminate ODBC
+  - apiVersion: onepassword.com/v1
+    kind: OnePasswordItem
+    metadata:
+      name: op-google-admin-service-account
+      namespace: dagster-cloud
+    spec:
+      itemPath: vaults/Data Team/items/Google Admin Service Account
