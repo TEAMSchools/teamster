@@ -587,6 +587,30 @@ select
 
     case
         when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_aa_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
+        then 1
+        else 0
+    end as is_5yr_aa_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_aa_grad_int,
+
+    case
+        when
             ei.cte_status = 'Graduated'
             and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31)
         then 1
@@ -600,6 +624,38 @@ select
         then 1
         else 0
     end as is_2yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 3), 08, 31)
+        then 1
+        else 0
+    end as is_3yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
+        then 1
+        else 0
+    end as is_5yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_cte_grad_int,
 
     case
         when
