@@ -13,6 +13,9 @@ from teamster.kipptaf.google.drive.resources import GoogleDriveResource
 from teamster.kipptaf.google.forms.resources import GoogleFormsResource
 from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
 from teamster.kipptaf.ldap.resources import LdapResource
+from teamster.kipptaf.powerschool.enrollment.resources import (
+    PowerSchoolEnrollmentResource,
+)
 from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.kipptaf.smartrecruiters.resources import SmartRecruitersResource
 from teamster.kipptaf.tableau.resources import TableauServerResource
@@ -77,6 +80,10 @@ LDAP_RESOURCE = LdapResource(
 
 MCLASS_RESOURCE = MClassResource(
     username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
+)
+
+POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
+    api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
 )
 
 SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
