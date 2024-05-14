@@ -12,7 +12,6 @@ with
                             question_shortname
                             in ('student_number', 'family_respondent_number')
                         then answer
-                        else null
                     end
                 ) over (partition by answer order by date_submitted) as int
             ) as respondent_number,
@@ -22,7 +21,7 @@ with
             survey_id in (
                 '6829997',  -- KIPP NJ & KIPP Miami Family Survey
                 '16pr-UXHqY9g4kzB6azIWm0MRQANNspzWtAjvNEVcaUo'
-            )  -- KIPP Miami Re-Commitment Form & Family School Community Diagnostic 24.25
+            )  -- KIPP Miami Re-Commitment Form & Family School Community Diagnostic
             and question_shortname in ('student_number', 'family_respondent_number')
 
     )
