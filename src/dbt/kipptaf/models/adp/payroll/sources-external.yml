@@ -16,6 +16,8 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
+            auto_materialize_policy:
+              max_materializations_per_minute: 4
             parent_asset_key_path:
               - kipptaf
               - adp
