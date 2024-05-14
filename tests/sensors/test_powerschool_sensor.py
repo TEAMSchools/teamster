@@ -1,7 +1,7 @@
 from dagster import DagsterInstance, build_sensor_context
 
 from teamster.core.powerschool.sensors import build_powerschool_sensor
-from teamster.core.resources import DB_POWERSCHOOL, get_ssh_resource_powerschool
+from teamster.core.resources import DB_POWERSCHOOL, SSH_POWERSCHOOL
 from teamster.kippnewark.powerschool.assets import partition_assets
 from teamster.staging import LOCAL_TIMEZONE
 
@@ -19,9 +19,9 @@ def test_powerschool_sensor():
 
     sensor_results = dynamic_partition_sensor(
         context=context,
-        ssh_powerschool=get_ssh_resource_powerschool("teamacademy.clgpstest.com"),
+        ssh_powerschool=SSH_POWERSCHOOL,
         db_powerschool=DB_POWERSCHOOL,
     )
 
-    for result in sensor_results:
+    for result in sensor_results:  # type: ignore
         context.log.info(result)
