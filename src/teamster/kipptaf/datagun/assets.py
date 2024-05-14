@@ -1,9 +1,4 @@
-from dagster import (
-    AutoMaterializeAssetPartitionsFilter,
-    AutoMaterializePolicy,
-    AutoMaterializeRule,
-    config_from_files,
-)
+from dagster import AutoMaterializePolicy, config_from_files
 
 from teamster.core.datagun.assets import (
     build_bigquery_extract_sftp_asset,
