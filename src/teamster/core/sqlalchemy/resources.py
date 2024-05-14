@@ -20,7 +20,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     username: str | None = None
     password: str | None = None
     host: str | None = None
-    port: int | None = None
+    port: str = ""
     database: str | None = None
     query: dict = {}
 
@@ -181,7 +181,7 @@ class MSSQLResource(ConfigurableResource):
                 username=self.engine.username,
                 password=self.engine.password,
                 host=self.engine.host,
-                port=self.engine.port,
+                port=int(self.engine.port),
                 database=self.engine.database,
                 query={"driver": self.driver},
             )
@@ -204,7 +204,7 @@ class OracleResource(ConfigurableResource):
                 username=self.engine.username,
                 password=self.engine.password,
                 host=self.engine.host,
-                port=self.engine.port,
+                port=int(self.engine.port),
                 database=self.engine.database,
                 query=self.engine.query,
             ),
