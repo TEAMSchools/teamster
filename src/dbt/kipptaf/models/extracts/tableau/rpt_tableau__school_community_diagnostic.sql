@@ -4,6 +4,7 @@ with
         select
             survey_id,
             survey_response_id,
+            academic_year,
 
             safe_cast(
                 max(
@@ -18,10 +19,10 @@ with
 
         from {{ ref("int_surveys__survey_responses") }}
         where
-            survey_id in (
-                '6829997',  -- KIPP NJ & KIPP Miami Family Survey
-                '16pr-UXHqY9g4kzB6azIWm0MRQANNspzWtAjvNEVcaUo'
-            )  -- KIPP Miami Re-Commitment Form & Family School Community Diagnostic
+            survey_title in (
+                'KIPP NJ & KIPP Miami Family Survey',
+                'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
+            )
             and question_shortname in ('student_number', 'family_respondent_number')
 
     )
@@ -80,15 +81,17 @@ left join
 left join
     family_responses as fr
     on fr.survey_id = sr.survey_id
-    and fr.survey_response_id = fr.survey_response_id
+    and fr.survey_response_id = sr.survey_response_id
 left join
     {{ ref("base_powerschool__student_enrollments") }} as se2
     on fr.respondent_number = se2.student_number
+    and fr.academic_year = se2.academic_year
 where
-    sr.survey_id in (
-        '5300913',
-        '6829997',
-        '15Iq_dMeOmURb68Bg8Uc6j-Fco4N2wix7D8YFfSdCKPE',
-        '1qFzdciQdg7g9aNujUulk6hivP7Qkz4Ab4Hr5WzW_k1Q',
-        '16pr-UXHqY9g4kzB6azIWm0MRQANNspzWtAjvNEVcaUo'
+    sr.survey_title in (
+        'Engagement & Support Surveys',
+        'KIPP NJ & KIPP Miami Family Survey',
+        'School Community Diagnostic Student Survey',
+        'School Community Diagnostic Staff Survey',
+        'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
     )
+    and sr.question_shortname like '%scd%'
