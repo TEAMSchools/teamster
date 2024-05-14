@@ -3,7 +3,7 @@ select
 
     r.responseid as response_id,
     r.createtime as create_time,
-    timestamp(r.lastsubmittedtime) as last_submitted_time,
+    r.lastsubmittedtime as last_submitted_time,
     r.respondentemail as respondent_email,
     r.totalscore as total_score,
     r.answers,
@@ -12,12 +12,5 @@ select
         partition by fr._dagster_partition_key, r.respondentemail
         order by r.lastsubmittedtime desc
     ) as rn_form_respondent_submitted_desc,
-    {{
-        teamster_utils.date_to_fiscal_year(
-            date_field="timestamp(r.lastsubmittedtime)",
-            start_month=7,
-            year_source="start",
-        )
-    }} as academic_year,
 from {{ source("google_forms", "src_google_forms__responses") }} as fr
 cross join unnest(responses) as r
