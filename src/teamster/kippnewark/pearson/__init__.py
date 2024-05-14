@@ -1,4 +1,4 @@
-from .assets import assets
+from teamster.kippnewark.pearson.assets import assets
 
 __all__ = [
     "assets",

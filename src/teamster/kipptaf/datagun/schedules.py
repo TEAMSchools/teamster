@@ -22,7 +22,7 @@ clever_extract_assets_schedule = ScheduleDefinition(
     job=clever_extract_asset_job,
     cron_schedule="@hourly",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 6)},
+    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 8)},
 )
 
 coupa_extract_assets_schedule = ScheduleDefinition(
@@ -35,7 +35,7 @@ deanslist_extract_assets_schedule = ScheduleDefinition(
     job=deanslist_extract_asset_job,
     cron_schedule="25 1 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 13)},
+    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 14)},
 )
 
 egencia_extract_assets_schedule = ScheduleDefinition(
