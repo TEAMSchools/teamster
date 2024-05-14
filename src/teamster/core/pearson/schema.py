@@ -949,4 +949,5 @@ ASSET_SCHEMA = {
     "njgpa": json.loads(
         py_avro_schema.generate(py_type=njgpa_record, options=pas_options)
     ),
+    "student_list_report": {},
 }
