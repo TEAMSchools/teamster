@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: edplan
+    schema: "{{ var('edplan_schema', 'edplan') }}"
+    database: "{{ var('edplan_database', target.database) }}"
+    tables:
+      - name: src_edplan__njsmart_powerschool_archive
