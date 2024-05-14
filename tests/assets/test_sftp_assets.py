@@ -431,3 +431,11 @@ def test_adp_payroll_general_ledger_file_kipptaf():
             instance=instance,
             # partition_key="20240229|2Z3",
         )
+
+
+def test_pearson_student_list_report_kippcamden():
+    from teamster.kippcamden.pearson.assets import assets
+
+    asset = [a for a in assets if a.key.path[-1] == "student_list_report"][0]
+
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
