@@ -91,6 +91,46 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: username
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kippcamden
+                    key: host
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: server
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: database
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: port
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: username
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippcamden
+                    key: host
+              - name: TITAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kippcamden
+                    key: host
         run_k8s_config:
           container_config:
             env:
@@ -149,3 +189,43 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: username
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kippcamden
+                    key: host
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: server
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: database
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: port
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippcamden
+                    key: username
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippcamden
+                    key: host
+              - name: TITAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kippcamden
+                    key: host
