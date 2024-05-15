@@ -29,13 +29,19 @@ njgpa = build_sftp_asset(
 student_list_report = build_sftp_asset(
     asset_key=[CODE_LOCATION, "pearson", "student_list_report"],
     remote_dir=f"/data-team/{CODE_LOCATION}/pearson/student_list_report",
-    remote_file_regex=r"(?P<fiscal_year>\d+)/(?P<administration>[a-z]+)/StudentListReport_(?P<administration>[A-za-z]+)(?P<fiscal_year>\d+) - \d+-\d+-\d+T\d+_\d+_\d+\.\d++\d+.csv",
+    remote_file_regex=(
+        r"(?P<test_type>[a-z]+)\/StudentListReport_"
+        r"(?P<administration_fiscal_year>[A-za-z]+\d+) - "
+        r"\d+-\d+-\d+T\d+_\d+_\d+\.\d+\+\d+\.csv"
+    ),
     avro_schema=ASSET_SCHEMA["student_list_report"],
     ssh_resource_key="ssh_couchdrop",
     partitions_def=MultiPartitionsDefinition(
         {
-            "fiscal_year": StaticPartitionsDefinition(["2023", "2022"]),
-            "administration": StaticPartitionsDefinition(["Spring", "Fall"]),
+            "test_type": StaticPartitionsDefinition(["njsla", "njgpa"]),
+            "administration_fiscal_year": StaticPartitionsDefinition(
+                ["Spring2023", "Spring2022"]
+            ),
         }
     ),
 )
