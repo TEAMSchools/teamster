@@ -668,16 +668,28 @@ select
     case
         when
             ei.ugrad_status = 'Graduated'
-            or ei.cte_status = 'Graduated'
-            and if(
-                ei.ugrad_status = 'Graduated',
-                ei.ugrad_actual_end_date,
-                ei.cte_actual_end_date
-            )
-            <= date((c.ktc_cohort + 6), 08, 31)
+            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
         then 1
         else 0
-    end as is_6yr_ugrad_cte_grad,
+    end as is_6yr_ugrad_cte_grad_int,
+
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date
+            <= date_add(c.contact_birthdate, interval 25 year)
+        then 1
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date
+            <= date_add(c.contact_birthdate, interval 25 year)
+        then 1
+        else 0
+    end as is_24yo_ugrad_cte_grad_int,
 
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
