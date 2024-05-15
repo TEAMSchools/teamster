@@ -56,3 +56,15 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+      - name: src_pearson__student_list_report
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - pearson
+              - student_list_report
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/pearson/student_list_report/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
