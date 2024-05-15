@@ -34,7 +34,7 @@ with
 select
     academic_year_int as academic_year,
     concat('i-Ready ', lower(subject), ' typical growth') as domain,
-    cast(if(student_grade = 'K', '0', student_grade) as numeric) as grade_level,
+    cast(if(student_grade = 'K', '0', student_grade) as string) as grade_level,
     round(
         avg(if(percent_progress_to_annual_typical_growth_percent >= 100, 1, 0)), 2
     ) as pct_met,
@@ -47,7 +47,7 @@ union all
 select
     academic_year_int as academic_year,
     concat('i-Ready ', lower(subject), ' stretch growth') as domain,
-    safe_cast(if(student_grade = 'K', '0', student_grade) as numeric) as grade_level,
+    safe_cast(if(student_grade = 'K', '0', student_grade) as string) as grade_level,
     round(
         avg(if(percent_progress_to_annual_stretch_growth_percent >= 100, 1, 0)), 2
     ) as pct_met,
@@ -60,7 +60,7 @@ union all
 select
     academic_year,
     concat('FAST ', lower(assessment_subject), ' proficiency') as domain,
-    assessment_grade as grade_level,
+    cast(assessment_grade as string) as grade_level,
     round(avg(if(is_proficient, 1, 0)), 2) as pct_met,
 from {{ ref("stg_fldoe__fast") }}
 where administration_window = 'PM3'
@@ -71,8 +71,69 @@ union all
 select
     academic_year,
     concat('STAR ', subject, ' proficiency') as domain,
-    grade_level,
+    cast(grade_level as string) as grade_level,
     round(avg(if(star_is_proficient = 'Yes', 1, 0)), 2) as pct_met
 from star
 where rn_subj_round = 1
 group by academic_year, subject, grade_level
+
+union all
+
+select
+    co.academic_year,
+    'ada' as domain,
+    cast(co.grade_level as string) as grade_level,
+    round(avg(ada.ada), 2) as pct_met
+from {{ ref("int_powerschool__ada") }} as ada
+inner join
+    {{ ref("base_powerschool__student_enrollments") }} as co
+    on ada.studentid = co.studentid
+    and ada.yearid = co.yearid
+    and co.region = 'Miami'
+    and co.grade_level != 99
+    and co.rn_year = 1
+group by co.academic_year, co.grade_level
+
+union all
+
+select
+    co.academic_year,
+    'ada' as domain,
+    co.school_abbreviation as grade_level,
+    round(avg(ada.ada), 2) as pct_met
+from {{ ref("int_powerschool__ada") }} as ada
+inner join
+    {{ ref("base_powerschool__student_enrollments") }} as co
+    on ada.studentid = co.studentid
+    and ada.yearid = co.yearid
+    and co.region = 'Miami'
+    and co.grade_level != 99
+    and co.rn_year = 1
+group by co.academic_year, co.school_abbreviation
+
+union all
+
+select
+    co.academic_year,
+    'ada' as domain,
+    'region' as grade_level,
+    round(avg(ada.ada), 2) as pct_met
+from {{ ref("int_powerschool__ada") }} as ada
+inner join
+    {{ ref("base_powerschool__student_enrollments") }} as co
+    on ada.studentid = co.studentid
+    and ada.yearid = co.yearid
+    and co.region = 'Miami'
+    and co.grade_level != 99
+    and co.rn_year = 1
+group by co.academic_year
+
+union all
+
+select
+    yearid + 1990 as academic_year,
+    'fte2 enrollment' as domain,
+    'region' as grade_level,
+    sum(if(is_enrolled_fte2, 1, 0)) as pct_met,
+from {{ ref("int_students__fldoe_fte") }}
+group by yearid
