@@ -26,7 +26,7 @@ with
             and question_shortname in ('student_number', 'family_respondent_number')
 
     )
-
+/* Google Forms and Alchemer Responses */
 select
     sr.survey_id,
     sr.survey_title,
@@ -40,9 +40,7 @@ select
 
     srh.job_title as staff_job_title,
 
-    coalesce(
-        se1.special_education_code, se2.special_education_code
-    ) as student_special_education_code,
+    coalesce(se1.spedlep, se2.spedlep) as student_spedlep,
     coalesce(
         sr.employee_number, se1.student_number, fr.respondent_number
     ) as respondent_number,
@@ -95,3 +93,53 @@ where
         'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
     )
     and sr.question_shortname like '%scd%'
+
+/* Powerschool InfoSnap Responses */
+union all
+
+select
+    'PowerSchool_24' as survey_id,
+    'PowerSchool Family School Community Diagnostic' as survey_title,
+    sr.external_student_id as survey_response_id,
+    sr.data_item_key as question_title,
+    sr.data_item_key as question_shortname,
+    sr.data_item_value as answer,
+    sr.data_item_value as answer_value,
+    sr.submitted as date_submitted,
+    '2024' as academic_year,
+
+    null as staff_job_title,
+
+    se.spedlep as student_spedlep,
+    se.student_number as respondent_number,
+    se.region,
+    se.school_name as location,
+    se.ethnicity as race_ethnicity,
+    se.gender as gender,
+    se.school_level as grade_band,
+    se.grade_level,
+    'Family' as survey_audience,
+
+from {{ ref("stg_powerschool_enrollment__submission_records") }} as sr
+left join
+    {{ ref("stg_reporting__terms") }} as rt
+    on rt.name = 'PowerSchool Family School Community Diagnostic'
+    and sr.submitted between rt.start_date and rt.end_date
+left join
+    {{ ref("base_powerschool__student_enrollments") }} as se
+    on sr.external_student_id = safe_cast(se.student_number as string)
+    and rt.academic_year = se.academic_year
+where
+    published_action_id = 39362
+    and data_item_key in (
+        'School_Survey_01',
+        'School_Survey_02',
+        'School_Survey_03',
+        'School_Survey_04',
+        'School_Survey_05',
+        'School_Survey_06',
+        'School_Survey_07',
+        'School_Survey_08',
+        'School_Survey_09',
+        'School_Survey_10'
+    )
