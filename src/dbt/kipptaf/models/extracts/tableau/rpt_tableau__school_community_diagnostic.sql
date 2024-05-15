@@ -1,4 +1,4 @@
-/* Student Number from Family Google Forms Survey*/
+/* Student Number from Family Surveys*/
 with
     family_responses as (
         select
@@ -94,9 +94,9 @@ where
     )
     and sr.question_shortname like '%scd%'
 
-/* Powerschool InfoSnap Responses */
 union all
 
+/* Powerschool InfoSnap Responses */
 select
     'PowerSchool_24' as survey_id,
     'PowerSchool Family School Community Diagnostic' as survey_title,
@@ -104,9 +104,9 @@ select
     sr.data_item_key as question_title,
     sr.data_item_key as question_shortname,
     sr.data_item_value as answer,
-    sr.data_item_value as answer_value,
-    sr.submitted as date_submitted,
-    '2024' as academic_year,
+    safe_cast(sr.data_item_value as int) as answer_value,
+    safe_cast(sr.submitted as timestamp) as date_submitted,
+    2024 as academic_year,
 
     null as staff_job_title,
 
