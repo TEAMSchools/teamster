@@ -1,3 +1,5 @@
+import re
+
 import pendulum
 from dagster import (
     AssetCheckResult,
@@ -11,15 +13,12 @@ from teamster.core.utils.classes import FiscalYear
 
 
 def regex_pattern_replace(pattern: str, replacements: dict):
-    for group_name, replacement in replacements.items():
-        try:
-            start_index = pattern.index(f"(?P<{group_name}>")
-        except ValueError:
-            continue
+    for group in re.findall(r"\(\?P<\w+>[\w\[\]\+\-\\]*\)", pattern):
+        group_key = re.search(r"(?<=<)(\w+)(?=>)", group).group()
 
-        end_index = pattern.index(")", start_index)
+        group_value = replacements.get(group_key, "")
 
-        pattern = pattern[:start_index] + replacement + pattern[end_index + 1 :]
+        pattern = pattern.replace(group, group_value)
 
     return pattern
 
