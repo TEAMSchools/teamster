@@ -1,7 +1,7 @@
-from .assets import _all as assets
-from .sensors import _all as sensors
+from teamster.kipptaf.adp.workforce_now.sftp.assets import assets
+from teamster.kipptaf.adp.workforce_now.sftp.sensors import sensors
 
-_all = [
-    assets,
-    sensors,
+__all__ = [
+    "assets",
+    "sensors",
 ]

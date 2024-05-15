@@ -7,11 +7,13 @@ from dagster import (
     schedule,
 )
 
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.adp.workforce_manager.assets import adp_wfm_assets_dynamic
+from teamster.kipptaf.adp.workforce_manager.jobs import (
+    adp_wfm_daily_partition_asset_job,
+    adp_wfm_dynamic_partition_asset_job,
+)
 from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
-
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import adp_wfm_assets_dynamic
-from .jobs import adp_wfm_daily_partition_asset_job, adp_wfm_dynamic_partition_asset_job
 
 adp_wfm_daily_partition_asset_job_schedule = build_schedule_from_partitioned_job(
     job=adp_wfm_daily_partition_asset_job, hour_of_day=23, minute_of_hour=50
@@ -29,9 +31,9 @@ def adp_wfm_dynamic_partition_schedule(
 ):
     for asset in adp_wfm_assets_dynamic:
         date_partition: DynamicPartitionsDefinition = (
-            asset.partitions_def.get_partitions_def_for_dimension("date")
+            asset.partitions_def.get_partitions_def_for_dimension("date")  # type: ignore
         )
-        symbolic_id_partition = asset.partitions_def.get_partitions_def_for_dimension(
+        symbolic_id_partition = asset.partitions_def.get_partitions_def_for_dimension(  # type: ignore
             "symbolic_id"
         )
 
@@ -46,7 +48,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
             context.instance.add_dynamic_partitions(
-                partitions_def_name=date_partition.name,
+                partitions_def_name=date_partition.name,  # type: ignore
                 partition_keys=[symbolic_period_record["begin"]],
             )
 
@@ -57,7 +59,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
 
-_all = [
+schedules = [
     adp_wfm_daily_partition_asset_job_schedule,
     adp_wfm_dynamic_partition_schedule,
 ]

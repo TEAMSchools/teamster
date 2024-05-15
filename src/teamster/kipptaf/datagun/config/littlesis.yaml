@@ -1,9 +1,0 @@
-assets:
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_littlesis__enrollments
-    file_config:
-      stem: littlesis_extract
-      suffix: csv
-    destination_config:
-      name: littlesis

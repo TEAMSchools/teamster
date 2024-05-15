@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: adp_payroll
+    schema: kipptaf_adp_payroll
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_adp_payroll__general_ledger_file
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/adp/payroll/general_ledger_file/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/adp/payroll/general_ledger_file/"
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            auto_materialize_policy:
+              max_materializations_per_minute: 4
+            parent_asset_key_path:
+              - kipptaf
+              - adp
+              - payroll
+              - general_ledger_file

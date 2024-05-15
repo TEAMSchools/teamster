@@ -11,13 +11,21 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
-  # Optionally specify the timeout in seconds to use when making requests to Dagster
-  # Cloud servers.
-  timeout: 4
+  # # Optionally customize the socket_options that are passed in to the underlying HTTP
+  # # connection pool used to send HTTP requests to Dagster Cloud.
+  # socketOptions:
+  # - [SOL_SOCKET, SO_KEEPALIVE, 1]
+  # - [IPPROTO_TCP, TCPKEEPIDLE, 11]
+  # - [IPPROTO_TCP, TCPKEEPINTVL, 7]
+  # - [IPPROTO_TCP, TCPKEEPCNT, 5]
 
-  # Optionally specify the number of retries to use when an HTTPS request to Dagster Cloud servers
-  # fails with a retryable error.
-  retries: 15
+  # # Optionally specify the timeout in seconds to use when making requests to Dagster
+  # # Cloud servers.
+  # timeout: 4
+
+  # # Optionally specify the number of retries to use when an HTTPS request to Dagster Cloud servers
+  # # fails with a retryable error.
+  # retries: 15
 
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
@@ -399,3 +407,17 @@ extraManifests:
       namespace: dagster-cloud
     spec:
       itemPath: vaults/Data Team/items/Illuminate ODBC
+  - apiVersion: onepassword.com/v1
+    kind: OnePasswordItem
+    metadata:
+      name: op-google-admin-service-account
+      namespace: dagster-cloud
+    spec:
+      itemPath: vaults/Data Team/items/Google Admin Service Account
+  - apiVersion: onepassword.com/v1
+    kind: OnePasswordItem
+    metadata:
+      name: op-powerschool-enrollment-api
+      namespace: dagster-cloud
+    spec:
+      itemPath: vaults/Data Team/items/PowerSchool Enrollment

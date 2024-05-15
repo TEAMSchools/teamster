@@ -1,0 +1,37 @@
+version: 2
+
+sources:
+  - name: performance_management
+    schema: kipptaf_performance_management
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_performance_management__outlier_detection
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/"
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - outlier_detection
+      - name: src_performance_management__observation_details
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/"
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - performance_management
+              - observation_details

@@ -1,6 +1,6 @@
 assets:
   - asset_name: fast
-    remote_dir: /teamster-kippmiami/couchdrop/fldoe/fast
+    remote_dir: /data-team/kippmiami/fldoe/fast
     remote_file_regex: \d+\/PM\d\/\w+-\w+(?P<grade_level_subject>Grade\dFAST[A-Za-z]+)_StudentData_(?P<school_year_term>SY\d+PM\d)\.csv
     partition_keys:
       school_year_term:
@@ -24,7 +24,7 @@ assets:
         - Grade8FASTELAReading
         - Grade8FASTMathematics
   - asset_name: fsa
-    remote_dir: /teamster-kippmiami/couchdrop/fldoe/fsa/student_scores
+    remote_dir: /data-team/kippmiami/fldoe/fsa/student_scores
     remote_file_regex: FSA_(?P<school_year_term>\d+)SPR_\d+_SRS-E_(?P<grade_level_subject>\w+)_SCHL\.csv
     partition_keys:
       school_year_term:
