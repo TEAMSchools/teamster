@@ -84,7 +84,7 @@ select
     sda.respondent_df_employee_number,
     null as respondent_email,
 
-    sda.question_shortname as question_shortname,
+    sda.question_shortname,
     coalesce(fi.title, sda.question_shortname) as question_title,
 
     sda.answer,
@@ -102,7 +102,7 @@ select
     eh.gender_identity as gender,
 from {{ ref("stg_surveys__cmo_engagement_regional_survey_detail_archive") }} as sda
 inner join
-    {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
+    {{ ref("stg_google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation
     and fi.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
 left join
