@@ -126,7 +126,7 @@ select
     sda.respondent_df_employee_number,
     sda.subject_df_employee_number,
     null as respondent_email,
-    sda.question_shortname as question_shortname,
+    sda.question_shortname,
     coalesce(fi.title, sda.question_shortname) as question_title,
     sda.answer,
     safe_cast(sda.answer_value as numeric) as answer_value,
@@ -150,7 +150,7 @@ select
     lower(sr.report_to_user_principal_name) as subject_manager_userprincipalname,
 from {{ ref("stg_surveys__manager_survey_detail_archive") }} as sda
 inner join
-    {{ source("google_forms", "src_google_forms__form_items_extension") }} as fi
+    {{ ref("stg_google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation
     and fi.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
 left join
