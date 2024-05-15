@@ -1,7 +1,7 @@
-from .assets import _all as assets
-from .schedules import _all as schedules
+from teamster.kippmiami.dbt.assets import assets
+from teamster.kippmiami.dbt.schedules import schedules
 
-_all = [
-    assets,
-    schedules,
+__all__ = [
+    "assets",
+    "schedules",
 ]

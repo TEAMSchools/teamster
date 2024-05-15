@@ -10,8 +10,7 @@ from teamster.core.resources import (
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
 )
-
-from . import (
+from teamster.kipptaf import (
     CODE_LOCATION,
     adp,
     airbyte,
@@ -20,19 +19,19 @@ from . import (
     couchdrop,
     datagun,
     dayforce,
+    dbt,
     deanslist,
     fivetran,
+    google,
     ldap,
     performance_management,
+    powerschool,
     resources,
     schoolmint,
     smartrecruiters,
     tableau,
     zendesk,
 )
-from .dbt import assets as dbt_assets
-from .dbt.schedules import _all as dbt_schedules
-from .google import directory, forms, sheets
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -44,15 +43,14 @@ defs = Definitions(
             amplify,
             datagun,
             dayforce,
-            dbt_assets,
+            dbt,
             deanslist,
-            directory,
             fivetran,
-            forms,
+            google,
             ldap,
             performance_management,
+            powerschool,
             schoolmint,
-            sheets,
             smartrecruiters,
             tableau,
             zendesk,
@@ -63,10 +61,9 @@ defs = Definitions(
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
-        *dbt_schedules,
-        *directory.schedules,
+        *dbt.schedules,
         *fivetran.schedules,
-        *forms.schedules,
+        *google.schedules,
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
@@ -79,7 +76,7 @@ defs = Definitions(
         *couchdrop.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
-        *sheets.sensors,
+        *google.sensors,
         *tableau.sensors,
     ],
     resources={
@@ -98,10 +95,12 @@ defs = Definitions(
         "alchemer": resources.ALCHEMER_RESOURCE,
         "fivetran": resources.FIVETRAN_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
+        "google_drive": resources.GOOGLE_DRIVE_RESOURCE,
         "google_forms": resources.GOOGLE_FORMS_RESOURCE,
         "gsheets": resources.GOOGLE_SHEETS_RESOURCE,
         "ldap": resources.LDAP_RESOURCE,
         "mclass": resources.MCLASS_RESOURCE,
+        "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "tableau": resources.TABLEAU_SERVER_RESOURCE,

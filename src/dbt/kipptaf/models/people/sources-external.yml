@@ -1,0 +1,106 @@
+version: 2
+
+sources:
+  - name: people
+    schema: kipptaf_people
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_people__employee_numbers_archive
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__employee_numbers_archive
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - employee_numbers_archive
+      - name: src_people__location_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__location_crosswalk
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - location_crosswalk
+      - name: src_people__campus_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__campus_crosswalk
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - campus_crosswalk
+      - name: src_people__powerschool_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__powerschool_crosswalk
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - powerschool_crosswalk
+      - name: src_people__student_logins_archive
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__student_logins_archive
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - student_logins_archive
+      - name: src_people__staffing_model
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__staffing_model
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - staffing_model
+      - name: src_people__salary_scale
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__salary_scale
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - salary_scale

@@ -1,7 +1,6 @@
 from teamster.core.dbt.schedules import build_dbt_code_version_schedule
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import dbt_assets
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.dbt.assets import dbt_assets
 
 dbt_code_version_schedule = build_dbt_code_version_schedule(
     code_location=CODE_LOCATION,
@@ -10,6 +9,6 @@ dbt_code_version_schedule = build_dbt_code_version_schedule(
     dbt_assets=dbt_assets,
 )
 
-_all = [
+schedules = [
     dbt_code_version_schedule,
 ]

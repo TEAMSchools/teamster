@@ -3,8 +3,7 @@ import pathlib
 from dagster import config_from_files
 
 from teamster.core.datagun.assets import build_bigquery_extract_asset
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
 
 powerschool_extract_assets = [
     build_bigquery_extract_asset(
@@ -15,6 +14,6 @@ powerschool_extract_assets = [
     )["assets"]
 ]
 
-_all = [
+assets = [
     *powerschool_extract_assets,
 ]

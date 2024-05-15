@@ -70,7 +70,7 @@ def build_ldap_asset(
         io_manager_key="io_manager_gcs_avro",
         op_tags=op_tags,
         group_name="ldap",
-        compute_kind="ldap",
+        compute_kind="python",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, ldap: LdapResource):

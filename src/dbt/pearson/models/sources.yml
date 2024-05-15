@@ -9,24 +9,48 @@ sources:
       - stage_external_sources
     tables:
       - name: src_pearson__njgpa
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - pearson
+              - njgpa
         external:
           location: "{{ var('cloud_storage_uri_base') }}/pearson/njgpa/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_pearson__njsla
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - pearson
+              - njsla
         external:
           location: "{{ var('cloud_storage_uri_base') }}/pearson/njsla/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_pearson__njsla_science
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - pearson
+              - njsla_science
         external:
           location: "{{ var('cloud_storage_uri_base') }}/pearson/njsla_science/*"
           options:
             format: AVRO
             enable_logical_types: true
       - name: src_pearson__parcc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - pearson
+              - parcc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/pearson/parcc/*"
           options:

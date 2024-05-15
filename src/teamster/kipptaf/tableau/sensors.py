@@ -2,9 +2,9 @@ import json
 
 from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
 
-from .. import CODE_LOCATION
-from .assets import external_assets
-from .resources import TableauServerResource
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.tableau.assets import external_assets
+from teamster.kipptaf.tableau.resources import TableauServerResource
 
 
 @sensor(
@@ -40,6 +40,6 @@ def tableau_asset_sensor(
     return SensorResult(asset_events=asset_events, cursor=json.dumps(cursor))
 
 
-_all = [
+sensors = [
     tableau_asset_sensor,
 ]

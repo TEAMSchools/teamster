@@ -1,5 +1,5 @@
-from .assets import _all as assets
+from teamster.kipptaf.dayforce.assets import assets
 
-_all = [
-    assets,
+__all__ = [
+    "assets",
 ]

@@ -1,4 +1,4 @@
-from . import api, sftp
+from teamster.kipptaf.adp.workforce_now import api, sftp
 
 assets = [
     *api.assets,
@@ -17,9 +17,9 @@ sensors = [
     *sftp.sensors,
 ]
 
-_all = [
-    assets,
-    jobs,
-    schedules,
-    sensors,
+__all__ = [
+    "assets",
+    "jobs",
+    "schedules",
+    "sensors",
 ]

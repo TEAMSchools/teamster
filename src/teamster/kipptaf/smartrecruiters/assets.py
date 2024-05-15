@@ -33,7 +33,7 @@ def build_smartrecruiters_report_asset(
         metadata={"report_id": report_id},
         io_manager_key="io_manager_gcs_avro",
         group_name="smartrecruiters",
-        compute_kind="smartrecruiters",
+        compute_kind="python",
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(

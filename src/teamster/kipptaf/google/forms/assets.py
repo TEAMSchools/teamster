@@ -1,33 +1,23 @@
-from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DynamicPartitionsDefinition, Output, asset
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.google.forms.resources import GoogleFormsResource
+from teamster.kipptaf.google.forms.schema import ASSET_SCHEMA
 
-from ... import CODE_LOCATION
-from .resources import GoogleFormsResource
-from .schema import ASSET_SCHEMA
-
-FORM_IDS = [
-    "15xuEO72xhyhhv8K0qKbkSV864-DetXhmWsxKyS7ai50",  # KTAF support
-    "1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0",  # manager
-    "1IXIrXFLrXDyq9cvjMBhFJB9mV_nxKGUNYUlRbD4ku_A",  # PM Score Change Request Form
-    "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA",  # staff info
-    "1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs",  # Career Launch Survey
-    "1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho",  # KIPP Forward Career Launch Survey
-    "1qFzdciQdg7g9aNujUulk6hivP7Qkz4Ab4Hr5WzW_k1Q",  # SCD Staff Survey
-    "1tcpnmUoxSb8M1_Nzoe_lVhkrD1Gj09jaX0MNHWGlZQs",  # PM Score Change Approval Form
-    "1tuqQIkPX8GfGXdpkNra9shB2Ig_U9CSS7VH1RfuQ_68",  # ITR
-    "1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI",  # support
-]
+GOOGLE_FORMS_PARTITIONS_DEF = DynamicPartitionsDefinition(
+    name=f"{CODE_LOCATION}_google_forms_form_ids"
+)
 
 key_prefix = [CODE_LOCATION, "google", "forms"]
 asset_kwargs = {
     "io_manager_key": "io_manager_gcs_avro",
     "group_name": "google_forms",
-    "compute_kind": "google_forms",
-    "partitions_def": StaticPartitionsDefinition(FORM_IDS),
+    "compute_kind": "python",
+    "partitions_def": GOOGLE_FORMS_PARTITIONS_DEF,
 }
 
 
@@ -66,7 +56,7 @@ def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource)
     )
 
 
-_all = [
+assets = [
     form,
     responses,
 ]

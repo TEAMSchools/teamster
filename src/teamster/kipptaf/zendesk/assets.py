@@ -1,20 +1,14 @@
 import pathlib
 
 import pendulum
-from dagster import (
-    AssetExecutionContext,
-    MonthlyPartitionsDefinition,
-    Output,
-    ResourceParam,
-    asset,
-)
+from dagster import AssetExecutionContext, MonthlyPartitionsDefinition, Output, asset
 from fastavro import block_reader, parse_schema, writer
 from pendulum.datetime import DateTime
-from zenpy import Zenpy
 from zenpy.lib.exception import RecordNotFoundException
 
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .schema import TICKET_METRIC_SCHEMA
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.zendesk.resources import ZendeskResource
+from teamster.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA
 
 
 @asset(
@@ -26,11 +20,9 @@ from .schema import TICKET_METRIC_SCHEMA
         timezone=LOCAL_TIMEZONE.name,
     ),
     group_name="zendesk",
-    compute_kind="zendesk",
+    compute_kind="python",
 )
-def ticket_metrics_archive(
-    context: AssetExecutionContext, zendesk: ResourceParam[Zenpy]
-):
+def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResource):
     data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
     schema = parse_schema(schema=TICKET_METRIC_SCHEMA)
 
@@ -42,7 +34,7 @@ def ticket_metrics_archive(
     context.log.info(
         f"Searching closed tickets: updated>{start_date} updated<{end_date}"
     )
-    archived_tickets = zendesk.search_export(
+    archived_tickets = zendesk._client.search_export(
         type="ticket", status="closed", updated_between=[start_date, end_date]
     )
 
@@ -69,7 +61,7 @@ def ticket_metrics_archive(
                 writer(
                     fo=fo,
                     schema=schema,
-                    records=[zendesk.tickets.metrics(ticket_id).to_dict()],  # type: ignore
+                    records=[zendesk._client.tickets.metrics(ticket_id).to_dict()],  # type: ignore
                     codec="snappy",
                     strict_allow_default=True,
                 )
@@ -92,6 +84,6 @@ def ticket_metrics_archive(
     yield Output(value=data_filepath, metadata={"records": num_records})
 
 
-_all = [
+assets = [
     ticket_metrics_archive,
 ]

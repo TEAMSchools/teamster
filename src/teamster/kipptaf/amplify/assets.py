@@ -38,7 +38,7 @@ def build_mclass_asset(name, dyd_results, op_tags=None):
         io_manager_key="io_manager_gcs_avro",
         partitions_def=PARTITIONS_DEF,
         group_name="amplify",
-        compute_kind="amplify",
+        compute_kind="python",
         op_tags=op_tags,
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
