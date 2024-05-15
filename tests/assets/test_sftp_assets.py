@@ -86,9 +86,7 @@ def test_pearson_njsla_kippnewark():
 
     asset = [a for a in assets if a.key.path[-1] == "njsla"][0]
 
-    _test_asset(
-        asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}, partition_key="19"
-    )
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_pearson_njsla_kippcamden():
@@ -96,9 +94,7 @@ def test_pearson_njsla_kippcamden():
 
     asset = [a for a in assets if a.key.path[-1] == "njsla"][0]
 
-    _test_asset(
-        asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}, partition_key="19"
-    )
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_pearson_njsla_science_kippnewark():
@@ -137,9 +133,7 @@ def test_performance_management_observation_details_kipptaf():
     from teamster.kipptaf.performance_management.assets import observation_details
 
     _test_asset(
-        asset=observation_details,
-        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
-        partition_key="2023|PM3",
+        asset=observation_details, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}
     )
 
 
@@ -291,7 +285,9 @@ def test_iready_diagnostic_results_kippnj():
 
     asset = [a for a in _all if a.key.path[-1] == "diagnostic_results"][0]
 
-    _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
+    _test_asset(
+        asset=asset, ssh_resource={"ssh_iready": SSH_IREADY}, partition_key="2021|math"
+    )
 
 
 def test_iready_personalized_instruction_by_lesson_kippmiami():
@@ -429,12 +425,19 @@ def test_adp_payroll_general_ledger_file_kipptaf():
             asset=general_ledger_file,
             ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
             instance=instance,
-            # partition_key="20240229|2Z3",
         )
 
 
 def test_pearson_student_list_report_kippcamden():
     from teamster.kippcamden.pearson.assets import assets
+
+    asset = [a for a in assets if a.key.path[-1] == "student_list_report"][0]
+
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+
+
+def test_pearson_student_list_report_kippnewark():
+    from teamster.kippnewark.pearson.assets import assets
 
     asset = [a for a in assets if a.key.path[-1] == "student_list_report"][0]
 

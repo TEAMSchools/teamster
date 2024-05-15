@@ -918,6 +918,18 @@ class NJGPA(BaseModel):
     testadministrator: int | float | None = None
 
 
+class StudentListReport(BaseModel):
+    state_student_identifier: int | None = None
+    last_or_surname: str | None = None
+    first_name: str | None = None
+    date_of_birth: str | None = None
+    scale_score: int | None = None
+    performance_level: str | None = None
+    test_name: str | None = None
+    testing_school: str | None = None
+    accountable_school: str | None = None
+
+
 class parcc_record(PARCC):
     """helper classes for backwards compatibility"""
 
@@ -949,5 +961,7 @@ ASSET_SCHEMA = {
     "njgpa": json.loads(
         py_avro_schema.generate(py_type=njgpa_record, options=pas_options)
     ),
-    "student_list_report": {},
+    "student_list_report": json.loads(
+        py_avro_schema.generate(py_type=StudentListReport, options=pas_options)
+    ),
 }
