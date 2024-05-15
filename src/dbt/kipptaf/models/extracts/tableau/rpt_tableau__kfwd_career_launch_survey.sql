@@ -59,8 +59,8 @@ with
         union all
 
         select
-            fr.form_id as survey_id,
-            fr.response_id,
+            safe_cast(fr.form_id as string) as survey_id,
+            safe_cast(fr.response_id as string) as response_id,
             safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
             null as respondent_salesforce_id,
             fr.respondent_email as respondent_user_principal_name,
