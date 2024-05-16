@@ -272,6 +272,22 @@ def test_fldoe_fsa_kippmiami():
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
+def test_fldoe_eoc_kippmiami():
+    from teamster.kippmiami.fldoe.assets import assets
+
+    asset = [a for a in assets if a.key.path[-1] == "eoc"][0]
+
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+
+
+def test_fldoe_science_kippmiami():
+    from teamster.kippmiami.fldoe.assets import assets
+
+    asset = [a for a in assets if a.key.path[-1] == "science"][0]
+
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+
+
 def test_iready_diagnostic_results_kippmiami():
     from teamster.kippmiami.iready.assets import _all
 
