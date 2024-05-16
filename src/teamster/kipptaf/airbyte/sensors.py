@@ -11,8 +11,8 @@ from dagster import (
 )
 from dagster_airbyte import AirbyteCloudResource
 
-from .. import CODE_LOCATION
-from . import assets
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.airbyte import assets
 
 ASSET_KEYS = [key for a in assets for key in a.keys]
 
@@ -66,6 +66,6 @@ def airbyte_job_status_sensor(
     return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
-_all = [
+sensors = [
     airbyte_job_status_sensor,
 ]

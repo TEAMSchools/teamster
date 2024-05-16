@@ -4,8 +4,8 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
+from teamster.google.directory.resources import GoogleDirectoryResource
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
 from teamster.kipptaf.google.directory.schema import ASSET_SCHEMA
 
 key_prefix = [CODE_LOCATION, "google", "directory"]
