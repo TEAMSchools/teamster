@@ -237,4 +237,6 @@ ASSET_SCHEMA = {
         py_avro_schema.generate(py_type=fast_record, options=pas_options)
     ),
     "fsa": json.loads(py_avro_schema.generate(py_type=fsa_record, options=pas_options)),
+    "science": {},
+    "eoc": {},
 }
