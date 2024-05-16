@@ -2,8 +2,8 @@ from dagster import DagsterInstance, build_sensor_context
 
 from teamster.core.powerschool.sensors import build_powerschool_sensor
 from teamster.core.resources import DB_POWERSCHOOL, SSH_POWERSCHOOL
+from teamster.kippnewark import LOCAL_TIMEZONE
 from teamster.kippnewark.powerschool.assets import partition_assets
-from teamster.staging import LOCAL_TIMEZONE
 
 
 def test_powerschool_sensor():
