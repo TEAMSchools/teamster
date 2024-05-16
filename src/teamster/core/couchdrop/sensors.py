@@ -27,7 +27,7 @@ def build_couchdrop_sftp_sensor(
         now = pendulum.now(tz=local_timezone)
         run_requests = []
 
-        tick_cursor = int(context.cursor or "0")
+        tick_cursor = float(context.cursor or "0.0")
 
         try:
             files = ssh_couchdrop.listdir_attr_r(

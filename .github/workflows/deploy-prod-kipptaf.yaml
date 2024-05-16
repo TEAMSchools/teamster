@@ -14,6 +14,15 @@ on:
       - src/teamster/kipptaf/**
       - src/dbt/kipptaf/**
       - src/dbt/teamster_utils/**
+  pull_request:
+    paths:
+      - src/teamster/core/**
+      - src/teamster/kipptaf/**
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   dagster-cloud-deploy:
