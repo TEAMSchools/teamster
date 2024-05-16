@@ -5,7 +5,7 @@ from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materi
 
 from teamster.core.datagun.assets import format_file_name
 from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
-from teamster.staging import LOCAL_TIMEZONE
+from teamster.kipptaf import LOCAL_TIMEZONE
 
 
 def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
