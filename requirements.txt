@@ -283,9 +283,9 @@ google-auth-httplib2==0.2.0 \
 google-auth-oauthlib==1.2.0 \
     --hash=sha256:292d2d3783349f2b0734a0a0207b1e1e322ac193c2c09d8f7c613fb7cc501ea8 \
     --hash=sha256:297c1ce4cb13a99b5834c74a1fe03252e1e499716718b190f56bcb9c4abc4faf
-google-cloud-bigquery==3.22.0 \
-    --hash=sha256:80c8e31a23b68b7d3ae5d138c9a9edff69d100ee812db73a5e63c79a13a5063d \
-    --hash=sha256:957591e6f948d7cb4aa0f7a8e4e47b4617cd7f0269e28a71c37953c39b6e8a4c
+google-cloud-bigquery==3.23.0 \
+    --hash=sha256:7ecdb207727d513b1bce1f213dbb926ed2e1d4f0122778de00f0e56d19d47a01 \
+    --hash=sha256:dc0a4a47ab541a34aa1dc1f48539d88c091adc0637da7744d7fab6f3bc8886d5
 google-cloud-core==2.4.1 \
     --hash=sha256:9b7749272a812bde58fff28868d0c5e2f585b82f37e09a1f6ed2d4d10f134073 \
     --hash=sha256:a9e6a4422b9ac5c29f79a0ede9485473338e2ce78d91f2370c01e730eab22e61
