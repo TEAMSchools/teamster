@@ -31,12 +31,13 @@ select
     sr.survey_id,
     sr.survey_title,
     sr.survey_response_id,
-    sr.question_title,
     sr.question_shortname,
-    sr.answer,
-    sr.answer_value,
     sr.date_submitted,
     sr.academic_year,
+
+    ltq.question_title,
+    lta.answer_text,
+    lta.answer_value,
 
     srh.job_title as staff_job_title,
 
@@ -84,6 +85,13 @@ left join
     {{ ref("base_powerschool__student_enrollments") }} as se2
     on fr.respondent_number = se2.student_number
     and fr.academic_year = se2.academic_year
+left join
+    /*Placeholder for Lookup Table Answer*/ as lta
+    on sr.question_shortname = lta.question_shortname
+    and sr.answer = lta.survey_response
+left join
+    /*Placeholder for Lookup Table Answer*/ as ltq
+    on sr.question_shortname = ltq.question_shortname
 where
     sr.survey_title in (
         'Engagement & Support Surveys',
@@ -98,15 +106,16 @@ union all
 
 /* Powerschool InfoSnap Responses */
 select
-    'PowerSchool_24' as survey_id,
+    'PowerSchool' as survey_id,
     'PowerSchool Family School Community Diagnostic' as survey_title,
     sr.external_student_id as survey_response_id,
-    sr.data_item_key as question_title,
     sr.data_item_key as question_shortname,
-    sr.data_item_value as answer,
-    safe_cast(sr.data_item_value as int) as answer_value,
     safe_cast(sr.submitted as timestamp) as date_submitted,
-    2024 as academic_year,
+    sr.academic_year as academic_year,
+    
+    ltq.question_title,
+    lta.answer_text,
+    lta.answer_value,
 
     null as staff_job_title,
 
@@ -129,6 +138,13 @@ left join
     {{ ref("base_powerschool__student_enrollments") }} as se
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
+left join
+    /*Placeholder for Lookup Table Answer*/ as lta
+    on sr.data_item_key = lta.question_shortname
+    and sr.answer = lta.survey_response
+left join
+    /*Placeholder for Lookup Table Answer*/ as ltq
+    on sr.data_item_key = ltq.question_shortname
 where
     published_action_id = 39362
     and data_item_key in (
