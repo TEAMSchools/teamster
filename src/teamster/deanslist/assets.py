@@ -15,13 +15,13 @@ from teamster.core.utils.functions import (
     get_avro_schema_valid_check_spec,
 )
 from teamster.deanslist.resources import DeansListResource
-from teamster.deanslist.schema import ASSET_SCHEMA
 
 
 def build_deanslist_static_partition_asset(
     code_location,
     asset_name,
     api_version,
+    schema,
     partitions_def: StaticPartitionsDefinition | None = None,
     op_tags: dict | None = None,
     params: dict | None = None,
@@ -50,7 +50,6 @@ def build_deanslist_static_partition_asset(
         )
 
         data = endpoint_content["data"]
-        schema = ASSET_SCHEMA[asset_name]
 
         yield Output(
             value=(data, schema), metadata={"records": endpoint_content["row_count"]}
@@ -67,6 +66,7 @@ def build_deanslist_multi_partition_asset(
     code_location,
     asset_name,
     api_version,
+    schema,
     partitions_def: MultiPartitionsDefinition,
     op_tags: dict | None = None,
     params: dict | None = None,
@@ -115,7 +115,6 @@ def build_deanslist_multi_partition_asset(
             params=request_params,
         )
 
-        schema = ASSET_SCHEMA[asset_name]
         data = endpoint_content["data"]
         row_count = endpoint_content["row_count"]
 
