@@ -1,7 +1,6 @@
 from teamster.core.couchdrop.sensors import build_couchdrop_sftp_sensor
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kipptaf.performance_management.assets import observation_details
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
 
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     code_location=CODE_LOCATION,

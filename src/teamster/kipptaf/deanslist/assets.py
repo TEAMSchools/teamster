@@ -2,12 +2,11 @@ import pathlib
 
 from dagster import config_from_files
 
-from teamster.core.deanslist.schema import ASSET_SCHEMA
 from teamster.core.sftp.assets import build_sftp_asset
+from teamster.deanslist.schema import ...
+from teamster.kipptaf import CODE_LOCATION
 
-from .. import CODE_LOCATION
-
-_all = [
+assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "deanslist", a["asset_name"]],
         ssh_resource_key="ssh_deanslist",

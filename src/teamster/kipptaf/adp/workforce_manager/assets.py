@@ -16,12 +16,12 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
+from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
 from teamster.kipptaf.adp.workforce_manager.schema import ASSET_SCHEMA
 
 
