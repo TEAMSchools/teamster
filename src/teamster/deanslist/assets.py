@@ -9,13 +9,13 @@ from dagster import (
     asset,
 )
 
-from teamster.core.deanslist.resources import DeansListResource
-from teamster.core.deanslist.schema import ASSET_SCHEMA
 from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
+from teamster.deanslist.resources import DeansListResource
+from teamster.deanslist.schema import ASSET_SCHEMA
 
 
 def build_deanslist_static_partition_asset(

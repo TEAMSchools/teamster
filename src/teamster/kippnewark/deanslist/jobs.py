@@ -1,6 +1,6 @@
 from dagster import define_asset_job
 
-from .assets import (
+from teamster.kippnewark.deanslist.assets import (
     multi_partition_fiscal_assets,
     multi_partition_monthly_assets,
     static_partition_assets,
@@ -24,7 +24,7 @@ multi_partition_fiscal_asset_job = define_asset_job(
     partitions_def=multi_partition_fiscal_assets[0].partitions_def,
 )
 
-_all = [
+jobs = [
     static_partition_asset_job,
     multi_partition_monthly_asset_job,
     multi_partition_fiscal_asset_job,

@@ -1,7 +1,7 @@
-from .assets import _all as assets
-from .sensors import _all as sensors
+from teamster.kippnewark.iready.assets import assets
+from teamster.kippnewark.iready.sensors import sensors
 
-_all = [
-    assets,
-    sensors,
+__all__ = [
+    "assets",
+    "sensors",
 ]
