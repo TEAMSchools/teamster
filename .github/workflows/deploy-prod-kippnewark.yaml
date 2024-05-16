@@ -23,6 +23,7 @@ on:
       - src/dbt/titan/**
   pull_request:
     paths:
+      - requirements.txt
       - src/teamster/core/**
       - src/teamster/kippnewark/**
     types:
