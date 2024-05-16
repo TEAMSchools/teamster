@@ -131,6 +131,11 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain
         run_k8s_config:
           container_config:
             env:
@@ -229,3 +234,8 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain
