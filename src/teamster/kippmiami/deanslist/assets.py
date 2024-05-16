@@ -7,13 +7,12 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.deanslist.assets import (
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.deanslist.assets import (
     build_deanslist_multi_partition_asset,
     build_deanslist_static_partition_asset,
 )
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 
 static_partitions_def = StaticPartitionsDefinition(["472", "525"])
 
@@ -67,7 +66,7 @@ multi_partition_fiscal_assets = [
     )["endpoints"]
 ]
 
-_all = [
+assets = [
     *static_partition_assets,
     *multi_partition_monthly_assets,
     *multi_partition_fiscal_assets,
