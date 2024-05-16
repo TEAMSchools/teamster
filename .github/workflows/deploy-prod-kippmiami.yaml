@@ -18,6 +18,15 @@ on:
       - src/dbt/powerschool/**
       - src/dbt/renlearn/**
       - src/dbt/teamster_utils/**
+  pull_request:
+    paths:
+      - src/teamster/core/**
+      - src/teamster/kippmiami/**
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   dagster-cloud-deploy:
