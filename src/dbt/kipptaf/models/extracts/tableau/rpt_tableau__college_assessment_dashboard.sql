@@ -274,7 +274,7 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_test_scope != 'PSAT10'
+where e.expected_test_type = 'Official' and e.expected_scope != 'PSAT10'
 
 union all
 
@@ -342,7 +342,7 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_test_scope = 'PSAT10'
+where e.expected_test_type = 'Official' and e.expected_scope = 'PSAT10'
 
 union all
 
