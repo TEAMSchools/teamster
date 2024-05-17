@@ -4,7 +4,10 @@ select
 
     format_date('%m/%d/%Y', gl.date) as `DATE`,
     concat(
-        'adp_payroll_', gl._dagster_partition_date, '_', gl.group_code
+        'adp_payroll_',
+        gl._dagster_partition_date,
+        '_',
+        gl._dagster_partition_group_code
     ) as `DESCRIPTION`,
 
     gl.reference_no as `REFERENCE_NO`,
@@ -29,7 +32,8 @@ select
     -- trunk-ignore(sqlfluff/RF05)
     srh.preferred_name_lastfirst as `#preferred_lastfirst`,
 
-    gl.group_code,
+    gl._dagster_partition_group_code,
+    safe_cast(gl._dagster_partition_date as string) as _dagster_partition_date,
 from {{ ref("stg_adp_payroll__general_ledger_file") }} as gl
 left join
     {{ ref("stg_finance__payroll_code_mapping") }} as cm
