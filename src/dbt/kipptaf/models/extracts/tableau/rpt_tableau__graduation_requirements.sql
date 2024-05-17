@@ -250,7 +250,8 @@ with
             end as met_pathway_requirement,
         from {{ ref("int_illuminate__psat_unpivot") }}
         where
-            score_type in (
+            rn_highest = 1
+            and score_type in (
                 'psat10_eb_read_write_section_score',
                 'psat10_math_test_score',
                 'psat10_math_section_score',
