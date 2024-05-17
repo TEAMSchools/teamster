@@ -20,6 +20,34 @@ sources:
               - kipptaf
               - surveys
               - staff_info_archive
+      - name: src_surveys__scd_question_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            sheet_range: scd_question_crosswalk
+            skip_leading_rows: 1
+            uris:
+              - https://docs.google.com/spreadsheets/d/1pVY5ByKU03s8kfrd9ori1m6Sa-xOTJR9Qt0eFkkKycM
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - scd_question_crosswalk
+      - name: src_surveys__scd_answer_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            sheet_range: scd_answer_crosswalk
+            skip_leading_rows: 1
+            uris:
+              - https://docs.google.com/spreadsheets/d/1pVY5ByKU03s8kfrd9ori1m6Sa-xOTJR9Qt0eFkkKycM
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - scd_answer_crosswalk
       - name: src_surveys__manager_survey_detail_archive
         external:
           options:
