@@ -27,22 +27,19 @@ def external_assets_from_specs(
             spec.code_version is None, "code_version must be None since it is ignored"
         )
         _check.invariant(
-            spec.freshness_policy is None,
-            "freshness_policy must be None since it is ignored",
-        )
-        _check.invariant(
             spec.skippable is False,
             "skippable must be False since it is ignored and False is the default",
         )
 
         @multi_asset(
-            compute_kind=compute_kind,
             name=spec.key.to_python_identifier(),
+            compute_kind=compute_kind,
             specs=[
                 AssetSpec(
                     key=spec.key,
                     description=spec.description,
                     group_name=spec.group_name,
+                    freshness_policy=spec.freshness_policy,
                     metadata={
                         **(spec.metadata or {}),
                         **{

@@ -116,6 +116,7 @@ class DiagnosticResults(BaseModel):
     comprehension_overall_relative_placement: str | None = None
     comprehension_overall_scale_score: int | None = None
     diagnostic_gain: float | None = None
+    diagnostic_language: str | None = None
     duration_min: int | None = None
     economically_disadvantaged: str | None = None
     english_language_learner: str | None = None
