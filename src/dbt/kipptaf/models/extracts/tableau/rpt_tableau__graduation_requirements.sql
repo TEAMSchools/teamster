@@ -215,18 +215,22 @@ with
             score,
 
             case
-                when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
+                when
+                    score_type in (
+                        'psat10_eb_read_write_section_score',
+                        'psat10_reading_test_score'
+                    )
                 then 'ELA'
                 else 'Math'
             end as discipline,
             case
                 when score_type = 'psat10_reading_test_score'
                 then 'Reading'
-                when score_type = 'psat10_math'
+                when score_type = 'psat10_math_section_score'
                 then 'Math'
                 when score_type = 'psat10_math_test_score'
                 then 'Math Test'
-                when score_type = 'psat10_ebrw'
+                when score_type = 'psat10_eb_read_write_section_score'
                 then 'EBRW'
             end as `subject`,
             case
@@ -235,16 +239,21 @@ with
                     in ('psat10_reading_test_score', 'psat10_math_test_score')
                     and score >= 21
                 then true
-                when score_type in ('psat10_math', 'psat10_ebrw') and score >= 420
+                when
+                    score_type in (
+                        'psat10_math_section_score',
+                        'psat10_eb_read_write_section_score'
+                    )
+                    and score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
         from {{ ref("int_illuminate__psat_unpivot") }}
         where
             score_type in (
-                'psat10_ebrw',
+                'psat10_eb_read_write_section_score',
                 'psat10_math_test_score',
-                'psat10_math',
+                'psat10_math_section_score',
                 'psat10_reading_test_score'
             )
     ),
