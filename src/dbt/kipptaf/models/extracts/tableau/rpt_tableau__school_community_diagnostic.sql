@@ -35,9 +35,9 @@ select
     sr.date_submitted,
     sr.academic_year,
 
-    ltq.question_title,
-    lta.answer_text,
-    lta.answer_value,
+    qc.Question_Text,
+    ac.Response_String as answer_text,
+    ac.Response_Int as answer_value,
 
     srh.job_title as staff_job_title,
 
@@ -86,12 +86,12 @@ left join
     on fr.respondent_number = se2.student_number
     and fr.academic_year = se2.academic_year
 left join
-    /*Placeholder for Lookup Table Answer*/ as lta
-    on sr.question_shortname = lta.question_shortname
-    and sr.answer = lta.survey_response
+    {{ ref('stg_surveys__scd_answer_crosswalk') }} as ac
+    on sr.question_shortname = ac.Question_Code
+    and sr.answer = ac.Response
 left join
-    /*Placeholder for Lookup Table Answer*/ as ltq
-    on sr.question_shortname = ltq.question_shortname
+    {{ ref('src_surveys__scd_question_crosswalk') }} as qc
+    on sr.question_shortname = qc.Question_Code
 where
     sr.survey_title in (
         'Engagement & Support Surveys',
@@ -113,9 +113,9 @@ select
     safe_cast(sr.submitted as timestamp) as date_submitted,
     sr.academic_year as academic_year,
     
-    ltq.question_title,
-    lta.answer_text,
-    lta.answer_value,
+    qc.Question_Text,
+    ac.Response_String as answer_text,
+    ac.Response_Int as answer_value,
 
     null as staff_job_title,
 
@@ -139,12 +139,12 @@ left join
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
 left join
-    /*Placeholder for Lookup Table Answer*/ as lta
-    on sr.data_item_key = lta.question_shortname
-    and sr.answer = lta.survey_response
+    {{ ref('stg_surveys__scd_answer_crosswalk') }} as ac
+    on sr.data_item_key = ac.Question_Code
+    and sr.answer = ac.Response
 left join
-    /*Placeholder for Lookup Table Answer*/ as ltq
-    on sr.data_item_key = ltq.question_shortname
+    {{ ref('src_surveys__scd_question_crosswalk') }} as qc
+    on sr.data_item_key = qc.Question_Code
 where
     published_action_id = 39362
     and data_item_key in (
