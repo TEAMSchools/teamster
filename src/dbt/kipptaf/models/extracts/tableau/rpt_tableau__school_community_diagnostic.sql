@@ -124,7 +124,7 @@ select
     se.region,
     se.school_name as location,
     se.ethnicity as race_ethnicity,
-    se.gender as gender,
+    se.gender,
     se.school_level as grade_band,
     se.grade_level,
     'Family' as survey_audience,
@@ -146,8 +146,8 @@ left join
     {{ ref("src_surveys__scd_question_crosswalk") }} as qc
     on sr.data_item_key = qc.question_code
 where
-    published_action_id = 39362
-    and data_item_key in (
+    sr.published_action_id = 39362
+    and sr.data_item_key in (
         'School_Survey_01',
         'School_Survey_02',
         'School_Survey_03',
