@@ -160,10 +160,7 @@ with
 
             test_date,
             score as scale_score,
-
-            row_number() over (
-                partition by local_student_id, score_type order by score desc
-            ) as rn_highest,
+            rn_highest,
 
             'Official' as test_type,
 
@@ -269,13 +266,12 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
-    and o.test_type != 'PSAT10'
 left join
     course_subjects_roster as c
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and e.expected_scope != 'PSAT10'
 
 union all
 
@@ -334,17 +330,16 @@ select
 from roster as e
 left join
     college_assessments_official as o
-    on cast(e.student_number as string) = o.contact
+    on safe_cast(e.student_number as string) = o.contact
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
-    and o.test_type = 'PSAT10'
 left join
     course_subjects_roster as c
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and e.expected_scope = 'PSAT10'
 
 union all
 
