@@ -2,7 +2,7 @@
 select
     gl.journal as `JOURNAL`,
 
-    cast(gl._dagster_partition_date as string) as `DATE`,
+    format_date('%m/%d/%Y', gl.date) as `DATE`,
     concat(
         'adp_payroll_', gl._dagster_partition_date, '_', gl.group_code
     ) as `DESCRIPTION`,
@@ -28,6 +28,8 @@ select
     srh.employee_number as `GLENTRY_EMPLOYEEID`,
     -- trunk-ignore(sqlfluff/RF05)
     srh.preferred_name_lastfirst as `#preferred_lastfirst`,
+
+    gl.group_code,
 from {{ ref("stg_adp_payroll__general_ledger_file") }} as gl
 left join
     {{ ref("stg_finance__payroll_code_mapping") }} as cm
@@ -38,3 +40,4 @@ left join
     and timestamp(gl.date)
     between srh.work_assignment_start_date and srh.work_assignment_end_date
     and srh.primary_indicator
+order by gl.line_no
