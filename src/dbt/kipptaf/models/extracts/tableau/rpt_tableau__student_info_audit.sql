@@ -259,7 +259,7 @@ where underenrollment_flag
 
 union all
 
-select
+select distinct
     se._dbt_source_relation as `db_name`,
     se.schoolid,
     se.school_name,
