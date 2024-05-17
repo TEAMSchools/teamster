@@ -4,7 +4,6 @@ from dagster import EnvVar, instance_for_test, materialize
 
 from teamster.core.resources import SSH_COUCHDROP, SSH_IREADY, get_io_manager_gcs_avro
 from teamster.core.ssh.resources import SSHResource
-from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
 
 def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
@@ -411,6 +410,7 @@ def test_titan_income_form_data_kippnewark():
 
 def test_deanslist_reconcile_attendance_kipptaf():
     from teamster.kipptaf.deanslist.assets import _all
+    from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
     asset = [a for a in _all if a.key.path[-1] == "reconcile_attendance"][0]
 
@@ -419,6 +419,7 @@ def test_deanslist_reconcile_attendance_kipptaf():
 
 def test_deanslist_reconcile_suspensions_kipptaf():
     from teamster.kipptaf.deanslist.assets import _all
+    from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
     asset = [a for a in _all if a.key.path[-1] == "reconcile_suspensions"][0]
 
