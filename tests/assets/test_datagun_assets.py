@@ -117,7 +117,12 @@ def test_format_file_name_multi_partition():
 def test_intacct_extract_asset():
     from teamster.kipptaf.datagun.assets import intacct_extract
 
-    _test_asset(asset=intacct_extract, instance=DagsterInstance.get())
+    _test_asset(
+        asset=intacct_extract,
+        instance=DagsterInstance.from_config(
+            config_dir=".dagster/home", config_filename="dagster-cloud.yaml"
+        ),
+    )
 
 
 def test_datagun_powerschool_kippnewark():
