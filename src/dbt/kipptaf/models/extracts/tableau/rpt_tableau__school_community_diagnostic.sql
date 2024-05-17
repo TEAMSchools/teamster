@@ -111,7 +111,7 @@ select
     sr.external_student_id as survey_response_id,
     sr.data_item_key as question_shortname,
     safe_cast(sr.submitted as timestamp) as date_submitted,
-    sr.academic_year as academic_year,
+    sr.academic_year,
 
     qc.question_text,
     ac.response_string as answer_text,
