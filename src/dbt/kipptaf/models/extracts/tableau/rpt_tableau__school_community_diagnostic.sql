@@ -35,9 +35,9 @@ select
     sr.date_submitted,
     sr.academic_year,
 
-    qc.Question_Text,
-    ac.Response_String as answer_text,
-    ac.Response_Int as answer_value,
+    qc.question_text,
+    ac.response_string as answer_text,
+    ac.response_int as answer_value,
 
     srh.job_title as staff_job_title,
 
@@ -86,12 +86,12 @@ left join
     on fr.respondent_number = se2.student_number
     and fr.academic_year = se2.academic_year
 left join
-    {{ ref('stg_surveys__scd_answer_crosswalk') }} as ac
-    on sr.question_shortname = ac.Question_Code
-    and sr.answer = ac.Response
+    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    on sr.question_shortname = ac.question_code
+    and sr.answer = ac.response
 left join
-    {{ ref('src_surveys__scd_question_crosswalk') }} as qc
-    on sr.question_shortname = qc.Question_Code
+    {{ ref("src_surveys__scd_question_crosswalk") }} as qc
+    on sr.question_shortname = qc.question_code
 where
     sr.survey_title in (
         'Engagement & Support Surveys',
@@ -112,10 +112,10 @@ select
     sr.data_item_key as question_shortname,
     safe_cast(sr.submitted as timestamp) as date_submitted,
     sr.academic_year as academic_year,
-    
-    qc.Question_Text,
-    ac.Response_String as answer_text,
-    ac.Response_Int as answer_value,
+
+    qc.question_text,
+    ac.response_string as answer_text,
+    ac.response_int as answer_value,
 
     null as staff_job_title,
 
@@ -139,12 +139,12 @@ left join
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
 left join
-    {{ ref('stg_surveys__scd_answer_crosswalk') }} as ac
-    on sr.data_item_key = ac.Question_Code
-    and sr.answer = ac.Response
+    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    on sr.data_item_key = ac.question_code
+    and sr.answer = ac.response
 left join
-    {{ ref('src_surveys__scd_question_crosswalk') }} as qc
-    on sr.data_item_key = qc.Question_Code
+    {{ ref("src_surveys__scd_question_crosswalk") }} as qc
+    on sr.data_item_key = qc.question_code
 where
     published_action_id = 39362
     and data_item_key in (
