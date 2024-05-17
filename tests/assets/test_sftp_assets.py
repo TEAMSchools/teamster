@@ -276,7 +276,11 @@ def test_fldoe_eoc_kippmiami():
 
     asset = [a for a in assets if a.key.path[-1] == "eoc"][0]
 
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+    _test_asset(
+        asset=asset,
+        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
+        partition_key="civics|2023",
+    )
 
 
 def test_fldoe_science_kippmiami():
@@ -284,7 +288,11 @@ def test_fldoe_science_kippmiami():
 
     asset = [a for a in assets if a.key.path[-1] == "science"][0]
 
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
+    _test_asset(
+        asset=asset,
+        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
+        partition_key="8|2023",
+    )
 
 
 def test_iready_diagnostic_results_kippmiami():
