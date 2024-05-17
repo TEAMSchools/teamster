@@ -32,6 +32,8 @@ class FAST(BaseModel):
     grade_4_fast_mathematics_achievement_level: str | None = None
     grade_5_fast_ela_reading_achievement_level: str | None = None
     grade_5_fast_mathematics_achievement_level: str | None = None
+    grade_5_science_achievement_level: str | None = None
+    grade_5_science_scale_score: int | None = None
     grade_6_fast_ela_reading_achievement_level: str | None = None
     grade_6_fast_mathematics_achievement_level: str | None = None
     grade_7_fast_ela_reading_achievement_level: str | None = None
@@ -55,54 +57,52 @@ class FAST(BaseModel):
     enrolled_grade: int | float | None = None
     fast_grade_3_ela_reading_percentile_rank: str | int | None = None
     fast_grade_3_ela_reading_scale_score: str | int | None = None
-    fast_grade_3_mathematics_scale_score: str | int | None = None
     fast_grade_3_mathematics_percentile_rank: str | int | None = None
+    fast_grade_3_mathematics_scale_score: str | int | None = None
     fast_grade_4_ela_reading_percentile_rank: str | int | None = None
     fast_grade_4_ela_reading_scale_score: str | int | None = None
-    fast_grade_4_mathematics_scale_score: str | int | None = None
     fast_grade_4_mathematics_percentile_rank: str | int | None = None
+    fast_grade_4_mathematics_scale_score: str | int | None = None
     fast_grade_5_ela_reading_percentile_rank: str | int | None = None
     fast_grade_5_ela_reading_scale_score: str | int | None = None
-    fast_grade_5_mathematics_scale_score: str | int | None = None
     fast_grade_5_mathematics_percentile_rank: str | int | None = None
+    fast_grade_5_mathematics_scale_score: str | int | None = None
     fast_grade_6_ela_reading_percentile_rank: str | int | None = None
     fast_grade_6_ela_reading_scale_score: str | int | None = None
-    fast_grade_6_mathematics_scale_score: str | int | None = None
     fast_grade_6_mathematics_percentile_rank: str | int | None = None
+    fast_grade_6_mathematics_scale_score: str | int | None = None
     fast_grade_7_ela_reading_percentile_rank: str | int | None = None
     fast_grade_7_ela_reading_scale_score: str | int | None = None
-    fast_grade_7_mathematics_scale_score: str | int | None = None
     fast_grade_7_mathematics_percentile_rank: str | int | None = None
+    fast_grade_7_mathematics_scale_score: str | int | None = None
     fast_grade_8_ela_reading_percentile_rank: str | int | None = None
     fast_grade_8_ela_reading_scale_score: str | int | None = None
-    fast_grade_8_mathematics_scale_score: str | int | None = None
     fast_grade_8_mathematics_percentile_rank: str | int | None = None
+    fast_grade_8_mathematics_scale_score: str | int | None = None
     grade_3_fast_ela_reading_percentile_rank: str | int | None = None
     grade_3_fast_ela_reading_scale_score: int | str | None = None
-    grade_3_fast_mathematics_scale_score: int | str | None = None
     grade_3_fast_mathematics_percentile_rank: str | int | None = None
+    grade_3_fast_mathematics_scale_score: int | str | None = None
     grade_4_fast_ela_reading_percentile_rank: str | int | None = None
     grade_4_fast_ela_reading_scale_score: str | int | None = None
-    grade_4_fast_mathematics_scale_score: str | int | None = None
     grade_4_fast_mathematics_percentile_rank: str | int | None = None
+    grade_4_fast_mathematics_scale_score: str | int | None = None
     grade_5_fast_ela_reading_percentile_rank: str | int | None = None
     grade_5_fast_ela_reading_scale_score: str | int | None = None
-    grade_5_fast_mathematics_scale_score: str | int | None = None
     grade_5_fast_mathematics_percentile_rank: str | int | None = None
+    grade_5_fast_mathematics_scale_score: str | int | None = None
     grade_6_fast_ela_reading_percentile_rank: str | int | None = None
     grade_6_fast_ela_reading_scale_score: str | int | None = None
-    grade_6_fast_mathematics_scale_score: str | int | None = None
     grade_6_fast_mathematics_percentile_rank: str | int | None = None
+    grade_6_fast_mathematics_scale_score: str | int | None = None
     grade_7_fast_ela_reading_percentile_rank: str | int | None = None
     grade_7_fast_ela_reading_scale_score: str | int | None = None
-    grade_7_fast_mathematics_scale_score: str | int | None = None
     grade_7_fast_mathematics_percentile_rank: str | int | None = None
+    grade_7_fast_mathematics_scale_score: str | int | None = None
     grade_8_fast_ela_reading_percentile_rank: str | int | None = None
     grade_8_fast_ela_reading_scale_score: int | str | None = None
-    grade_8_fast_mathematics_scale_score: str | int | None = None
     grade_8_fast_mathematics_percentile_rank: str | int | None = None
-    grade_5_science_achievement_level: str | None = None
-    grade_5_science_scale_score: int | None = None
+    grade_8_fast_mathematics_scale_score: str | int | None = None
 
     field_1_nature_of_science_performance: str | None = Field(
         None, alias="1_nature_of_science_performance"
@@ -262,6 +262,6 @@ ASSET_SCHEMA = {
         py_avro_schema.generate(py_type=fast_record, options=pas_options)
     ),
     "fsa": json.loads(py_avro_schema.generate(py_type=fsa_record, options=pas_options)),
-    "science": {},
-    "eoc": {},
+    "science": json.loads(py_avro_schema.generate(py_type=FAST, options=pas_options)),
+    "eoc": json.loads(py_avro_schema.generate(py_type=FAST, options=pas_options)),
 }
