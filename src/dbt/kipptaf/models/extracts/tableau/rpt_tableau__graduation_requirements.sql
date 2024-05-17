@@ -331,7 +331,7 @@ with
             and a.values_column in ('M', 'N')
     )
 
-select
+select distinct
     r._dbt_source_relation,
     r.academic_year,
     r.region,
