@@ -5,6 +5,10 @@ from pydantic import BaseModel, Field
 
 
 class FAST(BaseModel):
+    b_e_s_t_algebra_1_eoc_achievement_level: str | None = None
+    b_e_s_t_algebra_1_eoc_scale_score: str | None = None
+    civics_eoc_achievement_level: str | None = None
+    civics_eoc_scale_score: int | None = None
     date_taken: str | None = None
     english_language_learner_ell_status: str | None = None
     enrolled_district: str | None = None
@@ -30,12 +34,16 @@ class FAST(BaseModel):
     grade_4_fast_mathematics_achievement_level: str | None = None
     grade_5_fast_ela_reading_achievement_level: str | None = None
     grade_5_fast_mathematics_achievement_level: str | None = None
+    grade_5_science_achievement_level: str | None = None
+    grade_5_science_scale_score: int | None = None
     grade_6_fast_ela_reading_achievement_level: str | None = None
     grade_6_fast_mathematics_achievement_level: str | None = None
     grade_7_fast_ela_reading_achievement_level: str | None = None
     grade_7_fast_mathematics_achievement_level: str | None = None
     grade_8_fast_ela_reading_achievement_level: str | None = None
     grade_8_fast_mathematics_achievement_level: str | None = None
+    grade_8_science_achievement_level: str | None = None
+    grade_8_science_scale_score: int | None = None
     local_id: str | None = None
     primary_exceptionality: str | None = None
     section_504: str | None = None
@@ -53,136 +61,157 @@ class FAST(BaseModel):
     enrolled_grade: int | float | None = None
     fast_grade_3_ela_reading_percentile_rank: str | int | None = None
     fast_grade_3_ela_reading_scale_score: str | int | None = None
-    fast_grade_3_mathematics_scale_score: str | int | None = None
     fast_grade_3_mathematics_percentile_rank: str | int | None = None
+    fast_grade_3_mathematics_scale_score: str | int | None = None
     fast_grade_4_ela_reading_percentile_rank: str | int | None = None
     fast_grade_4_ela_reading_scale_score: str | int | None = None
-    fast_grade_4_mathematics_scale_score: str | int | None = None
     fast_grade_4_mathematics_percentile_rank: str | int | None = None
+    fast_grade_4_mathematics_scale_score: str | int | None = None
     fast_grade_5_ela_reading_percentile_rank: str | int | None = None
     fast_grade_5_ela_reading_scale_score: str | int | None = None
-    fast_grade_5_mathematics_scale_score: str | int | None = None
     fast_grade_5_mathematics_percentile_rank: str | int | None = None
+    fast_grade_5_mathematics_scale_score: str | int | None = None
     fast_grade_6_ela_reading_percentile_rank: str | int | None = None
     fast_grade_6_ela_reading_scale_score: str | int | None = None
-    fast_grade_6_mathematics_scale_score: str | int | None = None
     fast_grade_6_mathematics_percentile_rank: str | int | None = None
+    fast_grade_6_mathematics_scale_score: str | int | None = None
     fast_grade_7_ela_reading_percentile_rank: str | int | None = None
     fast_grade_7_ela_reading_scale_score: str | int | None = None
-    fast_grade_7_mathematics_scale_score: str | int | None = None
     fast_grade_7_mathematics_percentile_rank: str | int | None = None
+    fast_grade_7_mathematics_scale_score: str | int | None = None
     fast_grade_8_ela_reading_percentile_rank: str | int | None = None
     fast_grade_8_ela_reading_scale_score: str | int | None = None
-    fast_grade_8_mathematics_scale_score: str | int | None = None
     fast_grade_8_mathematics_percentile_rank: str | int | None = None
+    fast_grade_8_mathematics_scale_score: str | int | None = None
     grade_3_fast_ela_reading_percentile_rank: str | int | None = None
     grade_3_fast_ela_reading_scale_score: int | str | None = None
-    grade_3_fast_mathematics_scale_score: int | str | None = None
     grade_3_fast_mathematics_percentile_rank: str | int | None = None
+    grade_3_fast_mathematics_scale_score: int | str | None = None
     grade_4_fast_ela_reading_percentile_rank: str | int | None = None
     grade_4_fast_ela_reading_scale_score: str | int | None = None
-    grade_4_fast_mathematics_scale_score: str | int | None = None
     grade_4_fast_mathematics_percentile_rank: str | int | None = None
+    grade_4_fast_mathematics_scale_score: str | int | None = None
     grade_5_fast_ela_reading_percentile_rank: str | int | None = None
     grade_5_fast_ela_reading_scale_score: str | int | None = None
-    grade_5_fast_mathematics_scale_score: str | int | None = None
     grade_5_fast_mathematics_percentile_rank: str | int | None = None
+    grade_5_fast_mathematics_scale_score: str | int | None = None
     grade_6_fast_ela_reading_percentile_rank: str | int | None = None
     grade_6_fast_ela_reading_scale_score: str | int | None = None
-    grade_6_fast_mathematics_scale_score: str | int | None = None
     grade_6_fast_mathematics_percentile_rank: str | int | None = None
+    grade_6_fast_mathematics_scale_score: str | int | None = None
     grade_7_fast_ela_reading_percentile_rank: str | int | None = None
     grade_7_fast_ela_reading_scale_score: str | int | None = None
-    grade_7_fast_mathematics_scale_score: str | int | None = None
     grade_7_fast_mathematics_percentile_rank: str | int | None = None
+    grade_7_fast_mathematics_scale_score: str | int | None = None
     grade_8_fast_ela_reading_percentile_rank: str | int | None = None
     grade_8_fast_ela_reading_scale_score: int | str | None = None
-    grade_8_fast_mathematics_scale_score: str | int | None = None
     grade_8_fast_mathematics_percentile_rank: str | int | None = None
+    grade_8_fast_mathematics_scale_score: str | int | None = None
 
-    field_1_reading_prose_and_poetry_performance: str | None = Field(
+    field_1_science: str | None = Field(None, alias="1_nature_of_science_performance")
+    field_2_science: str | None = Field(
+        None, alias="2_earth_and_space_science_performance"
+    )
+    field_3_science: str | None = Field(None, alias="3_physical_science_performance")
+    field_4_science: str | None = Field(None, alias="4_life_science_performance")
+
+    field_1_civics: str | None = Field(
+        default=None, alias="1_origins_and_purposes_of_law_and_government_performance"
+    )
+    field_2_civics: str | None = Field(
+        default=None,
+        alias="2_roles_rights_and_responsibilities_of_citizens_performance",
+    )
+    field_3_civics: str | None = Field(
+        default=None, alias="3_government_policies_and_political_processes_performance"
+    )
+    field_4_civics: str | None = Field(
+        default=None, alias="4_organization_and_function_of_government_performance"
+    )
+
+    field_1_algebra_i: str | None = Field(
+        None, alias="1_expressions_functions_and_data_analysis_performance"
+    )
+    field_2_algebra_i: str | None = Field(
+        None, alias="2_linear_relationships_performance"
+    )
+    field_3_algebra_i: str | None = Field(
+        None, alias="3_non_linear_relationships_performance"
+    )
+
+    field_1_ela_reading: str | None = Field(
         default=None, alias="1_reading_prose_and_poetry_performance"
     )
-    field_2_reading_informational_text_performance: str | None = Field(
+    field_2_ela_reading: str | None = Field(
         default=None, alias="2_reading_informational_text_performance"
     )
-    field_3_reading_across_genres_vocabulary_performance: str | None = Field(
+    field_3_ela_reading: str | None = Field(
         default=None, alias="3_reading_across_genres_vocabulary_performance"
     )
-    field_1_number_sense_and_additive_reasoning_performance: str | None = Field(
+
+    field_1_mathematics_1: str | None = Field(
         default=None, alias="1_number_sense_and_additive_reasoning_performance"
     )
-    field_2_number_sense_and_multiplicative_reasoning_performance: str | None = Field(
-        default=None, alias="2_number_sense_and_multiplicative_reasoning_performance"
-    )
-    field_3_fractional_reasoning_performance: str | None = Field(
-        default=None, alias="3_fractional_reasoning_performance"
-    )
-    field_4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance: (
-        str | None
-    ) = Field(
+    field_1_mathematics_2: str | None = Field(
         default=None,
-        alias="4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
+        alias="1_number_sense_and_operations_with_whole_numbers_performance",
     )
-    field_1_number_sense_and_operations_with_whole_numbers_performance: str | None = (
-        Field(
-            default=None,
-            alias="1_number_sense_and_operations_with_whole_numbers_performance",
-        )
-    )
-    field_2_number_sense_and_operations_with_fractions_and_decimals_performance: (
-        str | None
-    ) = Field(
-        default=None,
-        alias="2_number_sense_and_operations_with_fractions_and_decimals_performance",
-    )
-    field_3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance: (
-        str | None
-    ) = Field(
-        default=None,
-        alias="3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
-    )
-    field_3_algebraic_reasoning_performance: str | None = Field(
-        default=None, alias="3_algebraic_reasoning_performance"
-    )
-    field_1_number_sense_and_operations_performance: str | None = Field(
+    field_1_mathematics_3: str | None = Field(
         default=None, alias="1_number_sense_and_operations_performance"
     )
-    field_2_algebraic_reasoning_performance: str | None = Field(
-        default=None, alias="2_algebraic_reasoning_performance"
-    )
-    field_3_geometric_reasoning_data_analysis_and_probability_performance: (
-        str | None
-    ) = Field(
-        default=None,
-        alias="3_geometric_reasoning_data_analysis_and_probability_performance",
-    )
-    field_1_number_sense_and_operations_and_algebraic_reasoning_performance: (
-        str | None
-    ) = Field(
+    field_1_mathematics_4: str | None = Field(
         default=None,
         alias="1_number_sense_and_operations_and_algebraic_reasoning_performance",
     )
-    field_2_proportional_reasoning_and_relationships_performance: str | None = Field(
-        default=None, alias="2_proportional_reasoning_and_relationships_performance"
-    )
-    field_3_geometric_reasoning_performance: str | None = Field(
-        default=None, alias="3_geometric_reasoning_performance"
-    )
-    field_4_data_analysis_and_probability_performance: str | None = Field(
-        default=None, alias="4_data_analysis_and_probability_performance"
-    )
-    field_1_number_sense_and_operations_and_probability_performance: str | None = Field(
+    field_1_mathematics_5: str | None = Field(
         default=None, alias="1_number_sense_and_operations_and_probability_performance"
     )
-    field_3_linear_relationships_data_analysis_and_functions_performance: str | None = (
-        Field(
-            default=None,
-            alias="3_linear_relationships_data_analysis_and_functions_performance",
-        )
+
+    field_2_mathematics_1: str | None = Field(
+        default=None, alias="2_number_sense_and_multiplicative_reasoning_performance"
     )
-    field_4_geometric_reasoning_performance: str | None = Field(
+    field_2_mathematics_2: str | None = Field(
+        default=None,
+        alias="2_number_sense_and_operations_with_fractions_and_decimals_performance",
+    )
+    field_2_mathematics_3: str | None = Field(
+        default=None, alias="2_algebraic_reasoning_performance"
+    )
+    field_2_mathematics_4: str | None = Field(
+        default=None, alias="2_proportional_reasoning_and_relationships_performance"
+    )
+
+    field_3_mathematics_1: str | None = Field(
+        default=None, alias="3_fractional_reasoning_performance"
+    )
+    field_3_mathematics_2: str | None = Field(
+        default=None,
+        alias="3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
+    )
+    field_3_mathematics_3: str | None = Field(
+        default=None, alias="3_algebraic_reasoning_performance"
+    )
+    field_3_mathematics_4: str | None = Field(
+        default=None,
+        alias="3_geometric_reasoning_data_analysis_and_probability_performance",
+    )
+    field_3_mathematics_5: str | None = Field(
+        default=None, alias="3_geometric_reasoning_performance"
+    )
+    field_3_mathematics_6: str | None = Field(
+        default=None,
+        alias="3_linear_relationships_data_analysis_and_functions_performance",
+    )
+
+    field_4_mathematics_1: str | None = Field(
+        default=None, alias="4_data_analysis_and_probability_performance"
+    )
+    field_4_mathematics_2: str | None = Field(
         default=None, alias="4_geometric_reasoning_performance"
+    )
+    field_4_mathematics_3: str | None = Field(
+        default=None,
+        alias="4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
     )
 
 
@@ -237,4 +266,6 @@ ASSET_SCHEMA = {
         py_avro_schema.generate(py_type=fast_record, options=pas_options)
     ),
     "fsa": json.loads(py_avro_schema.generate(py_type=fsa_record, options=pas_options)),
+    "science": json.loads(py_avro_schema.generate(py_type=FAST, options=pas_options)),
+    "eoc": json.loads(py_avro_schema.generate(py_type=FAST, options=pas_options)),
 }
