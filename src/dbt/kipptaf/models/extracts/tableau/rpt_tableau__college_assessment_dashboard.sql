@@ -199,7 +199,7 @@ with
             end as course_discipline,
 
             academic_year as test_academic_year,
-        from `teamster-332318`.`kipptaf_illuminate`.`int_illuminate__psat_unpivot`
+        from {{ ref('int_illuminate__psat_unpivot') }}
         where
             score_type in (
                 'psat10_eb_read_write_section_score',
