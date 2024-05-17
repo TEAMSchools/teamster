@@ -1,4 +1,3 @@
-import json
 import re
 
 import pendulum
@@ -25,9 +24,10 @@ def build_couchdrop_sftp_sensor(
         asset_selection=assets,
     )
     def _sensor(context: SensorEvaluationContext, ssh_couchdrop: SSHResource):
-        run_requests = []
         now = pendulum.now(tz=local_timezone)
-        cursor: dict = json.loads(context.cursor or "{}")
+        run_requests = []
+
+        tick_cursor = float(context.cursor or "0.0")
 
         try:
             files = ssh_couchdrop.listdir_attr_r(
@@ -50,13 +50,11 @@ def build_couchdrop_sftp_sensor(
                 f
                 for f in files
                 if pattern.match(string=f.filepath)
-                and f.st_mtime > cursor.get(asset_identifier, 0)
+                and f.st_mtime > tick_cursor
                 and f.st_size > 0
             ]
 
             for f in file_matches:
-                cursor[asset_identifier] = now.timestamp()
-
                 match = pattern.match(string=f.filepath)
 
                 if isinstance(asset.partitions_def, MultiPartitionsDefinition):
@@ -69,12 +67,22 @@ def build_couchdrop_sftp_sensor(
                 context.log.info(f"{f.filename}: {partition_key}")
                 run_requests.append(
                     RunRequest(
-                        run_key=f"{context.sensor_name}_{now.timestamp()}",
+                        run_key="_".join(
+                            [
+                                context.sensor_name,
+                                asset_identifier,
+                                str(partition_key),
+                                str(now.timestamp()),
+                            ]
+                        ),
                         asset_selection=[asset.key],
                         partition_key=partition_key,
                     )
                 )
 
-        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+        if run_requests:
+            tick_cursor = now.timestamp()
+
+        return SensorResult(run_requests=run_requests, cursor=str(tick_cursor))
 
     return _sensor

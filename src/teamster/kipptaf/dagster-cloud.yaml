@@ -376,6 +376,11 @@ locations:
                   secretKeyRef:
                     name: op-powerschool-enrollment-api
                     key: api-key
+              - name: LDAP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ldap-service-account
+                    key: ip
         run_k8s_config:
           container_config:
             env:
@@ -704,3 +709,8 @@ locations:
                   secretKeyRef:
                     name: op-powerschool-enrollment-api
                     key: api-key
+              - name: LDAP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ldap-service-account
+                    key: ip
