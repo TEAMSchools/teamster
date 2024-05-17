@@ -160,10 +160,7 @@ with
 
             test_date,
             score as scale_score,
-
-            row_number() over (
-                partition by local_student_id, score_type order by score desc
-            ) as rn_highest,
+            rn_highest,
 
             'Official' as test_type,
 
