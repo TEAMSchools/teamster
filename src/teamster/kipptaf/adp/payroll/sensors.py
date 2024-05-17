@@ -14,7 +14,7 @@ from dagster import (
 )
 
 from teamster.core.ssh.resources import SSHResource
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.adp.payroll.assets import assets
 
 
@@ -26,9 +26,11 @@ from teamster.kipptaf.adp.payroll.assets import assets
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource
 ):
-    now = pendulum.now(tz=LOCAL_TIMEZONE)
+    now = pendulum.now()
+    run_requests = []
+    dynamic_partitions_requests = []
 
-    cursor: dict = json.loads(context.cursor or "{}")
+    tick_cursor = float(context.cursor or "0.0")
 
     try:
         files = ssh_couchdrop.listdir_attr_r(
@@ -38,13 +40,11 @@ def adp_payroll_sftp_sensor(
         context.log.exception(e)
         return SensorResult(skip_reason=str(e))
 
-    run_requests = []
-    dynamic_partitions_requests = []
     for asset in assets:
         add_dynamic_partition_keys = set()
 
-        asset_metadata = asset.metadata_by_key[asset.key]
         asset_identifier = asset.key.to_python_identifier()
+        metadata_by_key = asset.metadata_by_key[asset.key]
         partitions_def: MultiPartitionsDefinition = asset.partitions_def  # type: ignore
 
         date_partition: DynamicPartitionsDefinition = (
@@ -52,34 +52,34 @@ def adp_payroll_sftp_sensor(
         )  # type: ignore
 
         context.log.info(asset_identifier)
-        last_run = cursor.get(asset_identifier, 0)
+        pattern = re.compile(
+            pattern=f"{metadata_by_key["remote_dir"]}/{metadata_by_key["remote_file_regex"]}"
+        )
 
-        for f in files:
-            match = re.match(
-                pattern=asset_metadata["remote_file_regex"], string=f.filename
+        file_matches = [
+            f
+            for f in files
+            if pattern.match(string=f.filepath)
+            and f.st_mtime > tick_cursor
+            and f.st_size > 0
+        ]
+
+        for f in file_matches:
+            match = pattern.match(string=f.filepath)
+
+            group_dict = match.groupdict()
+
+            partition_key = MultiPartitionKey(group_dict)
+
+            context.log.info(f"{f.filename}: {partition_key}")
+            add_dynamic_partition_keys.add(group_dict["date"])
+            run_requests.append(
+                RunRequest(
+                    run_key=f"{asset_identifier}__{partition_key}__{now.timestamp()}",
+                    asset_selection=[asset.key],
+                    partition_key=partition_key,
+                )
             )
-
-            if match is not None and f.st_mtime > last_run and f.st_size > 0:
-                context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-
-                group_dict = match.groupdict()
-
-                date_key = group_dict["date"]
-
-                partition_key = MultiPartitionKey(
-                    {"date": date_key, "group_code": group_dict["group_code"]}
-                )
-
-                add_dynamic_partition_keys.add(date_key)
-                run_requests.append(
-                    RunRequest(
-                        run_key=f"{asset_identifier}__{partition_key}",
-                        asset_selection=[asset.key],
-                        partition_key=partition_key,
-                    )
-                )
-
-                cursor[asset_identifier] = now.timestamp()
 
         dynamic_partitions_requests.append(
             AddDynamicPartitionsRequest(
@@ -88,10 +88,13 @@ def adp_payroll_sftp_sensor(
             )
         )
 
+    if run_requests:
+        tick_cursor = now.timestamp()
+
     return SensorResult(
         run_requests=run_requests,
         dynamic_partitions_requests=dynamic_partitions_requests,
-        cursor=json.dumps(obj=cursor),
+        cursor=json.dumps(obj=str(tick_cursor)),
     )
 
 
