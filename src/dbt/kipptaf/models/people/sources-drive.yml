@@ -104,3 +104,17 @@ sources:
               - kipptaf
               - people
               - salary_scale
+      - name: src_people__miami_performance_criteria
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1t6aN_0Bd6KUUmVcz7WSAzolToAW-3Cf4AV0ZkBFseiY
+            sheet_range: src_people__miami_performance_criteria
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - people
+              - miami_performance_criteria
