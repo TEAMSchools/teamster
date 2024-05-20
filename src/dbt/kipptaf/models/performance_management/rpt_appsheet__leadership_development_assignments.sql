@@ -2,8 +2,7 @@ with
     assignment_group as (
         select
             employee_number,
-            if
-            (
+            if(
                 job_title in (
                     'Assistant School Leader',
                     'Assistant School Leader, SPED',
@@ -52,6 +51,7 @@ where
     ag.route = ldm.role
     and (sr.business_unit_home_name = ldm.region or ldm.region = 'All')
     and sr.assignment_status in ('Active', 'Leave')
-    /*Need '2024' to make visible before start of next academic year, will switch join to current_academic_year after July 1*/
+    /* Need '2024' to make visible before start of next academic year, 
+    will switch after 7/1/2024 */
     and 2024 = ldm.academic_year
 order by sr.employee_number
