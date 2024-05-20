@@ -29,8 +29,15 @@ select
     gl.gl_dim_donor_restriction as `GLDIMDONOR_RESTRICTION`,
 
     srh.employee_number as `GLENTRY_EMPLOYEEID`,
-    -- trunk-ignore(sqlfluff/RF05)
-    srh.preferred_name_lastfirst as `#preferred_lastfirst`,
+    srh.preferred_name_lastfirst as preferred_name,
+    srh.legal_name_formatted_name as legal_name,
+    srh.assignment_status,
+    srh.home_work_location_name as home_work_location,
+    srh.department_home_name as home_department,
+    srh.job_title,
+    srh.worker_original_hire_date as original_hire_date,
+    srh.worker_termination_date as termination_date,
+    srh.work_assignment_actual_start_date,
 
     gl._dagster_partition_group_code,
     safe_cast(gl._dagster_partition_date as string) as _dagster_partition_date,
