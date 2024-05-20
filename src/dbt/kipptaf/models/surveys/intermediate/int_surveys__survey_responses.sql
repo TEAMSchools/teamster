@@ -104,7 +104,7 @@ select
 
     if(safe_cast(sr.response_value as integer) is null, 1, 0) as is_open_ended,
 from {{ ref("base_alchemer__survey_results") }} as sr
-left join
+inner join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = sr.survey_title
     and sr.response_date_submitted_date between rt.start_date and rt.end_date
