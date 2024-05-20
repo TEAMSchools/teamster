@@ -90,7 +90,7 @@ left join
     on sr.question_shortname = ac.question_code
     and sr.answer = ac.response
 left join
-    {{ ref("src_surveys__scd_question_crosswalk") }} as qc
+    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
     on sr.question_shortname = qc.question_code
 where
     sr.survey_title in (
@@ -141,9 +141,9 @@ left join
 left join
     {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
     on sr.data_item_key = ac.question_code
-    and sr.answer = ac.response
+    and sr.data_item_value = ac.response
 left join
-    {{ ref("src_surveys__scd_question_crosswalk") }} as qc
+    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
     on sr.data_item_key = qc.question_code
 where
     sr.published_action_id = 39362
