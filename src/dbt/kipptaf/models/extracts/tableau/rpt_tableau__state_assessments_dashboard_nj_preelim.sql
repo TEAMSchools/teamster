@@ -227,7 +227,6 @@ with
             s.is_504,
             s.lep_status,
 
-            a.academic_year,
             a.state_id,
             a.assessment_name,
             a.discipline,
@@ -239,6 +238,8 @@ with
             a.performance_band,
             a.performance_band_level,
             a.is_proficient,
+
+            safe_cast(a.academic_year as string) as academic_year
         from assessments_nj as a
         inner join
             students_nj as s
@@ -268,7 +269,7 @@ with
     )
 
 select
-    safe_cast(s.academic_year as string) as academic_year,
+    s.academic_year,
     s.region,
     s.schoolid,
     s.school,
@@ -316,18 +317,18 @@ select
 from nj_final as s
 left join
     state_comps as c
-    on s.academic_year = c.academic_year
+    on s.academic_year = safe_cast(c.academic_year as string)
     and s.assessment_name = c.test_name
     and s.test_code = c.test_code
     and s.region = c.region
 left join
     goals as g
-    on s.academic_year = g.academic_year
+    on s.academic_year = safe_cast(g.academic_year as string)
     and s.schoolid = g.school_id
     and s.test_code = g.state_assessment_code
 left join
     schedules as m
-    on s.academic_year = m.cc_academic_year
+    on s.academic_year = safe_cast(m.cc_academic_year as string)
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
