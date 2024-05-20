@@ -21,6 +21,11 @@ select
     datetime(sr.imported) as `imported`,
     datetime(sr.started) as `started`,
     datetime(sr.submitted) as submitted,
+    {{
+        teamster_utils.date_to_fiscal_year(
+            date_field="datetime(sr.submitted)", start_month=7, year_source="start"
+        )
+    }} as academic_year,
 
     nullif(di.value, '') as data_item_value,
 from
