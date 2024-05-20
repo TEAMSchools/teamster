@@ -13,6 +13,7 @@ from teamster.deanslist.assets import (
     build_deanslist_static_partition_asset,
 )
 from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden.deanslist.schema import ASSET_SCHEMA
 
 static_partitions_def = StaticPartitionsDefinition(["120", "126", "130", "473", "652"])
 
@@ -20,7 +21,10 @@ config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partition_assets = [
     build_deanslist_static_partition_asset(
-        code_location=CODE_LOCATION, partitions_def=static_partitions_def, **endpoint
+        code_location=CODE_LOCATION,
+        schema=ASSET_SCHEMA[endpoint["asset_name"]],
+        partitions_def=static_partitions_def,
+        **endpoint,
     )
     for endpoint in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
         "endpoints"
@@ -30,6 +34,7 @@ static_partition_assets = [
 multi_partition_monthly_assets = [
     build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
+        schema=ASSET_SCHEMA[endpoint["asset_name"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "date": MonthlyPartitionsDefinition(
@@ -48,6 +53,7 @@ multi_partition_monthly_assets = [
 multi_partition_fiscal_assets = [
     build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
+        schema=ASSET_SCHEMA[endpoint["asset_name"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "date": FiscalYearPartitionsDefinition(
