@@ -24,13 +24,7 @@ with
     )
 select
 
-    sr.home_work_location_name as location,
-    sr.business_unit_home_name as region,
-    sr.department_home_name as department,
-    sr.job_title,
-    sr.preferred_name_lastfirst,
     sr.employee_number,
-    sr.sam_account_name,
     sr.google_email,
 
     sr2.google_email as google_email_manager,
@@ -50,9 +44,14 @@ select
 from {{ ref("base_people__staff_roster") }} as sr
 cross join
     {{ ref("stg_performance_management__leadership_development_metrics") }} as ldm
+left join assignment_group as ag on sr.employee_number = ag.employee_number
+left join
+    {{ ref("base_people__staff_roster") }} as sr2
+    on sr.report_to_employee_number = sr2.employee_number
 where
     ag.route = ldm.role
     and (sr.business_unit_home_name = ldm.region or ldm.region = 'All')
     and sr.assignment_status in ('Active', 'Leave')
-    and ldm.active = true
+    /*Need '2024' to make visible before start of next academic year, will switch join to current_academic_year after July 1*/
+    and 2024 = ldm.academic_year
 order by sr.employee_number
