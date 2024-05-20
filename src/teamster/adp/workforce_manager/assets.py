@@ -24,16 +24,13 @@ from teamster.core.utils.functions import (
 
 
 def build_adp_wfm_asset(
-    code_location,
-    asset_name,
+    asset_key,
     report_name,
     hyperfind,
     symbolic_ids,
     schema,
     date_partitions_def: DailyPartitionsDefinition | DynamicPartitionsDefinition,
 ) -> AssetsDefinition:
-    asset_key = [code_location, "adp_workforce_manager", asset_name]
-
     @asset(
         key=asset_key,
         metadata={"hyperfind": hyperfind, "report_name": report_name},
