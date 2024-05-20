@@ -99,6 +99,11 @@ class AvroGCSIOManager(GCSUPathIOManager):
         bucket_obj: storage.Bucket = self.bucket_obj
         records, schema = obj
 
+        # import json
+        # fp = "env" / path
+        # fp.parent.mkdir(parents=True, exist_ok=True)
+        # json.dump(obj=records, fp=fp.open("w"))
+
         if self.path_exists(path):
             context.log.warning(f"Existing GCS key: {path}")
 
