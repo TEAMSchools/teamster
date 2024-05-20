@@ -132,11 +132,11 @@ with
 
     assessments_nj as (
         select
-            safe_cast(state_student_identifier as string) as state_id,
             scale_score as score,
             performance_level as performance_band,
 
             -- change academic year here
+            safe_cast(state_student_identifier as string) as state_id,
             2022 as academic_year,
             'Spring' as admin,
             'Spring' as season,
