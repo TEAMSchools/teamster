@@ -136,10 +136,11 @@ with
             performance_level as performance_band,
 
             -- change academic year here
-            safe_cast(state_student_identifier as string) as state_id,
             2022 as academic_year,
             'Spring' as admin,
             'Spring' as season,
+
+            safe_cast(state_student_identifier as string) as state_id,
 
             if(
                 test_name
@@ -239,7 +240,7 @@ with
             a.performance_band_level,
             a.is_proficient,
 
-            safe_cast(a.academic_year as string) as academic_year
+            safe_cast(a.academic_year as string) as academic_year,
         from assessments_nj as a
         inner join
             students_nj as s
