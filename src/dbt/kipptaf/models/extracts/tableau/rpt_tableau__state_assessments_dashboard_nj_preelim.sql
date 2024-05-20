@@ -39,7 +39,7 @@ with
             m.ms_attended,
 
             case
-                when spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
+                when e.spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
             end as iep_status,
 
             case
@@ -140,7 +140,6 @@ with
             2022 as academic_year,
             'Spring' as admin,
             'Spring' as season,
-            null as test_grade,
 
             if(
                 test_name
@@ -234,7 +233,6 @@ with
             a.discipline,
             a.subject,
             a.test_code,
-            a.test_grade,
             a.admin,
             a.season,
             a.score,
