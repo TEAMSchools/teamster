@@ -160,7 +160,7 @@ def build_bigquery_query_sftp_asset(
         ):
             substitutions = context.partition_key.keys_by_dimension  # type: ignore
             query_value["where"] = [
-                f"{k.dimension_name} = '{k.partition_key}'"
+                f"_dagster_partition_{k.dimension_name} = '{k.partition_key}'"
                 for k in context.partition_key.dimension_keys  # type: ignore
             ]
         else:

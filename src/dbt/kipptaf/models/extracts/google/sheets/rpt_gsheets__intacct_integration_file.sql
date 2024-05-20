@@ -1,39 +1,46 @@
+-- trunk-ignore(sqlfluff/ST06)
 select
-    gl.group_code,
-    gl.journal,
-    gl.reference_no,
-    gl.state,
-    gl.source_entity,
-    gl.line_no,
-    gl.document,
-    gl.acct_no,
-    gl.debit,
-    gl.credit,
-    gl.memo,
-    gl.location_id,
-    gl.dept_id,
-    gl.gl_entry_class_id,
-    gl.gl_dim_function,
-    gl.gl_dim_donor_restriction,
+    gl.journal as `JOURNAL`,
 
-    srh.employee_number as gl_entry_employee_id,
-    srh.preferred_name_lastfirst as preferred_lastfirst,
-    srh.legal_name_formatted_name as legal_lastfirst,
-    srh.department_home_name as department,
-    srh.home_work_location_name as `location`,
-    srh.job_title,
-    srh.assignment_status as `status`,
-    srh.worker_original_hire_date as hire_date,
-    srh.worker_termination_date as termination_date,
-    srh.work_assignment_actual_start_date as effective_position_start_date,
-
-    cast(gl._dagster_partition_date as string) as `date`,
-
-    coalesce(cm.project_id, gl.gl_entry_project_id) as gl_entry_project_id,
-
+    format_date('%m/%d/%Y', gl.date) as `DATE`,
     concat(
-        'adp_payroll_', gl._dagster_partition_date, '_', gl.group_code
-    ) as `description`,
+        'adp_payroll_',
+        gl._dagster_partition_date,
+        '_',
+        gl._dagster_partition_group_code
+    ) as `DESCRIPTION`,
+
+    gl.reference_no as `REFERENCE_NO`,
+    gl.state as `STATE`,
+    gl.source_entity as `SOURCEENTITY`,
+    gl.line_no as `LINE_NO`,
+    gl.document as `DOCUMENT`,
+    gl.acct_no as `ACCT_NO`,
+    gl.debit as `DEBIT`,
+    gl.credit as `CREDIT`,
+    gl.memo as `MEMO`,
+    gl.location_id as `LOCATION_ID`,
+    gl.dept_id as `DEPT_ID`,
+    gl.gl_entry_class_id as `GLENTRY_CLASSID`,
+
+    coalesce(cm.project_id, gl.gl_entry_project_id) as `GLENTRY_PROJECTID`,
+
+    gl.gl_dim_function as `GLDIMFUNCTION`,
+    gl.gl_dim_donor_restriction as `GLDIMDONOR_RESTRICTION`,
+
+    srh.employee_number as `GLENTRY_EMPLOYEEID`,
+    srh.preferred_name_lastfirst as preferred_name,
+    srh.legal_name_formatted_name as legal_name,
+    srh.assignment_status,
+    srh.home_work_location_name as home_work_location,
+    srh.department_home_name as home_department,
+    srh.job_title,
+    srh.worker_original_hire_date as original_hire_date,
+    srh.worker_termination_date as termination_date,
+    srh.work_assignment_actual_start_date,
+
+    gl._dagster_partition_group_code,
+    safe_cast(gl._dagster_partition_date as string) as _dagster_partition_date,
 from {{ ref("stg_adp_payroll__general_ledger_file") }} as gl
 left join
     {{ ref("stg_finance__payroll_code_mapping") }} as cm
@@ -44,3 +51,4 @@ left join
     and timestamp(gl.date)
     between srh.work_assignment_start_date and srh.work_assignment_end_date
     and srh.primary_indicator
+order by gl.line_no

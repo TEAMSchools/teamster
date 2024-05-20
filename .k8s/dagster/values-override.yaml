@@ -385,14 +385,14 @@ extraManifests:
       name: op-gcp-service-account-dbt
       namespace: dagster-cloud
     spec:
-      itemPath: vaults/Data Team/items/GCP Service Account - dbt
+      itemPath: vaults/Data Team/items/Teamster Service Account - dbt
   - apiVersion: onepassword.com/v1
     kind: OnePasswordItem
     metadata:
       name: op-gcp-service-account-teamster
       namespace: dagster-cloud
     spec:
-      itemPath: vaults/Data Team/items/GCP Service Account - TEAMster
+      itemPath: vaults/Data Team/items/Teamster Service Account - Default
   - apiVersion: onepassword.com/v1
     kind: OnePasswordItem
     metadata:
