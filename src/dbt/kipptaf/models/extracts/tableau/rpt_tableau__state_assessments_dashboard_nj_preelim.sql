@@ -137,7 +137,7 @@ with
 
             -- change academic year here
             2022 as academic_year,
-            'Spring' as admin,
+            'Spring' as `admin`,
             'Spring' as season,
 
             safe_cast(state_student_identifier as string) as state_id,
