@@ -8,7 +8,7 @@ from dagster import (
 
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.kippnewark import CODE_LOCATION
-from teamster.pearson.schema import ASSET_SCHEMA
+from teamster.kippnewark.pearson.schema import ASSET_SCHEMA
 
 config_dir = pathlib.Path(__file__).parent / "config"
 

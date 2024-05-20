@@ -1,8 +1,8 @@
 from dagster import AutoMaterializePolicy, DailyPartitionsDefinition
 
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.edplan.schema import NJSMART_POWERSCHOOL
 from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden.edplan.schema import NJSMART_POWERSCHOOL
 
 njsmart_powerschool = build_sftp_asset(
     asset_key=[CODE_LOCATION, "edplan", "njsmart_powerschool"],
