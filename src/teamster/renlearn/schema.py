@@ -1,6 +1,3 @@
-import json
-
-import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -408,16 +405,3 @@ class FastStar(FastStarCore):
     SubDomain_VS_SkillSet_B: int | None = None
 
     Attempts_G3: str | int | None = None
-
-
-ASSET_SCHEMA = {
-    "accelerated_reader": json.loads(
-        py_avro_schema.generate(py_type=AcceleratedReader)
-    ),
-    "fast_star": json.loads(py_avro_schema.generate(py_type=FastStar)),
-    "star_dashboard_standards": json.loads(
-        py_avro_schema.generate(py_type=StarDashboardStandard)
-    ),
-    "star": json.loads(py_avro_schema.generate(py_type=Star)),
-    "star_skill_area": json.loads(py_avro_schema.generate(py_type=StarSkillArea)),
-}

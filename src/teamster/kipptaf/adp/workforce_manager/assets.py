@@ -2,9 +2,18 @@ from dagster import DailyPartitionsDefinition, DynamicPartitionsDefinition
 
 from teamster.adp.workforce_manager.assets import build_adp_wfm_asset
 from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.adp.workforce_manager.schema import (
+    ACCRUAL_REPORTING_PERIOD_SUMMARY_SCHEMA,
+    TIME_DETAILS_SCHEMA,
+)
 
 accrual_reporting_period_summary = build_adp_wfm_asset(
-    asset_name="accrual_reporting_period_summary",
+    asset_key=[
+        CODE_LOCATION,
+        "adp_workforce_manager",
+        "accrual_reporting_period_summary",
+    ],
+    schema=ACCRUAL_REPORTING_PERIOD_SUMMARY_SCHEMA,
     report_name="AccrualReportingPeriodSummary",
     hyperfind="All Home",
     symbolic_ids=["Today"],
@@ -17,7 +26,12 @@ accrual_reporting_period_summary = build_adp_wfm_asset(
 )
 
 time_details = build_adp_wfm_asset(
-    asset_name="time_details",
+    asset_key=[
+        CODE_LOCATION,
+        "adp_workforce_manager",
+        "accrual_reporting_period_summary",
+    ],
+    schema=TIME_DETAILS_SCHEMA,
     report_name="TimeDetails",
     hyperfind="All Home",
     symbolic_ids=["Previous_SchedPeriod", "Current_SchedPeriod"],

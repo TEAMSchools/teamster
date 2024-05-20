@@ -7,8 +7,8 @@ from pendulum.datetime import DateTime
 from zenpy.lib.exception import RecordNotFoundException
 
 from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.zendesk.resources import ZendeskResource
 from teamster.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA
+from teamster.zendesk.resources import ZendeskResource
 
 
 @asset(
