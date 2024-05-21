@@ -5,9 +5,11 @@ from teamster.kipptaf.dbt.assets import manifest
 
 specs = [
     build_google_sheets_asset_spec(
-        code_location=CODE_LOCATION,
-        source_name=source["source_name"],
-        name=source["name"].split("__")[-1],
+        asset_key=[
+            CODE_LOCATION,
+            source["source_name"],
+            source["name"].split("__")[-1],
+        ],
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
