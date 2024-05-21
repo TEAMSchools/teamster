@@ -26,11 +26,7 @@ accrual_reporting_period_summary = build_adp_wfm_asset(
 )
 
 time_details = build_adp_wfm_asset(
-    asset_key=[
-        CODE_LOCATION,
-        "adp_workforce_manager",
-        "accrual_reporting_period_summary",
-    ],
+    asset_key=[CODE_LOCATION, "adp_workforce_manager", "time_details"],
     schema=TIME_DETAILS_SCHEMA,
     report_name="TimeDetails",
     hyperfind="All Home",
