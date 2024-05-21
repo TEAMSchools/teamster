@@ -13,7 +13,7 @@ from teamster.core.utils.classes import FiscalYear
 
 
 def regex_pattern_replace(pattern: str, replacements: dict):
-    for group in re.findall(r"\(\?P<\w+>[\w\[\]\+\-\\]*\)", pattern):
+    for group in re.findall(r"\(\?P<\w+>[\w\[\]\{\}\+\-\\]*\)", pattern):
         group_key = re.search(r"(?<=<)(\w+)(?=>)", group).group()
 
         group_value = replacements.get(group_key, "")

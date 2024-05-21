@@ -16,6 +16,7 @@ on:
       - src/dbt/teamster_utils/**
   pull_request:
     paths:
+      - requirements.txt
       - src/teamster/core/**
       - src/teamster/kipptaf/**
     types:

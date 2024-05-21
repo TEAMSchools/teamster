@@ -306,25 +306,25 @@ with
     nj_final as (
         select
             s._dbt_source_relation,
-            cast(a.academic_year as string) as academic_year,
             s.region,
             s.schoolid,
             s.school,
             s.student_number,
             s.state_studentnumber,
-            a.state_id,
             s.student_name,
             s.grade_level,
             s.enroll_status,
             s.gender,
-            a.race_ethnicity,
-            a.iep_status,
-            a.is_504,
             s.lunch_status,
-            a.lep_status,
             s.ms_attended,
             s.advisory,
 
+            cast(a.academic_year as string) as academic_year,
+            a.state_id,
+            a.race_ethnicity,
+            a.lep_status,
+            a.iep_status,
+            a.is_504,
             a.assessment_name,
             a.discipline,
             a.subject,
@@ -346,13 +346,11 @@ with
     fl_final as (
         select
             s._dbt_source_relation,
-            cast(a.academic_year as string) as academic_year,
             s.region,
             s.schoolid,
             s.school,
             s.student_number,
             s.fleid as state_studentnumber,
-            a.state_id,
             s.student_name,
             s.grade_level,
             s.enroll_status,
@@ -364,6 +362,8 @@ with
             s.lep_status,
             s.advisory,
 
+            cast(a.academic_year as string) as academic_year,
+            a.state_id,
             a.assessment_name,
             a.discipline,
             a.subject,
@@ -447,6 +447,8 @@ select
     m.course_number,
     m.course_name,
     m.teacher_name_current,
+
+    'Actual' as results_type,
 from nj_final as s
 left join
     state_comps as c
@@ -510,6 +512,8 @@ select
     m.course_number,
     m.course_name,
     m.teacher_name_current,
+
+    'Actual' as results_type,
 from fl_final as s
 left join
     state_comps as c
@@ -528,3 +532,47 @@ left join
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+union all
+select
+    academic_year,
+    region,
+    schoolid,
+    school,
+    student_number,
+    state_studentnumber,
+    state_id,
+    student_name,
+    grade_level,
+    enroll_status,
+    gender,
+    race_ethnicity,
+    iep_status,
+    is_504,
+    lunch_status,
+    ms_attended,
+    lep_status,
+    advisory,
+    assessment_name,
+    discipline,
+    subject,
+    test_code,
+    test_grade,
+    admin,
+    season,
+    score,
+    performance_band,
+    performance_band_level,
+    is_proficient,
+    proficiency_city,
+    proficiency_state,
+    assessment_grade_level,
+    grade_goal,
+    school_goal,
+    region_goal,
+    organization_goal,
+    teacher_name,
+    course_number,
+    course_name,
+    teacher_name_current,
+    results_type,
+from {{ ref("rpt_tableau__state_assessments_dashboard_nj_preelim") }}
