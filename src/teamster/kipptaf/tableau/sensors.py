@@ -4,7 +4,7 @@ from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult,
 
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.tableau.assets import external_assets
-from teamster.kipptaf.tableau.resources import TableauServerResource
+from teamster.tableau.resources import TableauServerResource
 
 
 @sensor(

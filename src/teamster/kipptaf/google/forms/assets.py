@@ -4,9 +4,9 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
+from teamster.google.forms.resources import GoogleFormsResource
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.google.forms.resources import GoogleFormsResource
-from teamster.kipptaf.google.forms.schema import ASSET_SCHEMA
+from teamster.kipptaf.google.forms.schema import FORM_SCHEMA, RESPONSES_SCHEMA
 
 GOOGLE_FORMS_PARTITIONS_DEF = DynamicPartitionsDefinition(
     name=f"{CODE_LOCATION}_google_forms_form_ids"
@@ -28,12 +28,11 @@ asset_kwargs = {
 )
 def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.get_form(form_id=context.partition_key)
-    schema = ASSET_SCHEMA["form"]
 
-    yield Output(value=([data], schema), metadata={"record_count": len(data)})
+    yield Output(value=([data], FORM_SCHEMA), metadata={"record_count": len(data)})
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=[data], schema=schema
+        asset_key=context.asset_key, records=[data], schema=FORM_SCHEMA
     )
 
 
@@ -44,15 +43,14 @@ def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
 )
 def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     data = google_forms.list_responses(form_id=context.partition_key)
-    schema = ASSET_SCHEMA["responses"]
 
     yield Output(
-        value=([data], schema),
+        value=([data], RESPONSES_SCHEMA),
         metadata={"record_count": len(data.get("responses", []))},
     )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=[data], schema=schema
+        asset_key=context.asset_key, records=[data], schema=RESPONSES_SCHEMA
     )
 
 

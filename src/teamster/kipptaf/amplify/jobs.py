@@ -1,9 +1,9 @@
 from dagster import define_asset_job
 
-from .assets import _all
+from teamster.kipptaf.amplify.assets import assets
 
-mclass_asset_job = define_asset_job(name="mclass_asset_job", selection=_all)
+mclass_asset_job = define_asset_job(name="mclass_asset_job", selection=assets)
 
-_all = [
+jobs = [
     mclass_asset_job,
 ]

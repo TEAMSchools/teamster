@@ -5,9 +5,8 @@ import pendulum
 from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 
 from teamster.core.ssh.resources import SSHResource
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from . import assets
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.deanslist import assets
 
 
 @sensor(
@@ -59,6 +58,6 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
     return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
 
-_all = [
+sensors = [
     deanslist_sftp_sensor,
 ]

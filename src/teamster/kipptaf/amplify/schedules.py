@@ -1,7 +1,7 @@
 from dagster import RunRequest, schedule
 
-from .. import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
-from .jobs import mclass_asset_job
+from teamster.kipptaf import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
+from teamster.kipptaf.amplify.jobs import mclass_asset_job
 
 
 @schedule(
@@ -19,6 +19,6 @@ def mclass_asset_job_schedule():
     )
 
 
-_all = [
+schedules = [
     mclass_asset_job_schedule,
 ]

@@ -4,12 +4,11 @@ import pendulum
 from dagster import StaticPartitionsDefinition, config_from_files
 
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.titan.schema import ASSET_SCHEMA
 from teamster.core.utils.classes import FiscalYear
+from teamster.kippcamden import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
+from teamster.kippcamden.titan.schema import ASSET_SCHEMA
 
-from .. import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
-
-_all = []
+assets = []
 
 for asset in config_from_files(
     [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
@@ -28,7 +27,7 @@ for asset in config_from_files(
 
     asset_name = asset["asset_name"]
 
-    _all.append(
+    assets.append(
         build_sftp_asset(
             asset_key=[CODE_LOCATION, "titan", asset_name],
             ssh_resource_key="ssh_titan",

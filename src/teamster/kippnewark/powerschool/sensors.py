@@ -1,7 +1,6 @@
-from teamster.core.powerschool.sensors import build_powerschool_sensor
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import dcid_assets, partition_assets
+from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippnewark.powerschool.assets import dcid_assets, partition_assets
+from teamster.powerschool.sis.sensors import build_powerschool_sensor
 
 partition_sensor = build_powerschool_sensor(
     name=f"{CODE_LOCATION}_powerschool_partition_sensor",
@@ -12,6 +11,6 @@ partition_sensor = build_powerschool_sensor(
     max_runtime_seconds=(60 * 7),
 )
 
-_all = [
+sensors = [
     partition_sensor,
 ]

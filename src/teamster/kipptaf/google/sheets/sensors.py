@@ -3,9 +3,9 @@ import json
 import pendulum
 from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
 
+from teamster.google.sheets.resources import GoogleSheetsResource
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.google.sheets.assets import google_sheets_assets
-from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
 
 ASSET_KEYS_BY_SHEET_ID = {
     a.metadata_by_key[a.key]["sheet_id"]: [

@@ -5,10 +5,8 @@ from teamster.core.utils.functions import (
     get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.powerschool.enrollment.resources import (
-    PowerSchoolEnrollmentResource,
-)
 from teamster.kipptaf.powerschool.enrollment.schema import SUBMISSION_RECORD_SCHEMA
+from teamster.powerschool.enrollment.resources import PowerSchoolEnrollmentResource
 
 PUBLISHED_ACTION_IDS = [
     "1006",

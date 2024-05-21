@@ -1,10 +1,9 @@
 from dagster import ScheduleDefinition
 
-from teamster.core.powerschool.schedules import build_powerschool_schedule
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import full_assets
-from .jobs import powerschool_nonpartition_asset_job
+from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippnewark.powerschool.assets import full_assets
+from teamster.kippnewark.powerschool.jobs import powerschool_nonpartition_asset_job
+from teamster.powerschool.sis.schedules import build_powerschool_schedule
 
 last_modified_schedule = build_powerschool_schedule(
     code_location=CODE_LOCATION,
@@ -20,7 +19,7 @@ nonpartition_asset_job_schedule = ScheduleDefinition(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
-_all = [
+schedules = [
     last_modified_schedule,
     nonpartition_asset_job_schedule,
 ]

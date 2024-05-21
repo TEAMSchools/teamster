@@ -1,121 +1,27 @@
-import pathlib
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.ldap.schema import GROUP_SCHEMA, USER_PERSON_SCHEMA
+from teamster.ldap.assets import build_ldap_asset
 
-from dagster import AssetExecutionContext, Output, asset, config_from_files
-
-from teamster.core.utils.functions import (
-    check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
+user_person = build_ldap_asset(
+    asset_key=[CODE_LOCATION, "ldap", "user_person"],
+    search_base="dc=teamschools,dc=kipp,dc=org",
+    search_filter="(&(objectClass=user)(objectCategory=person))",
+    schema=USER_PERSON_SCHEMA,
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {"resources": {"requests": {"memory": "1.0Gi"}}}
+        }
+    },
 )
 
-from .. import CODE_LOCATION
-from .resources import LdapResource
-from .schema import ASSET_SCHEMA
+group = build_ldap_asset(
+    asset_key=[CODE_LOCATION, "ldap", "group"],
+    search_base="dc=teamschools,dc=kipp,dc=org",
+    search_filter="(objectClass=group)",
+    schema=GROUP_SCHEMA,
+)
 
-# via http://www.phpldaptools.com/reference/Default-Schema-Attributes
-ARRAY_ATTRIBUTES = [
-    "member",
-    "memberOf",
-    "otherFacsimileTelephoneNumber",
-    "otherHomePhone",
-    "otherIpPhone",
-    "otherPager",
-    "otherTelephoneNumber",
-    "proxyAddresses",
-    "publicDelegates",
-    "servicePrincipalName",
-    "userWorkstations",
-]
-
-DATETIME_ATTRIBUTES = [
-    "accountExpires",
-    "badPasswordTime",
-    "dSCorePropagationData",
-    "idautoChallengeSetTimestamp",
-    "idautoGroupLastSynced",
-    "idautoPersonEndDate",
-    "lastLogoff",
-    "lastLogon",
-    "lastLogonTimestamp",
-    "lockoutTime",
-    "msExchWhenMailboxCreated",
-    "msTSExpireDate",
-    "pwdLastSet",
-    "whenChanged",
-    "whenCreated",
-]
-
-
-def build_ldap_asset(
-    name,
-    search_base,
-    search_filter,
-    attributes: list | None = None,
-    op_tags: dict | None = None,
-):
-    if attributes is None:
-        attributes = ["*"]
-
-    if op_tags is None:
-        op_tags = {}
-
-    asset_key = [CODE_LOCATION, "ldap", name]
-
-    @asset(
-        key=asset_key,
-        metadata={
-            "search_base": search_base,
-            "search_filter": search_filter,
-            "attributes": attributes,
-        },
-        io_manager_key="io_manager_gcs_avro",
-        op_tags=op_tags,
-        group_name="ldap",
-        compute_kind="python",
-        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
-    )
-    def _asset(context: AssetExecutionContext, ldap: LdapResource):
-        asset_name = context.asset_key.path[-1]
-
-        ldap._connection.search(**context.assets_def.metadata_by_key[context.asset_key])
-
-        entries = []
-        for entry in ldap._connection.entries:
-            primitive_items = {
-                key.replace("-", "_"): values[0]
-                if key not in DATETIME_ATTRIBUTES
-                else values[0].timestamp()
-                for key, values in entry.entry_attributes_as_dict.items()
-            }
-
-            array_items = {
-                key.replace("-", "_"): values
-                for key, values in entry.entry_attributes_as_dict.items()
-                if key in ARRAY_ATTRIBUTES
-            }
-
-            entries.append({**primitive_items, **array_items})
-
-        schema = ASSET_SCHEMA[asset_name]
-
-        yield Output(
-            value=(entries, schema),
-            metadata={"records": len(entries)},
-        )
-
-        yield check_avro_schema_valid(
-            asset_key=context.asset_key, records=entries, schema=schema
-        )
-
-    return _asset
-
-
-ldap_assets = [
-    build_ldap_asset(**asset)
-    for asset in config_from_files(
-        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"]
-    )["assets"]
-]
-
-_all = [
-    *ldap_assets,
+assets = [
+    user_person,
+    group,
 ]
