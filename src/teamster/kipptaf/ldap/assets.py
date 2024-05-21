@@ -14,7 +14,7 @@ user_person = build_ldap_asset(
     },
 )
 
-user_person = build_ldap_asset(
+group = build_ldap_asset(
     asset_key=[CODE_LOCATION, "ldap", "group"],
     search_base="dc=teamschools,dc=kipp,dc=org",
     search_filter="(objectClass=group)",
@@ -23,5 +23,5 @@ user_person = build_ldap_asset(
 
 assets = [
     user_person,
-    user_person,
+    group,
 ]
