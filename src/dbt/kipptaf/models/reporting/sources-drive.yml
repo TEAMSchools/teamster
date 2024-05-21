@@ -1,0 +1,49 @@
+version: 2
+
+sources:
+  - name: reporting
+    schema: kipptaf_reporting
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_reporting__terms
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
+            sheet_range: src_reporting__terms
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - reporting
+              - terms
+        columns:
+          - name: type
+            data_type: STRING
+          - name: code
+            data_type: STRING
+          - name: name
+            data_type: STRING
+          - name: start_date
+            data_type: DATE
+          - name: end_date
+            data_type: DATE
+          - name: academic_year
+            data_type: INTEGER
+          - name: fiscal_year
+            data_type: INTEGER
+          - name: powerschool_year_id
+            data_type: INTEGER
+          - name: powerschool_term_id
+            data_type: INTEGER
+          - name: school_id
+            data_type: INTEGER
+          - name: region
+            data_type: STRING
+          - name: grade_band
+            data_type: STRING
+          - name: lockbox_date
+            data_type: DATE
