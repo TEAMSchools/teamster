@@ -29,6 +29,7 @@ dependencies = [
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
   "zenpy>=2.0.42",
+  "pytest-playwright>=0.5.0",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
