@@ -15,3 +15,4 @@ from
             "src_performance_management__leadership_development_metrics",
         )
     }}
+where not `disabled`
