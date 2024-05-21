@@ -7,7 +7,7 @@ from dagster import (
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.powerschool.assets import build_powerschool_table_asset
+from teamster.powerschool.sis.assets import build_powerschool_table_asset
 
 config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
 
