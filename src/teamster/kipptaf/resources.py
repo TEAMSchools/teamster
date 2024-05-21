@@ -2,23 +2,21 @@ from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 from dagster_fivetran import FivetranResource
 
+from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
+from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.alchemer.resources import AlchemerResource
+from teamster.amplify.resources import MClassResource
 from teamster.core.ssh.resources import SSHResource
-from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
-from teamster.kipptaf.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.kipptaf.alchemer.resources import AlchemerResource
-from teamster.kipptaf.amplify.resources import MClassResource
-from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
-from teamster.kipptaf.google.drive.resources import GoogleDriveResource
-from teamster.kipptaf.google.forms.resources import GoogleFormsResource
-from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
-from teamster.kipptaf.ldap.resources import LdapResource
-from teamster.kipptaf.powerschool.enrollment.resources import (
-    PowerSchoolEnrollmentResource,
-)
-from teamster.kipptaf.schoolmint.grow.resources import SchoolMintGrowResource
-from teamster.kipptaf.smartrecruiters.resources import SmartRecruitersResource
-from teamster.kipptaf.tableau.resources import TableauServerResource
-from teamster.kipptaf.zendesk.resources import ZendeskResource
+from teamster.google.directory.resources import GoogleDirectoryResource
+from teamster.google.drive.resources import GoogleDriveResource
+from teamster.google.forms.resources import GoogleFormsResource
+from teamster.google.sheets.resources import GoogleSheetsResource
+from teamster.ldap.resources import LdapResource
+from teamster.powerschool.enrollment.resources import PowerSchoolEnrollmentResource
+from teamster.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.smartrecruiters.resources import SmartRecruitersResource
+from teamster.tableau.resources import TableauServerResource
+from teamster.zendesk.resources import ZendeskResource
 
 """
 Dagster resources

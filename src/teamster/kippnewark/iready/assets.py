@@ -6,12 +6,11 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.iready.schema import ASSET_SCHEMA
 from teamster.core.sftp.assets import build_sftp_asset
+from teamster.kippnewark import CODE_LOCATION
+from teamster.kippnewark.iready.schema import ASSET_SCHEMA
 
-from .. import CODE_LOCATION
-
-_all = [
+assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "iready", a["asset_name"]],
         ssh_resource_key="ssh_iready",

@@ -5,33 +5,34 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.powerschool.assets import build_powerschool_table_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.powerschool.sis.assets import build_powerschool_table_asset
 
 config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
 
 full_assets = [
     build_powerschool_table_asset(
-        **cfg, code_location=CODE_LOCATION, local_timezone=LOCAL_TIMEZONE
+        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
+        local_timezone=LOCAL_TIMEZONE,
+        **a,
     )
-    for cfg in config_from_files([(f"{config_dir}/assets-full.yaml")])["assets"]
+    for a in config_from_files([(f"{config_dir}/assets-full.yaml")])["assets"]
 ]
 
 nonpartition_assets = [
     build_powerschool_table_asset(
-        **cfg,
-        code_location=CODE_LOCATION,
+        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
         op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+        **a,
     )
-    for cfg in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
+    for a in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
 ]
 
 transaction_date_partition_assets = [
     build_powerschool_table_asset(
-        **asset,
-        code_location=CODE_LOCATION,
+        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
         partitions_def=FiscalYearPartitionsDefinition(
             start_date=pendulum.datetime(year=2018, month=7, day=1),
@@ -41,16 +42,14 @@ transaction_date_partition_assets = [
         ),
         partition_column="transaction_date",
         op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+        **a,
     )
-    for asset in config_from_files([f"{config_dir}/assets-transactiondate.yaml"])[
-        "assets"
-    ]
+    for a in config_from_files([f"{config_dir}/assets-transactiondate.yaml"])["assets"]
 ]
 
 whenmodified_assets = [
     build_powerschool_table_asset(
-        **asset,
-        code_location=CODE_LOCATION,
+        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
         partitions_def=MonthlyPartitionsDefinition(
             start_date=pendulum.datetime(year=2018, month=7, day=1),
@@ -60,14 +59,14 @@ whenmodified_assets = [
         ),
         partition_column="whenmodified",
         op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+        **a,
     )
-    for asset in config_from_files([f"{config_dir}/assets-whenmodified.yaml"])["assets"]
+    for a in config_from_files([f"{config_dir}/assets-whenmodified.yaml"])["assets"]
 ]
 
 dcid_assets = [
     build_powerschool_table_asset(
-        code_location=CODE_LOCATION,
-        asset_name="storedgrades_dcid",
+        asset_key=[CODE_LOCATION, "powerschool", "storedgrades_dcid"],
         local_timezone=LOCAL_TIMEZONE,
         table_name="storedgrades",
         select_columns=["dcid"],
