@@ -77,6 +77,5 @@ select
 
     concat(ag.employee_number, ldm.metric_id) as assignment_id,
 from assignment_group as ag
-inner join leadership_development_metrics as ldm 
-on ag.route = ldm.role
-and ldm.region = 'All'
+inner join
+    leadership_development_metrics as ldm on ag.route = ldm.role and ldm.region = 'All'
