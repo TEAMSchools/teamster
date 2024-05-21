@@ -1,4 +1,4 @@
-/* Student Number from Family Google Forms Survey*/
+/* Student Number from Family Surveys*/
 with
     family_responses as (
         select
@@ -26,23 +26,22 @@ with
             and question_shortname in ('student_number', 'family_respondent_number')
 
     )
-
+/* Google Forms and Alchemer Responses */
 select
     sr.survey_id,
     sr.survey_title,
     sr.survey_response_id,
-    sr.question_title,
     sr.question_shortname,
-    sr.answer,
-    sr.answer_value,
     sr.date_submitted,
     sr.academic_year,
 
+    qc.question_text,
+    ac.response_string as answer_text,
+    ac.response_int as answer_value,
+
     srh.job_title as staff_job_title,
 
-    coalesce(
-        se1.special_education_code, se2.special_education_code
-    ) as student_special_education_code,
+    coalesce(se1.spedlep, se2.spedlep) as student_spedlep,
     coalesce(
         sr.employee_number, se1.student_number, fr.respondent_number
     ) as respondent_number,
@@ -86,6 +85,13 @@ left join
     {{ ref("base_powerschool__student_enrollments") }} as se2
     on fr.respondent_number = se2.student_number
     and fr.academic_year = se2.academic_year
+left join
+    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    on sr.question_shortname = ac.question_code
+    and sr.answer = ac.response
+left join
+    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
+    on sr.question_shortname = qc.question_code
 where
     sr.survey_title in (
         'Engagement & Support Surveys',
@@ -95,3 +101,61 @@ where
         'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
     )
     and sr.question_shortname like '%scd%'
+
+union all
+
+/* Powerschool InfoSnap Responses */
+select
+    'PowerSchool' as survey_id,
+    'PowerSchool Family School Community Diagnostic' as survey_title,
+    sr.external_student_id as survey_response_id,
+    sr.data_item_key as question_shortname,
+    safe_cast(sr.submitted as timestamp) as date_submitted,
+    sr.academic_year,
+
+    qc.question_text,
+    ac.response_string as answer_text,
+    ac.response_int as answer_value,
+
+    null as staff_job_title,
+
+    se.spedlep as student_spedlep,
+    se.student_number as respondent_number,
+    se.region,
+    se.school_name as location,
+    se.ethnicity as race_ethnicity,
+    se.gender,
+    se.school_level as grade_band,
+    se.grade_level,
+    'Family' as survey_audience,
+
+from {{ ref("stg_powerschool_enrollment__submission_records") }} as sr
+left join
+    {{ ref("stg_reporting__terms") }} as rt
+    on rt.name = 'PowerSchool Family School Community Diagnostic'
+    and sr.submitted between rt.start_date and rt.end_date
+left join
+    {{ ref("base_powerschool__student_enrollments") }} as se
+    on sr.external_student_id = safe_cast(se.student_number as string)
+    and rt.academic_year = se.academic_year
+left join
+    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    on sr.data_item_key = ac.question_code
+    and sr.data_item_value = ac.response
+left join
+    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
+    on sr.data_item_key = qc.question_code
+where
+    sr.published_action_id = 39362
+    and sr.data_item_key in (
+        'School_Survey_01',
+        'School_Survey_02',
+        'School_Survey_03',
+        'School_Survey_04',
+        'School_Survey_05',
+        'School_Survey_06',
+        'School_Survey_07',
+        'School_Survey_08',
+        'School_Survey_09',
+        'School_Survey_10'
+    )
