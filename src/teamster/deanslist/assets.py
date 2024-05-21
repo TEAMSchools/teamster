@@ -18,9 +18,9 @@ from teamster.deanslist.resources import DeansListResource
 
 
 def build_deanslist_static_partition_asset(
-    code_location,
-    asset_name,
+    asset_key,
     api_version,
+    endpoint,
     schema,
     partitions_def: StaticPartitionsDefinition | None = None,
     op_tags: dict | None = None,
@@ -28,8 +28,6 @@ def build_deanslist_static_partition_asset(
 ) -> AssetsDefinition:
     if params is None:
         params = {}
-
-    asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
 
     @asset(
         key=asset_key,
@@ -44,7 +42,7 @@ def build_deanslist_static_partition_asset(
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
             api_version=api_version,
-            endpoint=asset_name,
+            endpoint=endpoint,
             school_id=int(context.partition_key),
             params=params,
         )
@@ -63,9 +61,9 @@ def build_deanslist_static_partition_asset(
 
 
 def build_deanslist_multi_partition_asset(
-    code_location,
-    asset_name,
+    asset_key,
     api_version,
+    endpoint,
     schema,
     partitions_def: MultiPartitionsDefinition,
     op_tags: dict | None = None,
@@ -73,8 +71,6 @@ def build_deanslist_multi_partition_asset(
 ) -> AssetsDefinition:
     if params is None:
         params = {}
-
-    asset_key = [code_location, "deanslist", asset_name.replace("-", "_")]
 
     @asset(
         key=asset_key,
@@ -110,7 +106,7 @@ def build_deanslist_multi_partition_asset(
 
         endpoint_content = deanslist.get(
             api_version=api_version,
-            endpoint=asset_name,
+            endpoint=endpoint,
             school_id=int(partition_keys_by_dimension["school"]),
             params=request_params,
         )

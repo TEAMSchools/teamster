@@ -17,8 +17,7 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_powerschool_table_asset(
-    code_location,
-    asset_name,
+    asset_key,
     local_timezone,
     partitions_def: (
         FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
@@ -27,15 +26,16 @@ def build_powerschool_table_asset(
     select_columns: list[str] | None = None,
     partition_column=None,
     op_tags: dict | None = None,
+    **kwargs,
 ) -> AssetsDefinition:
     if table_name is None:
-        table_name = asset_name
+        table_name = asset_key[-1]
 
     if select_columns is None:
         select_columns = ["*"]
 
     @asset(
-        key=[code_location, "powerschool", asset_name],
+        key=asset_key,
         metadata={"partition_column": partition_column},
         io_manager_key="io_manager_gcs_file",
         partitions_def=partitions_def,
@@ -52,7 +52,7 @@ def build_powerschool_table_asset(
 
         if not context.has_partition_key:
             constructed_where = ""
-        elif context.partition_key == partitions_def.get_first_partition_key():
+        elif context.partition_key == partitions_def.get_first_partition_key():  # pyright: ignore[reportOptionalMemberAccess]
             constructed_where = ""
         else:
             window_start = pendulum.from_format(
@@ -91,11 +91,11 @@ def build_powerschool_table_asset(
         with ssh_powerschool.get_tunnel(
             remote_port=1521, local_port=1521
         ) as ssh_tunnel:
-            ssh_tunnel.start()
+            ssh_tunnel.start()  # pyright: ignore[reportOptionalMemberAccess]
 
             file_path: pathlib.Path = db_powerschool.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
-            )  # type: ignore
+            )  # pyright: ignore[reportAssignmentType]
 
         try:
             with file_path.open(mode="rb") as f:

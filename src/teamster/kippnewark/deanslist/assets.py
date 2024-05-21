@@ -23,20 +23,20 @@ config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partition_assets = [
     build_deanslist_static_partition_asset(
-        code_location=CODE_LOCATION,
-        schema=ASSET_SCHEMA[endpoint["asset_name"]],
+        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=static_partitions_def,
-        **endpoint,
+        **e,
     )
-    for endpoint in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
+    for e in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
         "endpoints"
     ]
 ]
 
 multi_partition_monthly_assets = [
     build_deanslist_multi_partition_asset(
-        code_location=CODE_LOCATION,
-        schema=ASSET_SCHEMA[endpoint["asset_name"]],
+        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "date": MonthlyPartitionsDefinition(
@@ -45,17 +45,17 @@ multi_partition_monthly_assets = [
                 "school": static_partitions_def,
             }
         ),
-        **endpoint,
+        **e,
     )
-    for endpoint in config_from_files(
-        [f"{config_dir}/multi-partition-monthly-assets.yaml"]
-    )["endpoints"]
+    for e in config_from_files([f"{config_dir}/multi-partition-monthly-assets.yaml"])[
+        "endpoints"
+    ]
 ]
 
 multi_partition_fiscal_assets = [
     build_deanslist_multi_partition_asset(
-        code_location=CODE_LOCATION,
-        schema=ASSET_SCHEMA[endpoint["asset_name"]],
+        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "date": FiscalYearPartitionsDefinition(
@@ -67,11 +67,11 @@ multi_partition_fiscal_assets = [
                 "school": static_partitions_def,
             }
         ),
-        **endpoint,
+        **e,
     )
-    for endpoint in config_from_files(
-        [f"{config_dir}/multi-partition-fiscal-assets.yaml"]
-    )["endpoints"]
+    for e in config_from_files([f"{config_dir}/multi-partition-fiscal-assets.yaml"])[
+        "endpoints"
+    ]
 ]
 
 assets = [
