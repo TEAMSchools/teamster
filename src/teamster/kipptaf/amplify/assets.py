@@ -1,6 +1,6 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG
 
-from teamster.amplify.assets import build_mclass_asset
+from teamster.amplify.mclass.assets import build_mclass_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kipptaf.amplify.schema import (
