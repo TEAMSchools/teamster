@@ -1,46 +1,14 @@
 from pydantic import BaseModel, Field
 
 
-class FAST(BaseModel):
-    b_e_s_t_algebra_1_eoc_achievement_level: str | None = None
-    b_e_s_t_algebra_1_eoc_scale_score: str | None = None
-    civics_eoc_achievement_level: str | None = None
-    civics_eoc_scale_score: int | None = None
+class FLDOECore(BaseModel):
     date_taken: str | None = None
     english_language_learner_ell_status: str | None = None
     enrolled_district: str | None = None
     enrolled_school: str | None = None
     ethnicity: str | None = None
-    fast_grade_3_ela_reading_achievement_level: str | None = None
-    fast_grade_3_mathematics_achievement_level: str | None = None
-    fast_grade_4_ela_reading_achievement_level: str | None = None
-    fast_grade_4_mathematics_achievement_level: str | None = None
-    fast_grade_5_ela_reading_achievement_level: str | None = None
-    fast_grade_5_mathematics_achievement_level: str | None = None
-    fast_grade_6_ela_reading_achievement_level: str | None = None
-    fast_grade_6_mathematics_achievement_level: str | None = None
-    fast_grade_7_ela_reading_achievement_level: str | None = None
-    fast_grade_7_mathematics_achievement_level: str | None = None
-    fast_grade_8_ela_reading_achievement_level: str | None = None
-    fast_grade_8_mathematics_achievement_level: str | None = None
     gender_k_12: str | None = None
     gender_postsecondary_only: str | None = None
-    grade_3_fast_ela_reading_achievement_level: str | None = None
-    grade_3_fast_mathematics_achievement_level: str | None = None
-    grade_4_fast_ela_reading_achievement_level: str | None = None
-    grade_4_fast_mathematics_achievement_level: str | None = None
-    grade_5_fast_ela_reading_achievement_level: str | None = None
-    grade_5_fast_mathematics_achievement_level: str | None = None
-    grade_5_science_achievement_level: str | None = None
-    grade_5_science_scale_score: int | None = None
-    grade_6_fast_ela_reading_achievement_level: str | None = None
-    grade_6_fast_mathematics_achievement_level: str | None = None
-    grade_7_fast_ela_reading_achievement_level: str | None = None
-    grade_7_fast_mathematics_achievement_level: str | None = None
-    grade_8_fast_ela_reading_achievement_level: str | None = None
-    grade_8_fast_mathematics_achievement_level: str | None = None
-    grade_8_science_achievement_level: str | None = None
-    grade_8_science_scale_score: int | None = None
     local_id: str | None = None
     primary_exceptionality: str | None = None
     section_504: str | None = None
@@ -56,6 +24,34 @@ class FAST(BaseModel):
     unnamed_25: str | None = None
 
     enrolled_grade: int | float | None = None
+
+
+class FAST(FLDOECore):
+    fast_grade_3_ela_reading_achievement_level: str | None = None
+    fast_grade_3_mathematics_achievement_level: str | None = None
+    fast_grade_4_ela_reading_achievement_level: str | None = None
+    fast_grade_4_mathematics_achievement_level: str | None = None
+    fast_grade_5_ela_reading_achievement_level: str | None = None
+    fast_grade_5_mathematics_achievement_level: str | None = None
+    fast_grade_6_ela_reading_achievement_level: str | None = None
+    fast_grade_6_mathematics_achievement_level: str | None = None
+    fast_grade_7_ela_reading_achievement_level: str | None = None
+    fast_grade_7_mathematics_achievement_level: str | None = None
+    fast_grade_8_ela_reading_achievement_level: str | None = None
+    fast_grade_8_mathematics_achievement_level: str | None = None
+    grade_3_fast_ela_reading_achievement_level: str | None = None
+    grade_3_fast_mathematics_achievement_level: str | None = None
+    grade_4_fast_ela_reading_achievement_level: str | None = None
+    grade_4_fast_mathematics_achievement_level: str | None = None
+    grade_5_fast_ela_reading_achievement_level: str | None = None
+    grade_5_fast_mathematics_achievement_level: str | None = None
+    grade_6_fast_ela_reading_achievement_level: str | None = None
+    grade_6_fast_mathematics_achievement_level: str | None = None
+    grade_7_fast_ela_reading_achievement_level: str | None = None
+    grade_7_fast_mathematics_achievement_level: str | None = None
+    grade_8_fast_ela_reading_achievement_level: str | None = None
+    grade_8_fast_mathematics_achievement_level: str | None = None
+
     fast_grade_3_ela_reading_percentile_rank: str | int | None = None
     fast_grade_3_ela_reading_scale_score: str | int | None = None
     fast_grade_3_mathematics_percentile_rank: str | int | None = None
@@ -104,37 +100,6 @@ class FAST(BaseModel):
     grade_8_fast_ela_reading_scale_score: int | str | None = None
     grade_8_fast_mathematics_percentile_rank: str | int | None = None
     grade_8_fast_mathematics_scale_score: str | int | None = None
-
-    field_1_science: str | None = Field(None, alias="1_nature_of_science_performance")
-    field_2_science: str | None = Field(
-        None, alias="2_earth_and_space_science_performance"
-    )
-    field_3_science: str | None = Field(None, alias="3_physical_science_performance")
-    field_4_science: str | None = Field(None, alias="4_life_science_performance")
-
-    field_1_civics: str | None = Field(
-        default=None, alias="1_origins_and_purposes_of_law_and_government_performance"
-    )
-    field_2_civics: str | None = Field(
-        default=None,
-        alias="2_roles_rights_and_responsibilities_of_citizens_performance",
-    )
-    field_3_civics: str | None = Field(
-        default=None, alias="3_government_policies_and_political_processes_performance"
-    )
-    field_4_civics: str | None = Field(
-        default=None, alias="4_organization_and_function_of_government_performance"
-    )
-
-    field_1_algebra_i: str | None = Field(
-        None, alias="1_expressions_functions_and_data_analysis_performance"
-    )
-    field_2_algebra_i: str | None = Field(
-        None, alias="2_linear_relationships_performance"
-    )
-    field_3_algebra_i: str | None = Field(
-        None, alias="3_non_linear_relationships_performance"
-    )
 
     field_1_ela_reading: str | None = Field(
         default=None, alias="1_reading_prose_and_poetry_performance"
@@ -210,6 +175,51 @@ class FAST(BaseModel):
         default=None,
         alias="4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
     )
+
+
+class EOC(FLDOECore):
+    b_e_s_t_algebra_1_eoc_achievement_level: str | None = None
+    b_e_s_t_algebra_1_eoc_scale_score: str | None = None
+    civics_eoc_achievement_level: str | None = None
+    civics_eoc_scale_score: int | None = None
+
+    field_1_civics: str | None = Field(
+        default=None, alias="1_origins_and_purposes_of_law_and_government_performance"
+    )
+    field_2_civics: str | None = Field(
+        default=None,
+        alias="2_roles_rights_and_responsibilities_of_citizens_performance",
+    )
+    field_3_civics: str | None = Field(
+        default=None, alias="3_government_policies_and_political_processes_performance"
+    )
+    field_4_civics: str | None = Field(
+        default=None, alias="4_organization_and_function_of_government_performance"
+    )
+
+    field_1_algebra_i: str | None = Field(
+        None, alias="1_expressions_functions_and_data_analysis_performance"
+    )
+    field_2_algebra_i: str | None = Field(
+        None, alias="2_linear_relationships_performance"
+    )
+    field_3_algebra_i: str | None = Field(
+        None, alias="3_non_linear_relationships_performance"
+    )
+
+
+class Science(FLDOECore):
+    grade_5_science_achievement_level: str | None = None
+    grade_5_science_scale_score: int | None = None
+    grade_8_science_achievement_level: str | None = None
+    grade_8_science_scale_score: int | None = None
+
+    field_1_science: str | None = Field(None, alias="1_nature_of_science_performance")
+    field_2_science: str | None = Field(
+        None, alias="2_earth_and_space_science_performance"
+    )
+    field_3_science: str | None = Field(None, alias="3_physical_science_performance")
+    field_4_science: str | None = Field(None, alias="4_life_science_performance")
 
 
 class FSA(BaseModel):
