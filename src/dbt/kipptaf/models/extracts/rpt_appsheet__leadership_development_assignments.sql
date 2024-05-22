@@ -13,10 +13,6 @@ with
         select
             sr.employee_number,
             sr.business_unit_home_name,
-            sr.preferred_name_lastfirst,
-            sr.google_email,
-            sr.assignment_status,
-            sr.report_to_google_email,
 
             if(
                 sr.job_title in (
@@ -35,22 +31,21 @@ with
                 'CMO and Other Leaders'
             ) as route,
         from {{ ref("base_people__staff_roster") }} as sr
-        where sr.assignment_status in ('Active', 'Leave')
+        where
+            sr.assignment_status in ('Active', 'Leave')
+            and (
+                contains_substr(sr.job_title, 'Head')
+                or contains_substr(sr.job_title, 'Chief')
+                or contains_substr(sr.job_title, 'Director')
+                or contains_substr(sr.job_title, 'Leader')
+            )
     )
 
 select
     ag.employee_number,
-    ag.google_email,
-    ag.report_to_google_email,
-    ag.route,
 
     ldm.academic_year,
-    ldm.role as assignment_group,
-    ldm.region as assignment_region,
     ldm.metric_id,
-    ldm.bucket,
-    ldm.type,
-    ldm.description,
 
     concat(ag.employee_number, ldm.metric_id) as assignment_id,
 from assignment_group as ag
@@ -63,18 +58,10 @@ union all
 
 select
     ag.employee_number,
-    ag.google_email,
-    ag.report_to_google_email,
-    ag.route,
 
     ldm.academic_year,
-    ldm.role as assignment_group,
-    ldm.region as assignment_region,
     ldm.metric_id,
-    ldm.bucket,
-    ldm.type,
-    ldm.description,
-
+    
     concat(ag.employee_number, ldm.metric_id) as assignment_id,
 from assignment_group as ag
 inner join
