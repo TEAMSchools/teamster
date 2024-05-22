@@ -2,7 +2,7 @@ from dagster import materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.resources import SMARTRECRUITERS_RESOURCE
-from teamster.kipptaf.smartrecruiters.assets import smartrecruiters_report_assets
+from teamster.kipptaf.smartrecruiters.assets import assets
 
 
 def _test_asset(assets, asset_name):
@@ -23,12 +23,12 @@ def _test_asset(assets, asset_name):
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
 
 
 def test_asset_smartrecruiters_applicants():
-    _test_asset(assets=smartrecruiters_report_assets, asset_name="applicants")
+    _test_asset(assets=assets, asset_name="applicants")
 
 
 def test_asset_smartrecruiters_applications():
-    _test_asset(assets=smartrecruiters_report_assets, asset_name="applications")
+    _test_asset(assets=assets, asset_name="applications")

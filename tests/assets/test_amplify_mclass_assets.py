@@ -29,7 +29,7 @@ def _test_asset(asset):
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
 
 
 def test_mclass_asset_benchmark_student_summary():
