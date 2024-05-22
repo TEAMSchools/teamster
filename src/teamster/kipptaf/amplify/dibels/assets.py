@@ -30,38 +30,38 @@ def data_farming(context: AssetExecutionContext, dds: DibelsDataSystemResource):
     response = dds.report(
         report="DataFarming",
         scope="District",
-        district=109,
         grade="_ALL_",
         start_year=2023,
         end_year=2023,
-        assessment=15030,
         assessment_period="_ALL_",
-        student_filter="none",
-        growth_measure=16240,
-        delimiter=0,
+        student_filter="any",
+        district=109,  # Example District
+        assessment=15030,  # DIBELS 8th Edition
+        growth_measure=16240,  # Composite
+        delimiter=0,  # Comma separated
         fields=[
-            1,
-            2,
-            3,
-            4,
-            5,
-            21,
-            22,
-            23,
-            25,
-            26,
-            27,
-            41,
-            43,
-            44,
-            45,
-            47,
-            48,
-            49,
-            51,
-            50,
-            61,
-            62,
+            1,  # Student Name
+            2,  # Student ID
+            3,  # Secondary ID
+            4,  # Date of Birth
+            5,  # Demographics
+            21,  # Schools
+            22,  # Class Names
+            23,  # Secondary Class Names
+            25,  # Teacher Names
+            26,  # District IDs
+            27,  # School IDs
+            41,  # Benchmark Statuses
+            43,  # School Percentiles
+            44,  # District Percentiles
+            45,  # National DDS Percentiles
+            47,  # Outcome Measures
+            48,  # Assessment Dates
+            49,  # Assessment Forms
+            51,  # Remote Testing Status
+            50,  # Zones of Growth (must select all periods)
+            61,  # Move Out Dates
+            62,  # Data System Internal IDs
         ],
     )
 
