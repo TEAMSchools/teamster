@@ -224,13 +224,16 @@ with
     assessments_fl_eoc as (
         select
             student_id as state_id,
-            cast(b_e_s_t_algebra_1_eoc_scale_score as numeric) as score,
             b_e_s_t_algebra_1_eoc_achievement_level as performance_band,
 
             'EOC' as assessment_name,
             'PM3' as `admin`,
             'Spring' as season,
+            'Math' as discipline,
+            'Algebra I' as subject,
+            'ALG01' as test_code,
 
+            cast(b_e_s_t_algebra_1_eoc_scale_score as numeric) as score,
             cast(_dagster_partition_school_year_term as int) as academic_year,
             cast(enrolled_grade.long_value as string) as test_grade,
             cast(
@@ -244,30 +247,6 @@ with
                 false
             ) as is_proficient,
 
-            case
-                _dagster_partition_grade_level_subject
-                when 'B.E.S.T.Algebra1'
-                then 'Math'
-                when 'Civics'
-                then 'Civics'
-            end as discipline,
-
-            case
-                _dagster_partition_grade_level_subject
-                when 'B.E.S.T.Algebra1'
-                then 'Algebra I'
-                when 'Civics'
-                then 'Civics'
-            end as subject,
-
-            case
-                _dagster_partition_grade_level_subject
-                when 'B.E.S.T.Algebra1'
-                then 'ALG01'
-                when 'Civics'
-                then 'SOC08'
-            end as test_code,
-
         from {{ ref("stg_fldoe__eoc") }}
         where
             (
@@ -275,6 +254,92 @@ with
                 and b_e_s_t_algebra_1_eoc_scale_score != 'Invalidated'
             )
 
+        union all
+
+        select
+            student_id as state_id,
+            civics_eoc_achievement_level as performance_band,
+
+            'EOC' as assessment_name,
+            'PM3' as `admin`,
+            'Spring' as season,
+            'Civics' as discipline,
+            'Civics' as subject,
+            'SOC08' as test_code,
+
+            cast(civics_eoc_scale_score as numeric) as score,
+            cast(_dagster_partition_school_year_term as int) as academic_year,
+            cast(enrolled_grade.long_value as string) as test_grade,
+            cast(
+                right(civics_eoc_achievement_level, 1) as numeric
+            ) as performance_band_level,
+
+            if(
+                safe_cast(right(civics_eoc_achievement_level, 1) as numeric) >= 3,
+                true,
+                false
+            ) as is_proficient,
+
+        from {{ ref("stg_fldoe__eoc") }}
+        where civics_eoc_scale_score is not null
+    ),
+
+    assessments_fl_science as (
+        select
+            student_id as state_id,
+            grade_8_science_achievement_level as performance_band,
+
+            'Science' as assessment_name,
+            'PM3' as `admin`,
+            'Spring' as season,
+            'Science' as discipline,
+            'Science' subject,
+            'SCI08' as test_code,
+
+            cast(grade_8_science_scale_score as numeric) as score,
+            cast(_dagster_partition_school_year_term as int) as academic_year,
+            cast(enrolled_grade.long_value as string) as test_grade,
+            cast(
+                right(grade_8_science_achievement_level, 1) as numeric
+            ) as performance_band_level,
+
+            if(
+                safe_cast(right(grade_8_science_achievement_level, 1) as numeric) >= 3,
+                true,
+                false
+            ) as is_proficient,
+
+        from {{ ref("stg_fldoe__science") }}
+        where grade_8_science_scale_score is not null and enrolled_grade.long_value = 8
+
+        union all
+
+        select
+            student_id as state_id,
+            grade_5_science_achievement_level as performance_band,
+
+            'Science' as assessment_name,
+            'PM3' as `admin`,
+            'Spring' as season,
+            'Science' as discipline,
+            'Science' subject,
+            'SCI05' as test_code,
+
+            cast(grade_5_science_scale_score as numeric) as score,
+            cast(_dagster_partition_school_year_term as int) as academic_year,
+            cast(enrolled_grade.long_value as string) as test_grade,
+            cast(
+                right(grade_5_science_achievement_level, 1) as numeric
+            ) as performance_band_level,
+
+            if(
+                safe_cast(right(grade_5_science_achievement_level, 1) as numeric) >= 3,
+                true,
+                false
+            ) as is_proficient,
+
+        from {{ ref("stg_fldoe__science") }}
+        where grade_5_science_scale_score is not null and enrolled_grade.long_value = 5
     ),
 
     assessments_fl as (
@@ -373,6 +438,23 @@ with
             subject,
             test_code,
         from assessments_fl_eoc
+        union all
+        select
+            academic_year,
+            state_id,
+            assessment_name,
+            test_grade,
+            `admin`,
+            score,
+            performance_band,
+            performance_band_level,
+            is_proficient,
+            season,
+            discipline,
+            subject,
+            test_code,
+        from assessments_fl_science
+
     ),
 
     nj_final as (
