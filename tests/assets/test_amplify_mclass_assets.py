@@ -3,7 +3,7 @@ import random
 from dagster import materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.amplify.assets import (
+from teamster.kipptaf.amplify.mclass.assets import (
     benchmark_student_summary,
     pm_student_summary,
 )
