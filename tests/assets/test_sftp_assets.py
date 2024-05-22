@@ -35,7 +35,7 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
 
 
 def test_edplan_kippcamden():
@@ -276,11 +276,7 @@ def test_fldoe_eoc_kippmiami():
 
     asset = [a for a in assets if a.key.path[-1] == "eoc"][0]
 
-    _test_asset(
-        asset=asset,
-        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
-        partition_key="civics|2023",
-    )
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_fldoe_science_kippmiami():
@@ -288,11 +284,7 @@ def test_fldoe_science_kippmiami():
 
     asset = [a for a in assets if a.key.path[-1] == "science"][0]
 
-    _test_asset(
-        asset=asset,
-        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
-        partition_key="8|2023",
-    )
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_iready_diagnostic_results_kippmiami():
