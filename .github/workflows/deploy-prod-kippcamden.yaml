@@ -6,23 +6,33 @@ on:
     branches:
       - main
     paths:
-      - Dockerfile
-      - requirements.txt
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippcamden.yaml
-      - src/teamster/core/**
-      - src/teamster/kippcamden/**
-      - src/dbt/kippcamden/**
+      - Dockerfile
+      - requirements.txt
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
+      - src/dbt/kippcamden/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
       - src/dbt/teamster_utils/**
       - src/dbt/titan/**
+      - src/teamster/core/**
+      - src/teamster/deanslist/**
+      - src/teamster/edplan/**
+      - src/teamster/kippcamden/**
+      - src/teamster/pearson/**
+      - src/teamster/powerschool/sis/**
+      - src/teamster/titan/**
   pull_request:
     paths:
       - src/teamster/core/**
+      - src/teamster/deanslist/**
+      - src/teamster/edplan/**
       - src/teamster/kippcamden/**
+      - src/teamster/pearson/**
+      - src/teamster/powerschool/sis/**
+      - src/teamster/titan/**
     types:
       - opened
       - synchronize
