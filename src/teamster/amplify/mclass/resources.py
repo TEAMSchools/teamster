@@ -38,16 +38,14 @@ class MClassResource(ConfigurableResource):
             response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
-
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.exception(e)
-
+            self.get_resource_context().log.exception(e)  # pyright: ignore[reportOptionalMemberAccess]
             raise exceptions.HTTPError(response.text) from e
 
     def get(self, path, *args, **kwargs):
         url = self._get_url(*args, path=path)
-        self.get_resource_context().log.debug(f"GET: {url}")
+        self.get_resource_context().log.debug(f"GET: {url}")  # pyright: ignore[reportOptionalMemberAccess]
 
         return self._request(method="GET", url=url, **kwargs)
 
@@ -56,7 +54,7 @@ class MClassResource(ConfigurableResource):
             data = {}
 
         url = self._get_url(*args, path=path)
-        self.get_resource_context().log.debug(f"POST: {url}")
+        self.get_resource_context().log.debug(f"POST: {url}")  # pyright: ignore[reportOptionalMemberAccess]
 
         for k, v in data.items():
             if isinstance(v, dict):

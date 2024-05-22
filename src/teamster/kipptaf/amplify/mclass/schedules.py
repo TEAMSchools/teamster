@@ -1,7 +1,7 @@
 from dagster import RunRequest, schedule
 
 from teamster.kipptaf import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
-from teamster.kipptaf.amplify.jobs import mclass_asset_job
+from teamster.kipptaf.amplify.mclass.jobs import mclass_asset_job
 
 
 @schedule(
