@@ -5,7 +5,7 @@ from dagster_fivetran import FivetranResource
 from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
 from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.alchemer.resources import AlchemerResource
-from teamster.amplify.resources import MClassResource
+from teamster.amplify.mclass.resources import MClassResource
 from teamster.core.ssh.resources import SSHResource
 from teamster.google.directory.resources import GoogleDirectoryResource
 from teamster.google.drive.resources import GoogleDriveResource
