@@ -224,7 +224,7 @@ with
     assessments_fl_eoc as (
         select
             student_id as state_id,
-            b_e_s_t_algebra_1_eoc_scale_score as scale_score,
+            cast(b_e_s_t_algebra_1_eoc_scale_score as numeric) as score,
             b_e_s_t_algebra_1_eoc_achievement_level as performance_band,
 
             'EOC' as assessment_name,
@@ -233,10 +233,15 @@ with
 
             cast(_dagster_partition_school_year_term as int) as academic_year,
             cast(enrolled_grade.long_value as string) as test_grade,
-            right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as performance_band_level,
+            cast(
+                right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric
+            ) as performance_band_level,
 
             if(
-                right(b_e_s_t_algebra_1_eoc_achievement_level, 1) >= 3, true, false
+                safe_cast(right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric)
+                >= 3,
+                true,
+                false
             ) as is_proficient,
 
             case
@@ -270,7 +275,7 @@ with
                 and b_e_s_t_algebra_1_eoc_scale_score != 'Invalidated'
             )
 
-    )
+    ),
 
     assessments_fl as (
         select
@@ -363,6 +368,7 @@ with
             performance_band,
             performance_band_level,
             is_proficient,
+            season,
             discipline,
             subject,
             test_code,
@@ -407,6 +413,7 @@ with
             students_nj as s
             on a.academic_year = s.academic_year
             and a.state_id = s.state_studentnumber
+        where a.score is not null
     ),
 
     fl_final as (
@@ -446,6 +453,7 @@ with
             students_fl as s
             on a.academic_year = s.academic_year
             and a.state_id = s.fleid
+        where a.score is not null
     ),
 
     state_comps as (
