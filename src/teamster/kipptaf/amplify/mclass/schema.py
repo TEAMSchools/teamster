@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.amplify.schema import BenchmarkStudentSummary, PMStudentSummary
+from teamster.amplify.mclass.schema import BenchmarkStudentSummary, PMStudentSummary
 
 
 class benchmark_student_summary_record(BenchmarkStudentSummary):
