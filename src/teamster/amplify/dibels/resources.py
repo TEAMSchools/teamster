@@ -53,8 +53,11 @@ class DibelsDataSystemResource(ConfigurableResource):
         student_filter,
         delimiter,
         growth_measure,
-        # fields: list | None = None,
+        fields: list[int] | None = None,
     ):
+        if fields is None:
+            fields = []
+
         response = self.get(
             path="reports/report.php",
             params={
@@ -67,8 +70,9 @@ class DibelsDataSystemResource(ConfigurableResource):
                 "Assessment": assessment,
                 "AssessmentPeriod": assessment_period,
                 "StudentFilter": student_filter,
-                "Delimiter": delimiter,
                 "GrowthMeasure": growth_measure,
+                "Delimiter": delimiter,
+                "Fields": fields,
             },
         )
 
