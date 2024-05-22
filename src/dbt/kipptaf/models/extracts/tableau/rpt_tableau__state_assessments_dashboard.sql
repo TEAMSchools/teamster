@@ -246,25 +246,25 @@ with
 
             case
                 _dagster_partition_grade_level_subject
-                when 'algebra_i'
+                when 'B.E.S.T.Algebra1'
                 then 'Math'
-                when 'civics'
+                when 'Civics'
                 then 'Civics'
             end as discipline,
 
             case
                 _dagster_partition_grade_level_subject
-                when 'algebra_i'
+                when 'B.E.S.T.Algebra1'
                 then 'Algebra I'
-                when 'civics'
+                when 'Civics'
                 then 'Civics'
             end as subject,
 
             case
                 _dagster_partition_grade_level_subject
-                when 'algebra_i'
+                when 'B.E.S.T.Algebra1'
                 then 'ALG01'
-                when 'civics'
+                when 'Civics'
                 then 'SOC08'
             end as test_code,
 
