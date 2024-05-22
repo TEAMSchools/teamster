@@ -1,53 +1,24 @@
-from dagster import AssetExecutionContext, asset, materialize
+from dagster import materialize
 
-from teamster.amplify.dibels.resources import DibelsDataSystemResource
-
-
-@asset
-def foo(context: AssetExecutionContext, dds: DibelsDataSystemResource):
-    dds.report(
-        report="DataFarming",
-        scope="District",
-        district=109,
-        grade="_ALL_",
-        start_year=2023,
-        end_year=2023,
-        assessment=15030,
-        assessment_period="_ALL_",
-        student_filter="none",
-        growth_measure=16240,
-        delimiter=0,
-        fields=[
-            1,
-            2,
-            3,
-            4,
-            5,
-            21,
-            22,
-            23,
-            25,
-            26,
-            27,
-            41,
-            43,
-            44,
-            45,
-            47,
-            48,
-            49,
-            51,
-            50,
-            61,
-            62,
-        ],
-    )
+from teamster.core.resources import get_io_manager_gcs_avro
+from teamster.kipptaf.amplify.dibels.assets import data_farming
+from teamster.kipptaf.resources import DIBELS_DATA_SYSTEM_RESOURCE
 
 
-def test_foo():
+def test_data_farming():
     result = materialize(
-        assets=[foo],
-        resources={"dds": DibelsDataSystemResource(username="", password="")},
+        assets=[data_farming],
+        resources={
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "dds": DIBELS_DATA_SYSTEM_RESOURCE,
+        },
     )
 
     assert result.success
+    assert (
+        result.get_asset_materialization_events()[0]
+        .event_specific_data.materialization.metadata["row_count"]  # type: ignore
+        .value
+        > 0
+    )
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
