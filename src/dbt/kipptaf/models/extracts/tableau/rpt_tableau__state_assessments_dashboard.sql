@@ -221,6 +221,62 @@ with
         where cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
     ),
 
+    assessments_fl_eoc as (
+        select
+            student_id as state_id,
+            cast(b_e_s_t_algebra_1_eoc_scale_score as numeric) as score,
+            b_e_s_t_algebra_1_eoc_achievement_level as performance_band,
+
+            'EOC' as assessment_name,
+            'PM3' as `admin`,
+            'Spring' as season,
+
+            cast(_dagster_partition_school_year_term as int) as academic_year,
+            cast(enrolled_grade.long_value as string) as test_grade,
+            cast(
+                right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric
+            ) as performance_band_level,
+
+            if(
+                safe_cast(right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric)
+                >= 3,
+                true,
+                false
+            ) as is_proficient,
+
+            case
+                _dagster_partition_grade_level_subject
+                when 'algebra_i'
+                then 'Math'
+                when 'civics'
+                then 'Civics'
+            end as discipline,
+
+            case
+                _dagster_partition_grade_level_subject
+                when 'algebra_i'
+                then 'Algebra I'
+                when 'civics'
+                then 'Civics'
+            end as subject,
+
+            case
+                _dagster_partition_grade_level_subject
+                when 'algebra_i'
+                then 'ALG01'
+                when 'civics'
+                then 'SOC08'
+            end as test_code,
+
+        from {{ ref("stg_fldoe__eoc") }}
+        where
+            (
+                b_e_s_t_algebra_1_eoc_scale_score is not null
+                and b_e_s_t_algebra_1_eoc_scale_score != 'Invalidated'
+            )
+
+    ),
+
     assessments_fl as (
         select
             cast(academic_year as int) as academic_year,
@@ -301,6 +357,22 @@ with
             end as test_code,
         from {{ ref("stg_fldoe__fsa") }}
         where performance_level is not null
+        union all
+        select
+            academic_year,
+            state_id,
+            assessment_name,
+            test_grade,
+            `admin`,
+            score,
+            performance_band,
+            performance_band_level,
+            is_proficient,
+            season,
+            discipline,
+            subject,
+            test_code,
+        from assessments_fl_eoc
     ),
 
     nj_final as (
@@ -341,6 +413,7 @@ with
             students_nj as s
             on a.academic_year = s.academic_year
             and a.state_id = s.state_studentnumber
+        where a.score is not null
     ),
 
     fl_final as (
@@ -380,6 +453,7 @@ with
             students_fl as s
             on a.academic_year = s.academic_year
             and a.state_id = s.fleid
+        where a.score is not null
     ),
 
     state_comps as (
