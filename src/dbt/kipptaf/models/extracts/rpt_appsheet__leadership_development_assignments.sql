@@ -43,10 +43,8 @@ with
 
 select
     ag.employee_number,
-
     ldm.academic_year,
     ldm.metric_id,
-
     concat(ag.employee_number, ldm.metric_id) as assignment_id,
 from assignment_group as ag
 inner join
@@ -58,10 +56,8 @@ union all
 
 select
     ag.employee_number,
-
     ldm.academic_year,
     ldm.metric_id,
-    
     concat(ag.employee_number, ldm.metric_id) as assignment_id,
 from assignment_group as ag
 inner join
