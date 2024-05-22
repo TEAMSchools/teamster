@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.fldoe.schema import FAST, FSA
+from teamster.fldoe.schema import EOC, FAST, FSA, Science
 
 
 class fast_record(FAST):
@@ -24,6 +24,8 @@ ASSET_SCHEMA = {
         py_avro_schema.generate(py_type=fast_record, options=pas_options)
     ),
     "fsa": json.loads(py_avro_schema.generate(py_type=fsa_record, options=pas_options)),
-    "science": json.loads(py_avro_schema.generate(py_type=FAST, options=pas_options)),
-    "eoc": json.loads(py_avro_schema.generate(py_type=FAST, options=pas_options)),
+    "science": json.loads(
+        py_avro_schema.generate(py_type=Science, options=pas_options)
+    ),
+    "eoc": json.loads(py_avro_schema.generate(py_type=EOC, options=pas_options)),
 }
