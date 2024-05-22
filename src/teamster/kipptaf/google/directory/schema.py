@@ -11,11 +11,9 @@ from teamster.google.directory.schema import (
     User,
 )
 
-GROUPS_SCHEMA = (json.loads(py_avro_schema.generate(py_type=Group, namespace="group")),)
+GROUPS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Group, namespace="group"))
 
-MEMBERS_SCHEMA = (
-    json.loads(py_avro_schema.generate(py_type=Member, namespace="member")),
-)
+MEMBERS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Member, namespace="member"))
 
 ORGUNITS_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=OrgUnits, namespace="orgunits")
