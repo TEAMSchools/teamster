@@ -5,6 +5,7 @@ from dagster_fivetran import FivetranResource
 from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
 from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.alchemer.resources import AlchemerResource
+from teamster.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.amplify.mclass.resources import MClassResource
 from teamster.core.ssh.resources import SSHResource
 from teamster.google.directory.resources import GoogleDirectoryResource
@@ -47,6 +48,10 @@ ALCHEMER_RESOURCE = AlchemerResource(
     api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
     api_version="v5",
     timeout=15,
+)
+
+DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
+    username=EnvVar("AMPLIFY_DDS_USERNAME"), password=EnvVar("AMPLIFY_DDS_PASSWORD")
 )
 
 FIVETRAN_RESOURCE = FivetranResource(

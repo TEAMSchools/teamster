@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup, Tag
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
 from requests import Session, exceptions
@@ -76,4 +77,8 @@ class DibelsDataSystemResource(ConfigurableResource):
             },
         )
 
-        return response
+        soup = BeautifulSoup(markup=response.text, features="html.parser")
+
+        csv_link: Tag = soup.find(name="a", attrs={"class": "csv-link"})  # pyright: ignore[reportAssignmentType]
+
+        return self._request(method="GET", url=csv_link.get(key="href"))
