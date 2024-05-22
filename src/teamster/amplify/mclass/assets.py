@@ -5,7 +5,7 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.amplify.resources import MClassResource
+from teamster.amplify.mclass.resources import MClassResource
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,

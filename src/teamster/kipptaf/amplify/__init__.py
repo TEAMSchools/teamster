@@ -1,6 +1,16 @@
-from teamster.kipptaf.amplify.assets import assets
-from teamster.kipptaf.amplify.jobs import jobs
-from teamster.kipptaf.amplify.schedules import schedules
+from teamster.kipptaf.amplify import mclass
+
+assets = [
+    *mclass.assets,
+]
+
+jobs = [
+    *mclass.jobs,
+]
+
+schedules = [
+    *mclass.schedules,
+]
 
 __all__ = [
     "assets",

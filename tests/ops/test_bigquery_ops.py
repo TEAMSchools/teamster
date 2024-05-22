@@ -2,10 +2,7 @@ from dagster import build_op_context
 from dagster_gcp import BigQueryResource
 
 from teamster import GCS_PROJECT_NAME
-from teamster.kipptaf.google.bigquery.ops import (
-    BigQueryGetTableOpConfig,
-    bigquery_get_table_op,
-)
+from teamster.google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
 
 
 def test_op():

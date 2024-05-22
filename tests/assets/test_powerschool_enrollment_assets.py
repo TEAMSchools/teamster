@@ -4,9 +4,7 @@ from dagster import AssetsDefinition, EnvVar, materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.powerschool.enrollment.assets import submission_records
-from teamster.kipptaf.powerschool.enrollment.resources import (
-    PowerSchoolEnrollmentResource,
-)
+from teamster.powerschool.enrollment.resources import PowerSchoolEnrollmentResource
 
 
 def _test_asset(asset: AssetsDefinition, partition_key=None):
@@ -33,7 +31,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
 
 
 def test_submission_records():
