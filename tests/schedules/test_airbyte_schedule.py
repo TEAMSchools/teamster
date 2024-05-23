@@ -20,5 +20,5 @@ def test_schedule():
         context=context, airbyte=AIRBYTE_CLOUD_RESOURCE
     )
 
-    for o in output:  # type: ignore
+    for o in output:
         context.log.info(o)

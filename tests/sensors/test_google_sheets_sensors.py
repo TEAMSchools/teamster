@@ -18,4 +18,4 @@ def test_google_sheets_asset_sensor():
         ),
     )
 
-    assert len(sensor_result.asset_events) > 0  # type: ignore
+    assert len(sensor_result.asset_events) > 0

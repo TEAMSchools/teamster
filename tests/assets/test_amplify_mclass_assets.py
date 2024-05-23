@@ -11,7 +11,7 @@ from teamster.kipptaf.resources import MCLASS_RESOURCE
 
 
 def _test_asset(asset):
-    partition_keys = asset.partitions_def.get_partition_keys()  # type: ignore
+    partition_keys = asset.partitions_def.get_partition_keys()
 
     result = materialize(
         assets=[asset],
@@ -25,11 +25,11 @@ def _test_asset(asset):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # type: ignore
+        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_mclass_asset_benchmark_student_summary():
