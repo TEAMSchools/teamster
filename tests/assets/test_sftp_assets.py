@@ -23,7 +23,7 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
         instance=instance,
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             **ssh_resource,
         },
     )

@@ -16,7 +16,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
     result = materialize(
         assets=[asset],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             "ps_enrollment": PowerSchoolEnrollmentResource(
                 api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
             ),

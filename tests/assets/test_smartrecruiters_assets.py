@@ -11,7 +11,7 @@ def _test_asset(assets, asset_name):
     result = materialize(
         assets=[asset],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             "smartrecruiters": SMARTRECRUITERS_RESOURCE,
         },
     )
