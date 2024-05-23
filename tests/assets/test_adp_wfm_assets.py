@@ -38,7 +38,7 @@ def _test_asset(asset: AssetsDefinition):
                 random.randint(a=0, b=(len(partition_keys) - 1))
             ],
             resources={
-                "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+                "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
                 "adp_wfm": ADP_WORKFORCE_MANAGER_RESOURCE,
             },
         )

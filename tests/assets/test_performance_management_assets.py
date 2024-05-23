@@ -16,7 +16,7 @@ def test_outlier_detection():
         assets=[outlier_detection],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             "db_bigquery": BIGQUERY_RESOURCE,
         },
     )

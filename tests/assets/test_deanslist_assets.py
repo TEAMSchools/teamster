@@ -17,7 +17,7 @@ def _test_asset(assets, asset_name, partition_key: str | None = None):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             "deanslist": DEANSLIST_RESOURCE,
         },
     )

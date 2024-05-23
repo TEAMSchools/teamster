@@ -26,7 +26,7 @@ def _test_asset(asset: AssetsDefinition):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             "google_directory": GOOGLE_DIRECTORY_RESOURCE,
         },
     )
@@ -34,7 +34,7 @@ def _test_asset(asset: AssetsDefinition):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]
+        .event_specific_data.materialization.metadata["record_count"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
         .value
         > 0
     )
