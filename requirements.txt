@@ -222,9 +222,9 @@ db-dtypes==1.2.0 \
 dbt-bigquery==1.7.9 \
     --hash=sha256:b2f77ca76f8a5b7427911b16f2ff84588421fe89931dc7afbb77b42eb93fecd2 \
     --hash=sha256:dd10a1bb12007ac4ed1fd5b95836f67f800a59df9ad82e0dc1d51f89fc7561fd
-dbt-core==1.7.14 \
-    --hash=sha256:86dc6e84c356f075ae29896ef315c679d9bc49d96ae24124a105d5ecc79de43b \
-    --hash=sha256:e142e62d30178d598ad9463b8d162cfa8238806622fee7e63bf8b3236551feec
+dbt-core==1.8.1 \
+    --hash=sha256:24bca2f60b8e2f0b07fbdd968550e0abfab8748598f34fa7c42b192ed570d391 \
+    --hash=sha256:4b61d68ebf5647bd3d760f9135506f744755dcfa7ef6b49e0ead1d07bbc820fe
 dbt-extractor==0.5.1 \
     --hash=sha256:100453ba06e169cbdb118234ab3f06f6722a2e0e316089b81c88dea701212abc \
     --hash=sha256:1b25fa7a276ab26aa2d70ff6e0cf4cfb1490d7831fb57ee1337c24d2b0333b84 \
