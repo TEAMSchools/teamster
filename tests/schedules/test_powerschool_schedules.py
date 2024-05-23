@@ -12,5 +12,5 @@ def test_schedule():
             db_powerschool=DB_POWERSCHOOL,
         )
 
-        for o in output:  # type: ignore
+        for o in output:
             context.log.info(o)

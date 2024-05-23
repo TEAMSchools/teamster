@@ -10,5 +10,5 @@ def test_schedule():
 
     output = deanslist_comm_log_midday_job_schedule(context=context)
 
-    for o in output:  # type: ignore
+    for o in output:
         context.log.info(o)

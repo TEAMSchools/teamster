@@ -14,7 +14,7 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
 
     result = materialize(
         assets=[asset],
-        partition_key=partition_key,  # type: ignore
+        partition_key=partition_key,
         resources={
             "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
             "google_forms": GOOGLE_FORMS_RESOURCE,
@@ -24,11 +24,11 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]  # type: ignore
+        .event_specific_data.materialization.metadata["record_count"]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_asset_google_forms_form():
