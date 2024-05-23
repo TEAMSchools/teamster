@@ -72,13 +72,6 @@ def data_farming(context: AssetExecutionContext, dds: DibelsDataSystemResource):
 
     records = df.to_dict(orient="records")
 
-    import json
-    import pathlib
-
-    fp = pathlib.Path("env/amplify/datafarming.json")
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(obj=records, fp=fp.open("w"))
-
     yield Output(
         value=(records, DATA_FARMING_SCHEMA), metadata={"row_count": df.shape[0]}
     )
