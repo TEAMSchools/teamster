@@ -181,3 +181,17 @@ sources:
               - kipptaf
               - assessments
               - college_readiness_expected_tests
+      - name: src_assessments__assessment_expectations
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__assessment_expectations
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - assessment_expectations
