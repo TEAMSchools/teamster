@@ -50,7 +50,7 @@ lint:
     - osv-scanner@1.7.3
     - oxipng@9.1.1
     - prettier@3.2.5
-    - ruff@0.4.4
+    - ruff@0.4.5
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.0.6
