@@ -1,6 +1,6 @@
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
-from tableauserverclient import PersonalAccessTokenAuth
+from tableauserverclient.models.tableau_auth import PersonalAccessTokenAuth
 from tableauserverclient.server.server import Server
 
 
