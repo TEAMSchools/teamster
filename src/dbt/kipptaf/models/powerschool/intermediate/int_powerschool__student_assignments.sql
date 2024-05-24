@@ -42,6 +42,20 @@ with
 
             1 as counter,
 
+            concat('Q', right(gb.storecode, 1)) as assign_quarter,
+            if(
+                concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
+            ) as assign_semester_code,
+            left(gb.storecode, 1) as assign_category_code,
+
+            concat(
+                enr.region, enr.school_level, left(gb.storecode, 1)
+            ) as es_exclude_concat,
+
+            concat(
+                enr.region, enr.school_level, gb.category_name
+            ) as other_excluded_categories_concat,
+
             case
                 when enr.school_level in ('ES', 'MS')
                 then co.cc_section_number
@@ -54,19 +68,6 @@ with
                 ((a.totalpointvalue * s.scorepoints) / 100),
                 s.scorepoints
             ) as assign_score_converted,
-
-            concat('Q', right(gb.storecode, 1)) as assign_quarter,
-            if(
-                concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
-            ) as assign_semester_code,
-            left(gb.storecode, 1) as assign_category_code,
-
-            concat(
-                enr.region, enr.school_level, left(gb.storecode, 1)
-            ) as es_exclude_concat,
-            concat(
-                enr.region, enr.school_level, gb.category_name
-            ) as other_excluded_categories_concat,
 
             if(
                 a.assignmentid is not null
