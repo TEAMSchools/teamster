@@ -252,7 +252,7 @@ with
             if(t.teacher_quarter in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
 
             avg(
-                if(asg.assign_expected_with_score = 1, assign_final_score_percent, null)
+                if(asg.assign_expected_with_score = 1, asg.assign_final_score_percent, null)
             ) over (
                 partition by
                     t.schoolid,
@@ -271,7 +271,8 @@ with
                     t.audit_qt_week_number,
                     asg.assign_category_code
             )
-            as total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
+            as 
+            total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
 
             sum(asg.assign_expected_to_be_scored) over (
                 partition by
@@ -312,7 +313,8 @@ with
                     asg.assign_category,
                     asg.assign_id
             )
-            as total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
+            as 
+            total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
 
             sum(asg.assign_expected_to_be_scored) over (
                 partition by
