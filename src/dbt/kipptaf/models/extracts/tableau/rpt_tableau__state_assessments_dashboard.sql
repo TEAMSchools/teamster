@@ -96,6 +96,8 @@ with
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
+            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+
             if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
             if(`period` = 'FallBlock', 'Fall', `period`) as season,
             if(
@@ -121,6 +123,30 @@ with
                 then 'Not Yet Graduation Ready'
                 else testperformancelevel_text
             end as performance_band,
+            case
+                when twoormoreraces = 'Y'
+                then 'T'
+                when hispanicorlatinoethnicity = 'Y'
+                then 'H'
+                when americanindianoralaskanative = 'Y'
+                then 'I'
+                when asian = 'Y'
+                then 'A'
+                when blackorafricanamerican = 'Y'
+                then 'B'
+                when nativehawaiianorotherpacificislander = 'Y'
+                then 'P'
+                when white = 'Y'
+                then 'W'
+            end as race_ethnicity,
+            case
+                when studentwithdisabilities in ('IEP', 'B')
+                then 'Has IEP'
+                else 'No IEP'
+            end as iep_status,
+            case
+                englishlearnerel when 'Y' then true when 'N' then false
+            end as lep_status,
         from {{ ref("int_pearson__all_assessments") }}
         where academic_year >= {{ var("current_academic_year") }} - 7
     ),
@@ -296,14 +322,14 @@ select
     s.grade_level,
     s.enroll_status,
     s.gender,
-    s.race_ethnicity,
-    s.iep_status,
-    s.is_504,
     s.lunch_status,
-    s.lep_status,
     s.advisory,
     s.ms_attended,
 
+    a.race_ethnicity,
+    a.lep_status,
+    a.iep_status,
+    a.is_504,
     a.state_id,
     a.assessment_name,
     a.discipline,
@@ -377,13 +403,13 @@ select
     s.grade_level,
     s.enroll_status,
     s.gender,
-    s.race_ethnicity,
-    s.iep_status,
-    s.is_504,
     s.lunch_status,
-    s.lep_status,
     s.advisory,
     s.ms_attended,
+    s.race_ethnicity,
+    s.lep_status,
+    s.iep_status,
+    s.is_504,
 
     a.state_id,
     a.assessment_name,
