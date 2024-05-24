@@ -36,17 +36,13 @@ with
             aud.end_date as audit_end_date,
             aud.due_date as audit_due_date,
 
+            1 as counter,
+
             coalesce(s.islate, 0) as assign_is_late,
             coalesce(s.isexempt, 0) as assign_is_exempt,
             coalesce(s.ismissing, 0) as assign_is_missing,
 
-            1 as counter,
-
             concat('Q', right(gb.storecode, 1)) as assign_quarter,
-            if(
-                concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
-            ) as assign_semester_code,
-            left(gb.storecode, 1) as assign_category_code,
 
             concat(
                 enr.region, enr.school_level, left(gb.storecode, 1)
@@ -55,6 +51,11 @@ with
             concat(
                 enr.region, enr.school_level, gb.category_name
             ) as other_excluded_categories_concat,
+
+            if(
+                concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
+            ) as assign_semester_code,
+            left(gb.storecode, 1) as assign_category_code,
 
             case
                 when enr.school_level in ('ES', 'MS')
