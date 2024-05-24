@@ -12,6 +12,7 @@ with
             sub.district_benchmark_category_name,
             sub.district_benchmark_proficient,
             sub.scaled_score,
+            sub.unified_score,
             sub.current_sgp,
             sub.completed_date,
             sub.assessment_id,
