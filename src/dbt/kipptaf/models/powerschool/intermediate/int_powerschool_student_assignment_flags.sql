@@ -91,7 +91,7 @@ select distinct
     assign_f_score_less_5,
     assign_w_missing_score_not_5,
     assign_s_score_less_50p,
-    assign_f_missing_score_not_5
+    assign_f_missing_score_not_5,
 
 from
     student_unpivot_flags pivot (
