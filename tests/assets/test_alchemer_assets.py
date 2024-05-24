@@ -60,7 +60,7 @@ def _test_asset(asset, partition_key=None):
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
-            partitions_def_name=asset.partitions_def.name,  # type: ignore
+            partitions_def_name=asset.partitions_def.name,
             partition_keys=SURVEY_IDS,
         )
 
@@ -69,7 +69,7 @@ def _test_asset(asset, partition_key=None):
             instance=instance,
             partition_key=partition_key,
             resources={
-                "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+                "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
                 "alchemer": ALCHEMER_RESOURCE,
             },
         )
@@ -77,11 +77,11 @@ def _test_asset(asset, partition_key=None):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]  # type: ignore
+        .event_specific_data.materialization.metadata["record_count"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_asset_alchemer_survey():

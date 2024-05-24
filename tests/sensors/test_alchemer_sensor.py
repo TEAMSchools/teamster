@@ -22,7 +22,7 @@ def test_alchemer_survey_metadata_asset_sensor():
             alchemer=ALCHEMER_RESOURCE,
         )
 
-    assert len(sensor_result.run_requests) > 0  # type: ignore
+    assert len(sensor_result.run_requests) > 0
 
 
 def test_alchemer_survey_response_asset_sensor():
@@ -38,4 +38,4 @@ def test_alchemer_survey_response_asset_sensor():
             alchemer=ALCHEMER_RESOURCE,
         )
 
-    assert len(sensor_result.run_requests) > 0  # type: ignore
+    assert len(sensor_result.run_requests) > 0

@@ -181,7 +181,7 @@ class EOC(FLDOECore):
     b_e_s_t_algebra_1_eoc_achievement_level: str | None = None
     b_e_s_t_algebra_1_eoc_scale_score: str | None = None
     civics_eoc_achievement_level: str | None = None
-    civics_eoc_scale_score: int | None = None
+    civics_eoc_scale_score: str | None = None
 
     field_1_civics: str | None = Field(
         default=None, alias="1_origins_and_purposes_of_law_and_government_performance"

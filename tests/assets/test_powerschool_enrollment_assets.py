@@ -16,7 +16,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
     result = materialize(
         assets=[asset],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             "ps_enrollment": PowerSchoolEnrollmentResource(
                 api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
             ),
@@ -27,11 +27,11 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # type: ignore
+        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_submission_records():

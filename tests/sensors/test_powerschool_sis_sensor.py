@@ -23,5 +23,5 @@ def test_powerschool_sensor():
         db_powerschool=DB_POWERSCHOOL,
     )
 
-    for result in sensor_results:  # type: ignore
+    for result in sensor_results:
         context.log.info(result)

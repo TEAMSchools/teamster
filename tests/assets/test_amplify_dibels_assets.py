@@ -9,7 +9,7 @@ def test_data_farming():
     result = materialize(
         assets=[data_farming],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             "dds": DIBELS_DATA_SYSTEM_RESOURCE,
         },
     )
@@ -17,8 +17,8 @@ def test_data_farming():
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["row_count"]  # type: ignore
+        .event_specific_data.materialization.metadata["row_count"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]

@@ -23,7 +23,7 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
         instance=instance,
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             **ssh_resource,
         },
     )
@@ -31,11 +31,11 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # type: ignore
+        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # type: ignore
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_edplan_kippcamden():
@@ -430,7 +430,7 @@ def test_adp_payroll_general_ledger_file_kipptaf():
     from teamster.kipptaf.adp.payroll.assets import general_ledger_file
 
     partitions_def_name = (
-        general_ledger_file.partitions_def.get_partitions_def_for_dimension("date").name  # type: ignore
+        general_ledger_file.partitions_def.get_partitions_def_for_dimension("date").name  # pyright: ignore[reportOptionalMemberAccess, reportAttributeAccessIssue]
     )
 
     with instance_for_test() as instance:

@@ -61,6 +61,7 @@ LDAP_PASSWORD=op://Data Team/Active Directory Service Account/password
 LDAP_PORT=op://Data Team/Active Directory Service Account/port
 LDAP_USER=op://Data Team/Active Directory Service Account/username
 LITTLESIS_SFTP_HOST=op://Data Team/Little SIS SFTP/host
+LITTLESIS_SFTP_PORT=op://Data Team/Little SIS SFTP/port
 LITTLESIS_SFTP_PASSWORD=op://Data Team/Little SIS SFTP/password
 LITTLESIS_SFTP_USERNAME=op://Data Team/Little SIS SFTP/username
 OP_CONNECT_TOKEN=op://Data Team/hltg4twkgkf6xc23n6pc7dqvee/credential

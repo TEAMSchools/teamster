@@ -170,6 +170,7 @@ SSH_RESOURCE_IDAUTO = SSHResource(
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
+    remote_port=EnvVar("LITTLESIS_SFTP_PORT"),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )
