@@ -35,6 +35,7 @@ with
             m.ms_attended,
 
             if(e.spedlep like '%SPED%', 'Has IEP', 'No IEP') as iep_status,
+
             case
                 when e.school_level in ('ES', 'MS')
                 then e.advisory_name
