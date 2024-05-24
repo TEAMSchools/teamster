@@ -154,7 +154,7 @@ with
 
     assessments_nj as (
         select
-            cast(academic_year as int) as academic_year,
+            safe_cast(academic_year as int) as academic_year,
             statestudentidentifier as state_id,
             assessment_name,
             subject_area as discipline,
@@ -218,7 +218,7 @@ with
                 else testcode
             end as test_code,
         from {{ ref("int_pearson__all_assessments") }}
-        where cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
+        where safe_cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
     ),
 
     assessments_fl_eoc as (
@@ -233,10 +233,16 @@ with
             'Algebra I' as subject,
             'ALG01' as test_code,
 
-            cast(b_e_s_t_algebra_1_eoc_scale_score as int) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
+            safe_cast(
+                if(
+                    b_e_s_t_algebra_1_eoc_scale_score = 'Invalidated',
+                    null,
+                    b_e_s_t_algebra_1_eoc_scale_score
+                ) as int
+            ) as score,
+            safe_cast(_dagster_partition_school_year_term as int) as academic_year,
+            safe_cast(enrolled_grade.long_value as string) as test_grade,
+            safe_cast(
                 right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as int
             ) as performance_band_level,
 
@@ -248,9 +254,7 @@ with
             ) as is_proficient,
 
         from {{ ref("stg_fldoe__eoc") }}
-        where
-            _dagster_partition_grade_level_subject != 'Civics'
-            and b_e_s_t_algebra_1_eoc_scale_score is not null
+        where b_e_s_t_algebra_1_eoc_scale_score is not null
 
         union all
 
@@ -265,10 +269,14 @@ with
             'Civics' as subject,
             'SOC08' as test_code,
 
-            cast(civics_eoc_scale_score as int) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
+            safe_cast(
+                if(
+                    civics_eoc_scale_score = 'Invalidated', null, civics_eoc_scale_score
+                ) as int
+            ) as score,
+            safe_cast(_dagster_partition_school_year_term as int) as academic_year,
+            safe_cast(enrolled_grade.long_value as string) as test_grade,
+            safe_cast(
                 right(civics_eoc_achievement_level, 1) as int
             ) as performance_band_level,
 
@@ -294,10 +302,10 @@ with
             'Science' subject,
             'SCI08' as test_code,
 
-            cast(grade_8_science_scale_score as int) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
+            safe_cast(grade_8_science_scale_score as int) as score,
+            safe_cast(_dagster_partition_school_year_term as int) as academic_year,
+            safe_cast(enrolled_grade.long_value as string) as test_grade,
+            safe_cast(
                 right(grade_8_science_achievement_level, 1) as int
             ) as performance_band_level,
 
@@ -323,10 +331,10 @@ with
             'Science' subject,
             'SCI05' as test_code,
 
-            cast(grade_5_science_scale_score as int) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
+            safe_cast(grade_5_science_scale_score as int) as score,
+            safe_cast(_dagster_partition_school_year_term as int) as academic_year,
+            safe_cast(enrolled_grade.long_value as string) as test_grade,
+            safe_cast(
                 right(grade_5_science_achievement_level, 1) as int
             ) as performance_band_level,
 
@@ -338,14 +346,15 @@ with
 
         from {{ ref("stg_fldoe__science") }}
         where grade_5_science_scale_score is not null and enrolled_grade.long_value = 5
+
     ),
 
     assessments_fl as (
         select
-            cast(academic_year as int) as academic_year,
+            safe_cast(academic_year as int) as academic_year,
             student_id as state_id,
             'FAST' as assessment_name,
-            cast(assessment_grade as string) as test_grade,
+            safe_cast(assessment_grade as string) as test_grade,
             administration_window as `admin`,
             scale_score as score,
             achievement_level as performance_band,
@@ -383,10 +392,10 @@ with
         where achievement_level not in ('Insufficient to score', 'Invalidated')
         union all
         select
-            cast(academic_year as int) as academic_year,
+            safe_cast(academic_year as int) as academic_year,
             fleid as state_id,
             'FSA' as assessment_name,
-            cast(test_grade as string) as test_grade,
+            safe_cast(test_grade as string) as test_grade,
             'Spring' as `admin`,
             scale_score as score,
             achievement_level as performance_band,
@@ -471,7 +480,7 @@ with
             s.ms_attended,
             s.advisory,
 
-            cast(a.academic_year as string) as academic_year,
+            safe_cast(a.academic_year as string) as academic_year,
             a.state_id,
             a.race_ethnicity,
             a.lep_status,
@@ -515,7 +524,7 @@ with
             s.lep_status,
             s.advisory,
 
-            cast(a.academic_year as string) as academic_year,
+            safe_cast(a.academic_year as string) as academic_year,
             a.state_id,
             a.assessment_name,
             a.discipline,
@@ -606,18 +615,18 @@ select
 from nj_final as s
 left join
     state_comps as c
-    on cast(s.academic_year as int) = c.academic_year
+    on safe_cast(s.academic_year as int) = c.academic_year
     and s.assessment_name = c.test_name
     and s.test_code = c.test_code
     and s.region = c.region
 left join
     goals as g
-    on cast(s.academic_year as int) = g.academic_year
+    on safe_cast(s.academic_year as int) = g.academic_year
     and s.schoolid = g.school_id
     and s.test_code = g.state_assessment_code
 left join
     schedules as m
-    on s.academic_year = cast(m.cc_academic_year as string)
+    on s.academic_year = safe_cast(m.cc_academic_year as string)
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
@@ -671,18 +680,18 @@ select
 from fl_final as s
 left join
     state_comps as c
-    on cast(s.academic_year as int) = c.academic_year
+    on safe_cast(s.academic_year as int) = c.academic_year
     and s.assessment_name = c.test_name
     and s.test_code = c.test_code
     and s.region = c.region
 left join
     goals as g
-    on cast(s.academic_year as int) = g.academic_year
+    on safe_cast(s.academic_year as int) = g.academic_year
     and s.schoolid = g.school_id
     and s.test_code = g.state_assessment_code
 left join
     schedules as m
-    on s.academic_year = cast(m.cc_academic_year as string)
+    on s.academic_year = safe_cast(m.cc_academic_year as string)
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
