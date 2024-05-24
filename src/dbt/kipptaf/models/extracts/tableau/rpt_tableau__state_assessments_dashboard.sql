@@ -250,10 +250,7 @@ with
         from {{ ref("stg_fldoe__eoc") }}
         where
             _dagster_partition_grade_level_subject != 'Civics'
-            and (
-                b_e_s_t_algebra_1_eoc_scale_score is not null
-                and b_e_s_t_algebra_1_eoc_scale_score != 'Invalidated'
-            )
+            and b_e_s_t_algebra_1_eoc_scale_score is not null
 
         union all
 
