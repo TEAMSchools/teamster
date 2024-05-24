@@ -233,15 +233,15 @@ with
             'Algebra I' as subject,
             'ALG01' as test_code,
 
-            cast(b_e_s_t_algebra_1_eoc_scale_score as numeric) as score,
+            cast(b_e_s_t_algebra_1_eoc_scale_score as int) as score,
             cast(_dagster_partition_school_year_term as int) as academic_year,
             cast(enrolled_grade.long_value as string) as test_grade,
             cast(
-                right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric
+                right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as int
             ) as performance_band_level,
 
             if(
-                safe_cast(right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric)
+                safe_cast(right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as int)
                 >= 3,
                 true,
                 false
@@ -268,15 +268,15 @@ with
             'Civics' as subject,
             'SOC08' as test_code,
 
-            cast(civics_eoc_scale_score as numeric) as score,
+            cast(civics_eoc_scale_score as int) as score,
             cast(_dagster_partition_school_year_term as int) as academic_year,
             cast(enrolled_grade.long_value as string) as test_grade,
             cast(
-                right(civics_eoc_achievement_level, 1) as numeric
+                right(civics_eoc_achievement_level, 1) as int
             ) as performance_band_level,
 
             if(
-                safe_cast(right(civics_eoc_achievement_level, 1) as numeric) >= 3,
+                safe_cast(right(civics_eoc_achievement_level, 1) as int) >= 3,
                 true,
                 false
             ) as is_proficient,
@@ -297,15 +297,15 @@ with
             'Science' subject,
             'SCI08' as test_code,
 
-            cast(grade_8_science_scale_score as numeric) as score,
+            cast(grade_8_science_scale_score as int) as score,
             cast(_dagster_partition_school_year_term as int) as academic_year,
             cast(enrolled_grade.long_value as string) as test_grade,
             cast(
-                right(grade_8_science_achievement_level, 1) as numeric
+                right(grade_8_science_achievement_level, 1) as int
             ) as performance_band_level,
 
             if(
-                safe_cast(right(grade_8_science_achievement_level, 1) as numeric) >= 3,
+                safe_cast(right(grade_8_science_achievement_level, 1) as int) >= 3,
                 true,
                 false
             ) as is_proficient,
@@ -326,15 +326,15 @@ with
             'Science' subject,
             'SCI05' as test_code,
 
-            cast(grade_5_science_scale_score as numeric) as score,
+            cast(grade_5_science_scale_score as int) as score,
             cast(_dagster_partition_school_year_term as int) as academic_year,
             cast(enrolled_grade.long_value as string) as test_grade,
             cast(
-                right(grade_5_science_achievement_level, 1) as numeric
+                right(grade_5_science_achievement_level, 1) as int
             ) as performance_band_level,
 
             if(
-                safe_cast(right(grade_5_science_achievement_level, 1) as numeric) >= 3,
+                safe_cast(right(grade_5_science_achievement_level, 1) as int) >= 3,
                 true,
                 false
             ) as is_proficient,
