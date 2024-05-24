@@ -895,7 +895,7 @@ with
 
         from final_roster as f
         left join
-            `grangel.int_powerschool__teacher_assignment_flags` as t
+            {{ ref("int_powerschool__teacher_assignment_flags") }} as t
             on f.academic_year = t.academic_year
             and f.schoolid = t.schoolid
             and f.course_number = t.course_number
