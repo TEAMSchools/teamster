@@ -20,6 +20,7 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/njgpa/"
       - name: src_pearson__njsla
         meta:
           dagster:
@@ -32,6 +33,7 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/njsla/"
       - name: src_pearson__njsla_science
         meta:
           dagster:
@@ -44,6 +46,7 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/njsla_science/"
       - name: src_pearson__parcc
         meta:
           dagster:
@@ -56,6 +59,7 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/parcc/"
       - name: src_pearson__student_list_report
         meta:
           dagster:
@@ -68,3 +72,5 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/pearson/student_list_report/"

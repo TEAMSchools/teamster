@@ -1,10 +1,3 @@
-{#-
-    edit the academic_year to ensure the grade levels are correct for NJ preelim results
-    edit the academic_year only if the SIS has been rolled over to school year AFTER
-    the preelim results school year
--#}
-{%- set academic_year = 2022 -%}
-
 with
     ms_grad as (
         select
@@ -55,11 +48,11 @@ with
             and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
             and m.rn = 1
         where
-            e.academic_year = {{ academic_year }}
-            and e.rn_year = 1
+            e.rn_year = 1
             and e.region in ('Camden', 'Newark')
-            and e.grade_level > 2
             and e.schoolid != 999999
+            and e.academic_year >= 2022
+            and e.grade_level > 2
     ),
 
     schedules as (
@@ -84,10 +77,10 @@ with
             end as discipline,
         from {{ ref("base_powerschool__course_enrollments") }} as e
         where
-            e.cc_academic_year = {{ academic_year }}
-            and e.rn_credittype_year = 1
+            e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and e.cc_academic_year >= 2022
     ),
 
     assessments_nj as (
@@ -95,8 +88,8 @@ with
             _dbt_source_relation,
             scale_score as score,
             performance_level as performance_band,
+            academic_year,
 
-            {{ academic_year }} as academic_year,
             'Spring' as `admin`,
             'Spring' as season,
 
@@ -204,7 +197,8 @@ select
     m.teacher_name,
     m.course_number,
     m.course_name,
-    m.teacher_name as teacher_name_current,
+
+    mcur.teacher_name as teacher_name_current,
 
     c.city as proficiency_city,
     c.state as proficiency_state,
@@ -229,6 +223,12 @@ left join
     and s.student_number = m.students_student_number
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+left join
+    schedules as mcur
+    on s.student_number = mcur.students_student_number
+    and a.discipline = mcur.discipline
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="mcur") }}
+    and mcur.academic_year = {{ var("current_academic_year") }}
 left join
     state_comps as c
     on s.academic_year = c.academic_year
