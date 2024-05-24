@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             student_number,
             school_abbreviation as ms_attended,
+
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
@@ -92,26 +93,16 @@ with
             testperformancelevel as performance_band_level,
             is_proficient,
 
-            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+            cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
             if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
             if(`period` = 'FallBlock', 'Fall', `period`) as season,
             if(
-                studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP'
-            ) as iep_status,
-            if(
                 `subject` = 'English Language Arts/Literacy',
                 'English Language Arts',
                 `subject`
-            ) as subject,
+            ) as `subject`,
 
-            case
-                when assessmentgrade in ('Grade 10', 'Grade 11')
-                then right(assessmentgrade, 2)
-                when assessmentgrade is null
-                then null
-                else right(assessmentgrade, 1)
-            end as test_grade,
             case
                 testcode
                 when 'SC05'
@@ -129,25 +120,6 @@ with
                 then 'Not Yet Graduation Ready'
                 else testperformancelevel_text
             end as performance_band,
-            case
-                when twoormoreraces = 'Y'
-                then 'T'
-                when hispanicorlatinoethnicity = 'Y'
-                then 'H'
-                when americanindianoralaskanative = 'Y'
-                then 'I'
-                when asian = 'Y'
-                then 'A'
-                when blackorafricanamerican = 'Y'
-                then 'B'
-                when nativehawaiianorotherpacificislander = 'Y'
-                then 'P'
-                when white = 'Y'
-                then 'W'
-            end as race_ethnicity,
-            case
-                englishlearnerel when 'Y' then true when 'N' then false
-            end as lep_status,
         from {{ ref("int_pearson__all_assessments") }}
         where academic_year >= {{ var("current_academic_year") }} - 7
     ),
@@ -156,121 +128,52 @@ with
         select
             _dbt_source_relation,
             student_id as state_id,
-            b_e_s_t_algebra_1_eoc_achievement_level as performance_band,
+            academic_year,
+            enrolled_grade as test_grade,
+            scale_score as score,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
+            is_proficient,
 
             'EOC' as assessment_name,
-            'PM3' as `admin`,
             'Spring' as season,
-            'Math' as discipline,
-            'Algebra I' as `subject`,
-            'ALG01' as test_code,
-
-            cast(b_e_s_t_algebra_1_eoc_scale_score as numeric) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
-                right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric
-            ) as performance_band_level,
-
-            if(
-                safe_cast(right(b_e_s_t_algebra_1_eoc_achievement_level, 1) as numeric)
-                >= 3,
-                true,
-                false
-            ) as is_proficient,
-        from {{ ref("stg_fldoe__eoc") }}
-        where
-            _dagster_partition_grade_level_subject = 'B.E.S.T.Algebra1'
-            and b_e_s_t_algebra_1_eoc_scale_score != 'Invalidated'
-
-        union all
-
-        select
-            _dbt_source_relation,
-            student_id as state_id,
-            civics_eoc_achievement_level as performance_band,
-
-            'EOC' as assessment_name,
             'PM3' as `admin`,
-            'Spring' as season,
-            'Civics' as discipline,
-            'Civics' as `subject`,
-            'SOC08' as test_code,
 
-            cast(civics_eoc_scale_score as numeric) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
-                right(civics_eoc_achievement_level, 1) as numeric
-            ) as performance_band_level,
+            if(test_name = 'B.E.S.T.Algebra1', 'Math', test_name) as discipline,
+            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', test_name) as `subject`,
 
-            if(
-                safe_cast(right(civics_eoc_achievement_level, 1) as numeric) >= 3,
-                true,
-                false
-            ) as is_proficient,
+            case
+                test_name
+                when 'B.E.S.T.Algebra1'
+                then 'ALG01'
+                when 'Civics'
+                then 'SOC08'
+            end as test_code,
         from {{ ref("stg_fldoe__eoc") }}
-        where
-            _dagster_partition_grade_level_subject = 'Civics'
-            and civics_eoc_scale_score != 'Invalidated'
+        where not is_invalidated
     ),
 
     assessments_fl_science as (
         select
             _dbt_source_relation,
             student_id as state_id,
-            grade_8_science_achievement_level as performance_band,
+            academic_year,
+            test_grade_level as test_grade,
+            scale_score as score,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
+            is_proficient,
 
             'Science' as assessment_name,
-            'PM3' as `admin`,
             'Spring' as season,
+            'PM3' as `admin`,
             'Science' as discipline,
             'Science' as `subject`,
-            'SCI08' as test_code,
 
-            cast(grade_8_science_scale_score as numeric) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
-                right(grade_8_science_achievement_level, 1) as numeric
-            ) as performance_band_level,
-
-            if(
-                safe_cast(right(grade_8_science_achievement_level, 1) as numeric) >= 3,
-                true,
-                false
-            ) as is_proficient,
+            case
+                test_grade_level when 5 then 'SCI05' when 8 then 'SCI08'
+            end as test_code,
         from {{ ref("stg_fldoe__science") }}
-        where grade_8_science_scale_score is not null and enrolled_grade.long_value = 8
-
-        union all
-
-        select
-            _dbt_source_relation,
-            student_id as state_id,
-            grade_5_science_achievement_level as performance_band,
-
-            'Science' as assessment_name,
-            'PM3' as `admin`,
-            'Spring' as season,
-            'Science' as discipline,
-            'Science' as `subject`,
-            'SCI05' as test_code,
-
-            cast(grade_5_science_scale_score as numeric) as score,
-            cast(_dagster_partition_school_year_term as int) as academic_year,
-            cast(enrolled_grade.long_value as string) as test_grade,
-            cast(
-                right(grade_5_science_achievement_level, 1) as numeric
-            ) as performance_band_level,
-
-            if(
-                safe_cast(right(grade_5_science_achievement_level, 1) as numeric) >= 3,
-                true,
-                false
-            ) as is_proficient,
-        from {{ ref("stg_fldoe__science") }}
-        where grade_5_science_scale_score is not null and enrolled_grade.long_value = 5
     ),
 
     assessments_fl as (
@@ -278,7 +181,7 @@ with
             _dbt_source_relation,
             academic_year,
             student_id as state_id,
-            safe_cast(assessment_grade as string) as test_grade,
+            assessment_grade as test_grade,
             administration_window as `admin`,
             scale_score as score,
             achievement_level as performance_band,
@@ -325,7 +228,7 @@ with
             _dbt_source_relation,
             academic_year,
             fleid as state_id,
-            safe_cast(test_grade as string) as test_grade,
+            test_grade,
 
             'Spring' as `admin`,
 
@@ -354,7 +257,7 @@ with
                 then 'Mathematics'
                 when 'SCIENCE'
                 then 'Science'
-            end as subject,
+            end as `subject`,
             case
                 when test_subject = 'ELA'
                 then concat('ELA0', test_grade)
