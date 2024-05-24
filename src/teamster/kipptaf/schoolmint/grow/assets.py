@@ -21,6 +21,7 @@ static_partition_assets = [
             "grow",
             e["asset_name"].replace("-", "_").replace("/", "_"),
         ],
+        endpoint=e["asset_name"],
         partitions_def=STATIC_PARTITONS_DEF,
         schema=ASSET_SCHEMA[e["asset_name"]],
     )
@@ -32,6 +33,7 @@ static_partition_assets = [
 multi_partition_assets = [
     build_schoolmint_grow_asset(
         asset_key=[CODE_LOCATION, "schoolmint", "grow", e["asset_name"]],
+        endpoint=e["asset_name"],
         partitions_def=MultiPartitionsDefinition(
             {
                 "archived": STATIC_PARTITONS_DEF,

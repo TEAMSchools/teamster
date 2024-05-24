@@ -14,7 +14,9 @@ from teamster.core.utils.functions import (
 from teamster.schoolmint.grow.resources import SchoolMintGrowResource
 
 
-def build_schoolmint_grow_asset(asset_key, partitions_def, schema) -> AssetsDefinition:
+def build_schoolmint_grow_asset(
+    asset_key, endpoint, partitions_def, schema
+) -> AssetsDefinition:
     @asset(
         key=asset_key,
         io_manager_key="io_manager_gcs_avro",
@@ -42,7 +44,7 @@ def build_schoolmint_grow_asset(asset_key, partitions_def, schema) -> AssetsDefi
         # TODO: lastModified == None for first partition
 
         endpoint_content = schoolmint_grow.get(
-            endpoint=context.asset_key.path[-1],
+            endpoint=endpoint,
             archived=(archived_partition == "t"),
             lastModified=last_modified_partition,
         )
