@@ -170,20 +170,6 @@ with
             pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
     ),
 
-    goals as (
-        select
-            academic_year,
-            school_id,
-            state_assessment_code,
-            grade_level,
-            grade_goal,
-            school_goal,
-            region_goal,
-            organization_goal,
-        from {{ ref("stg_assessments__academic_goals") }}
-        where state_assessment_code is not null
-    )
-
 select
     s.academic_year,
     s.region,
