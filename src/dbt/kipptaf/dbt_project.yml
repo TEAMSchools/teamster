@@ -107,6 +107,8 @@ models:
         +schema: google_directory
         staging:
           +materialized: table
+      appsheet:
+        +schema: appsheet
     illuminate:
       +schema: illuminate
       staging:
