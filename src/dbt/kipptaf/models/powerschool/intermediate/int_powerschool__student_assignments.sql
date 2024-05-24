@@ -30,11 +30,11 @@ with
 
             s.scorepoints as assign_score_raw,
 
-            aud.yr_week_number as audit_yr_week_number,
-            aud.qt_week_number as audit_qt_week_number,
-            aud.start_date as audit_start_date,
-            aud.end_date as audit_end_date,
-            aud.due_date as audit_due_date,
+            aud.year_week_number,
+            aud.quarter_week_number,
+            aud.audit_start_date,
+            aud.audit_end_date,
+            aud.audit_due_date,
 
             1 as counter,
 
@@ -56,13 +56,6 @@ with
                 concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
             ) as assign_semester_code,
             left(gb.storecode, 1) as assign_category_code,
-
-            case
-                when enr.school_level in ('ES', 'MS')
-                then co.cc_section_number
-                when enr.school_level = 'HS'
-                then co.sections_external_expression
-            end as `section`,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -101,6 +94,13 @@ with
                 a.assignmentid is not null and coalesce(s.isexempt, 0) = 0, 1, 0
             ) as assign_expected_to_be_scored,
 
+            case
+                when enr.school_level in ('ES', 'MS')
+                then co.cc_section_number
+                when enr.school_level = 'HS'
+                then co.sections_external_expression
+            end as `section`,
+
         from {{ ref("base_powerschool__course_enrollments") }} as co
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as enr
@@ -128,7 +128,7 @@ with
             {{ ref("stg_reporting__gradebook_expectations") }} as aud
             on enr.academic_year = aud.academic_year
             and enr.region = aud.region
-            and a.duedate between aud.start_date and aud.end_date
+            and a.duedate between aud.audit_start_date and aud.audit_end_date
         where
             co.cc_academic_year = {{ var("current_academic_year") }}
             and not co.is_dropped_section
@@ -178,8 +178,8 @@ with
             assign_expected_with_score,
             assign_expected_to_be_scored,
             assign_max_score,
-            audit_yr_week_number,
-            audit_qt_week_number,
+            year_week_number,
+            quarter_week_number,
             audit_start_date,
             audit_end_date,
             audit_due_date,
@@ -239,8 +239,8 @@ select
     assign_expected_with_score,
     assign_expected_to_be_scored,
     assign_max_score,
-    audit_yr_week_number,
-    audit_qt_week_number,
+    year_week_number,
+    quarter_week_number,
     audit_start_date,
     audit_end_date,
     audit_due_date,
