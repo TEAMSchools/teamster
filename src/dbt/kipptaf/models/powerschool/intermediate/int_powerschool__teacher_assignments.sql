@@ -72,11 +72,11 @@ with
             t.teacher_quarter,
             t.counter,
 
-            aud.yr_week_number as audit_yr_week_number,
-            aud.qt_week_number as audit_qt_week_number,
-            aud.start_date as audit_start_date,
-            aud.end_date as audit_end_date,
-            aud.due_date as audit_due_date,
+            aud.year_week_number,
+            aud.quarter_week_number,
+            aud.audit_start_date,
+            aud.audit_end_date,
+            aud.audit_due_date,
 
             case
                 t.expected_teacher_assign_category_code
@@ -121,8 +121,8 @@ with
             t.sectionid,
             t.sections_dcid,
             t.teacher_quarter,
-            t.audit_yr_week_number,
-            t.audit_qt_week_number,
+            t.year_week_number,
+            t.quarter_week_number,
             t.audit_start_date,
             t.audit_end_date,
             t.audit_due_date,
@@ -146,7 +146,7 @@ with
             and gb.grading_formula_weighting_type != 'Total_Points'
             and {{ union_dataset_join_clause(left_alias="t", right_alias="gb") }}
         left join
-            {{ ref("int_powerschool__gradebook_assignment_scores") }} as a
+            {{ ref("int_powerschool__gradebook_assignments") }} as a
             on gb.sections_dcid = a.sectionsdcid
             and gb.category_id = a.category_id
             and a.duedate between t.audit_start_date and t.audit_end_date
@@ -170,8 +170,8 @@ with
             sectionid,
             sections_dcid,
             teacher_quarter,
-            audit_yr_week_number,
-            audit_qt_week_number,
+            year_week_number,
+            quarter_week_number,
             audit_start_date,
             audit_end_date,
             audit_due_date,
@@ -195,7 +195,7 @@ with
                         section,
                         teacher_quarter,
                         expected_teacher_assign_category_code
-                    order by teacher_quarter, audit_qt_week_number
+                    order by teacher_quarter, quarter_week_number
                 )
                 >= audit_category_exp_audit_week_ytd,
                 0,
@@ -210,7 +210,7 @@ with
                     section,
                     teacher_quarter,
                     expected_teacher_assign_category_code
-                order by teacher_quarter, audit_qt_week_number
+                order by teacher_quarter, quarter_week_number
             ) as teacher_running_total_assign_by_cat,
 
         from assign_3
@@ -231,8 +231,8 @@ with
             t.sectionid,
             t.sections_dcid,
             t.teacher_quarter,
-            t.audit_yr_week_number,
-            t.audit_qt_week_number,
+            t.year_week_number,
+            t.quarter_week_number,
             t.audit_start_date,
             t.audit_end_date,
             t.audit_due_date,
@@ -252,7 +252,11 @@ with
             if(t.teacher_quarter in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
 
             avg(
-                if(asg.assign_expected_with_score = 1, asg.assign_final_score_percent, null)
+                if(
+                    asg.assign_expected_with_score = 1,
+                    asg.assign_final_score_percent,
+                    null
+                )
             ) over (
                 partition by
                     t.schoolid,
@@ -268,10 +272,9 @@ with
                     t.schoolid,
                     t.teacher_name,
                     t.teacher_quarter,
-                    t.audit_qt_week_number,
+                    t.quarter_week_number,
                     asg.assign_category_code
-            )
-            as 
+            ) as
             total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
 
             sum(asg.assign_expected_to_be_scored) over (
@@ -279,7 +282,7 @@ with
                     t.schoolid,
                     t.teacher_name,
                     t.teacher_quarter,
-                    t.audit_qt_week_number,
+                    t.quarter_week_number,
                     asg.assign_category_code
             ) as total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
 
@@ -287,7 +290,7 @@ with
                 partition by
                     t.schoolid,
                     t.teacher_quarter,
-                    t.audit_qt_week_number,
+                    t.quarter_week_number,
                     t.course_number,
                     t.section,
                     asg.assign_category_code
@@ -297,7 +300,7 @@ with
                 partition by
                     t.schoolid,
                     t.teacher_quarter,
-                    t.audit_qt_week_number,
+                    t.quarter_week_number,
                     t.course_number,
                     t.section,
                     asg.assign_category_code
@@ -309,11 +312,10 @@ with
                     t.course_number,
                     t.sectionid,
                     t.teacher_quarter,
-                    t.audit_qt_week_number,
+                    t.quarter_week_number,
                     asg.assign_category,
                     asg.assign_id
-            )
-            as 
+            ) as
             total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
 
             sum(asg.assign_expected_to_be_scored) over (
@@ -322,7 +324,7 @@ with
                     t.course_number,
                     t.sectionid,
                     t.teacher_quarter,
-                    t.audit_qt_week_number,
+                    t.quarter_week_number,
                     asg.assign_category,
                     asg.assign_id
             ) as total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
@@ -405,8 +407,8 @@ select
     sectionid,
     sections_dcid,
     teacher_quarter,
-    audit_yr_week_number,
-    audit_qt_week_number,
+    year_week_number,
+    quarter_week_number,
     audit_start_date,
     audit_end_date,
     audit_due_date,
