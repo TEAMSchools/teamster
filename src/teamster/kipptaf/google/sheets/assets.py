@@ -1,15 +1,10 @@
 from teamster.core.definitions.external_asset import external_assets_from_specs
 from teamster.google.sheets.assets import build_google_sheets_asset_spec
-from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.dbt.assets import manifest
 
 specs = [
     build_google_sheets_asset_spec(
-        asset_key=[
-            CODE_LOCATION,
-            source["source_name"],
-            source["name"].split("__")[-1],
-        ],
+        asset_key=source["meta"]["dagster"]["parent_asset_key_path"],
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
