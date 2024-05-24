@@ -161,7 +161,7 @@ with
         from
             {{ ref("stg_assessments__state_test_comparison") }}
             pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
-    ),
+    )
 
 select
     s.academic_year,
