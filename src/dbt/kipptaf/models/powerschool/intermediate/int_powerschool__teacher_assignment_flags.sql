@@ -117,7 +117,7 @@ select distinct
     s_max_score_greater_100,
     w_expected_assign_count_not_met,
     f_expected_assign_count_not_met,
-    s_expected_assign_count_not_met
+    s_expected_assign_count_not_met,
 
 from
     teacher_unpivot_flags pivot (
