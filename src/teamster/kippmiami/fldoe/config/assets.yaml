@@ -35,3 +35,21 @@ assets:
         - SCI
         - MATH
         - ELA_GR04_10
+  - asset_name: science
+    remote_dir: /data-team/kippmiami/fldoe/science
+    remote_file_regex: (?P<school_year_term>\d+)\/\w+-\w+Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv
+    partition_keys:
+      school_year_term:
+        - "2023"
+      grade_level_subject:
+        - "5"
+        - "8"
+  - asset_name: eoc
+    remote_dir: /data-team/kippmiami/fldoe/eoc
+    remote_file_regex: (?P<school_year_term>\d+)\/[A-Z]+-[A-Z]+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv
+    partition_keys:
+      school_year_term:
+        - "2023"
+      grade_level_subject:
+        - Civics
+        - B.E.S.T.Algebra1

@@ -3,6 +3,8 @@ from teamster.core.utils.functions import regex_pattern_replace
 
 def test_regex_pattern_replace():
     test_patterns = [
+        r"(?P<school_year_term>\d+)\/\w+-\w+Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv",
+        r"(?P<school_year_term>\d+)\/[A-Z]+-[A-Z]+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv",
         r"'incomeformdata(?P<fiscal_year>\d{4})\.csv'",
         r"'persondata(?P<fiscal_year>\d{4})\.csv'",
         r"(?:(?P<academic_year>\w+)\/)?diagnostic_and_instruction_(?P<subject>\w+)_ytd_window\.csv",

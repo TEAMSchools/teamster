@@ -20,8 +20,8 @@ from teamster.core.utils.functions import (
     get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.tableau.resources import TableauServerResource
 from teamster.kipptaf.tableau.schema import WORKBOOK_SCHEMA
+from teamster.tableau.resources import TableauServerResource
 
 config = config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])
 

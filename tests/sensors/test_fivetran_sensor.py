@@ -29,7 +29,7 @@ def test_fivetran_sync_status_sensor():
         context=context, fivetran=FIVETRAN_RESOURCE, db_bigquery=BIGQUERY_RESOURCE
     )
 
-    asset_events = sensor_result.asset_events  # type: ignore
+    asset_events = sensor_result.asset_events
 
     context.log.info(msg=asset_events)
     assert len(asset_events) > 0

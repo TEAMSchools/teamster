@@ -21,7 +21,7 @@ def test_sync_schedule():
 
     output = fivetran_start_sync_schedule(context=context, fivetran=FIVETRAN_RESOURCE)
 
-    for o in output:  # type: ignore
+    for o in output:
         context.log.info(o)
 
 
@@ -38,5 +38,5 @@ def test_resync_schedule():
 
     output = fivetran_start_sync_schedule(context=context, fivetran=FIVETRAN_RESOURCE)
 
-    for o in output:  # type: ignore
+    for o in output:
         context.log.info(o)

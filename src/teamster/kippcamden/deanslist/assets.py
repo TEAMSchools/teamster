@@ -7,13 +7,13 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.deanslist.assets import (
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.deanslist.assets import (
     build_deanslist_multi_partition_asset,
     build_deanslist_static_partition_asset,
 )
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden.deanslist.schema import ASSET_SCHEMA
 
 static_partitions_def = StaticPartitionsDefinition(["120", "126", "130", "473", "652"])
 
@@ -21,16 +21,20 @@ config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partition_assets = [
     build_deanslist_static_partition_asset(
-        code_location=CODE_LOCATION, partitions_def=static_partitions_def, **endpoint
+        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        schema=ASSET_SCHEMA[e["endpoint"]],
+        partitions_def=static_partitions_def,
+        **e,
     )
-    for endpoint in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
+    for e in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
         "endpoints"
     ]
 ]
 
 multi_partition_monthly_assets = [
     build_deanslist_multi_partition_asset(
-        code_location=CODE_LOCATION,
+        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "date": MonthlyPartitionsDefinition(
@@ -39,16 +43,17 @@ multi_partition_monthly_assets = [
                 "school": static_partitions_def,
             }
         ),
-        **endpoint,
+        **e,
     )
-    for endpoint in config_from_files(
-        [f"{config_dir}/multi-partition-monthly-assets.yaml"]
-    )["endpoints"]
+    for e in config_from_files([f"{config_dir}/multi-partition-monthly-assets.yaml"])[
+        "endpoints"
+    ]
 ]
 
 multi_partition_fiscal_assets = [
     build_deanslist_multi_partition_asset(
-        code_location=CODE_LOCATION,
+        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
                 "date": FiscalYearPartitionsDefinition(
@@ -60,14 +65,14 @@ multi_partition_fiscal_assets = [
                 "school": static_partitions_def,
             }
         ),
-        **endpoint,
+        **e,
     )
-    for endpoint in config_from_files(
-        [f"{config_dir}/multi-partition-fiscal-assets.yaml"]
-    )["endpoints"]
+    for e in config_from_files([f"{config_dir}/multi-partition-fiscal-assets.yaml"])[
+        "endpoints"
+    ]
 ]
 
-_all = [
+assets = [
     *static_partition_assets,
     *multi_partition_monthly_assets,
     *multi_partition_fiscal_assets,

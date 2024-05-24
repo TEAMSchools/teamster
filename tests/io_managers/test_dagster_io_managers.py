@@ -70,7 +70,7 @@ def _test_asset_handle_output_path(
     ][0]
 
     assert (
-        handled_output_event.event_specific_data.metadata["path"].value  # type: ignore
+        handled_output_event.event_specific_data.metadata["path"].value
     ) == expected_path
 
 

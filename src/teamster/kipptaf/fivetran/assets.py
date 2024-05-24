@@ -38,6 +38,6 @@ for config_file in config_path.glob("*.yaml"):
                 )
             )
 
-_all: list[AssetsDefinition] = external_assets_from_specs(
+assets: list[AssetsDefinition] = external_assets_from_specs(
     specs=specs, compute_kind="fivetran"
 )

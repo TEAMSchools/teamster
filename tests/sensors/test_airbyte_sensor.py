@@ -17,7 +17,7 @@ def test_airbyte_job_status_sensor():
         context=context, airbyte=AIRBYTE_CLOUD_RESOURCE
     )
 
-    asset_events = sensor_result.asset_events  # type: ignore
+    asset_events = sensor_result.asset_events
 
     context.log.info(msg=asset_events)
     assert len(asset_events) > 0
