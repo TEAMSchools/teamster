@@ -228,7 +228,7 @@ left join
     on s.student_number = mcur.students_student_number
     and a.discipline = mcur.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="mcur") }}
-    and mcur.academic_year = {{ var("current_academic_year") }}
+    and mcur.cc_academic_year = {{ var("current_academic_year") }}
 left join
     state_comps as c
     on s.academic_year = c.academic_year
