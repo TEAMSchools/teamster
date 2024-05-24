@@ -16,7 +16,7 @@ with
             respondent_email,
             last_submitted_time,
 
-            {# pivot cols #}
+            /* pivot cols */
             additional_languages,
             cert_barriers,
             cert_out_of_state_details,
@@ -286,7 +286,7 @@ with
             null as updates_open_ended,
             null as praxis_document_link,
 
-            {# multiselect_options #}
+            /* multiselect_options */
             alumni_status,
             community_grew_up,
             community_professional_experience as community_professional_exp,
@@ -294,7 +294,7 @@ with
             path_to_education,
             race_ethnicity,
             relay_status,
-        from {{ source("surveys", "src_surveys__staff_info_archive") }}
+        from {{ ref("stg_surveys__staff_info_archive") }}
     ),
 
     deduplicate as (
