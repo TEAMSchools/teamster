@@ -36,16 +36,18 @@ with
             aud.end_date as audit_end_date,
             aud.due_date as audit_due_date,
 
+            coalesce(s.islate, 0) as assign_is_late,
+            coalesce(s.isexempt, 0) as assign_is_exempt,
+            coalesce(s.ismissing, 0) as assign_is_missing,
+
+            1 as counter,
+
             case
                 when enr.school_level in ('ES', 'MS')
                 then co.cc_section_number
                 when enr.school_level = 'HS'
                 then co.sections_external_expression
-            end as section,
-
-            coalesce(s.islate, 0) as assign_is_late,
-            coalesce(s.isexempt, 0) as assign_is_exempt,
-            coalesce(s.ismissing, 0) as assign_is_missing,
+            end as `section`,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -73,6 +75,7 @@ with
                 1,
                 0
             ) as assign_null_score,
+
             if(
                 a.assignmentid is not null
                 and s.scorepoints is not null
@@ -80,6 +83,7 @@ with
                 1,
                 0
             ) as assign_scored,
+
             if(
                 a.assignmentid is not null
                 and (
@@ -90,11 +94,10 @@ with
                 1,
                 0
             ) as assign_expected_with_score,
+
             if(
                 a.assignmentid is not null and coalesce(s.isexempt, 0) = 0, 1, 0
             ) as assign_expected_to_be_scored,
-
-            1 as counter,
 
         from {{ ref("base_powerschool__course_enrollments") }} as co
         inner join
@@ -129,7 +132,7 @@ with
             and not co.is_dropped_section
             and co.cc_dateleft >= current_date('America/New_York')
             and enr.enroll_status = 0
-            and enr.school_level <> 'OD'
+            and enr.school_level != 'OD'
             and a.iscountedinfinalgrade = 1
             and a.duedate between co.cc_dateenrolled and co.cc_dateleft
             and a.scoretype in ('POINTS', 'PERCENT')
@@ -183,6 +186,7 @@ with
             safe_divide(
                 assign_score_converted, assign_max_score
             ) as assign_final_score_percent,
+
         from assign_1
         where
             assign_category_code != 'H'
