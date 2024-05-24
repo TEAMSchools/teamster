@@ -124,58 +124,6 @@ with
         where academic_year >= {{ var("current_academic_year") }} - 7
     ),
 
-    assessments_fl_eoc as (
-        select
-            _dbt_source_relation,
-            student_id as state_id,
-            academic_year,
-            enrolled_grade as test_grade,
-            scale_score as score,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
-            is_proficient,
-
-            'EOC' as assessment_name,
-            'Spring' as season,
-            'PM3' as `admin`,
-
-            if(test_name = 'B.E.S.T.Algebra1', 'Math', test_name) as discipline,
-            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', test_name) as `subject`,
-
-            case
-                test_name
-                when 'B.E.S.T.Algebra1'
-                then 'ALG01'
-                when 'Civics'
-                then 'SOC08'
-            end as test_code,
-        from {{ ref("stg_fldoe__eoc") }}
-        where not is_invalidated
-    ),
-
-    assessments_fl_science as (
-        select
-            _dbt_source_relation,
-            student_id as state_id,
-            academic_year,
-            test_grade_level as test_grade,
-            scale_score as score,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
-            is_proficient,
-
-            'Science' as assessment_name,
-            'Spring' as season,
-            'PM3' as `admin`,
-            'Science' as discipline,
-            'Science' as `subject`,
-
-            case
-                test_grade_level when 5 then 'SCI05' when 8 then 'SCI08'
-            end as test_code,
-        from {{ ref("stg_fldoe__science") }}
-    ),
-
     assessments_fl as (
         select
             _dbt_source_relation,
@@ -238,6 +186,15 @@ with
             is_proficient,
 
             'FSA' as assessment_name,
+
+            case
+                when test_subject = 'ELA'
+                then concat('ELA0', test_grade)
+                when test_subject = 'SCIENCE'
+                then concat('SCI0', test_grade)
+                else concat('MAT0', test_grade)
+            end as test_code,
+
             'Spring' as season,
 
             case
@@ -258,13 +215,6 @@ with
                 when 'SCIENCE'
                 then 'Science'
             end as `subject`,
-            case
-                when test_subject = 'ELA'
-                then concat('ELA0', test_grade)
-                when test_subject = 'SCIENCE'
-                then concat('SCI0', test_grade)
-                else concat('MAT0', test_grade)
-            end as test_code,
         from {{ ref("stg_fldoe__fsa") }}
         where performance_level is not null
 
@@ -273,38 +223,58 @@ with
         select
             _dbt_source_relation,
             academic_year,
-            state_id,
-            test_grade,
-            `admin`,
-            score,
-            performance_band,
-            performance_band_level,
+            student_id as state_id,
+            enrolled_grade as test_grade,
+
+            'PM3' as `admin`,
+
+            scale_score as score,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
             is_proficient,
-            assessment_name,
-            season,
-            discipline,
-            `subject`,
-            test_code,
-        from assessments_fl_eoc
+
+            'EOC' as assessment_name,
+
+            case
+                test_name
+                when 'B.E.S.T.Algebra1'
+                then 'ALG01'
+                when 'Civics'
+                then 'SOC08'
+            end as test_code,
+
+            'Spring' as season,
+
+            if(test_name = 'B.E.S.T.Algebra1', 'Math', test_name) as discipline,
+            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', test_name) as `subject`,
+        from {{ ref("stg_fldoe__eoc") }}
+        where not is_invalidated
 
         union all
 
         select
             _dbt_source_relation,
             academic_year,
-            state_id,
-            test_grade,
-            `admin`,
-            score,
-            performance_band,
-            performance_band_level,
+            student_id as state_id,
+            test_grade_level as test_grade,
+
+            'PM3' as `admin`,
+
+            scale_score as score,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
             is_proficient,
-            assessment_name,
-            season,
-            discipline,
-            `subject`,
-            test_code,
-        from assessments_fl_science
+
+            'Science' as assessment_name,
+
+            case
+                test_grade_level when 5 then 'SCI05' when 8 then 'SCI08'
+            end as test_code,
+
+            'Spring' as season,
+            'Science' as discipline,
+            'Science' as `subject`,
+        from {{ ref("stg_fldoe__science") }}
     ),
 
     state_comps as (
