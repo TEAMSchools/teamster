@@ -160,10 +160,7 @@ with
 
             test_date,
             score as scale_score,
-
-            row_number() over (
-                partition by local_student_id, score_type order by score desc
-            ) as rn_highest,
+            rn_highest,
 
             'Official' as test_type,
 
@@ -178,14 +175,22 @@ with
                 when 'psat10_reading_test_score'
                 then 'Reading'
                 when 'psat10_math_test_score'
+                then 'Math Test'
+                when 'psat10_math_section_score'
                 then 'Math'
-                when 'psat10_ebrw'
+                when 'psat10_eb_read_write_section_score'
                 then 'Writing and Language Test'
             end as subject_area,
             case
-                when score_type in ('psat10_ebrw', 'psat10_reading_test_score')
+                when
+                    score_type in (
+                        'psat10_eb_read_write_section_score',
+                        'psat10_reading_test_score'
+                    )
                 then 'ENG'
-                when score_type = 'psat10_math_test_score'
+                when
+                    score_type
+                    in ('psat10_math_test_score', 'psat10_math_section_score')
                 then 'MATH'
                 else 'NA'
             end as course_discipline,
@@ -194,7 +199,8 @@ with
         from {{ ref("int_illuminate__psat_unpivot") }}
         where
             score_type in (
-                'psat10_ebrw',
+                'psat10_eb_read_write_section_score',
+                'psat10_math_section_score',
                 'psat10_math_test_score',
                 'psat10_reading_test_score',
                 'psat10_total_score'
@@ -260,13 +266,12 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
-    and o.test_type != 'PSAT10'
 left join
     course_subjects_roster as c
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and e.expected_scope != 'PSAT10'
 
 union all
 
@@ -325,17 +330,16 @@ select
 from roster as e
 left join
     college_assessments_official as o
-    on cast(e.student_number as string) = o.contact
+    on safe_cast(e.student_number as string) = o.contact
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
-    and o.test_type = 'PSAT10'
 left join
     course_subjects_roster as c
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and e.expected_scope = 'PSAT10'
 
 union all
 

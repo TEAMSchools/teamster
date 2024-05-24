@@ -1,7 +1,6 @@
-from teamster.core.renlearn.sensors import build_renlearn_sftp_sensor
-
-from .. import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
-from . import assets
+from teamster.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
+from teamster.kippnewark.renlearn import assets
+from teamster.renlearn.sensors import build_renlearn_sftp_sensor
 
 sftp_sensor = build_renlearn_sftp_sensor(
     code_location=CODE_LOCATION,
@@ -11,6 +10,6 @@ sftp_sensor = build_renlearn_sftp_sensor(
     minimum_interval_seconds=(60 * 10),
 )
 
-_all = [
+sensors = [
     sftp_sensor,
 ]

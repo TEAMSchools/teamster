@@ -2,10 +2,8 @@ import json
 import time
 
 import pendulum
-from alchemer import AlchemerSession
 from dagster import (
     AddDynamicPartitionsRequest,
-    ResourceParam,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -13,6 +11,7 @@ from dagster import (
 )
 from requests.exceptions import HTTPError
 
+from teamster.alchemer.resources import AlchemerResource
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.alchemer.assets import (
     survey,
@@ -28,7 +27,7 @@ from teamster.kipptaf.alchemer.assets import (
     asset_selection=survey_metadata_assets,
 )
 def alchemer_survey_metadata_asset_sensor(
-    context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
+    context: SensorEvaluationContext, alchemer: AlchemerResource
 ):
     now = pendulum.now(tz="America/New_York").start_of("minute")
 
@@ -43,7 +42,7 @@ def alchemer_survey_metadata_asset_sensor(
     dynamic_partitions_requests = []
 
     try:
-        survey_list = alchemer.survey.list()
+        survey_list = alchemer._client.survey.list()
     except Exception as e:
         return SensorResult(skip_reason=str(e))
 
@@ -103,7 +102,7 @@ def alchemer_survey_metadata_asset_sensor(
     asset_selection=[survey_response, survey_response_disqualified],
 )  # type: ignore
 def alchemer_survey_response_asset_sensor(
-    context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
+    context: SensorEvaluationContext, alchemer: AlchemerResource
 ):
     """https://apihelp.alchemer.com/help/api-response-time
     Response data is subject to response processing, which can vary based on server
@@ -119,7 +118,7 @@ def alchemer_survey_response_asset_sensor(
     survey_response_dq_partition_keys = []
 
     try:
-        surveys = alchemer.survey.list()
+        surveys = alchemer._client.survey.list()
     except Exception as e:
         return SensorResult(skip_reason=str(e))
 
@@ -145,7 +144,7 @@ def alchemer_survey_response_asset_sensor(
         else:
             try:
                 try:
-                    survey_obj = alchemer.survey.get(id=survey_id)
+                    survey_obj = alchemer._client.survey.get(id=survey_id)
                 except Exception as e:
                     context.log.error(msg=e)
                     continue

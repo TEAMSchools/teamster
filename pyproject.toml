@@ -8,7 +8,8 @@ authors = [
 dependencies = [
   "dagster>=1.7,<2",
   "dagster-cloud>=1.7,<2",
-  "dbt-bigquery>=1.7",
+  "dbt-core>=1.8",
+  "dbt-bigquery>=1.8",
   "dagster-airbyte>=0.23",
   "dagster-dbt>=0.23",
   "dagster-fivetran>=0.23",
@@ -51,13 +52,12 @@ _.env_file = "env/.env"
 clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
 install-dagster = { shell = "bash .pdm/scripts/install-dagster.sh", help = "Install Dagster Cloud via Helm" }
 install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "Install 1Password Connect via Helm" }
-validate = { shell = "bash .pdm/scripts/validate.sh", help = "Validate Dagster imports and configs" }
+dagster-dev = { shell = "bash .pdm/scripts/dagster-dev.sh", help = "Validate Dagster imports and configs" }
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 post_install = { shell = "pdm export --prod -o requirements.txt" }
 json2py = { shell = "bash .pdm/scripts/json2py.sh" }
+op-inject = { shell = "op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env" }
 
 [tool.pyright]
 venvPath = ".venv"
-reportOptionalMemberAccess = false
-reportInvalidStringEscapeSequence = false

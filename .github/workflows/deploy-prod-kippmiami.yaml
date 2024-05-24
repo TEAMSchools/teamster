@@ -6,22 +6,32 @@ on:
     branches:
       - main
     paths:
-      - Dockerfile
-      - requirements.txt
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippmiami.yaml
-      - src/teamster/core/**
-      - src/teamster/kippmiami/**
-      - src/dbt/kippmiami/**
+      - Dockerfile
+      - requirements.txt
       - src/dbt/deanslist/**
       - src/dbt/iready/**
+      - src/dbt/kippmiami/**
       - src/dbt/powerschool/**
       - src/dbt/renlearn/**
       - src/dbt/teamster_utils/**
+      - src/teamster/core/**
+      - src/teamster/deanslist/**
+      - src/teamster/fldoe/**
+      - src/teamster/iready/**
+      - src/teamster/kippmiami/**
+      - src/teamster/powerschool/sis/**
+      - src/teamster/renlearn/**
   pull_request:
     paths:
       - src/teamster/core/**
+      - src/teamster/deanslist/**
+      - src/teamster/fldoe/**
+      - src/teamster/iready/**
       - src/teamster/kippmiami/**
+      - src/teamster/powerschool/sis/**
+      - src/teamster/renlearn/**
     types:
       - opened
       - synchronize

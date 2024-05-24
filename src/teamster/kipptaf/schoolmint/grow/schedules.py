@@ -5,8 +5,8 @@ from dagster import (
     schedule,
 )
 
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .jobs import (
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.schoolmint.grow.jobs import (
     multi_partition_asset_job,
     schoolmint_grow_user_update_job,
     static_partition_asset_job,
@@ -36,7 +36,7 @@ schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
     job=schoolmint_grow_user_update_job,
 )
 
-_all = [
+schedules = [
     schoolmint_grow_static_partition_asset_job_schedule,
     multi_partition_asset_job_schedule,
     schoolmint_grow_user_update_job_schedule,

@@ -1,9 +1,9 @@
-from .assets import _all as assets
-from .jobs import _all as jobs
-from .schedules import _all as schedules
+from teamster.kippnewark.deanslist.assets import assets
+from teamster.kippnewark.deanslist.jobs import jobs
+from teamster.kippnewark.deanslist.schedules import schedules
 
-_all = [
-    assets,
-    jobs,
-    schedules,
+__all__ = [
+    "assets",
+    "jobs",
+    "schedules",
 ]

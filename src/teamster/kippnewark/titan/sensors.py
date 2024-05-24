@@ -1,7 +1,6 @@
-from teamster.core.titan.sensors import build_titan_sftp_sensor
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from . import assets
+from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippnewark.titan import assets
+from teamster.titan.sensors import build_titan_sftp_sensor
 
 sftp_sensor = build_titan_sftp_sensor(
     code_location=CODE_LOCATION,
@@ -10,6 +9,6 @@ sftp_sensor = build_titan_sftp_sensor(
     minimum_interval_seconds=(60 * 10),
 )
 
-_all = [
+sensors = [
     sftp_sensor,
 ]

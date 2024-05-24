@@ -1,12 +1,11 @@
 from dagster import AssetKey
 
-from teamster.core.deanslist.schedules import (
+from teamster.deanslist.schedules import (
     build_deanslist_multi_partition_asset_job_schedule,
     build_deanslist_static_partition_asset_job_schedule,
 )
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from .jobs import (
+from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippnewark.deanslist.jobs import (
     multi_partition_fiscal_asset_job,
     multi_partition_monthly_asset_job,
     static_partition_asset_job,
@@ -52,7 +51,7 @@ deanslist_comm_log_midday_job_schedule = (
     )
 )
 
-_all = [
+schedules = [
     deanslist_comm_log_midday_job_schedule,
     deanslist_multi_partition_fiscal_asset_job_schedule,
     deanslist_multi_partition_monthly_asset_job_schedule,

@@ -9,9 +9,8 @@ from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, Row, create_engine, result
 
+from teamster.core.sqlalchemy.schema import ORACLE_AVRO_SCHEMA_TYPES
 from teamster.core.utils.classes import CustomJSONEncoder
-
-from .schema import ORACLE_AVRO_SCHEMA_TYPES
 
 
 class SqlAlchemyEngineResource(ConfigurableResource):

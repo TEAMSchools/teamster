@@ -4,16 +4,15 @@ import pendulum
 from dagster import DynamicPartitionsDefinition, OpExecutionContext, Output, asset
 from requests.exceptions import HTTPError
 
+from teamster.alchemer.resources import AlchemerResource
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.alchemer.resources import AlchemerResource
 from teamster.kipptaf.alchemer.schema import (
     SURVEY_CAMPAIGN_SCHEMA,
     SURVEY_QUESTION_SCHEMA,
-    SURVEY_RESPONSE_DQ_SCHEMA,
     SURVEY_RESPONSE_SCHEMA,
     SURVEY_SCHEMA,
 )
@@ -174,11 +173,11 @@ def survey_response_disqualified(
         data = survey_response_obj.list()
 
     yield Output(
-        value=(data, SURVEY_RESPONSE_DQ_SCHEMA), metadata={"record_count": len(data)}
+        value=(data, SURVEY_RESPONSE_SCHEMA), metadata={"record_count": len(data)}
     )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=SURVEY_RESPONSE_DQ_SCHEMA
+        asset_key=context.asset_key, records=data, schema=SURVEY_RESPONSE_SCHEMA
     )
 
 
