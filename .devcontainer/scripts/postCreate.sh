@@ -61,7 +61,7 @@ pdm install --frozen-lockfile
 
 # install dbt deps and generate manifests
 # trunk-ignore(shellcheck/SC2312)
-find ./src/dbt/kipp* -maxdepth 2 -name "dbt_project.yml" -print0 |
+find ./src/dbt/ -maxdepth 2 -name "dbt_project.yml" -print0 |
   while IFS= read -r -d "" file; do
     directory=$(dirname "${file}")
     project_name=$(basename "${directory}")
