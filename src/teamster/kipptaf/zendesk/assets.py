@@ -6,13 +6,13 @@ from fastavro import block_reader, parse_schema, writer
 from pendulum.datetime import DateTime
 from zenpy.lib.exception import RecordNotFoundException
 
-from teamster.kipptaf import LOCAL_TIMEZONE
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA
 from teamster.zendesk.resources import ZendeskResource
 
 
 @asset(
-    key=["zendesk", "ticket_metrics_archive"],
+    key=[CODE_LOCATION, "zendesk", "ticket_metrics_archive"],
     io_manager_key="io_manager_gcs_file",
     partitions_def=MonthlyPartitionsDefinition(
         start_date=pendulum.datetime(2011, 7, 1),

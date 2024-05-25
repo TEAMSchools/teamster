@@ -33,7 +33,7 @@ PUBLISHED_ACTION_IDS = [
 
 
 @asset(
-    key=["powerschool", "enrollment", "submission_records"],
+    key=[CODE_LOCATION, "powerschool", "enrollment", "submission_records"],
     io_manager_key="io_manager_gcs_avro",
     group_name="powerschool",
     partitions_def=StaticPartitionsDefinition(PUBLISHED_ACTION_IDS),
