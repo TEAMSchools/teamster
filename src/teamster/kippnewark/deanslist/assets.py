@@ -12,7 +12,7 @@ from teamster.deanslist.assets import (
     build_deanslist_multi_partition_asset,
     build_deanslist_static_partition_asset,
 )
-from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippnewark import LOCAL_TIMEZONE
 from teamster.kippnewark.deanslist.schema import ASSET_SCHEMA
 
 static_partitions_def = StaticPartitionsDefinition(
@@ -23,7 +23,7 @@ config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partition_assets = [
     build_deanslist_static_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=["deanslist", e["endpoint"].replace("-", "_")],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=static_partitions_def,
         **e,
@@ -35,7 +35,7 @@ static_partition_assets = [
 
 multi_partition_monthly_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=["deanslist", e["endpoint"].replace("-", "_")],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
@@ -54,7 +54,7 @@ multi_partition_monthly_assets = [
 
 multi_partition_fiscal_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=["deanslist", e["endpoint"].replace("-", "_")],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={

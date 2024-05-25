@@ -121,7 +121,7 @@ def get_isolation_forest(df: pandas.DataFrame):
 
 
 @asset(
-    key=[CODE_LOCATION, "performance_management", "outlier_detection"],
+    key=["performance_management", "outlier_detection"],
     io_manager_key="io_manager_gcs_avro",
     group_name="performance_management",
     partitions_def=MultiPartitionsDefinition(
@@ -220,7 +220,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
 
 
 observation_details = build_sftp_asset(
-    asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
+    asset_key=["performance_management", "observation_details"],
     remote_dir="/data-team/kipptaf/performance-management/observation-details",
     remote_file_regex=r"(?P<academic_year>\d+)\/(?P<term>PM\d)\/\w+\.csv",
     avro_schema=OBSERVATION_DETAILS_SCHEMA,

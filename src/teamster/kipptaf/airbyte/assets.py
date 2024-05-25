@@ -3,11 +3,10 @@ import pathlib
 from dagster import AssetKey, AssetsDefinition, AssetSpec, config_from_files
 
 from teamster.core.definitions.external_asset import external_assets_from_specs
-from teamster.kipptaf import CODE_LOCATION
 
 specs = [
     AssetSpec(
-        key=AssetKey([CODE_LOCATION, a["group_name"], table]),
+        key=AssetKey([a["group_name"], table]),
         metadata={"connection_id": a["connection_id"]},
         group_name=a["group_name"],
     )

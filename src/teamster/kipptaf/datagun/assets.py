@@ -1,17 +1,18 @@
+import pathlib
+
 from dagster import AutoMaterializePolicy, config_from_files
 
 from teamster.core.datagun.assets import (
     build_bigquery_extract_sftp_asset,
     build_bigquery_query_sftp_asset,
 )
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf import LOCAL_TIMEZONE
 from teamster.kipptaf.adp.payroll.assets import GENERAL_LEDGER_FILE_PARTITIONS_DEF
 
-config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
+config_dir = pathlib.Path(__file__).parent / "config"
 
 # BQ extract job
 blissbook_extract = build_bigquery_extract_sftp_asset(
-    code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
     dataset_config={
         "dataset_id": "kipptaf_extracts",
@@ -22,14 +23,11 @@ blissbook_extract = build_bigquery_extract_sftp_asset(
 )
 
 clever_extract_assets = [
-    build_bigquery_extract_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
+    build_bigquery_extract_sftp_asset(timezone=LOCAL_TIMEZONE, **a)
     for a in config_from_files([f"{config_dir}/clever.yaml"])["assets"]
 ]
 
 coupa_extract = build_bigquery_extract_sftp_asset(
-    code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
     dataset_config={"dataset_id": "kipptaf_extracts", "table_id": "rpt_coupa__users"},
     file_config={"stem": "users_{today}", "suffix": "csv"},
@@ -37,7 +35,6 @@ coupa_extract = build_bigquery_extract_sftp_asset(
 )
 
 egencia_extract = build_bigquery_extract_sftp_asset(
-    code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
     dataset_config={"dataset_id": "kipptaf_extracts", "table_id": "rpt_egencia__users"},
     file_config={"stem": "users_{today}", "suffix": "csv"},
@@ -45,14 +42,11 @@ egencia_extract = build_bigquery_extract_sftp_asset(
 )
 
 illuminate_extract_assets = [
-    build_bigquery_extract_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
+    build_bigquery_extract_sftp_asset(timezone=LOCAL_TIMEZONE, **a)
     for a in config_from_files([f"{config_dir}/illuminate.yaml"])["assets"]
 ]
 
 littlesis_extract = build_bigquery_extract_sftp_asset(
-    code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
     dataset_config={
         "dataset_id": "kipptaf_extracts",
@@ -64,14 +58,11 @@ littlesis_extract = build_bigquery_extract_sftp_asset(
 
 # BQ query
 deanslist_extract_assets = [
-    build_bigquery_query_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
+    build_bigquery_query_sftp_asset(timezone=LOCAL_TIMEZONE, **a)
     for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]
 ]
 
 idauto_extract = build_bigquery_query_sftp_asset(
-    code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
     query_config={
         "type": "schema",
@@ -89,7 +80,6 @@ idauto_extract = build_bigquery_query_sftp_asset(
 )
 
 intacct_extract = build_bigquery_query_sftp_asset(
-    code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
     query_config={
         "type": "schema",

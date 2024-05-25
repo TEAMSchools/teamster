@@ -8,12 +8,12 @@ from dagster import (
 
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippmiami import LOCAL_TIMEZONE
 from teamster.kippmiami.renlearn.schema import ASSET_SCHEMA
 
 assets = [
     build_sftp_asset(
-        asset_key=[CODE_LOCATION, "renlearn", a["asset_name"]],
+        asset_key=["renlearn", a["asset_name"]],
         ssh_resource_key="ssh_renlearn",
         avro_schema=ASSET_SCHEMA[a["asset_name"]],
         slugify_cols=False,

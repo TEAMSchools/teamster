@@ -1,3 +1,5 @@
+import pathlib
+
 import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
@@ -6,14 +8,14 @@ from dagster import (
 )
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden import LOCAL_TIMEZONE
 from teamster.powerschool.sis.assets import build_powerschool_table_asset
 
-config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
+config_dir = pathlib.Path(__file__).parent / "config"
 
 full_assets = [
     build_powerschool_table_asset(
-        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
+        asset_key=["powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
         op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
         **a,
@@ -23,7 +25,7 @@ full_assets = [
 
 nonpartition_assets = [
     build_powerschool_table_asset(
-        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
+        asset_key=["powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
         op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
         **a,
@@ -33,7 +35,7 @@ nonpartition_assets = [
 
 transaction_date_partition_assets = [
     build_powerschool_table_asset(
-        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
+        asset_key=["powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
         partitions_def=FiscalYearPartitionsDefinition(
             start_date=pendulum.datetime(year=2016, month=7, day=1),
@@ -50,7 +52,7 @@ transaction_date_partition_assets = [
 
 whenmodified_assets = [
     build_powerschool_table_asset(
-        asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
+        asset_key=["powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
         partitions_def=MonthlyPartitionsDefinition(
             start_date=pendulum.datetime(year=2016, month=7, day=1),
@@ -67,7 +69,7 @@ whenmodified_assets = [
 
 dcid_assets = [
     build_powerschool_table_asset(
-        asset_key=[CODE_LOCATION, "powerschool", "storedgrades_dcid"],
+        asset_key=["powerschool", "storedgrades_dcid"],
         local_timezone=LOCAL_TIMEZONE,
         table_name="storedgrades",
         select_columns=["dcid"],

@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -11,7 +13,7 @@ from teamster.schoolmint.grow.assets import build_schoolmint_grow_asset
 
 STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
 
-config_dir = f"src/teamster/{CODE_LOCATION}/schoolmint/grow/config"
+config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partition_assets = [
     build_schoolmint_grow_asset(
@@ -32,7 +34,7 @@ static_partition_assets = [
 
 multi_partition_assets = [
     build_schoolmint_grow_asset(
-        asset_key=[CODE_LOCATION, "schoolmint", "grow", e["asset_name"]],
+        asset_key=["schoolmint", "grow", e["asset_name"]],
         endpoint=e["asset_name"],
         partitions_def=MultiPartitionsDefinition(
             {

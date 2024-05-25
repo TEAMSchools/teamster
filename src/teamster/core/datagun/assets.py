@@ -5,7 +5,7 @@ import pathlib
 import re
 
 import pendulum
-from dagster import AssetExecutionContext, AssetKey, MultiPartitionsDefinition, asset
+from dagster import AssetExecutionContext, MultiPartitionsDefinition, asset  # AssetKey,
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
@@ -118,7 +118,6 @@ def load_sftp(
 
 
 def build_bigquery_query_sftp_asset(
-    code_location,
     timezone,
     query_config,
     file_config,
@@ -143,8 +142,8 @@ def build_bigquery_query_sftp_asset(
     )
 
     @asset(
-        key=[code_location, "extracts", destination_name, asset_name],
-        deps=[AssetKey([code_location, "extracts", query_value["table"]["name"]])],
+        key=["extracts", destination_name, asset_name],
+        # deps=[AssetKey(["extracts", query_value["table"]["name"]])],
         metadata={**query_config, **file_config},
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         partitions_def=partitions_def,
@@ -207,7 +206,6 @@ def build_bigquery_query_sftp_asset(
 
 
 def build_bigquery_extract_sftp_asset(
-    code_location,
     timezone,
     dataset_config,
     file_config,
@@ -233,8 +231,8 @@ def build_bigquery_extract_sftp_asset(
     )
 
     @asset(
-        key=[code_location, "extracts", destination_name, asset_name],
-        deps=[AssetKey([code_location, "extracts", table_id])],
+        key=["extracts", destination_name, asset_name],
+        # deps=[AssetKey([code_location, "extracts", table_id])],
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         partitions_def=partitions_def,
         op_tags=op_tags,
@@ -261,11 +259,13 @@ def build_bigquery_extract_sftp_asset(
         # establish gcs blob
         gcs: storage.Client = context.resources.gcs
 
-        bucket = gcs.get_bucket(f"teamster-{code_location}")
+        bucket = gcs.get_bucket(
+            # f"teamster-{code_location}"
+        )
 
         blob = bucket.blob(
             blob_name=(
-                f"dagster/{code_location}/extracts/data/{destination_name}/{file_name}"
+                # f"dagster/{code_location}/extracts/data/{destination_name}/{file_name}"
             )
         )
 
@@ -278,7 +278,9 @@ def build_bigquery_extract_sftp_asset(
 
         extract_job = bq_client.extract_table(
             source=dataset_ref.table(table_id=table_id),
-            destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
+            destination_uris=[
+                # f"gs://teamster-{code_location}/{blob.name}"
+            ],
             job_config=bigquery.ExtractJobConfig(**extract_job_config),
         )
 
@@ -297,7 +299,6 @@ def build_bigquery_extract_sftp_asset(
 
 
 def build_bigquery_extract_asset(
-    code_location,
     timezone,
     dataset_config,
     file_config,
@@ -322,8 +323,8 @@ def build_bigquery_extract_asset(
     )
 
     @asset(
-        key=[code_location, "extracts", destination_name, asset_name],
-        deps=[AssetKey([code_location, "extracts", table_id])],
+        key=["extracts", destination_name, asset_name],
+        # deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
         group_name="datagun",
         compute_kind="python",
@@ -350,7 +351,9 @@ def build_bigquery_extract_asset(
         # establish gcs blob
         gcs_client = gcs.get_client()
 
-        bucket = gcs_client.get_bucket(f"teamster-{code_location}")
+        bucket = gcs_client.get_bucket(
+            # f"teamster-{code_location}"
+        )
 
         blob = bucket.blob(
             blob_name=f"{destination_path}/{destination_name}/{file_name}"
@@ -364,7 +367,9 @@ def build_bigquery_extract_asset(
 
             extract_job = bq_client.extract_table(
                 source=dataset_ref.table(table_id=table_id),
-                destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
+                destination_uris=[
+                    # f"gs://teamster-{code_location}/{blob.name}"
+                ],
                 job_config=bigquery.ExtractJobConfig(**extract_job_config),
             )
 
