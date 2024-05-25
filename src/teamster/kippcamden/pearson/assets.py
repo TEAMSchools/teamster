@@ -13,7 +13,7 @@ from teamster.kippcamden.pearson.schema import ASSET_SCHEMA
 config_dir = pathlib.Path(__file__).parent / "config"
 
 njgpa = build_sftp_asset(
-    asset_key=[CODE_LOCATION, "pearson", "njgpa"],
+    asset_key=["pearson", "njgpa"],
     remote_dir=f"/data-team/{CODE_LOCATION}/pearson/njgpa",
     remote_file_regex="pc(?P<administration>[a-z]+)(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv",
     avro_schema=ASSET_SCHEMA["njgpa"],
@@ -27,7 +27,7 @@ njgpa = build_sftp_asset(
 )
 
 student_list_report = build_sftp_asset(
-    asset_key=[CODE_LOCATION, "pearson", "student_list_report"],
+    asset_key=["pearson", "student_list_report"],
     remote_dir=f"/data-team/{CODE_LOCATION}/pearson/student_list_report",
     remote_file_regex=(
         r"(?P<test_type>[a-z]+)\/StudentListReport_"
@@ -48,7 +48,7 @@ student_list_report = build_sftp_asset(
 
 static_partition_assets = [
     build_sftp_asset(
-        asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
+        asset_key=["pearson", a["asset_name"]],
         avro_schema=ASSET_SCHEMA[a["asset_name"]],
         ssh_resource_key="ssh_couchdrop",
         partitions_def=StaticPartitionsDefinition(a["partition_keys"]),

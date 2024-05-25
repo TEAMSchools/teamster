@@ -6,10 +6,9 @@ from dagster import (
 )
 
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.adp.payroll.schema import GENERAL_LEDGER_FILE_SCHEMA
 
-asset_key = AssetKey([CODE_LOCATION, "adp", "payroll", "general_ledger_file"])
+asset_key = AssetKey(["adp", "payroll", "general_ledger_file"])
 
 GENERAL_LEDGER_FILE_PARTITIONS_DEF = MultiPartitionsDefinition(
     {

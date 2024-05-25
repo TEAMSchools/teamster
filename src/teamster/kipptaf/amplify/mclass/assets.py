@@ -2,7 +2,7 @@ from dagster import MAX_RUNTIME_SECONDS_TAG
 
 from teamster.amplify.mclass.assets import build_mclass_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf import LOCAL_TIMEZONE
 from teamster.kipptaf.amplify.mclass.schema import (
     BENCHMARK_STUDENT_SUMMARY_SCHEMA,
     PM_STUDENT_SUMMARY_SCHEMA,
@@ -22,7 +22,7 @@ DYD_PAYLOAD = {
 
 
 benchmark_student_summary = build_mclass_asset(
-    asset_key=[CODE_LOCATION, "amplify", "benchmark_student_summary"],
+    asset_key=["amplify", "benchmark_student_summary"],
     dyd_payload={**DYD_PAYLOAD, "dyd_results": "BM"},
     partitions_def=PARTITIONS_DEF,
     schema=BENCHMARK_STUDENT_SUMMARY_SCHEMA,
@@ -30,7 +30,7 @@ benchmark_student_summary = build_mclass_asset(
 )
 
 pm_student_summary = build_mclass_asset(
-    asset_key=[CODE_LOCATION, "amplify", "pm_student_summary"],
+    asset_key=["amplify", "pm_student_summary"],
     dyd_payload={**DYD_PAYLOAD, "dyd_results": "PM"},
     partitions_def=PARTITIONS_DEF,
     schema=PM_STUDENT_SUMMARY_SCHEMA,

@@ -7,12 +7,11 @@ from dagster import (
 )
 
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kippnewark import CODE_LOCATION
 from teamster.kippnewark.iready.schema import ASSET_SCHEMA
 
 assets = [
     build_sftp_asset(
-        asset_key=[CODE_LOCATION, "iready", a["asset_name"]],
+        asset_key=["iready", a["asset_name"]],
         ssh_resource_key="ssh_iready",
         avro_schema=ASSET_SCHEMA[a["asset_name"]],
         partitions_def=MultiPartitionsDefinition(

@@ -12,7 +12,7 @@ from teamster.kippmiami.fldoe.schema import ASSET_SCHEMA
 
 assets = [
     build_sftp_asset(
-        asset_key=[CODE_LOCATION, "fldoe", a["asset_name"]],
+        asset_key=["fldoe", a["asset_name"]],
         ssh_resource_key="ssh_couchdrop",
         avro_schema=ASSET_SCHEMA[a["asset_name"]],
         partitions_def=MultiPartitionsDefinition(

@@ -1,11 +1,11 @@
 from dagster import AutoMaterializePolicy, DailyPartitionsDefinition
 
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden import LOCAL_TIMEZONE
 from teamster.kippcamden.edplan.schema import NJSMART_POWERSCHOOL
 
 njsmart_powerschool = build_sftp_asset(
-    asset_key=[CODE_LOCATION, "edplan", "njsmart_powerschool"],
+    asset_key=["edplan", "njsmart_powerschool"],
     remote_dir="Reports",
     remote_file_regex=r"NJSMART-Power[Ss]chool\.txt",
     ssh_resource_key="ssh_edplan",

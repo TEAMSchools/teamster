@@ -5,7 +5,7 @@ from dagster import StaticPartitionsDefinition, config_from_files
 
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.classes import FiscalYear
-from teamster.kippcamden import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
+from teamster.kippcamden import CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
 from teamster.kippcamden.titan.schema import ASSET_SCHEMA
 
 assets = []
@@ -29,7 +29,7 @@ for asset in config_from_files(
 
     assets.append(
         build_sftp_asset(
-            asset_key=[CODE_LOCATION, "titan", asset_name],
+            asset_key=["titan", asset_name],
             ssh_resource_key="ssh_titan",
             avro_schema=ASSET_SCHEMA[asset_name],
             partitions_def=StaticPartitionsDefinition(partition_keys),
