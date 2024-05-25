@@ -1,4 +1,5 @@
 from teamster.core.sftp.assets import build_sftp_asset
+from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.deanslist.schema import (
     RECONCILE_ATTENDANCE_SCHEMA,
     RECONCILE_SUSPENSIONS_SCHEMA,
