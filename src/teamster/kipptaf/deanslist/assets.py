@@ -6,7 +6,7 @@ from teamster.kipptaf.deanslist.schema import (
 )
 
 reconcile_attendance = build_sftp_asset(
-    asset_key=["deanslist", "reconcile_attendance"],
+    asset_key=[CODE_LOCATION, "deanslist", "reconcile_attendance"],
     remote_dir="reconcile_report_files",
     remote_file_regex=r"ktaf_reconcile_att\.csv",
     ssh_resource_key="ssh_deanslist",
@@ -14,7 +14,7 @@ reconcile_attendance = build_sftp_asset(
 )
 
 reconcile_suspensions = build_sftp_asset(
-    asset_key=["deanslist", "reconcile_suspensions"],
+    asset_key=[CODE_LOCATION, "deanslist", "reconcile_suspensions"],
     remote_dir="reconcile_report_files",
     remote_file_regex=r"ktaf_reconcile_susp\.csv",
     ssh_resource_key="ssh_deanslist",

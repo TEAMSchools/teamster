@@ -15,7 +15,7 @@ from teamster.kipptaf.amplify.dibels.schema import DATA_FARMING_SCHEMA
 
 
 @asset(
-    key=["amplify", "dibels", "data_farming"],
+    key=[CODE_LOCATION, "amplify", "dibels", "data_farming"],
     io_manager_key="io_manager_gcs_avro",
     group_name="amplify",
     compute_kind="python",
