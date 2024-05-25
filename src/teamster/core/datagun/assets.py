@@ -158,10 +158,10 @@ def build_bigquery_query_sftp_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            substitutions = context.partition_key.keys_by_dimension  # pyright: ignore[reportAttributeAccessIssue]
             query_value["where"] = [
                 f"_dagster_partition_{k.dimension_name} = '{k.partition_key}'"
-                for k in context.partition_key.dimension_keys  # type: ignore
+                for k in context.partition_key.dimension_keys  # pyright: ignore[reportAttributeAccessIssue]
             ]
         else:
             substitutions = {
@@ -210,6 +210,7 @@ def build_bigquery_extract_sftp_asset(
     dataset_config,
     file_config,
     destination_config,
+    bucket_name,
     extract_job_config: dict | None = None,
     op_tags: dict | None = None,
     partitions_def=None,
@@ -221,6 +222,7 @@ def build_bigquery_extract_sftp_asset(
     table_id = dataset_config["table_id"]
 
     destination_name = destination_config["name"]
+    destination_blob_path = destination_config["blob_path"]
     destination_path = destination_config.get("path", "")
 
     file_suffix = file_config["suffix"]
@@ -245,7 +247,7 @@ def build_bigquery_extract_sftp_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            substitutions = context.partition_key.keys_by_dimension  # pyright: ignore[reportAttributeAccessIssue]
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
@@ -259,13 +261,12 @@ def build_bigquery_extract_sftp_asset(
         # establish gcs blob
         gcs: storage.Client = context.resources.gcs
 
-        bucket = gcs.get_bucket(
-            # f"teamster-{code_location}"
-        )
+        bucket = gcs.get_bucket(bucket_or_name=bucket_name)
 
         blob = bucket.blob(
             blob_name=(
-                # f"dagster/{code_location}/extracts/data/{destination_name}/{file_name}"
+                f"{destination_blob_path}/{destination_name}/{file_name}"
+                # dagster/{code_location}/extracts/data
             )
         )
 
@@ -278,9 +279,7 @@ def build_bigquery_extract_sftp_asset(
 
         extract_job = bq_client.extract_table(
             source=dataset_ref.table(table_id=table_id),
-            destination_uris=[
-                # f"gs://teamster-{code_location}/{blob.name}"
-            ],
+            destination_uris=[f"gs://{bucket_name}/{blob.name}"],
             job_config=bigquery.ExtractJobConfig(**extract_job_config),
         )
 
@@ -303,6 +302,7 @@ def build_bigquery_extract_asset(
     dataset_config,
     file_config,
     destination_config,
+    bucket_name,
     extract_job_config: dict | None = None,
     op_tags: dict | None = None,
 ):
@@ -337,7 +337,7 @@ def build_bigquery_extract_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            substitutions = context.partition_key.keys_by_dimension  # pyright: ignore[reportAttributeAccessIssue]
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
@@ -351,9 +351,7 @@ def build_bigquery_extract_asset(
         # establish gcs blob
         gcs_client = gcs.get_client()
 
-        bucket = gcs_client.get_bucket(
-            # f"teamster-{code_location}"
-        )
+        bucket = gcs_client.get_bucket(bucket_or_name=bucket_name)
 
         blob = bucket.blob(
             blob_name=f"{destination_path}/{destination_name}/{file_name}"
@@ -367,9 +365,7 @@ def build_bigquery_extract_asset(
 
             extract_job = bq_client.extract_table(
                 source=dataset_ref.table(table_id=table_id),
-                destination_uris=[
-                    # f"gs://teamster-{code_location}/{blob.name}"
-                ],
+                destination_uris=[f"gs://{bucket_name}/{blob.name}"],
                 job_config=bigquery.ExtractJobConfig(**extract_job_config),
             )
 

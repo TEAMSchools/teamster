@@ -1,4 +1,3 @@
-from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.ldap.schema import GROUP_SCHEMA, USER_PERSON_SCHEMA
 from teamster.ldap.assets import build_ldap_asset
 

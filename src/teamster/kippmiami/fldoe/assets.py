@@ -7,7 +7,6 @@ from dagster import (
 )
 
 from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kippmiami import CODE_LOCATION
 from teamster.kippmiami.fldoe.schema import ASSET_SCHEMA
 
 assets = [
