@@ -46,7 +46,7 @@ lint:
     - gitleaks@8.18.2
     - hadolint@2.12.0
     - isort@5.13.2
-    - markdownlint@0.40.0
+    - markdownlint@0.41.0
     - osv-scanner@1.7.3
     - oxipng@9.1.1
     - prettier@3.2.5
