@@ -21,7 +21,7 @@ on:
 
 concurrency:
   # Cancel in-progress deploys to the same branch
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
