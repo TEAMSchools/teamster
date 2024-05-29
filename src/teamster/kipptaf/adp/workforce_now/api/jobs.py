@@ -1,12 +1,9 @@
 from dagster import RunConfig, define_asset_job, job
 
+from teamster.adp.workforce_now.api.ops import adp_wfn_update_workers_op
+from teamster.google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.adp.workforce_now.api.assets import workers
-from teamster.kipptaf.adp.workforce_now.api.ops import adp_wfn_update_workers_op
-from teamster.kipptaf.google.bigquery.ops import (
-    BigQueryGetTableOpConfig,
-    bigquery_get_table_op,
-)
 
 
 @job(

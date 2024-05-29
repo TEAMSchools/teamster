@@ -45,6 +45,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       result: ${{ steps.prerun.outputs.result }}
+    if: github.actor != 'dependabot[bot]'
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
@@ -57,7 +58,7 @@ jobs:
     needs:
       - prerun
     runs-on: ubuntu-latest
-    if: needs.prerun.outputs.result != 'skip'
+    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/checkout
       - uses: actions/checkout@v4
@@ -94,7 +95,7 @@ jobs:
       - prerun
       - dbt
     runs-on: ubuntu-latest
-    if: needs.prerun.outputs.result != 'skip'
+    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     strategy:
       fail-fast: false
       matrix:
@@ -184,7 +185,7 @@ jobs:
       - prerun
       - dbt
       - build
-    if: needs.prerun.outputs.result != 'skip'
+    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/download-artifact
       - name: Download digests
@@ -238,6 +239,7 @@ jobs:
       - dbt
       - build
       - merge
+    if: github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/checkout
       - name: Checkout

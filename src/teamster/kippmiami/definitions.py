@@ -15,8 +15,7 @@ from teamster.core.resources import (
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
 )
-
-from . import (
+from teamster.kippmiami import (
     CODE_LOCATION,
     couchdrop,
     datagun,
@@ -27,8 +26,6 @@ from . import (
     powerschool,
     renlearn,
 )
-
-CODE_LOCATION_UPPER = CODE_LOCATION.upper()
 
 defs = Definitions(
     executor=k8s_job_executor,

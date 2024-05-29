@@ -361,6 +361,11 @@ locations:
                   secretKeyRef:
                     name: op-littlesis-sftp
                     key: host
+              - name: LITTLESIS_SFTP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-littlesis-sftp
+                    key: port
               - name: TABLEAU_SERVER_ADDRESS
                 valueFrom:
                   secretKeyRef:
@@ -694,6 +699,11 @@ locations:
                   secretKeyRef:
                     name: op-littlesis-sftp
                     key: host
+              - name: LITTLESIS_SFTP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-littlesis-sftp
+                    key: port
               - name: TABLEAU_SERVER_ADDRESS
                 valueFrom:
                   secretKeyRef:

@@ -46,14 +46,14 @@ lint:
     - gitleaks@8.18.2
     - hadolint@2.12.0
     - isort@5.13.2
-    - markdownlint@0.40.0
+    - markdownlint@0.41.0
     - osv-scanner@1.7.3
     - oxipng@9.1.1
     - prettier@3.2.5
-    - ruff@0.4.4
+    - ruff@0.4.5
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - sqlfluff@3.0.6
+    - sqlfluff@3.0.7
     - sqlfmt@0.21.3
     - svgo@3.3.2
     - taplo@0.8.1

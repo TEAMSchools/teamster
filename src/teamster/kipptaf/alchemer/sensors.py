@@ -11,6 +11,7 @@ from dagster import (
 )
 from requests.exceptions import HTTPError
 
+from teamster.alchemer.resources import AlchemerResource
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.alchemer.assets import (
     survey,
@@ -18,7 +19,6 @@ from teamster.kipptaf.alchemer.assets import (
     survey_response,
     survey_response_disqualified,
 )
-from teamster.kipptaf.alchemer.resources import AlchemerResource
 
 
 @sensor(

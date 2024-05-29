@@ -1,20 +1,15 @@
 with
-    ms_grad_sub as (
+    ms_grad as (
         select
             _dbt_source_relation,
             student_number,
             school_abbreviation as ms_attended,
+
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'MS'
-    ),
-
-    ms_grad as (
-        select _dbt_source_relation, student_number, ms_attended,
-        from ms_grad_sub
-        where rn = 1
     ),
 
     students_nj as (
@@ -38,9 +33,7 @@ with
 
             m.ms_attended,
 
-            case
-                when e.spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
-            end as iep_status,
+            if(e.spedlep like '%SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             case
                 when e.school_level in ('ES', 'MS')
@@ -53,45 +46,13 @@ with
             ms_grad as m
             on e.student_number = m.student_number
             and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
+            and m.rn = 1
         where
-            -- edit the academic_year to ensure the grade levels are correct for NJ
-            -- preelim results
-            e.academic_year = 2022
-            and e.rn_year = 1
+            e.rn_year = 1
             and e.region in ('Camden', 'Newark')
-            and e.grade_level > 2
             and e.schoolid != 999999
-    ),
-
-    schedules_current as (
-        select
-            _dbt_source_relation,
-            cc_academic_year,
-            students_student_number,
-            courses_credittype,
-            teacher_lastfirst as teacher_name,
-            courses_course_name as course_name,
-            cc_course_number as course_number,
-
-            case
-                courses_credittype
-                when 'ENG'
-                then 'ELA'
-                when 'MATH'
-                then 'Math'
-                when 'SCI'
-                then 'Science'
-                when 'SOC'
-                then 'Civics'
-            end as discipline,
-        from {{ ref("base_powerschool__course_enrollments") }}
-        where
-            -- edit the academic_year to ensure the grade levels are correct for NJ
-            -- preelim results
-            cc_academic_year = 2022
-            and rn_credittype_year = 1
-            and not is_dropped_section
-            and courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and e.academic_year >= 2022
+            and e.grade_level > 2
     ),
 
     schedules as (
@@ -102,8 +63,6 @@ with
             e.teacher_lastfirst as teacher_name,
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
-
-            c.teacher_name as teacher_name_current,
 
             case
                 e.courses_credittype
@@ -117,26 +76,20 @@ with
                 then 'Civics'
             end as discipline,
         from {{ ref("base_powerschool__course_enrollments") }} as e
-        left join
-            schedules_current as c
-            on e.students_student_number = c.students_student_number
-            and e.courses_credittype = c.courses_credittype
         where
-            -- edit the academic_year only if the SIS has been rolled over to school
-            -- year AFTER the preelim results school year
-            e.cc_academic_year = 2022
-            and e.rn_credittype_year = 1
+            e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and e.cc_academic_year >= 2022
     ),
 
     assessments_nj as (
         select
+            _dbt_source_relation,
             scale_score as score,
             performance_level as performance_band,
+            academic_year,
 
-            -- change academic year here
-            2022 as academic_year,
             'Spring' as `admin`,
             'Spring' as season,
 
@@ -148,7 +101,6 @@ with
                 'NJGPA',
                 'NJSLA'
             ) as assessment_name,
-
             if(
                 performance_level
                 in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),
@@ -163,7 +115,6 @@ with
                 then 'Math'
                 else 'ELA'
             end as discipline,
-
             case
                 when test_name like '%Mathematics%'
                 then 'Mathematics'
@@ -171,7 +122,6 @@ with
                 then 'Mathematics'
                 else 'English Language Arts'
             end as subject,
-
             case
                 when performance_level = 'Did Not Yet Meet Expectations'
                 then 1
@@ -188,7 +138,6 @@ with
                 when performance_level = 'Graduation Ready'
                 then 2
             end as performance_band_level,
-
             case
                 when test_name = 'ELA Graduation Proficiency'
                 then 'ELAGP'
@@ -203,70 +152,15 @@ with
                 when test_name like '%ELA%'
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
             end as test_code,
-
         from {{ ref("stg_pearson__student_list_report") }}
         where state_student_identifier is not null
     ),
 
-    nj_final as (
-        select
-            s._dbt_source_relation,
-            s.region,
-            s.schoolid,
-            s.school,
-            s.student_number,
-            s.state_studentnumber,
-            s.student_name,
-            s.grade_level,
-            s.enroll_status,
-            s.gender,
-            s.lunch_status,
-            s.ms_attended,
-            s.advisory,
-            s.race_ethnicity,
-            s.iep_status,
-            s.is_504,
-            s.lep_status,
-
-            a.state_id,
-            a.assessment_name,
-            a.discipline,
-            a.subject,
-            a.test_code,
-            a.admin,
-            a.season,
-            a.score,
-            a.performance_band,
-            a.performance_band_level,
-            a.is_proficient,
-
-            safe_cast(a.academic_year as string) as academic_year,
-        from assessments_nj as a
-        inner join
-            students_nj as s
-            on a.academic_year = s.academic_year
-            and a.state_id = s.state_studentnumber
-    ),
-
     state_comps as (
-        select academic_year, test_name, test_code, region, city, state,
+        select academic_year, test_name, test_code, region, city, `state`,
         from
             {{ ref("stg_assessments__state_test_comparison") }}
             pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
-    ),
-
-    goals as (
-        select
-            academic_year,
-            school_id,
-            state_assessment_code,
-            grade_level,
-            grade_goal,
-            school_goal,
-            region_goal,
-            organization_goal,
-        from {{ ref("stg_assessments__academic_goals") }}
-        where state_assessment_code is not null
     )
 
 select
@@ -276,7 +170,6 @@ select
     s.school,
     s.student_number,
     s.state_studentnumber,
-    s.state_id,
     s.student_name,
     s.grade_level,
     s.enroll_status,
@@ -288,17 +181,24 @@ select
     s.ms_attended,
     s.lep_status,
     s.advisory,
-    s.assessment_name,
-    s.discipline,
-    s.subject,
-    s.test_code,
-    '' as test_grade,
-    s.admin,
-    s.season,
-    s.score,
-    s.performance_band,
-    s.performance_band_level,
-    s.is_proficient,
+
+    a.state_id,
+    a.assessment_name,
+    a.discipline,
+    a.subject,
+    a.test_code,
+    a.admin,
+    a.season,
+    a.score,
+    a.performance_band,
+    a.performance_band_level,
+    a.is_proficient,
+
+    m.teacher_name,
+    m.course_number,
+    m.course_name,
+
+    mcur.teacher_name as teacher_name_current,
 
     c.city as proficiency_city,
     c.state as proficiency_state,
@@ -309,27 +209,34 @@ select
     g.region_goal,
     g.organization_goal,
 
-    m.teacher_name,
-    m.course_number,
-    m.course_name,
-    m.teacher_name_current,
-
     'Preeliminary' as results_type,
-from nj_final as s
-left join
-    state_comps as c
-    on s.academic_year = safe_cast(c.academic_year as string)
-    and s.assessment_name = c.test_name
-    and s.test_code = c.test_code
-    and s.region = c.region
-left join
-    goals as g
-    on s.academic_year = safe_cast(g.academic_year as string)
-    and s.schoolid = g.school_id
-    and s.test_code = g.state_assessment_code
+    null as test_grade,
+from students_nj as s
+inner join
+    assessments_nj as a
+    on s.academic_year = a.academic_year
+    and s.state_studentnumber = a.state_id
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="a") }}
 left join
     schedules as m
-    on s.academic_year = safe_cast(m.cc_academic_year as string)
+    on s.academic_year = m.cc_academic_year
     and s.student_number = m.students_student_number
-    and s.discipline = m.discipline
+    and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+left join
+    schedules as mcur
+    on s.student_number = mcur.students_student_number
+    and a.discipline = mcur.discipline
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="mcur") }}
+    and mcur.cc_academic_year = {{ var("current_academic_year") }}
+left join
+    state_comps as c
+    on s.academic_year = c.academic_year
+    and s.region = c.region
+    and a.assessment_name = c.test_name
+    and a.test_code = c.test_code
+left join
+    {{ ref("stg_assessments__academic_goals") }} as g
+    on s.academic_year = g.academic_year
+    and s.schoolid = g.school_id
+    and a.test_code = g.state_assessment_code

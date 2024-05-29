@@ -4,9 +4,16 @@ from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
+from teamster.google.directory.resources import GoogleDirectoryResource
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.google.directory.resources import GoogleDirectoryResource
-from teamster.kipptaf.google.directory.schema import ASSET_SCHEMA
+from teamster.kipptaf.google.directory.schema import (
+    GROUPS_SCHEMA,
+    MEMBERS_SCHEMA,
+    ORGUNITS_SCHEMA,
+    ROLE_ASSIGNMENTS_SCHEMA,
+    ROLES_SCHEMA,
+    USERS_SCHEMA,
+)
 
 key_prefix = [CODE_LOCATION, "google", "directory"]
 asset_kwargs = {
@@ -23,12 +30,11 @@ asset_kwargs = {
 )
 def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_orgunits(org_unit_type="all")
-    schema = ASSET_SCHEMA["orgunits"]
 
-    yield Output(value=([data], schema), metadata={"record_count": len(data)})
+    yield Output(value=([data], ORGUNITS_SCHEMA), metadata={"record_count": len(data)})
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=[data], schema=schema
+        asset_key=context.asset_key, records=[data], schema=ORGUNITS_SCHEMA
     )
 
 
@@ -39,12 +45,11 @@ def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryRe
 )
 def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_users(projection="full")
-    schema = ASSET_SCHEMA["users"]
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(value=(data, USERS_SCHEMA), metadata={"record_count": len(data)})
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=USERS_SCHEMA
     )
 
 
@@ -55,12 +60,11 @@ def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 )
 def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_groups()
-    schema = ASSET_SCHEMA["groups"]
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(value=(data, GROUPS_SCHEMA), metadata={"record_count": len(data)})
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=GROUPS_SCHEMA
     )
 
 
@@ -71,12 +75,11 @@ def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryReso
 )
 def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_roles()
-    schema = ASSET_SCHEMA["roles"]
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(value=(data, ROLES_SCHEMA), metadata={"record_count": len(data)})
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=ROLES_SCHEMA
     )
 
 
@@ -89,12 +92,13 @@ def role_assignments(
     context: AssetExecutionContext, google_directory: GoogleDirectoryResource
 ):
     data = google_directory.list_role_assignments()
-    schema = ASSET_SCHEMA["role_assignments"]
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(
+        value=(data, ROLE_ASSIGNMENTS_SCHEMA), metadata={"record_count": len(data)}
+    )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=ROLE_ASSIGNMENTS_SCHEMA
     )
 
 
@@ -112,12 +116,11 @@ def role_assignments(
 )
 def members(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_members(group_key=context.partition_key)
-    schema = ASSET_SCHEMA["members"]
 
-    yield Output(value=(data, schema), metadata={"record_count": len(data)})
+    yield Output(value=(data, MEMBERS_SCHEMA), metadata={"record_count": len(data)})
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=schema
+        asset_key=context.asset_key, records=data, schema=MEMBERS_SCHEMA
     )
 
 

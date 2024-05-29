@@ -23,7 +23,7 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
         instance=instance,
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
             **ssh_resource,
         },
     )
@@ -31,11 +31,11 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # type: ignore
+        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_edplan_kippcamden():
@@ -137,9 +137,9 @@ def test_performance_management_observation_details_kipptaf():
 
 
 def test_renlearn_accelerated_reader_kippnj():
-    from teamster.kippnewark.renlearn.assets import _all
+    from teamster.kippnewark.renlearn.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "accelerated_reader"][0]
+    asset = [a for a in assets if a.key.path[-1] == "accelerated_reader"][0]
 
     _test_asset(
         asset=asset,
@@ -154,9 +154,9 @@ def test_renlearn_accelerated_reader_kippnj():
 
 
 def test_renlearn_accelerated_reader_kippmiami():
-    from teamster.kippmiami.renlearn.assets import _all
+    from teamster.kippmiami.renlearn.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "accelerated_reader"][0]
+    asset = [a for a in assets if a.key.path[-1] == "accelerated_reader"][0]
 
     _test_asset(
         asset=asset,
@@ -171,9 +171,9 @@ def test_renlearn_accelerated_reader_kippmiami():
 
 
 def test_renlearn_star_kippnj():
-    from teamster.kippnewark.renlearn.assets import _all
+    from teamster.kippnewark.renlearn.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "star"][0]
+    asset = [a for a in assets if a.key.path[-1] == "star"][0]
 
     _test_asset(
         asset=asset,
@@ -188,9 +188,9 @@ def test_renlearn_star_kippnj():
 
 
 def test_renlearn_star_kippmiami():
-    from teamster.kippmiami.renlearn.assets import _all
+    from teamster.kippmiami.renlearn.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "star"][0]
+    asset = [a for a in assets if a.key.path[-1] == "star"][0]
 
     _test_asset(
         asset=asset,
@@ -205,9 +205,9 @@ def test_renlearn_star_kippmiami():
 
 
 def test_renlearn_star_skill_area_kippmiami():
-    from teamster.kippmiami.renlearn.assets import _all
+    from teamster.kippmiami.renlearn.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "star_skill_area"][0]
+    asset = [a for a in assets if a.key.path[-1] == "star_skill_area"][0]
 
     _test_asset(
         asset=asset,
@@ -222,9 +222,9 @@ def test_renlearn_star_skill_area_kippmiami():
 
 
 def test_renlearn_star_dashboard_standards_kippmiami():
-    from teamster.kippmiami.renlearn.assets import _all
+    from teamster.kippmiami.renlearn.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "star_dashboard_standards"][0]
+    asset = [a for a in assets if a.key.path[-1] == "star_dashboard_standards"][0]
 
     _test_asset(
         asset=asset,
@@ -239,9 +239,9 @@ def test_renlearn_star_dashboard_standards_kippmiami():
 
 
 def test_renlearn_fast_star_kippmiami():
-    from teamster.kippmiami.renlearn.assets import _all
+    from teamster.kippmiami.renlearn.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "fast_star"][0]
+    asset = [a for a in assets if a.key.path[-1] == "fast_star"][0]
 
     _test_asset(
         asset=asset,
@@ -276,11 +276,7 @@ def test_fldoe_eoc_kippmiami():
 
     asset = [a for a in assets if a.key.path[-1] == "eoc"][0]
 
-    _test_asset(
-        asset=asset,
-        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
-        partition_key="civics|2023",
-    )
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_fldoe_science_kippmiami():
@@ -288,25 +284,21 @@ def test_fldoe_science_kippmiami():
 
     asset = [a for a in assets if a.key.path[-1] == "science"][0]
 
-    _test_asset(
-        asset=asset,
-        ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
-        partition_key="8|2023",
-    )
+    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_iready_diagnostic_results_kippmiami():
-    from teamster.kippmiami.iready.assets import _all
+    from teamster.kippmiami.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "diagnostic_results"][0]
+    asset = [a for a in assets if a.key.path[-1] == "diagnostic_results"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
 def test_iready_diagnostic_results_kippnj():
-    from teamster.kippnewark.iready.assets import _all
+    from teamster.kippnewark.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "diagnostic_results"][0]
+    asset = [a for a in assets if a.key.path[-1] == "diagnostic_results"][0]
 
     _test_asset(
         asset=asset, ssh_resource={"ssh_iready": SSH_IREADY}, partition_key="2021|math"
@@ -314,61 +306,61 @@ def test_iready_diagnostic_results_kippnj():
 
 
 def test_iready_personalized_instruction_by_lesson_kippmiami():
-    from teamster.kippmiami.iready.assets import _all
+    from teamster.kippmiami.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "personalized_instruction_by_lesson"][
-        0
-    ]
+    asset = [
+        a for a in assets if a.key.path[-1] == "personalized_instruction_by_lesson"
+    ][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
 def test_iready_personalized_instruction_by_lesson_kippnj():
-    from teamster.kippnewark.iready.assets import _all
+    from teamster.kippnewark.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "personalized_instruction_by_lesson"][
-        0
-    ]
+    asset = [
+        a for a in assets if a.key.path[-1] == "personalized_instruction_by_lesson"
+    ][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
 def test_iready_instructional_usage_data_kippmiami():
-    from teamster.kippmiami.iready.assets import _all
+    from teamster.kippmiami.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "instructional_usage_data"][0]
+    asset = [a for a in assets if a.key.path[-1] == "instructional_usage_data"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
 def test_iready_instructional_usage_data_kippnj():
-    from teamster.kippnewark.iready.assets import _all
+    from teamster.kippnewark.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "instructional_usage_data"][0]
+    asset = [a for a in assets if a.key.path[-1] == "instructional_usage_data"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
 def test_iready_diagnostic_and_instruction_kippmiami():
-    from teamster.kippmiami.iready.assets import _all
+    from teamster.kippmiami.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "diagnostic_and_instruction"][0]
+    asset = [a for a in assets if a.key.path[-1] == "diagnostic_and_instruction"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
 def test_iready_diagnostic_and_instruction_kippnj():
-    from teamster.kippnewark.iready.assets import _all
+    from teamster.kippnewark.iready.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "diagnostic_and_instruction"][0]
+    asset = [a for a in assets if a.key.path[-1] == "diagnostic_and_instruction"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
 def test_titan_person_data_kippnewark():
-    from teamster.kippnewark.titan.assets import _all
+    from teamster.kippnewark.titan.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "person_data"][0]
+    asset = [a for a in assets if a.key.path[-1] == "person_data"][0]
 
     _test_asset(
         asset=asset,
@@ -383,9 +375,9 @@ def test_titan_person_data_kippnewark():
 
 
 def test_titan_person_data_kippcamden():
-    from teamster.kippnewark.titan.assets import _all
+    from teamster.kippnewark.titan.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "person_data"][0]
+    asset = [a for a in assets if a.key.path[-1] == "person_data"][0]
 
     _test_asset(
         asset=asset,
@@ -400,9 +392,9 @@ def test_titan_person_data_kippcamden():
 
 
 def test_titan_income_form_data_kippnewark():
-    from teamster.kippnewark.titan.assets import _all
+    from teamster.kippnewark.titan.assets import assets
 
-    asset = [a for a in _all if a.key.path[-1] == "income_form_data"][0]
+    asset = [a for a in assets if a.key.path[-1] == "income_form_data"][0]
 
     _test_asset(
         asset=asset,
@@ -417,19 +409,19 @@ def test_titan_income_form_data_kippnewark():
 
 
 def test_deanslist_reconcile_attendance_kipptaf():
-    from teamster.kipptaf.deanslist.assets import _all
+    from teamster.kipptaf.deanslist.assets import assets
     from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
-    asset = [a for a in _all if a.key.path[-1] == "reconcile_attendance"][0]
+    asset = [a for a in assets if a.key.path[-1] == "reconcile_attendance"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_deanslist": SSH_RESOURCE_DEANSLIST})
 
 
 def test_deanslist_reconcile_suspensions_kipptaf():
-    from teamster.kipptaf.deanslist.assets import _all
+    from teamster.kipptaf.deanslist.assets import assets
     from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
-    asset = [a for a in _all if a.key.path[-1] == "reconcile_suspensions"][0]
+    asset = [a for a in assets if a.key.path[-1] == "reconcile_suspensions"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_deanslist": SSH_RESOURCE_DEANSLIST})
 
@@ -438,7 +430,7 @@ def test_adp_payroll_general_ledger_file_kipptaf():
     from teamster.kipptaf.adp.payroll.assets import general_ledger_file
 
     partitions_def_name = (
-        general_ledger_file.partitions_def.get_partitions_def_for_dimension("date").name  # type: ignore
+        general_ledger_file.partitions_def.get_partitions_def_for_dimension("date").name  # pyright: ignore[reportOptionalMemberAccess, reportAttributeAccessIssue]
     )
 
     with instance_for_test() as instance:

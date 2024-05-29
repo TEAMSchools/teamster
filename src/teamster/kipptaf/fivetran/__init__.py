@@ -1,9 +1,9 @@
-from .assets import _all as assets
-from .schedules import _all as schedules
-from .sensors import _all as sensors
+from teamster.kipptaf.fivetran.assets import assets
+from teamster.kipptaf.fivetran.schedules import schedules
+from teamster.kipptaf.fivetran.sensors import sensors
 
-_all = [
-    assets,
-    schedules,
-    sensors,
+__all__ = [
+    "assets",
+    "schedules",
+    "sensors",
 ]

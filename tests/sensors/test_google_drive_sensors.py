@@ -16,4 +16,4 @@ def test_alchemer_survey_metadata_asset_sensor():
 
         context.log.info(sensor_result.dynamic_partitions_requests)
 
-    assert len(sensor_result.dynamic_partitions_requests) > 0  # type: ignore
+    assert len(sensor_result.dynamic_partitions_requests) > 0

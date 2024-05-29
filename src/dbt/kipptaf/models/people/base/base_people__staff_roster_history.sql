@@ -607,6 +607,7 @@ with
             ldap.user_principal_name as report_to_user_principal_name,
             ldap.mail as report_to_mail,
             ldap.sam_account_name as report_to_sam_account_name,
+            ldap.google_email as report_to_google_email,
         from crosswalk as cw
         left join
             {{ ref("stg_people__employee_numbers") }} as en
