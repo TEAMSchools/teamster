@@ -33,7 +33,6 @@ with
 
             student_flag_name,
             student_flag_value,
-
         from
             {{ ref("int_powerschool__student_assignments") }} unpivot (
                 student_flag_value for student_flag_name in (
@@ -92,7 +91,6 @@ select distinct
     assign_w_missing_score_not_5,
     assign_s_score_less_50p,
     assign_f_missing_score_not_5,
-
 from
     student_unpivot_flags pivot (
         max(student_flag_value) for student_flag_name in (
