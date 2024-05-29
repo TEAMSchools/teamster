@@ -42,15 +42,14 @@ def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
     **asset_kwargs,
 )
 def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):
-    data = google_forms.list_responses(form_id=context.partition_key)
+    reponses = google_forms.list_responses(form_id=context.partition_key)
 
     yield Output(
-        value=([data], RESPONSES_SCHEMA),
-        metadata={"record_count": len(data.get("responses", []))},
+        value=(reponses, RESPONSES_SCHEMA), metadata={"record_count": len(reponses)}
     )
 
     yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=[data], schema=RESPONSES_SCHEMA
+        asset_key=context.asset_key, records=reponses, schema=RESPONSES_SCHEMA
     )
 
 
