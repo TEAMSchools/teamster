@@ -165,7 +165,17 @@ with
         group by academic_year, test_name, enrolled_grade
     )
 
-select pc.*, if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as net_payout,
+select
+    pc.academic_year,
+    pc.group,
+    pc.grade_level,
+    pc.measure,
+    pc.criteria as criteria_cutoff,
+    pc.payout_amount as payout_potential,
+
+    cu.criteria as criteria_actual,
+
+    if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as payout_actual,
 from {{ ref("stg_people__miami_performance_criteria") }} as pc
 left join
     criteria_union as cu
