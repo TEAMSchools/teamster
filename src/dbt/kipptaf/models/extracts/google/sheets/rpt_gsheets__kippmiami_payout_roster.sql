@@ -28,7 +28,7 @@ with
             star_crosswalk as c
             on s.grade = c.grade
             and s._dagster_partition_subject = c.subject
-        where s.screening_period_window_name = 'Winter'
+        where s.screening_period_window_name = 'Spring'
     ),
 
     criteria_union as (
