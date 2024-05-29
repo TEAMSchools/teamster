@@ -104,7 +104,7 @@ with
         select
             co.academic_year,
             'ada' as measure,
-            co.school_abbreviation as grade_level,
+            co.school_name as grade_level,
             round(avg(ada.ada), 2) as criteria,
         from {{ ref("int_powerschool__ada") }} as ada
         inner join
@@ -114,7 +114,7 @@ with
             and co.region = 'Miami'
             and co.grade_level != 99
             and co.rn_year = 1
-        group by co.academic_year, co.school_abbreviation
+        group by co.academic_year, co.school_name
 
         union all
 
