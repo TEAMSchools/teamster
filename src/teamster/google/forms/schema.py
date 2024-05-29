@@ -64,6 +64,8 @@ class Columns(BaseModel):
 
 
 class Grid(BaseModel):
+    shuffleQuestions: bool | None = None
+
     columns: Columns | None = None
 
 
