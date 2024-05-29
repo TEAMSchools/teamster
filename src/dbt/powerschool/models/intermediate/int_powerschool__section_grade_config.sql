@@ -96,6 +96,9 @@ select
     gcfw.districtteachercategoryid as district_teacher_category_id,
     gcfw.defaultscoretype as default_score_type,
 
+    left(tb.storecode, 1) as storecode_type,
+    right(tb.storecode, 1) as storecode_sequence,
+
     coalesce(gcfw.isinfinalgrades, 0) as is_in_final_grades,
 
     coalesce(

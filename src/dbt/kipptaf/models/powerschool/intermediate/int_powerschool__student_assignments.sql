@@ -19,8 +19,15 @@ with
             enr.grade_level,
             enr.school_level,
 
+            aud.year_week_number,
+            aud.quarter_week_number,
+            aud.audit_start_date,
+            aud.audit_end_date,
+            aud.audit_due_date,
+
             gb.storecode as assign_category_quarter,
             gb.category_name as assign_category,
+            gb.storecode_type as assign_category_code,
 
             a.scoretype as assign_score_type,
             a.assignmentid as assign_id,
@@ -30,32 +37,18 @@ with
 
             s.scorepoints as assign_score_raw,
 
-            aud.year_week_number,
-            aud.quarter_week_number,
-            aud.audit_start_date,
-            aud.audit_end_date,
-            aud.audit_due_date,
-
-            1 as counter,
+            concat('Q', gb.storecode_sequence) as assign_quarter,
 
             coalesce(s.islate, 0) as assign_is_late,
             coalesce(s.isexempt, 0) as assign_is_exempt,
             coalesce(s.ismissing, 0) as assign_is_missing,
 
-            concat('Q', right(gb.storecode, 1)) as assign_quarter,
-
             concat(
-                enr.region, enr.school_level, left(gb.storecode, 1)
+                enr.region, enr.school_level, gb.storecode_type
             ) as es_exclude_concat,
-
             concat(
                 enr.region, enr.school_level, gb.category_name
             ) as other_excluded_categories_concat,
-
-            if(
-                concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
-            ) as assign_semester_code,
-            left(gb.storecode, 1) as assign_category_code,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -100,45 +93,45 @@ with
                 when enr.school_level = 'HS'
                 then co.sections_external_expression
             end as `section`,
-
-        from {{ ref("base_powerschool__course_enrollments") }} as co
+        from {{ ref("base_powerschool__student_enrollments") }} as enr
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as enr
-            on co.cc_studentid = enr.studentid
-            and co.cc_yearid = enr.yearid
+            {{ ref("base_powerschool__course_enrollments") }} as co
+            on enr.studentid = co.cc_studentid
+            and enr.yearid = co.cc_yearid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
-            and enr.rn_year = 1
+            and not co.is_dropped_section
+            and co.cc_dateleft >= current_date('America/New_York')
+        inner join
+            {{ ref("stg_reporting__gradebook_expectations") }} as aud
+            on enr.academic_year = aud.academic_year
+            and enr.region = aud.region
         inner join
             {{ ref("int_powerschool__section_grade_config") }} as gb
             on co.sections_dcid = gb.sections_dcid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gb") }}
-            and gb.grading_formula_weighting_type != 'Total_Points'
+            and gb.grading_formula_weighting_type = 'Category_Weighting'
+            and gb.storecode_type != 'H'
+            and gb.storecode not in ('Q1', 'Q2', 'Q3', 'Q4')
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on gb.sections_dcid = a.sectionsdcid
             and gb.category_id = a.category_id
-            and a.duedate between gb.term_start_date and gb.term_end_date
             and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
+            and a.duedate between aud.audit_start_date and aud.audit_end_date
+            and a.duedate between gb.term_start_date and gb.term_end_date
+            and a.duedate between co.cc_dateenrolled and co.cc_dateleft
+            and a.iscountedinfinalgrade = 1
+            and a.scoretype in ('POINTS', 'PERCENT')
         left join
             {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
             and enr.students_dcid = s.studentsdcid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
-        left join
-            {{ ref("stg_reporting__gradebook_expectations") }} as aud
-            on enr.academic_year = aud.academic_year
-            and enr.region = aud.region
-            and a.duedate between aud.audit_start_date and aud.audit_end_date
         where
-            co.cc_academic_year = {{ var("current_academic_year") }}
-            and not co.is_dropped_section
-            and co.cc_dateleft >= current_date('America/New_York')
+            enr.academic_year = {{ var("current_academic_year") }}
+            and enr.rn_year = 1
             and enr.enroll_status = 0
             and enr.school_level != 'OD'
-            and a.iscountedinfinalgrade = 1
-            and a.duedate between co.cc_dateenrolled and co.cc_dateleft
-            and a.scoretype in ('POINTS', 'PERCENT')
-            and gb.storecode not in ('Q1', 'Q2', 'Q3', 'Q4')
     ),
 
     assign_2 as (
@@ -159,7 +152,6 @@ with
             `section`,
             sectionid,
             sections_dcid,
-            assign_semester_code,
             assign_quarter,
             assign_category_code,
             assign_category,
@@ -183,16 +175,17 @@ with
             audit_start_date,
             audit_end_date,
             audit_due_date,
-            counter,
 
             safe_divide(
                 assign_score_converted, assign_max_score
             ) as assign_final_score_percent,
 
+            if(
+                concat('Q', assign_quarter) in ('Q1', 'Q2'), 'S1', 'S2'
+            ) as assign_semester_code,
         from assign_1
         where
-            assign_category_code != 'H'
-            and es_exclude_concat
+            es_exclude_concat
             not in ('NewarkESF', 'NewarkESS', 'CamdenESF', 'CamdenESS')
             and other_excluded_categories_concat not in (
                 'NewarkHSParticipation',
@@ -244,7 +237,8 @@ select
     audit_start_date,
     audit_end_date,
     audit_due_date,
-    counter,
+
+    1 as `counter`,
 
     if(
         assign_id is not null and assign_score_converted > assign_max_score, 1, 0
@@ -295,5 +289,4 @@ select
     if(
         assign_score_converted < (assign_max_score / 2), 1, 0
     ) as assign_s_score_less_50p,
-
 from assign_2
