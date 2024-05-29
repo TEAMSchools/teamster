@@ -69,7 +69,6 @@ with
             question_item.image.sourceuri as image_source_uri,
 
             null as question_group_grid_shuffle_questions,
-            null as question_group_grid_columns_shuffle,
             null as question_group_grid_columns_type,
 
             question_item.question,
@@ -94,8 +93,6 @@ with
 
             question_group_item.grid.shufflequestions
             as question_group_grid_shuffle_questions,
-            question_group_item.grid.columns.shuffle
-            as question_group_grid_columns_shuffle,
             question_group_item.grid.columns.type as question_group_grid_columns_type,
 
             question,
@@ -135,7 +132,6 @@ with
             image_width,
             image_source_uri,
             question_group_grid_shuffle_questions,
-            question_group_grid_columns_shuffle,
             question_group_grid_columns_type,
             item_kind,
 
@@ -249,7 +245,6 @@ select
     null as video_youtube_uri,
 
     null as question_group_grid_shuffle_questions,
-    null as question_group_grid_columns_shuffle,
     null as question_group_grid_columns_type,
     null as question_id,
     null as question_required,
@@ -296,7 +291,6 @@ select
     video_youtube_uri,
 
     null as question_group_grid_shuffle_questions,
-    null as question_group_grid_columns_shuffle,
     null as question_group_grid_columns_type,
     null as question_id,
     null as question_required,
@@ -343,7 +337,6 @@ select
     null as video_youtube_uri,
 
     question_group_grid_shuffle_questions,
-    question_group_grid_columns_shuffle,
     question_group_grid_columns_type,
     question_id,
     question_required,
