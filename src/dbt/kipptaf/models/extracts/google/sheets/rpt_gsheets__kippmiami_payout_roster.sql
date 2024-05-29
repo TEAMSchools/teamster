@@ -11,10 +11,10 @@ with
     star as (
         select
             s.student_display_id,
+            s.district_benchmark_proficient as star_is_proficient,
             safe_cast(left(s.school_year, 4) as numeric) as academic_year,
             safe_cast(if(s.grade = 'K', '0', s.grade) as numeric) as grade_level,
             if(s._dagster_partition_subject = 'SM', 'math', 'reading') as subject,
-            s.district_benchmark_proficient as star_is_proficient,
             row_number() over (
                 partition by
                     s.student_display_id,
