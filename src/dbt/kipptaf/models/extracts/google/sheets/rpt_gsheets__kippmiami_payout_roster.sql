@@ -77,7 +77,7 @@ with
             academic_year,
             concat('STAR ', subject, ' proficiency') as measure,
             cast(grade_level as string) as grade_level,
-            round(avg(if(star_is_proficient = 'Yes', 1, 0)), 2) as criteria
+            round(avg(if(star_is_proficient = 'Yes', 1, 0)), 2) as criteria,
         from star
         where rn_subj_round = 1
         group by academic_year, subject, grade_level
@@ -88,7 +88,7 @@ with
             co.academic_year,
             'ada' as measure,
             cast(co.grade_level as string) as grade_level,
-            round(avg(ada.ada), 2) as criteria
+            round(avg(ada.ada), 2) as criteria,
         from {{ ref("int_powerschool__ada") }} as ada
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -105,7 +105,7 @@ with
             co.academic_year,
             'ada' as measure,
             co.school_abbreviation as grade_level,
-            round(avg(ada.ada), 2) as criteria
+            round(avg(ada.ada), 2) as criteria,
         from {{ ref("int_powerschool__ada") }} as ada
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -122,7 +122,7 @@ with
             co.academic_year,
             'ada' as measure,
             'region' as grade_level,
-            round(avg(ada.ada), 2) as criteria
+            round(avg(ada.ada), 2) as criteria,
         from {{ ref("int_powerschool__ada") }} as ada
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
