@@ -820,7 +820,7 @@ with
             s.assign_s_score_less_50p,
             s.assign_f_missing_score_not_5,
 
-            coalesce(f.sections_dcid, 'Transfer'),
+            coalesce(safe_cast(f.sections_dcid as string), 'Transfer'),
 
             if(
                 f.region = 'Miami'
