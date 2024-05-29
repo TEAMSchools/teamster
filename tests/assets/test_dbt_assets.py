@@ -81,7 +81,7 @@ def test_external_source_dbt_assets():
     result = materialize(
         assets=[external_source_dbt_assets],
         resources={"dbt_cli": get_dbt_cli_resource("kipptaf")},
-        selection=["kipptaf/google_forms/src_google_forms__responses"],
+        selection=["kipptaf/google_forms/src_google_forms__form"],
     )
 
     assert result.success
