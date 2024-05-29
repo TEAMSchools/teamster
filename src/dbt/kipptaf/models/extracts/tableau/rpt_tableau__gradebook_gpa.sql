@@ -333,47 +333,6 @@ with
             and g.course_number not in ('{{ exclude_course_numbers | join("', '") }}')
     ),
 
-    gpa_analysis as (
-        select
-            sr._dbt_source_relation,
-            sr.yearid,
-            sr.studentid,
-
-            gt.semester as gpa_semester_code,
-            gt.term_name as gpa_quarter,
-            gt.is_current as gpa_current_quarter,
-            gt.gpa_term as gpa_for_quarter,
-            gt.gpa_semester,
-            gt.gpa_y1,
-            gt.gpa_y1_unweighted,
-            gt.total_credit_hours as gpa_total_credit_hours,
-            gt.n_failing_y1 as gpa_n_failing_y1,
-
-            gc.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
-            gc.cumulative_y1_gpa_unweighted as gpa_cumulative_y1_gpa_unweighted,
-            gc.cumulative_y1_gpa_projected as gpa_cumulative_y1_gpa_projected,
-            gc.cumulative_y1_gpa_projected_s1 as gpa_cumulative_y1_gpa_projected_s1,
-            gc.cumulative_y1_gpa_projected_s1_unweighted
-            as gpa_cumulative_y1_gpa_projected_s1_unweighted,
-            gc.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
-        from {{ ref("base_powerschool__student_enrollments") }} as sr
-        left join
-            {{ ref("int_powerschool__gpa_term") }} as gt
-            on sr.studentid = gt.studentid
-            and sr.yearid = gt.yearid
-            and sr.schoolid = gt.schoolid
-            and {{ union_dataset_join_clause(left_alias="sr", right_alias="gt") }}
-        left join
-            {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on sr.studentid = gc.studentid
-            and sr.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="sr", right_alias="gc") }}
-        where
-            sr.school_level in ('MS', 'HS')
-            and sr.rn_year = 1
-            and gt.term_name is not null
-    ),
-
     final_roster as (
         select
             s._dbt_source_relation,
@@ -451,18 +410,23 @@ with
             c.category_y1_percent_grade_current,
             c.category_quarter_average_all_courses,
 
-            gpa.gpa_for_quarter,
-            gpa.gpa_semester,
-            gpa.gpa_y1,
-            gpa.gpa_y1_unweighted,
-            gpa.gpa_total_credit_hours,
-            gpa.gpa_n_failing_y1,
-            gpa.gpa_cumulative_y1_gpa,
-            gpa.gpa_cumulative_y1_gpa_unweighted,
-            gpa.gpa_cumulative_y1_gpa_projected,
-            gpa.gpa_cumulative_y1_gpa_projected_s1,
-            gpa.gpa_cumulative_y1_gpa_projected_s1_unweighted,
-            gpa.gpa_core_cumulative_y1_gpa,
+            gt.semester as gpa_semester_code,
+            gt.term_name as gpa_quarter,
+            gt.is_current as gpa_current_quarter,
+            gt.gpa_term as gpa_for_quarter,
+            gt.gpa_semester,
+            gt.gpa_y1,
+            gt.gpa_y1_unweighted,
+            gt.total_credit_hours as gpa_total_credit_hours,
+            gt.n_failing_y1 as gpa_n_failing_y1,
+
+            gc.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
+            gc.cumulative_y1_gpa_unweighted as gpa_cumulative_y1_gpa_unweighted,
+            gc.cumulative_y1_gpa_projected as gpa_cumulative_y1_gpa_projected,
+            gc.cumulative_y1_gpa_projected_s1 as gpa_cumulative_y1_gpa_projected_s1,
+            gc.cumulative_y1_gpa_projected_s1_unweighted
+            as gpa_cumulative_y1_gpa_projected_s1_unweighted,
+            gc.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
 
             if(s.ada >= 0.80, 1, 0) as ada_above_or_at_80,
 
@@ -520,11 +484,16 @@ with
             and m.`quarter` = c.`quarter`
             and {{ union_dataset_join_clause(left_alias="m", right_alias="c") }}
         left join
-            gpa_analysis as gpa
-            on s.yearid = gpa.yearid
-            and s.studentid = gpa.studentid
-            and s.`quarter` = gpa.gpa_quarter
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="gpa") }}
+            {{ ref("int_powerschool__gpa_term") }} as gt
+            on s.studentid = gt.studentid
+            and s.yearid = gt.yearid
+            and s.schoolid = gt.schoolid
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="gt") }}
+        left join
+            {{ ref("int_powerschool__gpa_cumulative") }} as gc
+            on s.studentid = gc.studentid
+            and s.schoolid = gc.schoolid
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="gc") }}
         left join
             final_y1_historical as y1h
             on m.yearid = y1h.yearid
