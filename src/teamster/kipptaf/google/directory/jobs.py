@@ -1,18 +1,15 @@
 from dagster import RunConfig, define_asset_job, job
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.google.bigquery.ops import (
-    BigQueryGetTableOpConfig,
-    bigquery_get_table_op,
-)
-from teamster.kipptaf.google.directory.assets import (
-    google_directory_nonpartitioned_assets,
-)
-from teamster.kipptaf.google.directory.ops import (
+from teamster.google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
+from teamster.google.directory.ops import (
     google_directory_member_create_op,
     google_directory_role_assignment_create_op,
     google_directory_user_create_op,
     google_directory_user_update_op,
+)
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.google.directory.assets import (
+    google_directory_nonpartitioned_assets,
 )
 
 

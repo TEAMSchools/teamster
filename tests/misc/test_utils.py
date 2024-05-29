@@ -3,6 +3,8 @@ from teamster.core.utils.functions import regex_pattern_replace
 
 def test_regex_pattern_replace():
     test_patterns = [
+        r"(?P<school_year_term>\d+)\/\w+-\w+Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv",
+        r"(?P<school_year_term>\d+)\/[A-Z]+-[A-Z]+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv",
         r"'incomeformdata(?P<fiscal_year>\d{4})\.csv'",
         r"'persondata(?P<fiscal_year>\d{4})\.csv'",
         r"(?:(?P<academic_year>\w+)\/)?diagnostic_and_instruction_(?P<subject>\w+)_ytd_window\.csv",
@@ -34,3 +36,23 @@ def test_regex_pattern_replace():
 
         print(f"{test_pattern}\n\t=> {result_pattern}\n")
         assert "?P<" not in result_pattern
+
+
+def test_foo():
+    from teamster.kipptaf.dbt.assets import manifest
+
+    asset_keys_old = set()
+    asset_keys_new = set()
+
+    for source in manifest["sources"].values():
+        if (
+            source.get("external")
+            and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
+        ):
+            asset_keys_old.add(
+                str(["kipptaf", source["source_name"], source["name"].split("__")[-1]])
+            )
+
+            asset_keys_new.add(str(source["meta"]["dagster"]["parent_asset_key_path"]))
+
+    assert asset_keys_new == asset_keys_old

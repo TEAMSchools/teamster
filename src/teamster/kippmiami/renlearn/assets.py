@@ -6,13 +6,12 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.renlearn.schema import ASSET_SCHEMA
 from teamster.core.sftp.assets import build_sftp_asset
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippmiami.renlearn.schema import ASSET_SCHEMA
 
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-
-_all = [
+assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "renlearn", a["asset_name"]],
         ssh_resource_key="ssh_renlearn",

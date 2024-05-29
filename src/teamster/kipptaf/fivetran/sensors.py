@@ -10,10 +10,10 @@ from dagster import (
 from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 
-from .. import CODE_LOCATION
-from .assets import CONNECTORS, _all
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.fivetran.assets import CONNECTORS, assets
 
-ASSET_KEYS = [asset.key for asset in _all]
+ASSET_KEYS = [asset.key for asset in assets]
 
 
 def render_fivetran_audit_query(dataset, timestamp):
@@ -27,7 +27,7 @@ def render_fivetran_audit_query(dataset, timestamp):
 @sensor(
     name=f"{CODE_LOCATION}_fivetran_sync_status_sensor",
     minimum_interval_seconds=(60 * 5),
-    asset_selection=_all,
+    asset_selection=assets,
 )
 def fivetran_sync_status_sensor(
     context: SensorEvaluationContext,
@@ -87,6 +87,6 @@ def fivetran_sync_status_sensor(
     return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
-_all = [
+sensors = [
     fivetran_sync_status_sensor,
 ]

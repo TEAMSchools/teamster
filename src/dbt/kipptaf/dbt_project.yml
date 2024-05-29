@@ -107,6 +107,8 @@ models:
         +schema: google_directory
         staging:
           +materialized: table
+      appsheet:
+        +schema: appsheet
     illuminate:
       +schema: illuminate
       staging:
@@ -158,8 +160,7 @@ models:
       +schema: students
     surveys:
       +schema: surveys
-      intermediate:
-        +materialized: table
+      +materialized: table
     tableau:
       +schema: tableau
       staging:

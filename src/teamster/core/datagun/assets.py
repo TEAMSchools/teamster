@@ -102,8 +102,8 @@ def load_sftp(
                         context.log.info(f"Creating directory: {path}")
                         sftp.mkdir(path=str(path))
 
-        context.log.info(f"Saving file to {destination_filepath}")
         if isinstance(data, storage.Blob):
+            context.log.info(f"Saving file to {destination_filepath}")
             with sftp.open(filename=str(destination_filepath), mode="w") as f:
                 data.download_to_file(file_obj=f)
         else:
@@ -112,6 +112,7 @@ def load_sftp(
                 context.log.info(f"Changing directory to {destination_filepath.parent}")
                 sftp.chdir(str(destination_filepath.parent))
 
+            context.log.info(f"Saving file to {destination_filepath}")
             with sftp.file(filename=file_name, mode="w") as f:
                 f.write(data)
 

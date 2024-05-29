@@ -10,6 +10,7 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     multi_asset,
 )
+from dagster_dbt import DagsterDbtTranslator, DbtProject
 from dagster_dbt.asset_decorator import (
     DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
     get_dbt_multi_asset_args,
@@ -19,7 +20,7 @@ from dagster_dbt.asset_utils import (
     DAGSTER_DBT_SELECT_METADATA_KEY,
     get_deps,
 )
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
+from dagster_dbt.dagster_dbt_translator import validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.utils import (
     dagster_name_fn,
@@ -117,6 +118,7 @@ def dbt_external_source_assets(
     backfill_policy: BackfillPolicy | None = None,
     op_tags: dict[str, Any] | None = None,
     required_resource_keys: set[str] | None = None,
+    project: DbtProject | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Forked from dagster_dbt.asset_decorator.dbt_assets"""
     dagster_dbt_translator = validate_translator(
@@ -148,6 +150,7 @@ def dbt_external_source_assets(
         io_manager_key=io_manager_key,
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
+        project=project,
     )
 
     deps, internal_asset_deps = get_dbt_multi_asset_deps(

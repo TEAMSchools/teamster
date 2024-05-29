@@ -6,6 +6,7 @@ from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materi
 from teamster.core.datagun.assets import format_file_name
 from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
 from teamster.kipptaf import LOCAL_TIMEZONE
+from teamster.kipptaf.resources import SSH_RESOURCE_LITTLESIS
 
 
 def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
@@ -24,6 +25,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
             "gcs": GCS_RESOURCE,
             "db_bigquery": BIGQUERY_RESOURCE,
             "ssh_couchdrop": SSH_COUCHDROP,
+            "ssh_littlesis": SSH_RESOURCE_LITTLESIS,
         },
     )
 
@@ -133,3 +135,9 @@ def test_datagun_powerschool_kippnewark():
             random.randint(a=0, b=(len(powerschool_extract_assets) - 1))
         ]
     )
+
+
+def test_littlesis_extract():
+    from teamster.kipptaf.datagun.assets import littlesis_extract
+
+    _test_asset(asset=littlesis_extract)

@@ -3,10 +3,10 @@ from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 
 from teamster import GCS_PROJECT_NAME
-from teamster.core.deanslist.resources import DeansListResource
 from teamster.core.google.storage.io_manager import GCSIOManager
 from teamster.core.sqlalchemy.resources import OracleResource, SqlAlchemyEngineResource
 from teamster.core.ssh.resources import SSHResource
+from teamster.deanslist.resources import DeansListResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 

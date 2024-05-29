@@ -1,7 +1,6 @@
-from teamster.core.edplan.sensors import build_sftp_sensor
-
-from .. import CODE_LOCATION, LOCAL_TIMEZONE
-from . import assets
+from teamster.edplan.sensors import build_sftp_sensor
+from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kippcamden.edplan import assets
 
 sftp_sensor = build_sftp_sensor(
     sensor_name=f"{CODE_LOCATION}_edplan_sftp_sensor",
@@ -10,6 +9,6 @@ sftp_sensor = build_sftp_sensor(
     minimum_interval_seconds=(60 * 10),
 )
 
-_all = [
+sensors = [
     sftp_sensor,
 ]
