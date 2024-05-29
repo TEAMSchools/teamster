@@ -36,3 +36,23 @@ def test_regex_pattern_replace():
 
         print(f"{test_pattern}\n\t=> {result_pattern}\n")
         assert "?P<" not in result_pattern
+
+
+def test_foo():
+    from teamster.kipptaf.dbt.assets import manifest
+
+    asset_keys_old = set()
+    asset_keys_new = set()
+
+    for source in manifest["sources"].values():
+        if (
+            source.get("external")
+            and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
+        ):
+            asset_keys_old.add(
+                str(["kipptaf", source["source_name"], source["name"].split("__")[-1]])
+            )
+
+            asset_keys_new.add(str(source["meta"]["dagster"]["parent_asset_key_path"]))
+
+    assert asset_keys_new == asset_keys_old

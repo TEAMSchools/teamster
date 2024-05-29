@@ -8,18 +8,21 @@ with
                     ref("stg_pearson__njsla_science"),
                     ref("stg_pearson__njgpa"),
                 ],
-                exclude=["_dbt_source_relation"],
+                source_column_name="_dbt_source_relation_2",
             )
         }}
     ),
 
     with_translations as (
         select  -- noqa: AM04
-            * except (statestudentidentifier),
+            * except (statestudentidentifier, _dbt_source_relation_2),
+
             safe_cast(statestudentidentifier as string) as statestudentidentifier,
+
             upper(
                 regexp_extract(_dbt_source_relation, r'__(\w+)`$')
             ) as assessment_name,
+
             case
                 when
                     subject

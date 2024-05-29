@@ -57,7 +57,7 @@ def build_dbt_external_source_assets(
         ]
 
         # run dbt stage_external_sources
-        dbt_run_operation = dbt_cli.cli(
+        dbt_cli.cli(
             args=[
                 "run-operation",
                 "stage_external_sources",
@@ -69,9 +69,6 @@ def build_dbt_external_source_assets(
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
         )
-
-        for event in dbt_run_operation.stream_raw_events():
-            context.log.info(event)
 
         for output_name in context.selected_output_names:
             yield Output(value=None, output_name=output_name)

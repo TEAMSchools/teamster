@@ -21,7 +21,7 @@ on:
 
 concurrency:
   # Cancel in-progress deploys to the same branch
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -184,7 +184,7 @@ jobs:
       - prerun
       - dbt
       - build
-    if: needs.prerun.outputs.result != 'skip'
+    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/download-artifact
       - name: Download digests
@@ -238,6 +238,7 @@ jobs:
       - dbt
       - build
       - merge
+    if: github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
