@@ -182,3 +182,4 @@ left join
     on pc.academic_year = cu.academic_year
     and pc.grade_level = cu.grade_level
     and pc.measure = cu.measure
+where pc.academic_year is not null
