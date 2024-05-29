@@ -6,20 +6,6 @@ sources:
     tags:
       - stage_external_sources
     tables:
-      - name: src_surveys__staff_info_archive
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1XCOY8t6dlSaS8NKdZCKCwdMmp_0FRTrBih3a-wyROm4
-            sheet_range: src_surveys__staff_info_archive
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - surveys
-              - staff_info_archive
       - name: src_surveys__scd_question_crosswalk
         external:
           options:
@@ -66,6 +52,19 @@ sources:
               - kipptaf
               - surveys
               - manager_survey_detail_archive
+      - name: src_surveys__staff_info_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1W6ACbPefRNgojIdN-fCCnepXpobuXgfv
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - surveys
+              - staff_info_archive
       - name: src_surveys__cmo_engagement_regional_survey_detail_archive
         external:
           options:

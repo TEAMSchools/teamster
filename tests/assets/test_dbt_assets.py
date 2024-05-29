@@ -23,7 +23,7 @@ DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(
     exclude="tag:stage_external_sources",
     dagster_dbt_translator=DAGSTER_DBT_TRANSLATOR,
 )
-def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+def _test_dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
     asset_materialization_keys = []
 
     latest_code_versions = context.instance.get_latest_materialization_code_versions(
@@ -54,7 +54,7 @@ def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         elif set(node["depends_on"]["nodes"]) in new_code_version_node_names:
             pass
         else:
-            context.selected_asset_keys.remove(node_asset_key)
+            context.selected_asset_keys.remove(node_asset_key)  # pyright: ignore[reportAttributeAccessIssue]
 
     if context.selected_asset_keys:
         dbt_parse = dbt_cli.cli(args=["compile"], context=context)
@@ -67,9 +67,21 @@ def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
 
 def test_dbt_assets():
     result = materialize(
-        assets=[_dbt_assets],
+        assets=[_test_dbt_assets],
         resources={"dbt_cli": get_dbt_cli_resource("kipptaf")},
         selection=["kipptaf/tableau/rpt_tableau__assessment_dashboard"],
+    )
+
+    assert result.success
+
+
+def test_external_source_dbt_assets():
+    from teamster.kipptaf.dbt.assets import external_source_dbt_assets
+
+    result = materialize(
+        assets=[external_source_dbt_assets],
+        resources={"dbt_cli": get_dbt_cli_resource("kipptaf")},
+        selection=["kipptaf/google_forms/src_google_forms__responses"],
     )
 
     assert result.success
