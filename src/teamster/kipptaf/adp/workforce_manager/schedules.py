@@ -31,9 +31,9 @@ def adp_wfm_dynamic_partition_schedule(
 ):
     for asset in adp_wfm_assets_dynamic:
         date_partition: DynamicPartitionsDefinition = (
-            asset.partitions_def.get_partitions_def_for_dimension("date")  # type: ignore
+            asset.partitions_def.get_partitions_def_for_dimension("date")
         )
-        symbolic_id_partition = asset.partitions_def.get_partitions_def_for_dimension(  # type: ignore
+        symbolic_id_partition = asset.partitions_def.get_partitions_def_for_dimension(
             "symbolic_id"
         )
 
@@ -48,7 +48,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
             context.instance.add_dynamic_partitions(
-                partitions_def_name=date_partition.name,  # type: ignore
+                partitions_def_name=date_partition.name,
                 partition_keys=[symbolic_period_record["begin"]],
             )
 

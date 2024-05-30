@@ -5,8 +5,10 @@ import zipfile
 from dagster import (
     AssetExecutionContext,
     DagsterInvariantViolationError,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    _check,
     asset,
 )
 from numpy import nan
@@ -47,9 +49,11 @@ def compose_regex(regexp, context: AssetExecutionContext):
         return regexp
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
+        partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
+
         return regex_pattern_replace(
             pattern=regexp,
-            replacements=context.partition_key.keys_by_dimension,  # type: ignore
+            replacements=partition_key.keys_by_dimension,
         )
     else:
         compiled_regex = re.compile(pattern=regexp)

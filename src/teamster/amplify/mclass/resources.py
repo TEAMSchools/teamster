@@ -1,7 +1,7 @@
 import json
 
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext, _check
 from pydantic import PrivateAttr
 from requests import Session, exceptions
 
@@ -18,7 +18,9 @@ class MClassResource(ConfigurableResource):
 
         soup = BeautifulSoup(markup=portal_redirect.text, features="html.parser")
 
-        kc_form_login: Tag = soup.find(name="form", id="kc-form-login")  # type: ignore
+        kc_form_login = _check.inst(
+            obj=soup.find(name="form", id="kc-form-login"), ttype=Tag
+        )
 
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
         self._request(
@@ -40,12 +42,12 @@ class MClassResource(ConfigurableResource):
             response.raise_for_status()
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.exception(e)  # pyright: ignore[reportOptionalMemberAccess]
+            self.get_resource_context().log.exception(e)
             raise exceptions.HTTPError(response.text) from e
 
     def get(self, path, *args, **kwargs):
         url = self._get_url(*args, path=path)
-        self.get_resource_context().log.debug(f"GET: {url}")  # pyright: ignore[reportOptionalMemberAccess]
+        self.get_resource_context().log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
@@ -54,7 +56,7 @@ class MClassResource(ConfigurableResource):
             data = {}
 
         url = self._get_url(*args, path=path)
-        self.get_resource_context().log.debug(f"POST: {url}")  # pyright: ignore[reportOptionalMemberAccess]
+        self.get_resource_context().log.debug(f"POST: {url}")
 
         for k, v in data.items():
             if isinstance(v, dict):

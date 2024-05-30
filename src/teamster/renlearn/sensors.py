@@ -48,7 +48,7 @@ def build_renlearn_sftp_sensor(
             last_run = cursor.get(asset_identifier, 0)
 
             subjects: StaticPartitionsDefinition = (
-                asset.partitions_def.get_partitions_def_for_dimension("subject")  # type: ignore
+                asset.partitions_def.get_partitions_def_for_dimension("subject")
             )
 
             for f in files:

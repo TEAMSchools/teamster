@@ -30,7 +30,7 @@ def tableau_asset_sensor(
 
         updated_at_timestamp = workbook.updated_at.timestamp()
 
-        if updated_at_timestamp > last_updated_timestamp:  # type: ignore
+        if updated_at_timestamp > last_updated_timestamp:
             context.log.info(workbook.updated_at)
 
             asset_events.append(AssetMaterialization(asset_key=asset.key))

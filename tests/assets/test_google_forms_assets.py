@@ -13,7 +13,7 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     )
 
     if partition_key is None:
-        partition_keys = asset.partitions_def.get_partition_keys(  # pyright: ignore[reportOptionalMemberAccess]
+        partition_keys = asset.partitions_def.get_partition_keys(
             dynamic_partitions_store=instance
         )
 
@@ -34,11 +34,11 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
+        .event_specific_data.materialization.metadata["record_count"]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_asset_google_forms_form():

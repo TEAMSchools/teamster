@@ -46,16 +46,16 @@ class SSHResource(DagsterSSHResource):
 
         for file in sftp_client.listdir_attr(remote_dir):
             try:
-                filepath = str(pathlib.Path(remote_dir) / file.filepath)  # type: ignore
+                filepath = str(pathlib.Path(remote_dir) / file.filepath)
             except AttributeError:
                 filepath = str(pathlib.Path(remote_dir) / file.filename)
 
-            if S_ISDIR(file.st_mode):  # type: ignore
+            if S_ISDIR(file.st_mode):
                 self._listdir_attr_r(
                     sftp_client=sftp_client, remote_dir=filepath, files=files
                 )
-            elif S_ISREG(file.st_mode):  # type: ignore
-                file.filepath = filepath  # type: ignore
+            elif S_ISREG(file.st_mode):
+                file.filepath = filepath
                 files.append(file)
 
         return files

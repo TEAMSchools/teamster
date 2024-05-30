@@ -16,20 +16,20 @@ from teamster.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
 
 
 def _test_asset(asset: AssetsDefinition):
-    date_partitions_def = asset.partitions_def.get_partitions_def_for_dimension("date")  # pyright: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+    date_partitions_def = asset.partitions_def.get_partitions_def_for_dimension("date")
 
     with instance_for_test() as instance:
         if isinstance(date_partitions_def, DynamicPartitionsDefinition):
             instance.add_dynamic_partitions(
-                partitions_def_name=date_partitions_def.name,  # pyright: ignore[reportArgumentType]
+                partitions_def_name=date_partitions_def.name,
                 partition_keys=["foo"],
             )
 
-            partition_keys = asset.partitions_def.get_partition_keys(  # pyright: ignore[reportOptionalMemberAccess]
+            partition_keys = asset.partitions_def.get_partition_keys(
                 dynamic_partitions_store=instance
             )
         else:
-            partition_keys = asset.partitions_def.get_partition_keys()  # pyright: ignore[reportOptionalMemberAccess]
+            partition_keys = asset.partitions_def.get_partition_keys()
 
         result = materialize(
             assets=[asset],
@@ -48,11 +48,11 @@ def _test_asset(asset: AssetsDefinition):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
+        .event_specific_data.materialization.metadata["records"]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_asset_adp_workforce_manager_accrual_reporting_period_summary():

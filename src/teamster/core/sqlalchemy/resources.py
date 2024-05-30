@@ -4,7 +4,7 @@ import pathlib
 from typing import Iterator, Sequence
 
 import oracledb
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, Row, create_engine, result
@@ -24,6 +24,10 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     query: dict = {}
 
     _engine: Engine = PrivateAttr()
+    _log: DagsterLogManager = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(value=self._log)
 
     def execute_query(
         self,
@@ -37,17 +41,15 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         if connect_kwargs is None:
             connect_kwargs = {}
 
-        context = self.get_resource_context()
-
-        context.log.info("Opening connection to engine")
+        self._log.info("Opening connection to engine")
         with self._engine.connect(**connect_kwargs) as conn:
-            conn.call_timeout = call_timeout  # type: ignore
+            conn.call_timeout = call_timeout
 
-            context.log.info(f"Executing query:\n{query}")
+            self._log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
 
             if output_format in ["dict", "json"]:
-                context.log.info("Retrieving rows from all partitions")
+                self._log.info("Retrieving rows from all partitions")
 
                 cursor_result = cursor_result.mappings()
 
@@ -58,7 +60,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                 if output_format == "json":
                     output = json.dumps(obj=output, cls=CustomJSONEncoder)
 
-                context.log.info(f"Retrieved {len(output)} rows")
+                self._log.info(f"Retrieved {len(output)} rows")
             elif output_format == "avro":
                 avro_schema = parse_schema(
                     {
@@ -69,7 +71,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                                 "name": col[0].lower(),
                                 "type": [
                                     "null",
-                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),  # type: ignore
+                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),
                                 ],
                                 "default": None,
                             }
@@ -84,22 +86,20 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                     data_filepath=pathlib.Path(data_filepath).absolute(),
                 )
             else:
-                context.log.info("Retrieving rows from all partitions")
+                self._log.info("Retrieving rows from all partitions")
 
                 output = self.result_to_tuple_list(
                     partitions=cursor_result.partitions(size=partition_size)
                 )
 
-                context.log.info(f"Retrieved {len(output)} rows")
+                self._log.info(f"Retrieved {len(output)} rows")
 
         return output
 
     def result_to_tuple_list(self, partitions):
-        context = self.get_resource_context()
-
         pt_rows = [rows for pt in partitions for rows in pt]
 
-        context.log.debug("Unpacking partition rows")
+        self._log.debug("Unpacking partition rows")
         output_data = [row for row in pt_rows]
 
         del pt_rows
@@ -108,11 +108,9 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         return output_data
 
     def result_to_dict_list(self, partitions):
-        context = self.get_resource_context()
-
         pt_rows = [rows for pt in partitions for rows in pt]
 
-        context.log.debug("Unpacking partition rows")
+        self._log.debug("Unpacking partition rows")
         output_data = [dict(row) for row in pt_rows]
 
         del pt_rows
@@ -126,9 +124,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         schema,
         data_filepath: pathlib.Path,
     ):
-        context = self.get_resource_context()
-
-        context.log.info(f"Saving results to {data_filepath}")
+        self._log.info(f"Saving results to {data_filepath}")
         data_filepath.parent.mkdir(parents=True, exist_ok=True)
 
         with data_filepath.open("wb") as fo:
@@ -144,7 +140,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         fo = data_filepath.open("a+b")
 
         for i, pt in enumerate(partitions):
-            context.log.debug(f"Retrieving rows from partition {i}")
+            self._log.debug(f"Retrieving rows from partition {i}")
 
             data = [row._mapping for row in pt]
             del pt
@@ -152,7 +148,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
             len_data += len(data)
 
-            context.log.debug(f"Saving partition {i}")
+            self._log.debug(f"Saving partition {i}")
             writer(
                 fo=fo,
                 schema=schema,
@@ -209,3 +205,5 @@ class OracleResource(ConfigurableResource):
             ),
             arraysize=self.arraysize,
         )
+
+        super().setup_for_execution(context)

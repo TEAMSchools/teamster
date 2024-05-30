@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
 from requests import Session, exceptions
 
@@ -10,9 +10,12 @@ class DibelsDataSystemResource(ConfigurableResource):
 
     _base_url: str = PrivateAttr(default="https://dibels.amplify.com")
     _session: Session = PrivateAttr(default_factory=Session)
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(value=self._log)
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
+
         self._request(
             method="POST",
             url=f"{self._base_url}/user/login",
@@ -32,12 +35,12 @@ class DibelsDataSystemResource(ConfigurableResource):
             response.raise_for_status()
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.exception(e)  # pyright: ignore[reportOptionalMemberAccess]
+            self._log.exception(e)
             raise exceptions.HTTPError(response.text) from e
 
     def get(self, path, *args, **kwargs):
         url = self._get_url(*args, path=path)
-        self.get_resource_context().log.debug(f"GET: {url}")  # pyright: ignore[reportOptionalMemberAccess]
+        self._log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
@@ -79,6 +82,6 @@ class DibelsDataSystemResource(ConfigurableResource):
 
         soup = BeautifulSoup(markup=response.text, features="html.parser")
 
-        csv_link: Tag = soup.find(name="a", attrs={"class": "csv-link"})  # pyright: ignore[reportAssignmentType]
+        csv_link: Tag = soup.find(name="a", attrs={"class": "csv-link"})
 
         return self._request(method="GET", url=csv_link.get(key="href"))

@@ -5,7 +5,14 @@ import pathlib
 import re
 
 import pendulum
-from dagster import AssetExecutionContext, AssetKey, MultiPartitionsDefinition, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    _check,
+    asset,
+)
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud import bigquery, storage
 from pandas import DataFrame
@@ -159,10 +166,14 @@ def build_bigquery_query_sftp_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            partition_key = _check.inst(
+                obj=context.partition_key, ttype=MultiPartitionKey
+            )
+
+            substitutions = partition_key.keys_by_dimension
             query_value["where"] = [
                 f"_dagster_partition_{k.dimension_name} = '{k.partition_key}'"
-                for k in context.partition_key.dimension_keys  # type: ignore
+                for k in partition_key.dimension_keys
             ]
         else:
             substitutions = {
@@ -247,7 +258,11 @@ def build_bigquery_extract_sftp_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            partition_key = _check.inst(
+                obj=context.partition_key, ttype=MultiPartitionKey
+            )
+
+            substitutions = partition_key.keys_by_dimension
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
@@ -336,7 +351,11 @@ def build_bigquery_extract_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            partition_key = _check.inst(
+                obj=context.partition_key, ttype=MultiPartitionKey
+            )
+
+            substitutions = partition_key.keys_by_dimension
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),

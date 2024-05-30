@@ -27,11 +27,11 @@ def _test_asset(asset):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
+        .event_specific_data.materialization.metadata["records"]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
 
 
 def test_mclass_asset_benchmark_student_summary():
