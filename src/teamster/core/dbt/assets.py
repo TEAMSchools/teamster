@@ -2,6 +2,7 @@ import json
 
 from dagster import AssetExecutionContext, Output
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from dagster_dbt.utils import dagster_name_fn
 
 from teamster.core.dbt.asset_decorator import dbt_external_source_assets
 
@@ -41,6 +42,8 @@ def build_dbt_external_source_assets(
     name=None,
     op_tags=None,
 ):
+    sources = manifest["sources"].values()
+
     @dbt_external_source_assets(
         manifest=manifest,
         select=select,
@@ -51,13 +54,11 @@ def build_dbt_external_source_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        selection = []
-
-        for k, v in manifest["sources"].items():
-            output_name = k.replace(".", "_")
-
-            if output_name in context.selected_output_names:
-                selection.append(f"{v["source_name"]}.{v["name"]}")
+        selection = [
+            f"{dbt_resource_props["source_name"]}.{dbt_resource_props["name"]}"
+            for dbt_resource_props in sources
+            if dagster_name_fn(dbt_resource_props) in context.selected_output_names
+        ]
 
         # run dbt stage_external_sources
         dbt_run_operation = dbt_cli.cli(
