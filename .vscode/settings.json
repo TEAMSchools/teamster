@@ -1,4 +1,6 @@
 {
+  "dbt.enableNewLineagePanel": true,
+  "dbt.enableNewQueryPanel": true,
   "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
   "dbt.prefixGenerateModel": "stg",
   "dbt.queryLimit": 500,
@@ -34,8 +36,6 @@
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "dbt.enableNewLineagePanel": true,
-  "dbt.enableNewQueryPanel": true,
   "testing.showAllMessages": true,
   "python.testing.pytestArgs": ["tests", "--capture=no"],
   "python.testing.unittestEnabled": false,

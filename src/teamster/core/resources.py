@@ -77,9 +77,12 @@ def get_io_manager_gcs_pickle(code_location):
     )
 
 
-def get_io_manager_gcs_avro(code_location):
+def get_io_manager_gcs_avro(code_location, test=False):
     return GCSIOManager(
-        gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{code_location}", object_type="avro"
+        gcs=GCS_RESOURCE,
+        gcs_bucket=f"teamster-{code_location}",
+        object_type="avro",
+        test=test,
     )
 
 
