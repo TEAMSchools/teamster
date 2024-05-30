@@ -49,7 +49,7 @@ lint:
     - hadolint@2.12.0
     - isort@5.13.2
     - markdownlint@0.41.0
-    - osv-scanner@1.7.3
+    - osv-scanner@1.7.4
     - oxipng@9.1.1
     - prettier@3.2.5
     - ruff@0.4.6
