@@ -69,7 +69,7 @@ def build_deanslist_multi_partition_asset_job_schedule(
     def _schedule(context: ScheduleEvaluationContext):
         for school in school_partition.get_partition_keys():
             partition_key = MultiPartitionKey(
-                {"school": school, "date": last_date_partition_key}  # type: ignore
+                {"school": school, "date": last_date_partition_key}
             )
 
             yield RunRequest(

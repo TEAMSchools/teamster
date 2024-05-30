@@ -38,7 +38,7 @@ def google_sheets_asset_sensor(
 
             last_update_timestamp = pendulum.parse(
                 text=spreadsheet.get_lastUpdateTime()
-            ).timestamp()  # type: ignore
+            ).timestamp()
 
             last_materialization_timestamp = cursor.get(sheet_id, 0)
 

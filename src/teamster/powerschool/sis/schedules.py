@@ -31,7 +31,7 @@ def build_powerschool_schedule(
         name=schedule_name,
         execution_timezone=execution_timezone,
         job=job,
-    )  # type: ignore
+    )
     def _schedule(
         context: ScheduleEvaluationContext,
         ssh_powerschool: SSHResource,
@@ -64,7 +64,7 @@ def build_powerschool_schedule(
                         latest_materialization_timestamp.value
                         if latest_materialization_timestamp is not None
                         else 0.0
-                    )  # type: ignore
+                    )
                 )
 
                 if latest_materialization_datetime.timestamp() == 0:
@@ -90,7 +90,7 @@ def build_powerschool_schedule(
                         ),
                         partition_size=1,
                         output_format=None,
-                    )  # type: ignore
+                    )
 
                     context.log.info(f"count: {count}")
 

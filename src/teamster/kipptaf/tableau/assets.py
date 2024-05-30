@@ -49,7 +49,7 @@ asset_key = [*workbook_asset_def["key_prefix"], asset_name]
 )
 def workbook(context: AssetExecutionContext, tableau: TableauServerResource):
     workbook = tableau._server.workbooks.get_by_id(
-        context.partition_key.keys_by_dimension["workbook_id"]  # type: ignore
+        context.partition_key.keys_by_dimension["workbook_id"]
     )
 
     tableau._server.workbooks.populate_views(workbook_item=workbook, usage=True)

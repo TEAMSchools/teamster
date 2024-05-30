@@ -36,7 +36,7 @@ def alchemer_survey_metadata_asset_sensor(
         survey.key
     )
 
-    survey_partitions_def_name = survey.partitions_def.name  # type: ignore
+    survey_partitions_def_name = survey.partitions_def.name
 
     run_requests = []
     dynamic_partitions_requests = []
@@ -100,7 +100,7 @@ def alchemer_survey_metadata_asset_sensor(
     name=f"{CODE_LOCATION}_alchemer_survey_response_asset_sensor",
     minimum_interval_seconds=(60 * 15),
     asset_selection=[survey_response, survey_response_disqualified],
-)  # type: ignore
+)
 def alchemer_survey_response_asset_sensor(
     context: SensorEvaluationContext, alchemer: AlchemerResource
 ):
@@ -193,11 +193,11 @@ def alchemer_survey_response_asset_sensor(
         cursor=json.dumps(obj=cursor),
         dynamic_partitions_requests=[
             AddDynamicPartitionsRequest(
-                partitions_def_name=survey_response.partitions_def.name,  # type: ignore
+                partitions_def_name=survey_response.partitions_def.name,
                 partition_keys=survey_response_partition_keys,
             ),
             AddDynamicPartitionsRequest(
-                partitions_def_name=survey_response_disqualified.partitions_def.name,  # type: ignore
+                partitions_def_name=survey_response_disqualified.partitions_def.name,
                 partition_keys=survey_response_dq_partition_keys,
             ),
         ],

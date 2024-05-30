@@ -31,7 +31,7 @@ partitions_def = DynamicPartitionsDefinition(name=f"{CODE_LOCATION}_alchemer_sur
     key=[*key_prefix, "survey"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey"])],
     partitions_def=partitions_def,
-    **asset_kwargs,  # type: ignore
+    **asset_kwargs,
 )
 def survey(context: OpExecutionContext, alchemer: AlchemerResource):
     survey = alchemer._client.survey.get(id=context.partition_key)
@@ -49,7 +49,7 @@ def survey(context: OpExecutionContext, alchemer: AlchemerResource):
     key=[*key_prefix, "survey_question"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_question"])],
     partitions_def=partitions_def,
-    **asset_kwargs,  # type: ignore
+    **asset_kwargs,
 )
 def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
     survey = alchemer._client.survey.get(id=context.partition_key)
@@ -69,7 +69,7 @@ def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
     key=[*key_prefix, "survey_campaign"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_campaign"])],
     partitions_def=partitions_def,
-    **asset_kwargs,  # type: ignore
+    **asset_kwargs,
 )
 def survey_campaign(context: OpExecutionContext, alchemer: AlchemerResource):
     asset_name = context.assets_def.key[-1]
@@ -94,7 +94,7 @@ def survey_campaign(context: OpExecutionContext, alchemer: AlchemerResource):
     partitions_def=DynamicPartitionsDefinition(
         name=f"{CODE_LOCATION}_alchemer_survey_response"
     ),
-    **asset_kwargs,  # type: ignore
+    **asset_kwargs,
 )
 def survey_response(context: OpExecutionContext, alchemer: AlchemerResource):
     partition_key_split = context.partition_key.split("_")
@@ -146,7 +146,7 @@ def survey_response(context: OpExecutionContext, alchemer: AlchemerResource):
         get_avro_schema_valid_check_spec([*key_prefix, "survey_response_disqualified"])
     ],
     partitions_def=partitions_def,
-    **asset_kwargs,  # type: ignore
+    **asset_kwargs,
 )
 def survey_response_disqualified(
     context: OpExecutionContext, alchemer: AlchemerResource

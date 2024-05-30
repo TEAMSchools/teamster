@@ -27,7 +27,7 @@ def build_schoolmint_grow_asset(
     )
     def _asset(context: AssetExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         if isinstance(context.assets_def.partitions_def, MultiPartitionsDefinition):
-            keys_by_dimension = context.partition_key.keys_by_dimension  # type: ignore
+            keys_by_dimension = context.partition_key.keys_by_dimension
 
             archived_partition = keys_by_dimension["archived"]
             last_modified_partition = (

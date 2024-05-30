@@ -26,7 +26,7 @@ def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResou
     data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
     schema = parse_schema(schema=TICKET_METRIC_SCHEMA)
 
-    partition_key: DateTime = pendulum.parse(context.partition_key)  # type: ignore
+    partition_key: DateTime = pendulum.parse(context.partition_key)
 
     start_date = partition_key.subtract(seconds=1)
     end_date = partition_key.add(months=1)
@@ -53,7 +53,7 @@ def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResou
 
     try:
         for ticket in archived_tickets:  # type:ignore
-            ticket_id = ticket.id  # type: ignore
+            ticket_id = ticket.id
 
             context.log.info(f"Getting metrics for ticket #{ticket_id}")
 
@@ -61,7 +61,7 @@ def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResou
                 writer(
                     fo=fo,
                     schema=schema,
-                    records=[zendesk._client.tickets.metrics(ticket_id).to_dict()],  # type: ignore
+                    records=[zendesk._client.tickets.metrics(ticket_id).to_dict()],
                     codec="snappy",
                     strict_allow_default=True,
                 )

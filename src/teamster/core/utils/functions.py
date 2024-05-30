@@ -1,4 +1,5 @@
 import re
+from typing import Mapping
 
 import pendulum
 from dagster import (
@@ -12,9 +13,9 @@ from dagster import (
 from teamster.core.utils.classes import FiscalYear
 
 
-def regex_pattern_replace(pattern: str, replacements: dict):
+def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
     for group in re.findall(r"\(\?P<\w+>[\w\[\]\{\}\+\-\\\.]*\)", pattern):
-        group_key = re.search(r"(?<=<)(\w+)(?=>)", group).group()  # pyright: ignore[reportOptionalMemberAccess]
+        group_key = re.search(r"(?<=<)(\w+)(?=>)", group).group()
 
         group_value = replacements.get(group_key, "")
 

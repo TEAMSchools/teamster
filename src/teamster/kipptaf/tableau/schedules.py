@@ -14,13 +14,13 @@ job = define_asset_job(
     name=f"{CODE_LOCATION}_tableau_workbook_asset_job", selection=[workbook]
 )
 
-partitions_def: MultiPartitionsDefinition = workbook.partitions_def  # type: ignore
+partitions_def: MultiPartitionsDefinition = workbook.partitions_def
 
 workbook_id_partition = partitions_def.get_partitions_def_for_dimension("workbook_id")
 date_partition = partitions_def.get_partitions_def_for_dimension("date")
 
 workbook_id_partition_keys = workbook_id_partition.get_partition_keys()
-last_date_partition_key: str = date_partition.get_last_partition_key()  # type: ignore
+last_date_partition_key: str = date_partition.get_last_partition_key()
 
 
 @schedule(

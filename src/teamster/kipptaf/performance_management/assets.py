@@ -60,7 +60,7 @@ def get_iqr_outliers(df: pandas.DataFrame):
     q1 = numpy.percentile(df["overall_score"], 25)
     q3 = numpy.percentile(df["overall_score"], 75)
 
-    iqr = q3 - q1  # type: ignore
+    iqr = q3 - q1
 
     outliers_array = numpy.where(
         (df["overall_score"] < q1 - 1.5 * iqr) | (df["overall_score"] > q3 + 1.5 * iqr)
@@ -138,7 +138,7 @@ def get_isolation_forest(df: pandas.DataFrame):
     ],
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
-    partition_key: MultiPartitionKey = context.partition_key  # type: ignore
+    partition_key: MultiPartitionKey = context.partition_key
 
     # load data from extract view
     with db_bigquery.get_client() as bq:

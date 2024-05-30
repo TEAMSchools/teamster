@@ -52,7 +52,7 @@ def build_powerschool_table_asset(
 
         if not context.has_partition_key:
             constructed_where = ""
-        elif context.partition_key == partitions_def.get_first_partition_key():  # pyright: ignore[reportOptionalMemberAccess]
+        elif context.partition_key == partitions_def.get_first_partition_key():
             constructed_where = ""
         else:
             window_start = pendulum.from_format(
@@ -91,11 +91,11 @@ def build_powerschool_table_asset(
         with ssh_powerschool.get_tunnel(
             remote_port=1521, local_port=1521
         ) as ssh_tunnel:
-            ssh_tunnel.start()  # pyright: ignore[reportOptionalMemberAccess]
+            ssh_tunnel.start()
 
             file_path: pathlib.Path = db_powerschool.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
-            )  # pyright: ignore[reportAssignmentType]
+            )
 
         try:
             with file_path.open(mode="rb") as f:

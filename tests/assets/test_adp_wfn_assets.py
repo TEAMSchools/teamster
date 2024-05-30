@@ -8,7 +8,7 @@ from teamster.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
 
 
 def test_workers():
-    partition_keys = workers.partitions_def.get_partition_keys()  # pyright: ignore[reportOptionalMemberAccess]
+    partition_keys = workers.partitions_def.get_partition_keys()
 
     result = materialize(
         assets=[workers],
@@ -24,8 +24,8 @@ def test_workers():
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
+        .event_specific_data.materialization.metadata["record_count"]
         .value
         > 0
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""

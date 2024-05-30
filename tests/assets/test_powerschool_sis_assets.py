@@ -32,7 +32,7 @@ def _test_asset(assets, asset_name):
     assert result.success
     assert (
         result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
+        .event_specific_data.materialization.metadata["records"]
         .value
         > 0
     )

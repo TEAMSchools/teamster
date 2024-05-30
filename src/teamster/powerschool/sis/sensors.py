@@ -69,7 +69,7 @@ def build_powerschool_sensor(
                             latest_materialization_timestamp.value
                             if latest_materialization_timestamp is not None
                             else 0.0
-                        )  # type: ignore
+                        )
                     )
 
                     latest_materialization_fmt = (
@@ -89,7 +89,7 @@ def build_powerschool_sensor(
                         partition_size=1,
                         output_format=None,
                         call_timeout=10000,
-                    )  # type: ignore
+                    )
 
                     context.log.info(f"count: {count}")
 
