@@ -19,7 +19,9 @@ def _test_asset(assets, asset_name, partition_key=None):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                code_location="test", test=True
+            ),
             "schoolmint_grow": SCHOOLMINT_GROW_RESOURCE,
         },
     )
