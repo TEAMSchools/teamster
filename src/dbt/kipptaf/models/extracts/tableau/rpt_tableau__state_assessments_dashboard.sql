@@ -1,10 +1,9 @@
 with
-    ms_grad as (
+    ms_grad_sub as (
         select
             _dbt_source_relation,
             student_number,
             school_abbreviation as ms_attended,
-
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
@@ -12,7 +11,13 @@ with
         where school_level = 'MS'
     ),
 
-    students as (
+    ms_grad as (
+        select _dbt_source_relation, student_number, ms_attended,
+        from ms_grad_sub
+        where rn = 1
+    ),
+
+    students_nj as (
         select
             e._dbt_source_relation,
             e.academic_year,
@@ -21,20 +26,14 @@ with
             e.school_abbreviation as school,
             e.student_number,
             e.state_studentnumber,
-            e.fleid,
             e.lastfirst as student_name,
             e.grade_level,
             e.enroll_status,
             e.is_out_of_district,
-            e.ethnicity as race_ethnicity,
             e.gender,
             e.lunch_status,
-            e.is_504,
-            e.lep_status,
 
             m.ms_attended,
-
-            if(e.spedlep like '%SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             case
                 when e.school_level in ('ES', 'MS')
@@ -47,15 +46,52 @@ with
             ms_grad as m
             on e.student_number = m.student_number
             and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
-            and m.rn = 1
         where
             e.academic_year >= {{ var("current_academic_year") }} - 7
             and e.rn_year = 1
+            and e.region in ('Camden', 'Newark')
             and e.grade_level > 2
             and e.schoolid != 999999
     ),
 
-    schedules as (
+    students_fl as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            region,
+            schoolid,
+            school_abbreviation as school,
+            student_number,
+            fleid,
+            lastfirst as student_name,
+            grade_level,
+            enroll_status,
+            is_out_of_district,
+            gender,
+            is_504,
+            lep_status,
+            lunch_status,
+            case
+                ethnicity when 'T' then 'T' when 'H' then 'H' else ethnicity
+            end as race_ethnicity,
+            case
+                when spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
+            end as iep_status,
+            case
+                when school_level in ('ES', 'MS')
+                then advisory_name
+                when school_level = 'HS'
+                then advisor_lastfirst
+            end as advisory,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where
+            academic_year >= {{ var("current_academic_year") }} - 7
+            and rn_year = 1
+            and region = 'Miami'
+            and grade_level > 2
+    ),
+
+    schedules_current as (
         select
             _dbt_source_relation,
             cc_academic_year,
@@ -77,15 +113,47 @@ with
             end as discipline,
         from {{ ref("base_powerschool__course_enrollments") }}
         where
-            cc_academic_year >= {{ var("current_academic_year") }} - 7
+            cc_academic_year = {{ var("current_academic_year") }}
             and rn_credittype_year = 1
             and not is_dropped_section
             and courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
+    schedules as (
+        select
+            e._dbt_source_relation,
+            e.cc_academic_year,
+            e.students_student_number,
+            e.teacher_lastfirst as teacher_name,
+            e.courses_course_name as course_name,
+            e.cc_course_number as course_number,
+
+            c.teacher_name as teacher_name_current,
+            case
+                e.courses_credittype
+                when 'ENG'
+                then 'ELA'
+                when 'MATH'
+                then 'Math'
+                when 'SCI'
+                then 'Science'
+                when 'SOC'
+                then 'Civics'
+            end as discipline,
+        from {{ ref("base_powerschool__course_enrollments") }} as e
+        left join
+            schedules_current as c
+            on e.students_student_number = c.students_student_number
+            and e.courses_credittype = c.courses_credittype
+        where
+            e.cc_academic_year >= {{ var("current_academic_year") }} - 7
+            and e.rn_credittype_year = 1
+            and not e.is_dropped_section
+            and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+    ),
+
     assessments_nj as (
         select
-            _dbt_source_relation,
             academic_year,
             statestudentidentifier as state_id,
             assessment_name,
@@ -94,28 +162,8 @@ with
             testperformancelevel as performance_band_level,
             is_proficient,
 
-            cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
-
             coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as `subject`,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as test_code,
             case
                 when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
                 then 'Graduation Ready'
@@ -123,6 +171,7 @@ with
                 then 'Not Yet Graduation Ready'
                 else testperformancelevel_text
             end as performance_band,
+
             case
                 when twoormoreraces = 'Y'
                 then 'T'
@@ -139,37 +188,105 @@ with
                 when white = 'Y'
                 then 'W'
             end as race_ethnicity,
+
             case
                 when studentwithdisabilities in ('IEP', 'B')
                 then 'Has IEP'
                 else 'No IEP'
             end as iep_status,
+
             case
                 englishlearnerel when 'Y' then true when 'N' then false
             end as lep_status,
+
+            case
+                when assessmentgrade in ('Grade 10', 'Grade 11')
+                then right(assessmentgrade, 2)
+                when assessmentgrade is null
+                then null
+                else right(assessmentgrade, 1)
+            end as test_grade,
+
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as test_code,
+
+            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+            if(`period` = 'FallBlock', 'Fall', `period`) as season,
+            if(
+                subject = 'English Language Arts/Literacy',
+                'English Language Arts',
+                subject
+            ) as subject,
+
         from {{ ref("int_pearson__all_assessments") }}
-        where academic_year >= {{ var("current_academic_year") }} - 7
+        where safe_cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
+    ),
+
+    assessments_fl_eoc as (
+        select
+            academic_year,
+            is_proficient,
+            student_id as state_id,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
+            scale_score as score,
+
+            'EOC' as assessment_name,
+            'PM3' as `admin`,
+            'Spring' as season,
+
+            if(test_name = 'B.E.S.T.Algebra1', 'Math', 'Civics') as discipline,
+            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', 'Civics') as subject,
+            if(test_name = 'B.E.S.T.Algebra1', 'ALG01', 'SOC08') as test_code,
+
+            safe_cast(enrolled_grade as string) as test_grade,
+
+        from {{ ref("stg_fldoe__eoc") }}
+        where not is_invalidated
+
+    ),
+
+    assessments_fl_science as (
+        select
+            academic_year,
+            is_proficient,
+            student_id as state_id,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
+            scale_score as score,
+
+            'Science' as assessment_name,
+            'PM3' as `admin`,
+            'Spring' as season,
+            'Science' as discipline,
+            'Science' as subject,
+
+            if(test_grade_level = 5, 'SCI05', 'SCI08') as test_code,
+
+            safe_cast(test_grade_level as string) as test_grade,
+
+        from {{ ref("stg_fldoe__science") }}
     ),
 
     assessments_fl as (
         select
-            _dbt_source_relation,
             academic_year,
             student_id as state_id,
-            assessment_grade as test_grade,
+            'FAST' as assessment_name,
+            safe_cast(assessment_grade as string) as test_grade,
             administration_window as `admin`,
             scale_score as score,
             achievement_level as performance_band,
             achievement_level_int as performance_band_level,
             is_proficient,
-
-            'FAST' as assessment_name,
-
-            if(
-                assessment_subject = 'ELAReading',
-                concat('ELA0', assessment_grade),
-                concat('MAT0', assessment_grade)
-            ) as test_code,
 
             case
                 administration_window
@@ -180,40 +297,52 @@ with
                 when 'PM3'
                 then 'Spring'
             end as season,
-            case
-                assessment_subject
-                when 'ELAReading'
-                then 'ELA'
-                when 'Mathematics'
-                then 'Math'
-            end as discipline,
-            case
-                assessment_subject
-                when 'ELAReading'
-                then 'English Language Arts'
-                when 'Mathematics'
-                then 'Mathematics'
-            end as `subject`,
+
+            if(assessment_subject = 'ELAReading', 'ELA', 'Math') as discipline,
+            if(
+                assessment_subject = 'ELAReading',
+                'English Language Arts',
+                'Mathematics'
+            ) as subject,
+
+            if(
+                assessment_subject = 'ELAReading',
+                concat('ELA0', assessment_grade),
+                concat('MAT0', assessment_grade)
+            ) as test_code,
+
         from {{ ref("stg_fldoe__fast") }}
         where achievement_level not in ('Insufficient to score', 'Invalidated')
-
         union all
-
         select
-            _dbt_source_relation,
             academic_year,
             fleid as state_id,
-            test_grade,
-
+            'FSA' as assessment_name,
+            safe_cast(test_grade as string) as test_grade,
             'Spring' as `admin`,
-
             scale_score as score,
             achievement_level as performance_band,
             performance_level as performance_band_level,
             is_proficient,
-
-            'FSA' as assessment_name,
-
+            'Spring' as season,
+            case
+                test_subject
+                when 'ELA'
+                then 'ELA'
+                when 'MATH'
+                then 'Math'
+                when 'SCIENCE'
+                then 'Science'
+            end as discipline,
+            case
+                test_subject
+                when 'ELA'
+                then 'English Language Arts'
+                when 'MATH'
+                then 'Mathematics'
+                when 'SCIENCE'
+                then 'Science'
+            end as subject,
             case
                 when test_subject = 'ELA'
                 then concat('ELA0', test_grade)
@@ -221,94 +350,143 @@ with
                 then concat('SCI0', test_grade)
                 else concat('MAT0', test_grade)
             end as test_code,
-
-            'Spring' as season,
-
-            case
-                test_subject
-                when 'ELA'
-                then 'ELA'
-                when 'MATH'
-                then 'Math'
-                when 'SCIENCE'
-                then 'Science'
-            end as discipline,
-            case
-                test_subject
-                when 'ELA'
-                then 'English Language Arts'
-                when 'MATH'
-                then 'Mathematics'
-                when 'SCIENCE'
-                then 'Science'
-            end as `subject`,
         from {{ ref("stg_fldoe__fsa") }}
         where performance_level is not null
-
         union all
-
         select
-            _dbt_source_relation,
             academic_year,
-            student_id as state_id,
-            enrolled_grade as test_grade,
-
-            'PM3' as `admin`,
-
-            scale_score as score,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
+            state_id,
+            assessment_name,
+            test_grade,
+            `admin`,
+            score,
+            performance_band,
+            performance_band_level,
             is_proficient,
-
-            'EOC' as assessment_name,
-
-            case
-                test_name
-                when 'B.E.S.T.Algebra1'
-                then 'ALG01'
-                when 'Civics'
-                then 'SOC08'
-            end as test_code,
-
-            'Spring' as season,
-
-            if(test_name = 'B.E.S.T.Algebra1', 'Math', test_name) as discipline,
-            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', test_name) as `subject`,
-        from {{ ref("stg_fldoe__eoc") }}
-        where not is_invalidated
-
+            season,
+            discipline,
+            subject,
+            test_code,
+        from assessments_fl_eoc
         union all
-
         select
-            _dbt_source_relation,
             academic_year,
-            student_id as state_id,
-            test_grade_level as test_grade,
-
-            'PM3' as `admin`,
-
-            scale_score as score,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
+            state_id,
+            assessment_name,
+            test_grade,
+            `admin`,
+            score,
+            performance_band,
+            performance_band_level,
             is_proficient,
+            season,
+            discipline,
+            subject,
+            test_code,
+        from assessments_fl_science
 
-            'Science' as assessment_name,
+    ),
 
-            case
-                test_grade_level when 5 then 'SCI05' when 8 then 'SCI08'
-            end as test_code,
+    nj_final as (
+        select
+            s._dbt_source_relation,
+            s.academic_year,
+            s.region,
+            s.schoolid,
+            s.school,
+            s.student_number,
+            s.state_studentnumber,
+            s.student_name,
+            s.grade_level,
+            s.enroll_status,
+            s.gender,
+            s.lunch_status,
+            s.ms_attended,
+            s.advisory,
 
-            'Spring' as season,
-            'Science' as discipline,
-            'Science' as `subject`,
-        from {{ ref("stg_fldoe__science") }}
+            a.state_id,
+            a.race_ethnicity,
+            a.lep_status,
+            a.iep_status,
+            a.is_504,
+            a.assessment_name,
+            a.discipline,
+            a.subject,
+            a.test_code,
+            a.test_grade,
+            a.admin,
+            a.season,
+            a.score,
+            a.performance_band,
+            a.performance_band_level,
+            a.is_proficient,
+        from assessments_nj as a
+        inner join
+            students_nj as s
+            on a.academic_year = s.academic_year
+            and a.state_id = s.state_studentnumber
+        where a.score is not null
+    ),
+
+    fl_final as (
+        select
+            s._dbt_source_relation,
+            s.academic_year,
+            s.region,
+            s.schoolid,
+            s.school,
+            s.student_number,
+            s.fleid as state_studentnumber,
+            s.student_name,
+            s.grade_level,
+            s.enroll_status,
+            s.gender,
+            s.race_ethnicity,
+            s.iep_status,
+            s.is_504,
+            s.lunch_status,
+            s.lep_status,
+            s.advisory,
+
+            a.state_id,
+            a.assessment_name,
+            a.discipline,
+            a.subject,
+            a.test_code,
+            a.test_grade,
+            a.admin,
+            a.season,
+            a.score,
+            a.performance_band,
+            a.performance_band_level,
+            a.is_proficient,
+        from assessments_fl as a
+        inner join
+            students_fl as s
+            on a.academic_year = s.academic_year
+            and a.state_id = s.fleid
+        where a.score is not null
     ),
 
     state_comps as (
-        select academic_year, test_name, test_code, region, city, `state`,
+        select academic_year, test_name, test_code, region, city, state,
         from
             {{ ref("stg_assessments__state_test_comparison") }}
             pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
+    ),
+
+    goals as (
+        select
+            academic_year,
+            school_id,
+            state_assessment_code,
+            grade_level,
+            grade_goal,
+            school_goal,
+            region_goal,
+            organization_goal,
+        from {{ ref("stg_assessments__academic_goals") }}
+        where state_assessment_code is not null
     )
 
 select
@@ -318,36 +496,29 @@ select
     s.school,
     s.student_number,
     s.state_studentnumber,
+    s.state_id,
     s.student_name,
     s.grade_level,
     s.enroll_status,
     s.gender,
+    s.race_ethnicity,
+    s.iep_status,
+    s.is_504,
     s.lunch_status,
-    s.advisory,
     s.ms_attended,
-
-    a.race_ethnicity,
-    a.lep_status,
-    a.iep_status,
-    a.is_504,
-    a.state_id,
-    a.assessment_name,
-    a.discipline,
-    a.subject,
-    a.test_code,
-    a.test_grade,
-    a.admin,
-    a.season,
-    a.score,
-    a.performance_band,
-    a.performance_band_level,
-    a.is_proficient,
-
-    m.teacher_name,
-    m.course_number,
-    m.course_name,
-
-    mcur.teacher_name as teacher_name_current,
+    s.lep_status,
+    s.advisory,
+    s.assessment_name,
+    s.discipline,
+    s.subject,
+    s.test_code,
+    s.test_grade,
+    s.admin,
+    s.season,
+    s.score,
+    s.performance_band,
+    s.performance_band_level,
+    s.is_proficient,
 
     c.city as proficiency_city,
     c.state as proficiency_state,
@@ -358,40 +529,31 @@ select
     g.region_goal,
     g.organization_goal,
 
+    m.teacher_name,
+    m.course_number,
+    m.course_name,
+    m.teacher_name_current,
+
     'Actual' as results_type,
-from students as s
-inner join
-    assessments_nj as a
-    on s.academic_year = a.academic_year
-    and s.state_studentnumber = a.state_id
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="a") }}
-    and a.score is not null
+from nj_final as s
+left join
+    state_comps as c
+    on s.academic_year = c.academic_year
+    and s.assessment_name = c.test_name
+    and s.test_code = c.test_code
+    and s.region = c.region
+left join
+    goals as g
+    on s.academic_year = g.academic_year
+    and s.schoolid = g.school_id
+    and s.test_code = g.state_assessment_code
 left join
     schedules as m
     on s.academic_year = m.cc_academic_year
     and s.student_number = m.students_student_number
-    and a.discipline = m.discipline
+    and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
-left join
-    schedules as mcur
-    on s.student_number = mcur.students_student_number
-    and a.discipline = mcur.discipline
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="mcur") }}
-    and mcur.cc_academic_year = {{ var("current_academic_year") }}
-left join
-    state_comps as c
-    on s.academic_year = c.academic_year
-    and s.region = c.region
-    and a.assessment_name = c.test_name
-    and a.test_code = c.test_code
-left join
-    {{ ref("stg_assessments__academic_goals") }} as g
-    on s.academic_year = g.academic_year
-    and s.schoolid = g.school_id
-    and a.test_code = g.state_assessment_code
-
 union all
-
 select
     s.academic_year,
     s.region,
@@ -399,36 +561,29 @@ select
     s.school,
     s.student_number,
     s.state_studentnumber,
+    s.state_id,
     s.student_name,
     s.grade_level,
     s.enroll_status,
     s.gender,
-    s.lunch_status,
-    s.advisory,
-    s.ms_attended,
     s.race_ethnicity,
-    s.lep_status,
     s.iep_status,
     s.is_504,
-
-    a.state_id,
-    a.assessment_name,
-    a.discipline,
-    a.subject,
-    a.test_code,
-    a.test_grade,
-    a.admin,
-    a.season,
-    a.score,
-    a.performance_band,
-    a.performance_band_level,
-    a.is_proficient,
-
-    m.teacher_name,
-    m.course_number,
-    m.course_name,
-
-    mcur.teacher_name as teacher_name_current,
+    s.lunch_status,
+    null as ms_attended,
+    s.lep_status,
+    s.advisory,
+    s.assessment_name,
+    s.discipline,
+    s.subject,
+    s.test_code,
+    s.test_grade,
+    s.admin,
+    s.season,
+    s.score,
+    s.performance_band,
+    s.performance_band_level,
+    s.is_proficient,
 
     c.city as proficiency_city,
     c.state as proficiency_state,
@@ -439,40 +594,31 @@ select
     g.region_goal,
     g.organization_goal,
 
+    m.teacher_name,
+    m.course_number,
+    m.course_name,
+    m.teacher_name_current,
+
     'Actual' as results_type,
-from students as s
-inner join
-    assessments_fl as a
-    on s.academic_year = a.academic_year
-    and s.fleid = a.state_id
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="a") }}
-    and a.score is not null
+from fl_final as s
+left join
+    state_comps as c
+    on s.academic_year = c.academic_year
+    and s.assessment_name = c.test_name
+    and s.test_code = c.test_code
+    and s.region = c.region
+left join
+    goals as g
+    on s.academic_year = g.academic_year
+    and s.schoolid = g.school_id
+    and s.test_code = g.state_assessment_code
 left join
     schedules as m
     on s.academic_year = m.cc_academic_year
     and s.student_number = m.students_student_number
-    and a.discipline = m.discipline
+    and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
-left join
-    schedules as mcur
-    on s.student_number = mcur.students_student_number
-    and a.discipline = mcur.discipline
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="mcur") }}
-    and mcur.cc_academic_year = {{ var("current_academic_year") }}
-left join
-    state_comps as c
-    on s.academic_year = c.academic_year
-    and s.region = c.region
-    and a.assessment_name = c.test_name
-    and a.test_code = c.test_code
-left join
-    {{ ref("stg_assessments__academic_goals") }} as g
-    on s.academic_year = g.academic_year
-    and s.schoolid = g.school_id
-    and a.test_code = g.state_assessment_code
-
 union all
-
 select
     academic_year,
     region,
@@ -480,33 +626,29 @@ select
     school,
     student_number,
     state_studentnumber,
+    state_id,
     student_name,
     grade_level,
     enroll_status,
     gender,
-    lunch_status,
-    advisory,
-    ms_attended,
     race_ethnicity,
-    lep_status,
     iep_status,
     is_504,
-    state_id,
+    lunch_status,
+    ms_attended,
+    lep_status,
+    advisory,
     assessment_name,
     discipline,
-    `subject`,
+    subject,
     test_code,
-    test_grade,
-    `admin`,
+    cast(test_grade as string) as test_grade,
+    admin,
     season,
     score,
     performance_band,
     performance_band_level,
     is_proficient,
-    teacher_name,
-    course_number,
-    course_name,
-    teacher_name_current,
     proficiency_city,
     proficiency_state,
     assessment_grade_level,
@@ -514,5 +656,9 @@ select
     school_goal,
     region_goal,
     organization_goal,
+    teacher_name,
+    course_number,
+    course_name,
+    teacher_name_current,
     results_type,
 from {{ ref("rpt_tableau__state_assessments_dashboard_nj_preelim") }}
