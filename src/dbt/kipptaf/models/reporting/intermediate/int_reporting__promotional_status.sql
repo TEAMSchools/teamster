@@ -316,6 +316,7 @@ select
     attendance_status,
     attendance_status_hs_detail,
     academic_status,
+    exemption,
     case
         when exemption is not null
         then exemption
