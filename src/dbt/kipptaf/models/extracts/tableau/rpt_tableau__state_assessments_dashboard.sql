@@ -154,7 +154,7 @@ with
 
     assessments_nj as (
         select
-            academic_year as academic_year,
+            academic_year,
             statestudentidentifier as state_id,
             assessment_name,
             subject_area as discipline,
@@ -255,14 +255,13 @@ with
 
     assessments_fl_science as (
         select
-            academic_year as academic_year,
+            academic_year,
             student_id as state_id,
             is_proficient,
 
             achievement_level as performance_band,
             achievement_level_int as performance_band_level,
             scale_score as score,
-            safe_cast(test_grade_level as string) as test_grade,
 
             'Science' as assessment_name,
             'PM3' as `admin`,
@@ -270,6 +269,8 @@ with
             'Science' as discipline,
             'Science' subject,
             'SCI08' as test_code,
+
+            safe_cast(test_grade_level as string) as test_grade,
 
         from {{ ref("stg_fldoe__science") }}
     ),
