@@ -162,6 +162,8 @@ with
             testperformancelevel as performance_band_level,
             is_proficient,
 
+            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+
             case
                 when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
                 then 'Graduation Ready'
@@ -223,8 +225,6 @@ with
                 'English Language Arts',
                 subject
             ) as subject,
-
-            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
 
         from {{ ref("int_pearson__all_assessments") }}
         where safe_cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
