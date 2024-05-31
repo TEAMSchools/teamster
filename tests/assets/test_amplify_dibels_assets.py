@@ -9,7 +9,9 @@ def test_data_farming():
     result = materialize(
         assets=[data_farming],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                code_location="test", test=True
+            ),
             "dds": DIBELS_DATA_SYSTEM_RESOURCE,
         },
     )

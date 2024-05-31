@@ -1,7 +1,7 @@
 import time
 
 import google.auth
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster._utils.backoff import backoff
 from googleapiclient import discovery, errors
 from pydantic import PrivateAttr
@@ -20,7 +20,8 @@ class GoogleDirectoryResource(ConfigurableResource):
     ]
     max_results: int = 500
 
-    _service: discovery.Resource = PrivateAttr()
+    _resource: discovery.Resource = PrivateAttr()
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         if self.service_account_file_path is not None:
@@ -28,15 +29,18 @@ class GoogleDirectoryResource(ConfigurableResource):
                 filename=self.service_account_file_path, scopes=self.scopes
             )
 
-            credentials = credentials.with_subject(self.delegated_account)  # type: ignore
+            credentials = credentials.with_subject(self.delegated_account)  # pyright: ignore[reportAttributeAccessIssue]
         else:
             credentials, project_id = google.auth.default(scopes=self.scopes)
 
-        self._service = discovery.build(
+        self._resource = discovery.build(
             serviceName="admin",
             version=f"directory_{self.version}",
             credentials=credentials,
         )
+
+        if context.log is not None:
+            self._log = context.log
 
     def _list(self, api_name, **kwargs):
         data = []
@@ -47,7 +51,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         while True:
             response = (
-                getattr(self._service, api_name)()
+                getattr(self._resource, api_name)()
                 .list(pageToken=next_page_token, maxResults=max_results, **kwargs)
                 .execute()
             )
@@ -55,7 +59,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             next_page_token = response.get("nextPageToken")
             data.extend(response[response_data_key])
 
-            self.get_resource_context().log.debug(f"Retrieved {len(data)} records")
+            self._log.debug(f"Retrieved {len(data)} records")
 
             if next_page_token is None:
                 break
@@ -66,7 +70,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         self, org_unit_path=None, org_unit_type=None, customer_id=None, **kwargs
     ):
         return (
-            self._service.orgunits()  # type: ignore
+            self._resource.orgunits()  # pyright: ignore[reportAttributeAccessIssue]
             .list(
                 customerId=(customer_id or self.customer_id),
                 orgUnitPath=org_unit_path,
@@ -78,7 +82,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def get_orgunit(self, org_unit_path, customer_id=None, **kwargs):
         return (
-            self._service.orgunits()  # type: ignore
+            self._resource.orgunits()  # pyright: ignore[reportAttributeAccessIssue]
             .get(
                 customerId=(customer_id or self.customer_id),
                 orgUnitPath=org_unit_path,
@@ -89,23 +93,27 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def list_users(self, **kwargs):
         return self._list(
-            "users", customer=kwargs.get("customer", self.customer_id), **kwargs
+            api_name="users",
+            customer=kwargs.get("customer", self.customer_id),
+            **kwargs,
         )
 
     def get_user(self, user_key, **kwargs):
-        return self._service.users().get(userKey=user_key, **kwargs).execute()  # type: ignore
+        return self._resource.users().get(userKey=user_key, **kwargs).execute()  # pyright: ignore[reportAttributeAccessIssue]
 
     def list_groups(self, **kwargs):
         return self._list(
-            "groups", customer=kwargs.get("customer", self.customer_id), **kwargs
+            api_name="groups",
+            customer=kwargs.get("customer", self.customer_id),
+            **kwargs,
         )
 
     def list_members(self, group_key, **kwargs):
-        return self._list("members", groupKey=group_key, **kwargs)
+        return self._list(api_name="members", groupKey=group_key, **kwargs)
 
     def list_roles(self, **kwargs):
         return self._list(
-            "roles",
+            api_name="roles",
             customer=kwargs.get("customer", self.customer_id),
             max_results=kwargs.get("max_results", 100),
             response_data_key="items",
@@ -114,7 +122,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def list_role_assignments(self, **kwargs):
         return self._list(
-            "roleAssignments",
+            api_name="roleAssignments",
             customer=kwargs.get("customer", self.customer_id),
             max_results=kwargs.get("max_results", 200),
             response_data_key="items",
@@ -122,10 +130,10 @@ class GoogleDirectoryResource(ConfigurableResource):
         )
 
     def insert_user(self, body):
-        return self._service.users().insert(body=body).execute()  # type: ignore
+        return self._resource.users().insert(body=body).execute()  # pyright: ignore[reportAttributeAccessIssue]
 
     def update_user(self, user_key, body):
-        return self._service.users().update(userKey=user_key, body=body).execute()  # type: ignore
+        return self._resource.users().update(userKey=user_key, body=body).execute()  # pyright: ignore[reportAttributeAccessIssue]
 
     @staticmethod
     def _batch_list(list, size):
@@ -142,10 +150,8 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def batch_insert_users(self, users):
         def callback(request_id, response, exception):
-            context = self.get_resource_context()
-
             if exception is not None:
-                context.log.error(exception)
+                self._log.error(exception)
                 if exception.status_code == 403:
                     raise exception
                 elif exception.status_code == 409 and exception.reason not in [
@@ -154,7 +160,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                 ]:
                     raise exception
             else:
-                context.log.info(
+                self._log.info(
                     msg=(
                         f"CREATED {response['primaryEmail']}: "
                         f"{response['name'].get('givenName')} "
@@ -170,12 +176,12 @@ class GoogleDirectoryResource(ConfigurableResource):
         batches = self._batch_list(list=users, size=10)
 
         for i, batch in enumerate(batches):
-            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+            self._log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
+            batch_request = self._resource.new_batch_http_request(callback=callback)  # pyright: ignore[reportAttributeAccessIssue]
 
             for user in batch:
-                batch_request.add(self._service.users().insert(body=user))  # type: ignore
+                batch_request.add(self._resource.users().insert(body=user))  # pyright: ignore[reportAttributeAccessIssue]
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
@@ -183,14 +189,12 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def batch_update_users(self, users):
         def callback(request_id, response, exception):
-            context = self.get_resource_context()
-
             if exception is not None:
-                context.log.error(exception)
+                self._log.error(exception)
                 if exception.status_code in [403, 409]:
                     raise exception
             else:
-                context.log.info(
+                self._log.info(
                     msg=(
                         f"UPDATED {response['primaryEmail']}: "
                         f"{response['name'].get('givenName')} "
@@ -204,13 +208,13 @@ class GoogleDirectoryResource(ConfigurableResource):
         batches = self._batch_list(list=users, size=40)
 
         for i, batch in enumerate(batches):
-            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+            self._log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
+            batch_request = self._resource.new_batch_http_request(callback=callback)  # pyright: ignore[reportAttributeAccessIssue]
 
             for user in batch:
                 batch_request.add(
-                    self._service.users().update(  # type: ignore
+                    self._resource.users().update(  # pyright: ignore[reportAttributeAccessIssue]
                         userKey=user["primaryEmail"], body=user
                     )
                 )
@@ -220,13 +224,9 @@ class GoogleDirectoryResource(ConfigurableResource):
             time.sleep(1)
 
     def batch_insert_members(self, members):
-        context = self.get_resource_context()
-
         def callback(request_id, response, exception):
-            context = self.get_resource_context()
-
             if exception is not None:
-                context.log.error(exception)
+                self._log.error(exception)
                 if exception.status_code == 403:
                     raise exception
                 elif (
@@ -239,14 +239,14 @@ class GoogleDirectoryResource(ConfigurableResource):
         batches = self._batch_list(list=members, size=40)
 
         for i, batch in enumerate(batches):
-            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+            self._log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
+            batch_request = self._resource.new_batch_http_request(callback=callback)  # pyright: ignore[reportAttributeAccessIssue]
 
             for member in batch:
-                context.log.info(f"ADDING {member['email']} to {member['groupKey']}")
+                self._log.info(f"ADDING {member['email']} to {member['groupKey']}")
                 batch_request.add(
-                    self._service.members().insert(  # type: ignore
+                    self._resource.members().insert(  # pyright: ignore[reportAttributeAccessIssue]
                         groupKey=member["groupKey"], body=member
                     )
                 )
@@ -257,10 +257,8 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def batch_insert_role_assignments(self, role_assignments, customer=None):
         def callback(request_id, response, exception):
-            context = self.get_resource_context()
-
             if exception is not None:
-                context.log.error(exception)
+                self._log.error(exception)
                 if exception.status_code == 403:
                     raise exception
                 elif (
@@ -273,13 +271,13 @@ class GoogleDirectoryResource(ConfigurableResource):
         batches = self._batch_list(list=role_assignments, size=10)
 
         for i, batch in enumerate(batches):
-            self.get_resource_context().log.info(f"Processing batch {i + 1}")
+            self._log.info(f"Processing batch {i + 1}")
 
-            batch_request = self._service.new_batch_http_request(callback=callback)  # type: ignore
+            batch_request = self._resource.new_batch_http_request(callback=callback)  # pyright: ignore[reportAttributeAccessIssue]
 
             for role_assignment in batch:
                 batch_request.add(
-                    self._service.roleAssignments().insert(  # type: ignore
+                    self._resource.roleAssignments().insert(  # pyright: ignore[reportAttributeAccessIssue]
                         customer=(customer or self.customer_id),
                         body=role_assignment,
                     )
