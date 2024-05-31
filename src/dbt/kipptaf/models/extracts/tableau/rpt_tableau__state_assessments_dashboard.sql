@@ -257,20 +257,19 @@ with
     assessments_fl_science as (
         select
             academic_year,
-            student_id as state_id,
             is_proficient,
-
+            student_id as state_id,
             achievement_level as performance_band,
             achievement_level_int as performance_band_level,
             scale_score as score,
 
-            if(test_grade_level = 5, 'SCI05', 'SCI08') as test_code,
-
             'Science' as assessment_name,
             'PM3' as `admin`,
-            'Spring' as season,
+            'Spring' as `season`,
             'Science' as discipline,
             'Science' subject,
+
+            if(test_grade_level = 5, 'SCI05', 'SCI08') as test_code,
 
             safe_cast(test_grade_level as string) as test_grade,
 
