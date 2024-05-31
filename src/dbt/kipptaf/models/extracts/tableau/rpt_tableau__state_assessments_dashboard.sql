@@ -238,11 +238,12 @@ with
             achievement_level_int as performance_band_level,
             is_proficient,
             scale_score as score,
-            safe_cast(enrolled_grade as string) as test_grade,
 
             'EOC' as assessment_name,
             'PM3' as `admin`,
             'Spring' as season,
+
+            safe_cast(enrolled_grade as string) as test_grade,
 
             if(test_name = 'B.E.S.T.Algebra1', 'Math', 'Civics') as discipline,
             if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', 'Civics') as subject,
