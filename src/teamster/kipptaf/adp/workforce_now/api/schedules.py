@@ -13,9 +13,7 @@ adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
 )
 
 adp_wfn_api_workers_asset_schedule = build_schedule_from_partitioned_job(
-    job=adp_wfn_api_workers_asset_job,
-    cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    job=adp_wfn_api_workers_asset_job
 )
 
 schedules = [
