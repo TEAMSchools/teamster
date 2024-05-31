@@ -1,5 +1,4 @@
 {
-  "include": ["src"],
   "venv": ".venv",
   "venvPath": "/workspaces/teamster"
 }
