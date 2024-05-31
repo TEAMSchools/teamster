@@ -184,7 +184,7 @@ with
                     and co.special_education_code in ('CMI', 'CMO', 'CSE')
                 then 'Exempt - Special Education'
                 when
-                    co.grade_level >= 3
+                    co.grade_level between 3 and 8
                     and (
                         nj.state_assessment_name = '3'
                         or nj.math_state_assessment_name in ('3', '4')
@@ -318,8 +318,6 @@ select
     academic_status,
     exemption,
     case
-        when exemption is not null
-        then exemption
         when grade_level = 0
         then attendance_status
         when
