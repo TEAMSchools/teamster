@@ -16,17 +16,13 @@ lint:
     - terrascan
     - trivy
   ignore:
-    - paths:
-        - src/teamster/**
-      linters:
-        - sqlfluff
+    - linters:
         - sqlfmt
-    - paths:
-        - src/dbt/**
-      linters:
+        - sqlfluff
+      paths:
+        - src/teamster/**
+    - linters:
         - actionlint
-        - bandit
-        - git-diff-check
         - hadolint
         - isort
         - markdownlint
@@ -37,10 +33,12 @@ lint:
         - shfmt
         - svgo
         - taplo
-    - paths:
-        - .k8s/**/values.yaml
-      linters:
+      paths:
+        - src/dbt/**
+    - linters:
         - ALL
+      paths:
+        - .k8s/**/values.yaml
   enabled:
     - actionlint@1.7.1
     - bandit@1.7.8
