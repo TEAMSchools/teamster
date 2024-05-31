@@ -239,13 +239,13 @@ with
             achievement_level_int as performance_band_level,
             scale_score as score,
 
-            if(test_name = 'B.E.S.T.Algebra1', 'Math', 'Civics') as discipline,
-            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', 'Civics') as subject,
-            if(test_name = 'B.E.S.T.Algebra1', 'ALG01', 'SOC08') as test_code,
-
             'EOC' as assessment_name,
             'PM3' as `admin`,
             'Spring' as season,
+
+            if(test_name = 'B.E.S.T.Algebra1', 'Math', 'Civics') as discipline,
+            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', 'Civics') as subject,
+            if(test_name = 'B.E.S.T.Algebra1', 'ALG01', 'SOC08') as test_code,
 
             safe_cast(enrolled_grade as string) as test_grade,
 
