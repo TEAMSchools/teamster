@@ -936,7 +936,7 @@ with
             if(
                 sum(
                     if(
-                        f.assign_id is null
+                        s.assign_id is null
                         and s.student_course_entry_date
                         >= f.teacher_assign_due_date - 7,
                         0,
@@ -944,7 +944,7 @@ with
                     )
                 ) over (
                     partition by
-                        f.`quarter`, f.student_number, f.course_number, f.sectionid
+                        s.`quarter`, s.student_number, s.course_number, s.sectionid
                 )
                 = 0,
                 1,
