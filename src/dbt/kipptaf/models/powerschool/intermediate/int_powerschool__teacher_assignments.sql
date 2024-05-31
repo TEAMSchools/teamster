@@ -7,8 +7,6 @@ with
             t.grade_band as school_level,
             t.name as teacher_quarter,
 
-            expected_teacher_assign_category_code,
-
             s._dbt_source_relation,
             s.terms_yearid as yearid,
             s.sections_schoolid as schoolid,
@@ -18,7 +16,9 @@ with
             s.sections_schedulesectionid as sectionid,
             s.sections_dcid,
 
-            if(t.name in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
+            expected_teacher_assign_category_code,
+
+            1 as counter,
 
             case
                 when t.grade_band in ('ES', 'MS')
@@ -35,21 +35,22 @@ with
                 when 'kippmiami'
                 then 'Miami'
             end as region,
+
         from {{ ref("stg_reporting__terms") }} as t
-        cross join
-            unnest(
-                {{ expected_teacher_assign_category_code }}
-            ) as expected_teacher_assign_category_code
         left join
             {{ ref("base_powerschool__sections") }} as s
             on t.powerschool_year_id = s.terms_yearid
             and t.school_id = s.sections_schoolid
             and t.type = 'RT'
             and t.grade_band is not null
+        cross join
+            unnest(
+                {{ expected_teacher_assign_category_code }}
+            ) as expected_teacher_assign_category_code
         where
             t.academic_year = {{ var("current_academic_year") }}
             and s.courses_schoolid != 999999
-            and current_date('{{ var("local_timezone") }}')
+            and current_date('America/New_York')
             between s.terms_firstday and s.terms_lastday
     ),
 
@@ -69,6 +70,7 @@ with
             t.sections_dcid,
             t.expected_teacher_assign_category_code,
             t.teacher_quarter,
+            t.counter,
 
             aud.year_week_number,
             aud.quarter_week_number,
@@ -127,7 +129,7 @@ with
             t.expected_teacher_assign_category_code,
             t.expected_teacher_assign_category_name,
             t.audit_category_exp_audit_week_ytd,
-
+            t.counter,
             a.assignmentid as teacher_assign_id,
             a.name as teacher_assign_name,
             a.scoretype as teacher_assign_score_type,
@@ -135,6 +137,7 @@ with
             a.duedate as teacher_assign_due_date,
 
             if(a.assignmentid is null, 0, 1) as teacher_assign_count,
+
         from assign_2 as t
         inner join
             {{ ref("int_powerschool__section_grade_config") }} as gb
@@ -175,6 +178,7 @@ with
             expected_teacher_assign_category_code,
             expected_teacher_assign_category_name,
             audit_category_exp_audit_week_ytd,
+            counter,
             teacher_assign_id,
             teacher_assign_name,
             teacher_assign_score_type,
@@ -235,6 +239,7 @@ with
             t.expected_teacher_assign_category_code,
             t.expected_teacher_assign_category_name,
             t.audit_category_exp_audit_week_ytd,
+            t.counter,
             t.teacher_assign_id,
             t.teacher_assign_name,
             t.teacher_assign_score_type,
@@ -243,7 +248,8 @@ with
             t.teacher_assign_count,
             t.teacher_running_total_assign_by_cat,
             t.teacher_category_assign_count_expected_not_met,
-            t.teacher_semester_code,
+
+            if(t.teacher_quarter in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
 
             avg(
                 if(
@@ -323,7 +329,7 @@ with
                     asg.assign_id
             ) as total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
 
-            /* flags */
+            -- flags
             if(
                 sum(asg.assign_is_missing) over (
                     partition by
@@ -374,6 +380,7 @@ with
                 1,
                 0
             ) as qt_teacher_s_total_greater_200,
+
         from assign_4 as t
         left join
             {{ ref("int_powerschool__student_assignments") }} as asg
@@ -408,6 +415,7 @@ select
     expected_teacher_assign_category_code,
     expected_teacher_assign_category_name,
     audit_category_exp_audit_week_ytd,
+    counter,
     teacher_assign_id,
     teacher_assign_name,
     teacher_assign_score_type,
@@ -427,8 +435,6 @@ select
     qt_teacher_no_missing_assignments,
     qt_teacher_s_total_less_200,
     qt_teacher_s_total_greater_200,
-
-    1 as `counter`,
 
     if(
         expected_teacher_assign_category_code = 'W'
@@ -494,4 +500,5 @@ select
         ),
         2
     ) as percent_graded_completion_by_assign_id_qt_audit_week,
+
 from assign_5
