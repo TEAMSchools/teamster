@@ -233,21 +233,21 @@ with
     assessments_fl_eoc as (
         select
             academic_year,
+            is_proficient,
             student_id as state_id,
             achievement_level as performance_band,
             achievement_level_int as performance_band_level,
-            is_proficient,
             scale_score as score,
+
+            if(test_name = 'B.E.S.T.Algebra1', 'Math', 'Civics') as discipline,
+            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', 'Civics') as subject,
+            if(test_name = 'B.E.S.T.Algebra1', 'ALG01', 'SOC08') as test_code,
 
             'EOC' as assessment_name,
             'PM3' as `admin`,
             'Spring' as season,
 
             safe_cast(enrolled_grade as string) as test_grade,
-
-            if(test_name = 'B.E.S.T.Algebra1', 'Math', 'Civics') as discipline,
-            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', 'Civics') as subject,
-            if(test_name = 'B.E.S.T.Algebra1', 'ALG01', 'SOC08') as test_code,
 
         from {{ ref("stg_fldoe__eoc") }}
         where not is_invalidated
