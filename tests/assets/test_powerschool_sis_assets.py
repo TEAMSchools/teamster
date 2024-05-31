@@ -1,6 +1,7 @@
 import random
 
-from dagster import materialize
+from dagster import _check, materialize
+from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import (
     DB_POWERSCHOOL,
@@ -23,19 +24,21 @@ def _test_asset(assets, asset_name):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_file": get_io_manager_gcs_file("staging"),
+            "io_manager_gcs_file": get_io_manager_gcs_file("test"),
             "ssh_powerschool": SSH_POWERSCHOOL,
             "db_powerschool": DB_POWERSCHOOL,
         },
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]
-        .value
-        > 0
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
+    records = _check.inst(
+        event_specific_data.materialization.metadata["records"].value, int
+    )
+    assert records > 0
 
 
 def test_schools_kippnewark():

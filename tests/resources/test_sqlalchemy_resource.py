@@ -1,7 +1,6 @@
-import pendulum
 from dagster import build_resources
 from dagster_gcp import BigQueryResource
-from google.cloud import bigquery
+from google.cloud.bigquery import Client as BigQueryClient
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.datagun.assets import construct_query
@@ -11,11 +10,9 @@ def _test(query_type, query_value):
     with build_resources(
         resources={"db_bigquery": BigQueryResource(project=GCS_PROJECT_NAME)}
     ) as resources:
-        db_bigquery: bigquery.Client = next(resources.db_bigquery)
+        db_bigquery: BigQueryClient = next(resources.db_bigquery)
 
-    query = construct_query(
-        now=pendulum.now(), query_type=query_type, query_value=query_value
-    )
+    query = construct_query(query_type=query_type, query_value=query_value)
     print(query)
 
     query_job = db_bigquery.query(query=str(query))

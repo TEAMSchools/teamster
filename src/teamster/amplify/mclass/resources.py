@@ -1,9 +1,9 @@
 import json
 
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
-from requests import Session, exceptions
+from requests import Response, Session, exceptions
 
 
 class MClassResource(ConfigurableResource):
@@ -12,6 +12,7 @@ class MClassResource(ConfigurableResource):
 
     _base_url: str = PrivateAttr(default="https://mclass.amplify.com")
     _session: Session = PrivateAttr(default_factory=Session)
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         portal_redirect = self.get(path="reports/myReports")
@@ -29,6 +30,8 @@ class MClassResource(ConfigurableResource):
             data={"username": self.username, "password": self.password},
         )
 
+        self._log = _check.not_none(value=context.log)
+
     def _get_url(self, path, *args):
         if args:
             return f"{self._base_url}/{path}/{'/'.join(args)}"
@@ -36,18 +39,22 @@ class MClassResource(ConfigurableResource):
             return f"{self._base_url}/{path}"
 
     def _request(self, method, url, **kwargs):
+        response = Response()
+
         try:
             response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.exception(e)
+            self._log.exception(e)
             raise exceptions.HTTPError(response.text) from e
+        except Exception as e:
+            raise Exception from e
 
     def get(self, path, *args, **kwargs):
         url = self._get_url(*args, path=path)
-        self.get_resource_context().log.debug(f"GET: {url}")
+        self._log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
@@ -56,7 +63,7 @@ class MClassResource(ConfigurableResource):
             data = {}
 
         url = self._get_url(*args, path=path)
-        self.get_resource_context().log.debug(f"POST: {url}")
+        self._log.debug(f"POST: {url}")
 
         for k, v in data.items():
             if isinstance(v, dict):

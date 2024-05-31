@@ -9,7 +9,7 @@ from dagster import (
     asset,
 )
 from dagster_gcp import BigQueryResource
-from google.cloud import bigquery
+from google.cloud.bigquery import DatasetReference
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
@@ -144,7 +144,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     with db_bigquery.get_client() as bq:
         bq_client = bq
 
-    dataset_ref = bigquery.DatasetReference(
+    dataset_ref = DatasetReference(
         project=bq_client.project, dataset_id="kipptaf_extracts"
     )
 

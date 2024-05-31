@@ -27,7 +27,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=self._log)
+        self._log = _check.not_none(value=context.log)
 
     def execute_query(
         self,
@@ -205,5 +205,3 @@ class OracleResource(ConfigurableResource):
             ),
             arraysize=self.arraysize,
         )
-
-        super().setup_for_execution(context)

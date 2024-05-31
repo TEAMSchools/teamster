@@ -1,6 +1,13 @@
 import random
 
-from dagster import materialize
+from dagster import (
+    AssetsDefinition,
+    PartitionsDefinition,
+    TextMetadataValue,
+    _check,
+    materialize,
+)
+from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.resources import TABLEAU_SERVER_RESOURCE
@@ -8,7 +15,12 @@ from teamster.kipptaf.tableau.assets import workbook
 
 
 def test_workbook():
-    partition_keys = workbook.partitions_def.get_partition_keys()
+    _check.inst(obj=workbook, ttype=AssetsDefinition)
+
+    partitions_def = _check.inst(
+        obj=workbook.partitions_def, ttype=PartitionsDefinition
+    )
+    partition_keys = partitions_def.get_partition_keys()
 
     partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
 
@@ -24,10 +36,16 @@ def test_workbook():
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]
-        .value
-        > 0
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    records = _check.inst(
+        event_specific_data.materialization.metadata["records"].value, int
+    )
+    assert records > 0
+    extras = _check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
+        ttype=TextMetadataValue,
+    )
+    assert extras.text == ""

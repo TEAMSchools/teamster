@@ -50,9 +50,15 @@ def build_powerschool_table_asset(
     ):
         now = pendulum.now(tz=local_timezone).start_of("hour")
 
+        first_partition_key = (
+            partitions_def.get_first_partition_key()
+            if partitions_def is not None
+            else None
+        )
+
         if not context.has_partition_key:
             constructed_where = ""
-        elif context.partition_key == partitions_def.get_first_partition_key():
+        elif context.partition_key == first_partition_key:
             constructed_where = ""
         else:
             window_start = pendulum.from_format(
