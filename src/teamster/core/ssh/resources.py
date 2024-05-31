@@ -45,9 +45,9 @@ class SSHResource(DagsterSSHResource):
             files = []
 
         for file in sftp_client.listdir_attr(remote_dir):
-            try:
+            if hasattr(file, "filepath"):
                 filepath = str(pathlib.Path(remote_dir) / file.filepath)
-            except AttributeError:
+            else:
                 filepath = str(pathlib.Path(remote_dir) / file.filename)
 
             if S_ISDIR(file.st_mode):
@@ -58,4 +58,34 @@ class SSHResource(DagsterSSHResource):
                 file.filepath = filepath
                 files.append(file)
 
+        return files
+
+    def listdir_attr_r_test(
+        self, remote_dir: str, files: list | None = None, conn=None, sftp_client=None
+    ):
+        if files is None:
+            files = []
+
+        if conn is None:
+            conn = self.get_connection()
+
+        if sftp_client is None:
+            sftp_client = conn.open_sftp()
+
+        self.log.info(remote_dir)
+        for file in sftp_client.listdir_attr(remote_dir):
+            path = str(pathlib.Path(remote_dir) / file.filename)
+
+            if S_ISDIR(file.st_mode):
+                self.listdir_attr_r_test(
+                    remote_dir=path,
+                    files=files,
+                    conn=conn,
+                    sftp_client=sftp_client,
+                )
+            elif S_ISREG(file.st_mode):
+                files.append({"file": file, "path": path})
+
+        sftp_client.close()
+        conn.close()
         return files

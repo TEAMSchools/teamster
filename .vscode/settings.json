@@ -40,8 +40,5 @@
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true
-  },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
   }
 }
