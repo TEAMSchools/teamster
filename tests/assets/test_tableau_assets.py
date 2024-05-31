@@ -15,7 +15,9 @@ def test_workbook():
     result = materialize(
         assets=[workbook],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                code_location="test", test=True
+            ),
             "tableau": TABLEAU_SERVER_RESOURCE,
         },
         partition_key=partition_key,

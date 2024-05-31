@@ -122,11 +122,47 @@ with
             )
     ),
 
+    ps_log as (
+        select
+            lg._dbt_source_relation,
+            lg.studentid,
+            lg.entry_date,
+            lg.entry,
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="lg.entry_date", start_month=7, year_source="start"
+                )
+            }} as academic_year,
+        from {{ ref("stg_powerschool__log") }} as lg
+        inner join
+            {{ ref("stg_powerschool__gen") }} as g
+            on lg.logtypeid = g.id
+            and g.cat = 'logtype'
+            and g.name = 'Exempt from retention'
+    ),
+
+    exempt_override as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            entry_date,
+            entry,
+
+            row_number() over (
+                partition by _dbt_source_relation, studentid, academic_year
+                order by entry_date desc
+            ) as rn_log,
+        from ps_log
+    ),
+
     promo as (
         select
             co.student_number,
             co.academic_year,
             co.grade_level,
+            co.is_self_contained,
+            co.special_education_code,
 
             rt.term_name,
 
@@ -140,6 +176,23 @@ with
             c.n_failing,
             c.projected_credits_y1_term,
             c.projected_credits_cum,
+
+            case
+                when
+                    co.grade_level < 3
+                    and co.is_self_contained
+                    and co.special_education_code in ('CMI', 'CMO', 'CSE')
+                then 'Exempt - Special Education'
+                when
+                    co.grade_level >= 3
+                    and (
+                        nj.state_assessment_name = '3'
+                        or nj.math_state_assessment_name in ('3', '4')
+                    )
+                then 'Exempt - Special Education'
+                when lg.entry_date is not null
+                then 'Exempt - Manual Override'
+            end as exemption,
 
             case
                 /* Gr K-8 */
@@ -235,6 +288,16 @@ with
             iready as ir
             on co.student_number = ir.student_id
             and co.academic_year = ir.academic_year_int
+        left join
+            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
+            on co.students_dcid = nj.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+        left join
+            exempt_override as lg
+            on co.studentid = lg.studentid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="lg") }}
+            and co.academic_year = lg.academic_year
+            and lg.rn_log = 1
         where co.rn_year = 1
     )
 
@@ -253,7 +316,10 @@ select
     attendance_status,
     attendance_status_hs_detail,
     academic_status,
+    exemption,
     case
+        when exemption is not null
+        then exemption
         when grade_level = 0
         then attendance_status
         when

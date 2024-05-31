@@ -31,14 +31,11 @@ with
                 'CMO and Other Leaders'
             ) as route,
         from {{ ref("base_people__staff_roster") }} as sr
-        where
-            sr.assignment_status in ('Active', 'Leave')
-            and (
-                contains_substr(sr.job_title, 'Head')
-                or contains_substr(sr.job_title, 'Chief')
-                or contains_substr(sr.job_title, 'Director')
-                or contains_substr(sr.job_title, 'Leader')
-            )
+        left join
+            {{ ref("stg_leadership_development_active_users") }} as au
+            on sr.employee_number = safe_cast(au.employee_number as int)
+        where au.active_title
+
     )
 
 select

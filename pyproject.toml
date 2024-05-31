@@ -58,6 +58,3 @@ dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 post_install = { shell = "pdm export --prod -o requirements.txt" }
 json2py = { shell = "bash .pdm/scripts/json2py.sh" }
 op-inject = { shell = "op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env" }
-
-[tool.pyright]
-venvPath = ".venv"

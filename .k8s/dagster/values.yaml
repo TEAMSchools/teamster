@@ -190,6 +190,11 @@ dagsterCloudAgent:
   # volumes:
   # volumeMounts:
 
+  # Additional agent pod spec configuration that is not covered by a field above.
+  # Example:
+  # additionalPodSpecConfig:
+  #   priorityClassName: high-priority
+
 ####################################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ####################################################################################################

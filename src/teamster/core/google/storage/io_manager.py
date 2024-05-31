@@ -90,6 +90,17 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
 
 
 class AvroGCSIOManager(GCSUPathIOManager):
+    def __init__(
+        self,
+        bucket: str,
+        client: Any | None = None,
+        prefix: str = "dagster",
+        test: bool = False,
+    ):
+        self.test = test
+
+        super().__init__(bucket, client, prefix)
+
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         bucket_obj: storage.Bucket = self.bucket_obj
 
@@ -99,10 +110,14 @@ class AvroGCSIOManager(GCSUPathIOManager):
         bucket_obj: storage.Bucket = self.bucket_obj
         records, schema = obj
 
-        # import json
-        # fp = "env" / path
-        # fp.parent.mkdir(parents=True, exist_ok=True)
-        # json.dump(obj=records, fp=fp.open("w"))
+        if self.test:
+            import json
+
+            fp = "env" / path.with_suffix(".json")
+
+            fp.parent.mkdir(parents=True, exist_ok=True)
+
+            json.dump(obj=records, fp=fp.open("w"))
 
         if self.path_exists(path):
             context.log.warning(f"Existing GCS key: {path}")
@@ -141,6 +156,7 @@ class FileGCSIOManager(GCSUPathIOManager):
 
 class GCSIOManager(GCSPickleIOManager):
     object_type: str
+    test: bool = False
 
     @property
     @cached_method
@@ -152,6 +168,7 @@ class GCSIOManager(GCSPickleIOManager):
                 bucket=self.gcs_bucket,
                 client=self.gcs.get_client(),
                 prefix=self.gcs_prefix,
+                test=self.test,
             )
         if self.object_type == "file":
             return FileGCSIOManager(

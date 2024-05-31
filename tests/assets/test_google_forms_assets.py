@@ -24,7 +24,9 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
         instance=instance,
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                code_location="test", test=True
+            ),
             "google_forms": GOOGLE_FORMS_RESOURCE,
         },
     )
