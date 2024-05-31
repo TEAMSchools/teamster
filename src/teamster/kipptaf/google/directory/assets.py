@@ -16,17 +16,14 @@ from teamster.kipptaf.google.directory.schema import (
 )
 
 key_prefix = [CODE_LOCATION, "google", "directory"]
-asset_kwargs = {
-    "io_manager_key": "io_manager_gcs_avro",
-    "group_name": "google_directory",
-    "compute_kind": "python",
-}
 
 
 @asset(
     key=[*key_prefix, "orgunits"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "orgunits"])],
-    **asset_kwargs,
+    io_manager_key="io_manager_gcs_avro",
+    group_name="google_directory",
+    compute_kind="python",
 )
 def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_orgunits(org_unit_type="all")
@@ -41,7 +38,9 @@ def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryRe
 @asset(
     key=[*key_prefix, "users"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "users"])],
-    **asset_kwargs,
+    io_manager_key="io_manager_gcs_avro",
+    group_name="google_directory",
+    compute_kind="python",
 )
 def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_users(projection="full")
@@ -56,7 +55,9 @@ def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 @asset(
     key=[*key_prefix, "groups"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "groups"])],
-    **asset_kwargs,
+    io_manager_key="io_manager_gcs_avro",
+    group_name="google_directory",
+    compute_kind="python",
 )
 def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_groups()
@@ -71,7 +72,9 @@ def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryReso
 @asset(
     key=[*key_prefix, "roles"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "roles"])],
-    **asset_kwargs,
+    io_manager_key="io_manager_gcs_avro",
+    group_name="google_directory",
+    compute_kind="python",
 )
 def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_roles()
@@ -86,7 +89,9 @@ def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 @asset(
     key=[*key_prefix, "role_assignments"],
     check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "role_assignments"])],
-    **asset_kwargs,
+    io_manager_key="io_manager_gcs_avro",
+    group_name="google_directory",
+    compute_kind="python",
 )
 def role_assignments(
     context: AssetExecutionContext, google_directory: GoogleDirectoryResource
@@ -112,7 +117,9 @@ def role_assignments(
             "group-students-newark@teamstudents.org",
         ]
     ),
-    **asset_kwargs,
+    io_manager_key="io_manager_gcs_avro",
+    group_name="google_directory",
+    compute_kind="python",
 )
 def members(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_members(group_key=context.partition_key)

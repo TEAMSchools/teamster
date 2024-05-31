@@ -1,6 +1,14 @@
 import random
 
-from dagster import AssetsDefinition, DagsterInstance, materialize
+from dagster import (
+    AssetsDefinition,
+    DagsterInstance,
+    PartitionsDefinition,
+    TextMetadataValue,
+    _check,
+    materialize,
+)
+from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.google.forms.assets import form, responses
@@ -13,7 +21,10 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     )
 
     if partition_key is None:
-        partition_keys = asset.partitions_def.get_partition_keys(
+        partitions_def = _check.inst(
+            obj=asset.partitions_def, ttype=PartitionsDefinition
+        )
+        partition_keys = partitions_def.get_partition_keys(
             dynamic_partitions_store=instance
         )
 
@@ -32,13 +43,19 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]
-        .value
-        > 0
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""
+    records = _check.inst(
+        event_specific_data.materialization.metadata["record_count"].value, int
+    )
+    assert records > 0
+    extras = _check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
+        ttype=TextMetadataValue,
+    )
+    assert extras.text == ""
 
 
 def test_asset_google_forms_form():

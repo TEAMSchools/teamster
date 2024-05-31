@@ -8,6 +8,7 @@ from dagster import (
     AssetCheckSpec,
     MetadataValue,
     MultiPartitionKey,
+    _check,
 )
 
 from teamster.core.utils.classes import FiscalYear
@@ -15,9 +16,11 @@ from teamster.core.utils.classes import FiscalYear
 
 def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
     for group in re.findall(r"\(\?P<\w+>[\w\[\]\{\}\+\-\\\.]*\)", pattern):
-        group_key = re.search(r"(?<=<)(\w+)(?=>)", group).group()
+        match = _check.not_none(
+            value=re.search(pattern=r"(?<=<)(\w+)(?=>)", string=group)
+        )
 
-        group_value = replacements.get(group_key, "")
+        group_value = replacements.get(match.group(0), "")
 
         pattern = pattern.replace(group, group_value)
 

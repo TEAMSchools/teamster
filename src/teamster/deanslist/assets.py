@@ -3,9 +3,11 @@ from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
     MonthlyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
+    _check,
     asset,
 )
 
@@ -83,8 +85,12 @@ def build_deanslist_multi_partition_asset(
         check_specs=[get_avro_schema_valid_check_spec(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
-        partitions_def: MultiPartitionsDefinition = context.assets_def.partitions_def
-        partition_keys_by_dimension = context.partition_key.keys_by_dimension
+        partitions_def = _check.inst(
+            obj=context.assets_def.partitions_def, ttype=MultiPartitionsDefinition
+        )
+        partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
+
+        partition_keys_by_dimension = partition_key.keys_by_dimension
 
         date_partition_def = partitions_def.get_partitions_def_for_dimension("date")
         date_partition_key = pendulum.from_format(
