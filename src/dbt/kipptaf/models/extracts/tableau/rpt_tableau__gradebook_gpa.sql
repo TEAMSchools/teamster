@@ -317,14 +317,14 @@ with
         from {{ ref("stg_powerschool__storedgrades") }} as g
         left join
             student_roster as co
-            on g.academic_year = co.academic_year
-            and g.schoolid = co.schoolid
-            and g.studentid = co.studentid
+            on tr.academic_year = co.academic_year
+            and tr.schoolid = co.schoolid
+            and tr.studentid = co.studentid
             and {{ union_dataset_join_clause(left_alias="g", right_alias="co") }}
         left join
             student_roster as e1
-            on g.schoolid = e1.schoolid
-            and g.studentid = e1.studentid
+            on tr.schoolid = e1.schoolid
+            and tr.studentid = e1.studentid
             and e1.year_in_school = 1
             and {{ union_dataset_join_clause(left_alias="g", right_alias="e1") }}
         where
