@@ -265,9 +265,9 @@ with
 
             'Science' as assessment_name,
             'PM3' as `admin`,
-            'Spring' as `season`,
+            'Spring' as season,
             'Science' as discipline,
-            'Science' subject,
+            'Science' as subject,
 
             if(test_grade_level = 5, 'SCI05', 'SCI08') as test_code,
 
