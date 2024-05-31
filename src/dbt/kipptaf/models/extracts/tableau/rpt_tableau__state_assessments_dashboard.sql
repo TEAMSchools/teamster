@@ -264,12 +264,13 @@ with
             achievement_level_int as performance_band_level,
             scale_score as score,
 
+            if(test_grade_level = 5, 'SCI05', 'SCI08') as test_code,
+
             'Science' as assessment_name,
             'PM3' as `admin`,
             'Spring' as season,
             'Science' as discipline,
             'Science' subject,
-            'SCI08' as test_code,
 
             safe_cast(test_grade_level as string) as test_grade,
 
