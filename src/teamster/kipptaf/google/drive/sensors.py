@@ -2,6 +2,7 @@ from dagster import (
     AddDynamicPartitionsRequest,
     SensorEvaluationContext,
     SensorResult,
+    _check,
     sensor,
 )
 
@@ -28,7 +29,7 @@ def google_forms_partition_sensor(
     return SensorResult(
         dynamic_partitions_requests=[
             AddDynamicPartitionsRequest(
-                partitions_def_name=GOOGLE_FORMS_PARTITIONS_DEF.name,
+                partitions_def_name=_check.not_none(GOOGLE_FORMS_PARTITIONS_DEF.name),
                 partition_keys=[f["id"] for f in files],
             )
         ]

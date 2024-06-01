@@ -28,7 +28,7 @@ def _test_asset(asset: AssetsDefinition):
     with instance_for_test() as instance:
         if isinstance(date_partitions_def, DynamicPartitionsDefinition):
             instance.add_dynamic_partitions(
-                partitions_def_name=date_partitions_def.name,
+                partitions_def_name=_check.not_none(date_partitions_def.name),
                 partition_keys=["foo"],
             )
 
