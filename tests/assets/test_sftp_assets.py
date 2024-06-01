@@ -1,6 +1,7 @@
 import random
 
 from dagster import (
+    DynamicPartitionsDefinition,
     EnvVar,
     MultiPartitionsDefinition,
     TextMetadataValue,
@@ -448,7 +449,13 @@ def test_adp_payroll_general_ledger_file_kipptaf():
     partitions_def = _check.inst(
         obj=general_ledger_file.partitions_def, ttype=MultiPartitionsDefinition
     )
-    partitions_def_name = partitions_def.get_partitions_def_for_dimension("date").name
+
+    date_partitions_def = _check.inst(
+        obj=partitions_def.get_partitions_def_for_dimension("date"),
+        ttype=DynamicPartitionsDefinition,
+    )
+
+    partitions_def_name = _check.not_none(value=date_partitions_def.name)
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(

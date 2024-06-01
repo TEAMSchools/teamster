@@ -47,7 +47,7 @@ def build_adp_wfm_asset(
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
-        symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]  # type:ignore
+        symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]
 
         symbolic_period_record = [
             sp

@@ -9,6 +9,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     StaticPartitionsDefinition,
+    _check,
     sensor,
 )
 
@@ -30,9 +31,7 @@ def build_couchdrop_sftp_sensor(
         tick_cursor = float(context.cursor or "0.0")
 
         try:
-            files = ssh_couchdrop.listdir_attr_r(
-                remote_dir=f"/data-team/{code_location}", files=[]
-            )
+            files = ssh_couchdrop.listdir_attr_r(f"/data-team/{code_location}")
         except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
@@ -47,15 +46,15 @@ def build_couchdrop_sftp_sensor(
             )
 
             file_matches = [
-                f
-                for f in files
-                if pattern.match(string=f.filepath)
-                and f.st_mtime > tick_cursor
-                and f.st_size > 0
+                (f, path)
+                for f, path in files
+                if pattern.match(string=path)
+                and _check.not_none(f.st_mtime) > tick_cursor
+                and _check.not_none(f.st_size) > 0
             ]
 
-            for f in file_matches:
-                match = pattern.match(string=f.filepath)
+            for f, path in file_matches:
+                match = _check.not_none(pattern.match(string=path))
 
                 if isinstance(asset.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())

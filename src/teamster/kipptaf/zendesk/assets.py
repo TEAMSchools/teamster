@@ -1,7 +1,13 @@
 import pathlib
 
 import pendulum
-from dagster import AssetExecutionContext, MonthlyPartitionsDefinition, Output, asset
+from dagster import (
+    AssetExecutionContext,
+    MonthlyPartitionsDefinition,
+    Output,
+    _check,
+    asset,
+)
 from fastavro import block_reader, parse_schema, writer
 from pendulum.datetime import DateTime
 from zenpy.lib.exception import RecordNotFoundException
@@ -26,7 +32,7 @@ def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResou
     data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
     schema = parse_schema(schema=TICKET_METRIC_SCHEMA)
 
-    partition_key: DateTime = pendulum.parse(context.partition_key)
+    partition_key: DateTime = pendulum.parse(_check.not_none(context.partition_key))
 
     start_date = partition_key.subtract(seconds=1)
     end_date = partition_key.add(months=1)
@@ -52,7 +58,7 @@ def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResou
     fo = data_filepath.open("a+b")
 
     try:
-        for ticket in archived_tickets:  # type:ignore
+        for ticket in archived_tickets:
             ticket_id = ticket.id
 
             context.log.info(f"Getting metrics for ticket #{ticket_id}")

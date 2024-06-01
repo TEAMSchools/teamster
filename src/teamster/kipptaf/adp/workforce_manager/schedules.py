@@ -3,6 +3,7 @@ from dagster import (
     MultiPartitionKey,
     RunRequest,
     ScheduleEvaluationContext,
+    _check,
     build_schedule_from_partitioned_job,
     schedule,
 )
@@ -48,7 +49,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
             context.instance.add_dynamic_partitions(
-                partitions_def_name=date_partition.name,
+                partitions_def_name=_check.not_none(date_partition.name),
                 partition_keys=[symbolic_period_record["begin"]],
             )
 

@@ -24,8 +24,7 @@ from teamster.core.utils.functions import (
 
 
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
-    # list files remote filepath
-    files = ssh.listdir_attr_r(remote_dir=remote_dir, files=[])
+    files = ssh.listdir_attr_r(remote_dir)
 
     if remote_dir == ".":
         pattern = remote_file_regex
@@ -33,9 +32,7 @@ def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
         pattern = f"{remote_dir}/{remote_file_regex}"
 
     return [
-        f.filepath
-        for f in files
-        if re.match(pattern=pattern, string=f.filepath) is not None
+        path for _, path in files if re.match(pattern=pattern, string=path) is not None
     ]
 
 
