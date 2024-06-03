@@ -1,7 +1,7 @@
 import pathlib
 
 import google.auth
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from gspread.auth import authorize, service_account
 from gspread.client import Client
 from gspread.exceptions import SpreadsheetNotFound
@@ -13,8 +13,11 @@ class GoogleSheetsResource(ConfigurableResource):
     service_account_file_path: str | None = None
 
     _client: Client = PrivateAttr()
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(context.log)
+
         if self.service_account_file_path is not None:
             self._client = service_account(
                 filename=pathlib.Path(self.service_account_file_path)
@@ -43,10 +46,8 @@ class GoogleSheetsResource(ConfigurableResource):
         try:
             spreadsheet = self.open(**kwargs)
         except SpreadsheetNotFound as e:
-            context = self.get_resource_context()
-
-            context.log.warning(e)
-            context.log.info("Creating new Sheet")
+            self._log.warning(e)
+            self._log.info("Creating new Sheet")
 
             spreadsheet = self._client.create(**kwargs)
 
