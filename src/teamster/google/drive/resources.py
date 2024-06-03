@@ -24,7 +24,8 @@ class GoogleDriveResource(ConfigurableResource):
         ).files()
 
     def _list(self, **kwargs):
-        return self._service.list(**kwargs).execute()  # type: ignore
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
+        return self._service.list(**kwargs).execute()
 
     def list_files(self, **kwargs):
         """Lists the user's files.

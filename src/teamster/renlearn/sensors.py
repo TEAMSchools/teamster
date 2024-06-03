@@ -5,10 +5,11 @@ import pendulum
 from dagster import (
     AssetsDefinition,
     MultiPartitionKey,
+    MultiPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    StaticPartitionsDefinition,
+    _check,
     sensor,
 )
 
@@ -34,7 +35,7 @@ def build_renlearn_sftp_sensor(
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
-            files = ssh_renlearn.listdir_attr_r(remote_dir=".", files=[])
+            files = ssh_renlearn.listdir_attr_r()
         except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
@@ -47,18 +48,20 @@ def build_renlearn_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
-            subjects: StaticPartitionsDefinition = (
-                asset.partitions_def.get_partitions_def_for_dimension("subject")  # type: ignore
+            partitions_def = _check.inst(
+                asset.partitions_def, MultiPartitionsDefinition
             )
 
-            for f in files:
+            subjects = partitions_def.get_partitions_def_for_dimension("subject")
+
+            for f, _ in files:
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    if f.st_mtime > last_run and f.st_size > 0:
+                    if f.st_mtime > last_run and _check.not_none(f.st_size) > 0:
                         for subject in subjects.get_partition_keys():
                             run_requests.append(
                                 RunRequest(

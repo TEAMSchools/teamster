@@ -2,15 +2,20 @@ import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
+    AssetMaterialization,
     AssetsDefinition,
+    EventLogEntry,
     MonthlyPartitionsDefinition,
+    PartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
     TimeWindow,
+    _check,
     sensor,
 )
 from sqlalchemy import text
+from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHResource
@@ -42,6 +47,8 @@ def build_powerschool_sensor(
             with ssh_powerschool.get_tunnel(
                 remote_port=1521, local_port=1521
             ) as ssh_tunnel:
+                ssh_tunnel = _check.inst(ssh_tunnel, SSHTunnelForwarder)
+
                 ssh_tunnel.start()
 
                 for asset in asset_defs:
@@ -52,12 +59,18 @@ def build_powerschool_sensor(
                         "partition_column"
                     ]
 
-                    latest_materialization_event = (
-                        context.instance.get_latest_materialization_event(asset.key)
+                    latest_materialization_event = _check.inst(
+                        context.instance.get_latest_materialization_event(asset.key),
+                        EventLogEntry,
+                    )
+
+                    asset_materialization = _check.inst(
+                        latest_materialization_event.asset_materialization,
+                        AssetMaterialization,
                     )
 
                     latest_materialization_timestamp = (
-                        latest_materialization_event.asset_materialization.metadata.get(
+                        asset_materialization.metadata.get(
                             "latest_materialization_timestamp"
                         )
                         if latest_materialization_event is not None
@@ -66,10 +79,10 @@ def build_powerschool_sensor(
 
                     latest_materialization_datetime = pendulum.from_timestamp(
                         timestamp=(
-                            latest_materialization_timestamp.value
+                            _check.inst(latest_materialization_timestamp.value, float)
                             if latest_materialization_timestamp is not None
                             else 0.0
-                        )  # type: ignore
+                        )
                     )
 
                     latest_materialization_fmt = (
@@ -78,18 +91,20 @@ def build_powerschool_sensor(
                         ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                     )
 
-                    [(count,)] = db_powerschool.engine.execute_query(
-                        query=text(
-                            # trunk-ignore(bandit/B608)
-                            f"SELECT COUNT(*) FROM {table_name} "
-                            f"WHERE {partition_column} >= "
-                            f"TO_TIMESTAMP('{latest_materialization_fmt}', "
-                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                    [(count,)] = _check.inst(
+                        db_powerschool.engine.execute_query(
+                            query=text(
+                                # trunk-ignore(bandit/B608)
+                                f"SELECT COUNT(*) FROM {table_name} "
+                                f"WHERE {partition_column} >= "
+                                f"TO_TIMESTAMP('{latest_materialization_fmt}', "
+                                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                            ),
+                            partition_size=1,
+                            output_format=None,
                         ),
-                        partition_size=1,
-                        output_format=None,
-                        call_timeout=10000,
-                    )  # type: ignore
+                        list[tuple],
+                    )
 
                     context.log.info(f"count: {count}")
 
@@ -107,10 +122,12 @@ def build_powerschool_sensor(
                                     )
                                 )
                             )
-                        else:
+                        elif isinstance(asset.partitions_def, PartitionsDefinition):
                             partition_keys = [
                                 asset.partitions_def.get_last_partition_key()
                             ]
+                        else:
+                            partition_keys = []
 
                         context.log.info(partition_keys)
 

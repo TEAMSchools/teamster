@@ -1,6 +1,6 @@
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
-from requests import Session, exceptions
+from requests import Response, Session, exceptions
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 
@@ -12,20 +12,22 @@ class AdpWorkforceManagerResource(ConfigurableResource):
     username: str
     password: str
 
-    _client: Session = PrivateAttr(default_factory=Session)
+    _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()
     _refresh_token: str = PrivateAttr()
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(context.log)
         self._base_url = f"https://{self.subdomain}.mykronos.com/api"
 
-        self._client.headers["appkey"] = self.app_key
+        self._session.headers["appkey"] = self.app_key
 
         self._authenticate(grant_type="password")
 
     def _authenticate(self, grant_type):
-        self._client.headers["Content-Type"] = "application/x-www-form-urlencoded"
-        self._client.headers.pop(
+        self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
+        self._session.headers.pop(
             "Authorization", ""
         )  # remove existing auth for refresh
 
@@ -42,7 +44,7 @@ class AdpWorkforceManagerResource(ConfigurableResource):
             payload["username"] = self.username
             payload["password"] = self.password
 
-        response = self._client.post(
+        response = self._session.post(
             f"{self._base_url}/authentication/access_token", data=payload
         )
 
@@ -50,8 +52,8 @@ class AdpWorkforceManagerResource(ConfigurableResource):
         response_data = response.json()
 
         self._refresh_token = response_data["refresh_token"]
-        self._client.headers["Content-Type"] = "application/json"
-        self._client.headers["Authorization"] = (
+        self._session.headers["Content-Type"] = "application/json"
+        self._session.headers["Authorization"] = (
             "Bearer " + response_data["access_token"]
         )
 
@@ -59,14 +61,16 @@ class AdpWorkforceManagerResource(ConfigurableResource):
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
     )
     def _request(self, method, url, **kwargs):
+        response = Response()
+
         try:
-            response = self._client.request(method=method, url=url, **kwargs)
+            response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
 
             return response
         except exceptions.HTTPError as e:
-            self.get_resource_context().log.exception(e)
+            self._log.exception(e)
 
             if response.status_code == 401:
                 self._authenticate(grant_type="refresh_token")
@@ -79,12 +83,12 @@ class AdpWorkforceManagerResource(ConfigurableResource):
 
     def get(self, endpoint, *args, **kwargs):
         url = self._get_url(*args, endpoint=endpoint)
-        self.get_resource_context().log.debug(f"GET: {url}")
+        self._log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
     def post(self, endpoint, *args, **kwargs):
         url = self._get_url(*args, endpoint=endpoint)
-        self.get_resource_context().log.debug(f"POST: {url}")
+        self._log.debug(f"POST: {url}")
 
         return self._request(method="POST", url=url, **kwargs)

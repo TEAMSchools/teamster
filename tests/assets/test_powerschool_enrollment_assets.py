@@ -1,6 +1,7 @@
 import random
 
-from dagster import AssetsDefinition, EnvVar, materialize
+from dagster import AssetsDefinition, EnvVar, TextMetadataValue, _check, materialize
+from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.powerschool.enrollment.assets import submission_records
@@ -27,13 +28,19 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
-        .value
-        > 0
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    records = _check.inst(
+        event_specific_data.materialization.metadata["records"].value, int
+    )
+    assert records > 0
+    extras = _check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
+        ttype=TextMetadataValue,
+    )
+    assert extras.text == ""
 
 
 def test_submission_records():
