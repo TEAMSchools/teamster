@@ -6,10 +6,12 @@ from dagster import (
     AssetsDefinition,
     MonthlyPartitionsDefinition,
     Output,
+    _check,
     asset,
 )
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
+from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHResource
@@ -97,10 +99,15 @@ def build_powerschool_table_asset(
         with ssh_powerschool.get_tunnel(
             remote_port=1521, local_port=1521
         ) as ssh_tunnel:
+            ssh_tunnel = _check.inst(ssh_tunnel, SSHTunnelForwarder)
+
             ssh_tunnel.start()
 
-            file_path: pathlib.Path = db_powerschool.engine.execute_query(
-                query=sql, partition_size=100000, output_format="avro"
+            file_path = _check.inst(
+                db_powerschool.engine.execute_query(
+                    query=sql, partition_size=100000, output_format="avro"
+                ),
+                pathlib.Path,
             )
 
         try:

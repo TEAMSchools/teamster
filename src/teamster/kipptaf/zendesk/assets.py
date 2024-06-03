@@ -10,7 +10,9 @@ from dagster import (
 )
 from fastavro import block_reader, parse_schema, writer
 from pendulum.datetime import DateTime
+from zenpy.lib.api_objects import BaseObject
 from zenpy.lib.exception import RecordNotFoundException
+from zenpy.lib.generator import SearchExportResultGenerator
 
 from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA
@@ -29,19 +31,24 @@ from teamster.zendesk.resources import ZendeskResource
     compute_kind="python",
 )
 def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResource):
+    partition_key = _check.not_none(context.partition_key)
+
+    partition_key_datetime = _check.inst(pendulum.parse(text=partition_key), DateTime)
+
     data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
     schema = parse_schema(schema=TICKET_METRIC_SCHEMA)
 
-    partition_key: DateTime = pendulum.parse(_check.not_none(context.partition_key))
-
-    start_date = partition_key.subtract(seconds=1)
-    end_date = partition_key.add(months=1)
+    start_date = partition_key_datetime.subtract(seconds=1)
+    end_date = partition_key_datetime.add(months=1)
 
     context.log.info(
         f"Searching closed tickets: updated>{start_date} updated<{end_date}"
     )
-    archived_tickets = zendesk._client.search_export(
-        type="ticket", status="closed", updated_between=[start_date, end_date]
+    archived_tickets = _check.inst(
+        zendesk._client.search_export(
+            type="ticket", status="closed", updated_between=[start_date, end_date]
+        ),
+        SearchExportResultGenerator,
     )
 
     context.log.info(f"Saving results to {data_filepath}")
@@ -62,12 +69,15 @@ def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResou
             ticket_id = ticket.id
 
             context.log.info(f"Getting metrics for ticket #{ticket_id}")
+            metrics = _check.inst(
+                zendesk._client.tickets.metrics(ticket_id), BaseObject
+            )
 
             try:
                 writer(
                     fo=fo,
                     schema=schema,
-                    records=[zendesk._client.tickets.metrics(ticket_id).to_dict()],
+                    records=[metrics.to_dict()],
                     codec="snappy",
                     strict_allow_default=True,
                 )

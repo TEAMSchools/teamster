@@ -6,6 +6,7 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
+    _check,
     asset,
 )
 from dagster_gcp import BigQueryResource
@@ -80,6 +81,7 @@ def get_pca(df: pandas.DataFrame):
 
     pca_df = pandas.DataFrame(
         data=principal_components,
+        # trunk-ignore(pyright/reportArgumentType)
         columns=["pc1", "pc2"],
     )
 
@@ -99,6 +101,7 @@ def get_dbscan(df):
 
     clusters = outlier_detection.fit_predict(X=df[["pc1", "pc2"]])
 
+    # trunk-ignore(pyright/reportArgumentType)
     cluster_df = pandas.DataFrame(data=clusters, columns=["cluster"])
 
     df = pandas.merge(left=df, right=cluster_df, left_index=True, right_index=True)
@@ -107,12 +110,14 @@ def get_dbscan(df):
 
 
 def get_isolation_forest(df: pandas.DataFrame):
+    # trunk-ignore(pyright/reportArgumentType)
     model = IsolationForest(contamination=0.1)  # assuming 10% of the data are outliers
 
     model.fit(X=df[FIT_TRANSFORM_COLUMNS])
 
     outliers = model.predict(X=df[FIT_TRANSFORM_COLUMNS])
 
+    # trunk-ignore(pyright/reportArgumentType)
     tree_df = pandas.DataFrame(data=outliers, columns=["tree_outlier"])
 
     df = pandas.merge(left=df, right=tree_df, left_index=True, right_index=True)
@@ -138,7 +143,7 @@ def get_isolation_forest(df: pandas.DataFrame):
     ],
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
-    partition_key: MultiPartitionKey = context.partition_key
+    partition_key = _check.inst(context.partition_key, MultiPartitionKey)
 
     # load data from extract view
     with db_bigquery.get_client() as bq:
@@ -204,6 +209,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
         how="left",
         left_on=["observer_employee_number", "academic_year", "form_term"],
         right_on=["observer_employee_number", "academic_year", "form_term"],
+        # trunk-ignore(pyright/reportArgumentType)
         suffixes=["_current", "_global"],
     )
 

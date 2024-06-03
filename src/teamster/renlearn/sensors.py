@@ -5,10 +5,10 @@ import pendulum
 from dagster import (
     AssetsDefinition,
     MultiPartitionKey,
+    MultiPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    StaticPartitionsDefinition,
     _check,
     sensor,
 )
@@ -48,9 +48,11 @@ def build_renlearn_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
-            subjects: StaticPartitionsDefinition = (
-                asset.partitions_def.get_partitions_def_for_dimension("subject")
+            partitions_def = _check.inst(
+                asset.partitions_def, MultiPartitionsDefinition
             )
+
+            subjects = partitions_def.get_partitions_def_for_dimension("subject")
 
             for f, _ in files:
                 match = re.match(

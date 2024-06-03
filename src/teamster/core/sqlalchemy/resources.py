@@ -75,7 +75,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
                                 ],
                                 "default": None,
                             }
-                            for col in cursor_result.cursor.description
+                            for col in _check.not_none(cursor_result.cursor).description
                         ],
                     }
                 )
@@ -96,7 +96,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
         return output
 
-    def result_to_tuple_list(self, partitions):
+    def result_to_tuple_list(self, partitions) -> list[tuple]:
         pt_rows = [rows for pt in partitions for rows in pt]
 
         self._log.debug("Unpacking partition rows")
