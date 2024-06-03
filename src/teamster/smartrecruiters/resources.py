@@ -1,47 +1,44 @@
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
-from requests import Session, exceptions
+from requests import Response, Session
+from requests.exceptions import HTTPError
 
 
 class SmartRecruitersResource(ConfigurableResource):
     smart_token: str
 
-    _client: Session = PrivateAttr(default_factory=Session)
+    _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr(default="https://api.smartrecruiters.com")
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._client.headers["X-SmartToken"] = self.smart_token
+        self._log = _check.not_none(context.log)
+        self._session.headers["X-SmartToken"] = self.smart_token
 
     def _get_url(self, endpoint, *args):
         return f"{self._base_url}/{endpoint}" + ("/" + "/".join(args) if args else "")
 
     def _request(self, method, url, **kwargs):
+        response = Response()
+
         try:
-            response = self._client.request(method=method, url=url, **kwargs)
+            response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
-
             return response
-        except exceptions.HTTPError as e:
-            context = self.get_resource_context()
-
-            context.log.exception(e)
-
-            raise exceptions.HTTPError(response.text) from e
+        except HTTPError as e:
+            self._log.exception(e)
+            raise HTTPError(response.text) from e
 
     def get(self, endpoint, *args, **kwargs):
-        context = self.get_resource_context()
-
         url = self._get_url(*args, endpoint=endpoint)
-        context.log.debug(f"GET: {url}")
+        self._log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
     def post(self, endpoint, *args, **kwargs):
-        context = self.get_resource_context()
-
         url = self._get_url(*args, endpoint=endpoint)
-        context.log.debug(f"POST: {url}")
+        self._log.debug(f"POST: {url}")
 
         return self._request(
             method="POST", url=self._get_url(*args, endpoint=endpoint), **kwargs

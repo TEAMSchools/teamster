@@ -54,6 +54,7 @@ def _test_dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         elif set(node["depends_on"]["nodes"]) in new_code_version_node_names:
             pass
         else:
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
             context.selected_asset_keys.remove(node_asset_key)
 
     if context.selected_asset_keys:

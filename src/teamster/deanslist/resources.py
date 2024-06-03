@@ -1,20 +1,23 @@
 import gc
 
 import yaml
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
-from requests import Session, exceptions
+from requests import Response, Session
+from requests.exceptions import HTTPError
 
 
 class DeansListResource(ConfigurableResource):
     subdomain: str
     api_key_map: str
 
-    _client: Session = PrivateAttr(default_factory=Session)
+    _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()
     _api_key_map: dict = PrivateAttr()
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(context.log)
         self._base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
         with open(self.api_key_map) as f:
@@ -33,18 +36,18 @@ class DeansListResource(ConfigurableResource):
             return f"{self._base_url}/{api_version}/{endpoint}"
 
     def _request(self, method, url, params, **kwargs):
-        context = self.get_resource_context()
+        response = Response()
 
         try:
-            response = self._client.request(
+            response = self._session.request(
                 method=method, url=url, params=params, **kwargs
             )
 
             response.raise_for_status()
             return response
-        except exceptions.HTTPError as e:
-            context.log.exception(e)
-            raise exceptions.HTTPError(response.text) from e
+        except HTTPError as e:
+            self._log.exception(e)
+            raise HTTPError(response.text) from e
 
     def _parse_response(self, response):
         response_json = response.json()
@@ -69,11 +72,9 @@ class DeansListResource(ConfigurableResource):
         return {"row_count": total_row_count, "data": all_data}
 
     def get(self, api_version, endpoint, school_id, params, *args, **kwargs):
-        context = self.get_resource_context()
-
         url = self._get_url(*args, api_version=api_version, endpoint=endpoint)
 
-        context.log.info(f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}")
+        self._log.info(f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}")
 
         params["apikey"] = self._api_key_map[school_id]
 

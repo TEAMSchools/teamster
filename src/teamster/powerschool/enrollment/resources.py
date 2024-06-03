@@ -1,6 +1,7 @@
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
-from requests import Session, exceptions
+from requests import Response, Session
+from requests.exceptions import HTTPError
 
 
 class PowerSchoolEnrollmentResource(ConfigurableResource):
@@ -9,10 +10,12 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
     page_size: int = 50
 
     _base_url: str = PrivateAttr(default="https://registration.powerschool.com/api")
-    _client: Session = PrivateAttr(default_factory=Session)
+    _session: Session = PrivateAttr(default_factory=Session)
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._client.auth = (self.api_key, "")
+        self._log = _check.not_none(context.log)
+        self._session.auth = (self.api_key, "")
 
     def _get_url(self, endpoint, *args):
         if args:
@@ -21,16 +24,16 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
             return f"{self._base_url}/{self.api_version}/{endpoint}"
 
     def _request(self, method, url, **kwargs):
-        context = self.get_resource_context()
+        response = Response()
 
         try:
-            response = self._client.request(method=method, url=url, **kwargs)
-            response.raise_for_status()
+            response = self._session.request(method=method, url=url, **kwargs)
 
+            response.raise_for_status()
             return response
-        except exceptions.HTTPError as e:
-            context.log.exception(e)
-            raise exceptions.HTTPError(response.text) from e
+        except HTTPError as e:
+            self._log.exception(e)
+            raise HTTPError(response.text) from e
 
     def _parse_response(self, response):
         return response.json()
@@ -43,17 +46,16 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
         return self._parse_response(response)
 
     def get_all_records(self, endpoint, *args, **kwargs) -> list[dict]:
-        context = self.get_resource_context()
-        kwargs["params"] = {"pagesize": self.page_size}
-
         page = 1
         all_records = []
+        kwargs["params"] = {"pagesize": self.page_size}
+
         while True:
             kwargs["params"].update({"page": page})
 
             meta_data, records = self.get(endpoint, *args, **kwargs).values()
 
-            context.log.debug(meta_data)
+            self._log.debug(meta_data)
             all_records.extend(records)
 
             if page == meta_data["pageCount"]:
