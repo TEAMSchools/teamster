@@ -35,7 +35,7 @@ def airbyte_job_status_sensor(
         airbyte.make_request(endpoint="/connections", method="GET")
     )
 
-    for connection in _check.inst(connections["data"], dict):
+    for connection in _check.inst(connections["data"], list):
         connection_id = connection["connectionId"]
 
         last_updated = pendulum.from_timestamp(timestamp=cursor.get(connection_id, 0))
