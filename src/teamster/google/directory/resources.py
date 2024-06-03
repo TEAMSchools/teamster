@@ -72,6 +72,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         self, org_unit_path=None, org_unit_type=None, customer_id=None, **kwargs
     ):
         return (
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
             self._resource.orgunits()
             .list(
                 customerId=(customer_id or self.customer_id),
@@ -84,6 +85,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     def get_orgunit(self, org_unit_path, customer_id=None, **kwargs):
         return (
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
             self._resource.orgunits()
             .get(
                 customerId=(customer_id or self.customer_id),
@@ -101,6 +103,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         )
 
     def get_user(self, user_key, **kwargs):
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.users().get(userKey=user_key, **kwargs).execute()
 
     def list_groups(self, **kwargs):
@@ -132,9 +135,11 @@ class GoogleDirectoryResource(ConfigurableResource):
         )
 
     def insert_user(self, body):
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.users().insert(body=body).execute()
 
     def update_user(self, user_key, body):
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.users().update(userKey=user_key, body=body).execute()
 
     @staticmethod
@@ -180,9 +185,11 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(f"Processing batch {i + 1}")
 
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
 
             for user in batch:
+                # trunk-ignore(pyright/reportAttributeAccessIssue)
                 batch_request.add(self._resource.users().insert(body=user))
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
@@ -212,10 +219,12 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(f"Processing batch {i + 1}")
 
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
 
             for user in batch:
                 batch_request.add(
+                    # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.users().update(
                         userKey=user["primaryEmail"], body=user
                     )
@@ -243,11 +252,13 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(f"Processing batch {i + 1}")
 
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
 
             for member in batch:
                 self._log.info(f"ADDING {member['email']} to {member['groupKey']}")
                 batch_request.add(
+                    # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.members().insert(
                         groupKey=member["groupKey"], body=member
                     )
@@ -275,10 +286,12 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(f"Processing batch {i + 1}")
 
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
 
             for role_assignment in batch:
                 batch_request.add(
+                    # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.roleAssignments().insert(
                         customer=(customer or self.customer_id),
                         body=role_assignment,

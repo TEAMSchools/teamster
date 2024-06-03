@@ -125,13 +125,6 @@ SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     password=EnvVar("ADP_SFTP_PASSWORD"),
 )
 
-SSH_RESOURCE_BLISSBOOK = SSHResource(
-    remote_host=EnvVar("BLISSBOOK_SFTP_HOST"),
-    remote_port=int(EnvVar("BLISSBOOK_SFTP_PORT")),
-    username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
-    password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
-)
-
 SSH_RESOURCE_CLEVER = SSHResource(
     remote_host=EnvVar("CLEVER_SFTP_HOST"),
     username=EnvVar("CLEVER_SFTP_USERNAME"),
@@ -168,9 +161,16 @@ SSH_RESOURCE_IDAUTO = SSHResource(
     password=EnvVar("KTAF_SFTP_PASSWORD"),
 )
 
+SSH_RESOURCE_BLISSBOOK = SSHResource(
+    remote_host=EnvVar("BLISSBOOK_SFTP_HOST"),
+    remote_port=EnvVar("BLISSBOOK_SFTP_PORT"),
+    username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
+    password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
+)
+
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
-    remote_port=int(EnvVar("LITTLESIS_SFTP_PORT")),
+    remote_port=EnvVar("LITTLESIS_SFTP_PORT"),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )

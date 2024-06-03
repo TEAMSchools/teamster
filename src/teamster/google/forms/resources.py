@@ -28,6 +28,7 @@ class GoogleFormsResource(ConfigurableResource):
         ).forms()
 
     def get_form(self, form_id):
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.get(formId=form_id).execute()
 
     def list_responses(self, form_id, **kwargs):
@@ -36,6 +37,7 @@ class GoogleFormsResource(ConfigurableResource):
 
         while True:
             data: dict = (
+                # trunk-ignore(pyright/reportAttributeAccessIssue)
                 self._resource.responses()
                 .list(formId=form_id, pageToken=page_token, **kwargs)
                 .execute()
