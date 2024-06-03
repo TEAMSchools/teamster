@@ -1,5 +1,1 @@
-{
-  "include": ["src"],
-  "venv": ".venv",
-  "venvPath": "/workspaces/teamster"
-}
+{ "venv": ".venv", "venvPath": "/workspaces/teamster" }
