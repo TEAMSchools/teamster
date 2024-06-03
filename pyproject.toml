@@ -45,7 +45,6 @@ dev = [
   "pytest>=7.4.3",
   "datamodel-code-generator>=0.25.4",
   "dagster-webserver>=1.7.4",
-  "pyright>=1.1.365",
 ]
 
 [tool.pdm.scripts]

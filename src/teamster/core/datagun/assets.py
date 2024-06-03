@@ -5,11 +5,21 @@ import pathlib
 import re
 
 import pendulum
-from dagster import AssetExecutionContext, AssetKey, MultiPartitionsDefinition, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    _check,
+    asset,
+)
 from dagster_gcp import BigQueryResource, GCSResource
-from google.cloud import bigquery, storage
+from google.cloud.bigquery import Client as BigQueryClient
+from google.cloud.bigquery import DatasetReference, ExtractJobConfig
+from google.cloud.storage import Blob
+from google.cloud.storage import Client as CloudStorageClient
 from pandas import DataFrame
-from sqlalchemy import literal_column, select, table, text
+from sqlalchemy.sql.expression import literal_column, select, table, text
 
 from teamster.core.ssh.resources import SSHResource
 from teamster.core.utils.classes import CustomJSONEncoder
@@ -102,7 +112,7 @@ def load_sftp(
                         context.log.info(f"Creating directory: {path}")
                         sftp.mkdir(path=str(path))
 
-        if isinstance(data, storage.Blob):
+        if isinstance(data, Blob):
             context.log.info(f"Saving file to {destination_filepath}")
             with sftp.open(filename=str(destination_filepath), mode="w") as f:
                 data.download_to_file(file_obj=f)
@@ -159,10 +169,14 @@ def build_bigquery_query_sftp_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            partition_key = _check.inst(
+                obj=context.partition_key, ttype=MultiPartitionKey
+            )
+
+            substitutions = partition_key.keys_by_dimension
             query_value["where"] = [
                 f"_dagster_partition_{k.dimension_name} = '{k.partition_key}'"
-                for k in context.partition_key.dimension_keys  # type: ignore
+                for k in partition_key.dimension_keys
             ]
         else:
             substitutions = {
@@ -176,7 +190,7 @@ def build_bigquery_query_sftp_asset(
 
         query = construct_query(query_type=query_type, query_value=query_value)
 
-        db_bigquery: bigquery.Client = next(context.resources.db_bigquery)
+        db_bigquery: BigQueryClient = next(context.resources.db_bigquery)
 
         query_job = db_bigquery.query(query=query)
 
@@ -247,7 +261,11 @@ def build_bigquery_extract_sftp_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            partition_key = _check.inst(
+                obj=context.partition_key, ttype=MultiPartitionKey
+            )
+
+            substitutions = partition_key.keys_by_dimension
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
@@ -259,7 +277,7 @@ def build_bigquery_extract_sftp_asset(
         )
 
         # establish gcs blob
-        gcs: storage.Client = context.resources.gcs
+        gcs: CloudStorageClient = context.resources.gcs
 
         bucket = gcs.get_bucket(f"teamster-{code_location}")
 
@@ -272,14 +290,12 @@ def build_bigquery_extract_sftp_asset(
         # execute bq extract job
         bq_client = next(context.resources.db_bigquery)
 
-        dataset_ref = bigquery.DatasetReference(
-            project=bq_client.project, dataset_id=dataset_id
-        )
+        dataset_ref = DatasetReference(project=bq_client.project, dataset_id=dataset_id)
 
         extract_job = bq_client.extract_table(
             source=dataset_ref.table(table_id=table_id),
             destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
-            job_config=bigquery.ExtractJobConfig(**extract_job_config),
+            job_config=ExtractJobConfig(**extract_job_config),
         )
 
         extract_job.result()
@@ -336,7 +352,11 @@ def build_bigquery_extract_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            substitutions = context.partition_key.keys_by_dimension  # type: ignore
+            partition_key = _check.inst(
+                obj=context.partition_key, ttype=MultiPartitionKey
+            )
+
+            substitutions = partition_key.keys_by_dimension
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
@@ -358,14 +378,14 @@ def build_bigquery_extract_asset(
 
         # execute bq extract job
         with db_bigquery.get_client() as bq_client:
-            dataset_ref = bigquery.DatasetReference(
+            dataset_ref = DatasetReference(
                 project=bq_client.project, dataset_id=dataset_id
             )
 
             extract_job = bq_client.extract_table(
                 source=dataset_ref.table(table_id=table_id),
                 destination_uris=[f"gs://teamster-{code_location}/{blob.name}"],
-                job_config=bigquery.ExtractJobConfig(**extract_job_config),
+                job_config=ExtractJobConfig(**extract_job_config),
             )
 
             extract_job.result()

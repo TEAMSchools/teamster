@@ -1,7 +1,7 @@
 import json
 
 import pendulum
-from dagster import build_sensor_context
+from dagster import SensorResult, build_sensor_context
 
 from teamster.core.resources import BIGQUERY_RESOURCE
 from teamster.kipptaf.fivetran.sensors import fivetran_sync_status_sensor
@@ -29,7 +29,7 @@ def test_fivetran_sync_status_sensor():
         context=context, fivetran=FIVETRAN_RESOURCE, db_bigquery=BIGQUERY_RESOURCE
     )
 
-    asset_events = sensor_result.asset_events
+    assert isinstance(sensor_result, SensorResult)
 
-    context.log.info(msg=asset_events)
-    assert len(asset_events) > 0
+    context.log.info(msg=sensor_result.asset_events)
+    assert len(sensor_result.asset_events) > 0

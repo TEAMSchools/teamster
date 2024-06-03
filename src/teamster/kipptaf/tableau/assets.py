@@ -6,9 +6,11 @@ from dagster import (
     AssetsDefinition,
     AssetSpec,
     DailyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
+    _check,
     asset,
     config_from_files,
 )
@@ -48,8 +50,10 @@ asset_key = [*workbook_asset_def["key_prefix"], asset_name]
     **workbook_asset_def,
 )
 def workbook(context: AssetExecutionContext, tableau: TableauServerResource):
+    partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+
     workbook = tableau._server.workbooks.get_by_id(
-        context.partition_key.keys_by_dimension["workbook_id"]  # type: ignore
+        partition_key.keys_by_dimension["workbook_id"]
     )
 
     tableau._server.workbooks.populate_views(workbook_item=workbook, usage=True)

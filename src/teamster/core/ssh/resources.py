@@ -1,13 +1,16 @@
 import pathlib
 from stat import S_ISDIR, S_ISREG
 
+from dagster import _check
 from dagster_ssh import SSHResource as DagsterSSHResource
+from paramiko import SFTPAttributes
 from paramiko.sftp_client import SFTPClient
 from sshtunnel import SSHTunnelForwarder
 
 
 class SSHResource(DagsterSSHResource):
-    remote_port: str = "22"
+    # trunk-ignore(pyright/reportIncompatibleVariableOverride)
+    remote_port: str | None = None
     tunnel_remote_host: str | None = None
 
     def get_tunnel(
@@ -20,42 +23,27 @@ class SSHResource(DagsterSSHResource):
             remote_port=remote_port, remote_host=remote_host, local_port=local_port
         )
 
-    def listdir_attr_r(self, remote_dir: str, files: list | None = None):
-        if files is None:
-            files = []
+    def listdir_attr_r(self, remote_dir: str = "."):
+        with self.get_connection() as connection:
+            with connection.open_sftp() as sftp_client:
+                return self._inner_listdir_attr_r(
+                    sftp_client=sftp_client, remote_dir=remote_dir
+                )
 
-        with self.get_connection() as conn:
-            try:
-                with conn.open_sftp() as sftp_client:
-                    try:
-                        files = self._listdir_attr_r(
-                            sftp_client=sftp_client, remote_dir=remote_dir, files=files
-                        )
-                    finally:
-                        sftp_client.close()
-            finally:
-                conn.close()
-
-        return files
-
-    def _listdir_attr_r(
+    def _inner_listdir_attr_r(
         self, sftp_client: SFTPClient, remote_dir: str, files: list | None = None
-    ):
+    ) -> list[tuple[SFTPAttributes, str]]:
         if files is None:
             files = []
 
         for file in sftp_client.listdir_attr(remote_dir):
-            try:
-                filepath = str(pathlib.Path(remote_dir) / file.filepath)  # type: ignore
-            except AttributeError:
-                filepath = str(pathlib.Path(remote_dir) / file.filename)
+            path = str(pathlib.Path(remote_dir) / file.filename)
 
-            if S_ISDIR(file.st_mode):  # type: ignore
-                self._listdir_attr_r(
-                    sftp_client=sftp_client, remote_dir=filepath, files=files
+            if S_ISDIR(_check.not_none(value=file.st_mode)):
+                self._inner_listdir_attr_r(
+                    sftp_client=sftp_client, remote_dir=path, files=files
                 )
-            elif S_ISREG(file.st_mode):  # type: ignore
-                file.filepath = filepath  # type: ignore
-                files.append(file)
+            elif S_ISREG(_check.not_none(value=file.st_mode)):
+                files.append((file, path))
 
         return files

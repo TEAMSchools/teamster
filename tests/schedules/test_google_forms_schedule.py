@@ -8,5 +8,6 @@ def test_schedule():
 
     output = google_forms_asset_job_schedule(context=context)
 
+    assert output is not None
     for o in output:
         context.log.info(o)

@@ -1,6 +1,15 @@
 import random
 
-from dagster import EnvVar, instance_for_test, materialize
+from dagster import (
+    DynamicPartitionsDefinition,
+    EnvVar,
+    MultiPartitionsDefinition,
+    TextMetadataValue,
+    _check,
+    instance_for_test,
+    materialize,
+)
+from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import SSH_COUCHDROP, SSH_IREADY, get_io_manager_gcs_avro
 from teamster.core.ssh.resources import SSHResource
@@ -31,13 +40,19 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
-        .value
-        > 0
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    records = _check.inst(
+        event_specific_data.materialization.metadata["records"].value, int
+    )
+    assert records > 0
+    extras = _check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
+        ttype=TextMetadataValue,
+    )
+    assert extras.text == ""
 
 
 def test_edplan_kippcamden():
@@ -431,9 +446,16 @@ def test_deanslist_reconcile_suspensions_kipptaf():
 def test_adp_payroll_general_ledger_file_kipptaf():
     from teamster.kipptaf.adp.payroll.assets import general_ledger_file
 
-    partitions_def_name = (
-        general_ledger_file.partitions_def.get_partitions_def_for_dimension("date").name  # pyright: ignore[reportOptionalMemberAccess, reportAttributeAccessIssue]
+    partitions_def = _check.inst(
+        obj=general_ledger_file.partitions_def, ttype=MultiPartitionsDefinition
     )
+
+    date_partitions_def = _check.inst(
+        obj=partitions_def.get_partitions_def_for_dimension("date"),
+        ttype=DynamicPartitionsDefinition,
+    )
+
+    partitions_def_name = _check.not_none(value=date_partitions_def.name)
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(

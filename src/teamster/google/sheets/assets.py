@@ -1,15 +1,18 @@
 import re
 
-from dagster import AssetSpec
+from dagster import AssetSpec, _check
 
 
 def build_google_sheets_asset_spec(asset_key, uri, range_name):
-    re_match = re.match(
-        pattern=r"https:\/{2}docs\.google\.com\/spreadsheets\/d\/([\w-]+)", string=uri
+    match = _check.not_none(
+        value=re.match(
+            pattern=r"https:\/{2}docs\.google\.com\/spreadsheets\/d\/([\w-]+)",
+            string=uri,
+        )
     )
 
     return AssetSpec(
         key=asset_key,
-        metadata={"sheet_id": re_match.group(1), "range_name": range_name},  # pyright: ignore[reportOptionalMemberAccess]
+        metadata={"sheet_id": match.group(1), "range_name": range_name},
         group_name="google_sheets",
     )
