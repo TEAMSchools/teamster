@@ -235,33 +235,20 @@ select
     if(assign_score_converted > assign_max_score, 1, 0) as assign_score_above_max,
 
     if(
-        assign_is_exempt = 1
-        and assign_score_converted > 0
-        and assign_score_converted is not null,
-        1,
-        0
+        assign_is_exempt = 1 and assign_score_converted > 0 1, 0
     ) as assign_exempt_with_score,
 
     if(
-        assign_category_code = 'W'
-        and assign_score_converted is not null
-        and assign_score_converted < 5,
-        1,
-        0
+        assign_category_code = 'W' and assign_score_converted < 5, 1, 0
     ) as assign_w_score_less_5,
 
     if(
-        assign_category_code = 'F'
-        and assign_score_converted is not null
-        and assign_score_converted < 5,
-        1,
-        0
+        assign_category_code = 'F' and assign_score_converted < 5, 1, 0
     ) as assign_f_score_less_5,
 
     if(
         assign_is_missing = 1
         and assign_category_code = 'W'
-        and assign_score_converted is not null
         and assign_score_converted != 5,
         1,
         0
@@ -270,7 +257,6 @@ select
     if(
         assign_is_missing = 1
         and assign_category_code = 'F'
-        and assign_score_converted is not null
         and assign_score_converted != 5,
         1,
         0
