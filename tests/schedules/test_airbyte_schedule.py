@@ -20,5 +20,6 @@ def test_schedule():
         context=context, airbyte=AIRBYTE_CLOUD_RESOURCE
     )
 
+    assert output is not None
     for o in output:
         context.log.info(o)

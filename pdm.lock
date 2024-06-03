@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:cc72410a7efd4ccd7705049ea101829b45a17318ce9d3ae26f7cbe3014db3421"
+content_hash = "sha256:e3da69bfd604bd530dea370b1bdaf9a8c1fb6fd9e0155e7a281fa7e3066d631b"
 
 [[package]]
 name = "agate"
@@ -1873,17 +1873,6 @@ files = [
 ]
 
 [[package]]
-name = "nodeenv"
-version = "1.9.0"
-requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
-summary = "Node.js virtual environment builder"
-groups = ["dev"]
-files = [
-    {file = "nodeenv-1.9.0-py2.py3-none-any.whl", hash = "sha256:508ecec98f9f3330b636d4448c0f1a56fc68017c68f1e7857ebc52acf0eb879a"},
-    {file = "nodeenv-1.9.0.tar.gz", hash = "sha256:07f144e90dae547bf0d4ee8da0ee42664a42a04e02ed68e06324348dafe4bdb1"},
-]
-
-[[package]]
 name = "numpy"
 version = "1.26.4"
 requires_python = ">=3.9"
@@ -2444,20 +2433,6 @@ marker = "sys_platform == \"win32\" and python_version >= \"3.8\""
 files = [
     {file = "pyreadline3-3.4.1-py3-none-any.whl", hash = "sha256:b0efb6516fd4fb07b45949053826a62fa4cb353db5be2bbb4a7aa1fdd1e345fb"},
     {file = "pyreadline3-3.4.1.tar.gz", hash = "sha256:6f3d1f7b8a31ba32b73917cefc1f28cc660562f39aea8646d30bd6eff21f7bae"},
-]
-
-[[package]]
-name = "pyright"
-version = "1.1.365"
-requires_python = ">=3.7"
-summary = "Command line wrapper for pyright"
-groups = ["dev"]
-dependencies = [
-    "nodeenv>=1.6.0",
-]
-files = [
-    {file = "pyright-1.1.365-py3-none-any.whl", hash = "sha256:194d767a039f9034376b7ec8423841880ac6efdd061f3e283b4ad9fcd484a659"},
-    {file = "pyright-1.1.365.tar.gz", hash = "sha256:d7e69000939aed4bf823707086c30c84c005bdd39fac2dfb370f0e5be16c2ef2"},
 ]
 
 [[package]]

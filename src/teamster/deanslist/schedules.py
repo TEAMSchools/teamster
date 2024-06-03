@@ -4,6 +4,7 @@ from dagster import (
     MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
+    _check,
     schedule,
 )
 
@@ -45,7 +46,7 @@ def build_deanslist_multi_partition_asset_job_schedule(
     date_partition = partitions_def.get_partitions_def_for_dimension("date")
     school_partition = partitions_def.get_partitions_def_for_dimension("school")
 
-    last_date_partition_key = date_partition.get_last_partition_key()
+    last_date_partition_key = _check.not_none(date_partition.get_last_partition_key())
 
     if schedule_name is None:
         if isinstance(date_partition, MonthlyPartitionsDefinition):
@@ -69,7 +70,7 @@ def build_deanslist_multi_partition_asset_job_schedule(
     def _schedule(context: ScheduleEvaluationContext):
         for school in school_partition.get_partition_keys():
             partition_key = MultiPartitionKey(
-                {"school": school, "date": last_date_partition_key}  # type: ignore
+                {"school": school, "date": last_date_partition_key}
             )
 
             yield RunRequest(

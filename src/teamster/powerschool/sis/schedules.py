@@ -1,13 +1,17 @@
 import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
+    AssetMaterialization,
     AssetsDefinition,
+    EventLogEntry,
     RunRequest,
     ScheduleEvaluationContext,
+    _check,
     define_asset_job,
     schedule,
 )
 from sqlalchemy import text
+from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHResource
@@ -31,7 +35,7 @@ def build_powerschool_schedule(
         name=schedule_name,
         execution_timezone=execution_timezone,
         job=job,
-    )  # type: ignore
+    )
     def _schedule(
         context: ScheduleEvaluationContext,
         ssh_powerschool: SSHResource,
@@ -42,17 +46,25 @@ def build_powerschool_schedule(
         with ssh_powerschool.get_tunnel(
             remote_port=1521, local_port=1521
         ) as ssh_tunnel:
+            ssh_tunnel = _check.inst(ssh_tunnel, SSHTunnelForwarder)
+
             ssh_tunnel.start()
 
             for asset in asset_defs:
                 context.log.info(asset.key)
 
-                latest_materialization_event = (
-                    context.instance.get_latest_materialization_event(asset.key)
+                latest_materialization_event = _check.inst(
+                    context.instance.get_latest_materialization_event(asset.key),
+                    EventLogEntry,
+                )
+
+                asset_materialization = _check.inst(
+                    latest_materialization_event.asset_materialization,
+                    AssetMaterialization,
                 )
 
                 latest_materialization_timestamp = (
-                    latest_materialization_event.asset_materialization.metadata.get(
+                    asset_materialization.metadata.get(
                         "latest_materialization_timestamp"
                     )
                     if latest_materialization_event is not None
@@ -61,10 +73,10 @@ def build_powerschool_schedule(
 
                 latest_materialization_datetime = pendulum.from_timestamp(
                     timestamp=(
-                        latest_materialization_timestamp.value
+                        _check.inst(latest_materialization_timestamp.value, float)
                         if latest_materialization_timestamp is not None
                         else 0.0
-                    )  # type: ignore
+                    )
                 )
 
                 if latest_materialization_datetime.timestamp() == 0:
@@ -80,17 +92,20 @@ def build_powerschool_schedule(
                         ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
                     )
 
-                    [(count,)] = db_powerschool.engine.execute_query(
-                        query=text(
-                            # trunk-ignore(bandit/B608)
-                            f"SELECT COUNT(*) FROM {asset.key.path[-1]} "
-                            f"WHERE {partition_column} >= "
-                            f"TO_TIMESTAMP('{latest_materialization_fmt}', "
-                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                    [(count,)] = _check.inst(
+                        db_powerschool.engine.execute_query(
+                            query=text(
+                                # trunk-ignore(bandit/B608)
+                                f"SELECT COUNT(*) FROM {asset.key.path[-1]} "
+                                f"WHERE {partition_column} >= "
+                                f"TO_TIMESTAMP('{latest_materialization_fmt}', "
+                                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                            ),
+                            partition_size=1,
+                            output_format=None,
                         ),
-                        partition_size=1,
-                        output_format=None,
-                    )  # type: ignore
+                        list[tuple],
+                    )
 
                     context.log.info(f"count: {count}")
 

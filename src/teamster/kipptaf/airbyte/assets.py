@@ -1,6 +1,6 @@
 import pathlib
 
-from dagster import AssetKey, AssetsDefinition, AssetSpec, config_from_files
+from dagster import AssetKey, AssetSpec, config_from_files
 
 from teamster.core.definitions.external_asset import external_assets_from_specs
 from teamster.kipptaf import CODE_LOCATION
@@ -17,6 +17,4 @@ specs = [
     for table in a["destination_tables"]
 ]
 
-assets: list[AssetsDefinition] = external_assets_from_specs(
-    specs=specs, compute_kind="airbyte"
-)
+assets = external_assets_from_specs(specs=specs, compute_kind="airbyte")

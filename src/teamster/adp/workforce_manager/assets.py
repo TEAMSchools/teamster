@@ -6,10 +6,12 @@ from dagster import (
     AutoMaterializePolicy,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     OpExecutionContext,
     Output,
     StaticPartitionsDefinition,
+    _check,
     asset,
 )
 from numpy import nan
@@ -47,21 +49,27 @@ def build_adp_wfm_asset(
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
-        symbolic_id = context.partition_key.keys_by_dimension["symbolic_id"]  # type:ignore
+        partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+
+        symbolic_id = partition_key.keys_by_dimension["symbolic_id"]
+
+        symbolic_period_response = _check.not_none(
+            adp_wfm.get(endpoint="v1/commons/symbolicperiod")
+        )
 
         symbolic_period_record = [
             sp
-            for sp in adp_wfm.get(endpoint="v1/commons/symbolicperiod").json()
+            for sp in symbolic_period_response.json()
             if sp["symbolicId"] == symbolic_id
         ][0]
 
+        hyperfind_response = _check.not_none(
+            adp_wfm.get(endpoint="v1/commons/hyperfind")
+        )
+
         hyperfind_record = [
             hq
-            for hq in (
-                adp_wfm.get(endpoint="v1/commons/hyperfind")
-                .json()
-                .get("hyperfindQueries")
-            )
+            for hq in hyperfind_response.json().get("hyperfindQueries")
             if hq["name"] == asset.metadata_by_key[asset.key]["hyperfind"]
         ][0]
 
@@ -69,31 +77,41 @@ def build_adp_wfm_asset(
             f"Executing {report_name}:\n{symbolic_period_record}\n{hyperfind_record}"
         )
 
-        report_execution_response = adp_wfm.post(
-            endpoint=f"v1/platform/reports/{report_name}/execute",
-            json={
-                "parameters": [
-                    {"name": "DataSource", "value": {"hyperfind": hyperfind_record}},
-                    {
-                        "name": "DateRange",
-                        "value": {"symbolicPeriod": symbolic_period_record},
-                    },
-                    {
-                        "name": "Output Format",
-                        "value": {"key": "csv", "title": "CSV"},
-                    },  # undocumented: where does this come from?
-                ]
-            },
-        ).json()
+        report_execution_response = _check.not_none(
+            adp_wfm.post(
+                endpoint=f"v1/platform/reports/{report_name}/execute",
+                json={
+                    "parameters": [
+                        {
+                            "name": "DataSource",
+                            "value": {"hyperfind": hyperfind_record},
+                        },
+                        {
+                            "name": "DateRange",
+                            "value": {"symbolicPeriod": symbolic_period_record},
+                        },
+                        {
+                            "name": "Output Format",
+                            "value": {"key": "csv", "title": "CSV"},
+                        },  # undocumented: where does this come from?
+                    ]
+                },
+            )
+        )
 
-        context.log.info(report_execution_response)
+        report_execution_response_json = report_execution_response.json()
 
-        report_execution_id = report_execution_response.get("id")
+        context.log.info(report_execution_response_json)
+        report_execution_id = report_execution_response_json.get("id")
+
+        report_executions_response = _check.not_none(
+            adp_wfm.get(endpoint="v1/platform/report_executions")
+        )
 
         while True:
             report_execution_record = [
                 rex
-                for rex in adp_wfm.get(endpoint="v1/platform/report_executions").json()
+                for rex in report_executions_response.json()
                 if rex.get("id") == report_execution_id
             ][0]
 
@@ -102,15 +120,19 @@ def build_adp_wfm_asset(
             if report_execution_record.get("status").get("qualifier") == "Completed":
                 context.log.info(f"Downloading {report_name}")
 
-                report_file_text = adp_wfm.get(
-                    endpoint=f"v1/platform/report_executions/{report_execution_id}/file"
-                ).text
+                file_response = _check.not_none(
+                    adp_wfm.get(
+                        endpoint=(
+                            f"v1/platform/report_executions/{report_execution_id}/file"
+                        )
+                    )
+                )
 
                 break
 
             time.sleep(5)
 
-        df = read_csv(filepath_or_buffer=StringIO(report_file_text), low_memory=False)
+        df = read_csv(filepath_or_buffer=StringIO(file_response.text), low_memory=False)
 
         df.replace({nan: None}, inplace=True)
         df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
