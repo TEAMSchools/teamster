@@ -45,13 +45,14 @@ with
                     assessment_id,
                     assessment_number,
                     assessment_status,
+                    _dagster_partition_subject as star_subject,
                     case
                         when _dagster_partition_subject = 'SR'
                         then 'Reading'
                         when _dagster_partition_subject = 'SM'
                         then 'Math'
                         when _dagster_partition_subject = 'SEL'
-                        then 'Early Literacy'
+                        then 'Reading'
                     end as subject,
                     case
                         when screening_period_window_name = 'Fall'
@@ -111,6 +112,7 @@ select
     s.standard_description,
     s.standard_mastery_level,
     s.standard_percent_mastery,
+    s.star_subject,
     s.rn_subject_round_star,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
