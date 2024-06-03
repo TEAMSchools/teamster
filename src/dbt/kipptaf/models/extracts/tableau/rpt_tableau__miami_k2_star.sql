@@ -19,6 +19,7 @@ with
             sub.assessment_number,
             sub.assessment_status,
             sub.subject,
+            sub.star_subject,
             sub.administration_window,
             d.domain_name,
             d.domain_mastery_level,
