@@ -34,7 +34,7 @@ def adp_payroll_sftp_sensor(
 
     try:
         files = ssh_couchdrop.listdir_attr_r(
-            remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll", files=[]
+            f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
         )
     except Exception as e:
         context.log.exception(e)
@@ -61,15 +61,15 @@ def adp_payroll_sftp_sensor(
         )
 
         file_matches = [
-            f
-            for f in files
-            if pattern.match(string=f.filepath)
-            and f.st_mtime > tick_cursor
-            and f.st_size > 0
+            (f, path)
+            for f, path in files
+            if pattern.match(string=path)
+            and _check.not_none(f.st_mtime) > tick_cursor
+            and _check.not_none(f.st_size) > 0
         ]
 
-        for f in file_matches:
-            match = _check.not_none(value=pattern.match(string=f.filepath))
+        for f, path in file_matches:
+            match = _check.not_none(value=pattern.match(string=path))
 
             group_dict = match.groupdict()
 

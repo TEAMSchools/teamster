@@ -8,6 +8,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    _check,
     sensor,
 )
 
@@ -34,7 +35,7 @@ def build_iready_sftp_sensor(
         run_requests = []
 
         try:
-            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir, files=[])
+            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir)
         except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
@@ -46,12 +47,16 @@ def build_iready_sftp_sensor(
             context.log.info(asset_identifier)
             last_run = cursor.get(asset_identifier, 0)
 
-            for f in files:
+            for f, _ in files:
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
-                if match is not None and f.st_mtime > last_run and f.st_size > 0:
+                if (
+                    match is not None
+                    and f.st_mtime > last_run
+                    and _check.not_none(f.st_size) > 0
+                ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     run_requests.append(
                         RunRequest(

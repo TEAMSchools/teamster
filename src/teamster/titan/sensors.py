@@ -7,6 +7,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    _check,
     sensor,
 )
 from paramiko.ssh_exception import SSHException
@@ -31,7 +32,7 @@ def build_titan_sftp_sensor(
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
-            files = ssh_titan.listdir_attr_r(remote_dir=".", files=[])
+            files = ssh_titan.listdir_attr_r()
         except SSHException as e:
             context.log.error(e)
             raise SSHException from e
@@ -47,14 +48,14 @@ def build_titan_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
-            for f in files:
+            for f, _ in files:
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    if f.st_mtime > last_run and f.st_size > 0:
+                    if f.st_mtime > last_run and _check.not_none(f.st_size) > 0:
                         run_requests.append(
                             RunRequest(
                                 run_key=f"{asset_identifier}_{f.st_mtime}",

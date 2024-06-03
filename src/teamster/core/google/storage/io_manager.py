@@ -1,13 +1,14 @@
+from typing import BinaryIO
 from urllib.parse import urlparse
 
 import fastavro
 import pendulum
-from dagster import Any, InputContext, MultiPartitionKey, OutputContext
+from dagster import Any, InputContext, MultiPartitionKey, OutputContext, _check
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
-from google.cloud import storage
+from google.cloud.storage import Bucket
 from upath import UPath
 
 from teamster.core.utils.classes import FiscalYear
@@ -102,12 +103,12 @@ class AvroGCSIOManager(GCSUPathIOManager):
         super().__init__(bucket, client, prefix)
 
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        bucket_obj: storage.Bucket = self.bucket_obj
+        blob = self.bucket_obj.blob(blob_name=str(path))
 
-        return fastavro.reader(fo=bucket_obj.blob(blob_name=str(path)).open("wb"))  # type: ignore
+        return fastavro.reader(fo=_check.inst(obj=blob.open("rb"), ttype=BinaryIO))
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        bucket_obj: storage.Bucket = self.bucket_obj
+        bucket_obj: Bucket = self.bucket_obj
         records, schema = obj
 
         if self.test:
@@ -141,7 +142,7 @@ class FileGCSIOManager(GCSUPathIOManager):
         return urlparse(self._uri_for_path(path))
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        bucket_obj: storage.Bucket = self.bucket_obj
+        bucket_obj: Bucket = self.bucket_obj
 
         if self.path_exists(path):
             context.log.warning(f"Removing existing GCS key: {path}")

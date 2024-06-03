@@ -1,10 +1,10 @@
 import copy
 import gc
 
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
-from requests import Session
+from requests import Response, Session
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
 
@@ -15,18 +15,21 @@ class SchoolMintGrowResource(ConfigurableResource):
     district_id: str
     api_response_limit: int = 100
 
-    _client: Session = PrivateAttr(default_factory=Session)
+    _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr(default="https://grow-api.schoolmint.com")
     _default_params: dict = PrivateAttr()
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(context.log)
+
         self._default_params = {
             "limit": self.api_response_limit,
             "district": self.district_id,
             "skip": 0,
         }
 
-        self._client.headers.update(
+        self._session.headers.update(
             {
                 "Accept": "application/json",
                 "Content-Type": "application/json",
@@ -49,25 +52,23 @@ class SchoolMintGrowResource(ConfigurableResource):
         )
 
     def _request(self, method, url, **kwargs):
+        response = Response()
+
         try:
-            response = self._client.request(method=method, url=url, **kwargs)
+            response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
-
             return response
         except HTTPError as e:
-            self.get_resource_context().log.error(response.text)
-
+            self._log.error(response.text)
             raise HTTPError() from e
 
     def get(self, endpoint, *args, **kwargs):
-        context = self.get_resource_context()
         url = self._get_url(endpoint, *args)
         params = copy.deepcopy(self._default_params)
 
         params.update(kwargs)
-
-        context.log.debug(f"GET: {url}\nPARAMS: {params}")
+        self._log.debug(f"GET: {url}\nPARAMS: {params}")
 
         if args:
             response = self._request(method="GET", url=url, params=params)
@@ -108,7 +109,7 @@ class SchoolMintGrowResource(ConfigurableResource):
                 else:
                     params["skip"] += params["limit"]
 
-                context.log.debug(params)
+                self._log.debug(params)
 
             all_data["count"] = count
 
@@ -117,20 +118,17 @@ class SchoolMintGrowResource(ConfigurableResource):
     def post(self, endpoint, *args, **kwargs):
         url = self._get_url(endpoint, *args)
 
-        self.get_resource_context().log.debug(f"POST: {url}")
-
+        self._log.debug(f"POST: {url}")
         return self._request(method="POST", url=url, **kwargs).json()
 
     def put(self, endpoint, *args, **kwargs):
         url = self._get_url(endpoint, *args)
 
-        self.get_resource_context().log.debug(f"PUT: {url}")
-
+        self._log.debug(f"PUT: {url}")
         return self._request(method="PUT", url=url, **kwargs).json()
 
     def delete(self, endpoint, *args):
         url = self._get_url(endpoint, *args)
 
-        self.get_resource_context().log.debug(f"DELETE: {url}")
-
+        self._log.debug(f"DELETE: {url}")
         return self._request(method="DELETE", url=url).json()
