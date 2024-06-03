@@ -23,7 +23,7 @@ job = define_asset_job(
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 def tableau_workbook_asset_job_schedule(context: ScheduleEvaluationContext):
-    partitions_def: MultiPartitionsDefinition = workbook.partitions_def
+    partitions_def = _check.inst(workbook.partitions_def, MultiPartitionsDefinition)
 
     workbook_id_partition = partitions_def.get_partitions_def_for_dimension(
         "workbook_id"

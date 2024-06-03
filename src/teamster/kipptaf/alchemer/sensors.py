@@ -4,9 +4,11 @@ import time
 import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
+    DynamicPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    _check,
     sensor,
 )
 from requests.exceptions import HTTPError
@@ -36,7 +38,7 @@ def alchemer_survey_metadata_asset_sensor(
         survey.key
     )
 
-    survey_partitions_def_name = survey.partitions_def.name
+    partitions_def = _check.inst(survey.partitions_def, DynamicPartitionsDefinition)
 
     run_requests = []
     dynamic_partitions_requests = []
@@ -72,7 +74,7 @@ def alchemer_survey_metadata_asset_sensor(
         if is_run_request:
             dynamic_partitions_requests.append(
                 AddDynamicPartitionsRequest(
-                    partitions_def_name=survey_partitions_def_name,
+                    partitions_def_name=_check.not_none(partitions_def.name),
                     partition_keys=[survey_id],
                 )
             )
@@ -111,6 +113,13 @@ def alchemer_survey_response_asset_sensor(
     available via the API can be upwards of 5 minutes.
     """
     now = pendulum.now(tz="America/New_York").subtract(minutes=15).start_of("minute")
+
+    survey_response_partitions_def = _check.inst(
+        survey_response.partitions_def, DynamicPartitionsDefinition
+    )
+    survey_response_disqualified_partitions_def = _check.inst(
+        survey_response_disqualified.partitions_def, DynamicPartitionsDefinition
+    )
     cursor: dict = json.loads(context.cursor or "{}")
 
     run_requests = []
@@ -193,11 +202,15 @@ def alchemer_survey_response_asset_sensor(
         cursor=json.dumps(obj=cursor),
         dynamic_partitions_requests=[
             AddDynamicPartitionsRequest(
-                partitions_def_name=survey_response.partitions_def.name,
+                partitions_def_name=_check.not_none(
+                    survey_response_partitions_def.name
+                ),
                 partition_keys=survey_response_partition_keys,
             ),
             AddDynamicPartitionsRequest(
-                partitions_def_name=survey_response_disqualified.partitions_def.name,
+                partitions_def_name=_check.not_none(
+                    survey_response_disqualified_partitions_def.name
+                ),
                 partition_keys=survey_response_dq_partition_keys,
             ),
         ],
