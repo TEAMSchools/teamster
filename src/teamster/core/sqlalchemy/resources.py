@@ -3,9 +3,9 @@ import json
 import pathlib
 from typing import Iterator, Sequence
 
+import fastavro
 import oracledb
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
-from fastavro import parse_schema, writer
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, Row, create_engine, result
 
@@ -36,67 +36,63 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         connect_kwargs: dict | None = None,
         output_format=None,
         data_filepath="env/data.avro",
-        call_timeout=0,
     ):
         if connect_kwargs is None:
             connect_kwargs = {}
 
+        data_filepath = pathlib.Path(data_filepath).absolute()
+
         self._log.info("Opening connection to engine")
         with self._engine.connect(**connect_kwargs) as conn:
-            conn.call_timeout = call_timeout
-
             self._log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
 
             if output_format in ["dict", "json"]:
-                self._log.info("Retrieving rows from all partitions")
-
                 cursor_result = cursor_result.mappings()
 
                 output = self.result_to_dict_list(
-                    partitions=cursor_result.partitions(size=partition_size)
+                    cursor_result.partitions(partition_size)
                 )
-
-                if output_format == "json":
-                    output = json.dumps(obj=output, cls=CustomJSONEncoder)
-
-                self._log.info(f"Retrieved {len(output)} rows")
             elif output_format == "avro":
-                avro_schema = parse_schema(
-                    {
-                        "type": "record",
-                        "name": query.get_final_froms()[0].name,
-                        "fields": [
-                            {
-                                "name": col[0].lower(),
-                                "type": [
-                                    "null",
-                                    *ORACLE_AVRO_SCHEMA_TYPES.get(col[1].name, []),
-                                ],
-                                "default": None,
-                            }
-                            for col in _check.not_none(cursor_result.cursor).description
-                        ],
-                    }
-                )
+                fields = []
+                schema = {"type": "record", "name": query.get_final_froms()[0].name}
+                cursor = _check.not_none(cursor_result.cursor)
+
+                for col in cursor.description:
+                    col = _check.inst(col, oracledb.FetchInfo)
+
+                    fields.append(
+                        {
+                            "name": col.name.lower(),
+                            "type": [
+                                "null",
+                                *ORACLE_AVRO_SCHEMA_TYPES.get(col.type.name, []),
+                            ],
+                            "default": None,
+                        }
+                    )
+
+                schema["fields"] = fields
+
+                parsed_schema = fastavro.parse_schema(schema=schema)
 
                 output = self.result_to_avro(
-                    partitions=cursor_result.partitions(size=partition_size),
-                    schema=avro_schema,
-                    data_filepath=pathlib.Path(data_filepath).absolute(),
+                    partitions=cursor_result.partitions(partition_size),
+                    schema=parsed_schema,
+                    data_filepath=data_filepath,
                 )
             else:
-                self._log.info("Retrieving rows from all partitions")
-
                 output = self.result_to_tuple_list(
-                    partitions=cursor_result.partitions(size=partition_size)
+                    partitions=cursor_result.partitions(partition_size)
                 )
 
-                self._log.info(f"Retrieved {len(output)} rows")
+        if output_format == "json":
+            output = json.dumps(obj=output, cls=CustomJSONEncoder)
 
         return output
 
     def result_to_tuple_list(self, partitions) -> list[tuple]:
+        self._log.info("Retrieving rows from all partitions")
         pt_rows = [rows for pt in partitions for rows in pt]
 
         self._log.debug("Unpacking partition rows")
@@ -105,9 +101,11 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         del pt_rows
         gc.collect()
 
+        self._log.info(f"Retrieved {len(output_data)} rows")
         return output_data
 
     def result_to_dict_list(self, partitions):
+        self._log.info("Retrieving rows from all partitions")
         pt_rows = [rows for pt in partitions for rows in pt]
 
         self._log.debug("Unpacking partition rows")
@@ -116,6 +114,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         del pt_rows
         gc.collect()
 
+        self._log.info(f"Retrieved {len(output_data)} rows")
         return output_data
 
     def result_to_avro(
@@ -128,7 +127,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         data_filepath.parent.mkdir(parents=True, exist_ok=True)
 
         with data_filepath.open("wb") as fo:
-            writer(
+            fastavro.writer(
                 fo=fo,
                 schema=schema,
                 records=[],
@@ -141,15 +140,15 @@ class SqlAlchemyEngineResource(ConfigurableResource):
 
         for i, pt in enumerate(partitions):
             self._log.debug(f"Retrieving rows from partition {i}")
-
             data = [row._mapping for row in pt]
+
             del pt
             gc.collect()
 
             len_data += len(data)
 
             self._log.debug(f"Saving partition {i}")
-            writer(
+            fastavro.writer(
                 fo=fo,
                 schema=schema,
                 records=data,
