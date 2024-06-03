@@ -1,6 +1,6 @@
 import json
 
-from dagster import build_sensor_context
+from dagster import SensorResult, build_sensor_context
 
 from teamster.kipptaf.resources import TABLEAU_SERVER_RESOURCE
 from teamster.kipptaf.tableau.sensors import tableau_asset_sensor
@@ -17,7 +17,7 @@ def test_tableau_asset_sensor():
         context=context, tableau=TABLEAU_SERVER_RESOURCE
     )
 
-    asset_events = sensor_result.asset_events
+    assert isinstance(sensor_result, SensorResult)
 
-    context.log.info(msg=asset_events)
-    assert len(asset_events) > 0
+    context.log.info(msg=sensor_result.asset_events)
+    assert len(sensor_result.asset_events) > 0

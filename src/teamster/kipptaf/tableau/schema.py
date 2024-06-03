@@ -1,3 +1,4 @@
+# trunk-ignore-all(pyright/reportIncompatibleVariableOverride)
 import json
 
 import py_avro_schema

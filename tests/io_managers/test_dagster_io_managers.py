@@ -7,9 +7,11 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
+    _check,
     asset,
     materialize,
 )
+from dagster._core.events import HandledOutputData
 from dagster_gcp import GCSResource
 
 from teamster import GCS_PROJECT_NAME
@@ -69,9 +71,11 @@ def _test_asset_handle_output_path(
         e for e in result.all_node_events if e.event_type_value == "HANDLED_OUTPUT"
     ][0]
 
-    assert (
-        handled_output_event.event_specific_data.metadata["path"].value
-    ) == expected_path
+    event_specific_data = _check.inst(
+        handled_output_event.event_specific_data, HandledOutputData
+    )
+
+    assert (event_specific_data.metadata["path"].value) == expected_path
 
 
 def test_avro_handle_asset():
