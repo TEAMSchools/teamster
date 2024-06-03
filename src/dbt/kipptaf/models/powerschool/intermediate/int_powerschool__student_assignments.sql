@@ -135,7 +135,7 @@ with
             and a.iscountedinfinalgrade = 1
             and a.duedate between co.cc_dateenrolled and co.cc_dateleft
             and a.scoretype in ('POINTS', 'PERCENT')
-            and gb.storecode not in ('Q1', 'Q2', 'Q3', 'Q4')
+            and left(gb.storecode, 1) not in ('Q', 'H')
     ),
 
     assign_2 as (
@@ -235,7 +235,7 @@ select
     if(assign_score_converted > assign_max_score, 1, 0) as assign_score_above_max,
 
     if(
-        assign_is_exempt = 1 and assign_score_converted > 0 1, 0
+        assign_is_exempt = 1 and assign_score_converted > 0, 1, 0
     ) as assign_exempt_with_score,
 
     if(
