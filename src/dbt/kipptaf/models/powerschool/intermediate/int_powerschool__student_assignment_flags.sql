@@ -59,9 +59,8 @@ select distinct
     studentid,
     student_number,
     grade_level,
-    student_course_entry_date,
     course_number,
-    `section`,
+    section_or_period,
     sectionid,
     sections_dcid,
     assign_quarter,
@@ -78,7 +77,7 @@ select distinct
     assign_score_raw,
     assign_score_converted,
     assign_max_score,
-    quarter_week_number,
+    audit_qt_week_number,
 
     assign_null_score,
     assign_score_above_max,
@@ -98,7 +97,7 @@ from
             'assign_w_score_less_5',
             'assign_f_score_less_5',
             'assign_w_missing_score_not_5',
-            'assign_s_score_less_50p',
-            'assign_f_missing_score_not_5'
+            'assign_f_missing_score_not_5',
+            'assign_s_score_less_50p'
         )
     )
