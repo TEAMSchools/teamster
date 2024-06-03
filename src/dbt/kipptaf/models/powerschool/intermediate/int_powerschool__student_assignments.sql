@@ -263,7 +263,9 @@ select
     ) as assign_f_missing_score_not_5,
 
     if(
-        assign_score_converted < (assign_max_score / 2), 1, 0
+        assign_category_code = 'S' and assign_score_converted < (assign_max_score / 2),
+        1,
+        0
     ) as assign_s_score_less_50p,
 
 from assign_2
