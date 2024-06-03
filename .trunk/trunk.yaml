@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - pyright@1.1.365
+    - pyright
     - actionlint@1.7.1
     - bandit@1.7.8
     - git-diff-check
@@ -66,6 +66,10 @@ lint:
       commands:
         - name: format
           enabled: true
+    - name: pyright
+      commands:
+        - name: lint
+          run: /workspaces/teamster/.venv/bin/pyright --outputjson ${target}
 runtimes:
   enabled:
     - go@1.21.0
