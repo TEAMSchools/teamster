@@ -20,11 +20,10 @@
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
   "testing.showAllMessages": true,
-  "trunk.numJobs": 1,
   "files.associations": {
-    "*.toml": "toml",
     "*.env": "shellscript",
-    "*.sql": "jinja-sql"
+    "*.sql": "jinja-sql",
+    "*.toml": "toml"
   },
   "files.exclude": {
     "**/.git": false,
