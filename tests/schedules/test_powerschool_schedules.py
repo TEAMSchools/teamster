@@ -12,5 +12,6 @@ def test_schedule():
             db_powerschool=DB_POWERSCHOOL,
         )
 
+        assert output is not None
         for o in output:
             context.log.info(o)

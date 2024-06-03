@@ -23,5 +23,6 @@ def test_powerschool_sensor():
         db_powerschool=DB_POWERSCHOOL,
     )
 
+    assert sensor_results is not None
     for result in sensor_results:
         context.log.info(result)
