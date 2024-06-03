@@ -42,14 +42,11 @@ with
                     assign_w_score_less_5,
                     assign_f_score_less_5,
                     assign_w_missing_score_not_5,
-                    assign_s_score_less_50p,
-                    assign_f_missing_score_not_5
+                    assign_f_missing_score_not_5,
+                    assign_s_score_less_50p
                 )
             )
-        where
-            student_flag_value = 1
-            and concat(assign_category_code, student_flag_name)
-            not in ('Wassign_s_score_less_50p', 'Fassign_s_score_less_50p')
+        where student_flag_value = 1
     )
 
 select distinct
