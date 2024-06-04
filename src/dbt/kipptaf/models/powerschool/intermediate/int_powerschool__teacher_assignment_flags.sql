@@ -67,6 +67,11 @@ with
                 'Fqt_teacher_s_total_less_200'
             )*/
     )
+select *
+from
+    teacher_unpivot_flags
+
+    /*
 
 select distinct
     _dbt_source_relation,
@@ -131,4 +136,5 @@ from
             'f_expected_assign_count_not_met',
             's_expected_assign_count_not_met'
         )
-    )
+    )*/
+    
