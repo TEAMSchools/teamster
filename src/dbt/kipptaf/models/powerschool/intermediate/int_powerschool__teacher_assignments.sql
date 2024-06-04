@@ -20,6 +20,8 @@ with
 
             1 as counter,
 
+            if(t.name in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
+
             if(
                 t.grade_band in ('ES', 'MS'),
                 s.sections_section_number,
@@ -92,6 +94,7 @@ with
             t.sections_dcid,
             t.expected_teacher_assign_category_code,
             t.expected_teacher_assign_category_name,
+            t.teacher_semester_code,
             t.teacher_quarter,
             t.counter,
 
@@ -134,6 +137,7 @@ with
             t.section_or_period,
             t.sectionid,
             t.sections_dcid,
+            t.teacher_semester_code,
             t.teacher_quarter,
             t.audit_yr_week_number,
             t.audit_qt_week_number,
@@ -152,26 +156,15 @@ with
 
             if(a.assignmentid is null, 0, 1) as teacher_assign_count,
 
-            if(t.teacher_quarter in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
-
         from assign_2 as t
         inner join
-            {{ ref("int_powerschool__section_grade_config") }} as gb
-            on t.sections_dcid = gb.sections_dcid
-            and t.expected_teacher_assign_category_name = gb.category_name
-            and gb.grading_formula_weighting_type != 'Total_Points'
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="gb") }}
-        left join
             {{ ref("int_powerschool__student_assignments") }} as a
-            on gb.sections_dcid = a.sectionsdcid
-            and gb.category_id = a.category_id
-            and a.duedate between t.audit_start_date and t.audit_end_date
-            and a.category_name = t.expected_teacher_assign_category_name
-            and a.iscountedinfinalgrade = 1
-            and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
-        where
-            a.scoretype in ('POINTS', 'PERCENT')
-            and left(gb.storecode, 1) not in ('Q', 'H')
+            on t.course_number = a.course_number
+            and t.sections_dcid = a.sections_dcid
+            and t.teacher_number = a.teacher_number
+            and t.expected_teacher_assign_category_name = a.assign_category
+            and t.teacher_assign_id = a.assign_id
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
     ),
 
     assign_4 as (
