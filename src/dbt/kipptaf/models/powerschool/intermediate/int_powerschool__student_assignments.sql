@@ -18,7 +18,6 @@ with
             enr.grade_level,
             enr.school_level,
 
-            gb.storecode as assign_category_quarter,
             gb.category_name as assign_category,
 
             a.scoretype as assign_score_type,
@@ -37,19 +36,23 @@ with
 
             1 as counter,
 
-            if(
-                enr.region = 'Miami'
-                and enr.grade_level <= 4
-                and gb.category_name != 'Work Habits',
-                concat(left(gb.category_name, 1), right(gb.storecode, 1)),
-                left(gb.storecode, 1)
-            ) as assign_category_code,
+            concat(
+                left(gb.category_name, 1), right(gb.storecode, 1)
+            ) as assign_category_quarter,
 
             coalesce(s.islate, 0) as assign_is_late,
             coalesce(s.isexempt, 0) as assign_is_exempt,
             coalesce(s.ismissing, 0) as assign_is_missing,
 
             concat('Q', right(gb.storecode, 1)) as assign_quarter,
+
+            if(
+                enr.region = 'Miami'
+                and enr.grade_level <= 4
+                and gb.category_name != 'Work Habits',
+                left(gb.category_name, 1),
+                left(gb.storecode, 1)
+            ) as assign_category_code,
 
             if(ap.ap_course_subject is null, 0, 1) as ap_course,
 
