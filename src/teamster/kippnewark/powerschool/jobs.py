@@ -1,6 +1,6 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, define_asset_job
 
-from .assets import nonpartition_assets
+from teamster.kippnewark.powerschool.assets import nonpartition_assets
 
 powerschool_nonpartition_asset_job = define_asset_job(
     name="powerschool_nonpartition_asset_job",
@@ -8,6 +8,6 @@ powerschool_nonpartition_asset_job = define_asset_job(
     tags={MAX_RUNTIME_SECONDS_TAG: (60 * 7)},
 )
 
-_all = [
+jobs = [
     powerschool_nonpartition_asset_job,
 ]

@@ -281,6 +281,116 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: credential
+              - name: ADP_SFTP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-adp-wfn-sftp
+                    key: ip
+              - name: BLISSBOOK_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-blissbook-sftp
+                    key: host
+              - name: BLISSBOOK_SFTP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-blissbook-sftp
+                    key: port
+              - name: CLEVER_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-clever-sftp
+                    key: host
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: COUPA_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-sftp
+                    key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain
+              - name: DEANSLIST_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-sftp
+                    key: host
+              - name: EGENCIA_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-egencia-sftp
+                    key: host
+              - name: GOOGLE_WORKSPACE_CUSTOMER_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-google-admin-service-account
+                    key: customer-id
+              - name: GOOGLE_DIRECTORY_DELEGATED_ACCOUNT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-google-admin-service-account
+                    key: username
+              - name: ILLUMINATE_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-sftp
+                    key: host
+              - name: IREADY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: host
+              - name: KTAF_SFTP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-idauto-sftp
+                    key: host
+              - name: LDAP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ldap-service-account
+                    key: port
+              - name: LITTLESIS_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-littlesis-sftp
+                    key: host
+              - name: LITTLESIS_SFTP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-littlesis-sftp
+                    key: port
+              - name: TABLEAU_SERVER_ADDRESS
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: hostname
+              - name: TABLEAU_SITE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: site-id
+              - name: PS_ENROLLMENT_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-powerschool-enrollment-api
+                    key: api-key
+              - name: LDAP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ldap-service-account
+                    key: ip
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api
+                    key: credential
         run_k8s_config:
           container_config:
             env:
@@ -513,4 +623,114 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-tableau-server-api
+                    key: credential
+              - name: ADP_SFTP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-adp-wfn-sftp
+                    key: ip
+              - name: BLISSBOOK_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-blissbook-sftp
+                    key: host
+              - name: BLISSBOOK_SFTP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-blissbook-sftp
+                    key: port
+              - name: CLEVER_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-clever-sftp
+                    key: host
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: COUPA_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-sftp
+                    key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain
+              - name: DEANSLIST_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-sftp
+                    key: host
+              - name: EGENCIA_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-egencia-sftp
+                    key: host
+              - name: GOOGLE_WORKSPACE_CUSTOMER_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-google-admin-service-account
+                    key: customer-id
+              - name: GOOGLE_DIRECTORY_DELEGATED_ACCOUNT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-google-admin-service-account
+                    key: username
+              - name: ILLUMINATE_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-sftp
+                    key: host
+              - name: IREADY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: host
+              - name: KTAF_SFTP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-idauto-sftp
+                    key: host
+              - name: LDAP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ldap-service-account
+                    key: port
+              - name: LITTLESIS_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-littlesis-sftp
+                    key: host
+              - name: LITTLESIS_SFTP_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-littlesis-sftp
+                    key: port
+              - name: TABLEAU_SERVER_ADDRESS
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: hostname
+              - name: TABLEAU_SITE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-tableau-server-api
+                    key: site-id
+              - name: PS_ENROLLMENT_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-powerschool-enrollment-api
+                    key: api-key
+              - name: LDAP_HOST_IP
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ldap-service-account
+                    key: ip
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api
                     key: credential

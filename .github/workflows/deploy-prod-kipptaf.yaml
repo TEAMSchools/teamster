@@ -6,14 +6,54 @@ on:
     branches:
       - main
     paths:
-      - Dockerfile
-      - requirements.txt
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kipptaf.yaml
-      - src/teamster/core/**
-      - src/teamster/kipptaf/**
+      - Dockerfile
+      - requirements.txt
       - src/dbt/kipptaf/**
       - src/dbt/teamster_utils/**
+      - src/teamster/adp/**
+      - src/teamster/airbyte/**
+      - src/teamster/alchemer/**
+      - src/teamster/amplify/**
+      - src/teamster/core/**
+      - src/teamster/dayforce/**
+      - src/teamster/fivetran/**
+      - src/teamster/google/**
+      - src/teamster/kipptaf/**
+      - src/teamster/ldap/**
+      - src/teamster/performance_management/**
+      - src/teamster/powerschool/enrollment/**
+      - src/teamster/schoolmint/**
+      - src/teamster/smartrecruiters/**
+      - src/teamster/tableau/**
+      - src/teamster/zendesk/**
+  pull_request:
+    paths:
+      - requirements.txt
+      - src/teamster/adp/**
+      - src/teamster/airbyte/**
+      - src/teamster/alchemer/**
+      - src/teamster/amplify/**
+      - src/teamster/core/**
+      - src/teamster/core/**
+      - src/teamster/dayforce/**
+      - src/teamster/fivetran/**
+      - src/teamster/google/**
+      - src/teamster/kipptaf/**
+      - src/teamster/kipptaf/**
+      - src/teamster/ldap/**
+      - src/teamster/performance_management/**
+      - src/teamster/powerschool/enrollment/**
+      - src/teamster/schoolmint/**
+      - src/teamster/smartrecruiters/**
+      - src/teamster/tableau/**
+      - src/teamster/zendesk/**
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   dagster-cloud-deploy:

@@ -12,12 +12,14 @@ with
             sub.district_benchmark_category_name,
             sub.district_benchmark_proficient,
             sub.scaled_score,
+            sub.unified_score,
             sub.current_sgp,
             sub.completed_date,
             sub.assessment_id,
             sub.assessment_number,
             sub.assessment_status,
             sub.subject,
+            sub.star_subject,
             sub.administration_window,
             d.domain_name,
             d.domain_mastery_level,
@@ -38,18 +40,20 @@ with
                     district_benchmark_category_name,
                     district_benchmark_proficient,
                     scaled_score,
+                    unified_score,
                     current_sgp,
                     completed_date,
                     assessment_id,
                     assessment_number,
                     assessment_status,
+                    _dagster_partition_subject as star_subject,
                     case
                         when _dagster_partition_subject = 'SR'
                         then 'Reading'
                         when _dagster_partition_subject = 'SM'
                         then 'Math'
                         when _dagster_partition_subject = 'SEL'
-                        then 'Early Literacy'
+                        then 'Reading'
                     end as subject,
                     case
                         when screening_period_window_name = 'Fall'
@@ -100,6 +104,7 @@ select
     s.district_benchmark_category_name as star_category_name,
     s.district_benchmark_proficient as star_proficient,
     s.scaled_score,
+    s.unified_score,
     s.current_sgp,
     s.completed_date,
     s.domain_name as star_domain,
@@ -108,6 +113,7 @@ select
     s.standard_description,
     s.standard_mastery_level,
     s.standard_percent_mastery,
+    s.star_subject,
     s.rn_subject_round_star,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj

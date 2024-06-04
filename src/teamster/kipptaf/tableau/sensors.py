@@ -1,10 +1,16 @@
 import json
 
-from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
+from dagster import (
+    AssetMaterialization,
+    SensorEvaluationContext,
+    SensorResult,
+    _check,
+    sensor,
+)
 
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.tableau.assets import external_assets
-from teamster.kipptaf.tableau.resources import TableauServerResource
+from teamster.tableau.resources import TableauServerResource
 
 
 @sensor(
@@ -28,9 +34,9 @@ def tableau_asset_sensor(
 
         workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
 
-        updated_at_timestamp = workbook.updated_at.timestamp()
+        updated_at_timestamp = _check.not_none(value=workbook.updated_at).timestamp()
 
-        if updated_at_timestamp > last_updated_timestamp:  # type: ignore
+        if updated_at_timestamp > last_updated_timestamp:
             context.log.info(workbook.updated_at)
 
             asset_events.append(AssetMaterialization(asset_key=asset.key))

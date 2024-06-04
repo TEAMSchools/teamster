@@ -26,6 +26,7 @@ select
     ps.attendance_status,
     ps.attendance_status_hs_detail,
     ps.academic_status,
+    ps.exemption,
     ps.overall_status as promo_status_overall,
 
     if(co.spedlep like 'SPED%', 'Has IEP', co.spedlep) as iep_status,

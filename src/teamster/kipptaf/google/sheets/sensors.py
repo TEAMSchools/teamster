@@ -1,11 +1,17 @@
 import json
 
 import pendulum
-from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
+from dagster import (
+    AssetMaterialization,
+    SensorEvaluationContext,
+    SensorResult,
+    _check,
+    sensor,
+)
 
+from teamster.google.sheets.resources import GoogleSheetsResource
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.google.sheets.assets import google_sheets_assets
-from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
 
 ASSET_KEYS_BY_SHEET_ID = {
     a.metadata_by_key[a.key]["sheet_id"]: [
@@ -34,11 +40,13 @@ def google_sheets_asset_sensor(
 
     for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID:
         try:
-            spreadsheet = gsheets.open(sheet_id=sheet_id)
+            spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
 
-            last_update_timestamp = pendulum.parse(
-                text=spreadsheet.get_lastUpdateTime()
-            ).timestamp()  # type: ignore
+            last_update_time = _check.inst(
+                pendulum.parse(text=spreadsheet.get_lastUpdateTime()), pendulum.DateTime
+            )
+
+            last_update_timestamp = last_update_time.timestamp()
 
             last_materialization_timestamp = cursor.get(sheet_id, 0)
 

@@ -3,11 +3,10 @@ import pathlib
 from dagster import config_from_files
 
 from teamster.core.sftp.assets import build_sftp_asset
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.adp.workforce_now.sftp.schema import ASSET_SCHEMA
 
-from .... import CODE_LOCATION
-from .schema import ASSET_SCHEMA
-
-_all = [
+assets = [
     build_sftp_asset(
         asset_key=[CODE_LOCATION, "adp", "workforce_now", a["asset_name"]],
         ssh_resource_key="ssh_adp_workforce_now",

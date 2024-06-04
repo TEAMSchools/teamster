@@ -9,16 +9,15 @@ from teamster.core.resources import (
     SSH_COUCHDROP,
     SSH_EDPLAN,
     SSH_IREADY,
+    SSH_POWERSCHOOL,
     SSH_RENLEARN,
     SSH_TITAN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
-    get_ssh_resource_powerschool,
 )
-
-from . import (
+from teamster.kippnewark import (
     CODE_LOCATION,
     couchdrop,
     datagun,
@@ -31,8 +30,6 @@ from . import (
     renlearn,
     titan,
 )
-
-CODE_LOCATION_UPPER = CODE_LOCATION.upper()
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -71,14 +68,12 @@ defs = Definitions(
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_edplan": SSH_EDPLAN,
         "ssh_iready": SSH_IREADY,
+        "ssh_powerschool": SSH_POWERSCHOOL,
         "ssh_renlearn": SSH_RENLEARN,
         "ssh_titan": SSH_TITAN,
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
-        "ssh_powerschool": get_ssh_resource_powerschool(
-            remote_host="psteam.kippnj.org"
-        ),
     },
 )

@@ -1,4 +1,3 @@
-import json
 import re
 
 import pendulum
@@ -10,6 +9,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     StaticPartitionsDefinition,
+    _check,
     sensor,
 )
 
@@ -25,14 +25,13 @@ def build_couchdrop_sftp_sensor(
         asset_selection=assets,
     )
     def _sensor(context: SensorEvaluationContext, ssh_couchdrop: SSHResource):
-        run_requests = []
         now = pendulum.now(tz=local_timezone)
-        cursor: dict = json.loads(context.cursor or "{}")
+        run_requests = []
+
+        tick_cursor = float(context.cursor or "0.0")
 
         try:
-            files = ssh_couchdrop.listdir_attr_r(
-                remote_dir=f"/teamster-{code_location}/couchdrop", files=[]
-            )
+            files = ssh_couchdrop.listdir_attr_r(f"/data-team/{code_location}")
         except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
@@ -47,17 +46,15 @@ def build_couchdrop_sftp_sensor(
             )
 
             file_matches = [
-                f
-                for f in files
-                if pattern.match(string=f.filepath)
-                and f.st_mtime > cursor.get(asset_identifier, 0)
-                and f.st_size > 0
+                (f, path)
+                for f, path in files
+                if pattern.match(string=path)
+                and _check.not_none(value=f.st_mtime) > tick_cursor
+                and _check.not_none(value=f.st_size) > 0
             ]
 
-            for f in file_matches:
-                cursor[asset_identifier] = now.timestamp()
-
-                match = pattern.match(string=f.filepath)
+            for f, path in file_matches:
+                match = _check.not_none(value=pattern.match(string=path))
 
                 if isinstance(asset.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())
@@ -69,12 +66,22 @@ def build_couchdrop_sftp_sensor(
                 context.log.info(f"{f.filename}: {partition_key}")
                 run_requests.append(
                     RunRequest(
-                        run_key=f"{context.sensor_name}_{now.timestamp()}",
+                        run_key="_".join(
+                            [
+                                context.sensor_name,
+                                asset_identifier,
+                                str(partition_key),
+                                str(now.timestamp()),
+                            ]
+                        ),
                         asset_selection=[asset.key],
                         partition_key=partition_key,
                     )
                 )
 
-        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+        if run_requests:
+            tick_cursor = now.timestamp()
+
+        return SensorResult(run_requests=run_requests, cursor=str(tick_cursor))
 
     return _sensor

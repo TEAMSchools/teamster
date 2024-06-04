@@ -2,18 +2,17 @@ import json
 import re
 
 import pendulum
-from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
+from dagster import RunRequest, SensorEvaluationContext, SensorResult, _check, sensor
 
 from teamster.core.ssh.resources import SSHResource
-
-from .... import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import _all as adp_wfn_sftp_assets
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.adp.workforce_now.sftp.assets import assets
 
 
 @sensor(
     name=f"{CODE_LOCATION}_adp_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=adp_wfn_sftp_assets,
+    asset_selection=assets,
 )
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
@@ -23,13 +22,13 @@ def adp_wfn_sftp_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
 
     try:
-        files = ssh_adp_workforce_now.listdir_attr_r(remote_dir=".", files=[])
+        files = ssh_adp_workforce_now.listdir_attr_r()
     except Exception as e:
         context.log.exception(e)
         return SensorResult(skip_reason=str(e))
 
     run_requests = []
-    for asset in adp_wfn_sftp_assets:
+    for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
         asset_identifier = asset.key.to_python_identifier()
 
@@ -37,14 +36,14 @@ def adp_wfn_sftp_sensor(
         last_run = cursor.get(asset_identifier, 0)
 
         updates = []
-        for f in files:
+        for f, _ in files:
             match = re.match(
                 pattern=asset_metadata["remote_file_regex"], string=f.filename
             )
 
             if match is not None:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                if f.st_mtime > last_run and f.st_size > 0:
+                if f.st_mtime > last_run and _check.not_none(value=f.st_size) > 0:
                     updates.append({"mtime": f.st_mtime})
 
         if updates:
@@ -61,6 +60,6 @@ def adp_wfn_sftp_sensor(
     return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
 
-_all = [
+sensors = [
     adp_wfn_sftp_sensor,
 ]

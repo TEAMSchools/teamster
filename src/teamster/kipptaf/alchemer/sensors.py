@@ -2,19 +2,20 @@ import json
 import time
 
 import pendulum
-from alchemer import AlchemerSession
 from dagster import (
     AddDynamicPartitionsRequest,
-    ResourceParam,
+    DynamicPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    _check,
     sensor,
 )
 from requests.exceptions import HTTPError
 
-from .. import CODE_LOCATION
-from .assets import (
+from teamster.alchemer.resources import AlchemerResource
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.alchemer.assets import (
     survey,
     survey_metadata_assets,
     survey_response,
@@ -28,7 +29,7 @@ from .assets import (
     asset_selection=survey_metadata_assets,
 )
 def alchemer_survey_metadata_asset_sensor(
-    context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
+    context: SensorEvaluationContext, alchemer: AlchemerResource
 ):
     now = pendulum.now(tz="America/New_York").start_of("minute")
 
@@ -37,13 +38,13 @@ def alchemer_survey_metadata_asset_sensor(
         survey.key
     )
 
-    survey_partitions_def_name = survey.partitions_def.name  # type: ignore
+    partitions_def = _check.inst(survey.partitions_def, DynamicPartitionsDefinition)
 
     run_requests = []
     dynamic_partitions_requests = []
 
     try:
-        survey_list = alchemer.survey.list()
+        survey_list = alchemer._client.survey.list()
     except Exception as e:
         return SensorResult(skip_reason=str(e))
 
@@ -73,7 +74,7 @@ def alchemer_survey_metadata_asset_sensor(
         if is_run_request:
             dynamic_partitions_requests.append(
                 AddDynamicPartitionsRequest(
-                    partitions_def_name=survey_partitions_def_name,
+                    partitions_def_name=_check.not_none(value=partitions_def.name),
                     partition_keys=[survey_id],
                 )
             )
@@ -101,9 +102,9 @@ def alchemer_survey_metadata_asset_sensor(
     name=f"{CODE_LOCATION}_alchemer_survey_response_asset_sensor",
     minimum_interval_seconds=(60 * 15),
     asset_selection=[survey_response, survey_response_disqualified],
-)  # type: ignore
+)
 def alchemer_survey_response_asset_sensor(
-    context: SensorEvaluationContext, alchemer: ResourceParam[AlchemerSession]
+    context: SensorEvaluationContext, alchemer: AlchemerResource
 ):
     """https://apihelp.alchemer.com/help/api-response-time
     Response data is subject to response processing, which can vary based on server
@@ -112,6 +113,13 @@ def alchemer_survey_response_asset_sensor(
     available via the API can be upwards of 5 minutes.
     """
     now = pendulum.now(tz="America/New_York").subtract(minutes=15).start_of("minute")
+
+    survey_response_partitions_def = _check.inst(
+        survey_response.partitions_def, DynamicPartitionsDefinition
+    )
+    survey_response_disqualified_partitions_def = _check.inst(
+        survey_response_disqualified.partitions_def, DynamicPartitionsDefinition
+    )
     cursor: dict = json.loads(context.cursor or "{}")
 
     run_requests = []
@@ -119,7 +127,7 @@ def alchemer_survey_response_asset_sensor(
     survey_response_dq_partition_keys = []
 
     try:
-        surveys = alchemer.survey.list()
+        surveys = alchemer._client.survey.list()
     except Exception as e:
         return SensorResult(skip_reason=str(e))
 
@@ -145,7 +153,7 @@ def alchemer_survey_response_asset_sensor(
         else:
             try:
                 try:
-                    survey_obj = alchemer.survey.get(id=survey_id)
+                    survey_obj = alchemer._client.survey.get(id=survey_id)
                 except Exception as e:
                     context.log.error(msg=e)
                     continue
@@ -194,18 +202,22 @@ def alchemer_survey_response_asset_sensor(
         cursor=json.dumps(obj=cursor),
         dynamic_partitions_requests=[
             AddDynamicPartitionsRequest(
-                partitions_def_name=survey_response.partitions_def.name,  # type: ignore
+                partitions_def_name=_check.not_none(
+                    survey_response_partitions_def.name
+                ),
                 partition_keys=survey_response_partition_keys,
             ),
             AddDynamicPartitionsRequest(
-                partitions_def_name=survey_response_disqualified.partitions_def.name,  # type: ignore
+                partitions_def_name=_check.not_none(
+                    survey_response_disqualified_partitions_def.name
+                ),
                 partition_keys=survey_response_dq_partition_keys,
             ),
         ],
     )
 
 
-_all = [
+sensors = [
     alchemer_survey_metadata_asset_sensor,
     alchemer_survey_response_asset_sensor,
 ]

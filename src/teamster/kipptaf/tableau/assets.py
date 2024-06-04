@@ -6,22 +6,24 @@ from dagster import (
     AssetsDefinition,
     AssetSpec,
     DailyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
+    _check,
     asset,
     config_from_files,
 )
 from slugify import slugify
 
-from teamster.core.definitions.external_asset import external_assets_from_specs
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
+from teamster.core.definitions.external_asset import external_assets_from_specs
 from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.tableau.resources import TableauServerResource
 from teamster.kipptaf.tableau.schema import WORKBOOK_SCHEMA
+from teamster.tableau.resources import TableauServerResource
 
 config = config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])
 
@@ -44,12 +46,14 @@ asset_key = [*workbook_asset_def["key_prefix"], asset_name]
             ),
         }
     ),
-    check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+    check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     **workbook_asset_def,
 )
 def workbook(context: AssetExecutionContext, tableau: TableauServerResource):
+    partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+
     workbook = tableau._server.workbooks.get_by_id(
-        context.partition_key.keys_by_dimension["workbook_id"]  # type: ignore
+        partition_key.keys_by_dimension["workbook_id"]
     )
 
     tableau._server.workbooks.populate_views(workbook_item=workbook, usage=True)

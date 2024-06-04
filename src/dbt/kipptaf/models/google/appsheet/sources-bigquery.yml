@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: google_appsheet
+    schema: kipptaf_appsheet
+    tables:
+      - name: src_leadership_development_active_users
+      - name: src_leadership_development_output
+      - name: src_leadership_development_ratings

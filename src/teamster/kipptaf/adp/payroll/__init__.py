@@ -1,5 +1,5 @@
-from .assets import _all as assets
-from .sensors import __all__ as sensors
+from teamster.kipptaf.adp.payroll.assets import assets
+from teamster.kipptaf.adp.payroll.sensors import sensors
 
 __all__ = [
     "assets",

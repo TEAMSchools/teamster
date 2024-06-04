@@ -21,20 +21,20 @@ dbt_assets = build_dbt_assets(
     exclude="tag:stage_external_sources source:adp_payroll+",
 )
 
-adp_payroll_dbt_assets = build_dbt_assets(
-    manifest=manifest,
-    dagster_dbt_translator=dagster_dbt_translator,
-    name=f"{CODE_LOCATION}_adp_payroll_dbt_assets",
-    partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
-    select="stg_adp_payroll__general_ledger_file+",
-)
-
 external_source_dbt_assets = build_dbt_external_source_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}_external_source_dbt_assets",
     select="tag:stage_external_sources",
     exclude="source:adp_payroll",
+)
+
+adp_payroll_dbt_assets = build_dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=dagster_dbt_translator,
+    name=f"{CODE_LOCATION}_adp_payroll_dbt_assets",
+    partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
+    select="stg_adp_payroll__general_ledger_file+",
 )
 
 adp_payroll_external_source_dbt_assets = build_dbt_external_source_assets(
