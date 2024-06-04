@@ -27,6 +27,7 @@ with
             assign_is_missing,
             assign_score_raw,
             assign_score_converted,
+            assign_final_score_percent,
             assign_max_score,
             audit_qt_week_number,
 
