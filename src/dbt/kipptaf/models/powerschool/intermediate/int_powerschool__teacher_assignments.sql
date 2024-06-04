@@ -20,11 +20,22 @@ with
 
             1 as counter,
 
-            case
-                when t.grade_band in ('ES', 'MS')
-                then s.sections_section_number
-                else s.sections_external_expression
-            end as section_or_period,
+            if(
+                t.grade_band in ('ES', 'MS'),
+                s.sections_section_number,
+                s.sections_external_expression
+            ) as section_or_period,
+
+            if(
+                (
+                    t.grade_band = 'ES'
+                    and regexp_extract(s._dbt_source_relation, r'(kipp\w+)_')
+                    = 'kippmiami'
+                )
+                or t.grade_band in ('MS', 'HS')
+                0,
+                1
+            ) as exclude_row,
 
             case
                 expected_teacher_assign_category_code
@@ -106,6 +117,7 @@ with
             on t.academic_year = aud.academic_year
             and t.teacher_quarter = aud.quarter
             and t.region = aud.region
+        where exclude_row = 0
     ),
 
     assign_3 as (
@@ -140,6 +152,8 @@ with
 
             if(a.assignmentid is null, 0, 1) as teacher_assign_count,
 
+            if(t.teacher_quarter in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
+
         from assign_2 as t
         inner join
             {{ ref("int_powerschool__section_grade_config") }} as gb
@@ -148,7 +162,7 @@ with
             and gb.grading_formula_weighting_type != 'Total_Points'
             and {{ union_dataset_join_clause(left_alias="t", right_alias="gb") }}
         left join
-            {{ ref("int_powerschool__gradebook_assignments") }} as a
+            {{ ref("int_powerschool__student_assignments") }} as a
             on gb.sections_dcid = a.sectionsdcid
             and gb.category_id = a.category_id
             and a.duedate between t.audit_start_date and t.audit_end_date
@@ -174,6 +188,7 @@ with
             section_or_period,
             sectionid,
             sections_dcid,
+            semester_semester_code,
             teacher_quarter,
             audit_yr_week_number,
             audit_qt_week_number,
@@ -190,8 +205,6 @@ with
             teacher_assign_max_score,
             teacher_assign_due_date,
             teacher_assign_count,
-
-            if(teacher_quarter in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
 
             if(
                 sum(teacher_assign_count) over (
@@ -237,6 +250,7 @@ with
             t.section_or_period,
             t.sectionid,
             t.sections_dcid,
+            t.teacher_semester_code,
             t.teacher_quarter,
             t.audit_yr_week_number,
             t.audit_qt_week_number,
