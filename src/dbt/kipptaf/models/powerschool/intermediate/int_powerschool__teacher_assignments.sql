@@ -337,6 +337,7 @@ with
 
             if(
                 sum(
+                    distinct
                     if(
                         asg.assign_category_code = 'S'
                         and asg.assign_expected_to_be_scored = 1,
@@ -358,6 +359,7 @@ with
 
             if(
                 sum(
+                    distinct
                     if(asg.assign_category_code = 'S', t.teacher_assign_max_score, 0)
                 ) over (
                     partition by
