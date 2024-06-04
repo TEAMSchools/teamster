@@ -177,13 +177,7 @@ with
             and t.teacher_name = a.teacher_name
             and t.expected_teacher_assign_category_name = a.assign_category
             and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
-    )
-
-select *
-from
-    assign_3
-
-    /*
+    ),
 
     assign_4 as (
         select
@@ -245,7 +239,13 @@ from
             ) as teacher_running_total_assign_by_cat,
 
         from assign_3
-    ),
+    )
+
+select *
+from
+    assign_4
+
+    /*
 
     assign_5 as (
         select distinct
