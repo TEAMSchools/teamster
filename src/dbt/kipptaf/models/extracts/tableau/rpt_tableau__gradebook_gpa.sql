@@ -1,23 +1,18 @@
 {% set quarter = ["Q1", "Q2", "Q3", "Q4", "Y1"] %}
+{% set exempt_courses = [
+    "LOG20",
+    "LOG22999XL",
+    "LOG9",
+    "LOG100",
+    "LOG1010",
+    "LOG11",
+    "LOG12",
+    "LOG300",
+    "SEM22106G1",
+    "SEM22106S1",
+] %}
 
 with
-    staff_info as (
-        select
-            home_work_location_dagster_code_location,
-            home_work_location_powerschool_school_id as schoolid,
-            home_work_location_name as school_name,
-            employee_number,
-            powerschool_teacher_number,
-            preferred_name_lastfirst as name,
-            preferred_name_given_name as preferred_first_name,
-            job_title,
-            sam_account_name,
-        from {{ ref("base_people__staff_roster") }}
-        where
-            assignment_status = 'Active'
-            and home_work_location_powerschool_school_id != 0
-    ),
-
     student_roster as (
         select
             enr._dbt_source_relation,
@@ -56,16 +51,19 @@ with
 
             'Local' as roster_type,
 
-            case
-                when enr.school_level in ('ES', 'MS')
-                then advisory_name
-                when enr.school_level = 'HS'
-                then advisor_lastfirst
-            end as advisory,
+            if(
+                enr.school_level in ('ES', 'MS'), advisory_name, advisor_lastfirst
+            ) as advisory,
+
+            if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             case
-                when enr.spedlep like 'SPED%' then 'Has IEP' else 'No IEP'
-            end as iep_status,
+                when quarter in ('Q1', 'Q2')
+                then 'S1'
+                when quarter in ('Q3', 'Q4')
+                then 'S2'
+                else 'S#'
+            end as semester,
 
             case when sp.studentid is not null then 1 end as is_counseling_services,
 
@@ -204,15 +202,9 @@ with
             is_student_athlete,
             ada,
             roster_type,
+            semester,
             quarter,
 
-            case
-                when quarter in ('Q1', 'Q2')
-                then 'S1'
-                when quarter in ('Q3', 'Q4')
-                then 'S2'
-                else 'S#'
-            end as semester,
         from student_roster
 
         union all
@@ -253,8 +245,9 @@ with
             is_student_athlete,
             ada,
             roster_type,
-            quarter,
             semester,
+            quarter,
+
         from transfer_roster
     ),
 
@@ -274,7 +267,6 @@ with
             m.courses_course_name as course_name,
             m.teachernumber as teacher_number,
             m.teacher_lastfirst as teacher_name,
-            i.sam_account_name as tableau_username,
             m.courses_excludefromgpa as exclude_from_gpa,
 
             f.tutoring_nj,
@@ -290,27 +282,11 @@ with
             and m.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
         cross join unnest({{ quarter }}) as quarter
-        left join
-            staff_info as i
-            on m.teachernumber = i.powerschool_teacher_number
-            and regexp_extract(m._dbt_source_relation, r'(kipp\w+)_')
-            = i.home_work_location_dagster_code_location
         where
             not m.is_dropped_course
             and not m.is_dropped_section
             and m.rn_course_number_year = 1
-            and m.cc_course_number not in (
-                'LOG20',
-                'LOG22999XL',
-                'LOG9',
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG300',
-                'SEM22106G1',
-                'SEM22106S1'
-            )
+            and m.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
             and m.cc_academic_year = {{ var("current_academic_year") }}
     ),
 
