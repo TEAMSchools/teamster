@@ -69,7 +69,7 @@ def _test_dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
 def test_dbt_assets():
     result = materialize(
         assets=[_test_dbt_assets],
-        resources={"dbt_cli": get_dbt_cli_resource("kipptaf")},
+        resources={"dbt_cli": get_dbt_cli_resource(code_location="kipptaf", test=True)},
         selection=["kipptaf/tableau/rpt_tableau__assessment_dashboard"],
     )
 
@@ -81,7 +81,7 @@ def test_external_source_dbt_assets():
 
     result = materialize(
         assets=[external_source_dbt_assets],
-        resources={"dbt_cli": get_dbt_cli_resource("kipptaf")},
+        resources={"dbt_cli": get_dbt_cli_resource(code_location="kipptaf", test=True)},
         selection=["kipptaf/google_forms/src_google_forms__form"],
     )
 
