@@ -1,7 +1,15 @@
-from dagster import EnvVar, materialize
+from dagster import (
+    DynamicPartitionsDefinition,
+    EnvVar,
+    TextMetadataValue,
+    _check,
+    instance_for_test,
+    materialize,
+)
+from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.overgrad.assets import (
+from teamster.kipptaf.overgrad.assets import (
     admissions,
     custom_fields,
     followings,
@@ -12,11 +20,15 @@ from teamster.overgrad.assets import (
 from teamster.overgrad.resources import OvergradResource
 
 
-def _test_asset(asset):
+def _test_asset(asset, partition_key=None, instance=None):
     result = materialize(
         assets=[asset],
+        partition_key=partition_key,
+        instance=instance,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                code_location="test", test=True
+            ),
             "overgrad": OvergradResource(
                 api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100
             ),
@@ -24,13 +36,21 @@ def _test_asset(asset):
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["row_count"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
-        .value
-        > 0
+
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    records = _check.inst(
+        event_specific_data.materialization.metadata["record_count"].value, int
+    )
+    assert records > 0
+
+    extras = _check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
+        ttype=TextMetadataValue,
+    )
+    assert extras.text == ""
 
 
 def test_schools():
@@ -54,4 +74,15 @@ def test_students():
 
 
 def test_universities():
-    _test_asset(asset=universities)
+    partition_key = "4372"
+    partitions_def = _check.inst(
+        obj=universities.partitions_def, ttype=DynamicPartitionsDefinition
+    )
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(
+            partitions_def_name=_check.not_none(value=partitions_def.name),
+            partition_keys=[partition_key],
+        )
+
+        _test_asset(asset=universities, partition_key=partition_key, instance=instance)

@@ -1,6 +1,3 @@
-import json
-
-import py_avro_schema
 from pydantic import BaseModel
 
 
@@ -107,9 +104,17 @@ class Student(StudentIDs):
     custom_field_values: list[CustomFieldValue | None] | None = None
 
 
-class University(BaseModel):
+class UniversityID(BaseModel):
     id: int | None = None
     ipeds_id: int | None = None
+
+
+class University(UniversityID):
+    city: str | None = None
+    name: str | None = None
+    object: str | None = None
+    state: str | None = None
+    status: str | None = None
 
 
 class DueDate(BaseModel):
@@ -161,7 +166,7 @@ class Admission(BaseModel):
     probability_of_acceptance: float | None = None
 
     student: StudentIDs | None = None
-    university: University | None = None
+    university: UniversityID | None = None
     due_date: DueDate | None = None
     award_letter: AwardLetter | None = None
 
@@ -179,29 +184,4 @@ class Following(BaseModel):
     added_by: str | None = None
 
     student: StudentIDs | None = None
-    university: University | None = None
-
-
-pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
-
-ADMISSION_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=Admission, options=pas_options)
-)
-
-SCHOOL_SCHEMA = json.loads(py_avro_schema.generate(py_type=School, options=pas_options))
-
-STUDENT_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=Student, options=pas_options)
-)
-
-FOLLOWING_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=Following, options=pas_options)
-)
-
-UNIVERSITY_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=University, options=pas_options)
-)
-
-CUSTOM_FIELD_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=CustomField, options=pas_options)
-)
+    university: UniversityID | None = None

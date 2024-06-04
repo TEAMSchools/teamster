@@ -40,7 +40,7 @@ def google_sheets_asset_sensor(
 
     for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID:
         try:
-            spreadsheet = _check.not_none(gsheets.open(sheet_id=sheet_id))
+            spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
 
             last_update_time = _check.inst(
                 pendulum.parse(text=spreadsheet.get_lastUpdateTime()), pendulum.DateTime

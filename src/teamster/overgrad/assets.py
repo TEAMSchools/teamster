@@ -1,60 +1,58 @@
-from dagster import AssetExecutionContext, Output, asset
+from dagster import (
+    AssetExecutionContext,
+    DynamicPartitionsDefinition,
+    Output,
+    _check,
+    asset,
+)
 
 from teamster.core.utils.functions import (
     check_avro_schema_valid,
     get_avro_schema_valid_check_spec,
 )
 from teamster.overgrad.resources import OvergradResource
-from teamster.overgrad.schema import (
-    ADMISSION_SCHEMA,
-    CUSTOM_FIELD_SCHEMA,
-    FOLLOWING_SCHEMA,
-    SCHOOL_SCHEMA,
-    STUDENT_SCHEMA,
-    UNIVERSITY_SCHEMA,
-)
 
 
-def build_overgrad_asset(endpoint, schema):
+def build_overgrad_asset(
+    endpoint, schema, partitions_def=None, auto_materialize_policy=None
+):
     @asset(
         key=["overgrad", endpoint],
         io_manager_key="io_manager_gcs_avro",
         group_name="overgrad",
         check_specs=[get_avro_schema_valid_check_spec(["overgrad", endpoint])],
+        partitions_def=partitions_def,
+        auto_materialize_policy=auto_materialize_policy,
     )
     def _asset(context: AssetExecutionContext, overgrad: OvergradResource):
-        data = overgrad.get_list(path=endpoint)
+        if context.partition_key is not None:
+            response_json = overgrad.get(endpoint, context.partition_key).json()
 
-        import json
-        import pathlib
+            data = [response_json["data"]]
+        else:
+            data = overgrad.get_list(path=endpoint)
 
-        fp = pathlib.Path(f"env/overgrad/{endpoint}.json")
-        fp.parent.mkdir(parents=True, exist_ok=True)
-        json.dump(obj=data, fp=fp.open("w"))
+        if endpoint in ["admissions", "followings"]:
+            partitions_def = _check.inst(
+                obj=context.assets_def.partitions_def, ttype=DynamicPartitionsDefinition
+            )
+            university_ids = set()
 
-        yield Output(value=(data, schema), metadata={"row_count": len(data)})
+            for d in data:
+                university_id = d["university"]["id"]
+
+                if university_id is not None:
+                    university_ids.add(university_id)
+
+            context.instance.add_dynamic_partitions(
+                partitions_def_name=_check.not_none(value=partitions_def.name),
+                partition_keys=list(university_ids),
+            )
+
+        yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=data, schema=schema
         )
 
     return _asset
-
-
-admissions = build_overgrad_asset(endpoint="admissions", schema=ADMISSION_SCHEMA)
-followings = build_overgrad_asset(endpoint="followings", schema=FOLLOWING_SCHEMA)
-schools = build_overgrad_asset(endpoint="schools", schema=SCHOOL_SCHEMA)
-students = build_overgrad_asset(endpoint="students", schema=STUDENT_SCHEMA)
-universities = build_overgrad_asset(endpoint="universities", schema=UNIVERSITY_SCHEMA)
-custom_fields = build_overgrad_asset(
-    endpoint="custom_fields", schema=CUSTOM_FIELD_SCHEMA
-)
-
-assets = [
-    admissions,
-    custom_fields,
-    followings,
-    schools,
-    students,
-    universities,
-]

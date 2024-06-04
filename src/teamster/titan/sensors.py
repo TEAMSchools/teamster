@@ -55,7 +55,7 @@ def build_titan_sftp_sensor(
 
                 if match is not None:
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    if f.st_mtime > last_run and _check.not_none(f.st_size) > 0:
+                    if f.st_mtime > last_run and _check.not_none(value=f.st_size) > 0:
                         run_requests.append(
                             RunRequest(
                                 run_key=f"{asset_identifier}_{f.st_mtime}",
