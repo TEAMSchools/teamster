@@ -17,6 +17,7 @@ with
         select
             co._dbt_source_relation,
             co.sections_dcid,
+            co.cc_dateenrolled as student_course_entry_date,
             co.cc_sectionid as sectionid,
             co.cc_section_number as section_number,
             co.cc_course_number as course_number,
@@ -191,6 +192,7 @@ with
             studentid,
             students_dcid,
             student_number,
+            student_course_entry_date,
             grade_level,
             teacher_name,
             course_number,
@@ -242,6 +244,7 @@ select
     studentid,
     students_dcid,
     student_number,
+    student_course_entry_date,
     grade_level,
     teacher_name,
     course_number,
