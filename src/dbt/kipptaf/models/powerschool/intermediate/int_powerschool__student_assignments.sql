@@ -43,6 +43,8 @@ with
 
             concat('Q', right(gb.storecode, 1)) as assign_quarter,
 
+            if(ap.ap_course_subject is null, 0, 1) as ap_course,
+
             if(
                 enr.grade_level <= 4,
                 co.cc_section_number,
@@ -125,6 +127,11 @@ with
             on enr.academic_year = aud.academic_year
             and enr.region = aud.region
             and a.duedate between aud.audit_start_date and aud.audit_end_date
+        left join
+            {{ ref("stg_powerschool__s_nj_crs_x") }} as ap
+            on co.courses_dcid = ap.coursesdcid
+            and regexp_extract(co._dbt_source_relation, r'(kipp\w+)_')
+            = regexp_extract(ap._dbt_source_relation, r'(kipp\w+)_')
         where
             co.cc_academic_year = {{ var("current_academic_year") }}
             and co.cc_course_number != 'HR'
@@ -152,6 +159,7 @@ with
             grade_level,
             teacher_name,
             course_number,
+            ap_course,
             section_or_period,
             sectionid,
             sections_dcid,
@@ -202,6 +210,7 @@ select
     grade_level,
     teacher_name,
     course_number,
+    ap_course,
     section_or_period,
     sectionid,
     sections_dcid,
