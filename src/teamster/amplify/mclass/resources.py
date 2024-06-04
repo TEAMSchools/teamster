@@ -15,6 +15,8 @@ class MClassResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(value=context.log)
+
         portal_redirect = self.get(path="reports/myReports")
 
         soup = BeautifulSoup(markup=portal_redirect.text, features="html.parser")
@@ -29,8 +31,6 @@ class MClassResource(ConfigurableResource):
             url=kc_form_login.attrs["action"],
             data={"username": self.username, "password": self.password},
         )
-
-        self._log = _check.not_none(value=context.log)
 
     def _get_url(self, path, *args):
         if args:
