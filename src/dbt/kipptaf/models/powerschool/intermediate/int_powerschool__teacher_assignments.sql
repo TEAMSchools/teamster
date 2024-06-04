@@ -336,45 +336,26 @@ with
             ) as qt_teacher_no_missing_assignments,
 
             if(
-                sum(
-                    distinct
-                    if(
-                        asg.assign_category_code = 'S'
-                        and asg.assign_expected_to_be_scored = 1,
-                        t.teacher_assign_max_score,
-                        0
+                asg.assign_category_code = 'S'
+                and asg.assign_expected_to_be_scored = 1
+                and (
+                    sum(distinct t.teacher_assign_max_score) over (
+                        partition by
+                            t.schoolid,
+                            t.teacher_quarter,
+                            t.teacher_name,
+                            t.course_number,
+                            t.section_or_period
                     )
-                ) over (
-                    partition by
-                        t.schoolid,
-                        t.teacher_quarter,
-                        t.teacher_name,
-                        t.course_number,
-                        t.section_or_period
-                )
-                < 200,
+                    < 200
+                ),
                 1,
                 0
             ) as qt_teacher_s_total_less_200,
-            /*
-            if(
-                sum(
-                    distinct
-                    if(asg.assign_category_code = 'S', t.teacher_assign_max_score, 0)
-                ) over (
-                    partition by
-                        t.schoolid,
-                        t.teacher_quarter,
-                        t.teacher_name,
-                        t.course_number,
-                        t.section_or_period
-                )
-                > 200,
-                1,
-                0
-            ) as qt_teacher_s_total_greater_200,*/
+
             if(
                 asg.assign_category_code = 'S'
+                and asg.assign_expected_to_be_scored = 1
                 and (
                     sum(distinct t.teacher_assign_max_score) over (
                         partition by
