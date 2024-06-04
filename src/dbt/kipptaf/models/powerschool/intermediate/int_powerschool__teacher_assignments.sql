@@ -1,4 +1,17 @@
 {% set expected_teacher_assign_category_code = ["W", "F", "S"] %}
+{% set exempt_courses = [
+    "LOG20",
+    "LOG22999XL",
+    "LOG9",
+    "LOG100",
+    "LOG1010",
+    "LOG11",
+    "LOG12",
+    "LOG300",
+    "SEM22106G1",
+    "SEM22106S1",
+    "HR",
+] %}
 
 with
     assign_1 as (
@@ -73,7 +86,7 @@ with
         where
             t.academic_year = {{ var("current_academic_year") }}
             and s.courses_schoolid != 999999
-            and s.courses_course_number != 'HR'
+            and s.courses_course_number != exempt_courses
             and current_date('America/New_York')
             between s.terms_firstday and s.terms_lastday
     ),
