@@ -6,24 +6,25 @@ from dagster import (
     asset,
 )
 
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
+    check_avro_schema_valid,
+)
 from teamster.overgrad.resources import OvergradResource
-
-# from teamster.core.utils.functions import (
-#     check_avro_schema_valid,
-#     get_avro_schema_valid_check_spec,
-# )
 
 
 def build_overgrad_asset(
-    endpoint, schema, partitions_def=None, auto_materialize_policy=None
+    asset_key, schema, partitions_def=None, auto_materialize_policy=None
 ):
+    endpoint = asset_key[-1]
+
     @asset(
-        key=["overgrad", endpoint],
+        key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         group_name="overgrad",
-        # check_specs=[get_avro_schema_valid_check_spec(["overgrad", endpoint])],
         partitions_def=partitions_def,
         auto_materialize_policy=auto_materialize_policy,
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, overgrad: OvergradResource):
         if context.assets_def.partitions_def is not None:
@@ -52,8 +53,8 @@ def build_overgrad_asset(
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
-        # yield check_avro_schema_valid(
-        #     asset_key=context.asset_key, records=data, schema=schema
-        # )
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=data, schema=schema
+        )
 
     return _asset

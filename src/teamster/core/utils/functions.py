@@ -2,16 +2,7 @@ import re
 from typing import Mapping
 
 import pendulum
-from dagster import (
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
-    AssetsDefinition,
-    MetadataValue,
-    MultiPartitionKey,
-    _check,
-    asset_check,
-)
+from dagster import MultiPartitionKey, _check
 
 from teamster.core.utils.classes import FiscalYear
 
@@ -85,47 +76,3 @@ def get_partition_key_path(partition_key, path):
 def partition_key_to_vars(partition_key):
     path = get_partition_key_path(partition_key=partition_key, path=[])
     return {"partition_path": "/".join(path)}
-
-
-def get_avro_schema_valid_check_spec(asset):
-    return AssetCheckSpec(
-        name="avro_schema_valid",
-        asset=asset,
-        description=(
-            "Checks output records against the supplied schema and warns if any "
-            "unexpected fields are discovered"
-        ),
-    )
-
-
-def check_avro_schema_valid(asset_key, records, schema):
-    extras = set().union(*(d.keys() for d in records)) - set(
-        field["name"] for field in schema["fields"]
-    )
-
-    return AssetCheckResult(
-        passed=len(extras) == 0,
-        asset_key=asset_key,
-        check_name="avro_schema_valid",
-        metadata={"extras": MetadataValue.text(", ".join(extras))},
-        severity=AssetCheckSeverity.WARN,
-    )
-
-
-def build_check_avro_schema_valid(assets_def: AssetsDefinition):
-    @asset_check(asset=assets_def, name="avro_schema_valid")
-    def _asset_check(asset_value: tuple):
-        records, schema = asset_value
-
-        extras = set().union(*(d.keys() for d in records)) - set(
-            field["name"] for field in schema["fields"]
-        )
-
-        return AssetCheckResult(
-            passed=len(extras) == 0,
-            asset_key=assets_def.key,
-            metadata={"extras": MetadataValue.text(", ".join(extras))},
-            severity=AssetCheckSeverity.WARN,
-        )
-
-    return _asset_check
