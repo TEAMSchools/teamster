@@ -10,7 +10,7 @@ with
             teacher_number,
             teacher_name,
             course_number,
-            `section`,
+            section_or_period,
             sectionid,
             sections_dcid,
             teacher_quarter,
