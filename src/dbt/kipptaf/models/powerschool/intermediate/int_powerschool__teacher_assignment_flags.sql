@@ -16,8 +16,8 @@ with
             teacher_quarter,
             expected_teacher_assign_category_code,
             expected_teacher_assign_category_name,
-            year_week_number,
-            quarter_week_number,
+            audit_yr_week_number,
+            audit_qt_week_number,
             audit_start_date,
             audit_end_date,
             audit_due_date,
@@ -56,18 +56,23 @@ with
                     s_expected_assign_count_not_met
                 )
             )
-        where
-            teacher_flag_value = 1
-            and concat(
+        where teacher_flag_value = 1
+    /*and concat(
                 expected_teacher_assign_category_code,
                 teacher_flag_name
             ) not in (
-                'Wqt_eacher_s_total_greater_200',
+                'Wqt_teacher_s_total_greater_200',
                 'Wqt_teacher_s_total_less_200',
                 'Fqt_teacher_s_total_greater_200',
-                'Fqt_eacher_s_total_less_200'
-            )
+                'Fqt_teacher_s_total_less_200'
+            )*/
     )
+
+select *
+from
+    teacher_unpivot_flags
+
+    /*
 
 select distinct
     _dbt_source_relation,
@@ -133,3 +138,5 @@ from
             's_expected_assign_count_not_met'
         )
     )
+*/
+    
