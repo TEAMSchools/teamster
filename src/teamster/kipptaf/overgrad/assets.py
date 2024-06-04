@@ -1,5 +1,6 @@
 from dagster import AutoMaterializePolicy, DynamicPartitionsDefinition
 
+from teamster.core.utils.functions import build_check_avro_schema_valid
 from teamster.kipptaf.overgrad.schema import (
     ADMISSION_SCHEMA,
     CUSTOM_FIELD_SCHEMA,
@@ -32,3 +33,5 @@ assets = [
     students,
     universities,
 ]
+
+asset_checks = [build_check_avro_schema_valid(asset) for asset in assets]

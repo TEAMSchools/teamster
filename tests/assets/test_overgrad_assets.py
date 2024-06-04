@@ -1,7 +1,8 @@
 from dagster import (
+    AssetCheckResult,
+    AssetsDefinition,
     DynamicPartitionsDefinition,
     EnvVar,
-    TextMetadataValue,
     _check,
     instance_for_test,
     materialize,
@@ -11,6 +12,7 @@ from dagster._core.events import StepMaterializationData
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.overgrad.assets import (
     admissions,
+    asset_checks,
     custom_fields,
     followings,
     schools,
@@ -20,7 +22,7 @@ from teamster.kipptaf.overgrad.assets import (
 from teamster.overgrad.resources import OvergradResource
 
 
-def _test_asset(asset, partition_key=None, instance=None):
+def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
     result = materialize(
         assets=[asset],
         partition_key=partition_key,
@@ -46,10 +48,19 @@ def _test_asset(asset, partition_key=None, instance=None):
     )
     assert records > 0
 
-    extras = _check.inst(
-        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
-        ttype=TextMetadataValue,
+    asset_check = [
+        ac for ac in asset_checks if ac.keys_by_input_name["asset_value"] == asset.key
+    ][0]
+
+    asset_check_result = _check.inst(
+        obj=asset_check(result.asset_value(asset.key)), ttype=AssetCheckResult
     )
+
+    assert asset_check_result.passed
+
+    extras = asset_check_result.metadata.get("extras")
+
+    assert extras is not None
     assert extras.text == ""
 
 
