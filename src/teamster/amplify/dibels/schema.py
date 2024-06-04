@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class DataFarming(BaseModel):
-    additional_codes: None = None
+    additional_codes: str | None = None
     benchmark_status_composite_1st_beginning: str | None = None
     benchmark_status_composite_1st_end: str | None = None
     benchmark_status_composite_1st_middle: str | None = None
@@ -74,7 +74,7 @@ class DataFarming(BaseModel):
     date_wrf_1st_beginning: str | None = None
     date_wrf_1st_end: str | None = None
     date_wrf_1st_middle: str | None = None
-    dibels_approved_accommodations: None = None
+    dibels_approved_accommodations: str | None = None
     disability_status_spec_ed_category_services_provided: str | None = None
     district_name: str | None = None
     district_percentile_composite_1st_beginning: float | None = None
@@ -123,7 +123,7 @@ class DataFarming(BaseModel):
     form_wrf_1st_middle: str | None = None
     free_reduced_lunch: str | None = None
     gender: str | None = None
-    growth_goal_composite_1st_end: None = None
+    growth_goal_composite_1st_end: str | None = None
     growth_goal_met_composite_1st_end: str | None = None
     growth_goal_type_composite_1st_end: str | None = None
     growth_percentile_composite_1st_end: str | None = None
@@ -353,7 +353,7 @@ class DataFarming(BaseModel):
     school_percentile_wrf_1st_beginning: float | None = None
     school_percentile_wrf_1st_end: float | None = None
     school_percentile_wrf_1st_middle: float | None = None
-    secondary_id: None = None
+    secondary_id: int | None = None
     special_education: str | None = None
     student_id: int | None = None
     teacher_1st: str | None = None

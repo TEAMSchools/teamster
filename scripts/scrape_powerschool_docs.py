@@ -1,3 +1,4 @@
+# trunk-ignore-all(bandit/B101,bandit/B113)
 import re
 
 import pandas
@@ -8,7 +9,6 @@ from bs4 import BeautifulSoup
 base_url = "https://docs.powerschool.com"
 current_link = "/PSDD/powerschool-tables"
 
-# trunk-ignore(bandit/B113)
 children_json = requests.get(
     url=f"{base_url}/rest/scroll-viewport/1.0/tree/children",
     params={
@@ -32,13 +32,17 @@ for child in children:
     if link in ["/PSDD/powerschool-tables/auditing-tables-fields"]:
         continue
 
-    # trunk-ignore(bandit/B113)
     child_page = requests.get(f"{base_url}{link}")
 
     soup = BeautifulSoup(markup=child_page.text, features="lxml")
 
     # parse columns table
     cols_table_tag = soup.find("table")
+    p_tag = soup.find("p")
+
+    assert p_tag is not None
+    p_text = p_tag.text
+
     columns = []
     if cols_table_tag:
         dfs = pandas.read_html(str(cols_table_tag))
@@ -62,14 +66,14 @@ for child in children:
             )
 
     title_match = re.match(r"^([\w\s\$]+)(,\s\d+|\s)?\(?(.*)?$", child["title"])
+
+    assert title_match is not None
     table_name, table_id, table_version = title_match.groups()
 
     models.append(
         {
             "name": f"stg_powerschool__{table_name.lower()}",
-            "description": (
-                f"{soup.find('p').text}<br><br>Table ID: {table_id}<br>{table_version}"
-            ),
+            "description": f"{p_text}<br><br>Table ID: {table_id}<br>{table_version}",
             "columns": columns,
         }
     )

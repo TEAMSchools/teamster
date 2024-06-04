@@ -1,6 +1,6 @@
 from dagster import Config, OpExecutionContext, op
 from dagster_gcp import BigQueryResource
-from google.cloud import bigquery
+from google.cloud.bigquery import DatasetReference
 
 
 class BigQueryGetTableOpConfig(Config):
@@ -17,7 +17,7 @@ def bigquery_get_table_op(
 ):
     project = config.project or db_bigquery.project
 
-    dataset_ref = bigquery.DatasetReference(
+    dataset_ref = DatasetReference(
         project=(project or ""), dataset_id=config.dataset_id
     )
 

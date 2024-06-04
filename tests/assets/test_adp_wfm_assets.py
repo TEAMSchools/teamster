@@ -3,9 +3,13 @@ import random
 from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    TextMetadataValue,
+    _check,
     instance_for_test,
     materialize,
 )
+from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.adp.workforce_manager.assets import (
@@ -16,20 +20,23 @@ from teamster.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
 
 
 def _test_asset(asset: AssetsDefinition):
-    date_partitions_def = asset.partitions_def.get_partitions_def_for_dimension("date")  # pyright: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+    partitions_def = _check.inst(
+        obj=asset.partitions_def, ttype=MultiPartitionsDefinition
+    )
+    date_partitions_def = partitions_def.get_partitions_def_for_dimension("date")
 
     with instance_for_test() as instance:
         if isinstance(date_partitions_def, DynamicPartitionsDefinition):
             instance.add_dynamic_partitions(
-                partitions_def_name=date_partitions_def.name,  # pyright: ignore[reportArgumentType]
+                partitions_def_name=_check.not_none(date_partitions_def.name),
                 partition_keys=["foo"],
             )
 
-            partition_keys = asset.partitions_def.get_partition_keys(  # pyright: ignore[reportOptionalMemberAccess]
+            partition_keys = partitions_def.get_partition_keys(
                 dynamic_partitions_store=instance
             )
         else:
-            partition_keys = asset.partitions_def.get_partition_keys()  # pyright: ignore[reportOptionalMemberAccess]
+            partition_keys = partitions_def.get_partition_keys()
 
         result = materialize(
             assets=[asset],
@@ -38,19 +45,29 @@ def _test_asset(asset: AssetsDefinition):
                 random.randint(a=0, b=(len(partition_keys) - 1))
             ],
             resources={
-                "io_manager_gcs_avro": get_io_manager_gcs_avro("test"),
+                "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                    code_location="test", test=True
+                ),
                 "adp_wfm": ADP_WORKFORCE_MANAGER_RESOURCE,
             },
         )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]  # pyright: ignore[reportOperatorIssue, reportAttributeAccessIssue, reportOptionalMemberAccess]
-        .value
-        > 0
+
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
-    assert result.get_asset_check_evaluations()[0].metadata.get("extras").text == ""  # pyright: ignore[reportOptionalMemberAccess]
+    records = _check.inst(
+        event_specific_data.materialization.metadata["records"].value, int
+    )
+    assert records > 0
+
+    extras = _check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
+        ttype=TextMetadataValue,
+    )
+    assert extras.text == ""
 
 
 def test_asset_adp_workforce_manager_accrual_reporting_period_summary():

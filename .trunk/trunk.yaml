@@ -7,22 +7,46 @@ plugins:
       ref: v1.5.0
       uri: https://github.com/trunk-io/plugins
 lint:
+  enabled:
+    - pyright@1.1.365
+    - actionlint@1.7.1
+    - bandit@1.7.8
+    - git-diff-check
+    - gitleaks@8.18.3
+    - hadolint@2.12.0
+    - isort@5.13.2
+    - markdownlint@0.41.0
+    - osv-scanner@1.7.4
+    - oxipng@9.1.1
+    - prettier@3.3.0
+    - ruff@0.4.7
+    - shellcheck@0.10.0
+    - shfmt@3.6.0
+    - sqlfluff@3.0.7
+    - sqlfmt@0.21.3
+    - svgo@3.3.2
+    - taplo@0.8.1
+    - trufflehog@3.77.0
+    - yamllint@1.35.1
   disabled:
     - black
     - checkov
     - flake8
-    - pyright
     - sql-formatter
     - terrascan
     - trivy
   ignore:
-    - linters:
-        - sqlfmt
-        - sqlfluff
-      paths:
+    - paths:
         - src/teamster/**
-    - linters:
+      linters:
+        - sqlfluff
+        - sqlfmt
+    - paths:
+        - src/dbt/**
+      linters:
         - actionlint
+        - bandit
+        - git-diff-check
         - hadolint
         - isort
         - markdownlint
@@ -33,32 +57,10 @@ lint:
         - shfmt
         - svgo
         - taplo
-      paths:
-        - src/dbt/**
-    - linters:
-        - ALL
-      paths:
+    - paths:
         - .k8s/**/values.yaml
-  enabled:
-    - actionlint@1.7.0
-    - bandit@1.7.8
-    - git-diff-check
-    - gitleaks@8.18.2
-    - hadolint@2.12.0
-    - isort@5.13.2
-    - markdownlint@0.40.0
-    - osv-scanner@1.7.3
-    - oxipng@9.1.1
-    - prettier@3.2.5
-    - ruff@0.4.5
-    - shellcheck@0.10.0
-    - shfmt@3.6.0
-    - sqlfluff@3.0.7
-    - sqlfmt@0.21.3
-    - svgo@3.3.2
-    - taplo@0.8.1
-    - trufflehog@3.76.3
-    - yamllint@1.35.1
+      linters:
+        - ALL
   definitions:
     - name: ruff
       commands:

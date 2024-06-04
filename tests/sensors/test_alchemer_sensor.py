@@ -1,6 +1,12 @@
 import json
 
-from dagster import build_sensor_context, instance_for_test
+from dagster import (
+    RunRequest,
+    SensorResult,
+    _check,
+    build_sensor_context,
+    instance_for_test,
+)
 
 from teamster.kipptaf.alchemer.sensors import (
     alchemer_survey_metadata_asset_sensor,
@@ -22,7 +28,10 @@ def test_alchemer_survey_metadata_asset_sensor():
             alchemer=ALCHEMER_RESOURCE,
         )
 
-    assert len(sensor_result.run_requests) > 0
+    assert isinstance(sensor_result, SensorResult)
+    run_requests = _check.inst(sensor_result.run_requests, list[RunRequest])
+
+    assert len(run_requests) > 0
 
 
 def test_alchemer_survey_response_asset_sensor():
@@ -38,4 +47,7 @@ def test_alchemer_survey_response_asset_sensor():
             alchemer=ALCHEMER_RESOURCE,
         )
 
-    assert len(sensor_result.run_requests) > 0
+    assert isinstance(sensor_result, SensorResult)
+    run_requests = _check.inst(sensor_result.run_requests, list[RunRequest])
+
+    assert len(run_requests) > 0

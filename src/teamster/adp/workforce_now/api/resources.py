@@ -1,8 +1,9 @@
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
-from requests import exceptions
+from requests import Response
 from requests.auth import HTTPBasicAuth
+from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -15,8 +16,11 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
     _service_root: str = PrivateAttr(default="https://api.adp.com")
     _session: OAuth2Session = PrivateAttr()
+    _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(context.log)
+
         # instantiate client
         self._session = OAuth2Session(
             client=BackendApplicationClient(client_id=self.client_id)
@@ -38,16 +42,16 @@ class AdpWorkforceNowResource(ConfigurableResource):
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
     )
     def _request(self, method, url, **kwargs):
+        response = Response()
+
         try:
             response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
-
             return response
-        except exceptions.HTTPError as e:
-            self.get_resource_context().log.error(response.text)
-
-            raise exceptions.HTTPError() from e
+        except HTTPError as e:
+            self._log.error(response.text)
+            raise HTTPError() from e
 
     def post(self, endpoint, subresource, verb, payload):
         return self._request(
@@ -68,16 +72,15 @@ class AdpWorkforceNowResource(ConfigurableResource):
         page_size = 100
         all_records = []
 
-        context = self.get_resource_context()
-        endpoint_name = endpoint.split("/")[-1]
         if params is None:
             params = {}
+
+        endpoint_name = endpoint.split("/")[-1]
 
         params.update({"$top": page_size, "$skip": 0})
 
         while True:
-            context.log.debug(params)
-
+            self._log.debug(params)
             response = self.get(endpoint=endpoint, params=params)
 
             if response.status_code == 204:
