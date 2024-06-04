@@ -134,13 +134,7 @@ with
             and t.teacher_quarter = aud.quarter
             and t.region = aud.region
         where exclude_row = 0
-    )
-
-select *
-from
-    assign_2
-
-    /*
+    ),
 
     assign_3 as (
         select distinct
@@ -167,24 +161,29 @@ from
             t.expected_teacher_assign_category_name,
             t.audit_category_exp_audit_week_ytd,
             t.counter,
-            a.assignmentid as teacher_assign_id,
-            a.name as teacher_assign_name,
-            a.scoretype as teacher_assign_score_type,
-            a.totalpointvalue as teacher_assign_max_score,
-            a.duedate as teacher_assign_due_date,
+            a.assign_id as teacher_assign_id,
+            a.assign_name as teacher_assign_name,
+            a.assign_score_type as teacher_assign_score_type,
+            a.assign_max_score as teacher_assign_max_score,
+            a.assign_due_date as teacher_assign_due_date,
 
-            if(a.assignmentid is null, 0, 1) as teacher_assign_count,
+            if(a.assign_id is null, 0, 1) as teacher_assign_count,
 
         from assign_2 as t
         inner join
             {{ ref("int_powerschool__student_assignments") }} as a
             on t.course_number = a.course_number
             and t.sections_dcid = a.sections_dcid
-            and t.teacher_number = a.teacher_number
+            and t.teacher_name = a.teacher_name
             and t.expected_teacher_assign_category_name = a.assign_category
-            and t.teacher_assign_id = a.assign_id
             and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
-    ),
+    )
+
+select *
+from
+    assign_3
+
+    /*
 
     assign_4 as (
         select

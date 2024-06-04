@@ -2,8 +2,8 @@ with
     assign_1 as (
         select
             co._dbt_source_relation,
-            co.cc_sectionid as sectionid,
             co.sections_dcid,
+            co.cc_sectionid as sectionid,
             co.cc_section_number as section_number,
             co.cc_course_number as course_number,
             co.teacher_lastfirst as teacher_name,
@@ -28,11 +28,11 @@ with
 
             s.scorepoints as assign_score_raw,
 
-            aud.year_week_number as audit_yr_week_number,
-            aud.quarter_week_number as audit_qt_week_number,
             aud.audit_start_date,
             aud.audit_end_date,
             aud.audit_due_date,
+            aud.year_week_number as audit_yr_week_number,
+            aud.quarter_week_number as audit_qt_week_number,
 
             1 as counter,
 
@@ -229,6 +229,7 @@ select
     students_dcid,
     student_number,
     grade_level,
+
     teacher_name,
     course_number,
     ap_course,
