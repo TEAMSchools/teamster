@@ -25,6 +25,8 @@ class GoogleDirectoryResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = _check.not_none(value=context.log)
+
         if self.service_account_file_path is not None:
             credentials, project_id = auth.load_credentials_from_file(
                 filename=self.service_account_file_path, scopes=self.scopes
@@ -41,8 +43,6 @@ class GoogleDirectoryResource(ConfigurableResource):
             version=f"directory_{self.version}",
             credentials=credentials,
         )
-
-        self._log = _check.not_none(value=context.log)
 
     def _list(self, api_name, **kwargs):
         data = []
