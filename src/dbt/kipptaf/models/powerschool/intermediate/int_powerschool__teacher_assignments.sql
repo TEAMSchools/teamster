@@ -206,77 +206,9 @@ with
             and t.audit_qt_week_number = a.audit_qt_week_number
             and t.expected_teacher_assign_category_name = a.assign_category
             and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
-    )
+    ),
 
-/*
     assign_4 as (
-        select
-            _dbt_source_relation,
-            yearid,
-            academic_year,
-            region,
-            schoolid,
-            school_level,
-            teacher_number,
-            teacher_name,
-            course_number,
-            section_or_period,
-            sectionid,
-            sections_dcid,
-            teacher_semester_code,
-            teacher_quarter,
-            audit_yr_week_number,
-            audit_qt_week_number,
-            audit_start_date,
-            audit_end_date,
-            audit_due_date,
-            expected_teacher_assign_category_code,
-            expected_teacher_assign_category_name,
-            audit_category_exp_audit_week_ytd,
-            counter,
-            teacher_assign_id,
-            teacher_assign_name,
-            teacher_assign_score_type,
-            teacher_assign_max_score,
-            teacher_assign_due_date,
-            teacher_assign_count,
-
-            if(
-                sum(teacher_assign_count) over (
-                    partition by
-                        schoolid,
-                        teacher_name,
-                        course_number,
-                        section_or_period,
-                        teacher_quarter,
-                        expected_teacher_assign_category_code
-                    order by teacher_quarter, audit_qt_week_number
-                )
-                >= audit_category_exp_audit_week_ytd,
-                0,
-                1
-            ) as teacher_category_assign_count_expected_not_met,
-
-            sum(teacher_assign_count) over (
-                partition by
-                    schoolid,
-                    teacher_name,
-                    course_number,
-                    section_or_period,
-                    teacher_quarter,
-                    expected_teacher_assign_category_code
-                order by teacher_quarter, audit_qt_week_number
-            ) as teacher_running_total_assign_by_cat,
-
-        from assign_3
-    )*/
-select *
-from
-    assign_3
-
-    /*
-
-    assign_5 as (
         select distinct
             t._dbt_source_relation,
             t.yearid,
@@ -331,7 +263,7 @@ from
                     t.schoolid,
                     t.teacher_name,
                     t.teacher_quarter,
-                    t.quarter_week_number,
+                    t.audit_qt_week_number,
                     asg.assign_category_code
             ) as
             total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
@@ -341,7 +273,7 @@ from
                     t.schoolid,
                     t.teacher_name,
                     t.teacher_quarter,
-                    t.quarter_week_number,
+                    t.audit_qt_week_number,
                     asg.assign_category_code
             ) as total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
 
@@ -349,7 +281,7 @@ from
                 partition by
                     t.schoolid,
                     t.teacher_quarter,
-                    t.quarter_week_number,
+                    t.audit_qt_week_number,
                     t.course_number,
                     t.section_or_period,
                     asg.assign_category_code
@@ -359,7 +291,7 @@ from
                 partition by
                     t.schoolid,
                     t.teacher_quarter,
-                    t.quarter_week_number,
+                    t.audit_qt_week_number,
                     t.course_number,
                     t.section_or_period,
                     asg.assign_category_code
@@ -371,7 +303,7 @@ from
                     t.course_number,
                     t.sectionid,
                     t.teacher_quarter,
-                    t.quarter_week_number,
+                    t.audit_qt_week_number,
                     asg.assign_category,
                     asg.assign_id
             ) as
@@ -383,7 +315,7 @@ from
                     t.course_number,
                     t.sectionid,
                     t.teacher_quarter,
-                    t.quarter_week_number,
+                    t.audit_qt_week_number,
                     asg.assign_category,
                     asg.assign_id
             ) as total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
@@ -440,7 +372,7 @@ from
                 0
             ) as qt_teacher_s_total_greater_200,
 
-        from assign_4 as t
+        from assign_3 as t
         left join
             {{ ref("int_powerschool__student_assignments") }} as asg
             on t.academic_year = asg.academic_year
@@ -452,6 +384,11 @@ from
             and {{ union_dataset_join_clause(left_alias="t", right_alias="asg") }}
     )
 
+select *
+from
+    assign_4
+
+    /*
 select
     _dbt_source_relation,
     yearid,
