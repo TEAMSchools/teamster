@@ -277,4 +277,25 @@ select
         0
     ) as assign_s_score_less_50p,
 
+    if(
+        assign_is_exempt = 0
+        and school_level = 'MS'
+        and assign_category_code = 'S'
+        and (assign_final_score_percent * 100)
+        not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100),
+        1,
+        0
+    ) as assign_s_ms_score_not_conversion_chart_options,
+
+    if(
+        assign_is_exempt = 0
+        and school_level = 'HS'
+        and assign_category_code = 'S'
+        and ap_course = 0
+        and (assign_final_score_percent * 100)
+        not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
+        1,
+        0
+    ) as assign_s_hs_score_not_conversion_chart_options,
+
 from assign_2
