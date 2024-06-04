@@ -37,6 +37,8 @@ with
 
             1 as counter,
 
+            left(gb.storecode, 1) as assign_category_code,
+
             coalesce(s.islate, 0) as assign_is_late,
             coalesce(s.isexempt, 0) as assign_is_exempt,
             coalesce(s.ismissing, 0) as assign_is_missing,
@@ -60,7 +62,6 @@ with
             if(
                 concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
             ) as assign_semester_code,
-            left(gb.storecode, 1) as assign_category_code,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -143,7 +144,13 @@ with
             and a.duedate between co.cc_dateenrolled and co.cc_dateleft
             and a.scoretype in ('POINTS', 'PERCENT')
             and left(gb.storecode, 1) not in ('Q', 'H')
-    ),
+    )
+
+select *
+from
+    assign_1
+
+    /*
 
     assign_2 as (
         select
@@ -299,3 +306,5 @@ select
     ) as assign_s_hs_score_not_conversion_chart_options,
 
 from assign_2
+*/
+    
