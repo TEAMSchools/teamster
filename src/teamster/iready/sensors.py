@@ -55,7 +55,7 @@ def build_iready_sftp_sensor(
                 if (
                     match is not None
                     and f.st_mtime > last_run
-                    and _check.not_none(f.st_size) > 0
+                    and _check.not_none(value=f.st_size) > 0
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     run_requests.append(

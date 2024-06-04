@@ -16,7 +16,7 @@ class GoogleSheetsResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(context.log)
+        self._log = _check.not_none(value=context.log)
 
         if self.service_account_file_path is not None:
             self._client = service_account(

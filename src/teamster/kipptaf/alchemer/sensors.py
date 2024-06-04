@@ -74,7 +74,7 @@ def alchemer_survey_metadata_asset_sensor(
         if is_run_request:
             dynamic_partitions_requests.append(
                 AddDynamicPartitionsRequest(
-                    partitions_def_name=_check.not_none(partitions_def.name),
+                    partitions_def_name=_check.not_none(value=partitions_def.name),
                     partition_keys=[survey_id],
                 )
             )

@@ -1,8 +1,8 @@
 from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
 
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.powerschool.enrollment.schema import SUBMISSION_RECORD_SCHEMA
@@ -38,7 +38,7 @@ PUBLISHED_ACTION_IDS = [
     group_name="powerschool",
     partitions_def=StaticPartitionsDefinition(PUBLISHED_ACTION_IDS),
     check_specs=[
-        get_avro_schema_valid_check_spec(
+        build_check_spec_avro_schema_valid(
             [CODE_LOCATION, "powerschool", "enrollment", "submission_records"]
         )
     ],
