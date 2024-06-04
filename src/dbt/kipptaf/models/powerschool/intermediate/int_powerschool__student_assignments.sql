@@ -1,3 +1,17 @@
+{% set exempt_courses = [
+    "LOG20",
+    "LOG22999XL",
+    "LOG9",
+    "LOG100",
+    "LOG1010",
+    "LOG11",
+    "LOG12",
+    "LOG300",
+    "SEM22106G1",
+    "SEM22106S1",
+    "HR",
+] %}
+
 with
     assign_1 as (
         select
@@ -125,13 +139,13 @@ with
             {{ ref("base_powerschool__student_enrollments") }} as enr
             on co.cc_studentid = enr.studentid
             and co.cc_yearid = enr.yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
             and enr.rn_year = 1
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
         inner join
             {{ ref("int_powerschool__section_grade_config") }} as gb
             on co.sections_dcid = gb.sections_dcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="gb") }}
             and gb.grading_formula_weighting_type != 'Total_Points'
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="gb") }}
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on gb.sections_dcid = a.sectionsdcid
@@ -155,7 +169,7 @@ with
             = regexp_extract(ap._dbt_source_relation, r'(kipp\w+)_')
         where
             co.cc_academic_year = {{ var("current_academic_year") }}
-            and co.cc_course_number != 'HR'
+            and co.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
             and not co.is_dropped_section
             and co.cc_dateleft >= current_date('America/New_York')
             and enr.enroll_status = 0
@@ -229,7 +243,6 @@ select
     students_dcid,
     student_number,
     grade_level,
-
     teacher_name,
     course_number,
     ap_course,
