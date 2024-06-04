@@ -38,8 +38,10 @@ with
             1 as counter,
 
             if(
-                enr.region = 'Miami' and enr.grade_level <= 4,
-                concat(left(gb.category_name, 1), left(gb.storecode, 1)),
+                enr.region = 'Miami'
+                and enr.grade_level <= 4
+                and gb.category_name != 'Work Habits',
+                concat(left(gb.category_name, 1), right(gb.storecode, 1)),
                 left(gb.storecode, 1)
             ) as assign_category_code,
 
@@ -68,8 +70,7 @@ with
                     enr.grade_level <= 4
                     and enr.region = 'Miami'
                     and left(gb.storecode, 1) = 'Q'
-                    and left(gb.category_name, 1)
-                    in ('Formative Mastery', 'Summative Mastery')
+                    and left(gb.category_name, 1) in ('F', 'S')
                 ),
                 0,
                 1
