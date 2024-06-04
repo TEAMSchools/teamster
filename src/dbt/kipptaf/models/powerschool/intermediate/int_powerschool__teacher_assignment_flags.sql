@@ -68,12 +68,6 @@ with
             )*/
     )
 
-select *
-from
-    teacher_unpivot_flags
-
-    /*
-
 select distinct
     _dbt_source_relation,
     yearid,
@@ -84,14 +78,14 @@ select distinct
     teacher_number,
     teacher_name,
     course_number,
-    `section`,
+    section_or_period,
     sectionid,
     sections_dcid,
     teacher_quarter,
     expected_teacher_assign_category_code,
     expected_teacher_assign_category_name,
-    year_week_number,
-    quarter_week_number,
+    audit_yr_week_number,
+    audit_qt_week_number,
     audit_start_date,
     audit_end_date,
     audit_due_date,
@@ -138,5 +132,3 @@ from
             's_expected_assign_count_not_met'
         )
     )
-*/
-    
