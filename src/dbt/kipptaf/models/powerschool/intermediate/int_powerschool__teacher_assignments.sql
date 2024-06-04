@@ -169,6 +169,33 @@ with
 
             if(a.assign_id is null, 0, 1) as teacher_assign_count,
 
+            if(
+                sum(if(a.assign_id is null, 0, 1)) over (
+                    partition by
+                        t.schoolid,
+                        t.teacher_name,
+                        t.course_number,
+                        t.section_or_period,
+                        t.teacher_quarter,
+                        t.expected_teacher_assign_category_code
+                    order by t.teacher_quarter, t.audit_qt_week_number
+                )
+                >= t.audit_category_exp_audit_week_ytd,
+                0,
+                1
+            ) as teacher_category_assign_count_expected_not_met,
+
+            sum(if(a.assign_id is null, 0, 1)) over (
+                partition by
+                    t.schoolid,
+                    t.teacher_name,
+                    t.course_number,
+                    t.section_or_period,
+                    t.teacher_quarter,
+                    t.expected_teacher_assign_category_code
+                order by t.teacher_quarter, t.audit_qt_week_number
+            ) as teacher_running_total_assign_by_cat,
+
         from assign_2 as t
         inner join
             {{ ref("int_powerschool__student_assignments") }} as a
@@ -177,8 +204,9 @@ with
             and t.teacher_name = a.teacher_name
             and t.expected_teacher_assign_category_name = a.assign_category
             and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
-    ),
+    )
 
+/*
     assign_4 as (
         select
             _dbt_source_relation,
@@ -239,11 +267,10 @@ with
             ) as teacher_running_total_assign_by_cat,
 
         from assign_3
-    )
-
+    )*/
 select *
 from
-    assign_4
+    assign_3
 
     /*
 
