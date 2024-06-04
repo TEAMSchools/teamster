@@ -10,7 +10,7 @@ from sshtunnel import SSHTunnelForwarder
 
 class SSHResource(DagsterSSHResource):
     # trunk-ignore(pyright/reportIncompatibleVariableOverride)
-    remote_port: str | None = None
+    remote_port: str = "22"
     tunnel_remote_host: str | None = None
 
     def get_tunnel(

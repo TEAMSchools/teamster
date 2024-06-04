@@ -104,7 +104,7 @@ def build_powerschool_schedule(
                             partition_size=1,
                             output_format=None,
                         ),
-                        list[tuple],
+                        list,
                     )
 
                     context.log.info(f"count: {count}")
