@@ -521,6 +521,7 @@ with
             rt.academic_year,
             rt.grade_band as school_level,
             rt.name as quarter,
+            rt.is_current as is_current_quarter,
 
             min(c.date_value) as cal_quarter_start_date,
             max(c.date_value) as cal_quarter_end_date,
@@ -533,11 +534,11 @@ with
             and left(rt.name, 1) = 'Q'
             and rt.academic_year = `functions.current_academic_year`()
         where c.membershipvalue = 1 and c.schoolid not in (0, 999999)
-        group by c.schoolid, rt.academic_year, rt.grade_band, rt.name
+        group by c.schoolid, rt.academic_year, rt.grade_band, rt.name, rt.is_current
     ),
 
     final_roster as (
-        select
+        /*select
             s._dbt_source_relation,
             s.academic_year,
             s.region,
@@ -712,6 +713,156 @@ with
             and s.school_level = cal.school_level
             and s.quarter = cal.quarter
         where concat(s.school_level, s.region) not in ('ESCamden', 'ESNewark')
+
+        union all
+*/
+        select
+            s._dbt_source_relation,
+            s.academic_year,
+            s.region,
+            s.school_level,
+            s.schoolid,
+            s.school,
+            s.student_number,
+            s.studentid,
+            s.salesforce_id,
+            s.ktc_cohort,
+            s.lastfirst,
+            s.gender,
+            s.enroll_status,
+            s.grade_level,
+            s.ethnicity,
+            s.cohort,
+            s.year_in_school,
+            s.is_out_of_district,
+            s.lep_status,
+            s.is_504,
+            s.is_pathways,
+            s.iep_status,
+            s.lunch_status,
+            s.is_counseling_services,
+            s.is_student_athlete,
+            s.year_in_network,
+            s.is_retained_year,
+            s.is_retained_ever,
+            s.rn_undergrad,
+            s.advisory,
+            s.advisor_name,
+            s.ada,
+            s.hos,
+            s.roster_type,
+            s.semester,
+            s.quarter,
+
+            m.tutoring_nj,
+            m.nj_student_tier,
+
+            qy1.quarter_course_in_progress_percent_grade,
+            qy1.quarter_course_in_progress_letter_grade,
+            qy1.quarter_course_in_progress_grade_points,
+            qy1.quarter_course_in_progress_percent_grade_adjusted,
+            qy1.quarter_course_in_progress_letter_grade_adjusted,
+            qy1.quarter_course_final_percent_grade,
+            qy1.quarter_course_final_letter_grade,
+            qy1.quarter_course_final_grade_points,
+            qy1.quarter_course_percent_grade_that_matters,
+            qy1.quarter_course_letter_grade_that_matters,
+            qy1.quarter_course_grade_points_that_matters,
+
+            qy1.need_60,
+            qy1.need_70,
+            qy1.need_80,
+            qy1.need_90,
+            qy1.y1_course_in_progress_percent_grade,
+            qy1.y1_course_in_progress_percent_grade_adjusted,
+            qy1.y1_course_in_progress_letter_grade,
+            qy1.y1_course_in_progress_letter_grade_adjusted,
+            qy1.y1_course_in_progress_grade_points,
+            qy1.y1_course_in_progress_grade_points_unweighted,
+            qy1.quarter_citizenship,
+            qy1.quarter_comment_value,
+
+            cal.is_current_quarter,
+            cal.cal_quarter_start_date as quarter_start_date,
+            cal.cal_quarter_end_date as quarter_end_date,
+            '' as category_name_code,
+            '' as category_quarter_code,
+            null as category_quarter_percent_grade,
+            null as category_y1_percent_grade_running,
+            null as category_y1_percent_grade_current,
+            null as category_quarter_average_all_courses,
+
+            null as gpa_for_quarter,
+            null as gpa_semester,
+            null as gpa_y1,
+            null as gpa_y1_unweighted,
+            null as gpa_total_credit_hours,
+            null as gpa_n_failing_y1,
+            null as gpa_cumulative_y1_gpa,
+            null as gpa_cumulative_y1_gpa_unweighted,
+            null as gpa_cumulative_y1_gpa_projected,
+            null as gpa_cumulative_y1_gpa_projected_s1,
+            null as gpa_cumulative_y1_gpa_projected_s1_unweighted,
+            null as gpa_core_cumulative_y1_gpa,
+
+            cal.cal_quarter_end_date,
+
+            coalesce(m.course_name, y1h.course_name) as course_name,
+            coalesce(m.course_number, y1h.course_number) as course_number,
+            coalesce(m.sectionid, y1h.sectionid) as sectionid,
+            coalesce(safe_cast(m.sections_dcid as string), 'Transfer') as sections_dcid,
+            coalesce(m.section_number, 'Transfer') as section_number,
+            coalesce(m.external_expression, 'Transfer') as external_expression,
+            coalesce(m.credit_type, y1h.credit_type) as credit_type,
+            coalesce(m.teacher_number, 'Transfer') as teacher_number,
+            coalesce(m.teacher_name, y1h.teacher_name) as teacher_name,
+            coalesce(m.exclude_from_gpa, y1h.exclude_from_gpa) as exclude_from_gpa,
+
+            null as y1_course_final_percent_grade_adjusted,
+            null as y1_course_final_letter_grade_adjusted,
+            '' as y1_course_final_earned_credits,
+            '' as y1_course_final_potential_credit_hours,
+            '' as y1_course_final_grade_points,
+            if(s.ada >= 0.80, 1, 0) as ada_above_or_at_80,
+
+        from students as s
+        left join
+            section_teacher as m
+            on s.yearid = m.yearid
+            and s.studentid = m.studentid
+            and s.quarter = m.quarter
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+        left join
+            final_y1_historical as y1h
+            on m.yearid = y1h.yearid
+            and m.studentid = y1h.studentid
+            and m.course_number = y1h.course_number
+            and m.sectionid = y1h.sectionid
+            and m.quarter = y1h.quarter
+            and y1h.credit_type != 'Transfer'
+            and {{ union_dataset_join_clause(left_alias="m", right_alias="y1h") }}
+        left join
+            final_y1_historical as y1t
+            on s.yearid = y1t.yearid
+            and s.studentid = y1t.studentid
+            and s.quarter = y1t.quarter
+            and s.grade_level = y1t.grade_level
+            and y1t.credit_type = 'Transfer'
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="y1t") }}
+        left join
+            quarter_and_ip_y1_grades as qy1
+            on m.yearid = qy1.yearid
+            and m.studentid = qy1.studentid
+            and m.course_number = qy1.course_number
+            and m.sectionid = qy1.sectionid
+            and m.quarter = qy1.quarter
+            and {{ union_dataset_join_clause(left_alias="m", right_alias="qy1") }}
+        left join
+            calendar_dates as cal
+            on s.schoolid = cal.schoolid
+            and s.school_level = cal.school_level
+            and s.quarter = cal.quarter
+        where concat(s.school_level, s.region) in ('ESCamden', 'ESNewark')
     )
 
 select *
