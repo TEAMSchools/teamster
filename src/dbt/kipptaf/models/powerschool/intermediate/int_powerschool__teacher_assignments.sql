@@ -384,11 +384,6 @@ with
             and {{ union_dataset_join_clause(left_alias="t", right_alias="asg") }}
     )
 
-select *
-from
-    assign_4
-
-    /*
 select
     _dbt_source_relation,
     yearid,
@@ -420,7 +415,6 @@ select
     teacher_assign_due_date,
     teacher_assign_count,
     teacher_running_total_assign_by_cat,
-    teacher_semester_code,
     teacher_avg_score_for_assign_per_class_section_and_assign_id,
     total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
     total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
@@ -498,5 +492,4 @@ select
         2
     ) as percent_graded_completion_by_assign_id_qt_audit_week,
 
-from assign_5*/
-    
+from assign_4
