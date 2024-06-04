@@ -19,9 +19,9 @@ from pandas import read_csv
 from slugify import slugify
 
 from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 
 
@@ -45,7 +45,7 @@ def build_adp_wfm_asset(
         ),
         group_name="adp_workforce_manager",
         auto_materialize_policy=AutoMaterializePolicy.eager(),
-        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def

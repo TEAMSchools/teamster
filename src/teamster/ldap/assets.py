@@ -1,8 +1,8 @@
 from dagster import AssetExecutionContext, Output, asset
 
 from teamster.core.utils.functions import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.ldap.resources import LdapResource
 
@@ -65,7 +65,7 @@ def build_ldap_asset(
         op_tags=op_tags,
         group_name="ldap",
         compute_kind="python",
-        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, ldap: LdapResource):
         ldap._connection.search(**context.assets_def.metadata_by_key[context.asset_key])

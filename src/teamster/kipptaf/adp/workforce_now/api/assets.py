@@ -2,8 +2,8 @@ from dagster import AssetExecutionContext, DailyPartitionsDefinition, Output, as
 
 from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.core.utils.functions import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kipptaf.adp.workforce_now.api.schema import WORKER_SCHEMA
@@ -16,7 +16,7 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
     io_manager_key="io_manager_gcs_avro",
     group_name="adp_workforce_now",
     compute_kind="python",
-    check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+    check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     partitions_def=DailyPartitionsDefinition(
         start_date="01/01/2021", fmt="%m/%d/%Y", timezone=LOCAL_TIMEZONE.name
     ),

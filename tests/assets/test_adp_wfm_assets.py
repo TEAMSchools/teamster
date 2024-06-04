@@ -4,7 +4,6 @@ from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
-    TextMetadataValue,
     _check,
     instance_for_test,
     materialize,
@@ -55,18 +54,24 @@ def _test_asset(asset: AssetsDefinition):
     assert result.success
 
     asset_materialization_event = result.get_asset_materialization_events()[0]
-    event_specific_data = _check.inst(
+
+    step_materialization_data = _check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
+
     records = _check.inst(
-        event_specific_data.materialization.metadata["records"].value, int
+        step_materialization_data.materialization.metadata["records"].value, int
     )
+
     assert records > 0
 
-    extras = _check.inst(
-        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
-        ttype=TextMetadataValue,
-    )
+    asset_check_evaluation = result.get_asset_check_evaluations()[0]
+
+    assert asset_check_evaluation.passed
+
+    extras = asset_check_evaluation.metadata.get("extras")
+
+    assert extras is not None
     assert extras.text == ""
 
 

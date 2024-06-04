@@ -18,8 +18,8 @@ from slugify import slugify
 
 from teamster.core.definitions.external_asset import external_assets_from_specs
 from teamster.core.utils.functions import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.tableau.schema import WORKBOOK_SCHEMA
@@ -46,7 +46,7 @@ asset_key = [*workbook_asset_def["key_prefix"], asset_name]
             ),
         }
     ),
-    check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+    check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     **workbook_asset_def,
 )
 def workbook(context: AssetExecutionContext, tableau: TableauServerResource):

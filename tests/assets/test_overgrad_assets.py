@@ -1,5 +1,4 @@
 from dagster import (
-    AssetCheckResult,
     AssetsDefinition,
     DynamicPartitionsDefinition,
     EnvVar,
@@ -12,7 +11,6 @@ from dagster._core.events import StepMaterializationData
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.kipptaf.overgrad.assets import (
     admissions,
-    asset_checks,
     custom_fields,
     followings,
     schools,
@@ -40,25 +38,22 @@ def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
     assert result.success
 
     asset_materialization_event = result.get_asset_materialization_events()[0]
+
     event_specific_data = _check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
+
     records = _check.inst(
         event_specific_data.materialization.metadata["record_count"].value, int
     )
+
     assert records > 0
 
-    asset_check = [
-        ac for ac in asset_checks if ac.keys_by_input_name["asset_value"] == asset.key
-    ][0]
+    asset_check_evaluation = result.get_asset_check_evaluations()[0]
 
-    asset_check_result = _check.inst(
-        obj=asset_check(result.asset_value(asset.key)), ttype=AssetCheckResult
-    )
+    assert asset_check_evaluation.passed
 
-    assert asset_check_result.passed
-
-    extras = asset_check_result.metadata.get("extras")
+    extras = asset_check_evaluation.metadata.get("extras")
 
     assert extras is not None
     assert extras.text == ""

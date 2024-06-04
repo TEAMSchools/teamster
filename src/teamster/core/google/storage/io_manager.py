@@ -1,9 +1,8 @@
-from typing import BinaryIO
 from urllib.parse import urlparse
 
 import fastavro
 import pendulum
-from dagster import Any, InputContext, MultiPartitionKey, OutputContext, _check
+from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
@@ -105,7 +104,13 @@ class AvroGCSIOManager(GCSUPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         blob = self.bucket_obj.blob(blob_name=str(path))
 
-        return fastavro.reader(fo=_check.inst(obj=blob.open("rb"), ttype=BinaryIO))
+        with blob.open(mode="rb") as fo:
+            # trunk-ignore(pyright/reportArgumentType)
+            reader = fastavro.reader(fo=fo)
+
+            records = [record for record in reader]
+
+        return (records, reader.writer_schema)
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         bucket_obj: Bucket = self.bucket_obj

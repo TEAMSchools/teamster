@@ -13,6 +13,7 @@ from teamster.google.drive.resources import GoogleDriveResource
 from teamster.google.forms.resources import GoogleFormsResource
 from teamster.google.sheets.resources import GoogleSheetsResource
 from teamster.ldap.resources import LdapResource
+from teamster.overgrad.resources import OvergradResource
 from teamster.powerschool.enrollment.resources import PowerSchoolEnrollmentResource
 from teamster.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.smartrecruiters.resources import SmartRecruitersResource
@@ -86,6 +87,8 @@ LDAP_RESOURCE = LdapResource(
 MCLASS_RESOURCE = MClassResource(
     username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
 )
+
+OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100)
 
 POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
     api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000

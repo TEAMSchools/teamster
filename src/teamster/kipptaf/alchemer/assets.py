@@ -6,8 +6,8 @@ from requests.exceptions import HTTPError
 
 from teamster.alchemer.resources import AlchemerResource
 from teamster.core.utils.functions import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.alchemer.schema import (
@@ -24,7 +24,7 @@ partitions_def = DynamicPartitionsDefinition(name=f"{CODE_LOCATION}_alchemer_sur
 
 @asset(
     key=[*key_prefix, "survey"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "survey"])],
     partitions_def=partitions_def,
     io_manager_key="io_manager_gcs_avro",
     group_name="alchemer",
@@ -44,7 +44,7 @@ def survey(context: OpExecutionContext, alchemer: AlchemerResource):
 
 @asset(
     key=[*key_prefix, "survey_question"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_question"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "survey_question"])],
     partitions_def=partitions_def,
     io_manager_key="io_manager_gcs_avro",
     group_name="alchemer",
@@ -66,7 +66,7 @@ def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
 
 @asset(
     key=[*key_prefix, "survey_campaign"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_campaign"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "survey_campaign"])],
     partitions_def=partitions_def,
     io_manager_key="io_manager_gcs_avro",
     group_name="alchemer",
@@ -91,7 +91,7 @@ def survey_campaign(context: OpExecutionContext, alchemer: AlchemerResource):
 
 @asset(
     key=[*key_prefix, "survey_response"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "survey_response"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "survey_response"])],
     partitions_def=DynamicPartitionsDefinition(
         name=f"{CODE_LOCATION}_alchemer_survey_response"
     ),
@@ -146,7 +146,9 @@ def survey_response(context: OpExecutionContext, alchemer: AlchemerResource):
 @asset(
     key=[*key_prefix, "survey_response_disqualified"],
     check_specs=[
-        get_avro_schema_valid_check_spec([*key_prefix, "survey_response_disqualified"])
+        build_check_spec_avro_schema_valid(
+            [*key_prefix, "survey_response_disqualified"]
+        )
     ],
     partitions_def=partitions_def,
     io_manager_key="io_manager_gcs_avro",

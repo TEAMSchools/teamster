@@ -13,8 +13,8 @@ from dagster import (
 
 from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.core.utils.functions import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.deanslist.resources import DeansListResource
 
@@ -39,7 +39,7 @@ def build_deanslist_static_partition_asset(
         op_tags=op_tags,
         group_name="deanslist",
         compute_kind="python",
-        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         endpoint_content = deanslist.get(
@@ -82,7 +82,7 @@ def build_deanslist_multi_partition_asset(
         op_tags=op_tags,
         group_name="deanslist",
         compute_kind="python",
-        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         partitions_def = _check.inst(
