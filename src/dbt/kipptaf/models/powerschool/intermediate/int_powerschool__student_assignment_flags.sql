@@ -44,7 +44,9 @@ with
                     assign_f_score_less_5,
                     assign_w_missing_score_not_5,
                     assign_f_missing_score_not_5,
-                    assign_s_score_less_50p
+                    assign_s_score_less_50p,
+                    assign_s_ms_score_not_conversion_chart_options,
+                    assign_s_hs_score_not_conversion_chart_options
                 )
             )
         where student_flag_value = 1
@@ -77,6 +79,7 @@ select distinct
     assign_is_missing,
     assign_score_raw,
     assign_score_converted,
+    assign_final_score_percent,
     assign_max_score,
     audit_qt_week_number,
 
@@ -86,8 +89,10 @@ select distinct
     assign_w_score_less_5,
     assign_f_score_less_5,
     assign_w_missing_score_not_5,
-    assign_s_score_less_50p,
     assign_f_missing_score_not_5,
+    assign_s_score_less_50p,
+    assign_s_ms_score_not_conversion_chart_options,
+    assign_s_hs_score_not_conversion_chart_options,
 
 from
     student_unpivot_flags pivot (
@@ -99,6 +104,8 @@ from
             'assign_f_score_less_5',
             'assign_w_missing_score_not_5',
             'assign_f_missing_score_not_5',
-            'assign_s_score_less_50p'
+            'assign_s_score_less_50p',
+            'assign_s_ms_score_not_conversion_chart_options',
+            'assign_s_hs_score_not_conversion_chart_options'
         )
     )
