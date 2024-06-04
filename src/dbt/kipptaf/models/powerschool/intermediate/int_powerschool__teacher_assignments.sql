@@ -86,7 +86,7 @@ with
         where
             t.academic_year = {{ var("current_academic_year") }}
             and s.courses_schoolid != 999999
-            and s.courses_course_number != exempt_courses
+            and s.courses_course_number != 'exempt_courses'
             and current_date('America/New_York')
             between s.terms_firstday and s.terms_lastday
     ),
