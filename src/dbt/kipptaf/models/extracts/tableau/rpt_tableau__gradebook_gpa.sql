@@ -1742,4 +1742,4 @@ from
             w_grade_inflation
         )
     )
-where audit_flag_value = 0
+where audit_flag_value = 0 g
