@@ -34,7 +34,7 @@ with
                     and regexp_extract(s._dbt_source_relation, r'(kipp\w+)_')
                     = 'kippmiami'
                 )
-                or t.grade_band in ('MS', 'HS')
+                or t.grade_band in ('MS', 'HS'),
                 0,
                 1
             ) as exclude_row,
@@ -76,7 +76,13 @@ with
             and s.courses_course_number != 'HR'
             and current_date('America/New_York')
             between s.terms_firstday and s.terms_lastday
-    ),
+    )
+
+select *
+from
+    assign_1
+
+    /*
 
     assign_2 as (
         select distinct
@@ -181,7 +187,7 @@ with
             section_or_period,
             sectionid,
             sections_dcid,
-            semester_semester_code,
+            teacher_semester_code,
             teacher_quarter,
             audit_yr_week_number,
             audit_qt_week_number,
@@ -418,6 +424,7 @@ select
     section_or_period,
     sectionid,
     sections_dcid,
+    teacher_semester_code,
     teacher_quarter,
     audit_yr_week_number,
     audit_qt_week_number,
@@ -513,4 +520,5 @@ select
         2
     ) as percent_graded_completion_by_assign_id_qt_audit_week,
 
-from assign_5
+from assign_5*/
+    
