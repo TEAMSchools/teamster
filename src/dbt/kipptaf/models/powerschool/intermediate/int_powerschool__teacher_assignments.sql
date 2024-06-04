@@ -161,6 +161,7 @@ with
             t.expected_teacher_assign_category_name,
             t.audit_category_exp_audit_week_ytd,
             t.counter,
+            
             a.assign_id as teacher_assign_id,
             a.assign_name as teacher_assign_name,
             a.assign_score_type as teacher_assign_score_type,
