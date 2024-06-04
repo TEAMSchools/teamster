@@ -18,7 +18,7 @@ class AdpWorkforceManagerResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(context.log)
+        self._log = _check.not_none(value=context.log)
         self._base_url = f"https://{self.subdomain}.mykronos.com/api"
 
         self._session.headers["appkey"] = self.app_key

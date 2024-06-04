@@ -15,12 +15,12 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.ssh.resources import SSHResource
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
-    regex_pattern_replace,
 )
+from teamster.core.ssh.resources import SSHResource
+from teamster.core.utils.functions import regex_pattern_replace
 
 
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
@@ -92,7 +92,7 @@ def build_sftp_asset(
         op_tags=op_tags,
         group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
-        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
         compute_kind="python",
     )
     def _asset(context: AssetExecutionContext):

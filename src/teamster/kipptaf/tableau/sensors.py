@@ -34,7 +34,7 @@ def tableau_asset_sensor(
 
         workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
 
-        updated_at_timestamp = _check.not_none(workbook.updated_at).timestamp()
+        updated_at_timestamp = _check.not_none(value=workbook.updated_at).timestamp()
 
         if updated_at_timestamp > last_updated_timestamp:
             context.log.info(workbook.updated_at)

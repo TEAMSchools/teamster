@@ -12,7 +12,7 @@ class SmartRecruitersResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(context.log)
+        self._log = _check.not_none(value=context.log)
         self._session.headers["X-SmartToken"] = self.smart_token
 
     def _get_url(self, endpoint, *args):

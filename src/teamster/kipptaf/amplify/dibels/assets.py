@@ -6,9 +6,9 @@ from pandas import read_csv
 from slugify import slugify
 
 from teamster.amplify.dibels.resources import DibelsDataSystemResource
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.amplify.dibels.schema import DATA_FARMING_SCHEMA
@@ -20,7 +20,7 @@ from teamster.kipptaf.amplify.dibels.schema import DATA_FARMING_SCHEMA
     group_name="amplify",
     compute_kind="python",
     check_specs=[
-        get_avro_schema_valid_check_spec(
+        build_check_spec_avro_schema_valid(
             [CODE_LOCATION, "amplify", "dibels", "data_farming"]
         )
     ],

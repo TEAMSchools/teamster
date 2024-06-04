@@ -64,8 +64,8 @@ def adp_payroll_sftp_sensor(
             (f, path)
             for f, path in files
             if pattern.match(string=path)
-            and _check.not_none(f.st_mtime) > tick_cursor
-            and _check.not_none(f.st_size) > 0
+            and _check.not_none(value=f.st_mtime) > tick_cursor
+            and _check.not_none(value=f.st_size) > 0
         ]
 
         for f, path in file_matches:
