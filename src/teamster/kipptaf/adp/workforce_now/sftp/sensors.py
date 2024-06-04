@@ -2,7 +2,7 @@ import json
 import re
 
 import pendulum
-from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
+from dagster import RunRequest, SensorEvaluationContext, SensorResult, _check, sensor
 
 from teamster.core.ssh.resources import SSHResource
 from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
@@ -22,7 +22,7 @@ def adp_wfn_sftp_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
 
     try:
-        files = ssh_adp_workforce_now.listdir_attr_r(remote_dir=".", files=[])
+        files = ssh_adp_workforce_now.listdir_attr_r()
     except Exception as e:
         context.log.exception(e)
         return SensorResult(skip_reason=str(e))
@@ -36,14 +36,14 @@ def adp_wfn_sftp_sensor(
         last_run = cursor.get(asset_identifier, 0)
 
         updates = []
-        for f in files:
+        for f, _ in files:
             match = re.match(
                 pattern=asset_metadata["remote_file_regex"], string=f.filename
             )
 
             if match is not None:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                if f.st_mtime > last_run and f.st_size > 0:
+                if f.st_mtime > last_run and _check.not_none(f.st_size) > 0:
                     updates.append({"mtime": f.st_mtime})
 
         if updates:

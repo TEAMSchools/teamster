@@ -21,7 +21,7 @@ on:
 
 concurrency:
   # Cancel in-progress deploys to the same branch
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -184,7 +184,7 @@ jobs:
       - prerun
       - dbt
       - build
-    if: needs.prerun.outputs.result != 'skip'
+    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/download-artifact
       - name: Download digests
@@ -224,12 +224,12 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
 
-      # https://github.com/GoogleCloudPlatform/gcr-cleaner
-      - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
-        with:
-          args: >-
-            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster/${{ inputs.code-location }}
-            -keep=1 -tag-filter-any=.* -grace=30m
+      # # https://github.com/GoogleCloudPlatform/gcr-cleaner/blob/main/docs/deploy-github-actions.md
+      # - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
+      #   with:
+      #     args: >-
+      #       -repo=us-central1-docker.pkg.dev/teamster-332318/teamster/${{ inputs.code-location }}
+      #       -keep=5 -tag-filter-any=.*
 
   deploy:
     runs-on: ubuntu-20.04
@@ -238,6 +238,7 @@ jobs:
       - dbt
       - build
       - merge
+    if: github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/checkout
       - name: Checkout

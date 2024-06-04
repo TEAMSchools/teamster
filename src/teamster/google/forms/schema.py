@@ -64,6 +64,8 @@ class Columns(BaseModel):
 
 
 class Grid(BaseModel):
+    shuffleQuestions: bool | None = None
+
     columns: Columns | None = None
 
 
@@ -231,8 +233,3 @@ class Form(BaseModel):
     settings: FormSettings | None = None
 
     items: list[Item | None] | None = None
-
-
-class Responses(BaseModel):
-    nextPageToken: str | None = None
-    responses: list[Response | None] | None = None

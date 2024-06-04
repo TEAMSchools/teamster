@@ -6,10 +6,12 @@ from dagster import (
     AssetsDefinition,
     MonthlyPartitionsDefinition,
     Output,
+    _check,
     asset,
 )
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
+from sshtunnel import SSHTunnelForwarder
 
 from teamster.core.sqlalchemy.resources import OracleResource
 from teamster.core.ssh.resources import SSHResource
@@ -50,9 +52,15 @@ def build_powerschool_table_asset(
     ):
         now = pendulum.now(tz=local_timezone).start_of("hour")
 
+        first_partition_key = (
+            partitions_def.get_first_partition_key()
+            if partitions_def is not None
+            else None
+        )
+
         if not context.has_partition_key:
             constructed_where = ""
-        elif context.partition_key == partitions_def.get_first_partition_key():  # pyright: ignore[reportOptionalMemberAccess]
+        elif context.partition_key == first_partition_key:
             constructed_where = ""
         else:
             window_start = pendulum.from_format(
@@ -91,11 +99,16 @@ def build_powerschool_table_asset(
         with ssh_powerschool.get_tunnel(
             remote_port=1521, local_port=1521
         ) as ssh_tunnel:
-            ssh_tunnel.start()  # pyright: ignore[reportOptionalMemberAccess]
+            ssh_tunnel = _check.inst(ssh_tunnel, SSHTunnelForwarder)
 
-            file_path: pathlib.Path = db_powerschool.engine.execute_query(
-                query=sql, partition_size=100000, output_format="avro"
-            )  # pyright: ignore[reportAssignmentType]
+            ssh_tunnel.start()
+
+            file_path = _check.inst(
+                db_powerschool.engine.execute_query(
+                    query=sql, partition_size=100000, output_format="avro"
+                ),
+                pathlib.Path,
+            )
 
         try:
             with file_path.open(mode="rb") as f:

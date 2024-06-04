@@ -13,7 +13,7 @@ class GoogleFormsResource(ConfigurableResource):
         "https://www.googleapis.com/auth/drive.metadata.readonly",
     ]
 
-    _service: discovery.Resource = PrivateAttr()
+    _resource: discovery.Resource = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         if self.service_account_file_path is not None:
@@ -23,12 +23,30 @@ class GoogleFormsResource(ConfigurableResource):
         else:
             credentials, project_id = google.auth.default(scopes=self.scopes)
 
-        self._service = discovery.build(
+        self._resource = discovery.build(
             serviceName="forms", version=self.version, credentials=credentials
         ).forms()
 
     def get_form(self, form_id):
-        return self._service.get(formId=form_id).execute()  # type: ignore
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
+        return self._resource.get(formId=form_id).execute()
 
     def list_responses(self, form_id, **kwargs):
-        return self._service.responses().list(formId=form_id, **kwargs).execute()  # type: ignore
+        page_token = None
+        reponses = []
+
+        while True:
+            data: dict = (
+                # trunk-ignore(pyright/reportAttributeAccessIssue)
+                self._resource.responses()
+                .list(formId=form_id, pageToken=page_token, **kwargs)
+                .execute()
+            )
+
+            reponses.extend(data.get("responses", []))
+            page_token = data.get("nextPageToken")
+
+            if page_token is None:
+                break
+
+        return reponses
