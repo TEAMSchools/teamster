@@ -1480,8 +1480,8 @@ select distinct
     teacher_quarter,
     expected_teacher_assign_category_code,
     expected_teacher_assign_category_name,
-    year_week_number,
-    quarter_week_number,
+    audit_yr_week_number,
+    audit_qt_week_number,
     audit_start_date,
     audit_end_date,
     audit_due_date,
@@ -1522,7 +1522,7 @@ select distinct
     audit_flag_value,
 
 from
-    final_roster_with_final_combo_calcs unpivot (
+    final_roster_with_student_assign_data_and_combo_calcs unpivot (
         audit_flag_value for audit_flag_name in (
             qt_teacher_no_missing_assignments,
             qt_teacher_s_total_less_200,
@@ -1610,7 +1610,6 @@ select distinct
     credit_type,
     teacher_number,
     teacher_name,
-    tableau_username,
     exclude_from_gpa,
     is_current_quarter,
     quarter_start_date,
@@ -1664,8 +1663,8 @@ select distinct
     teacher_quarter,
     expected_teacher_assign_category_code,
     expected_teacher_assign_category_name,
-    year_week_number,
-    quarter_week_number,
+    audit_yr_week_number,
+    audit_qt_week_number,
     audit_start_date,
     audit_end_date,
     audit_due_date,
@@ -1706,7 +1705,7 @@ select distinct
     null as audit_flag_value,
 
 from
-    final_roster_with_final_combo_calcs unpivot (
+    final_roster_with_student_assign_data_and_combo_calcs unpivot (
         audit_flag_value for audit_flag_name in (
             qt_teacher_no_missing_assignments,
             qt_teacher_s_total_less_200,
@@ -1742,4 +1741,4 @@ from
             w_grade_inflation
         )
     )
-where audit_flag_value = 0 g
+where audit_flag_value = 0
