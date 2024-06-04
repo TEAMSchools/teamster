@@ -6,9 +6,11 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
+    AssetsDefinition,
     MetadataValue,
     MultiPartitionKey,
     _check,
+    asset_check,
 )
 
 from teamster.core.utils.classes import FiscalYear
@@ -108,3 +110,22 @@ def check_avro_schema_valid(asset_key, records, schema):
         metadata={"extras": MetadataValue.text(", ".join(extras))},
         severity=AssetCheckSeverity.WARN,
     )
+
+
+def build_check_avro_schema_valid(assets_def: AssetsDefinition):
+    @asset_check(asset=assets_def, name="avro_schema_valid")
+    def _asset_check(asset_value: tuple):
+        records, schema = asset_value
+
+        extras = set().union(*(d.keys() for d in records)) - set(
+            field["name"] for field in schema["fields"]
+        )
+
+        return AssetCheckResult(
+            passed=len(extras) == 0,
+            asset_key=assets_def.key,
+            metadata={"extras": MetadataValue.text(", ".join(extras))},
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return _asset_check
