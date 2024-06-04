@@ -15,12 +15,12 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.ssh.resources import SSHResource
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    regex_pattern_replace,
 )
+from teamster.core.ssh.resources import SSHResource
+from teamster.core.utils.functions import regex_pattern_replace
 
 
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
