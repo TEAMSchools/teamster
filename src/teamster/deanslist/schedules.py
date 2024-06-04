@@ -46,7 +46,9 @@ def build_deanslist_multi_partition_asset_job_schedule(
     date_partition = partitions_def.get_partitions_def_for_dimension("date")
     school_partition = partitions_def.get_partitions_def_for_dimension("school")
 
-    last_date_partition_key = _check.not_none(date_partition.get_last_partition_key())
+    last_date_partition_key = _check.not_none(
+        value=date_partition.get_last_partition_key()
+    )
 
     if schedule_name is None:
         if isinstance(date_partition, MonthlyPartitionsDefinition):

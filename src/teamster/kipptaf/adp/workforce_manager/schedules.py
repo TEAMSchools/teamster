@@ -59,7 +59,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
             context.instance.add_dynamic_partitions(
-                partitions_def_name=_check.not_none(date_partition.name),
+                partitions_def_name=_check.not_none(value=date_partition.name),
                 partition_keys=[symbolic_period_record["begin"]],
             )
 

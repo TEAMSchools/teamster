@@ -1,8 +1,8 @@
 from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
 
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
 from teamster.google.directory.resources import GoogleDirectoryResource
 from teamster.kipptaf import CODE_LOCATION
@@ -20,7 +20,7 @@ key_prefix = [CODE_LOCATION, "google", "directory"]
 
 @asset(
     key=[*key_prefix, "orgunits"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "orgunits"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "orgunits"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
     compute_kind="python",
@@ -37,7 +37,7 @@ def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryRe
 
 @asset(
     key=[*key_prefix, "users"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "users"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "users"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
     compute_kind="python",
@@ -54,7 +54,7 @@ def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 
 @asset(
     key=[*key_prefix, "groups"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "groups"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "groups"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
     compute_kind="python",
@@ -71,7 +71,7 @@ def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryReso
 
 @asset(
     key=[*key_prefix, "roles"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "roles"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "roles"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
     compute_kind="python",
@@ -88,7 +88,7 @@ def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 
 @asset(
     key=[*key_prefix, "role_assignments"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "role_assignments"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "role_assignments"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
     compute_kind="python",
@@ -109,7 +109,7 @@ def role_assignments(
 
 @asset(
     key=[*key_prefix, "members"],
-    check_specs=[get_avro_schema_valid_check_spec([*key_prefix, "members"])],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "members"])],
     partitions_def=StaticPartitionsDefinition(
         [
             "group-students-camden@teamstudents.org",

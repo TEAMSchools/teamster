@@ -31,7 +31,7 @@ from teamster.zendesk.resources import ZendeskResource
     compute_kind="python",
 )
 def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResource):
-    partition_key = _check.not_none(context.partition_key)
+    partition_key = _check.not_none(value=context.partition_key)
 
     partition_key_datetime = _check.inst(pendulum.parse(text=partition_key), DateTime)
 
