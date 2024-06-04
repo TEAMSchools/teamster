@@ -76,13 +76,7 @@ with
             and s.courses_course_number != 'HR'
             and current_date('America/New_York')
             between s.terms_firstday and s.terms_lastday
-    )
-
-select *
-from
-    assign_1
-
-    /*
+    ),
 
     assign_2 as (
         select distinct
@@ -127,7 +121,13 @@ from
             and t.teacher_quarter = aud.quarter
             and t.region = aud.region
         where exclude_row = 0
-    ),
+    )
+
+select *
+from
+    assign_2
+
+    /*
 
     assign_3 as (
         select distinct
