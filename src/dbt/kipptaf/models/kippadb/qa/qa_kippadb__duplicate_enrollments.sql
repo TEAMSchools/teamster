@@ -34,17 +34,19 @@ with
             and e1.id != e2.id
             and (
                 e2.start_date between e1.start_date and coalesce(
-                    e1.actual_end_date, date(2024, 06, 30)
+                    e1.actual_end_date,
+                    date({{ var("current_academic_year") }} + 1, 06, 30)
                 )
                 or e2.actual_end_date between e1.start_date and coalesce(
-                    e1.actual_end_date, date(2024, 06, 30)
+                    e1.actual_end_date,
+                    date({{ var("current_academic_year") }} + 1, 06, 30)
                 )
             )
             and e2.status != 'Did Not Enroll'
         inner join {{ ref("int_kippadb__roster") }} as r on e1.student = r.contact_id
         where
             e1.pursuing_degree_type
-            in ("Associate's (2 year)", "Associate's (2 year)", 'Certificate')
+            in ("Associate's (2 year)", "Bachelor's (4-year)", 'Certificate')
             and e1.type not in ('High School', 'Middle School')
             and e1.status != 'Did Not Enroll'
     )
