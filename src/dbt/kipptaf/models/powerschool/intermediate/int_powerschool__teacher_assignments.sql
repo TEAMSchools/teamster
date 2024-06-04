@@ -197,11 +197,13 @@ with
             ) as teacher_running_total_assign_by_cat,
 
         from assign_2 as t
-        inner join
+        left join
             {{ ref("int_powerschool__student_assignments") }} as a
             on t.course_number = a.course_number
             and t.sections_dcid = a.sections_dcid
             and t.teacher_name = a.teacher_name
+            and t.teacher_quarter = a.assign_quarter
+            and t.audit_qt_week_number = a.audit_qt_week_number
             and t.expected_teacher_assign_category_name = a.assign_category
             and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
     )
