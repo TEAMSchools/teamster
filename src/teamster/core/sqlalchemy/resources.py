@@ -56,7 +56,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
             elif output_format == "avro":
                 fields = []
                 schema = {"type": "record", "name": query.get_final_froms()[0].name}
-                cursor = _check.not_none(cursor_result.cursor)
+                cursor = _check.not_none(value=cursor_result.cursor)
 
                 for col in cursor.description:
                     col = _check.inst(col, oracledb.FetchInfo)

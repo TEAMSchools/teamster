@@ -49,12 +49,12 @@ def build_couchdrop_sftp_sensor(
                 (f, path)
                 for f, path in files
                 if pattern.match(string=path)
-                and _check.not_none(f.st_mtime) > tick_cursor
-                and _check.not_none(f.st_size) > 0
+                and _check.not_none(value=f.st_mtime) > tick_cursor
+                and _check.not_none(value=f.st_size) > 0
             ]
 
             for f, path in file_matches:
-                match = _check.not_none(pattern.match(string=path))
+                match = _check.not_none(value=pattern.match(string=path))
 
                 if isinstance(asset.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())

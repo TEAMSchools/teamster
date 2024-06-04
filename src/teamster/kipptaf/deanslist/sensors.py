@@ -39,7 +39,7 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
 
             if match is not None:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                if f.st_mtime > last_run and _check.not_none(f.st_size) > 0:
+                if f.st_mtime > last_run and _check.not_none(value=f.st_size) > 0:
                     asset_selection.append(asset.key)
 
                 cursor[asset_identifier] = now.timestamp()

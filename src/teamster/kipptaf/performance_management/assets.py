@@ -15,11 +15,11 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
 )
+from teamster.core.sftp.assets import build_sftp_asset
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.performance_management.schema import (
     OBSERVATION_DETAILS_SCHEMA,
@@ -137,7 +137,7 @@ def get_isolation_forest(df: pandas.DataFrame):
     ),
     output_required=False,
     check_specs=[
-        get_avro_schema_valid_check_spec(
+        build_check_spec_avro_schema_valid(
             [CODE_LOCATION, "performance_management", "outlier_detection"]
         )
     ],

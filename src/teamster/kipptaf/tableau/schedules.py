@@ -31,7 +31,9 @@ def tableau_workbook_asset_job_schedule(context: ScheduleEvaluationContext):
     date_partition = partitions_def.get_partitions_def_for_dimension("date")
 
     workbook_id_partition_keys = workbook_id_partition.get_partition_keys()
-    last_date_partition_key = _check.not_none(date_partition.get_last_partition_key())
+    last_date_partition_key = _check.not_none(
+        value=date_partition.get_last_partition_key()
+    )
 
     for workbook_id in workbook_id_partition_keys:
         partition_key = MultiPartitionKey(
