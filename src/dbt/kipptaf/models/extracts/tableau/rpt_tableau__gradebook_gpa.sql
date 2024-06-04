@@ -711,7 +711,8 @@ with
             on s.schoolid = cal.schoolid
             and s.school_level = cal.school_level
             and s.quarter = cal.quarter
+        where concat(s.school_level, s.region) not in ('ESCamden', 'ESNewark')
     )
 
-select count(*)
+select *
 from final_roster
