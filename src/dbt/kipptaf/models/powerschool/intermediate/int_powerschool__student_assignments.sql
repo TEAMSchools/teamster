@@ -37,7 +37,11 @@ with
 
             1 as counter,
 
-            left(gb.storecode, 1) as assign_category_code,
+            if(
+                enr.region = 'Miami' and enr.grade_level <= 4,
+                concat(left(gb.category_name, 1), left(gb.storecode, 1)),
+                left(gb.storecode, 1)
+            ) as assign_category_code,
 
             coalesce(s.islate, 0) as assign_is_late,
             coalesce(s.isexempt, 0) as assign_is_exempt,
@@ -54,7 +58,19 @@ with
             ) as section_or_period,
 
             if(
-                enr.grade_level > 4 or (enr.grade_level <= 4 and enr.region = 'Miami'),
+                (enr.grade_level > 4 and left(gb.storecode, 1) != 'Q')
+                or (
+                    enr.grade_level <= 4
+                    and enr.region = 'Miami'
+                    and left(gb.storecode, 1) = 'W'
+                )
+                or (
+                    enr.grade_level <= 4
+                    and enr.region = 'Miami'
+                    and left(gb.storecode, 1) = 'Q'
+                    and left(gb.category_name, 1)
+                    in ('Formative Mastery', 'Summative Mastery')
+                ),
                 0,
                 1
             ) as exclude_row,
@@ -143,14 +159,8 @@ with
             and a.iscountedinfinalgrade = 1
             and a.duedate between co.cc_dateenrolled and co.cc_dateleft
             and a.scoretype in ('POINTS', 'PERCENT')
-            and left(gb.storecode, 1) not in ('Q', 'H')
-    )
-
-select *
-from
-    assign_1
-
-    /*
+            and left(gb.storecode, 1) != 'H'
+    ),
 
     assign_2 as (
         select
@@ -306,5 +316,3 @@ select
     ) as assign_s_hs_score_not_conversion_chart_options,
 
 from assign_2
-*/
-    
