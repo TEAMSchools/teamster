@@ -538,7 +538,7 @@ with
     ),
 
     final_roster as (
-        /*select
+        select
             s._dbt_source_relation,
             s.academic_year,
             s.region,
@@ -715,7 +715,7 @@ with
         where concat(s.school_level, s.region) not in ('ESCamden', 'ESNewark')
 
         union all
-*/
+
         select
             s._dbt_source_relation,
             s.academic_year,
@@ -819,10 +819,10 @@ with
             coalesce(m.exclude_from_gpa, y1h.exclude_from_gpa) as exclude_from_gpa,
 
             null as y1_course_final_percent_grade_adjusted,
-            null as y1_course_final_letter_grade_adjusted,
-            '' as y1_course_final_earned_credits,
-            '' as y1_course_final_potential_credit_hours,
-            '' as y1_course_final_grade_points,
+            '' as y1_course_final_letter_grade_adjusted,
+            null as y1_course_final_earned_credits,
+            null as y1_course_final_potential_credit_hours,
+            null as y1_course_final_grade_points,
             if(s.ada >= 0.80, 1, 0) as ada_above_or_at_80,
 
         from students as s
