@@ -15,11 +15,11 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.core.sftp.assets import build_sftp_asset
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.performance_management.schema import (
     OBSERVATION_DETAILS_SCHEMA,

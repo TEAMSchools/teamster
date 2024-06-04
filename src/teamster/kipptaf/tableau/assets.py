@@ -16,11 +16,11 @@ from dagster import (
 )
 from slugify import slugify
 
-from teamster.core.definitions.external_asset import external_assets_from_specs
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.core.definitions.external_asset import external_assets_from_specs
 from teamster.kipptaf import CODE_LOCATION
 from teamster.kipptaf.tableau.schema import WORKBOOK_SCHEMA
 from teamster.tableau.resources import TableauServerResource

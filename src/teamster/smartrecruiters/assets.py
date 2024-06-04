@@ -6,7 +6,7 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )

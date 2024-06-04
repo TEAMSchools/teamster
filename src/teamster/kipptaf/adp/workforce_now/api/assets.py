@@ -1,7 +1,7 @@
 from dagster import AssetExecutionContext, DailyPartitionsDefinition, Output, asset
 
 from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )

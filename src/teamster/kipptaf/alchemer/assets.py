@@ -5,7 +5,7 @@ from dagster import DynamicPartitionsDefinition, OpExecutionContext, Output, ass
 from requests.exceptions import HTTPError
 
 from teamster.alchemer.resources import AlchemerResource
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
