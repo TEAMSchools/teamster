@@ -1,25 +1,21 @@
+import re
+from typing import Mapping
+
 import pendulum
-from dagster import (
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
-    MetadataValue,
-    MultiPartitionKey,
-)
+from dagster import MultiPartitionKey, _check
 
 from teamster.core.utils.classes import FiscalYear
 
 
-def regex_pattern_replace(pattern: str, replacements: dict):
-    for group_name, replacement in replacements.items():
-        try:
-            start_index = pattern.index(f"(?P<{group_name}>")
-        except ValueError:
-            continue
+def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
+    for group in re.findall(r"\(\?P<\w+>[\w\[\]\{\}\+\-\\\.]*\)", pattern):
+        match = _check.not_none(
+            value=re.search(pattern=r"(?<=<)(\w+)(?=>)", string=group)
+        )
 
-        end_index = pattern.index(")", start_index)
+        group_value = replacements.get(match.group(0), "")
 
-        pattern = pattern[:start_index] + replacement + pattern[end_index + 1 :]
+        pattern = pattern.replace(group, group_value)
 
     return pattern
 
@@ -80,28 +76,3 @@ def get_partition_key_path(partition_key, path):
 def partition_key_to_vars(partition_key):
     path = get_partition_key_path(partition_key=partition_key, path=[])
     return {"partition_path": "/".join(path)}
-
-
-def get_avro_schema_valid_check_spec(asset):
-    return AssetCheckSpec(
-        name="avro_schema_valid",
-        asset=asset,
-        description=(
-            "Checks output records against the supplied schema and warns if any "
-            "unexpected fields are discovered"
-        ),
-    )
-
-
-def check_avro_schema_valid(asset_key, records, schema):
-    extras = set().union(*(d.keys() for d in records)) - set(
-        field["name"] for field in schema["fields"]
-    )
-
-    return AssetCheckResult(
-        passed=len(extras) == 0,
-        asset_key=asset_key,
-        check_name="avro_schema_valid",
-        metadata={"extras": MetadataValue.text(", ".join(extras))},
-        severity=AssetCheckSeverity.WARN,
-    )

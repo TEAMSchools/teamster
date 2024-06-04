@@ -1,8 +1,14 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, RunConfig, define_asset_job, job
 
-from ...google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
-from .assets import multi_partition_assets, static_partition_assets
-from .ops import schoolmint_grow_school_update_op, schoolmint_grow_user_update_op
+from teamster.google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
+from teamster.kipptaf.schoolmint.grow.assets import (
+    multi_partition_assets,
+    static_partition_assets,
+)
+from teamster.schoolmint.grow.ops import (
+    schoolmint_grow_school_update_op,
+    schoolmint_grow_user_update_op,
+)
 
 
 @job(
@@ -36,7 +42,7 @@ multi_partition_asset_job = define_asset_job(
     partitions_def=multi_partition_assets[0].partitions_def,
 )
 
-_all = [
+jobs = [
     static_partition_asset_job,
     multi_partition_asset_job,
     schoolmint_grow_user_update_job,

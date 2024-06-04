@@ -5,25 +5,26 @@ import zipfile
 from dagster import (
     AssetExecutionContext,
     DagsterInvariantViolationError,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    _check,
     asset,
 )
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.ssh.resources import SSHResource
-from teamster.core.utils.functions import (
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-    get_avro_schema_valid_check_spec,
-    regex_pattern_replace,
 )
+from teamster.core.ssh.resources import SSHResource
+from teamster.core.utils.functions import regex_pattern_replace
 
 
 def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
-    # list files remote filepath
-    files = ssh.listdir_attr_r(remote_dir=remote_dir, files=[])
+    files = ssh.listdir_attr_r(remote_dir)
 
     if remote_dir == ".":
         pattern = remote_file_regex
@@ -31,9 +32,7 @@ def match_sftp_files(ssh: SSHResource, remote_dir, remote_file_regex):
         pattern = f"{remote_dir}/{remote_file_regex}"
 
     return [
-        f.filepath
-        for f in files
-        if re.match(pattern=pattern, string=f.filepath) is not None
+        path for _, path in files if re.match(pattern=pattern, string=path) is not None
     ]
 
 
@@ -47,9 +46,11 @@ def compose_regex(regexp, context: AssetExecutionContext):
         return regexp
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
+        partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
+
         return regex_pattern_replace(
             pattern=regexp,
-            replacements=context.partition_key.keys_by_dimension,  # type: ignore
+            replacements=partition_key.keys_by_dimension,
         )
     else:
         compiled_regex = re.compile(pattern=regexp)
@@ -73,8 +74,9 @@ def build_sftp_asset(
     auto_materialize_policy=None,
     slugify_cols=True,
     slugify_replacements=(),
+    tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
-    group_name=None,
+    group_name: str | None = None,
     **kwargs,
 ):
     if group_name is None:
@@ -86,11 +88,12 @@ def build_sftp_asset(
         required_resource_keys={ssh_resource_key},
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
+        tags=tags,
         op_tags=op_tags,
         group_name=group_name,
         auto_materialize_policy=auto_materialize_policy,
-        check_specs=[get_avro_schema_valid_check_spec(asset_key)],
-        compute_kind="sftp",
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
+        compute_kind="python",
     )
     def _asset(context: AssetExecutionContext):
         ssh: SSHResource = getattr(context.resources, ssh_resource_key)

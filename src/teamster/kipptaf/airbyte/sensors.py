@@ -7,12 +7,13 @@ from dagster import (
     AssetMaterialization,
     SensorEvaluationContext,
     SensorResult,
+    _check,
     sensor,
 )
 from dagster_airbyte import AirbyteCloudResource
 
-from .. import CODE_LOCATION
-from . import assets
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.airbyte import assets
 
 ASSET_KEYS = [key for a in assets for key in a.keys]
 
@@ -30,9 +31,11 @@ def airbyte_job_status_sensor(
 
     cursor = json.loads(context.cursor or "{}")
 
-    connections = airbyte.make_request(endpoint="/connections", method="GET")
+    connections = _check.not_none(
+        airbyte.make_request(endpoint="/connections", method="GET")
+    )
 
-    for connection in connections["data"]:  # type: ignore
+    for connection in _check.inst(connections["data"], list):
         connection_id = connection["connectionId"]
 
         last_updated = pendulum.from_timestamp(timestamp=cursor.get(connection_id, 0))
@@ -45,11 +48,11 @@ def airbyte_job_status_sensor(
             }
         )
 
-        successful_jobs = airbyte.make_request(
-            endpoint=f"/jobs?{params}", method="GET"
-        ).get("data", [])
+        jobs_response = _check.not_none(
+            airbyte.make_request(endpoint=f"/jobs?{params}", method="GET")
+        )
 
-        if successful_jobs:
+        if jobs_response.get("data") is not None:
             cursor[connection_id] = now_timestamp
 
             namespace_parts = connection["namespaceFormat"].split("_")
@@ -66,6 +69,6 @@ def airbyte_job_status_sensor(
     return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
-_all = [
+sensors = [
     airbyte_job_status_sensor,
 ]

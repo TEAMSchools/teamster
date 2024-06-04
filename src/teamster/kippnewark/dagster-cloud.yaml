@@ -111,6 +111,61 @@ locations:
                   secretKeyRef:
                     name: op-renlearn-sftp-kippnj
                     key: username
+              - name: IREADY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: host
+              - name: RENLEARN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
+                    key: host
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kippnewark
+                    key: host
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: server
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: database
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: port
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: username
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippnewark
+                    key: host
+              - name: TITAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kippnewark
+                    key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain
         run_k8s_config:
           container_config:
             env:
@@ -189,3 +244,58 @@ locations:
                   secretKeyRef:
                     name: op-renlearn-sftp-kippnj
                     key: username
+              - name: IREADY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: host
+              - name: RENLEARN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
+                    key: host
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kippnewark
+                    key: host
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: server
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: database
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: port
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippnewark
+                    key: username
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippnewark
+                    key: host
+              - name: TITAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kippnewark
+                    key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain

@@ -203,7 +203,7 @@ select
         not co.is_retained_year
         and co.grade_level = 3
         and subj.fast_subject = 'ELAReading'
-        and not ft.is_proficient,
+        and ft.achievement_level_int = 1,
         1,
         0
     ) as gr3_retention_flag,

@@ -6,9 +6,8 @@ from dagster import (
 )
 
 from teamster.core.sftp.assets import build_sftp_asset
-
-from ... import CODE_LOCATION
-from .schema import GENERAL_LEDGER_FILE_SCHEMA
+from teamster.kipptaf import CODE_LOCATION
+from teamster.kipptaf.adp.payroll.schema import GENERAL_LEDGER_FILE_SCHEMA
 
 asset_key = AssetKey([CODE_LOCATION, "adp", "payroll", "general_ledger_file"])
 
@@ -30,6 +29,6 @@ general_ledger_file = build_sftp_asset(
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
 )
 
-_all = [
+assets = [
     general_ledger_file,
 ]

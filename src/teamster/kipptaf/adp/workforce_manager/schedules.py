@@ -1,17 +1,21 @@
 from dagster import (
     DynamicPartitionsDefinition,
     MultiPartitionKey,
+    MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
+    _check,
     build_schedule_from_partitioned_job,
     schedule,
 )
 
-from teamster.kipptaf.adp.workforce_manager.resources import AdpWorkforceManagerResource
-
-from ... import CODE_LOCATION, LOCAL_TIMEZONE
-from .assets import adp_wfm_assets_dynamic
-from .jobs import adp_wfm_daily_partition_asset_job, adp_wfm_dynamic_partition_asset_job
+from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
+from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.kipptaf.adp.workforce_manager.assets import adp_wfm_assets_dynamic
+from teamster.kipptaf.adp.workforce_manager.jobs import (
+    adp_wfm_daily_partition_asset_job,
+    adp_wfm_dynamic_partition_asset_job,
+)
 
 adp_wfm_daily_partition_asset_job_schedule = build_schedule_from_partitioned_job(
     job=adp_wfm_daily_partition_asset_job, hour_of_day=23, minute_of_hour=50
@@ -28,25 +32,34 @@ def adp_wfm_dynamic_partition_schedule(
     context: ScheduleEvaluationContext, adp_wfm: AdpWorkforceManagerResource
 ):
     for asset in adp_wfm_assets_dynamic:
-        date_partition: DynamicPartitionsDefinition = (
-            asset.partitions_def.get_partitions_def_for_dimension("date")
-        )
-        symbolic_id_partition = asset.partitions_def.get_partitions_def_for_dimension(
+        partitions_def = _check.inst(asset.partitions_def, MultiPartitionsDefinition)
+
+        symbolic_id_partition = partitions_def.get_partitions_def_for_dimension(
             "symbolic_id"
+        )
+        date_partition = _check.inst(
+            partitions_def.get_partitions_def_for_dimension("date"),
+            DynamicPartitionsDefinition,
         )
 
         for symbolic_id in symbolic_id_partition.get_partition_keys():
-            symbolic_period_record = adp_wfm.post(
-                endpoint="v1/commons/symbolicperiod/read",
-                json={"where": {"currentUser": True, "symbolicPeriodId": symbolic_id}},
-            ).json()
+            symbolic_period_response = _check.not_none(
+                adp_wfm.post(
+                    endpoint="v1/commons/symbolicperiod/read",
+                    json={
+                        "where": {"currentUser": True, "symbolicPeriodId": symbolic_id}
+                    },
+                )
+            )
+
+            symbolic_period_record = symbolic_period_response.json()
 
             partition_key = MultiPartitionKey(
                 {"symbolic_id": symbolic_id, "date": symbolic_period_record["begin"]}
             )
 
             context.instance.add_dynamic_partitions(
-                partitions_def_name=date_partition.name,
+                partitions_def_name=_check.not_none(value=date_partition.name),
                 partition_keys=[symbolic_period_record["begin"]],
             )
 
@@ -57,7 +70,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
 
-_all = [
+schedules = [
     adp_wfm_daily_partition_asset_job_schedule,
     adp_wfm_dynamic_partition_schedule,
 ]

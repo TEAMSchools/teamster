@@ -1,4 +1,4 @@
-from teamster.kipptaf.google import directory, forms, sheets
+from teamster.kipptaf.google import directory, drive, forms, sheets
 
 assets = [
     *directory.assets,
@@ -18,4 +18,5 @@ schedules = [
 
 sensors = [
     *sheets.sensors,
+    *drive.sensors,
 ]

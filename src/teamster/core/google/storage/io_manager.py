@@ -7,7 +7,7 @@ from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
-from google.cloud import storage
+from google.cloud.storage import Bucket
 from upath import UPath
 
 from teamster.core.utils.classes import FiscalYear
@@ -90,14 +90,40 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
 
 
 class AvroGCSIOManager(GCSUPathIOManager):
-    def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        bucket_obj: storage.Bucket = self.bucket_obj
+    def __init__(
+        self,
+        bucket: str,
+        client: Any | None = None,
+        prefix: str = "dagster",
+        test: bool = False,
+    ):
+        self.test = test
 
-        return fastavro.reader(fo=bucket_obj.blob(blob_name=str(path)).open("wb"))  # type: ignore
+        super().__init__(bucket, client, prefix)
+
+    def load_from_path(self, context: InputContext, path: UPath) -> Any:
+        blob = self.bucket_obj.blob(blob_name=str(path))
+
+        with blob.open(mode="rb") as fo:
+            # trunk-ignore(pyright/reportArgumentType)
+            reader = fastavro.reader(fo=fo)
+
+            records = [record for record in reader]
+
+        return (records, reader.writer_schema)
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        bucket_obj: storage.Bucket = self.bucket_obj
+        bucket_obj: Bucket = self.bucket_obj
         records, schema = obj
+
+        if self.test:
+            import json
+
+            fp = "env" / path.with_suffix(".json")
+
+            fp.parent.mkdir(parents=True, exist_ok=True)
+
+            json.dump(obj=records, fp=fp.open("w"))
 
         if self.path_exists(path):
             context.log.warning(f"Existing GCS key: {path}")
@@ -121,7 +147,7 @@ class FileGCSIOManager(GCSUPathIOManager):
         return urlparse(self._uri_for_path(path))
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        bucket_obj: storage.Bucket = self.bucket_obj
+        bucket_obj: Bucket = self.bucket_obj
 
         if self.path_exists(path):
             context.log.warning(f"Removing existing GCS key: {path}")
@@ -136,6 +162,7 @@ class FileGCSIOManager(GCSUPathIOManager):
 
 class GCSIOManager(GCSPickleIOManager):
     object_type: str
+    test: bool = False
 
     @property
     @cached_method
@@ -147,6 +174,7 @@ class GCSIOManager(GCSPickleIOManager):
                 bucket=self.gcs_bucket,
                 client=self.gcs.get_client(),
                 prefix=self.gcs_prefix,
+                test=self.test,
             )
         if self.object_type == "file":
             return FileGCSIOManager(

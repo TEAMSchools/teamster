@@ -1,11 +1,11 @@
-from .assets import _all as assets
-from .jobs import _all as jobs
-from .schedules import _all as schedules
-from .sensors import _all as sensors
+from teamster.kipptaf.ldap.assets import assets
+from teamster.kipptaf.ldap.jobs import jobs
+from teamster.kipptaf.ldap.schedules import schedules
+from teamster.kipptaf.ldap.sensors import sensors
 
-_all = [
-    assets,
-    sensors,
-    jobs,
-    schedules,
+__all__ = [
+    "assets",
+    "sensors",
+    "jobs",
+    "schedules",
 ]

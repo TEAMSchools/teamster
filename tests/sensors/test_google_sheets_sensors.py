@@ -1,8 +1,8 @@
 import json
 
-from dagster import build_sensor_context
+from dagster import SensorResult, build_sensor_context
 
-from teamster.kipptaf.google.sheets.resources import GoogleSheetsResource
+from teamster.google.sheets.resources import GoogleSheetsResource
 from teamster.kipptaf.google.sheets.sensors import google_sheets_asset_sensor
 
 
@@ -18,4 +18,5 @@ def test_google_sheets_asset_sensor():
         ),
     )
 
-    assert len(sensor_result.asset_events) > 0  # type: ignore
+    assert isinstance(sensor_result, SensorResult)
+    assert len(sensor_result.asset_events) > 0

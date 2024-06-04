@@ -1,6 +1,6 @@
 assets:
   - asset_name: fast
-    remote_dir: /teamster-kippmiami/couchdrop/fldoe/fast
+    remote_dir: /data-team/kippmiami/fldoe/fast
     remote_file_regex: \d+\/PM\d\/\w+-\w+(?P<grade_level_subject>Grade\dFAST[A-Za-z]+)_StudentData_(?P<school_year_term>SY\d+PM\d)\.csv
     partition_keys:
       school_year_term:
@@ -24,7 +24,7 @@ assets:
         - Grade8FASTELAReading
         - Grade8FASTMathematics
   - asset_name: fsa
-    remote_dir: /teamster-kippmiami/couchdrop/fldoe/fsa/student_scores
+    remote_dir: /data-team/kippmiami/fldoe/fsa/student_scores
     remote_file_regex: FSA_(?P<school_year_term>\d+)SPR_\d+_SRS-E_(?P<grade_level_subject>\w+)_SCHL\.csv
     partition_keys:
       school_year_term:
@@ -35,3 +35,21 @@ assets:
         - SCI
         - MATH
         - ELA_GR04_10
+  - asset_name: science
+    remote_dir: /data-team/kippmiami/fldoe/science
+    remote_file_regex: (?P<school_year_term>\d+)\/\w+-\w+Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv
+    partition_keys:
+      school_year_term:
+        - "2023"
+      grade_level_subject:
+        - "5"
+        - "8"
+  - asset_name: eoc
+    remote_dir: /data-team/kippmiami/fldoe/eoc
+    remote_file_regex: (?P<school_year_term>\d+)\/[A-Z]+-[A-Z]+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv
+    partition_keys:
+      school_year_term:
+        - "2023"
+      grade_level_subject:
+        - Civics
+        - B.E.S.T.Algebra1

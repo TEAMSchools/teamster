@@ -35,3 +35,11 @@ sources:
               - kippcamden
               - pearson
               - stg_pearson__parcc
+      - name: stg_pearson__student_list_report
+        meta:
+          dagster:
+            group: pearson
+            asset_key:
+              - kippcamden
+              - pearson
+              - stg_pearson__student_list_report

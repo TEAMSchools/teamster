@@ -3,3 +3,6 @@ packages:
   - local: ../iready
   - local: ../powerschool
   - local: ../renlearn
+  # https://github.com/dbt-labs/dbt-external-tables
+  - package: dbt-labs/dbt_external_tables
+    version: 0.9.0

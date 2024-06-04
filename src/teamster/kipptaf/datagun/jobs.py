@@ -1,6 +1,6 @@
 from dagster import define_asset_job
 
-from .assets import (
+from teamster.kipptaf.datagun.assets import (
     blissbook_extract,
     clever_extract_assets,
     coupa_extract,

@@ -1,16 +1,16 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 
-from teamster.core.powerschool.schedules import build_powerschool_schedule
 from teamster.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.kippcamden.powerschool.assets import full_assets
 from teamster.kippcamden.powerschool.jobs import powerschool_nonpartition_asset_job
+from teamster.powerschool.sis.schedules import build_powerschool_schedule
 
 powerschool_schedule = build_powerschool_schedule(
     code_location=CODE_LOCATION,
     cron_schedule="0 * * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     asset_defs=full_assets,
-    max_runtime_seconds=(60 * 5),
+    max_runtime_seconds=(60 * 6),
 )
 
 nonpartition_asset_job_schedule = ScheduleDefinition(
