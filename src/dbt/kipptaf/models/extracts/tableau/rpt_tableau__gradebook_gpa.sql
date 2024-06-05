@@ -141,7 +141,7 @@ select distinct
     audit_flag_value,
 
 from
-    final_roster_with_student_assign_data_and_combo_calcs unpivot (
+    {{ ref("int_powerschool__gradebook_gpa") }} unpivot (
         audit_flag_value for audit_flag_name in (
             qt_teacher_no_missing_assignments,
             qt_teacher_s_total_less_200,
@@ -324,7 +324,7 @@ select distinct
     null as audit_flag_value,
 
 from
-    final_roster_with_student_assign_data_and_combo_calcs unpivot (
+    {{ ref("int_powerschool__gradebook_gpa") }} unpivot (
         audit_flag_value for audit_flag_name in (
             qt_teacher_no_missing_assignments,
             qt_teacher_s_total_less_200,
