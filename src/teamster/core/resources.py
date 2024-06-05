@@ -92,5 +92,11 @@ def get_io_manager_gcs_file(code_location):
     )
 
 
-def get_dbt_cli_resource(code_location):
-    return DbtCliResource(project_dir=f"src/dbt/{code_location}")
+def get_dbt_cli_resource(code_location, test=False):
+    if test:
+        return DbtCliResource(
+            project_dir=f"src/dbt/{code_location}",
+            dbt_executable="/workspaces/teamster/.venv/bin/dbt",
+        )
+    else:
+        return DbtCliResource(project_dir=f"src/dbt/{code_location}")
