@@ -29,12 +29,12 @@ inner join
     and e1.pursuing_degree_type = e2.pursuing_degree_type
     and e1.type = e2.type
     and e1.id != e2.id
-    and e2.status != 'Did Not Enroll'
     and (
         e2.start_date
         between e1.start_date and coalesce(e1.actual_end_date, date('9999-12-31'))
         or coalesce(e2.actual_end_date, '9999-12-31')
         between e1.start_date and coalesce(e1.actual_end_date, date('9999-12-31'))
     )
+    and e2.status != 'Did Not Enroll'
 inner join {{ ref("int_kippadb__roster") }} as r on e1.student = r.contact_id
 where e1.status != 'Did Not Enroll'
