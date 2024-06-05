@@ -40,6 +40,8 @@ vars:
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata() }}"
   kipptaf:
     act:
       +schema: act
@@ -174,3 +176,7 @@ models:
       +schema: zendesk
       staging:
         +materialized: table
+
+snapshots:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata() }}"
