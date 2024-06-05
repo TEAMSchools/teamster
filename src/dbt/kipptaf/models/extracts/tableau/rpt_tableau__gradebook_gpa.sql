@@ -122,6 +122,8 @@ select distinct
     percent_graded_completion_by_cat_qt_audit_week_all_courses,
     percent_graded_completion_by_cat_qt_audit_week,
     percent_graded_completion_by_assign_id_qt_audit_week,
+    qt_teacher_no_missing_assignments,
+    qt_teacher_s_total_less_200,
     student_course_entry_date,
     assign_category_code,
     assign_category,
@@ -143,8 +145,6 @@ select distinct
 from
     {{ ref("int_powerschool__gradebook_gpa") }} unpivot (
         audit_flag_value for audit_flag_name in (
-            qt_teacher_no_missing_assignments,
-            qt_teacher_s_total_less_200,
             qt_teacher_s_total_greater_200,
             w_assign_max_score_not_10,
             f_assign_max_score_not_10,
@@ -305,6 +305,8 @@ select distinct
     percent_graded_completion_by_cat_qt_audit_week_all_courses,
     percent_graded_completion_by_cat_qt_audit_week,
     percent_graded_completion_by_assign_id_qt_audit_week,
+    qt_teacher_no_missing_assignments,
+    qt_teacher_s_total_less_200,
     student_course_entry_date,
     assign_category_code,
     assign_category,
@@ -326,8 +328,6 @@ select distinct
 from
     {{ ref("int_powerschool__gradebook_gpa") }} unpivot (
         audit_flag_value for audit_flag_name in (
-            qt_teacher_no_missing_assignments,
-            qt_teacher_s_total_less_200,
             qt_teacher_s_total_greater_200,
             w_assign_max_score_not_10,
             f_assign_max_score_not_10,
