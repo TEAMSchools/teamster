@@ -1,10 +1,10 @@
 select
     e1.student as sf_contact_id,
     e1.pursuing_degree_type,
+    e1.type,
 
     e1.id as enrollment_1_id,
     e1.name as enrollment_1_name,
-    e1.type as enrollment_1_type,
     e1.start_date as enrollment_1_start_date,
     e1.actual_end_date as enrollment_1_actual_end_date,
     e1.status as enrollment_1_status,
@@ -27,6 +27,7 @@ inner join
     {{ ref("stg_kippadb__enrollment") }} as e2
     on e1.student = e2.student
     and e1.pursuing_degree_type = e2.pursuing_degree_type
+    and e1.type = e2.type
     and e1.id != e2.id
     and e2.status != 'Did Not Enroll'
     and (
