@@ -69,7 +69,7 @@ def build_adp_wfm_asset(
 
         hyperfind_record = [
             hq
-            for hq in hyperfind_response.json().get("hyperfindQueries")
+            for hq in hyperfind_response.json()["hyperfindQueries"]
             if hq["name"] == asset.metadata_by_key[asset.key]["hyperfind"]
         ][0]
 
@@ -102,22 +102,22 @@ def build_adp_wfm_asset(
         report_execution_response_json = report_execution_response.json()
 
         context.log.info(report_execution_response_json)
-        report_execution_id = report_execution_response_json.get("id")
-
-        report_executions_response = _check.not_none(
-            adp_wfm.get(endpoint="v1/platform/report_executions")
-        )
+        report_execution_id = report_execution_response_json["id"]
 
         while True:
+            report_executions_response = _check.not_none(
+                adp_wfm.get(endpoint="v1/platform/report_executions")
+            )
+
             report_execution_record = [
                 rex
                 for rex in report_executions_response.json()
-                if rex.get("id") == report_execution_id
+                if rex["id"] == report_execution_id
             ][0]
 
             context.log.info(report_execution_record)
 
-            if report_execution_record.get("status").get("qualifier") == "Completed":
+            if report_execution_record["status"]["qualifier"] == "Completed":
                 context.log.info(f"Downloading {report_name}")
 
                 file_response = _check.not_none(
