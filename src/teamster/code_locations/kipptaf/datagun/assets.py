@@ -1,3 +1,5 @@
+import pathlib
+
 from dagster import AutoMaterializePolicy, config_from_files
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
@@ -9,7 +11,7 @@ from teamster.libraries.datagun.assets import (
     build_bigquery_query_sftp_asset,
 )
 
-config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
+config_dir = pathlib.Path(__file__).parent / "config"
 
 # BQ extract job
 blissbook_extract = build_bigquery_extract_sftp_asset(
