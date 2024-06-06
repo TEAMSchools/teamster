@@ -1,17 +1,6 @@
 from dagster import ConfigurableResource, build_init_resource_context
 
-from teamster.core.resources import (  # DB_POWERSCHOOL,; get_ssh_resource_powerschool,
-    BIGQUERY_RESOURCE,
-    DEANSLIST_RESOURCE,
-    GCS_RESOURCE,
-    SSH_COUCHDROP,
-    SSH_EDPLAN,
-    SSH_IREADY,
-    SSH_RENLEARN,
-    SSH_TITAN,
-    get_dbt_cli_resource,
-)
-from teamster.kipptaf.resources import (
+from teamster.code_locations.kipptaf.resources import (
     ADP_WORKFORCE_MANAGER_RESOURCE,
     ADP_WORKFORCE_NOW_RESOURCE,
     AIRBYTE_CLOUD_RESOURCE,
@@ -34,6 +23,17 @@ from teamster.kipptaf.resources import (
     SSH_RESOURCE_LITTLESIS,
     TABLEAU_SERVER_RESOURCE,
     ZENDESK_RESOURCE,
+)
+from teamster.libraries.core.resources import (  # DB_POWERSCHOOL,; get_ssh_resource_powerschool,
+    BIGQUERY_RESOURCE,
+    DEANSLIST_RESOURCE,
+    GCS_RESOURCE,
+    SSH_COUCHDROP,
+    SSH_EDPLAN,
+    SSH_IREADY,
+    SSH_RENLEARN,
+    SSH_TITAN,
+    get_dbt_cli_resource,
 )
 
 

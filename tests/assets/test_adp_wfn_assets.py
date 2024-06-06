@@ -3,9 +3,9 @@ import random
 from dagster import PartitionsDefinition, TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.adp.workforce_now.api.assets import workers
-from teamster.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
+from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import workers
+from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
 
 def test_workers():

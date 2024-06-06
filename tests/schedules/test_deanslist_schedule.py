@@ -1,6 +1,6 @@
 from dagster import DagsterInstance, build_schedule_context
 
-from teamster.kippcamden.deanslist.schedules import (
+from teamster.code_locations.kippcamden.deanslist.schedules import (
     deanslist_comm_log_midday_job_schedule,
 )
 

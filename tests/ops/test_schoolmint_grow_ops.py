@@ -2,17 +2,17 @@ from dagster import EnvVar, build_op_context
 from dagster_gcp import BigQueryResource
 
 from teamster import GCS_PROJECT_NAME
-from teamster.google.bigquery.ops import (
+from teamster.libraries.google.bigquery.ops import (
     BigQueryGetTableOpConfig,
     bigquery_get_table_op,
     bigquery_query_op,
 )
-from teamster.schoolmint.grow.ops import (
+from teamster.libraries.schoolmint.grow.ops import (
     schoolmint_grow_school_update_op,
     schoolmint_grow_user_delete_op,
     schoolmint_grow_user_update_op,
 )
-from teamster.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 SCHOOLMINT_GROW = SchoolMintGrowResource(
     client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
