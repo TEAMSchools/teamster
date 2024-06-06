@@ -1,4 +1,4 @@
-{% set academic_year = "2021" %}  -- CHANGE YEAR HERE ONLY
+{% set academic_year = "2023" %}  -- CHANGE YEAR HERE ONLY
 
 with
     ms_grad as (
@@ -239,6 +239,6 @@ left join
     and a.test_code = c.test_code
 left join
     {{ ref("stg_assessments__academic_goals") }} as g
-    on s.academic_year = g.academic_year - 2  -- REMOVE THIS WHEN DONE
+    on s.academic_year = g.academic_year
     and s.schoolid = g.school_id
     and a.test_code = g.state_assessment_code
