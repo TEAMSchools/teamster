@@ -1,9 +1,11 @@
+import pathlib
+
 from dagster import config_from_files
 
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.libraries.datagun.assets import build_bigquery_extract_asset
 
-config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
+config_dir = pathlib.Path(__file__).parent / "config"
 
 powerschool_extract_assets = [
     build_bigquery_extract_asset(

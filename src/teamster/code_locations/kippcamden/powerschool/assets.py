@@ -1,3 +1,5 @@
+import pathlib
+
 import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
@@ -9,7 +11,7 @@ from teamster.code_locations.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.assets import build_powerschool_table_asset
 
-config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
+config_dir = pathlib.Path(__file__).parent / "config"
 
 full_assets = [
     build_powerschool_table_asset(
