@@ -1,11 +1,14 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, RunConfig, define_asset_job, job
 
-from teamster.google.bigquery.ops import BigQueryGetTableOpConfig, bigquery_get_table_op
-from teamster.kipptaf.schoolmint.grow.assets import (
+from teamster.code_locations.kipptaf.schoolmint.grow.assets import (
     multi_partition_assets,
     static_partition_assets,
 )
-from teamster.schoolmint.grow.ops import (
+from teamster.libraries.google.bigquery.ops import (
+    BigQueryGetTableOpConfig,
+    bigquery_get_table_op,
+)
+from teamster.libraries.schoolmint.grow.ops import (
     schoolmint_grow_school_update_op,
     schoolmint_grow_user_update_op,
 )

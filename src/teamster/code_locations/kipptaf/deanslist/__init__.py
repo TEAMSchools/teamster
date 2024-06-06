@@ -1,5 +1,5 @@
-from teamster.kipptaf.deanslist.assets import assets
-from teamster.kipptaf.deanslist.sensors import sensors
+from teamster.code_locations.kipptaf.deanslist.assets import assets
+from teamster.code_locations.kipptaf.deanslist.sensors import sensors
 
 __all__ = [
     "assets",

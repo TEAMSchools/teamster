@@ -3,7 +3,7 @@ import json
 
 import py_avro_schema
 
-from teamster.deanslist.schema import (
+from teamster.libraries.deanslist.schema import (
     Action,
     Behavior,
     CommLog,

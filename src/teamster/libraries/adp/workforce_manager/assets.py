@@ -18,8 +18,10 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
-from teamster.core.asset_checks import (
+from teamster.libraries.adp.workforce_manager.resources import (
+    AdpWorkforceManagerResource,
+)
+from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )

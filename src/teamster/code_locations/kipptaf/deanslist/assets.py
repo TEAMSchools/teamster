@@ -1,9 +1,9 @@
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.deanslist.schema import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.deanslist.schema import (
     RECONCILE_ATTENDANCE_SCHEMA,
     RECONCILE_SUSPENSIONS_SCHEMA,
 )
+from teamster.libraries.sftp.assets import build_sftp_asset
 
 reconcile_attendance = build_sftp_asset(
     asset_key=[CODE_LOCATION, "deanslist", "reconcile_attendance"],

@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.ldap.schema import Group, UserPerson
+from teamster.libraries.ldap.schema import Group, UserPerson
 
 USER_PERSON_SCHEMA = json.loads(
     py_avro_schema.generate(

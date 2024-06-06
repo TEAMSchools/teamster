@@ -1,6 +1,6 @@
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.ldap.schema import GROUP_SCHEMA, USER_PERSON_SCHEMA
-from teamster.ldap.assets import build_ldap_asset
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.ldap.schema import GROUP_SCHEMA, USER_PERSON_SCHEMA
+from teamster.libraries.ldap.assets import build_ldap_asset
 
 user_person = build_ldap_asset(
     asset_key=[CODE_LOCATION, "ldap", "user_person"],

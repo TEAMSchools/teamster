@@ -1,6 +1,6 @@
-from teamster.iready.sensors import build_iready_sftp_sensor
-from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kippnewark.iready import assets
+from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark.iready import assets
+from teamster.libraries.iready.sensors import build_iready_sftp_sensor
 
 sftp_sensor = build_iready_sftp_sensor(
     code_location=CODE_LOCATION,

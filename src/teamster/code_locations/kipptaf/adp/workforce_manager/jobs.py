@@ -1,7 +1,7 @@
 from dagster import define_asset_job
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.adp.workforce_manager.assets import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
     adp_wfm_assets_daily,
     adp_wfm_assets_dynamic,
 )

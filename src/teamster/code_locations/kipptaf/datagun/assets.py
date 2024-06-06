@@ -1,11 +1,13 @@
 from dagster import AutoMaterializePolicy, config_from_files
 
-from teamster.core.datagun.assets import (
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.adp.payroll.assets import (
+    GENERAL_LEDGER_FILE_PARTITIONS_DEF,
+)
+from teamster.libraries.datagun.assets import (
     build_bigquery_extract_sftp_asset,
     build_bigquery_query_sftp_asset,
 )
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.adp.payroll.assets import GENERAL_LEDGER_FILE_PARTITIONS_DEF
 
 config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
 

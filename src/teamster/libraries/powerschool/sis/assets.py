@@ -13,9 +13,9 @@ from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 from sshtunnel import SSHTunnelForwarder
 
-from teamster.core.sqlalchemy.resources import OracleResource
-from teamster.core.ssh.resources import SSHResource
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.libraries.sqlalchemy.resources import OracleResource
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_powerschool_table_asset(

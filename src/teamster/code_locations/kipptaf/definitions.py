@@ -1,16 +1,7 @@
 from dagster import Definitions, load_assets_from_modules
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.resources import (
-    BIGQUERY_RESOURCE,
-    GCS_RESOURCE,
-    SSH_COUCHDROP,
-    get_dbt_cli_resource,
-    get_io_manager_gcs_avro,
-    get_io_manager_gcs_file,
-    get_io_manager_gcs_pickle,
-)
-from teamster.kipptaf import (
+from teamster.code_locations.kipptaf import (
     CODE_LOCATION,
     adp,
     airbyte,
@@ -32,6 +23,15 @@ from teamster.kipptaf import (
     smartrecruiters,
     tableau,
     zendesk,
+)
+from teamster.libraries.core.resources import (
+    BIGQUERY_RESOURCE,
+    GCS_RESOURCE,
+    SSH_COUCHDROP,
+    get_dbt_cli_resource,
+    get_io_manager_gcs_avro,
+    get_io_manager_gcs_file,
+    get_io_manager_gcs_pickle,
 )
 
 defs = Definitions(

@@ -13,9 +13,9 @@ from dagster import (
     sensor,
 )
 
-from teamster.core.ssh.resources import SSHResource
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.adp.payroll.assets import assets
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.adp.payroll.assets import assets
+from teamster.libraries.ssh.resources import SSHResource
 
 
 @sensor(

@@ -1,6 +1,6 @@
 from dagster import define_asset_job
 
-from teamster.kippcamden.deanslist.assets import (
+from teamster.code_locations.kippcamden.deanslist.assets import (
     multi_partition_fiscal_assets,
     multi_partition_monthly_assets,
     static_partition_assets,

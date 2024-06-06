@@ -1,7 +1,20 @@
 from dagster import Definitions, load_assets_from_modules
 from dagster_k8s import k8s_job_executor
 
-from teamster.core.resources import (
+from teamster.code_locations.kippnewark import (
+    CODE_LOCATION,
+    couchdrop,
+    datagun,
+    dbt,
+    deanslist,
+    edplan,
+    iready,
+    pearson,
+    powerschool,
+    renlearn,
+    titan,
+)
+from teamster.libraries.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,
@@ -16,19 +29,6 @@ from teamster.core.resources import (
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
-)
-from teamster.kippnewark import (
-    CODE_LOCATION,
-    couchdrop,
-    datagun,
-    dbt,
-    deanslist,
-    edplan,
-    iready,
-    pearson,
-    powerschool,
-    renlearn,
-    titan,
 )
 
 defs = Definitions(

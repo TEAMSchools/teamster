@@ -1,7 +1,9 @@
 from dagster import ScheduleDefinition
 
-from teamster.kipptaf import LOCAL_TIMEZONE
-from teamster.kipptaf.smartrecruiters.jobs import smartrecruiters_report_asset_job
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.smartrecruiters.jobs import (
+    smartrecruiters_report_asset_job,
+)
 
 smartrecruiters_report_assets_schedule = ScheduleDefinition(
     job=smartrecruiters_report_asset_job,

@@ -1,8 +1,10 @@
 from dagster import RunRequest, ScheduleEvaluationContext, schedule
 
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.google.forms.assets import GOOGLE_FORMS_PARTITIONS_DEF
-from teamster.kipptaf.google.forms.jobs import google_forms_asset_job
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.google.forms.assets import (
+    GOOGLE_FORMS_PARTITIONS_DEF,
+)
+from teamster.code_locations.kipptaf.google.forms.jobs import google_forms_asset_job
 
 
 @schedule(

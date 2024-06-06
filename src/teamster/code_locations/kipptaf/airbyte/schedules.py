@@ -1,5 +1,5 @@
-from teamster.airbyte.schedules import build_airbyte_start_sync_schedule
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.libraries.airbyte.schedules import build_airbyte_start_sync_schedule
 
 zendesk_start_sync_schedule = build_airbyte_start_sync_schedule(
     code_location=CODE_LOCATION,

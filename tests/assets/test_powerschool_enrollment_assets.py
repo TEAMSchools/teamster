@@ -3,9 +3,13 @@ import random
 from dagster import AssetsDefinition, EnvVar, TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.powerschool.enrollment.assets import submission_records
-from teamster.powerschool.enrollment.resources import PowerSchoolEnrollmentResource
+from teamster.code_locations.kipptaf.powerschool.enrollment.assets import (
+    submission_records,
+)
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.libraries.powerschool.enrollment.resources import (
+    PowerSchoolEnrollmentResource,
+)
 
 
 def _test_asset(asset: AssetsDefinition, partition_key=None):

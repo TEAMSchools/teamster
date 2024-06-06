@@ -6,10 +6,10 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kippnewark.renlearn.schema import ASSET_SCHEMA
+from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark.renlearn.schema import ASSET_SCHEMA
+from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.libraries.sftp.assets import build_sftp_asset
 
 assets = [
     build_sftp_asset(

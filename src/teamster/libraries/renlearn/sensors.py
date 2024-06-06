@@ -13,7 +13,7 @@ from dagster import (
     sensor,
 )
 
-from teamster.core.ssh.resources import SSHResource
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_renlearn_sftp_sensor(

@@ -1,4 +1,4 @@
-from teamster.kipptaf.adp.workforce_now import api, sftp
+from teamster.code_locations.kipptaf.adp.workforce_now import api, sftp
 
 assets = [
     *api.assets,

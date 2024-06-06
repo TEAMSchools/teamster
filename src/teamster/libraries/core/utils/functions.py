@@ -4,7 +4,7 @@ from typing import Mapping
 import pendulum
 from dagster import MultiPartitionKey, _check
 
-from teamster.core.utils.classes import FiscalYear
+from teamster.libraries.core.utils.classes import FiscalYear
 
 
 def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):

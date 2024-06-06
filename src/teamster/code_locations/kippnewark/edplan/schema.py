@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.edplan.schema import NJSmartPowerschool
+from teamster.libraries.edplan.schema import NJSmartPowerschool
 
 
 class njsmart_powerschool_record(NJSmartPowerschool):

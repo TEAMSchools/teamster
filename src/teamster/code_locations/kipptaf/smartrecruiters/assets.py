@@ -1,9 +1,9 @@
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.smartrecruiters.schema import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.smartrecruiters.schema import (
     APPLICANTS_SCHEMA,
     APPLICATIONS_SCHEMA,
 )
-from teamster.smartrecruiters.assets import build_smartrecruiters_report_asset
+from teamster.libraries.smartrecruiters.assets import build_smartrecruiters_report_asset
 
 applicants = build_smartrecruiters_report_asset(
     asset_key=[CODE_LOCATION, "smartrecruiters", "applicants"],

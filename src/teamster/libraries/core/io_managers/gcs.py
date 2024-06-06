@@ -10,7 +10,7 @@ from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyReq
 from google.cloud.storage import Bucket
 from upath import UPath
 
-from teamster.core.utils.classes import FiscalYear
+from teamster.libraries.core.utils.classes import FiscalYear
 
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):

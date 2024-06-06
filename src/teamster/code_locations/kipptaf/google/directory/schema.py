@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.google.directory.schema import (
+from teamster.libraries.google.directory.schema import (
     Group,
     Member,
     OrgUnits,

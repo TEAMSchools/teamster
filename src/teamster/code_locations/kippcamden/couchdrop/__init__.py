@@ -1,4 +1,4 @@
-from teamster.kippcamden.couchdrop.sensors import sensors
+from teamster.code_locations.kippcamden.couchdrop.sensors import sensors
 
 __all__ = [
     "sensors",

@@ -2,8 +2,10 @@ import pathlib
 
 from dagster import AssetKey, AssetSpec, config_from_files
 
-from teamster.core.definitions.external_asset import external_assets_from_specs
-from teamster.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.libraries.core.definitions.external_asset import (
+    external_assets_from_specs,
+)
 
 specs = [
     AssetSpec(

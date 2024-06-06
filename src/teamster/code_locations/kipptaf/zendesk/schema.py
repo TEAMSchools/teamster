@@ -3,7 +3,7 @@ import json
 
 import py_avro_schema
 
-from teamster.zendesk.schema import Minutes, TicketMetric
+from teamster.libraries.zendesk.schema import Minutes, TicketMetric
 
 
 class agent_wait_time_in_minutes_record(Minutes):

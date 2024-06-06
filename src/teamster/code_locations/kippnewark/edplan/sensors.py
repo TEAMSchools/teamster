@@ -1,6 +1,6 @@
-from teamster.edplan.sensors import build_sftp_sensor
-from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kippnewark.edplan import assets
+from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark.edplan import assets
+from teamster.libraries.edplan.sensors import build_sftp_sensor
 
 sftp_sensor = build_sftp_sensor(
     sensor_name=f"{CODE_LOCATION}_edplan_sftp_sensor",

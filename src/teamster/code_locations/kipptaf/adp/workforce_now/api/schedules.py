@@ -1,7 +1,7 @@
 from dagster import ScheduleDefinition, build_schedule_from_partitioned_job
 
-from teamster.kipptaf import LOCAL_TIMEZONE
-from teamster.kipptaf.adp.workforce_now.api.jobs import (
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.adp.workforce_now.api.jobs import (
     adp_wfn_api_workers_asset_job,
     adp_wfn_update_workers_job,
 )

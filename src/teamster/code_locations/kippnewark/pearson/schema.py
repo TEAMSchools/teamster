@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.pearson.schema import NJGPA, NJSLA, PARCC, StudentListReport
+from teamster.libraries.pearson.schema import NJGPA, NJSLA, PARCC, StudentListReport
 
 
 class parcc_record(PARCC):

@@ -1,6 +1,6 @@
 from dagster import EnvVar, _check, build_init_resource_context
 
-from teamster.core.ssh.resources import SSHResource
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def _test_listdir_attr_r(ssh: SSHResource, remote_dir: str = "~"):

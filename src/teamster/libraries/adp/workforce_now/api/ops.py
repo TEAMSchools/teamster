@@ -1,6 +1,6 @@
 from dagster import OpExecutionContext, op
 
-from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
 
 def get_base_payload(associate_oid):

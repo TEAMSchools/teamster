@@ -6,9 +6,11 @@ from dagster import (
     sensor,
 )
 
-from teamster.google.drive.resources import GoogleDriveResource
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.google.forms.assets import GOOGLE_FORMS_PARTITIONS_DEF
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.google.forms.assets import (
+    GOOGLE_FORMS_PARTITIONS_DEF,
+)
+from teamster.libraries.google.drive.resources import GoogleDriveResource
 
 
 @sensor(

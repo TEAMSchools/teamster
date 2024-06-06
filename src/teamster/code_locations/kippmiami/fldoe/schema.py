@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.fldoe.schema import EOC, FAST, FSA, Science
+from teamster.libraries.fldoe.schema import EOC, FAST, FSA, Science
 
 
 class fast_record(FAST):

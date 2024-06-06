@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.adp.workforce_manager.schema import (
+from teamster.libraries.adp.workforce_manager.schema import (
     AccrualReportingPeriodSummary,
     TimeDetail,
 )

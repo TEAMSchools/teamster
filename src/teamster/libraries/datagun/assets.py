@@ -21,8 +21,8 @@ from google.cloud.storage import Client as CloudStorageClient
 from pandas import DataFrame
 from sqlalchemy.sql.expression import literal_column, select, table, text
 
-from teamster.core.ssh.resources import SSHResource
-from teamster.core.utils.classes import CustomJSONEncoder
+from teamster.libraries.core.utils.classes import CustomJSONEncoder
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def format_file_name(stem: str, suffix: str, **substitutions):

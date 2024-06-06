@@ -8,7 +8,7 @@ from dagster import (
     schedule,
 )
 
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def build_deanslist_static_partition_asset_job_schedule(

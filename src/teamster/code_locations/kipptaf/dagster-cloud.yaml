@@ -1,7 +1,7 @@
 locations:
   - location_name: kipptaf
     code_source:
-      module_name: teamster.kipptaf.definitions
+      module_name: teamster.code_locations.kipptaf.definitions
     build:
       directory: ./
       registry: us-central1-docker.pkg.dev/teamster-332318/teamster/kipptaf

@@ -1,7 +1,7 @@
-from teamster.kippnewark.powerschool.assets import assets
-from teamster.kippnewark.powerschool.jobs import jobs
-from teamster.kippnewark.powerschool.schedules import schedules
-from teamster.kippnewark.powerschool.sensors import sensors
+from teamster.code_locations.kippnewark.powerschool.assets import assets
+from teamster.code_locations.kippnewark.powerschool.jobs import jobs
+from teamster.code_locations.kippnewark.powerschool.schedules import schedules
+from teamster.code_locations.kippnewark.powerschool.sensors import sensors
 
 __all__ = [
     "assets",

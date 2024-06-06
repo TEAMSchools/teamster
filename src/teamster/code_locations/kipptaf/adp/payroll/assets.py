@@ -5,9 +5,11 @@ from dagster import (
     StaticPartitionsDefinition,
 )
 
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.adp.payroll.schema import GENERAL_LEDGER_FILE_SCHEMA
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.adp.payroll.schema import (
+    GENERAL_LEDGER_FILE_SCHEMA,
+)
+from teamster.libraries.sftp.assets import build_sftp_asset
 
 asset_key = AssetKey([CODE_LOCATION, "adp", "payroll", "general_ledger_file"])
 

@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.overgrad.schema import (
+from teamster.libraries.overgrad.schema import (
     Admission,
     CustomField,
     Following,

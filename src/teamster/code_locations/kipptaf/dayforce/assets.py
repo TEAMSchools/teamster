@@ -2,9 +2,9 @@ import pathlib
 
 from dagster import config_from_files
 
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.dayforce.schema import ASSET_SCHEMA
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.dayforce.schema import ASSET_SCHEMA
+from teamster.libraries.sftp.assets import build_sftp_asset
 
 assets = [
     build_sftp_asset(

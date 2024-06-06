@@ -3,9 +3,9 @@ import json
 import pendulum
 from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.ldap.assets import assets
-from teamster.ldap.resources import LdapResource
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.ldap.assets import assets
+from teamster.libraries.ldap.resources import LdapResource
 
 
 @sensor(

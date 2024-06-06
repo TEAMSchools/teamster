@@ -6,9 +6,9 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kippnewark import CODE_LOCATION
-from teamster.kippnewark.iready.schema import ASSET_SCHEMA
+from teamster.code_locations.kippnewark import CODE_LOCATION
+from teamster.code_locations.kippnewark.iready.schema import ASSET_SCHEMA
+from teamster.libraries.sftp.assets import build_sftp_asset
 
 assets = [
     build_sftp_asset(

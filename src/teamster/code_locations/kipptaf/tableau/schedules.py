@@ -8,8 +8,8 @@ from dagster import (
     schedule,
 )
 
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.tableau.assets import workbook
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.tableau.assets import workbook
 
 job = define_asset_job(
     name=f"{CODE_LOCATION}_tableau_workbook_asset_job", selection=[workbook]
