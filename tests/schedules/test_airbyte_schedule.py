@@ -1,10 +1,8 @@
 from dagster import build_schedule_context
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.airbyte.schedules import (
-    build_airbyte_start_sync_schedule,
-)
 from teamster.code_locations.kipptaf.resources import AIRBYTE_CLOUD_RESOURCE
+from teamster.libraries.airbyte.schedules import build_airbyte_start_sync_schedule
 
 
 def test_schedule():
