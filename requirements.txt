@@ -227,9 +227,9 @@ dbt-adapters==1.2.1 \
 dbt-bigquery==1.8.1 \
     --hash=sha256:2395a9966d272a8200812c415601e38ae0327cf1a2570dca5de8ddd5b97b9e16 \
     --hash=sha256:66560675abe37aaa387f878c4c5a7cf6add6c5e2002e7b2903330caeca729570
-dbt-common==1.2.0 \
-    --hash=sha256:4c39173c65fd779e9635d67c4cebf5d842e97c7c9dc9a538ec037a13074efab7 \
-    --hash=sha256:b09ba0c1bd86c1b899f49f0e4c6dde1a55a222594e8e0ae999bd6546875f76a8
+dbt-common==1.3.0 \
+    --hash=sha256:327ea3572c605ef9b874138285a8099e92d5d5ec91f2c8dd7e188b6d76f9463c \
+    --hash=sha256:489ecba5c75fffde9c6b36f8d561a392d159fd84ed4f01e13bd37b3b57f84657
 dbt-core==1.8.1 \
     --hash=sha256:24bca2f60b8e2f0b07fbdd968550e0abfab8748598f34fa7c42b192ed570d391 \
     --hash=sha256:4b61d68ebf5647bd3d760f9135506f744755dcfa7ef6b49e0ead1d07bbc820fe
