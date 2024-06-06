@@ -1203,7 +1203,7 @@ select distinct
     if(
         f.region = 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.grade_level = 0
         and f.course_name = 'HR'
         and f.quarter != 'Y1'
@@ -1215,7 +1215,7 @@ select distinct
     if(
         f.region = 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.grade_level = 0
         and f.course_name != 'HR'
         and f.quarter != 'Y1'
@@ -1227,7 +1227,7 @@ select distinct
     if(
         f.region = 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.grade_level != 0
         and f.course_name != 'HR'
         and f.quarter != 'Y1'
@@ -1239,7 +1239,7 @@ select distinct
     if(
         f.region = 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.grade_level = 0
         and f.course_name = 'HR'
         and f.quarter != 'Y1'
@@ -1252,7 +1252,7 @@ select distinct
     if(
         f.region = 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.grade_level != 0
         and f.course_name != 'HR'
         and f.quarter != 'Y1'
@@ -1265,7 +1265,7 @@ select distinct
     if(
         f.region != 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.grade_level > 4
         and f.quarter != 'Y1'
         and f.quarter_course_percent_grade_that_matters < 70
@@ -1277,7 +1277,7 @@ select distinct
     if(
         f.region != 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.grade_level < 5
         and f.quarter != 'Y1'
         and (f.course_name = 'HR' or f.credit_type in ('MATH', 'ENG'))
@@ -1289,7 +1289,7 @@ select distinct
     if(
         f.region = 'Miami'
         and current_date('America/New_York')
-        between f.cal_quarter_end_date and (f.cal_quarter_end_date + 14)
+        between (f.cal_quarter_end_date - 3) and (f.cal_quarter_end_date + 14)
         and f.quarter != 'Y1'
         and f.quarter_comment_value is null,
         1,
@@ -1352,7 +1352,7 @@ select distinct
 
     if(
         f.region = 'Miami'
-        and f.quarter != 'Y!'
+        and f.quarter != 'Y1'
         and f.category_name_code = 'W'
         and f.category_quarter_percent_grade is null,
         1,
