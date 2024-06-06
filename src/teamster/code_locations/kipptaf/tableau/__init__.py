@@ -1,6 +1,6 @@
-from teamster.kipptaf.tableau.assets import assets
-from teamster.kipptaf.tableau.schedules import schedules
-from teamster.kipptaf.tableau.sensors import sensors
+from teamster.code_locations.kipptaf.tableau.assets import assets
+from teamster.code_locations.kipptaf.tableau.schedules import schedules
+from teamster.code_locations.kipptaf.tableau.sensors import sensors
 
 __all__ = [
     "assets",

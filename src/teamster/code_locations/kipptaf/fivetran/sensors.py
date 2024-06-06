@@ -10,8 +10,8 @@ from dagster import (
 from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.fivetran.assets import CONNECTORS, assets
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.fivetran.assets import CONNECTORS, assets
 
 ASSET_KEYS = [asset.key for asset in assets]
 

@@ -2,8 +2,8 @@ import json
 
 from dagster import SensorResult, build_sensor_context
 
-from teamster.kipptaf.airbyte.sensors import airbyte_job_status_sensor
-from teamster.kipptaf.resources import AIRBYTE_CLOUD_RESOURCE
+from teamster.code_locations.kipptaf.airbyte.sensors import airbyte_job_status_sensor
+from teamster.code_locations.kipptaf.resources import AIRBYTE_CLOUD_RESOURCE
 
 
 def test_airbyte_job_status_sensor():

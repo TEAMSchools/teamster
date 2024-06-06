@@ -9,8 +9,10 @@ from dagster import (
 )
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import BIGQUERY_RESOURCE, get_io_manager_gcs_avro
-from teamster.kipptaf.performance_management.assets import outlier_detection
+from teamster.code_locations.kipptaf.performance_management.assets import (
+    outlier_detection,
+)
+from teamster.libraries.core.resources import BIGQUERY_RESOURCE, get_io_manager_gcs_avro
 
 
 def test_outlier_detection():

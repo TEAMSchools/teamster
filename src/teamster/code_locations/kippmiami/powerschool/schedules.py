@@ -1,9 +1,11 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 
-from teamster.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kippmiami.powerschool.assets import full_assets
-from teamster.kippmiami.powerschool.jobs import powerschool_nonpartition_asset_job
-from teamster.powerschool.sis.schedules import build_powerschool_schedule
+from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippmiami.powerschool.assets import full_assets
+from teamster.code_locations.kippmiami.powerschool.jobs import (
+    powerschool_nonpartition_asset_job,
+)
+from teamster.libraries.powerschool.sis.schedules import build_powerschool_schedule
 
 last_modified_schedule = build_powerschool_schedule(
     code_location=CODE_LOCATION,

@@ -1,8 +1,8 @@
-from teamster.fivetran.schedules import (
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.libraries.fivetran.schedules import (
     build_fivetran_start_resync_schedule,
     build_fivetran_start_sync_schedule,
 )
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 
 adp_workforce_now_start_resync_schedule = build_fivetran_start_resync_schedule(
     code_location=CODE_LOCATION,

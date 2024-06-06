@@ -9,11 +9,11 @@ from dagster import (
     asset,
 )
 
-from teamster.core.asset_checks import (
+from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 
 def build_schoolmint_grow_asset(

@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.adp.payroll.schema import GeneralLedger
+from teamster.libraries.adp.payroll.schema import GeneralLedger
 
 
 class general_ledger_file_record(GeneralLedger):

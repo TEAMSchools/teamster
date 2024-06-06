@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.renlearn.schema import (
+from teamster.libraries.renlearn.schema import (
     AcceleratedReader,
     FastStar,
     Star,

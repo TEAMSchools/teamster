@@ -1,6 +1,8 @@
-from teamster.core.definitions.external_asset import external_assets_from_specs
-from teamster.google.sheets.assets import build_google_sheets_asset_spec
-from teamster.kipptaf.dbt.assets import manifest
+from teamster.code_locations.kipptaf.dbt.assets import manifest
+from teamster.libraries.core.definitions.external_asset import (
+    external_assets_from_specs,
+)
+from teamster.libraries.google.sheets.assets import build_google_sheets_asset_spec
 
 specs = [
     build_google_sheets_asset_spec(

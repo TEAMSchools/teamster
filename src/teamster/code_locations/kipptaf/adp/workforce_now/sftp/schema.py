@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.adp.workforce_now.sftp.schema import (
+from teamster.libraries.adp.workforce_now.sftp.schema import (
     AdditionalEarnings,
     ComprehensiveBenefits,
     PensionBenefitsEnrollments,

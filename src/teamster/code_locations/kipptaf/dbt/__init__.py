@@ -1,5 +1,5 @@
-from teamster.kipptaf.dbt.assets import assets
-from teamster.kipptaf.dbt.schedules import schedules
+from teamster.code_locations.kipptaf.dbt.assets import assets
+from teamster.code_locations.kipptaf.dbt.schedules import schedules
 
 __all__ = [
     "assets",

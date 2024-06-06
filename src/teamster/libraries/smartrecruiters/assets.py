@@ -6,11 +6,11 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.core.asset_checks import (
+from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.smartrecruiters.resources import SmartRecruitersResource
+from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 
 
 def build_smartrecruiters_report_asset(

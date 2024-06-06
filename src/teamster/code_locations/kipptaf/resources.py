@@ -2,23 +2,27 @@ from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 from dagster_fivetran import FivetranResource
 
-from teamster.adp.workforce_manager.resources import AdpWorkforceManagerResource
-from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.alchemer.resources import AlchemerResource
-from teamster.amplify.dibels.resources import DibelsDataSystemResource
-from teamster.amplify.mclass.resources import MClassResource
-from teamster.core.ssh.resources import SSHResource
-from teamster.google.directory.resources import GoogleDirectoryResource
-from teamster.google.drive.resources import GoogleDriveResource
-from teamster.google.forms.resources import GoogleFormsResource
-from teamster.google.sheets.resources import GoogleSheetsResource
-from teamster.ldap.resources import LdapResource
-from teamster.overgrad.resources import OvergradResource
-from teamster.powerschool.enrollment.resources import PowerSchoolEnrollmentResource
-from teamster.schoolmint.grow.resources import SchoolMintGrowResource
-from teamster.smartrecruiters.resources import SmartRecruitersResource
-from teamster.tableau.resources import TableauServerResource
-from teamster.zendesk.resources import ZendeskResource
+from teamster.libraries.adp.workforce_manager.resources import (
+    AdpWorkforceManagerResource,
+)
+from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.libraries.alchemer.resources import AlchemerResource
+from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
+from teamster.libraries.amplify.mclass.resources import MClassResource
+from teamster.libraries.google.directory.resources import GoogleDirectoryResource
+from teamster.libraries.google.drive.resources import GoogleDriveResource
+from teamster.libraries.google.forms.resources import GoogleFormsResource
+from teamster.libraries.google.sheets.resources import GoogleSheetsResource
+from teamster.libraries.ldap.resources import LdapResource
+from teamster.libraries.overgrad.resources import OvergradResource
+from teamster.libraries.powerschool.enrollment.resources import (
+    PowerSchoolEnrollmentResource,
+)
+from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
+from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.tableau.resources import TableauServerResource
+from teamster.libraries.zendesk.resources import ZendeskResource
 
 """
 Dagster resources

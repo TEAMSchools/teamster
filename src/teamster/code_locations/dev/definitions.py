@@ -7,16 +7,16 @@ warnings.filterwarnings("ignore", category=ExperimentalWarning)
 # trunk-ignore-begin(ruff/E402)
 from dagster import Definitions, load_assets_from_modules
 
-from teamster.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCHDROP,; get_dbt_cli_resource,
+from teamster.code_locations.kipptaf import (  # adp,; airbyte,; alchemer,; amplify,; couchdrop,; datagun,; dayforce,; dbt,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
+    CODE_LOCATION,
+    overgrad,
+    resources,
+)
+from teamster.libraries.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCHDROP,; get_dbt_cli_resource,
     GCS_RESOURCE,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
-)
-from teamster.kipptaf import (  # adp,; airbyte,; alchemer,; amplify,; couchdrop,; datagun,; dayforce,; dbt,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
-    CODE_LOCATION,
-    overgrad,
-    resources,
 )
 
 # trunk-ignore-end(ruff/E402)

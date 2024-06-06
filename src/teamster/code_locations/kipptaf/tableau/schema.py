@@ -3,7 +3,7 @@ import json
 
 import py_avro_schema
 
-from teamster.tableau.schema import View, Workbook
+from teamster.libraries.tableau.schema import View, Workbook
 
 
 class view_record(View):

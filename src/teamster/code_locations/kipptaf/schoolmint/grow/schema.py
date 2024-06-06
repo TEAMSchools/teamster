@@ -3,7 +3,7 @@ import json
 
 import py_avro_schema
 
-from teamster.schoolmint.grow.schema import (
+from teamster.libraries.schoolmint.grow.schema import (
     Assignment,
     AssignmentPresetTag,
     Attachment,

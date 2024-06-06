@@ -1,6 +1,6 @@
-from teamster.kipptaf.airbyte.assets import assets
-from teamster.kipptaf.airbyte.schedules import schedules
-from teamster.kipptaf.airbyte.sensors import sensors
+from teamster.code_locations.kipptaf.airbyte.assets import assets
+from teamster.code_locations.kipptaf.airbyte.schedules import schedules
+from teamster.code_locations.kipptaf.airbyte.sensors import sensors
 
 __all__ = [
     "assets",

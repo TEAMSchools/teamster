@@ -2,7 +2,7 @@ import json
 
 from dagster import build_resources
 
-from teamster.google.directory.resources import GoogleDirectoryResource
+from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
 with build_resources(
     resources={

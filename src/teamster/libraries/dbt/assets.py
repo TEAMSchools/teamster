@@ -4,7 +4,7 @@ from dagster import AssetExecutionContext, Output
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from dagster_dbt.utils import dagster_name_fn
 
-from teamster.core.dbt.asset_decorator import dbt_external_source_assets
+from teamster.libraries.dbt.asset_decorator import dbt_external_source_assets
 
 
 def build_dbt_assets(

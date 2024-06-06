@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.iready.schema import (
+from teamster.libraries.iready.schema import (
     DiagnosticInstruction,
     DiagnosticResults,
     InstructionalUsage,

@@ -1,4 +1,4 @@
-from teamster.kipptaf.powerschool.enrollment.assets import assets
+from teamster.code_locations.kipptaf.powerschool.enrollment.assets import assets
 
 __all__ = [
     "assets",

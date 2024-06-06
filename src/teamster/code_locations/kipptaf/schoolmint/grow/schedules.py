@@ -5,8 +5,8 @@ from dagster import (
     schedule,
 )
 
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.schoolmint.grow.jobs import (
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
     multi_partition_asset_job,
     schoolmint_grow_user_update_job,
     static_partition_asset_job,

@@ -2,7 +2,7 @@ import json
 
 from dagster import OpExecutionContext, op
 
-from teamster.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 
 @op

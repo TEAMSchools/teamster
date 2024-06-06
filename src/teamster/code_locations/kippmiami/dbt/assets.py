@@ -1,9 +1,12 @@
 import json
 import pathlib
 
-from teamster.core.dbt.assets import build_dbt_assets, build_dbt_external_source_assets
-from teamster.core.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
-from teamster.kippmiami import CODE_LOCATION
+from teamster.code_locations.kippmiami import CODE_LOCATION
+from teamster.libraries.dbt.assets import (
+    build_dbt_assets,
+    build_dbt_external_source_assets,
+)
+from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 manifest = json.loads(
     s=pathlib.Path(f"src/dbt/{CODE_LOCATION}/target/manifest.json").read_text()

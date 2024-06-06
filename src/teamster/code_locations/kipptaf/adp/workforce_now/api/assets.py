@@ -1,12 +1,12 @@
 from dagster import AssetExecutionContext, DailyPartitionsDefinition, Output, asset
 
-from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.core.asset_checks import (
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.adp.workforce_now.api.schema import WORKER_SCHEMA
+from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.adp.workforce_now.api.schema import WORKER_SCHEMA
 
 asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
 

@@ -14,9 +14,9 @@ from zenpy.lib.api_objects import BaseObject
 from zenpy.lib.exception import RecordNotFoundException
 from zenpy.lib.generator import SearchExportResultGenerator
 
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA
-from teamster.zendesk.resources import ZendeskResource
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA
+from teamster.libraries.zendesk.resources import ZendeskResource
 
 
 @asset(

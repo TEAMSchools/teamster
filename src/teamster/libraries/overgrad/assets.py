@@ -6,11 +6,11 @@ from dagster import (
     asset,
 )
 
-from teamster.core.asset_checks import (
+from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.overgrad.resources import OvergradResource
+from teamster.libraries.overgrad.resources import OvergradResource
 
 
 def build_overgrad_asset(

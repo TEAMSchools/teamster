@@ -1,7 +1,7 @@
 from dagster import config_from_files
 
-from teamster.core.datagun.assets import build_bigquery_extract_asset
-from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.libraries.datagun.assets import build_bigquery_extract_asset
 
 config_dir = f"src/teamster/{CODE_LOCATION}/datagun/config"
 

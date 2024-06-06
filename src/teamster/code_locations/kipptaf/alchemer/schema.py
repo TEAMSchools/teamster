@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.alchemer.schema import (
+from teamster.libraries.alchemer.schema import (
     Survey,
     SurveyCampaign,
     SurveyQuestion,

@@ -1,7 +1,7 @@
 from dagster import AutoMaterializePolicy, DynamicPartitionsDefinition
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.overgrad.schema import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.overgrad.schema import (
     ADMISSION_SCHEMA,
     CUSTOM_FIELD_SCHEMA,
     FOLLOWING_SCHEMA,
@@ -9,7 +9,7 @@ from teamster.kipptaf.overgrad.schema import (
     STUDENT_SCHEMA,
     UNIVERSITY_SCHEMA,
 )
-from teamster.overgrad.assets import build_overgrad_asset
+from teamster.libraries.overgrad.assets import build_overgrad_asset
 
 key_prefix = [CODE_LOCATION, "overgrad"]
 

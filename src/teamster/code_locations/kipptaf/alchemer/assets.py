@@ -4,17 +4,17 @@ import pendulum
 from dagster import DynamicPartitionsDefinition, OpExecutionContext, Output, asset
 from requests.exceptions import HTTPError
 
-from teamster.alchemer.resources import AlchemerResource
-from teamster.core.asset_checks import (
-    build_check_spec_avro_schema_valid,
-    check_avro_schema_valid,
-)
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.alchemer.schema import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.alchemer.schema import (
     SURVEY_CAMPAIGN_SCHEMA,
     SURVEY_QUESTION_SCHEMA,
     SURVEY_RESPONSE_SCHEMA,
     SURVEY_SCHEMA,
+)
+from teamster.libraries.alchemer.resources import AlchemerResource
+from teamster.libraries.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
+    check_avro_schema_valid,
 )
 
 key_prefix = [CODE_LOCATION, "alchemer"]

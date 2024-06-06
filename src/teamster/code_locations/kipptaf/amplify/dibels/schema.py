@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.amplify.dibels.schema import DataFarming
+from teamster.libraries.amplify.dibels.schema import DataFarming
 
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 

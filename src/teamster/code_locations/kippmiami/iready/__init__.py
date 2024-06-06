@@ -1,5 +1,5 @@
-from teamster.kippmiami.iready.assets import assets
-from teamster.kippmiami.iready.sensors import sensors
+from teamster.code_locations.kippmiami.iready.assets import assets
+from teamster.code_locations.kippmiami.iready.sensors import sensors
 
 __all__ = [
     "assets",

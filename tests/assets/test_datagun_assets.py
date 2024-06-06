@@ -3,10 +3,14 @@ import random
 import pendulum
 from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
-from teamster.core.datagun.assets import format_file_name
-from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
-from teamster.kipptaf import LOCAL_TIMEZONE
-from teamster.kipptaf.resources import SSH_RESOURCE_LITTLESIS
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_LITTLESIS
+from teamster.libraries.core.resources import (
+    BIGQUERY_RESOURCE,
+    GCS_RESOURCE,
+    SSH_COUCHDROP,
+)
+from teamster.libraries.datagun.assets import format_file_name
 
 
 def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
@@ -33,7 +37,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
 
 
 def test_construct_query_schema():
-    from teamster.core.datagun.assets import construct_query
+    from teamster.libraries.datagun.assets import construct_query
 
     group_code = "3LE"
     date = "20230815"
@@ -69,7 +73,7 @@ def test_construct_query_schema():
 
 
 def test_format_file_name_default():
-    from teamster.core.datagun.assets import format_file_name
+    from teamster.libraries.datagun.assets import format_file_name
 
     now = pendulum.now(tz=LOCAL_TIMEZONE)
 
@@ -117,7 +121,7 @@ def test_format_file_name_multi_partition():
 
 
 def test_intacct_extract_asset():
-    from teamster.kipptaf.datagun.assets import intacct_extract
+    from teamster.code_locations.kipptaf.datagun.assets import intacct_extract
 
     _test_asset(
         asset=intacct_extract,
@@ -128,7 +132,9 @@ def test_intacct_extract_asset():
 
 
 def test_datagun_powerschool_kippnewark():
-    from teamster.kippnewark.datagun.assets import powerschool_extract_assets
+    from teamster.code_locations.kippnewark.datagun.assets import (
+        powerschool_extract_assets,
+    )
 
     _test_asset(
         asset=powerschool_extract_assets[
@@ -138,6 +144,6 @@ def test_datagun_powerschool_kippnewark():
 
 
 def test_littlesis_extract():
-    from teamster.kipptaf.datagun.assets import littlesis_extract
+    from teamster.code_locations.kipptaf.datagun.assets import littlesis_extract
 
     _test_asset(asset=littlesis_extract)

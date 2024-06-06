@@ -1,7 +1,7 @@
-from teamster.kippmiami.powerschool.assets import assets
-from teamster.kippmiami.powerschool.jobs import jobs
-from teamster.kippmiami.powerschool.schedules import schedules
-from teamster.kippmiami.powerschool.sensors import sensors
+from teamster.code_locations.kippmiami.powerschool.assets import assets
+from teamster.code_locations.kippmiami.powerschool.jobs import jobs
+from teamster.code_locations.kippmiami.powerschool.schedules import schedules
+from teamster.code_locations.kippmiami.powerschool.sensors import sensors
 
 __all__ = [
     "assets",

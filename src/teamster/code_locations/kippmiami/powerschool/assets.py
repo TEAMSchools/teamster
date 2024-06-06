@@ -5,9 +5,9 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.powerschool.sis.assets import build_powerschool_table_asset
+from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.libraries.powerschool.sis.assets import build_powerschool_table_asset
 
 config_dir = f"src/teamster/{CODE_LOCATION}/powerschool/config"
 

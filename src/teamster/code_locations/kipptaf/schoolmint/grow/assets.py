@@ -5,9 +5,9 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.schoolmint.grow.schema import ASSET_SCHEMA
-from teamster.schoolmint.grow.assets import build_schoolmint_grow_asset
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.schoolmint.grow.schema import ASSET_SCHEMA
+from teamster.libraries.schoolmint.grow.assets import build_schoolmint_grow_asset
 
 STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
 

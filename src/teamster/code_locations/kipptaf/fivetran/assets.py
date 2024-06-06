@@ -3,8 +3,10 @@ import pathlib
 import yaml
 from dagster import AssetKey, AssetsDefinition, AssetSpec
 
-from teamster.core.definitions.external_asset import external_assets_from_specs
-from teamster.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.libraries.core.definitions.external_asset import (
+    external_assets_from_specs,
+)
 
 CONNECTORS = {}
 

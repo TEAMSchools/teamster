@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.adp.workforce_now.api.schema import Worker
+from teamster.libraries.adp.workforce_now.api.schema import Worker
 
 WORKER_SCHEMA = json.loads(
     py_avro_schema.generate(

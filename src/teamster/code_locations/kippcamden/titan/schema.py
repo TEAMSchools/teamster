@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.titan.schema import IncomeFormData, PersonData
+from teamster.libraries.titan.schema import IncomeFormData, PersonData
 
 
 class person_data_record(PersonData):

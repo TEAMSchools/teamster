@@ -1,6 +1,6 @@
-from teamster.core.couchdrop.sensors import build_couchdrop_sftp_sensor
-from teamster.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kippnewark.pearson.assets import assets
+from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark.pearson.assets import assets
+from teamster.libraries.couchdrop.sensors import build_couchdrop_sftp_sensor
 
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     code_location=CODE_LOCATION, local_timezone=LOCAL_TIMEZONE, assets=assets

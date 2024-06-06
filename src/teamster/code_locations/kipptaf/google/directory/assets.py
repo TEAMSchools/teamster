@@ -1,12 +1,7 @@
 from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
 
-from teamster.core.asset_checks import (
-    build_check_spec_avro_schema_valid,
-    check_avro_schema_valid,
-)
-from teamster.google.directory.resources import GoogleDirectoryResource
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.google.directory.schema import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.google.directory.schema import (
     GROUPS_SCHEMA,
     MEMBERS_SCHEMA,
     ORGUNITS_SCHEMA,
@@ -14,6 +9,11 @@ from teamster.kipptaf.google.directory.schema import (
     ROLES_SCHEMA,
     USERS_SCHEMA,
 )
+from teamster.libraries.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
+    check_avro_schema_valid,
+)
+from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
 key_prefix = [CODE_LOCATION, "google", "directory"]
 

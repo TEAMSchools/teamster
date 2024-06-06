@@ -3,9 +3,9 @@ import random
 from dagster import AssetsDefinition, PartitionsDefinition, _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_file
-from teamster.kipptaf.resources import ZENDESK_RESOURCE
-from teamster.kipptaf.zendesk.assets import ticket_metrics_archive
+from teamster.code_locations.kipptaf.resources import ZENDESK_RESOURCE
+from teamster.code_locations.kipptaf.zendesk.assets import ticket_metrics_archive
+from teamster.libraries.core.resources import get_io_manager_gcs_file
 
 
 def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):

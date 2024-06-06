@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.dayforce.schema import (
+from teamster.libraries.dayforce.schema import (
     Employee,
     EmployeeManager,
     EmployeeStatus,

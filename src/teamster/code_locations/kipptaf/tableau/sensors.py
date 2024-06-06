@@ -8,9 +8,9 @@ from dagster import (
     sensor,
 )
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.tableau.assets import external_assets
-from teamster.tableau.resources import TableauServerResource
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.tableau.assets import external_assets
+from teamster.libraries.tableau.resources import TableauServerResource
 
 
 @sensor(

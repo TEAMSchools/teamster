@@ -17,8 +17,8 @@ from dagster import (
 from sqlalchemy import text
 from sshtunnel import SSHTunnelForwarder
 
-from teamster.core.sqlalchemy.resources import OracleResource
-from teamster.core.ssh.resources import SSHResource
+from teamster.libraries.sqlalchemy.resources import OracleResource
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_powerschool_sensor(

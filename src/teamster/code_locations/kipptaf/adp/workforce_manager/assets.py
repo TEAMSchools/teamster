@@ -1,11 +1,11 @@
 from dagster import DailyPartitionsDefinition, DynamicPartitionsDefinition
 
-from teamster.adp.workforce_manager.assets import build_adp_wfm_asset
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.adp.workforce_manager.schema import (
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.adp.workforce_manager.schema import (
     ACCRUAL_REPORTING_PERIOD_SUMMARY_SCHEMA,
     TIME_DETAILS_SCHEMA,
 )
+from teamster.libraries.adp.workforce_manager.assets import build_adp_wfm_asset
 
 accrual_reporting_period_summary = build_adp_wfm_asset(
     asset_key=[

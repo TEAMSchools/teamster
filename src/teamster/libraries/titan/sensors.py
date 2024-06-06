@@ -12,7 +12,7 @@ from dagster import (
 )
 from paramiko.ssh_exception import SSHException
 
-from teamster.core.ssh.resources import SSHResource
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_titan_sftp_sensor(

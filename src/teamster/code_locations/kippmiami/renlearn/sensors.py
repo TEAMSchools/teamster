@@ -1,6 +1,10 @@
-from teamster.kippmiami import CODE_LOCATION, CURRENT_FISCAL_YEAR, LOCAL_TIMEZONE
-from teamster.kippmiami.renlearn import assets
-from teamster.renlearn.sensors import build_renlearn_sftp_sensor
+from teamster.code_locations.kippmiami import (
+    CODE_LOCATION,
+    CURRENT_FISCAL_YEAR,
+    LOCAL_TIMEZONE,
+)
+from teamster.code_locations.kippmiami.renlearn import assets
+from teamster.libraries.renlearn.sensors import build_renlearn_sftp_sensor
 
 sftp_sensor = build_renlearn_sftp_sensor(
     code_location=CODE_LOCATION,

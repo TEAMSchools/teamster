@@ -1,12 +1,15 @@
 from dagster import AssetExecutionContext, DynamicPartitionsDefinition, Output, asset
 
-from teamster.core.asset_checks import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.google.forms.schema import (
+    FORM_SCHEMA,
+    RESPONSES_SCHEMA,
+)
+from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.google.forms.resources import GoogleFormsResource
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.google.forms.schema import FORM_SCHEMA, RESPONSES_SCHEMA
+from teamster.libraries.google.forms.resources import GoogleFormsResource
 
 GOOGLE_FORMS_PARTITIONS_DEF = DynamicPartitionsDefinition(
     name=f"{CODE_LOCATION}_google_forms_form_ids"

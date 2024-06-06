@@ -1,7 +1,7 @@
 import pendulum
 from pendulum import timezone
 
-from teamster.core.utils.classes import FiscalYear
+from teamster.libraries.libraries.core.utils.classes import FiscalYear
 
 CODE_LOCATION = "dev"
 

@@ -13,14 +13,14 @@ from dagster import (
 )
 from requests.exceptions import HTTPError
 
-from teamster.alchemer.resources import AlchemerResource
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.alchemer.assets import (
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.alchemer.assets import (
     survey,
     survey_metadata_assets,
     survey_response,
     survey_response_disqualified,
 )
+from teamster.libraries.alchemer.resources import AlchemerResource
 
 
 @sensor(

@@ -12,8 +12,8 @@ from dagster import (
 )
 from dagster_airbyte import AirbyteCloudResource
 
-from teamster.kipptaf import CODE_LOCATION
-from teamster.kipptaf.airbyte import assets
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf.airbyte import assets
 
 ASSET_KEYS = [key for a in assets for key in a.keys]
 

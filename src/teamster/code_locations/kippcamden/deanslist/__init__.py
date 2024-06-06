@@ -1,6 +1,6 @@
-from teamster.kippcamden.deanslist.assets import assets
-from teamster.kippcamden.deanslist.jobs import jobs
-from teamster.kippcamden.deanslist.schedules import schedules
+from teamster.code_locations.kippcamden.deanslist.assets import assets
+from teamster.code_locations.kippcamden.deanslist.jobs import jobs
+from teamster.code_locations.kippcamden.deanslist.schedules import schedules
 
 __all__ = [
     "assets",

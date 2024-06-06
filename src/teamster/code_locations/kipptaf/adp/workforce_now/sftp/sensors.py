@@ -4,9 +4,9 @@ import re
 import pendulum
 from dagster import RunRequest, SensorEvaluationContext, SensorResult, _check, sensor
 
-from teamster.core.ssh.resources import SSHResource
-from teamster.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.kipptaf.adp.workforce_now.sftp.assets import assets
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
+from teamster.libraries.ssh.resources import SSHResource
 
 
 @sensor(

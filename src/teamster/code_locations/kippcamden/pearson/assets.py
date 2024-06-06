@@ -6,9 +6,9 @@ from dagster import (
     config_from_files,
 )
 
-from teamster.core.sftp.assets import build_sftp_asset
-from teamster.kippcamden import CODE_LOCATION
-from teamster.kippcamden.pearson.schema import ASSET_SCHEMA
+from teamster.code_locations.kippcamden import CODE_LOCATION
+from teamster.code_locations.kippcamden.pearson.schema import ASSET_SCHEMA
+from teamster.libraries.sftp.assets import build_sftp_asset
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
