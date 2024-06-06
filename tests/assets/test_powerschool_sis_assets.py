@@ -3,7 +3,7 @@ import random
 from dagster import _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import (
+from teamster.libraries.core.resources import (
     DB_POWERSCHOOL,
     SSH_POWERSCHOOL,
     get_io_manager_gcs_file,
@@ -42,6 +42,6 @@ def _test_asset(assets, asset_name):
 
 
 def test_schools_kippnewark():
-    from teamster.kippnewark.powerschool import assets
+    from teamster.code_locations.kippnewark.powerschool import assets
 
     _test_asset(assets=assets, asset_name="schools")

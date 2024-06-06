@@ -1,6 +1,6 @@
 from dagster import DagsterInstance
 
-from teamster.kipptaf.dbt.assets import dbt_assets
+from teamster.code_locations.kipptaf.dbt.assets import dbt_assets
 
 
 def _add_dynamic_partitions(partitions_def_name: str, partition_keys: list):

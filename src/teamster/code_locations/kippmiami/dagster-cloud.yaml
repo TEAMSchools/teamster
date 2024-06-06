@@ -1,0 +1,241 @@
+locations:
+  - location_name: kippmiami
+    code_source:
+      module_name: teamster.code_locations.kippmiami.definitions
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/kippmiami
+    working_directory: /app
+    container_context:
+      k8s:
+        volume_mounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: /etc/secret-volume
+        volumes:
+          - name: secret-volume
+            projected:
+              sources:
+                - secret:
+                    name: op-gcp-service-account-dbt
+                    items:
+                      - key: dbt_user_credentials.json
+                        path: dbt_user_creds_json
+                - secret:
+                    name: op-deanslist-api
+                    items:
+                      - key: deanslist_api_key_map.yaml
+                        path: deanslist_api_key_map_yaml
+        server_k8s_config:
+          container_config:
+            resources:
+              requests:
+                cpu: 500m
+                memory: 2.0Gi
+              limits:
+                cpu: 500m
+                memory: 2.0Gi
+            env:
+              - name: COUCHDROP_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: password
+              - name: COUCHDROP_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: username
+              - name: IREADY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: password
+              - name: IREADY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: username
+              - name: PS_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: password
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: password
+              - name: PS_SSH_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: port
+              - name: PS_SSH_REMOTE_BIND_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: remote-bind-host
+              - name: PS_SSH_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: username
+              - name: RENLEARN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippmiami
+                    key: password
+              - name: RENLEARN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippmiami
+                    key: username
+              - name: IREADY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: host
+              - name: RENLEARN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
+                    key: host
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: server
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: database
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: port
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: username
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain
+        run_k8s_config:
+          container_config:
+            env:
+              - name: COUCHDROP_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: password
+              - name: COUCHDROP_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: username
+              - name: IREADY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: password
+              - name: IREADY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: username
+              - name: PS_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: password
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: password
+              - name: PS_SSH_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: port
+              - name: PS_SSH_REMOTE_BIND_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: remote-bind-host
+              - name: PS_SSH_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: username
+              - name: RENLEARN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippmiami
+                    key: password
+              - name: RENLEARN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippmiami
+                    key: username
+              - name: IREADY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-iready-sftp
+                    key: host
+              - name: RENLEARN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-renlearn-sftp-kippnj
+                    key: host
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: server
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: database
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: port
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kippmiami
+                    key: username
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: host
+              - name: DEANSLIST_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-deanslist-api
+                    key: subdomain

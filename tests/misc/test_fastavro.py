@@ -4,7 +4,7 @@ import pathlib
 import fastavro
 import py_avro_schema
 
-from teamster.kipptaf.schoolmint.grow.schema import assignments_record
+from teamster.code_locations.kipptaf.schoolmint.grow.schema import assignments_record
 
 fp = pathlib.Path("env/schoolmint/grow/assignments/data.avro")
 

@@ -1,4 +1,4 @@
-from teamster.core.utils.functions import regex_pattern_replace
+from teamster.libraries.core.utils.functions import regex_pattern_replace
 
 
 def test_regex_pattern_replace():
@@ -39,7 +39,7 @@ def test_regex_pattern_replace():
 
 
 def test_foo():
-    from teamster.kipptaf.dbt.assets import manifest
+    from teamster.code_locations.kipptaf.dbt.assets import manifest
 
     asset_keys_old = set()
     asset_keys_new = set()
