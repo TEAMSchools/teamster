@@ -9,7 +9,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - expressions
@@ -18,7 +17,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repositories
@@ -27,7 +25,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_grade_levels
@@ -37,7 +34,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - fields

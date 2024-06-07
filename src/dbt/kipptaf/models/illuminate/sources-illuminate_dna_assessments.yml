@@ -9,7 +9,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - assessment_grade_levels
@@ -18,7 +17,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - assessment_standards
@@ -27,7 +25,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - assessments
@@ -36,7 +33,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - assessments_reporting_groups
@@ -45,7 +41,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - field_standards
@@ -54,7 +49,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - fields_reporting_groups
@@ -63,7 +57,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - performance_band_sets
@@ -72,7 +65,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - performance_bands
@@ -81,7 +73,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - reporting_groups
@@ -90,7 +81,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - students_assessments
@@ -99,7 +89,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - tags
@@ -109,7 +98,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_assessments
               - fields
