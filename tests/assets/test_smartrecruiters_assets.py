@@ -1,4 +1,4 @@
-from dagster import TextMetadataValue, _check, materialize
+from dagster import _check, materialize
 from dagster._core.events import StepMaterializationData
 
 from teamster.code_locations.kipptaf.resources import SMARTRECRUITERS_RESOURCE
