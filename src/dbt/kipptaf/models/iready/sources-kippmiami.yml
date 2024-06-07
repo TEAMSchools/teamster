@@ -3,14 +3,13 @@ version: 2
 sources:
   - name: kippmiami_iready
     tags:
-      - cross_project_source
+      - kippmiami
     tables:
       - name: stg_iready__diagnostic_results
         meta:
           dagster:
             group: iready
             asset_key:
-              - kippmiami
               - iready
               - stg_iready__diagnostic_results
       - name: stg_iready__instructional_usage_data
@@ -18,7 +17,6 @@ sources:
           dagster:
             group: iready
             asset_key:
-              - kippmiami
               - iready
               - stg_iready__instructional_usage_data
       - name: stg_iready__personalized_instruction_by_lesson
@@ -26,6 +24,5 @@ sources:
           dagster:
             group: iready
             asset_key:
-              - kippmiami
               - iready
               - stg_iready__personalized_instruction_by_lesson

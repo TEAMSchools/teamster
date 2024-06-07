@@ -3,14 +3,13 @@ version: 2
 sources:
   - name: kippnewark_edplan
     tags:
-      - cross_project_source
+      - kippnewark
     tables:
       - name: stg_edplan__njsmart_powerschool
         meta:
           dagster:
             group: edplan
             asset_key:
-              - kippnewark
               - edplan
               - stg_edplan__njsmart_powerschool
       - name: stg_edplan__njsmart_powerschool_archive
@@ -18,7 +17,6 @@ sources:
           dagster:
             group: edplan
             asset_key:
-              - kippnewark
               - edplan
               - stg_edplan__njsmart_powerschool_archive
       - name: int_edplan__njsmart_powerschool_union
@@ -26,6 +24,5 @@ sources:
           dagster:
             group: edplan
             asset_key:
-              - kippnewark
               - edplan
               - int_edplan__njsmart_powerschool_union

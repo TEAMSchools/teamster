@@ -3,14 +3,13 @@ version: 2
 sources:
   - name: kippcamden_powerschool
     tags:
-      - cross_project_source
+      - kippcamden
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         meta:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__assignmentcategoryassoc
       - name: stg_powerschool__assignmentscore
@@ -18,7 +17,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__assignmentscore
       - name: stg_powerschool__assignmentsection
@@ -26,7 +24,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__assignmentsection
       - name: stg_powerschool__attendance
@@ -34,7 +31,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__attendance
       - name: stg_powerschool__attendance_code
@@ -42,7 +38,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__attendance_code
       - name: stg_powerschool__attendance_conversion_items
@@ -50,7 +45,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__attendance_conversion_items
       - name: stg_powerschool__bell_schedule
@@ -58,7 +52,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__bell_schedule
       - name: stg_powerschool__calendar_day
@@ -66,7 +59,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__calendar_day
       - name: stg_powerschool__cc
@@ -74,7 +66,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__cc
       - name: stg_powerschool__codeset
@@ -82,7 +73,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__codeset
       - name: stg_powerschool__courses
@@ -90,7 +80,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__courses
       - name: stg_powerschool__cycle_day
@@ -98,7 +87,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__cycle_day
       - name: stg_powerschool__districtteachercategory
@@ -106,7 +94,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__districtteachercategory
       - name: stg_powerschool__emailaddress
@@ -114,7 +101,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__emailaddress
       - name: stg_powerschool__fte
@@ -122,7 +108,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__fte
       - name: stg_powerschool__gen
@@ -130,7 +115,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gen
       - name: stg_powerschool__gradecalcformulaweight
@@ -138,7 +122,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradecalcformulaweight
       - name: stg_powerschool__gradecalcschoolassoc
@@ -146,7 +129,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradecalcschoolassoc
       - name: stg_powerschool__gradecalculationtype
@@ -154,7 +136,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradecalculationtype
       - name: stg_powerschool__gradeformulaset
@@ -162,7 +143,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradeformulaset
       - name: stg_powerschool__gradescaleitem
@@ -170,7 +150,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradescaleitem
       - name: stg_powerschool__gradeschoolconfig
@@ -178,7 +157,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradeschoolconfig
       - name: stg_powerschool__gradeschoolformulaassoc
@@ -186,7 +164,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradeschoolformulaassoc
       - name: stg_powerschool__gradesectionconfig
@@ -194,7 +171,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__gradesectionconfig
       - name: stg_powerschool__log
@@ -202,7 +178,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__log
       - name: stg_powerschool__originalcontactmap
@@ -210,7 +185,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__originalcontactmap
       - name: stg_powerschool__period
@@ -218,7 +192,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__period
       - name: stg_powerschool__person
@@ -226,7 +199,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__person
       - name: stg_powerschool__personaddress
@@ -234,7 +206,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__personaddress
       - name: stg_powerschool__personaddressassoc
@@ -242,7 +213,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__personaddressassoc
       - name: stg_powerschool__personemailaddressassoc
@@ -250,7 +220,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__personemailaddressassoc
       - name: stg_powerschool__personphonenumberassoc
@@ -258,7 +227,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__personphonenumberassoc
       - name: stg_powerschool__pgfinalgrades
@@ -266,7 +234,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__pgfinalgrades
       - name: stg_powerschool__phonenumber
@@ -274,7 +241,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__phonenumber
       - name: stg_powerschool__prefs
@@ -282,7 +248,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__prefs
       - name: stg_powerschool__reenrollments
@@ -290,7 +255,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__reenrollments
       - name: stg_powerschool__roledef
@@ -298,7 +262,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__roledef
       - name: stg_powerschool__s_nj_crs_x
@@ -306,7 +269,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__s_nj_crs_x
       - name: stg_powerschool__s_nj_ren_x
@@ -314,7 +276,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__s_nj_ren_x
       - name: stg_powerschool__s_nj_stu_x
@@ -322,7 +283,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__s_nj_stu_x
       - name: stg_powerschool__s_nj_usr_x
@@ -330,7 +290,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__s_nj_usr_x
       - name: stg_powerschool__schools
@@ -338,7 +297,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__schools
       - name: stg_powerschool__schoolstaff
@@ -346,7 +304,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__schoolstaff
       - name: stg_powerschool__sections
@@ -354,7 +311,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__sections
       - name: stg_powerschool__sectionteacher
@@ -362,7 +318,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__sectionteacher
       - name: stg_powerschool__spenrollments
@@ -370,7 +325,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__spenrollments
       - name: stg_powerschool__storedgrades
@@ -378,7 +332,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__storedgrades
       - name: stg_powerschool__studentcontactassoc
@@ -386,7 +339,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__studentcontactassoc
       - name: stg_powerschool__studentcontactdetail
@@ -394,7 +346,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__studentcontactdetail
       - name: stg_powerschool__studentcorefields
@@ -402,7 +353,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__studentcorefields
       - name: stg_powerschool__studentrace
@@ -410,7 +360,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__studentrace
       - name: stg_powerschool__students
@@ -418,7 +367,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__students
       - name: stg_powerschool__teachercategory
@@ -426,7 +374,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__teachercategory
       - name: stg_powerschool__termbins
@@ -434,7 +381,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__termbins
       - name: stg_powerschool__terms
@@ -442,7 +388,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__terms
       - name: stg_powerschool__test
@@ -450,7 +395,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__test
       - name: stg_powerschool__testscore
@@ -458,7 +402,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__testscore
       - name: stg_powerschool__u_clg_et_stu
@@ -466,7 +409,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__u_clg_et_stu
       - name: stg_powerschool__u_clg_et_stu_alt
@@ -474,7 +416,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__u_clg_et_stu_alt
       - name: stg_powerschool__u_def_ext_students
@@ -482,7 +423,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__u_def_ext_students
       - name: stg_powerschool__u_studentsuserfields
@@ -490,7 +430,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__u_studentsuserfields
       - name: stg_powerschool__users
@@ -498,7 +437,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__users
       - name: base_powerschool__course_enrollments
@@ -506,7 +444,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - base_powerschool__course_enrollments
       - name: base_powerschool__sections
@@ -514,7 +451,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - base_powerschool__sections
       - name: base_powerschool__student_enrollments
@@ -522,7 +458,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - base_powerschool__student_enrollments
       - name: int_powerschool__advisory
@@ -530,7 +465,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__advisory
       - name: int_powerschool__calendar_rollup
@@ -538,7 +472,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__calendar_rollup
       - name: int_powerschool__contacts
@@ -546,7 +479,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__contacts
       - name: int_powerschool__person_contacts
@@ -554,7 +486,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__person_contacts
       - name: int_powerschool__ps_attendance_daily
@@ -562,7 +493,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__ps_attendance_daily
       - name: int_powerschool__ps_adaadm_daily_ctod
@@ -570,7 +500,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__ps_adaadm_daily_ctod
       - name: int_powerschool__ps_enrollment_all
@@ -578,7 +507,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__ps_enrollment_all
       - name: int_powerschool__ps_membership_reg
@@ -586,7 +514,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__ps_membership_reg
       - name: int_powerschool__spenrollments
@@ -594,7 +521,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__spenrollments
       - name: int_powerschool__student_contacts
@@ -602,7 +528,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__student_contacts
       - name: int_powerschool__student_contacts_pivot
@@ -610,7 +535,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__student_contacts_pivot
       - name: int_powerschool__teachers
@@ -618,7 +542,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__teachers
       - name: int_powerschool__teacher_grade_levels
@@ -626,7 +549,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__teacher_grade_levels
       - name: int_powerschool__district_entry_date
@@ -634,7 +556,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__district_entry_date
       - name: base_powerschool__final_grades
@@ -642,7 +563,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - base_powerschool__final_grades
       - name: int_powerschool__gpa_term
@@ -650,7 +570,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__gpa_term
       - name: int_powerschool__gradescaleitem_lookup
@@ -658,7 +577,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__gradescaleitem_lookup
       - name: int_powerschool__gpa_cumulative
@@ -666,7 +584,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__gpa_cumulative
       - name: int_powerschool__gradebook_assignment_scores
@@ -674,7 +591,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__gradebook_assignment_scores
       - name: int_powerschool__gradebook_assignments
@@ -682,7 +598,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__gradebook_assignments
       - name: int_powerschool__section_grade_config
@@ -690,7 +605,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__section_grade_config
       - name: int_powerschool__category_grades
@@ -698,7 +612,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__category_grades
       - name: int_powerschool__category_grades_pivot
@@ -706,7 +619,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__category_grades_pivot
       - name: int_powerschool__final_grades_pivot
@@ -714,7 +626,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__final_grades_pivot
       - name: int_powerschool__attendance_streak
@@ -722,7 +633,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__attendance_streak
       - name: stg_powerschool__studenttest
@@ -730,7 +640,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__studenttest
       - name: stg_powerschool__studenttestscore
@@ -738,7 +647,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__studenttestscore
       - name: int_powerschool__ada
@@ -746,7 +654,6 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - int_powerschool__ada
       - name: stg_powerschool__sced_code_mapping
@@ -754,6 +661,5 @@ sources:
           dagster:
             group: powerschool
             asset_key:
-              - kippcamden
               - powerschool
               - stg_powerschool__sced_code_mapping
