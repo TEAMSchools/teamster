@@ -27,6 +27,7 @@ def airbyte_job_status_sensor(
     context: SensorEvaluationContext, airbyte: AirbyteCloudResource
 ) -> SensorResult:
     now_timestamp = pendulum.now().timestamp()
+
     asset_events = []
 
     cursor = json.loads(context.cursor or "{}")
@@ -36,6 +37,10 @@ def airbyte_job_status_sensor(
     )
 
     for connection in _check.inst(connections["data"], list):
+        if connection["status"] == "inactive":
+            continue
+
+        context.log.info(connection["name"])
         connection_id = connection["connectionId"]
 
         last_updated = pendulum.from_timestamp(timestamp=cursor.get(connection_id, 0))
@@ -52,7 +57,7 @@ def airbyte_job_status_sensor(
             airbyte.make_request(endpoint=f"/jobs?{params}", method="GET")
         )
 
-        if jobs_response.get("data") is not None:
+        if jobs_response.get("data"):
             cursor[connection_id] = now_timestamp
 
             namespace_parts = connection["namespaceFormat"].split("_")

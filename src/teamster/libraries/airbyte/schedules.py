@@ -17,12 +17,15 @@ def build_airbyte_start_sync_schedule(
         job=airbyte_job,
     )
     def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudResource):
-        job = _check.dict_elem(
-            obj=airbyte.start_sync(connection_id), key="job", value_type=dict
+        job_sync = _check.not_none(
+            airbyte.make_request(
+                endpoint="/jobs",
+                data={"connectionId": connection_id, "jobType": "sync"},
+            )
         )
 
         context.log.info(
-            f"Job {job["id"]} initialized for connection_id={connection_id}."
+            f"Job {job_sync["jobId"]} {job_sync["status"]} for {connection_id}"
         )
 
         return SkipReason("This schedule doesn't actually return any runs.")
