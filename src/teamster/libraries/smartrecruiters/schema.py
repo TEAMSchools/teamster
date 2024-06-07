@@ -2,8 +2,10 @@ from pydantic import BaseModel
 
 
 class Application(BaseModel):
-    application_id: str | None = None
+    application_field_application_review_score: float | None = None
     application_field_job_title: str | None = None
+    application_field_phone_interview_score: float | None = None
+    application_id: str | None = None
     application_reason_for_rejection: str | None = None
     application_reason_for_withdrawal: str | None = None
     application_state_hired_date: str | None = None
@@ -25,7 +27,13 @@ class Application(BaseModel):
     application_status_interview_phone_screen_complete_date: str | None = None
     application_status_interview_phone_screen_requested_date: str | None = None
     application_status: str | None = None
+    candidate_email: str | None = None
+    candidate_first_name: str | None = None
     candidate_id: str | None = None
+    candidate_last_name: str | None = None
+    candidate_source_subtype: str | None = None
+    candidate_source_type: str | None = None
+    candidate_source: str | None = None
     department_internal: str | None = None
     job_city: str | None = None
     job_title: str | None = None
