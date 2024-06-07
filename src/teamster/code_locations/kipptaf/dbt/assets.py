@@ -23,7 +23,14 @@ dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}_dbt_assets",
-    exclude="tag:stage_external_sources source:adp_payroll+",
+    exclude="tag:stage_external_sources tag:cross_project_source source:adp_payroll+",
+)
+
+cross_project_source_dbt_assets = build_dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    name=f"{CODE_LOCATION}_cross_project_source_dbt_assets",
+    select="tag:cross_project_source",
 )
 
 external_source_dbt_assets = build_dbt_external_source_assets(
@@ -53,6 +60,7 @@ adp_payroll_external_source_dbt_assets = build_dbt_external_source_assets(
 assets = [
     adp_payroll_dbt_assets,
     adp_payroll_external_source_dbt_assets,
+    cross_project_source_dbt_assets,
     dbt_assets,
     external_source_dbt_assets,
 ]

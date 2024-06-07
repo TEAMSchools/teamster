@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: kippmiami_iready
+    tags:
+      - cross_project_source
     tables:
       - name: stg_iready__diagnostic_results
         meta:

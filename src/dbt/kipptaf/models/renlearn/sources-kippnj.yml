@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: kippnj_renlearn
     schema: kippnewark_renlearn
+    tags:
+      - cross_project_source
     tables:
       - name: stg_renlearn__accelerated_reader
         meta:

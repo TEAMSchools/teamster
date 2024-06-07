@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: kippnewark_deanslist
+    tags:
+      - cross_project_source
     tables:
       - name: stg_deanslist__behavior
         meta:

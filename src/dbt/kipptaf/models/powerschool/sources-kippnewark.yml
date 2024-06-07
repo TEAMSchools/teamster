@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: kippnewark_powerschool
+    tags:
+      - cross_project_source
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         meta:

@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: kippnewark_edplan
+    tags:
+      - cross_project_source
     tables:
       - name: stg_edplan__njsmart_powerschool
         meta:

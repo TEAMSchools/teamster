@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: kippnewark_pearson
+    tags:
+      - cross_project_source
     tables:
       - name: stg_pearson__njgpa
         meta:

@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: kippmiami_renlearn
+    tags:
+      - cross_project_source
     tables:
       - name: stg_renlearn__accelerated_reader
         meta:

@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: kippcamden_pearson
+    tags:
+      - cross_project_source
     tables:
       - name: stg_pearson__njgpa
         meta:
