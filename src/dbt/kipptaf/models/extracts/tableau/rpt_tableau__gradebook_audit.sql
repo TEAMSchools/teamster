@@ -51,6 +51,7 @@ select distinct
     quarter_start_date,
     quarter_end_date,
     quarter_course_grade_points_that_matters,
+    category_quarter_percent_grade,
     teacher_quarter,
     expected_teacher_assign_category_code,
     expected_teacher_assign_category_name,
