@@ -3,7 +3,7 @@ from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import Client as BigQueryClient
 
 from teamster import GCS_PROJECT_NAME
-from teamster.core.datagun.assets import construct_query
+from teamster.libraries.datagun.assets import construct_query
 
 
 def _test(query_type, query_value):

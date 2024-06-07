@@ -1,6 +1,6 @@
 from dagster import SensorResult, build_sensor_context
 
-from teamster.core.resources import (
+from teamster.libraries.core.resources import (
     SSH_COUCHDROP,
     SSH_EDPLAN,
     SSH_IREADY,
@@ -22,32 +22,32 @@ def _test_sensor(sftp_sensor, **kwargs):
 
 
 def test_edplan_sftp_sensor_kippnewark():
-    from teamster.kippnewark.edplan.sensors import sftp_sensor
+    from teamster.code_locations.kippnewark.edplan.sensors import sftp_sensor
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_edplan=SSH_EDPLAN)
 
 
 def test_titan_sftp_sensor_kippcamden():
-    from teamster.kippcamden.titan.sensors import sftp_sensor
+    from teamster.code_locations.kippcamden.titan.sensors import sftp_sensor
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_titan=SSH_TITAN)
 
 
 def test_iready_sftp_sensor_kippmiami():
-    from teamster.kippmiami.iready.sensors import sftp_sensor
+    from teamster.code_locations.kippmiami.iready.sensors import sftp_sensor
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=SSH_IREADY)
 
 
 def test_renlearn_sftp_sensor_kippnewark():
-    from teamster.kippnewark.renlearn.sensors import sftp_sensor
+    from teamster.code_locations.kippnewark.renlearn.sensors import sftp_sensor
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_renlearn=SSH_RENLEARN)
 
 
 def test_deanslist_sftp_sensor_kipptaf():
-    from teamster.kipptaf.deanslist.sensors import deanslist_sftp_sensor
-    from teamster.kipptaf.resources import SSH_RESOURCE_DEANSLIST
+    from teamster.code_locations.kipptaf.deanslist.sensors import deanslist_sftp_sensor
+    from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
     _test_sensor(
         sftp_sensor=deanslist_sftp_sensor, ssh_deanslist=SSH_RESOURCE_DEANSLIST
@@ -55,30 +55,38 @@ def test_deanslist_sftp_sensor_kipptaf():
 
 
 def test_couchdrop_sftp_sensor_kipptaf():
-    from teamster.kipptaf.couchdrop.sensors import couchdrop_sftp_sensor
+    from teamster.code_locations.kipptaf.couchdrop.sensors import couchdrop_sftp_sensor
 
     _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
 
 
 def test_couchdrop_sftp_sensor_kippcamden():
-    from teamster.kippcamden.couchdrop.sensors import couchdrop_sftp_sensor
+    from teamster.code_locations.kippcamden.couchdrop.sensors import (
+        couchdrop_sftp_sensor,
+    )
 
     _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
 
 
 def test_couchdrop_sftp_sensor_kippmiami():
-    from teamster.kippmiami.couchdrop.sensors import couchdrop_sftp_sensor
+    from teamster.code_locations.kippmiami.couchdrop.sensors import (
+        couchdrop_sftp_sensor,
+    )
 
     _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
 
 
 def test_couchdrop_sftp_sensor_kippnewark():
-    from teamster.kippnewark.couchdrop.sensors import couchdrop_sftp_sensor
+    from teamster.code_locations.kippnewark.couchdrop.sensors import (
+        couchdrop_sftp_sensor,
+    )
 
     _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
 
 
 def test_adp_payroll_sftp_sensor():
-    from teamster.kipptaf.adp.payroll.sensors import adp_payroll_sftp_sensor
+    from teamster.code_locations.kipptaf.adp.payroll.sensors import (
+        adp_payroll_sftp_sensor,
+    )
 
     _test_sensor(sftp_sensor=adp_payroll_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)

@@ -8,8 +8,7 @@ from dagster import (
 )
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.overgrad.assets import (
+from teamster.code_locations.kipptaf.overgrad.assets import (
     admissions,
     custom_fields,
     followings,
@@ -17,7 +16,8 @@ from teamster.kipptaf.overgrad.assets import (
     students,
     universities,
 )
-from teamster.overgrad.resources import OvergradResource
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.libraries.overgrad.resources import OvergradResource
 
 
 def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):

@@ -8,11 +8,11 @@ from dagster import (
     instance_for_test,
 )
 
-from teamster.kipptaf.alchemer.sensors import (
+from teamster.code_locations.kipptaf.alchemer.sensors import (
     alchemer_survey_metadata_asset_sensor,
     alchemer_survey_response_asset_sensor,
 )
-from teamster.kipptaf.resources import ALCHEMER_RESOURCE
+from teamster.code_locations.kipptaf.resources import ALCHEMER_RESOURCE
 
 
 def test_alchemer_survey_metadata_asset_sensor():
