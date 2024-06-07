@@ -102,6 +102,13 @@ class Applicant(BaseModel):
     screening_question_answer_national_in_which_regions_alumnus: str | None = None
 
 
+class Rating(BaseModel):
+    application_id: str | None = None
+    candidate_id: str | None = None
+    criteria_name: str | None = None
+    criteria_rating: int | None = None
+
+
 class OfferedHired(BaseModel):
     application_state_hired_date: str | None = None
     application_state_offer_date: str | None = None
