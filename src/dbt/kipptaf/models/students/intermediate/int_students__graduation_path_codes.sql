@@ -244,17 +244,17 @@ with
             and s.discipline = n.discipline
     )
 
-select
+select distinct
     r._dbt_source_relation,
     r.academic_year,
     r.student_number,
     r.grade_level,
     r.enroll_status,
     r.discipline,
-    if(r.grade_level = 12, r.code, u.code) as code,
     r.njgpa_attempt,
     r.njgpa_pass,
 
+    if(r.grade_level = 12, r.code, u.code) as code,
     if(o1.act is null, false, o1.act) as act,
     if(o1.sat is null, false, o1.sat) as sat,
     if(o2.psat10 is null, false, o2.psat10) as psat10,
