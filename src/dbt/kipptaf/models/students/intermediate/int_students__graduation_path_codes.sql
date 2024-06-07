@@ -20,7 +20,7 @@ with
         cross join unnest(['Math', 'ELA']) as discipline
         where
             e.academic_year = {{ var("current_academic_year") }}
-            and e.grade_level = 12
+            and e.grade_level between 9 and 12
             and e.rn_year = 1
     ),
 
@@ -251,7 +251,7 @@ select
     r.grade_level,
     r.enroll_status,
     r.discipline,
-    r.code,
+    if(r.grade_level = 12, r.code, u.code) as code,
     r.njgpa_attempt,
     r.njgpa_pass,
 
@@ -260,6 +260,8 @@ select
     if(o2.psat10 is null, false, o2.psat10) as psat10,
 
     case
+        when r.grade_level != 12
+        then u.code
         when r.code in ('M', 'N', 'O', 'P')
         then r.code
         when r.njgpa_pass
@@ -286,3 +288,7 @@ left join
     act_sat_psat10_pivot as o2
     on cast(r.student_number as string) = o2.contact
     and r.discipline = o2.discipline
+left join
+    pathway_code_unpivot as u
+    on r.students_dcid = u.studentsdcid
+    and r.discipline = u.discipline
