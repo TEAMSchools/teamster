@@ -93,6 +93,7 @@ select distinct
     assign_score_raw,
     assign_score_converted,
     assign_max_score,
+    assign_final_score_percent,
     assign_is_exempt,
     assign_is_late,
     assign_is_missing,

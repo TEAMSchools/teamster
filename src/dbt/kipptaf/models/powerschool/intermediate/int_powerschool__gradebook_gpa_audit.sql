@@ -1166,6 +1166,7 @@ select distinct
     s.assign_score_raw,
     s.assign_score_converted,
     s.assign_max_score,
+    assign_final_score_percent,
     s.assign_is_exempt,
     s.assign_is_late,
     s.assign_is_missing,
