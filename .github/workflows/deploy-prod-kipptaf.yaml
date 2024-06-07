@@ -37,6 +37,7 @@ on:
       - src/teamster/libraries/zendesk/**
   pull_request:
     paths:
+      - requirements.txt
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/libraries/adp/**
       - src/teamster/libraries/airbyte/**
