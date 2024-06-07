@@ -10,12 +10,12 @@ from dagster import (
 )
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.adp.workforce_manager.assets import (
+from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
     accrual_reporting_period_summary,
     time_details,
 )
-from teamster.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
+from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset: AssetsDefinition):

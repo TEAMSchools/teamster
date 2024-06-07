@@ -2,8 +2,8 @@ import json
 
 from dagster import SensorResult, build_sensor_context
 
-from teamster.kipptaf.resources import TABLEAU_SERVER_RESOURCE
-from teamster.kipptaf.tableau.sensors import tableau_asset_sensor
+from teamster.code_locations.kipptaf.resources import TABLEAU_SERVER_RESOURCE
+from teamster.code_locations.kipptaf.tableau.sensors import tableau_asset_sensor
 
 
 def test_tableau_asset_sensor():

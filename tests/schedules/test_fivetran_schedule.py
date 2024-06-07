@@ -1,11 +1,11 @@
 from dagster import build_schedule_context
 
-from teamster.kipptaf import LOCAL_TIMEZONE
-from teamster.kipptaf.fivetran.schedules import (
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.resources import FIVETRAN_RESOURCE
+from teamster.libraries.fivetran.schedules import (
     build_fivetran_start_resync_schedule,
     build_fivetran_start_sync_schedule,
 )
-from teamster.kipptaf.resources import FIVETRAN_RESOURCE
 
 
 def test_sync_schedule():

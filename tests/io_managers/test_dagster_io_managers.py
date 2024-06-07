@@ -15,7 +15,7 @@ from dagster._core.events import HandledOutputData
 from dagster_gcp import GCSResource
 
 from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
+from teamster.libraries.core.io_managers.gcs import GCSIOManager
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
