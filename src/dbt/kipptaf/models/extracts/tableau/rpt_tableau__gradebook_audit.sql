@@ -51,6 +51,7 @@ select distinct
     quarter_start_date,
     quarter_end_date,
     quarter_course_grade_points_that_matters,
+    quarter_course_letter_grade_that_matters,
     quarter_citizenship,
     quarter_comment_value,
     category_quarter_percent_grade,
