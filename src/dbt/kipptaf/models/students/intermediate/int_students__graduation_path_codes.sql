@@ -244,7 +244,7 @@ with
             njgpa_rollup as n
             on s.state_studentnumber = n.state_studentnumber
             and s.discipline = n.discipline
-    ),
+    )
 
 select
     r._dbt_source_relation,
