@@ -19,9 +19,7 @@ with
             on e.student_number = adb.student_number
         cross join unnest(['Math', 'ELA']) as discipline
         where
-            e.academic_year = {{ var("current_academic_year") }}
-            and e.grade_level between 9 and 12
-            and e.rn_year = 1
+            e.academic_year = 2023 and e.grade_level between 9 and 12 and e.rn_year = 1
     ),
 
     pathway_code_unpivot as (
@@ -74,13 +72,13 @@ with
             {{ ref("stg_powerschool__studenttestscore") }} as t
             on s.studentid = t.studentid
             and s.id = t.studenttestid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="t") }}
+            and {{ union_dataset_join_clause(left_alias="b", right_alias="t") }}
         left join
             {{ ref("stg_powerschool__testscore") }} as r
             on s.testid = r.testid
             and t.testscoreid = r.id
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="r") }}
-        where b.name = 'NJGPA'
+            and {{ union_dataset_join_clause(left_alias="b", right_alias="r") }}
+        where b.name = 'NJGPA' and s.studentid is not null
     ),
 
     act_sat_psat10_official as (
@@ -121,13 +119,13 @@ with
         union all
 
         select
-            local_student_id as contact,
+            s.kippadb_contact_id as contact,
 
             'PSAT10' as test_type,
 
             case
                 when
-                    score_type in (
+                    p.score_type in (
                         'psat10_eb_read_write_section_score',
                         'psat10_reading_test_score'
                     )
@@ -136,40 +134,29 @@ with
             end as discipline,
             case
                 when
-                    score_type
+                    p.score_type
                     in ('psat10_reading_test_score', 'psat10_math_test_score')
-                    and score >= 21
+                    and p.score >= 21
                 then true
                 when
-                    score_type in (
+                    p.score_type in (
                         'psat10_math_section_score',
                         'psat10_eb_read_write_section_score'
                     )
-                    and score >= 420
+                    and p.score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
-        from {{ ref("int_illuminate__psat_unpivot") }}
+        from {{ ref("int_illuminate__psat_unpivot") }} as p
+        left join
+            students as s on p.local_student_id = safe_cast(s.student_number as string)
         where
-            rn_highest = 1
+            p.rn_highest = 1
             and score_type in (
                 'psat10_eb_read_write_section_score',
                 'psat10_math_test_score',
                 'psat10_math_section_score',
                 'psat10_reading_test_score'
-            )
-    ),
-
-    act_sat_psat10_pivot as (
-        select
-            contact,
-            discipline,
-            if(act is null, false, act) as act,
-            if(sat is null, false, sat) as sat,
-            if(psat10 is null, false, psat10) as psat10,
-        from
-            act_sat_psat10_official pivot (
-                max(met_pathway_requirement) for test_type in ('ACT', 'SAT', 'PSAT10')
             )
     ),
 
@@ -242,9 +229,22 @@ with
             njgpa_rollup as n
             on s.state_studentnumber = n.state_studentnumber
             and s.discipline = n.discipline
+    ),
+
+    act_sat_psat10_pivot as (
+        select
+            contact,
+            discipline,
+            if(act is null, false, act) as act,
+            if(sat is null, false, sat) as sat,
+            if(psat10 is null, false, psat10) as psat10,
+        from
+            act_sat_psat10_official pivot (
+                max(met_pathway_requirement) for test_type in ('ACT', 'SAT', 'PSAT10')
+            )
     )
 
-select distinct
+select
     r._dbt_source_relation,
     r.academic_year,
     r.student_number,
@@ -257,7 +257,7 @@ select distinct
     if(r.grade_level = 12, r.code, u.code) as code,
     if(o1.act is null, false, o1.act) as act,
     if(o1.sat is null, false, o1.sat) as sat,
-    if(o2.psat10 is null, false, o2.psat10) as psat10,
+    if(o1.psat10 is null, false, o1.psat10) as psat10,
 
     case
         when r.grade_level != 12
@@ -275,7 +275,7 @@ select distinct
             and not r.njgpa_pass
             and o1.act in (false, null)
             and o1.sat in (false, null)
-            and o2.psat10
+            and o1.psat10
         then 'J'
         else 'R'
     end as final_grad_path,
@@ -285,10 +285,7 @@ left join
     on r.kippadb_contact_id = o1.contact
     and r.discipline = o1.discipline
 left join
-    act_sat_psat10_pivot as o2
-    on cast(r.student_number as string) = o2.contact
-    and r.discipline = o2.discipline
-left join
     pathway_code_unpivot as u
     on r.students_dcid = u.studentsdcid
     and r.discipline = u.discipline
+    and {{ union_dataset_join_clause(left_alias="r", right_alias="u") }}
