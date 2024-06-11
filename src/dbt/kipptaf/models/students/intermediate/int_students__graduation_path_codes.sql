@@ -19,7 +19,9 @@ with
             on e.student_number = adb.student_number
         cross join unnest(['Math', 'ELA']) as discipline
         where
-            e.academic_year = 2023 and e.grade_level between 9 and 12 and e.rn_year = 1
+            e.academic_year = {{ var("current_academic_year") }}
+            and e.grade_level between 9 and 12
+            and e.rn_year = 1
     ),
 
     pathway_code_unpivot as (
@@ -72,12 +74,12 @@ with
             {{ ref("stg_powerschool__studenttestscore") }} as t
             on s.studentid = t.studentid
             and s.id = t.studenttestid
-            and {{ union_dataset_join_clause(left_alias="b", right_alias="t") }}
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="t") }}
         left join
             {{ ref("stg_powerschool__testscore") }} as r
             on s.testid = r.testid
             and t.testscoreid = r.id
-            and {{ union_dataset_join_clause(left_alias="b", right_alias="r") }}
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="r") }}
         where b.name = 'NJGPA' and s.studentid is not null
     ),
 
@@ -152,11 +154,24 @@ with
             students as s on p.local_student_id = safe_cast(s.student_number as string)
         where
             p.rn_highest = 1
-            and score_type in (
+            and p.score_type in (
                 'psat10_eb_read_write_section_score',
                 'psat10_math_test_score',
                 'psat10_math_section_score',
                 'psat10_reading_test_score'
+            )
+    ),
+
+    act_sat_psat10_pivot as (
+        select
+            contact,
+            discipline,
+            if(act is null, false, act) as act,
+            if(sat is null, false, sat) as sat,
+            if(psat10 is null, false, psat10) as psat10,
+        from
+            act_sat_psat10_official pivot (
+                max(met_pathway_requirement) for test_type in ('ACT', 'SAT', 'PSAT10')
             )
     ),
 
@@ -230,19 +245,6 @@ with
             on s.state_studentnumber = n.state_studentnumber
             and s.discipline = n.discipline
     ),
-
-    act_sat_psat10_pivot as (
-        select
-            contact,
-            discipline,
-            if(act is null, false, act) as act,
-            if(sat is null, false, sat) as sat,
-            if(psat10 is null, false, psat10) as psat10,
-        from
-            act_sat_psat10_official pivot (
-                max(met_pathway_requirement) for test_type in ('ACT', 'SAT', 'PSAT10')
-            )
-    )
 
 select
     r._dbt_source_relation,
