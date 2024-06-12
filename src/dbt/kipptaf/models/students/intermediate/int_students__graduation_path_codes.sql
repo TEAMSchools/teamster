@@ -66,21 +66,21 @@ with
                 then 'Mathematics'
             end as `subject`,
         from {{ ref("stg_powerschool__test") }} as b
-        left join
+        inner join
             {{ ref("stg_powerschool__studenttest") }} as s
             on b.id = s.testid
             and {{ union_dataset_join_clause(left_alias="b", right_alias="s") }}
-        left join
+        inner join
             {{ ref("stg_powerschool__studenttestscore") }} as t
             on s.studentid = t.studentid
             and s.id = t.studenttestid
             and {{ union_dataset_join_clause(left_alias="s", right_alias="t") }}
-        left join
+        inner join
             {{ ref("stg_powerschool__testscore") }} as r
             on s.testid = r.testid
             and t.testscoreid = r.id
             and {{ union_dataset_join_clause(left_alias="s", right_alias="r") }}
-        where b.name = 'NJGPA' and s.studentid is not null
+        where b.name = 'NJGPA'
     ),
 
     act_sat_psat10_official as (
