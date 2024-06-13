@@ -10,7 +10,7 @@ lint:
   enabled:
     - pyright@1.1.367
     - actionlint@1.7.1
-    - bandit@1.7.8
+    - bandit@1.7.9
     - git-diff-check
     - gitleaks@8.18.3
     - hadolint@2.12.0
