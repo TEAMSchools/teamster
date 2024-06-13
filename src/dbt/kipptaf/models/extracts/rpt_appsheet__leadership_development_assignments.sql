@@ -25,7 +25,8 @@ with
                     'Head of Schools in Residence',
                     'Director School Operations',
                     'Director Campus Operations',
-                    'Managing Director of School Operations'
+                    'Managing Director of School Operations',
+                    'Associate Director of School Operations'
                 ),
                 sr.job_title,
                 'CMO and Other Leaders'
@@ -48,6 +49,7 @@ inner join
     leadership_development_metrics as ldm
     on ag.route = ldm.role
     and ag.business_unit_home_name = ldm.region
+    where ldm.role = 'Associate Director of School Operations'
 
 union all
 
@@ -59,3 +61,4 @@ select
 from assignment_group as ag
 inner join
     leadership_development_metrics as ldm on ag.route = ldm.role and ldm.region = 'All'
+     where ldm.role = 'Associate Director of School Operations'
