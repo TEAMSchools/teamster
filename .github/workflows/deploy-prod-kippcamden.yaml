@@ -17,22 +17,32 @@ on:
       - src/dbt/powerschool/**
       - src/dbt/teamster_utils/**
       - src/dbt/titan/**
-      - src/teamster/core/**
-      - src/teamster/deanslist/**
-      - src/teamster/edplan/**
-      - src/teamster/kippcamden/**
-      - src/teamster/pearson/**
-      - src/teamster/powerschool/sis/**
-      - src/teamster/titan/**
+      - src/teamster/code_locations/kippcamden/**
+      - src/teamster/libraries/core/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/pearson/**
+      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/titan/**
   pull_request:
     paths:
-      - src/teamster/core/**
-      - src/teamster/deanslist/**
-      - src/teamster/edplan/**
-      - src/teamster/kippcamden/**
-      - src/teamster/pearson/**
-      - src/teamster/powerschool/sis/**
-      - src/teamster/titan/**
+      - src/teamster/code_locations/kippcamden/**
+      - src/teamster/libraries/core/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/pearson/**
+      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/titan/**
     types:
       - opened
       - synchronize

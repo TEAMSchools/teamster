@@ -12,43 +12,55 @@ on:
       - requirements.txt
       - src/dbt/kipptaf/**
       - src/dbt/teamster_utils/**
-      - src/teamster/adp/**
-      - src/teamster/airbyte/**
-      - src/teamster/alchemer/**
-      - src/teamster/amplify/**
-      - src/teamster/core/**
-      - src/teamster/dayforce/**
-      - src/teamster/fivetran/**
-      - src/teamster/google/**
-      - src/teamster/kipptaf/**
-      - src/teamster/ldap/**
-      - src/teamster/performance_management/**
-      - src/teamster/powerschool/enrollment/**
-      - src/teamster/schoolmint/**
-      - src/teamster/smartrecruiters/**
-      - src/teamster/tableau/**
-      - src/teamster/zendesk/**
+      - src/teamster/code_locations/kipptaf/**
+      - src/teamster/libraries/adp/**
+      - src/teamster/libraries/airbyte/**
+      - src/teamster/libraries/alchemer/**
+      - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/core/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/dayforce/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/fivetran/**
+      - src/teamster/libraries/google/**
+      - src/teamster/libraries/ldap/**
+      - src/teamster/libraries/overgrad/**
+      - src/teamster/libraries/performance_management/**
+      - src/teamster/libraries/powerschool/enrollment/**
+      - src/teamster/libraries/schoolmint/**
+      - src/teamster/libraries/smartrecruiters/**
+      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/tableau/**
+      - src/teamster/libraries/zendesk/**
   pull_request:
     paths:
       - requirements.txt
-      - src/teamster/adp/**
-      - src/teamster/airbyte/**
-      - src/teamster/alchemer/**
-      - src/teamster/amplify/**
-      - src/teamster/core/**
-      - src/teamster/core/**
-      - src/teamster/dayforce/**
-      - src/teamster/fivetran/**
-      - src/teamster/google/**
-      - src/teamster/kipptaf/**
-      - src/teamster/kipptaf/**
-      - src/teamster/ldap/**
-      - src/teamster/performance_management/**
-      - src/teamster/powerschool/enrollment/**
-      - src/teamster/schoolmint/**
-      - src/teamster/smartrecruiters/**
-      - src/teamster/tableau/**
-      - src/teamster/zendesk/**
+      - src/teamster/code_locations/kipptaf/**
+      - src/teamster/libraries/adp/**
+      - src/teamster/libraries/airbyte/**
+      - src/teamster/libraries/alchemer/**
+      - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/core/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/dayforce/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/fivetran/**
+      - src/teamster/libraries/google/**
+      - src/teamster/libraries/ldap/**
+      - src/teamster/libraries/overgrad/**
+      - src/teamster/libraries/performance_management/**
+      - src/teamster/libraries/powerschool/enrollment/**
+      - src/teamster/libraries/schoolmint/**
+      - src/teamster/libraries/smartrecruiters/**
+      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/tableau/**
+      - src/teamster/libraries/zendesk/**
     types:
       - opened
       - synchronize
