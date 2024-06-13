@@ -83,7 +83,7 @@ with
         where b.name = 'NJGPA'
     ),
 
-    act_sat_psat10_official as (
+    act_sat_official as (
         select
             contact,
             test_type,
@@ -117,44 +117,45 @@ with
                 'sat_reading_test_score',
                 'sat_ebrw'
             )
+    ),
 
-        union all
+    act_sat_pivot as (
+        select contact, discipline, act, sat,
+        from
+            act_sat_official
+            pivot (max(met_pathway_requirement) for test_type in ('ACT', 'SAT'))
+    ),
 
+    psat10_official as (
         select
-            s.kippadb_contact_id as contact,
+            safe_cast(local_student_id as int) as local_student_id,
 
-            'PSAT10' as test_type,
+            if(
+                score_type
+                in ('psat10_eb_read_write_section_score', 'psat10_reading_test_score'),
+                'ELA',
+                'Math'
+            ) as discipline,
 
             case
                 when
-                    p.score_type in (
-                        'psat10_eb_read_write_section_score',
-                        'psat10_reading_test_score'
-                    )
-                then 'ELA'
-                else 'Math'
-            end as discipline,
-            case
-                when
-                    p.score_type
+                    score_type
                     in ('psat10_reading_test_score', 'psat10_math_test_score')
-                    and p.score >= 21
+                    and score >= 21
                 then true
                 when
-                    p.score_type in (
+                    score_type in (
                         'psat10_math_section_score',
                         'psat10_eb_read_write_section_score'
                     )
-                    and p.score >= 420
+                    and score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
-        from {{ ref("int_illuminate__psat_unpivot") }} as p
-        left join
-            students as s on p.local_student_id = safe_cast(s.student_number as string)
+        from {{ ref("int_illuminate__psat_unpivot") }}
         where
-            p.rn_highest = 1
-            and p.score_type in (
+            rn_highest = 1
+            and score_type in (
                 'psat10_eb_read_write_section_score',
                 'psat10_math_test_score',
                 'psat10_math_section_score',
@@ -162,17 +163,10 @@ with
             )
     ),
 
-    act_sat_psat10_pivot as (
-        select
-            contact,
-            discipline,
-            if(act is null, false, act) as act,
-            if(sat is null, false, sat) as sat,
-            if(psat10 is null, false, psat10) as psat10,
-        from
-            act_sat_psat10_official pivot (
-                max(met_pathway_requirement) for test_type in ('ACT', 'SAT', 'PSAT10')
-            )
+    psat10_rollup as (
+        select local_student_id, discipline, max(met_pathway_requirement) as psat10,
+        from psat10_official
+        group by local_student_id, discipline
     ),
 
     njgpa as (
@@ -256,10 +250,12 @@ select
     r.njgpa_attempt,
     r.njgpa_pass,
 
+    coalesce(o1.act, false) as act,
+    coalesce(o1.sat, false) as sat,
+
+    coalesce(o2.psat10, false) as psat10,
+
     if(r.grade_level = 12, r.code, u.code) as code,
-    if(o1.act is null, false, o1.act) as act,
-    if(o1.sat is null, false, o1.sat) as sat,
-    if(o1.psat10 is null, false, o1.psat10) as psat10,
 
     case
         when r.grade_level != 12
@@ -277,15 +273,19 @@ select
             and not r.njgpa_pass
             and o1.act in (false, null)
             and o1.sat in (false, null)
-            and o1.psat10
+            and o2.psat10
         then 'J'
         else 'R'
     end as final_grad_path,
 from roster as r
 left join
-    act_sat_psat10_pivot as o1
+    act_sat_pivot as o1
     on r.kippadb_contact_id = o1.contact
     and r.discipline = o1.discipline
+left join
+    psat10_rollup as o2
+    on r.student_number = o2.local_student_id
+    and r.discipline = o2.discipline
 left join
     pathway_code_unpivot as u
     on r.students_dcid = u.studentsdcid
