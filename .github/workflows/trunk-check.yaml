@@ -7,8 +7,8 @@ on:
       - synchronize
       - reopened
       - closed
-    branches-ignore:
-      - dependabot/*
+    paths-ignore:
+      - requirements.txt
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
