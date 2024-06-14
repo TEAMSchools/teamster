@@ -40,6 +40,7 @@ select
     od.etr_score,
     od.so_score,
     od.academic_year as od_academic_year,
+    od.observation_type,
     od.rn_submission,
 
     os.etr_tier,

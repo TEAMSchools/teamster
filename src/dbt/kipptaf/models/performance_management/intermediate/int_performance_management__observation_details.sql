@@ -1,3 +1,5 @@
+
+/*change this to measurement int table*/
 with
     measurements as (
         select
@@ -65,6 +67,7 @@ with
         where score_measurement_type in ('etr', 's&o')
         group by observation_id, score_measurement_type
     ),
+/*change these pivots to be on measurementGroup when they update*/
 
     pm_overall_scores_pivot as (
         select
@@ -97,7 +100,10 @@ with
             m.text_box,
             m.score_measurement_type,
             m.score_measurement_shortname,
+            m.observation_type,
+            /*replace with measurementGroup average*/
             sp.etr_score,
+            /*replace with measurementGroup average*/
             sp.so_score,
             t.code as form_term,
             t.type as form_type,
