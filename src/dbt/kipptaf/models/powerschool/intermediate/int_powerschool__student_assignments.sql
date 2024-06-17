@@ -13,25 +13,54 @@
 ] -%}
 
 with
+    students as (
+        select
+            se._dbt_source_relation,
+            se.student_number,
+            se.studentid,
+            se.students_dcid,
+            se.academic_year,
+            se.yearid,
+            se.region,
+            se.school_level,
+            se.schoolid,
+            se.grade_level,
+
+            gs.quarter,
+            ge.week_number,
+            ge.storecode_type,
+            ge.expectation,
+        from {{ ref("base_powerschool__student_enrollments") }} as se
+        inner join
+            {{ ref("stg_reporting__gradebook_expectations") }} as ge
+            on se.academic_year = ge.academic_year
+            and se.region = ge.region
+        where
+            se.academic_year = {{ var("current_academic_year") }}
+            and se.rn_year = 1
+            and se.enroll_status = 0
+            and se.school_level != 'OD'
+    ),
+
     assign_1 as (
         select
-            co._dbt_source_relation,
-            co.sections_dcid,
-            co.cc_dateenrolled as student_course_entry_date,
-            co.cc_sectionid as sectionid,
-            co.cc_section_number as section_number,
-            co.cc_course_number as course_number,
-            co.teacher_lastfirst as teacher_name,
+            ce._dbt_source_relation,
+            ce.sections_dcid,
+            ce.cc_dateenrolled as student_course_entry_date,
+            ce.cc_sectionid as sectionid,
+            ce.cc_section_number as section_number,
+            ce.cc_course_number as course_number,
+            ce.teacher_lastfirst as teacher_name,
 
-            enr.academic_year,
-            enr.student_number,
-            enr.studentid,
-            enr.students_dcid,
-            enr.yearid,
-            enr.region,
-            enr.schoolid,
-            enr.grade_level,
-            enr.school_level,
+            se.academic_year,
+            se.student_number,
+            se.studentid,
+            se.students_dcid,
+            se.yearid,
+            se.region,
+            se.schoolid,
+            se.grade_level,
+            se.school_level,
 
             gb.category_name as assign_category,
 
@@ -49,9 +78,7 @@ with
             aud.year_week_number as audit_yr_week_number,
             aud.quarter_week_number as audit_qt_week_number,
 
-            1 as counter,
-
-            if(co.ap_course_subject is null, 0, 1) as ap_course,
+            if(ce.ap_course_subject is null, 0, 1) as ap_course,
 
             concat('Q', gb.storecode_order) as assign_quarter,
             concat(
@@ -67,29 +94,29 @@ with
             coalesce(s.ismissing, 0) as assign_is_missing,
 
             if(
-                enr.region = 'Miami'
-                and enr.grade_level <= 4
+                se.region = 'Miami'
+                and se.grade_level <= 4
                 and gb.category_name != 'Work Habits',
                 left(gb.category_name, 1),
                 gb.storecode_type
             ) as assign_category_code,
 
             if(
-                enr.grade_level <= 4,
-                co.cc_section_number,
-                co.sections_external_expression
+                se.grade_level <= 4,
+                ce.cc_section_number,
+                ce.sections_external_expression
             ) as section_or_period,
 
             if(
-                (enr.grade_level > 4 and gb.storecode_type != 'Q')
+                (se.grade_level > 4 and gb.storecode_type != 'Q')
                 or (
-                    enr.grade_level <= 4
-                    and enr.region = 'Miami'
+                    se.grade_level <= 4
+                    and se.region = 'Miami'
                     and gb.storecode_type = 'W'
                 )
                 or (
-                    enr.grade_level <= 4
-                    and enr.region = 'Miami'
+                    se.grade_level <= 4
+                    and se.region = 'Miami'
                     and gb.storecode_type = 'Q'
                     and left(gb.category_name, 1) in ('F', 'S')
                 ),
@@ -133,46 +160,46 @@ with
             if(
                 a.assignmentid is not null and coalesce(s.isexempt, 0) = 0, 1, 0
             ) as assign_expected_to_be_scored,
-        from {{ ref("base_powerschool__course_enrollments") }} as co
+        from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as enr
-            on co.cc_studentid = enr.studentid
-            and co.cc_yearid = enr.yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
-            and enr.rn_year = 1
-            and enr.enroll_status = 0
-            and enr.school_level != 'OD'
+            {{ ref("base_powerschool__student_enrollments") }} as se
+            on ce.cc_studentid = se.studentid
+            and ce.cc_yearid = se.yearid
+            and {{ union_dataset_join_clause(left_alias="ce", right_alias="enr") }}
+            and se.rn_year = 1
+            and se.enroll_status = 0
+            and se.school_level != 'OD'
         inner join
             {{ ref("int_powerschool__section_grade_config") }} as gb
-            on co.sections_dcid = gb.sections_dcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="gb") }}
+            on ce.sections_dcid = gb.sections_dcid
+            and {{ union_dataset_join_clause(left_alias="ce", right_alias="gb") }}
             and gb.grading_formula_weighting_type != 'Total_Points'
             and gb.storecode_type != 'H'
+        inner join
+            {{ ref("stg_reporting__gradebook_expectations") }} as aud
+            on se.academic_year = aud.academic_year
+            and se.region = aud.region
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on gb.sections_dcid = a.sectionsdcid
             and gb.category_id = a.category_id
             and a.duedate between gb.term_start_date and gb.term_end_date
             and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
-            and a.duedate between co.cc_dateenrolled and co.cc_dateleft
+            and a.duedate between aud.audit_start_date and aud.audit_end_date
+            and a.duedate between ce.cc_dateenrolled and ce.cc_dateleft
             and a.iscountedinfinalgrade = 1
             and a.scoretype in ('POINTS', 'PERCENT')
         left join
             {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
-            and enr.students_dcid = s.studentsdcid
+            and se.students_dcid = s.studentsdcid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
-        left join
-            {{ ref("stg_reporting__gradebook_expectations") }} as aud
-            on enr.academic_year = aud.academic_year
-            and enr.region = aud.region
-            and a.duedate between aud.audit_start_date and aud.audit_end_date
         where
-            co.cc_academic_year = {{ var("current_academic_year") }}
-            and not co.is_dropped_section
+            ce.cc_academic_year = {{ var("current_academic_year") }}
+            and not ce.is_dropped_section
             -- trunk-ignore(sqlfluff/LT05)
-            and co.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
-            and co.cc_dateleft >= current_date('America/New_York')
+            and ce.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
+            and ce.cc_dateleft >= current_date('America/New_York')
     ),
 
     assign_2 as (
@@ -218,7 +245,6 @@ with
             audit_start_date,
             audit_end_date,
             audit_due_date,
-            counter,
 
             safe_divide(
                 assign_score_converted, assign_max_score
@@ -270,7 +296,6 @@ select
     audit_start_date,
     audit_end_date,
     audit_due_date,
-    counter,
 
     if(assign_score_converted > assign_max_score, 1, 0) as assign_score_above_max,
 
