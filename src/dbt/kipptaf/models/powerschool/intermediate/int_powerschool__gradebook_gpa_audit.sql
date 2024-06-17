@@ -304,7 +304,7 @@ with
 
             if(reporting_term in ('RT1', 'RT2'), 'S1', 'S2') as semester,
 
-            concat('Q', right(storecode, 1)) as `quarter`,
+            concat('Q', storecode_order) as `quarter`,
 
             avg(if(is_current, percent_grade_y1_running, null)) over (
                 partition by
@@ -426,46 +426,43 @@ with
 
     final_y1_historical as (
         select
-            g._dbt_source_relation,
-            g.academic_year,
-            g.yearid,
-            g.termid,
-            g.schoolname,
-            g.course_name,
-            g.studentid,
-            g.grade_level,
-            g.storecode,
-            g.excludefromgpa as exclude_from_gpa,
-            g.percent as y1_course_final_percent_grade_adjusted,
-            g.grade as y1_course_final_letter_grade_adjusted,
-            g.earnedcrhrs as y1_course_final_earned_credits,
-            g.potentialcrhrs as y1_course_final_potential_credit_hours,
-            g.gpa_points as y1_course_final_grade_points,
-            g.sectionid,
+            _dbt_source_relation,
+            academic_year,
+            yearid,
+            termid,
+            schoolname,
+            course_name,
+            studentid,
+            grade_level,
+            storecode,
+            excludefromgpa as exclude_from_gpa,
+            percent as y1_course_final_percent_grade_adjusted,
+            grade as y1_course_final_letter_grade_adjusted,
+            earnedcrhrs as y1_course_final_earned_credits,
+            potentialcrhrs as y1_course_final_potential_credit_hours,
+            gpa_points as y1_course_final_grade_points,
+            sectionid,
 
             'Q#' as `quarter`,
             'S#' as semester,
 
+            if(is_transfer_grade, 'Transfer', credit_type) as credit_type,
+            if(is_transfer_grade, 'Transfer', teacher_name) as teacher_name,
             if(
-                g.is_transfer_grade,
+                is_transfer_grade,
                 concat(
                     'T',
-                    upper(regexp_extract(g._dbt_source_relation, r'(kipp\w+)_')),
-                    g.dcid
+                    upper(regexp_extract(_dbt_source_relation, r'(kipp\w+)_')),
+                    dcid
                 ),
-                g.course_number
+                course_number
             ) as course_number,
-
-            if(g.is_transfer_grade, 'Transfer', g.credit_type) as credit_type,
-
-            if(g.is_transfer_grade, 'Transfer', g.teacher_name) as teacher_name,
-
-        from {{ ref("stg_powerschool__storedgrades") }} as g
+        from {{ ref("stg_powerschool__storedgrades") }}
         where
-            g.academic_year = {{ var("current_academic_year") }}
-            and g.storecode = 'Y1'
-            and g.is_transfer_grade
-            and g.course_number not in ('{{ exempt_courses | join("', '") }}')
+            academic_year = {{ var("current_academic_year") }}
+            and storecode = 'Y1'
+            and is_transfer_grade
+            and course_number not in ('{{ exempt_courses | join("', '") }}')
     ),
 
     gpa_analysis as (
@@ -492,7 +489,7 @@ with
             as gpa_cumulative_y1_gpa_projected_s1_unweighted,
             gc.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
         from {{ ref("base_powerschool__student_enrollments") }} as sr
-        left join
+        inner join
             {{ ref("int_powerschool__gpa_term") }} as gt
             on sr.studentid = gt.studentid
             and sr.yearid = gt.yearid
@@ -503,10 +500,7 @@ with
             on sr.studentid = gc.studentid
             and sr.schoolid = gc.schoolid
             and {{ union_dataset_join_clause(left_alias="sr", right_alias="gc") }}
-        where
-            sr.school_level in ('MS', 'HS')
-            and sr.rn_year = 1
-            and gt.term_name is not null
+        where sr.school_level in ('MS', 'HS') and sr.rn_year = 1
     ),
 
     calendar_dates as (
@@ -626,7 +620,7 @@ with
             coalesce(m.course_name, y1h.course_name) as course_name,
             coalesce(m.course_number, y1h.course_number) as course_number,
             coalesce(m.sectionid, y1h.sectionid) as sectionid,
-            coalesce(safe_cast(m.sections_dcid as string), 'Transfer') as sections_dcid,
+            coalesce(m.sections_dcid, 'Transfer') as sections_dcid,
             coalesce(m.section_number, 'Transfer') as section_number,
             coalesce(m.external_expression, 'Transfer') as external_expression,
             coalesce(m.credit_type, y1h.credit_type) as credit_type,
@@ -804,7 +798,7 @@ with
             coalesce(m.course_name, y1h.course_name) as course_name,
             coalesce(m.course_number, y1h.course_number) as course_number,
             coalesce(m.sectionid, y1h.sectionid) as sectionid,
-            coalesce(safe_cast(m.sections_dcid as string), 'Transfer') as sections_dcid,
+            coalesce(m.sections_dcid, 'Transfer') as sections_dcid,
             coalesce(m.section_number, 'Transfer') as section_number,
             coalesce(m.external_expression, 'Transfer') as external_expression,
             coalesce(m.credit_type, y1h.credit_type) as credit_type,
@@ -1008,7 +1002,7 @@ with
             on f.academic_year = t.academic_year
             and f.schoolid = t.schoolid
             and f.course_number = t.course_number
-            and safe_cast(f.sections_dcid as numeric) = t.sections_dcid
+            and f.sections_dcid = t.sections_dcid
             and f.quarter = t.teacher_quarter
             and f.category_name_code = t.expected_teacher_assign_category_code
     )
@@ -1360,7 +1354,7 @@ left join
     on f.academic_year = s.academic_year
     and f.student_number = s.student_number
     and f.course_number = s.course_number
-    and safe_cast(f.sections_dcid as numeric) = s.sections_dcid
+    and f.sections_dcid = s.sections_dcid
     and f.quarter = s.assign_quarter
     and f.category_name_code = s.assign_category_code
     and f.audit_qt_week_number = s.audit_qt_week_number
