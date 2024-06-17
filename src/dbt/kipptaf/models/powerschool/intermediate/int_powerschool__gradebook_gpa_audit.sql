@@ -1,5 +1,5 @@
-{% set quarter = ["Q1", "Q2", "Q3", "Q4", "Y1"] %}
-{% set exempt_courses = [
+{%- set quarter = ["Q1", "Q2", "Q3", "Q4", "Y1"] -%}
+{%- set exempt_courses = [
     "LOG20",
     "LOG22999XL",
     "LOG9",
@@ -10,7 +10,7 @@
     "LOG300",
     "SEM22106G1",
     "SEM22106S1",
-] %}
+] -%}
 
 with
     student_roster as (
@@ -47,7 +47,7 @@ with
 
             hos.head_of_school_preferred_name_lastfirst as hos,
 
-            quarter,
+            `quarter`,
 
             'Local' as roster_type,
 
@@ -58,9 +58,9 @@ with
             if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             case
-                when quarter in ('Q1', 'Q2')
+                when `quarter` in ('Q1', 'Q2')
                 then 'S1'
-                when quarter in ('Q3', 'Q4')
+                when `quarter` in ('Q3', 'Q4')
                 then 'S2'
                 else 'S#'  -- for Y1
             end as semester,
@@ -71,6 +71,7 @@ with
 
             round(ada.ada, 3) as ada,
         from {{ ref("base_powerschool__student_enrollments") }} as enr
+        cross join unnest({{ quarter }}) as `quarter`
         left join
             {{ ref("int_kippadb__roster") }} as ktc
             on enr.student_number = ktc.student_number
@@ -94,12 +95,11 @@ with
         left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
             on enr.schoolid = hos.home_work_location_powerschool_school_id
-        cross join unnest({{ quarter }}) as quarter
         where
             enr.rn_year = 1
-            and enr.grade_level != 99
-            and not enr.is_out_of_district
             and enr.academic_year = {{ var("current_academic_year") }}
+            and not enr.is_out_of_district
+            and enr.grade_level != 99
     ),
 
     transfer_roster as (
@@ -110,7 +110,7 @@ with
             tr.studentid,
             tr.grade_level,
 
-            'Q#' as quarter,
+            'Q#' as `quarter`,
             'S#' as semester,
 
             'Transfer' as roster_type,
@@ -203,8 +203,7 @@ with
             ada,
             roster_type,
             semester,
-            quarter,
-
+            `quarter`,
         from student_roster
 
         union all
@@ -246,8 +245,7 @@ with
             ada,
             roster_type,
             semester,
-            quarter,
-
+            `quarter`,
         from transfer_roster
     ),
 
@@ -272,21 +270,19 @@ with
             f.tutoring_nj,
             f.nj_student_tier,
 
-            quarter,
-
+            `quarter`,
         from {{ ref("base_powerschool__course_enrollments") }} as m
+        cross join unnest({{ quarter }}) as `quarter`
         left join
             {{ ref("int_reporting__student_filters") }} as f
             on m.cc_studentid = f.studentid
             and m.cc_academic_year = f.academic_year
             and m.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
-        cross join unnest({{ quarter }}) as quarter
         where
             m.cc_academic_year = {{ var("current_academic_year") }}
-            and not m.is_dropped_course
-            and not m.is_dropped_section
             and m.rn_course_number_year = 1
+            and not m.is_dropped_section
             and m.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
     ),
 
@@ -308,7 +304,7 @@ with
 
             if(reporting_term in ('RT1', 'RT2'), 'S1', 'S2') as semester,
 
-            concat('Q', right(storecode, 1)) as quarter,
+            concat('Q', right(storecode, 1)) as `quarter`,
 
             avg(if(is_current, percent_grade_y1_running, null)) over (
                 partition by
@@ -327,11 +323,11 @@ with
             ) as category_quarter_average_all_courses
         from {{ ref("int_powerschool__category_grades") }}
         where
-            not is_dropped_section
+            yearid + 1990 = {{ var("current_academic_year") }}
+            and not is_dropped_section
             and storecode_type not in ('Q', 'H')
-            and termbin_start_date <= current_date('America/New_York')
-            and yearid + 1990 = {{ var("current_academic_year") }}
             and course_number not in ('{{ exempt_courses | join("', '") }}')
+            and termbin_start_date <= current_date('America/New_York')
     ),
 
     quarter_and_ip_y1_grades as (
@@ -343,7 +339,7 @@ with
             course_number,
             sectionid,
             termid,
-            storecode as quarter,
+            storecode as `quarter`,
             fg_percent as quarter_course_in_progress_percent_grade,
             fg_letter_grade as quarter_course_in_progress_letter_grade,
             fg_grade_points as quarter_course_in_progress_grade_points,
@@ -371,8 +367,8 @@ with
             y1_grade_points as y1_course_in_progress_grade_points,
             y1_grade_points_unweighted as y1_course_in_progress_grade_points_unweighted,
 
-            nullif(citizenship, '') as quarter_citizenship,
-            nullif(comment_value, '') as quarter_comment_value,
+            citizenship as quarter_citizenship,
+            comment_value as quarter_comment_value,
 
         from {{ ref("base_powerschool__final_grades") }}
         where
@@ -391,15 +387,15 @@ with
             course_number,
             sectionid,
             termid,
-            'Y1' as quarter,
+            'Y1' as `quarter`,
             null as quarter_course_in_progress_percent_grade,
-            '' as quarter_course_in_progress_letter_grade,
+            null as quarter_course_in_progress_letter_grade,
             null as quarter_course_in_progress_grade_points,
             null as quarter_course_in_progress_percent_grade_adjusted,
-            '' as quarter_course_in_progress_letter_grade_adjusted,
+            null as quarter_course_in_progress_letter_grade_adjusted,
 
             null as quarter_course_final_percent_grade,
-            '' as quarter_course_final_letter_grade,
+            null as quarter_course_final_letter_grade,
             null as quarter_course_final_grade_points,
 
             y1_percent_grade_adjusted as quarter_course_percent_grade_that_matters,
@@ -418,8 +414,8 @@ with
             y1_grade_points as y1_course_in_progress_grade_points,
             y1_grade_points_unweighted as y1_course_in_progress_grade_points_unweighted,
 
-            '' as quarter_citizenship,
-            '' as quarter_comment_value,
+            null as quarter_citizenship,
+            null as quarter_comment_value,
         from {{ ref("base_powerschool__final_grades") }}
         where
             not is_dropped_section
@@ -447,7 +443,7 @@ with
             g.gpa_points as y1_course_final_grade_points,
             g.sectionid,
 
-            'Q#' as quarter,
+            'Q#' as `quarter`,
             'S#' as semester,
 
             if(
@@ -495,7 +491,6 @@ with
             gc.cumulative_y1_gpa_projected_s1_unweighted
             as gpa_cumulative_y1_gpa_projected_s1_unweighted,
             gc.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
-
         from {{ ref("base_powerschool__student_enrollments") }} as sr
         left join
             {{ ref("int_powerschool__gpa_term") }} as gt
@@ -520,19 +515,18 @@ with
 
             rt.academic_year,
             rt.grade_band as school_level,
-            rt.name as quarter,
+            rt.name as `quarter`,
             rt.is_current as is_current_quarter,
 
             min(c.date_value) as cal_quarter_start_date,
             max(c.date_value) as cal_quarter_end_date,
-
-        from `kipptaf_powerschool.stg_powerschool__calendar_day` as c
+        from {{ ref("stg_powerschool__calendar_day") }} as c
         inner join
-            `kipptaf_reporting.stg_reporting__terms` as rt
+            {{ ref("stg_reporting__terms") }} as rt
             on rt.school_id = c.schoolid
             and c.date_value between rt.start_date and rt.end_date
             and left(rt.name, 1) = 'Q'
-            and rt.academic_year = `functions.current_academic_year`()
+            and rt.academic_year = {{ var("current_academic_year") }}
         where c.membershipvalue = 1 and c.schoolid not in (0, 999999)
         group by c.schoolid, rt.academic_year, rt.grade_band, rt.name, rt.is_current
     ),
@@ -785,8 +779,8 @@ with
             cal.is_current_quarter,
             cal.cal_quarter_start_date as quarter_start_date,
             cal.cal_quarter_end_date as quarter_end_date,
-            '' as category_name_code,
-            '' as category_quarter_code,
+            null as category_name_code,
+            null as category_quarter_code,
             null as category_quarter_percent_grade,
             null as category_y1_percent_grade_running,
             null as category_y1_percent_grade_current,
@@ -819,7 +813,7 @@ with
             coalesce(m.exclude_from_gpa, y1h.exclude_from_gpa) as exclude_from_gpa,
 
             null as y1_course_final_percent_grade_adjusted,
-            '' as y1_course_final_letter_grade_adjusted,
+            null as y1_course_final_letter_grade_adjusted,
             null as y1_course_final_earned_credits,
             null as y1_course_final_potential_credit_hours,
             null as y1_course_final_grade_points,
