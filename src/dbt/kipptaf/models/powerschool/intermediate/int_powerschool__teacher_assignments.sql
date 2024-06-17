@@ -1,5 +1,5 @@
-{% set expected_teacher_assign_category_code = ["W", "F", "S"] %}
-{% set exempt_courses = [
+{%- set expected_teacher_assign_category_code = ["W", "F", "S"] -%}
+{%- set exempt_courses = [
     "LOG20",
     "LOG22999XL",
     "LOG9",
@@ -11,7 +11,7 @@
     "SEM22106G1",
     "SEM22106S1",
     "HR",
-] %}
+] -%}
 
 with
     assign_1 as (
@@ -86,6 +86,7 @@ with
         where
             t.academic_year = {{ var("current_academic_year") }}
             and s.courses_schoolid != 999999
+            -- trunk-ignore(sqlfluff/LT05)
             and s.courses_course_number not in ('{{ exempt_courses | join("', '") }}')
             and current_date('America/New_York')
             between s.terms_firstday and s.terms_lastday
@@ -126,14 +127,13 @@ with
                 when 'S'
                 then aud.s_expected_quarter
             end as audit_category_exp_audit_week_ytd,
-
         from assign_1 as t
         left join
             {{ ref("stg_reporting__gradebook_expectations") }} as aud
             on t.academic_year = aud.academic_year
             and t.teacher_quarter = aud.quarter
             and t.region = aud.region
-        where exclude_row = 0
+        where t.exclude_row = 0
     ),
 
     assign_3 as (
@@ -161,7 +161,7 @@ with
             t.expected_teacher_assign_category_name,
             t.audit_category_exp_audit_week_ytd,
             t.counter,
-            
+
             a.assign_id as teacher_assign_id,
             a.assign_name as teacher_assign_name,
             a.assign_score_type as teacher_assign_score_type,
