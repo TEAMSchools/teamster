@@ -20,7 +20,7 @@ with
         cross join unnest(['Math', 'ELA']) as discipline
         where
             e.academic_year = {{ var("current_academic_year") }}
-            and e.grade_level = 12
+            and e.grade_level between 9 and 12
             and e.rn_year = 1
     ),
 
@@ -66,16 +66,16 @@ with
                 then 'Mathematics'
             end as `subject`,
         from {{ ref("stg_powerschool__test") }} as b
-        left join
+        inner join
             {{ ref("stg_powerschool__studenttest") }} as s
             on b.id = s.testid
             and {{ union_dataset_join_clause(left_alias="b", right_alias="s") }}
-        left join
+        inner join
             {{ ref("stg_powerschool__studenttestscore") }} as t
             on s.studentid = t.studentid
             and s.id = t.studenttestid
             and {{ union_dataset_join_clause(left_alias="s", right_alias="t") }}
-        left join
+        inner join
             {{ ref("stg_powerschool__testscore") }} as r
             on s.testid = r.testid
             and t.testscoreid = r.id
@@ -83,7 +83,7 @@ with
         where b.name = 'NJGPA'
     ),
 
-    act_sat_psat10_official as (
+    act_sat_official as (
         select
             contact,
             test_type,
@@ -117,23 +117,26 @@ with
                 'sat_reading_test_score',
                 'sat_ebrw'
             )
+    ),
 
-        union all
+    act_sat_pivot as (
+        select contact, discipline, act, sat,
+        from
+            act_sat_official
+            pivot (max(met_pathway_requirement) for test_type in ('ACT', 'SAT'))
+    ),
 
+    psat10_official as (
         select
-            local_student_id as contact,
+            safe_cast(local_student_id as int) as local_student_id,
 
-            'PSAT10' as test_type,
+            if(
+                score_type
+                in ('psat10_eb_read_write_section_score', 'psat10_reading_test_score'),
+                'ELA',
+                'Math'
+            ) as discipline,
 
-            case
-                when
-                    score_type in (
-                        'psat10_eb_read_write_section_score',
-                        'psat10_reading_test_score'
-                    )
-                then 'ELA'
-                else 'Math'
-            end as discipline,
             case
                 when
                     score_type
@@ -160,17 +163,10 @@ with
             )
     ),
 
-    act_sat_psat10_pivot as (
-        select
-            contact,
-            discipline,
-            if(act is null, false, act) as act,
-            if(sat is null, false, sat) as sat,
-            if(psat10 is null, false, psat10) as psat10,
-        from
-            act_sat_psat10_official pivot (
-                max(met_pathway_requirement) for test_type in ('ACT', 'SAT', 'PSAT10')
-            )
+    psat10_rollup as (
+        select local_student_id, discipline, max(met_pathway_requirement) as psat10,
+        from psat10_official
+        group by local_student_id, discipline
     ),
 
     njgpa as (
@@ -251,15 +247,19 @@ select
     r.grade_level,
     r.enroll_status,
     r.discipline,
-    r.code,
     r.njgpa_attempt,
     r.njgpa_pass,
 
-    if(o1.act is null, false, o1.act) as act,
-    if(o1.sat is null, false, o1.sat) as sat,
-    if(o2.psat10 is null, false, o2.psat10) as psat10,
+    coalesce(o1.act, false) as act,
+    coalesce(o1.sat, false) as sat,
+
+    coalesce(o2.psat10, false) as psat10,
+
+    if(r.grade_level = 12, r.code, u.code) as code,
 
     case
+        when r.grade_level != 12
+        then u.code
         when r.code in ('M', 'N', 'O', 'P')
         then r.code
         when r.njgpa_pass
@@ -279,10 +279,15 @@ select
     end as final_grad_path,
 from roster as r
 left join
-    act_sat_psat10_pivot as o1
+    act_sat_pivot as o1
     on r.kippadb_contact_id = o1.contact
     and r.discipline = o1.discipline
 left join
-    act_sat_psat10_pivot as o2
-    on cast(r.student_number as string) = o2.contact
+    psat10_rollup as o2
+    on r.student_number = o2.local_student_id
     and r.discipline = o2.discipline
+left join
+    pathway_code_unpivot as u
+    on r.students_dcid = u.studentsdcid
+    and r.discipline = u.discipline
+    and {{ union_dataset_join_clause(left_alias="r", right_alias="u") }}
