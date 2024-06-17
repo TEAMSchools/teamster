@@ -1,4 +1,4 @@
-select distinct
+select
     _dbt_source_relation,
     academic_year,
     region,
