@@ -1,4 +1,4 @@
-{% set exempt_courses = [
+{%- set exempt_courses = [
     "LOG20",
     "LOG22999XL",
     "LOG9",
@@ -10,7 +10,7 @@
     "SEM22106G1",
     "SEM22106S1",
     "HR",
-] %}
+] -%}
 
 with
     assign_1 as (
@@ -170,6 +170,7 @@ with
             = regexp_extract(ap._dbt_source_relation, r'(kipp\w+)_')
         where
             co.cc_academic_year = {{ var("current_academic_year") }}
+            -- trunk-ignore(sqlfluff/LT05)
             and co.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
             and not co.is_dropped_section
             and co.cc_dateleft >= current_date('America/New_York')
