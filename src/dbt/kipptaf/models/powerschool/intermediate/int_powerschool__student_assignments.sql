@@ -51,17 +51,20 @@ with
 
             1 as counter,
 
+            if(co.ap_course_subject is null, 0, 1) as ap_course,
+
+            concat('Q', gb.storecode_order) as assign_quarter,
             concat(
                 left(gb.category_name, 1), right(gb.storecode, 1)
             ) as assign_category_quarter,
 
+            if(
+                concat('Q', gb.storecode_order) in ('Q1', 'Q2'), 'S1', 'S2'
+            ) as assign_semester_code,
+
             coalesce(s.islate, 0) as assign_is_late,
             coalesce(s.isexempt, 0) as assign_is_exempt,
             coalesce(s.ismissing, 0) as assign_is_missing,
-
-            concat('Q', gb.storecode_order) as assign_quarter,
-
-            if(ap.ap_course_subject is null, 0, 1) as ap_course,
 
             if(
                 enr.region = 'Miami'
@@ -93,10 +96,6 @@ with
                 0,
                 1
             ) as exclude_row,
-
-            if(
-                concat('Q', gb.storecode_order) in ('Q1', 'Q2'), 'S1', 'S2'
-            ) as assign_semester_code,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -168,10 +167,6 @@ with
             on enr.academic_year = aud.academic_year
             and enr.region = aud.region
             and a.duedate between aud.audit_start_date and aud.audit_end_date
-        left join
-            {{ ref("stg_powerschool__s_nj_crs_x") }} as ap
-            on co.courses_dcid = ap.coursesdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="ap") }}
         where
             co.cc_academic_year = {{ var("current_academic_year") }}
             and not co.is_dropped_section
