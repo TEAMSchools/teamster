@@ -166,8 +166,7 @@ with
         left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as ap
             on co.courses_dcid = ap.coursesdcid
-            and regexp_extract(co._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(ap._dbt_source_relation, r'(kipp\w+)_')
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="ap") }}
         where
             co.cc_academic_year = {{ var("current_academic_year") }}
             -- trunk-ignore(sqlfluff/LT05)
