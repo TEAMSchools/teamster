@@ -87,6 +87,7 @@ select
 
     tb.storecode,
     tb.storecode_type,
+    tb.storecode_order,
     tb.date1 as term_start_date,
     tb.date2 as term_end_date,
 
