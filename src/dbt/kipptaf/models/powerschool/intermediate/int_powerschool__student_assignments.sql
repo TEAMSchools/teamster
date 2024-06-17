@@ -59,17 +59,17 @@ with
             coalesce(s.isexempt, 0) as assign_is_exempt,
             coalesce(s.ismissing, 0) as assign_is_missing,
 
-            concat('Q', right(gb.storecode, 1)) as assign_quarter,
+            concat('Q', gb.storecode_order) as assign_quarter,
+
+            if(ap.ap_course_subject is null, 0, 1) as ap_course,
 
             if(
                 enr.region = 'Miami'
                 and enr.grade_level <= 4
                 and gb.category_name != 'Work Habits',
                 left(gb.category_name, 1),
-                left(gb.storecode, 1)
+                gb.storecode_type
             ) as assign_category_code,
-
-            if(ap.ap_course_subject is null, 0, 1) as ap_course,
 
             if(
                 enr.grade_level <= 4,
@@ -78,16 +78,16 @@ with
             ) as section_or_period,
 
             if(
-                (enr.grade_level > 4 and left(gb.storecode, 1) != 'Q')
+                (enr.grade_level > 4 and gb.storecode_type != 'Q')
                 or (
                     enr.grade_level <= 4
                     and enr.region = 'Miami'
-                    and left(gb.storecode, 1) = 'W'
+                    and gb.storecode_type = 'W'
                 )
                 or (
                     enr.grade_level <= 4
                     and enr.region = 'Miami'
-                    and left(gb.storecode, 1) = 'Q'
+                    and gb.storecode_type = 'Q'
                     and left(gb.category_name, 1) in ('F', 'S')
                 ),
                 0,
@@ -95,7 +95,7 @@ with
             ) as exclude_row,
 
             if(
-                concat('Q', right(gb.storecode, 1)) in ('Q1', 'Q2'), 'S1', 'S2'
+                concat('Q', gb.storecode_order) in ('Q1', 'Q2'), 'S1', 'S2'
             ) as assign_semester_code,
 
             if(
@@ -134,25 +134,30 @@ with
             if(
                 a.assignmentid is not null and coalesce(s.isexempt, 0) = 0, 1, 0
             ) as assign_expected_to_be_scored,
-
         from {{ ref("base_powerschool__course_enrollments") }} as co
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as enr
             on co.cc_studentid = enr.studentid
             and co.cc_yearid = enr.yearid
-            and enr.rn_year = 1
             and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
+            and enr.rn_year = 1
+            and enr.enroll_status = 0
+            and enr.school_level != 'OD'
         inner join
             {{ ref("int_powerschool__section_grade_config") }} as gb
             on co.sections_dcid = gb.sections_dcid
-            and gb.grading_formula_weighting_type != 'Total_Points'
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gb") }}
+            and gb.grading_formula_weighting_type != 'Total_Points'
+            and gb.storecode_type != 'H'
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on gb.sections_dcid = a.sectionsdcid
             and gb.category_id = a.category_id
             and a.duedate between gb.term_start_date and gb.term_end_date
             and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
+            and a.duedate between co.cc_dateenrolled and co.cc_dateleft
+            and a.iscountedinfinalgrade = 1
+            and a.scoretype in ('POINTS', 'PERCENT')
         left join
             {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
@@ -169,16 +174,10 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="ap") }}
         where
             co.cc_academic_year = {{ var("current_academic_year") }}
+            and not co.is_dropped_section
             -- trunk-ignore(sqlfluff/LT05)
             and co.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
-            and not co.is_dropped_section
             and co.cc_dateleft >= current_date('America/New_York')
-            and enr.enroll_status = 0
-            and enr.school_level != 'OD'
-            and a.iscountedinfinalgrade = 1
-            and a.duedate between co.cc_dateenrolled and co.cc_dateleft
-            and a.scoretype in ('POINTS', 'PERCENT')
-            and left(gb.storecode, 1) != 'H'
     ),
 
     assign_2 as (
@@ -229,7 +228,6 @@ with
             safe_divide(
                 assign_score_converted, assign_max_score
             ) as assign_final_score_percent,
-
         from assign_1
         where exclude_row = 0
     )
@@ -335,5 +333,4 @@ select
         1,
         0
     ) as assign_s_hs_score_not_conversion_chart_options,
-
 from assign_2

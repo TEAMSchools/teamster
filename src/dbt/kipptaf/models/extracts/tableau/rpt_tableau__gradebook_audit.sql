@@ -102,7 +102,6 @@ select distinct
 
     audit_flag_name,
     audit_flag_value,
-
 from
     {{ ref("int_powerschool__gradebook_gpa_audit") }} unpivot (
         audit_flag_value for audit_flag_name in (

@@ -23,7 +23,7 @@ select
     gb.storecode as grade_category_abbreviation,
     gb.grade_calc_formula_weight as weighting,
     gb.is_in_final_grades as includeinfinalgrades,
-    left(gb.storecode, 1) as finalgrade_category,
+    gb.storecode_type as finalgrade_category,
 
     a.assignmentid,
     a.duedate as assign_date,
@@ -88,7 +88,7 @@ select
     gb.storecode as grade_category_abbreviation,
     gb.grade_calc_formula_weight as weighting,
     gb.is_in_final_grades as includeinfinalgrades,
-    left(gb.storecode, 1) as finalgrade_category,
+    gb.storecode_type as finalgrade_category,
 
     a.assignmentid,
     a.duedate as assign_date,

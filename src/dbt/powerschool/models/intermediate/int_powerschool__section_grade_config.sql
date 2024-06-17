@@ -86,6 +86,7 @@ select
     sec.term_abbreviation,
 
     tb.storecode,
+    tb.storecode_type,
     tb.date1 as term_start_date,
     tb.date2 as term_end_date,
 
@@ -101,6 +102,7 @@ select
     coalesce(
         gct.gradecalculationtypeid, gcfw.gradecalcformulaweightid, -1
     ) as grading_formula_id,
+
     coalesce(gct.type, gcfw.type) as grading_formula_weighting_type,
 
     coalesce(
@@ -109,6 +111,7 @@ select
         gct.gradecalculationtypeid,
         -1
     ) as category_id,
+
     coalesce(gcfw.name, gct.type) as category_name,
 from sec
 inner join

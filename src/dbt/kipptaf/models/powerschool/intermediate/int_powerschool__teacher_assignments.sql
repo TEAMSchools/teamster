@@ -20,6 +20,8 @@ with
             t.grade_band as school_level,
             t.name as teacher_quarter,
 
+            expected_teacher_assign_category_code,
+
             s._dbt_source_relation,
             s.terms_yearid as yearid,
             s.sections_schoolid as schoolid,
@@ -29,11 +31,19 @@ with
             s.sections_schedulesectionid as sectionid,
             s.sections_dcid,
 
-            expected_teacher_assign_category_code,
-
             1 as counter,
 
             if(t.name in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
+
+            case
+                expected_teacher_assign_category_code
+                when 'W'
+                then 'Work Habits'
+                when 'F'
+                then 'Formative Mastery'
+                when 'S'
+                then 'Summative Mastery'
+            end as expected_teacher_assign_category_name,
 
             if(
                 t.grade_band in ('ES', 'MS'),
@@ -53,16 +63,6 @@ with
             ) as exclude_row,
 
             case
-                expected_teacher_assign_category_code
-                when 'W'
-                then 'Work Habits'
-                when 'F'
-                then 'Formative Mastery'
-                when 'S'
-                then 'Summative Mastery'
-            end as expected_teacher_assign_category_name,
-
-            case
                 regexp_extract(s._dbt_source_relation, r'(kipp\w+)_')
                 when 'kippcamden'
                 then 'Camden'
@@ -71,25 +71,23 @@ with
                 when 'kippmiami'
                 then 'Miami'
             end as region,
-
         from {{ ref("stg_reporting__terms") }} as t
-        left join
-            {{ ref("base_powerschool__sections") }} as s
-            on t.powerschool_year_id = s.terms_yearid
-            and t.school_id = s.sections_schoolid
-            and t.type = 'RT'
-            and t.grade_band is not null
         cross join
             unnest(
                 {{ expected_teacher_assign_category_code }}
             ) as expected_teacher_assign_category_code
-        where
-            t.academic_year = {{ var("current_academic_year") }}
-            and s.courses_schoolid != 999999
+        left join
+            {{ ref("base_powerschool__sections") }} as s
+            on t.powerschool_year_id = s.terms_yearid
+            and t.school_id = s.sections_schoolid
             -- trunk-ignore(sqlfluff/LT05)
             and s.courses_course_number not in ('{{ exempt_courses | join("', '") }}')
             and current_date('America/New_York')
             between s.terms_firstday and s.terms_lastday
+        where
+            t.academic_year = {{ var("current_academic_year") }}
+            and t.type = 'RT'
+            and t.grade_band is not null
     ),
 
     assign_2 as (
