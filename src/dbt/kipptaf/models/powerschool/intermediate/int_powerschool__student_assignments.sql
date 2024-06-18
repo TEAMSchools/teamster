@@ -13,6 +13,53 @@
 ] -%}
 
 with
+    calendar as (
+        select
+            cd._dbt_source_relation,
+            cd.schoolid,
+            cd.week_start_date,
+            cd.week_end_date,
+
+            t.yearid,
+            t.abbreviation as `quarter`,
+
+            min(cd.date_value) as school_week_start_date,
+            max(cd.date_value) as school_week_end_date,
+
+            row_number() over (
+                partition by
+                    cd._dbt_source_relation, cd.schoolid, t.yearid, t.abbreviation
+                order by cd.week_start_date asc
+            ) as week_number_quarter,
+        from {{ ref("stg_powerschool__calendar_day") }} as cd
+        inner join
+            {{ ref("stg_powerschool__terms") }} as t
+            on cd.schoolid = t.schoolid
+            and cd.date_value between t.firstday and t.lastday
+            and {{ union_dataset_join_clause(left_alias="cd", right_alias="t") }}
+            and t.portion = 4
+        inner join
+            {{ ref("stg_powerschool__cycle_day") }} as cy
+            on cd.cycle_day_id = cy.id
+            and {{ union_dataset_join_clause(left_alias="cd", right_alias="cy") }}
+        inner join
+            {{ ref("stg_powerschool__bell_schedule") }} as bs
+            on cd.schoolid = bs.schoolid
+            and cd.bell_schedule_id = bs.id
+            and {{ union_dataset_join_clause(left_alias="cd", right_alias="bs") }}
+        where
+            cd.insession = 1
+            and cd.membershipvalue > 0
+            and cd.date_value >= date({{ var("current_academic_year") }}, 7, 1)
+        group by
+            cd._dbt_source_relation,
+            cd.schoolid,
+            cd.week_start_date,
+            cd.week_end_date,
+            t.yearid,
+            t.abbreviation
+    ),
+
     students as (
         select
             se._dbt_source_relation,
@@ -26,15 +73,27 @@ with
             se.schoolid,
             se.grade_level,
 
-            gs.quarter,
-            ge.week_number,
+            c.quarter,
+            c.week_number_quarter,
+            c.week_start_date,
+            c.week_end_date,
+            c.school_week_start_date,
+            c.school_week_end_date,
+
             ge.storecode_type,
             ge.expectation,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         inner join
+            calendar as c
+            on se.schoolid = c.schoolid
+            and se.yearid = c.yearid
+            and {{ union_dataset_join_clause(left_alias="se", right_alias="c") }}
+        left join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on se.academic_year = ge.academic_year
             and se.region = ge.region
+            and c.quarter = ge.quarter
+            and c.week_number_quarter = ge.week_number
         where
             se.academic_year = {{ var("current_academic_year") }}
             and se.rn_year = 1
