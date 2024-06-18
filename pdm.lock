@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:e3da69bfd604bd530dea370b1bdaf9a8c1fb6fd9e0155e7a281fa7e3066d631b"
+content_hash = "sha256:168223b38e281b0f0569a4089061be686fbc2dd427dcdf8e49c507dbbbc38a9d"
 
 [[package]]
 name = "agate"
@@ -753,21 +753,21 @@ files = [
 
 [[package]]
 name = "dbt-adapters"
-version = "1.3.0"
+version = "1.2.1"
 requires_python = ">=3.8.0"
 summary = "The set of adapter protocols and base functionality that supports integration with dbt-core"
 groups = ["default"]
 dependencies = [
     "agate<2.0,>=1.0",
-    "dbt-common<2.0,>=1.3",
+    "dbt-common<2.0",
     "mashumaro[msgpack]<4.0,>=3.0",
     "protobuf<5.0,>=3.0",
     "pytz>=2015.7",
     "typing-extensions<5.0,>=4.0",
 ]
 files = [
-    {file = "dbt_adapters-1.3.0-py3-none-any.whl", hash = "sha256:65b6bf665cd0d61f57693332b3809e9f5ea0abfc5f64db7f2e97dbdda0def281"},
-    {file = "dbt_adapters-1.3.0.tar.gz", hash = "sha256:7220e647692c6c4c0a4dc37633bdc7e19ad763a7e11dd8133a4231aaf267a838"},
+    {file = "dbt_adapters-1.2.1-py3-none-any.whl", hash = "sha256:0f78a4cab153bf0cc4f02cbfb013b65149c9107f5ccc4132386e733a2a1ef39f"},
+    {file = "dbt_adapters-1.2.1.tar.gz", hash = "sha256:78c785ea783670f65c7351eac768960fd5263b8e37cb3377b980743e8433ace3"},
 ]
 
 [[package]]
