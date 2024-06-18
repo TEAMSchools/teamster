@@ -94,6 +94,11 @@ select
         timestamp(observedat), '{{ var("local_timezone") }}'
     ) as observed_at_date_local,
 
+    {{
+        teamster_utils.date_to_fiscal_year(
+            date_field="timestamp(observedat)", start_month=7, year_source="start"
+        )
+    }} as academic_year,
     array_to_string(listtwocolumna, '|') as list_two_column_a_str,
     array_to_string(listtwocolumnb, '|') as list_two_column_b_str,
 from deduplicate

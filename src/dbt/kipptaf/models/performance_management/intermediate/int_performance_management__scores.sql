@@ -1,21 +1,19 @@
 select
     o.observation_id,
-    o.teacher_id,
-    o.rubric_name as form_long_name,
-    o.rubric_id,
-    o.score as overall_score,
+    o.rubric_name,
+    o.score as observation_score,
+    o.score_averaged_by_strand as strand_score,
     o.observed_at_date_local as observed_at,
     o.list_two_column_a_str as glows,
     o.list_two_column_b_str as grows,
-    o.observer_email,
     o.last_modified,
+    o.locked,
+    o.academic_year,
 
     ot.name as observation_type,
+    ot.abbreviation as observation_type_abbreviation,
 
-    u.internal_id_int as employee_number,
-
-    os.measurement as score_measurement_id,
-    os.value_score as row_score_value,
+    os.value_score as row_score,
 
     m.name as measurement_name,
 
@@ -23,13 +21,9 @@ select
     mgm.strand_description,
 
     b.value_clean as text_box,
-
+    u.internal_id_int as employee_number,
     srh.employee_number as observer_employee_number,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
-inner join {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
-left join
-    {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
-    on o.observation_id = os.observation_id
 left join
     {{
         source(
@@ -37,11 +31,15 @@ left join
         )
     }} as ot on o.observation_type = ot._id
 left join
+    {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
+    on o.observation_id = os.observation_id
+left join
     {{ ref("stg_schoolmint_grow__measurements") }} as m
     on os.measurement = m.measurement_id
 left join
     {{ ref("stg_schoolmint_grow__rubrics__measurement_groups__measurements") }} as mgm
     on m.measurement_id = mgm.measurement_id
+inner join {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores__text_boxes") }} as b
     on os.observation_id = b.observation_id
@@ -51,4 +49,4 @@ left join
     on o.observer_email = srh.google_email
     and o.observed_at
     between srh.work_assignment_start_date and srh.work_assignment_end_date
-where o.is_published
+where o.is_published and o.archived_at is null and o.academic_year = {{ var('current_academic_year') }} 
