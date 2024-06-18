@@ -17,7 +17,7 @@ on:
       dbt-version:
         type: string
         required: false
-        default: "1.8.1"
+        default: 1.8.1
 
 concurrency:
   # Cancel in-progress deploys to the same branch
@@ -73,7 +73,7 @@ jobs:
 
       - name: Install dbt
         run:
-          pip install setuptools "dbt-core>=${{ inputs.dbt-version }}" "dbt-bigquery>=${{
+          pip install setuptools "dbt-core==${{ inputs.dbt-version }}" "dbt-bigquery==${{
           inputs.dbt-version }}"
 
       - name: dbt deps
