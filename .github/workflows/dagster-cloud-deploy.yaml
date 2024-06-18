@@ -17,7 +17,7 @@ on:
       dbt-version:
         type: string
         required: false
-        default: "1.7"
+        default: "1.8"
 
 concurrency:
   # Cancel in-progress deploys to the same branch
