@@ -80,46 +80,57 @@ with
         where grade_band in ('MS', 'HS') and region != 'Miami'
     ),
 
-    assign_1 as (
+    expectations as (
         select
-            _dbt_source_relation,
-            sections_dcid,
-            section_id,
-            schoolid,
-            section_or_period,
-            course_number,
-            teacher_number,
-            teacher_lastfirst,
-            yearid,
-            academic_year,
-            region,
-            grade_band,
+            vs._dbt_source_relation,
+            vs.sections_dcid,
+            vs.section_id,
+            vs.schoolid,
+            vs.section_or_period,
+            vs.course_number,
+            vs.teacher_number,
+            vs.teacher_lastfirst,
+            vs.yearid,
+            vs.academic_year,
+            vs.region,
+            vs.grade_band,
 
-            t.name as teacher_quarter,
-            if(t.name in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
-            expected_teacher_assign_category_code,
+            c.semester,
+            c.quarter,
+            c.week_number_quarter,
+            c.week_number_academic_year,
+            c.week_start_date,
+            c.week_end_date,
+            c.school_week_start_date,
+            c.school_week_end_date,
+            c.school_week_start_date_lead,
+
+            ge.assignment_category_code,
+            ge.assignment_category_term,
+            ge.expectation,
+
             case
-                expected_teacher_assign_category_code
+                ge.assignment_category_code,
                 when 'W'
                 then 'Work Habits'
                 when 'F'
                 then 'Formative Mastery'
                 when 'S'
                 then 'Summative Mastery'
-            end as expected_teacher_assign_category_name,
-
-            aud.year_week_number as audit_yr_week_number,
-            aud.quarter_week_number as audit_qt_week_number,
-            aud.audit_start_date,
-            aud.audit_end_date,
-            aud.audit_due_date,
+            end as assignment_category_name,
         from valid_sections as vs
-        left join
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as c
+            on vs.cc_schoolid = c.schoolid
+            and vs.cc_yearid = c.yearid
+            and c.week_end_date between ce.cc_dateenrolled and ce.cc_dateleft
+            and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
+        inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
-            on vs.academic_year = ge.academic_year
-            and vs.region = ge.region
-            and vs.quarter = ge.quarter
-            and vs.week_number_quarter = ge.week_number
+            on c.academic_year = ge.academic_year
+            and c.region = ge.region
+            and c.quarter = ge.quarter
+            and c.week_number_quarter = ge.week_number
     ),
 
     assign_3 as (
@@ -181,8 +192,7 @@ with
                     t.expected_teacher_assign_category_code
                 order by t.teacher_quarter, t.audit_qt_week_number
             ) as teacher_running_total_assign_by_cat,
-
-        from assign_2 as t
+        from expectations as t
         left join
             {{ ref("int_powerschool__student_assignments") }} as a
             on t.course_number = a.course_number
