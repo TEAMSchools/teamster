@@ -23,7 +23,7 @@ select
 from {{ ref("int_performance_management__scores") }}
 where observation_type_abbreviation in ('O3','WT','TDT')
 
-
+union all
 /*Teacher Performance Management for academic years starting 2024*/
 
 select

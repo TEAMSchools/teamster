@@ -1,3 +1,5 @@
+/* current academic year observations*/
+
 select
     o.observation_id,
     o.rubric_name,
@@ -41,8 +43,9 @@ select
     mgm.strand_description,
 
     b.value_clean as text_box,
-    coalesce(u.internal_id_int,srh.employee_number) as employee_number,
+    coalesce(u.internal_id_int, srh.employee_number) as employee_number,
     srh.report_to_employee_number as observer_employee_number,
+
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{
@@ -71,4 +74,7 @@ left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores__text_boxes") }} as b
     on os.observation_id = b.observation_id
     and os.measurement = b.measurement
-where o.is_published and o.archived_at is null
+where
+    o.is_published
+    and o.archived_at is null
+    and o.academic_year = {{ var("current_academic_year") }}
