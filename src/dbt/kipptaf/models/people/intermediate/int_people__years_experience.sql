@@ -193,7 +193,12 @@ with
 
     year_counts as (
         select
-            *,
+            employee_number,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+
             round(days_at_kipp / 365.25, 2) as years_at_kipp,
             round(days_as_teacher / 365.25, 2) as years_teaching_at_kipp,
         from day_count_pivot
