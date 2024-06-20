@@ -1,17 +1,3 @@
-{%- set exempt_courses = [
-    "LOG20",
-    "LOG22999XL",
-    "LOG9",
-    "LOG100",
-    "LOG1010",
-    "LOG11",
-    "LOG12",
-    "LOG300",
-    "SEM22106G1",
-    "SEM22106S1",
-    "HR",
-] -%}
-
 with
     calendar as (
         select
@@ -176,8 +162,19 @@ with
             and ce.cc_yearid = se.yearid
             and {{ union_dataset_join_clause(left_alias="se", right_alias="ce") }}
             and not ce.is_dropped_section
-            -- trunk-ignore(sqlfluff/LT05)
-            and ce.cc_course_number not in ('{{ exempt_courses | join("', '") }}')
+            and ce.cc_course_number not in (
+                'HR',
+                'LOG100',
+                'LOG1010',
+                'LOG11',
+                'LOG12',
+                'LOG20',
+                'LOG22999XL',
+                'LOG300',
+                'LOG9',
+                'SEM22106G1',
+                'SEM22106S1'
+            )
         inner join
             calendar as c
             on ce.cc_schoolid = c.schoolid

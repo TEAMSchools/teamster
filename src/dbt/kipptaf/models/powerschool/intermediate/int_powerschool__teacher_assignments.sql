@@ -1,40 +1,103 @@
-{%- set expected_teacher_assign_category_code = ["W", "F", "S"] -%}
-{%- set exempt_courses = [
-    "LOG20",
-    "LOG22999XL",
-    "LOG9",
-    "LOG100",
-    "LOG1010",
-    "LOG11",
-    "LOG12",
-    "LOG300",
-    "SEM22106G1",
-    "SEM22106S1",
-    "HR",
-] -%}
-
 with
+    sections as (
+        select
+            sec._dbt_source_relation,
+            sec.sections_dcid,
+            sec.sections_id as section_id,
+            sec.sections_schoolid as schoolid,
+            sec.sections_course_number as course_number,
+            sec.teachernumber as teacher_number,
+            sec.teacher_lastfirst,
+            sec.terms_yearid as yearid,
+
+            sec.terms_yearid + 1990 as academic_year,
+            initcap(regexp_extract(sec._dbt_source_relation, r'kipp(\w+)_')) as region,
+
+            case
+                sch.high_grade when 4 then 'ES' when 8 then 'MS' when 12 then 'HS'
+            end as grade_band,
+
+            if(
+                sch.high_grade in (4, 8),
+                s.sections_section_number,
+                s.sections_external_expression
+            ) as section_or_period,
+        from {{ ref("base_powerschool__sections") }} as sec
+        inner join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on sec.sections_schoolid = sch.school_number
+            and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
+        where
+            sec.sections_course_number not in (
+                'HR',
+                'LOG100',
+                'LOG1010',
+                'LOG11',
+                'LOG12',
+                'LOG20',
+                'LOG22999XL',
+                'LOG300',
+                'LOG9',
+                'SEM22106G1',
+                'SEM22106S1'
+            )
+            and sec.terms_firstday >= date({{ var("current_academic_year") }}, 7, 1)
+    ),
+
+    valid_sections as (
+        select
+            _dbt_source_relation,
+            sections_dcid,
+            section_id,
+            schoolid,
+            section_or_period,
+            course_number,
+            teacher_number,
+            teacher_lastfirst,
+            yearid,
+            academic_year,
+            region,
+            grade_band,
+        from sections
+        where region = 'Miami'
+
+        union all
+
+        select
+            _dbt_source_relation,
+            sections_dcid,
+            section_id,
+            schoolid,
+            section_or_period,
+            course_number,
+            teacher_number,
+            teacher_lastfirst,
+            yearid,
+            academic_year,
+            region,
+            grade_band,
+        from sections
+        where grade_band in ('MS', 'HS') and region != 'Miami'
+    ),
+
     assign_1 as (
-        select distinct
-            t.academic_year,
-            t.grade_band as school_level,
+        select
+            _dbt_source_relation,
+            sections_dcid,
+            section_id,
+            schoolid,
+            section_or_period,
+            course_number,
+            teacher_number,
+            teacher_lastfirst,
+            yearid,
+            academic_year,
+            region,
+            grade_band,
+
             t.name as teacher_quarter,
-
-            expected_teacher_assign_category_code,
-
-            s._dbt_source_relation,
-            s.terms_yearid as yearid,
-            s.sections_schoolid as schoolid,
-            s.teachernumber as teacher_number,
-            s.teacher_lastfirst as teacher_name,
-            s.courses_course_number as course_number,
-            s.sections_schedulesectionid as sectionid,
-            s.sections_dcid,
-
-            1 as counter,
-
             if(t.name in ('Q1', 'Q2'), 'S1', 'S2') as teacher_semester_code,
-
+            expected_teacher_assign_category_code,
             case
                 expected_teacher_assign_category_code
                 when 'W'
@@ -45,97 +108,22 @@ with
                 then 'Summative Mastery'
             end as expected_teacher_assign_category_name,
 
-            if(
-                t.grade_band in ('ES', 'MS'),
-                s.sections_section_number,
-                s.sections_external_expression
-            ) as section_or_period,
-
-            if(
-                (
-                    t.grade_band = 'ES'
-                    and regexp_extract(s._dbt_source_relation, r'(kipp\w+)_')
-                    = 'kippmiami'
-                )
-                or t.grade_band in ('MS', 'HS'),
-                0,
-                1
-            ) as exclude_row,
-
-            case
-                regexp_extract(s._dbt_source_relation, r'(kipp\w+)_')
-                when 'kippcamden'
-                then 'Camden'
-                when 'kippnewark'
-                then 'Newark'
-                when 'kippmiami'
-                then 'Miami'
-            end as region,
-        from {{ ref("stg_reporting__terms") }} as t
-        cross join
-            unnest(
-                {{ expected_teacher_assign_category_code }}
-            ) as expected_teacher_assign_category_code
-        left join
-            {{ ref("base_powerschool__sections") }} as s
-            on t.powerschool_year_id = s.terms_yearid
-            and t.school_id = s.sections_schoolid
-            -- trunk-ignore(sqlfluff/LT05)
-            and s.courses_course_number not in ('{{ exempt_courses | join("', '") }}')
-            and current_date('America/New_York')
-            between s.terms_firstday and s.terms_lastday
-        where
-            t.academic_year = {{ var("current_academic_year") }}
-            and t.type = 'RT'
-            and t.grade_band is not null
-    ),
-
-    assign_2 as (
-        select distinct
-            t._dbt_source_relation,
-            t.yearid,
-            t.academic_year,
-            t.region,
-            t.schoolid,
-            t.school_level,
-            t.teacher_number,
-            t.teacher_name,
-            t.course_number,
-            t.section_or_period,
-            t.sectionid,
-            t.sections_dcid,
-            t.expected_teacher_assign_category_code,
-            t.expected_teacher_assign_category_name,
-            t.teacher_semester_code,
-            t.teacher_quarter,
-            t.counter,
-
             aud.year_week_number as audit_yr_week_number,
             aud.quarter_week_number as audit_qt_week_number,
             aud.audit_start_date,
             aud.audit_end_date,
             aud.audit_due_date,
-
-            case
-                t.expected_teacher_assign_category_code
-                when 'W'
-                then aud.w_expected_quarter
-                when 'F'
-                then aud.f_expected_quarter
-                when 'S'
-                then aud.s_expected_quarter
-            end as audit_category_exp_audit_week_ytd,
-        from assign_1 as t
+        from valid_sections as vs
         left join
-            {{ ref("stg_reporting__gradebook_expectations") }} as aud
-            on t.academic_year = aud.academic_year
-            and t.teacher_quarter = aud.quarter
-            and t.region = aud.region
-        where t.exclude_row = 0
+            {{ ref("stg_reporting__gradebook_expectations") }} as ge
+            on vs.academic_year = ge.academic_year
+            and vs.region = ge.region
+            and vs.quarter = ge.quarter
+            and vs.week_number_quarter = ge.week_number
     ),
 
     assign_3 as (
-        select distinct
+        select
             t._dbt_source_relation,
             t.yearid,
             t.academic_year,
@@ -158,7 +146,6 @@ with
             t.expected_teacher_assign_category_code,
             t.expected_teacher_assign_category_name,
             t.audit_category_exp_audit_week_ytd,
-            t.counter,
 
             a.assign_id as teacher_assign_id,
             a.assign_name as teacher_assign_name,
@@ -208,7 +195,7 @@ with
     ),
 
     assign_4 as (
-        select distinct
+        select
             t._dbt_source_relation,
             t.yearid,
             t.academic_year,
@@ -231,7 +218,6 @@ with
             t.expected_teacher_assign_category_code,
             t.expected_teacher_assign_category_name,
             t.audit_category_exp_audit_week_ytd,
-            t.counter,
             t.teacher_assign_id,
             t.teacher_assign_name,
             t.teacher_assign_score_type,
@@ -405,7 +391,6 @@ select
     expected_teacher_assign_category_code,
     expected_teacher_assign_category_name,
     audit_category_exp_audit_week_ytd,
-    counter,
     teacher_assign_id,
     teacher_assign_name,
     teacher_assign_score_type,

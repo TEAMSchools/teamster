@@ -103,7 +103,7 @@ with
     ),
 
     transfer_roster as (
-        select distinct
+        select
             tr._dbt_source_relation,
             tr.academic_year,
             tr.yearid,
@@ -250,7 +250,7 @@ with
     ),
 
     section_teacher as (
-        select distinct
+        select
             m._dbt_source_relation,
             m.cc_yearid as yearid,
             m.cc_academic_year,
@@ -379,7 +379,7 @@ with
 
         union all
 
-        select distinct
+        select
             _dbt_source_relation,
             yearid,
             schoolid,
@@ -1007,7 +1007,7 @@ with
             and f.category_name_code = t.expected_teacher_assign_category_code
     )
 
-select distinct
+select
     f._dbt_source_relation,
     f.academic_year,
     f.region,
