@@ -10,8 +10,28 @@ select
     o.locked,
     o.academic_year,
 
-    ot.name as observation_type,
-    ot.abbreviation as observation_type_abbreviation,
+    case
+        when ot.name is not null
+        then ot.name
+        /* for prior years*/
+        when o.rubric_name like '%ETR%'
+        then 'Teacher Performance Management'
+        when o.rubric_name like '%O3%'
+        then 'O3'
+        when o.rubric_name like '%Walkthrough%'
+        then 'Walkthrough'
+    end as observation_type,
+    case
+        when ot.abbreviation is not null
+        then ot.abbreviation
+        /* for prior years*/
+        when o.rubric_name like '%ETR%'
+        then 'PM'
+        when o.rubric_name like '%O3%'
+        then 'O3'
+        when o.rubric_name like '%Walkthrough%'
+        then 'WT'
+    end as observation_type_abbreviation,
 
     os.value_score as row_score,
 
@@ -27,7 +47,8 @@ from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{
         source(
-            "schoolmint_grow", "src_schoolmint_grow__generic_tags_observationtypes"
+            "schoolmint_grow",
+            "src_schoolmint_grow__generic_tags_observationtypes",
         )
     }} as ot on o.observation_type = ot._id
 left join
@@ -49,4 +70,4 @@ left join
     on o.observer_email = srh.google_email
     and o.observed_at
     between srh.work_assignment_start_date and srh.work_assignment_end_date
-where o.is_published and o.archived_at is null and o.academic_year = {{ var('current_academic_year') }} 
+where o.is_published and o.archived_at is null

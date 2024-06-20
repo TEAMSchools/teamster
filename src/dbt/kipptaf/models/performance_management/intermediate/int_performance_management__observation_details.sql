@@ -1,4 +1,4 @@
-/*current academic year*/
+/*O3, Walkthroughs, Teacher Development Forms for all academic years*/
 
 select
     observation_id,
@@ -21,9 +21,38 @@ select
     observer_employee_number,
 
 from {{ ref("int_performance_management__scores") }}
-where academic_year = {{ var('current_academic_year') }}
+where observation_type_abbreviation in ('O3','WT','TDT')
+
+
+/*Teacher Performance Management for academic years starting 2024*/
+
+select
+    observation_id,
+    rubric_name,
+    observation_score,
+    strand_score,
+    glows,
+    grows,
+    last_modified,
+    academic_year,
+    locked,
+    observation_type,
+    observation_type_abbreviation,
+    row_score,
+    measurement_name,
+    strand_name,
+    strand_description,
+    text_box,
+    employee_number,
+    observer_employee_number,
+
+from {{ ref("int_performance_management__scores") }}
+where observation_type_abbreviation = 'PM'
+and academic_year >= 2024
 
 union all
+
+/* Teacher Performance Management 2022 and prior */
 
 select
     os.observation_id,
@@ -55,6 +84,6 @@ left join
     {{ ref("base_people__staff_roster") }} as sr
     on ds.observer_employee_number = sr.employee_number
 
-    /* union to 2023 couchdrop table*/
+/* Teacher Performance Management 2023 */
 
     
