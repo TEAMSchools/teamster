@@ -9,6 +9,8 @@ with
             sec.teachernumber as teacher_number,
             sec.teacher_lastfirst,
             sec.terms_yearid as yearid,
+            sec.terms_firstday,
+            sec.terms_lastday,
 
             sec.terms_yearid + 1990 as academic_year,
             initcap(regexp_extract(sec._dbt_source_relation, r'kipp(\w+)_')) as region,
@@ -19,8 +21,8 @@ with
 
             if(
                 sch.high_grade in (4, 8),
-                s.sections_section_number,
-                s.sections_external_expression
+                sec.sections_section_number,
+                sec.sections_external_expression
             ) as section_or_period,
         from {{ ref("base_powerschool__sections") }} as sec
         inner join
@@ -56,6 +58,8 @@ with
             teacher_lastfirst,
             yearid,
             academic_year,
+            terms_firstday,
+            terms_lastday,
             region,
             grade_band,
         from sections
@@ -74,6 +78,8 @@ with
             teacher_lastfirst,
             yearid,
             academic_year,
+            terms_firstday,
+            terms_lastday,
             region,
             grade_band,
         from sections
@@ -92,6 +98,8 @@ with
             vs.teacher_lastfirst,
             vs.yearid,
             vs.academic_year,
+            vs.terms_firstday,
+            vs.terms_lastday,
             vs.region,
             vs.grade_band,
 
@@ -106,25 +114,16 @@ with
             c.school_week_start_date_lead,
 
             ge.assignment_category_code,
+            ge.assignment_category_name,
             ge.assignment_category_term,
             ge.expectation,
-
-            case
-                ge.assignment_category_code,
-                when 'W'
-                then 'Work Habits'
-                when 'F'
-                then 'Formative Mastery'
-                when 'S'
-                then 'Summative Mastery'
-            end as assignment_category_name,
         from valid_sections as vs
         inner join
             {{ ref("int_powerschool__calendar_week") }} as c
-            on vs.cc_schoolid = c.schoolid
-            and vs.cc_yearid = c.yearid
-            and c.week_end_date between ce.cc_dateenrolled and ce.cc_dateleft
-            and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
+            on vs.schoolid = c.schoolid
+            and vs.yearid = c.yearid
+            and c.week_end_date between vs.terms_firstday and vs.terms_lastday
+            and {{ union_dataset_join_clause(left_alias="vs", right_alias="c") }}
         inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on c.academic_year = ge.academic_year
@@ -133,7 +132,7 @@ with
             and c.week_number_quarter = ge.week_number
     ),
 
-    assign_3 as (
+    assignments as (
         select
             t._dbt_source_relation,
             t.yearid,
@@ -147,60 +146,34 @@ with
             t.section_or_period,
             t.sectionid,
             t.sections_dcid,
-            t.teacher_semester_code,
-            t.teacher_quarter,
-            t.audit_yr_week_number,
-            t.audit_qt_week_number,
-            t.audit_start_date,
-            t.audit_end_date,
-            t.audit_due_date,
-            t.expected_teacher_assign_category_code,
-            t.expected_teacher_assign_category_name,
-            t.audit_category_exp_audit_week_ytd,
+            t.semester,  -- teacher_semester_code,
+            t.quarter,  -- teacher_quarter,
+            t.week_number_academic_year,  -- audit_yr_week_number,
+            t.week_number_quarter,  -- audit_qt_week_number,
+            t.week_start_date,  -- audit_start_date,
+            t.week_end_date,  -- audit_end_date,
+            t.school_week_start_date_lead,  -- audit_due_date,
+            t.category_code,  -- expected_teacher_assign_category_code,
+            t.category_name,  -- expected_teacher_assign_category_name,
+            t.expectation,  -- audit_category_exp_audit_week_ytd,
 
-            a.assign_id as teacher_assign_id,
-            a.assign_name as teacher_assign_name,
-            a.assign_score_type as teacher_assign_score_type,
-            a.assign_max_score as teacher_assign_max_score,
-            a.assign_due_date as teacher_assign_due_date,
+            a.assignmentid,  -- as teacher_assign_id,
+            a.name,  -- as teacher_assign_name,
+            a.duedate,  -- as teacher_assign_due_date,
+            a.scoretype,  -- as teacher_assign_score_type,
+            a.totalpointvalue,  -- as teacher_assign_max_score,
 
-            if(a.assign_id is null, 0, 1) as teacher_assign_count,
-
-            if(
-                sum(if(a.assign_id is null, 0, 1)) over (
-                    partition by
-                        t.schoolid,
-                        t.teacher_name,
-                        t.course_number,
-                        t.section_or_period,
-                        t.teacher_quarter,
-                        t.expected_teacher_assign_category_code
-                    order by t.teacher_quarter, t.audit_qt_week_number
-                )
-                >= t.audit_category_exp_audit_week_ytd,
-                0,
-                1
-            ) as teacher_category_assign_count_expected_not_met,
-
-            sum(if(a.assign_id is null, 0, 1)) over (
+            count(a.assignmentid) over (
                 partition by
-                    t.schoolid,
-                    t.teacher_name,
-                    t.course_number,
-                    t.section_or_period,
-                    t.teacher_quarter,
-                    t.expected_teacher_assign_category_code
-                order by t.teacher_quarter, t.audit_qt_week_number
-            ) as teacher_running_total_assign_by_cat,
+                    t._dbt_source_relation, t.sections_dcid t.quarter, t.category_code
+                order by t.quarter asc, t.week_number_quarter asc
+            ) as assignment_count_section_quarter_category_running,
         from expectations as t
         left join
-            {{ ref("int_powerschool__student_assignments") }} as a
-            on t.course_number = a.course_number
-            and t.sections_dcid = a.sections_dcid
-            and t.teacher_name = a.teacher_name
-            and t.teacher_quarter = a.assign_quarter
-            and t.audit_qt_week_number = a.audit_qt_week_number
-            and t.expected_teacher_assign_category_name = a.assign_category
+            {{ ref("int_powerschool__gradebook_assignments") }} as a
+            on t.sections_dcid = a.sectionsdcid
+            and t.assignment_category_name = a.category_name
+            and a.duedate between t.week_start_date and t.week_end_date
             and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
     ),
 
@@ -233,9 +206,14 @@ with
             t.teacher_assign_score_type,
             t.teacher_assign_max_score,
             t.teacher_assign_due_date,
-            t.teacher_assign_count,
-            t.teacher_running_total_assign_by_cat,
-            t.teacher_category_assign_count_expected_not_met,
+            t.assignment_count_section_quarter_category_running,
+
+            if(
+                t.assignment_count_section_quarter_category_running
+                < t.audit_category_exp_audit_week_ytd,
+                true,
+                false
+            ) as teacher_category_assign_count_expected_not_met,
 
             avg(
                 if(
@@ -365,8 +343,7 @@ with
                 1,
                 0
             ) as qt_teacher_s_total_greater_200,
-
-        from assign_3 as t
+        from assignments as t
         left join
             {{ ref("int_powerschool__student_assignments") }} as asg
             on t.academic_year = asg.academic_year
