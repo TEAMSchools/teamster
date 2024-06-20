@@ -1,6 +1,6 @@
 with
     student_unpivot_flags as (
-        select distinct
+        select
             _dbt_source_relation,
             yearid,
             academic_year,
@@ -53,7 +53,7 @@ with
         where student_flag_value = 1
     )
 
-select distinct
+select
     _dbt_source_relation,
     yearid,
     academic_year,
