@@ -41,8 +41,8 @@ select
     mgm.strand_description,
 
     b.value_clean as text_box,
-    u.internal_id_int as employee_number,
-    srh.employee_number as observer_employee_number,
+    coalesce(u.internal_id_int,srh.employee_number) as employee_number,
+    srh.report_to_employee_number as observer_employee_number,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{
@@ -61,13 +61,14 @@ left join
     {{ ref("stg_schoolmint_grow__rubrics__measurement_groups__measurements") }} as mgm
     on m.measurement_id = mgm.measurement_id
 inner join {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
+/* join to get info on non-active SMG users*/
+left join
+    {{ ref("base_people__staff_roster_history") }} as srh
+    on o.teacher_email = srh.google_email
+    and o.observed_at
+    between srh.work_assignment_start_date and srh.work_assignment_end_date
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores__text_boxes") }} as b
     on os.observation_id = b.observation_id
     and os.measurement = b.measurement
-left join
-    {{ ref("base_people__staff_roster_history") }} as srh
-    on o.observer_email = srh.google_email
-    and o.observed_at
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
 where o.is_published and o.archived_at is null
