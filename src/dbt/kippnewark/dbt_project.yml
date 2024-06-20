@@ -55,9 +55,6 @@ models:
   powerschool:
     +schema: powerschool
     +materialized: table
-    intermediate:
-      int_powerschool__gradebook_assignment_scores:
-        +materialized: view
   renlearn:
     +schema: renlearn
     staging:
