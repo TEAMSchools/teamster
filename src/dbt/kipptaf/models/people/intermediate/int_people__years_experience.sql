@@ -209,8 +209,7 @@ select distinct
 
     years_at_kipp as years_at_kipp_total,
 
-    years_at_kipp
-    + coalesce(years_exp_outside_kipp, 0) as years_experience_total,
+    years_at_kipp + coalesce(years_exp_outside_kipp, 0) as years_experience_total,
 
     years_teaching_at_kipp
     + coalesce(years_teaching_in_njfl, 0)
