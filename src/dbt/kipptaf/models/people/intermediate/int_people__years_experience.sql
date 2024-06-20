@@ -64,7 +64,7 @@ with
             assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
             and job_title != 'Intern'
             and assignment_status_effective_date_end
-            > assignment_status_effective_date_start
+            >= assignment_status_effective_date_start
     ),
 
     with_year_scaffold as (
