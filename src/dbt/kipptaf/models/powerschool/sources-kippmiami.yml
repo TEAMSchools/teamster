@@ -723,3 +723,11 @@ sources:
               - kippmiami
               - powerschool
               - stg_powerschool__sced_code_mapping
+      - name: int_powerschool__calendar_week
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - int_powerschool__calendar_week
