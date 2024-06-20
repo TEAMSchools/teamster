@@ -64,6 +64,9 @@ models:
         +enabled: false
       stg_powerschool__studentrace:
         +enabled: false
+    intermediate:
+      int_powerschool__gradebook_assignment_scores:
+        +materialized: view
   renlearn:
     +schema: renlearn
 
