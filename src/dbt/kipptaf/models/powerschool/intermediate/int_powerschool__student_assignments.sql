@@ -108,7 +108,7 @@ with
             )
             and a.duedate >= date({{ var("current_academic_year") }}, 7, 1)
         left join
-            {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
+            {{ ref("stg_powerschool__assignmentscore") }} as s
             on se.students_dcid = s.studentsdcid
             and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="se", right_alias="s") }}
