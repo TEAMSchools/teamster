@@ -338,6 +338,3 @@ left join
     and l.academic_year = pm.academic_year
 where
     l.dupe_check != 'dupe'
-    and l.academic_year = 2023
-    and overall_tier is not null
-    and is_attrition = 1
