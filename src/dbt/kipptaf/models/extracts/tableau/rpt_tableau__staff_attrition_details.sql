@@ -330,11 +330,10 @@ select distinct
     l.original_hire_date,
     l.total_years_teaching,
     pm.overall_tier,
-    pm.overall_score
+    pm.overall_score,
 from ly_deduped as l
 left join
     pm_scores as pm
     on l.employee_number = pm.employee_number
     and l.academic_year = pm.academic_year
-where
-    l.dupe_check != 'dupe'
+where l.dupe_check != 'dupe'
