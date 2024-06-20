@@ -1,38 +1,4 @@
 with
-    assignments as (
-        select
-            _dbt_source_relation,
-            assignmentsectionid,
-            assignmentid,
-            `name` as assignment_name,
-            duedate,
-            scoretype,
-            totalpointvalue,
-            category_id,
-            category_name,
-            sectionsdcid,
-
-            case
-                when category_name = 'Summative Mastery'
-                then 'S'
-                when category_name = 'Work Habits'
-                then 'W'
-                when category_name in ('Formative Assessments', 'Formative Mastery')
-                then 'F'
-            end as assignment_category_code,
-        from {{ ref("int_powerschool__gradebook_assignments") }}
-        where
-            iscountedinfinalgrade = 1
-            and scoretype in ('POINTS', 'PERCENT')
-            and category_name in (
-                'Summative Mastery',
-                'Work Habits',
-                'Formative Assessments',
-                'Formative Mastery'
-            )
-            and duedate >= date(2023, 7, 1)
-    ),
-
     students_assignments as (
         select
             se._dbt_source_relation,
@@ -68,7 +34,7 @@ with
             ge.expectation,
 
             a.assignmentid,
-            a.assignment_name,
+            a.name as assignment_name,
             a.duedate,
             a.scoretype,
             a.totalpointvalue,
@@ -122,16 +88,25 @@ with
         inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on c.academic_year = ge.academic_year
-            and c.region = ge.region
             and c.quarter = ge.quarter
             and c.week_number_quarter = ge.week_number
+            and c.region = ge.region
         left join
-            assignments as a
+            {{ ref("int_powerschool__gradebook_assignments") }} as a
             on ce.sections_dcid = a.sectionsdcid
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
-            and ge.assignment_category_code = a.assignment_category_code
+            and ge.assignment_category_code = a.category_code
             and a.duedate between c.week_start_date and c.week_end_date
             and {{ union_dataset_join_clause(left_alias="c", right_alias="a") }}
+            and a.iscountedinfinalgrade = 1
+            and a.scoretype in ('POINTS', 'PERCENT')
+            and a.category_name in (
+                'Summative Mastery',
+                'Work Habits',
+                'Formative Assessments',
+                'Formative Mastery'
+            )
+            and a.duedate >= date({{ var("current_academic_year") }}, 7, 1)
         left join
             {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
             on se.students_dcid = s.studentsdcid
