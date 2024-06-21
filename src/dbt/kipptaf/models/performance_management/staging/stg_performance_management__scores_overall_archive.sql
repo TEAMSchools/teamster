@@ -1,9 +1,7 @@
-/*check downstream*/ 
-
 select
     employee_number,
     academic_year,
-    pm_term as form_term,
+    pm_term as `round`,
     etr_score,
     so_score,
     overall_score,

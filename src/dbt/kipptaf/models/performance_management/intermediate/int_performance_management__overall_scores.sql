@@ -4,7 +4,7 @@ with
             employee_number,
             observation_id,
             academic_year,
-            form_term,
+            `round`,
             etr_score,
             so_score,
             overall_score,
@@ -20,7 +20,7 @@ with
             employee_number,
             observation_id,
             academic_year,
-            form_term,
+            `round`,
             etr_score,
             so_score,
             case
@@ -57,11 +57,11 @@ with
                 then 1
             end as overall_tier,
             case
-                when form_term = 'PM1'
+                when `round` = 'PM1'
                 then date(academic_year, 10, 1)
-                when form_term = 'PM2'
+                when `round` = 'PM2'
                 then date(academic_year + 1, 1, 1)
-                when form_term = 'PM3'
+                when `round` = 'PM3'
                 then date(academic_year + 1, 3, 1)
             end as eval_date,
         from {{ ref("int_performance_management__observation_details") }}
@@ -73,7 +73,7 @@ with
             employee_number,
             null as observation_id,
             academic_year,
-            'PM4' as form_term,
+            'PM4' as `round`,
             avg(etr_score) as etr_score,
             avg(so_score) as so_score,
             avg(overall_score) as overall_score,
@@ -111,7 +111,7 @@ with
         from {{ ref("int_performance_management__observation_details") }}
         where
             form_type = 'PM'
-            and form_term in ('PM2', 'PM3')
+            and `round` in ('PM2', 'PM3')
             and rn_submission = 1
             and overall_score is not null
             and academic_year >= 2023
@@ -122,7 +122,7 @@ select
     employee_number,
     observation_id,
     academic_year,
-    form_term as pm_term,
+    `round` as pm_term,
     etr_score,
     so_score,
     overall_score,

@@ -94,43 +94,43 @@ union all
 
 /* Teacher Performance Management 2022 and prior */
 select
-    os.observation_id,
-    os.form_long_name as rubric_name,
-    os.form_term as `round`,
-    os.overall_score as observation_score,
+    soa.observation_id,
+    'Coaching Tool: Coach ETR and Reflection' as rubric_name,
+    soa.`round`,
+    soa.overall_score as observation_score,
     case
-        when ds.score_type = 'ETR'
-        then os.etr_score
-        when ds.score_type = 'S&O'
-        then os.so_score
+        when sda.score_type = 'ETR'
+        then soa.etr_score
+        when sda.score_type = 'S&O'
+        then soa.so_score
     end as strand_score,
     null as glows,
     null as grows,
-    ds.observed_at,
-    ds.academic_year,
+    sda.observed_at,
+    sda.academic_year,
     true as locked,
     'Teacher Performance Management' as observation_type,
     'PM' as observation_type_abbreviation,
-    ds.row_score_value as row_score,
-    ds.measurement_name,
+    sda.row_score,
+    sda.measurement_name,
     case
-        when ds.score_type = 'ETR'
+        when sda.score_type = 'ETR'
         then 'Excellent Teaching Rubric'
-        when ds.score_type = 'S&O'
+        when sda.score_type = 'S&O'
         then 'Self & Others: Manager Feedback'
     end as strand_name,  /* case for if etr or so row as strand_name*/
     null as strand_description,
     null as text_box,
-    os.employee_number,
-    ds.observer_employee_number,
+    soa.employee_number,
+    sda.observer_employee_number,
 
-from {{ ref("stg_performance_management__scores_overall_archive") }} as os
+from {{ ref("stg_performance_management__scores_overall_archive") }} as soa
 inner join
-    {{ ref("stg_performance_management__scores_detail_archive") }} as ds
-    on os.employee_number = ds.employee_number
-    and os.academic_year = ds.academic_year
-    and os.form_term = ds.form_term
+    {{ ref("stg_performance_management__scores_detail_archive") }} as sda
+    on soa.employee_number = sda.employee_number
+    and soa.academic_year = sda.academic_year
+    and soa.`round` = sda.`round`
 left join
     {{ ref("base_people__staff_roster") }} as sr
-    on ds.observer_employee_number = sr.employee_number
-where row_score_value is not null
+    on sda.observer_employee_number = sr.employee_number
+where row_score is not null
