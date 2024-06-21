@@ -47,7 +47,7 @@ with
             ktc.contact_id as salesforce_id,
             ktc.ktc_cohort,
 
-            hos.head_of_school_preferred_name_lastfirst as hos,
+            hos.head_of_school_preferred_name_lastfirst as head_of_school,  -- hos
 
             'Local' as roster_type,
 
@@ -95,23 +95,34 @@ with
             and sa.specprog_name = 'Student Athlete'
         left join
             {{ ref("int_powerschool__ada") }} as ada
-            on enr.yearid = ada.yearid
-            and enr.studentid = ada.studentid
+            on enr.studentid = ada.studentid
+            and enr.yearid = ada.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="ada") }}
         where
-            enr.rn_year = 1
-            and enr.academic_year = {{ var("current_academic_year") }}
+            enr.academic_year = {{ var("current_academic_year") }}
+            and enr.rn_year = 1
             and not enr.is_out_of_district
             and enr.grade_level != 99
     ),
 
-    y1_roster as (
+    y1_historical as (
         select
             tr._dbt_source_relation,
             tr.studentid,
             tr.academic_year,
             tr.yearid,
+            tr.schoolname,
             tr.grade_level,
+            tr.course_name,
+            tr.sectionid,
+            tr.storecode,
+            tr.termid,
+            tr.percent as y1_course_final_percent_grade_adjusted,
+            tr.grade as y1_course_final_letter_grade_adjusted,
+            tr.earnedcrhrs as y1_course_final_earned_credits,
+            tr.potentialcrhrs as y1_course_final_potential_credit_hours,
+            tr.gpa_points as y1_course_final_grade_points,
+            tr.excludefromgpa as exclude_from_gpa,
             tr.is_transfer_grade,
 
             'Q#' as term,
@@ -177,90 +188,7 @@ with
         where
             tr.academic_year = {{ var("current_academic_year") }}
             and tr.storecode = 'Y1'
-    ),
-
-    students as (
-        select
-            roster_type,
-            _dbt_source_relation,
-            academic_year,
-            yearid,
-            region,
-            school_level,
-            schoolid,
-            school_abbreviation,
-            studentid,
-            student_number,
-            lastfirst,
-            gender,
-            enroll_status,
-            grade_level,
-            ethnicity,
-            cohort,
-            year_in_school,
-            advisor_lastfirst,
-            is_out_of_district,
-            lep_status,
-            is_504,
-            is_self_contained,
-            lunch_status,
-            year_in_network,
-            is_retained_year,
-            is_retained_ever,
-            rn_undergrad,
-            term,
-            semester,
-            salesforce_id,
-            ktc_cohort,
-            hos,
-            advisory,
-            iep_status,
-            is_counseling_services,
-            is_student_athlete,
-            ada,
-        from student_roster
-
-        union all
-
-        select
-            roster_type,
-            _dbt_source_relation,
-            academic_year,
-            yearid,
-            region,
-            school_level,
-            schoolid,
-            school_abbreviation,
-            studentid,
-            student_number,
-            lastfirst,
-            gender,
-            enroll_status,
-            grade_level,
-            ethnicity,
-            cohort,
-            year_in_school,
-            advisor_lastfirst,
-            is_out_of_district,
-            lep_status,
-            is_504,
-            is_self_contained,
-            lunch_status,
-            year_in_network,
-            is_retained_year,
-            is_retained_ever,
-            rn_undergrad,
-            term,
-            semester,
-            salesforce_id,
-            ktc_cohort,
-            hos,
-            advisory,
-            iep_status,
-            is_counseling_services,
-            is_student_athlete,
-            ada,
-        from transfer_roster
+            and tr.course_number not in ('{{ exempt_courses | join("', '") }}')
     ),
 
     section_teacher as (
@@ -278,15 +206,12 @@ with
             m.courses_credittype as credit_type,
             m.courses_course_name as course_name,
             m.teachernumber as teacher_number,
-            m.teacher_lastfirst as teacher_name,
+            m.teacher_lastfirst,  -- as teacher_name,
             m.courses_excludefromgpa as exclude_from_gpa,
 
             f.tutoring_nj,
             f.nj_student_tier,
-
-            term,
         from {{ ref("base_powerschool__course_enrollments") }} as m
-        cross join unnest({{ term }}) as term
         left join
             {{ ref("int_reporting__student_filters") }} as f
             on m.cc_studentid = f.studentid
@@ -337,7 +262,7 @@ with
             ) as category_quarter_average_all_courses
         from {{ ref("int_powerschool__category_grades") }}
         where
-            yearid + 1990 = {{ var("current_academic_year") }}
+            yearid = {{ var("current_academic_year") }} - 1990
             and not is_dropped_section
             and storecode_type not in ('Q', 'H')
             and course_number not in ('{{ exempt_courses | join("', '") }}')
@@ -360,35 +285,30 @@ with
             fg_percent_adjusted as quarter_course_in_progress_percent_grade_adjusted,
             fg_letter_grade_adjusted
             as quarter_course_in_progress_letter_grade_adjusted,
-
             sg_percent as quarter_course_final_percent_grade,
             sg_letter_grade as quarter_course_final_letter_grade,
             sg_grade_points as quarter_course_final_grade_points,
-
             term_percent_grade_adjusted as quarter_course_percent_grade_that_matters,
             term_letter_grade_adjusted as quarter_course_letter_grade_that_matters,
             term_grade_points as quarter_course_grade_points_that_matters,
-
             need_60,
             need_70,
             need_80,
             need_90,
-
             y1_percent_grade as y1_course_in_progress_percent_grade,
             y1_percent_grade_adjusted as y1_course_in_progress_percent_grade_adjusted,
             y1_letter_grade as y1_course_in_progress_letter_grade,
             y1_letter_grade_adjusted as y1_course_in_progress_letter_grade_adjusted,
             y1_grade_points as y1_course_in_progress_grade_points,
             y1_grade_points_unweighted as y1_course_in_progress_grade_points_unweighted,
-
             citizenship as quarter_citizenship,
             comment_value as quarter_comment_value,
         from {{ ref("base_powerschool__final_grades") }}
         where
-            not is_dropped_section
-            and termbin_start_date <= current_date('{{ var("local_timezone") }}')
-            and academic_year = {{ var("current_academic_year") }}
+            academic_year = {{ var("current_academic_year") }}
             and course_number not in ('{{ exempt_courses | join("', '") }}')
+            and not is_dropped_section
+            and termbin_start_date <= current_date('{{ var("local_timezone") }}')
 
         union all
 
@@ -400,13 +320,14 @@ with
             course_number,
             sectionid,
             termid,
+
             'Y1' as term,
+
             null as quarter_course_in_progress_percent_grade,
             null as quarter_course_in_progress_letter_grade,
             null as quarter_course_in_progress_grade_points,
             null as quarter_course_in_progress_percent_grade_adjusted,
             null as quarter_course_in_progress_letter_grade_adjusted,
-
             null as quarter_course_final_percent_grade,
             null as quarter_course_final_letter_grade,
             null as quarter_course_final_grade_points,
@@ -414,12 +335,10 @@ with
             y1_percent_grade_adjusted as quarter_course_percent_grade_that_matters,
             y1_letter_grade_adjusted as quarter_course_letter_grade_that_matters,
             y1_grade_points as quarter_course_grade_points_that_matters,
-
             need_60,
             need_70,
             need_80,
             need_90,
-
             y1_percent_grade as y1_course_in_progress_percent_grade,
             y1_percent_grade_adjusted as y1_course_in_progress_percent_grade_adjusted,
             y1_letter_grade as y1_course_in_progress_letter_grade,
@@ -431,58 +350,17 @@ with
             null as quarter_comment_value,
         from {{ ref("base_powerschool__final_grades") }}
         where
-            not is_dropped_section
-            and termbin_is_current
-            and academic_year = {{ var("current_academic_year") }}
-            and course_number not in ('{{ exempt_courses | join("', '") }}')
-    ),
-
-    final_y1_historical as (
-        select
-            _dbt_source_relation,
-            academic_year,
-            yearid,
-            termid,
-            schoolname,
-            course_name,
-            studentid,
-            grade_level,
-            storecode,
-            excludefromgpa as exclude_from_gpa,
-            percent as y1_course_final_percent_grade_adjusted,
-            grade as y1_course_final_letter_grade_adjusted,
-            earnedcrhrs as y1_course_final_earned_credits,
-            potentialcrhrs as y1_course_final_potential_credit_hours,
-            gpa_points as y1_course_final_grade_points,
-            sectionid,
-
-            'Q#' as term,
-            'S#' as semester,
-
-            if(is_transfer_grade, 'Transfer', credit_type) as credit_type,
-            if(is_transfer_grade, 'Transfer', teacher_name) as teacher_name,
-            if(
-                is_transfer_grade,
-                concat(
-                    'T',
-                    upper(regexp_extract(_dbt_source_relation, r'(kipp\w+)_')),
-                    dcid
-                ),
-                course_number
-            ) as course_number,
-        from {{ ref("stg_powerschool__storedgrades") }}
-        where
             academic_year = {{ var("current_academic_year") }}
-            and storecode = 'Y1'
+            and termbin_is_current
+            and not is_dropped_section
             and course_number not in ('{{ exempt_courses | join("', '") }}')
     ),
 
     gpa_analysis as (
         select
-            sr._dbt_source_relation,
-            sr.yearid,
-            sr.studentid,
-
+            gt._dbt_source_relation,
+            gt.studentid,
+            gt.yearid,
             gt.semester as gpa_semester_code,
             gt.term_name as gpa_quarter,
             gt.is_current as gpa_current_quarter,
@@ -500,19 +378,12 @@ with
             gc.cumulative_y1_gpa_projected_s1_unweighted
             as gpa_cumulative_y1_gpa_projected_s1_unweighted,
             gc.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
-        from {{ ref("base_powerschool__student_enrollments") }} as sr
-        inner join
-            {{ ref("int_powerschool__gpa_term") }} as gt
-            on sr.studentid = gt.studentid
-            and sr.yearid = gt.yearid
-            and sr.schoolid = gt.schoolid
-            and {{ union_dataset_join_clause(left_alias="sr", right_alias="gt") }}
+        from {{ ref("int_powerschool__gpa_term") }} as gt
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on sr.studentid = gc.studentid
-            and sr.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="sr", right_alias="gc") }}
-        where sr.school_level in ('MS', 'HS') and sr.rn_year = 1
+            on gt.studentid = gc.studentid
+            and gt.schoolid = gc.schoolid
+            and {{ union_dataset_join_clause(left_alias="gt", right_alias="gc") }}
     ),
 
     final_roster as (
@@ -841,6 +712,8 @@ with
     )
 
 select
+    _dbt_source_relation,
+    roster_type,
     studentid,
     student_number,
     salesforce_id,
@@ -848,103 +721,101 @@ select
     enroll_status,
     cohort,
     ktc_cohort,
-    ethnicity,
     gender,
+    ethnicity,
 
-    roster_type,
     academic_year,
     region,
     school_level,
     schoolid,
     school,
     grade_level,
-    advisor_name,
     advisory,
-    rn_undergrad,
-    year_in_network,
-    year_in_school,
+    advisor_name,
     hos,
+    year_in_school,
+    year_in_network,
+    rn_undergrad,
+    is_retained_year,
+    is_retained_ever,
 
     lunch_status,
     iep_status,
     lep_status,
     is_504,
+    is_pathways,
     is_counseling_services,
     is_student_athlete,
-    is_retained_ever,
-    is_retained_year,
-    is_pathways,
-    nj_student_tier,
     tutoring_nj,
+    nj_student_tier,
 
-    ada_above_or_at_80,
     ada,
+    ada_above_or_at_80,
+
+    `quarter`,
+    semester,
+    quarter_start_date,
+    quarter_end_date,
+    is_current_quarter,
 
     credit_type,
     course_number,
     course_name,
     exclude_from_gpa,
-    sections_dcid,
     sectionid,
+    sections_dcid,
     section_number,
     external_expression,
     teacher_number,
     teacher_name,
 
-    term,
-    semester,
-    is_current_quarter,
-
     category_name_code,
-    category_quarter_average_all_courses,
     category_quarter_code,
     category_quarter_percent_grade,
-    category_y1_percent_grade_current,
     category_y1_percent_grade_running,
+    category_y1_percent_grade_current,
+    category_quarter_average_all_courses,
 
-    gpa_core_cumulative_y1_gpa,
-    gpa_cumulative_y1_gpa_projected_s1_unweighted,
-    gpa_cumulative_y1_gpa_projected_s1,
-    gpa_cumulative_y1_gpa_projected,
-    gpa_cumulative_y1_gpa_unweighted,
-    gpa_cumulative_y1_gpa,
-    gpa_for_quarter,
-    gpa_n_failing_y1,
-    gpa_semester,
-    gpa_total_credit_hours,
-    gpa_y1_unweighted,
-    gpa_y1,
-
+    quarter_course_in_progress_percent_grade,
+    quarter_course_in_progress_letter_grade,
+    quarter_course_in_progress_grade_points,
+    quarter_course_in_progress_percent_grade_adjusted,
+    quarter_course_in_progress_letter_grade_adjusted,
+    quarter_course_final_percent_grade,
+    quarter_course_final_letter_grade,
+    quarter_course_final_grade_points,
+    quarter_course_percent_grade_that_matters,
+    quarter_course_letter_grade_that_matters,
+    quarter_course_grade_points_that_matters,
     need_60,
     need_70,
     need_80,
     need_90,
-
     quarter_citizenship,
     quarter_comment_value,
-    quarter_course_final_grade_points,
-    quarter_course_final_letter_grade,
-    quarter_course_final_percent_grade,
-    quarter_course_grade_points_that_matters,
-    quarter_course_in_progress_grade_points,
-    quarter_course_in_progress_letter_grade_adjusted,
-    quarter_course_in_progress_letter_grade,
-    quarter_course_in_progress_percent_grade_adjusted,
-    quarter_course_in_progress_percent_grade,
-    quarter_course_letter_grade_that_matters,
-    quarter_course_percent_grade_that_matters,
-    quarter_end_date,
-    quarter_start_date,
 
-    y1_course_final_earned_credits,
-    y1_course_final_grade_points,
-    y1_course_final_letter_grade_adjusted,
-    y1_course_final_percent_grade_adjusted,
-    y1_course_final_potential_credit_hours,
-    y1_course_in_progress_grade_points_unweighted,
-    y1_course_in_progress_grade_points,
-    y1_course_in_progress_letter_grade_adjusted,
-    y1_course_in_progress_letter_grade,
-    y1_course_in_progress_percent_grade_adjusted,
     y1_course_in_progress_percent_grade,
+    y1_course_in_progress_percent_grade_adjusted,
+    y1_course_in_progress_letter_grade,
+    y1_course_in_progress_letter_grade_adjusted,
+    y1_course_in_progress_grade_points,
+    y1_course_in_progress_grade_points_unweighted,
+    y1_course_final_percent_grade_adjusted,
+    y1_course_final_letter_grade_adjusted,
+    y1_course_final_earned_credits,
+    y1_course_final_potential_credit_hours,
+    y1_course_final_grade_points,
+
+    gpa_for_quarter,
+    gpa_semester,
+    gpa_y1,
+    gpa_y1_unweighted,
+    gpa_total_credit_hours,
+    gpa_n_failing_y1,
+    gpa_cumulative_y1_gpa,
+    gpa_cumulative_y1_gpa_unweighted,
+    gpa_cumulative_y1_gpa_projected,
+    gpa_cumulative_y1_gpa_projected_s1,
+    gpa_cumulative_y1_gpa_projected_s1_unweighted,
+    gpa_core_cumulative_y1_gpa,
 from final_roster
