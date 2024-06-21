@@ -133,4 +133,4 @@ inner join
 left join
     {{ ref("base_people__staff_roster") }} as sr
     on sda.observer_employee_number = sr.employee_number
-where row_score is not null
+where sda.row_score is not null

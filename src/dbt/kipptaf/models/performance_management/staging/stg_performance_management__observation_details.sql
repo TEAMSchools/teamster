@@ -10,7 +10,6 @@ select
     grows,
     measurement_name,
     observation_id,
-    safe_cast(observed_at as date) as observed_at,
     observer_employee_number,
     overall_score as observation_score,
     rn_submission,
@@ -21,6 +20,7 @@ select
     score_measurement_type as strand_name,
     teacher_id,
     text_box,
+    safe_cast(observed_at as date) as observed_at,
 
 from
     {{
