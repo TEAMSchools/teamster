@@ -1,7 +1,7 @@
 select
     subject_employee_number as employee_number,
     academic_year,
-    pm_term as `round`,
+    pm_term as code,
     score_type,
     observer_employee_number,
     measurement_name,

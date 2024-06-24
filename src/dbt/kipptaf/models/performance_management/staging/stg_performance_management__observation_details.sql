@@ -4,7 +4,7 @@ select
     etr_score,
     so_score,
     form_long_name as rubric_name,
-    form_term as `round`,
+    form_term as code,
     form_type as observation_type_abbreviation,
     glows,
     grows,

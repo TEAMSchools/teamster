@@ -1,17 +1,3 @@
--- with
---     final_tier as (
---         select
---             employee_number,
---             academic_year,
---             overall_score as final_score,
---             overall_tier as final_tier,
---             pm_term,
---         from {{ ref("int_performance_management__overall_scores") }}
---         where pm_term = 'PM4'
-
---     )
-
-/* current academic year results + tracking scaffold */
 select
     sr.employee_number,
     sr.sam_account_name,
@@ -34,31 +20,8 @@ select
     rt.end_date,
 
     od.observation_id,
-    od.rubric_name,
-    od.observation_score,
-    od.strand_score,
-    od.glows,
-    od.grows,
-    od.observed_at,
-    od.academic_year,
-    od.locked,
-    od.observation_type,
-    od.row_score,
-    od.measurement_name,
-    od.strand_name,
-    od.strand_description,
-    od.text_box,
-    od.employee_number,
-    od.observer_employee_number,
-
-    os.etr_tier,
-    os.so_tier,
-    os.overall_tier,
 
     sr2.preferred_name_lastfirst as observer_name,
-
-    -- ft.final_score,
-    -- ft.final_tier,
 
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
@@ -73,15 +36,5 @@ left join
     and rt.type = od.observation_type_abbreviation
     and od.observed_at between rt.start_date and rt.end_date
 left join
-    {{ ref("int_performance_management__overall_scores") }} as os
-    on od.observation_id = os.observation_id
-left join
     {{ ref("base_people__staff_roster") }} as sr2
     on od.observer_employee_number = sr2.employee_number
--- left join
---     final_tier as ft
---     on sr.employee_number = ft.employee_number
---     and od.academic_year = ft.academic_year
---     and rt.type = 'PM'
-where
-    od.observation_id is not null

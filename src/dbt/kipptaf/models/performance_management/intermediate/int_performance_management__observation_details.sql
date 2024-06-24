@@ -2,7 +2,7 @@
 select
     o.observation_id,
     o.rubric_name,
-    null as `round`,
+    null as code,
     o.score as observation_score,
     o.score_averaged_by_strand as strand_score,
     o.list_two_column_a_str as glows,
@@ -39,7 +39,7 @@ left join
     on m.measurement_id = mgm.measurement_id
     and o.rubric_id = mgm.rubric_id
 inner join {{ ref("stg_schoolmint_grow__users") }} as u on o.teacher_id = u.user_id
-/* join to get info on non-active SMG users*/
+/* join to get info on non-active SMG users */
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
     on o.teacher_email = srh.google_email
@@ -60,7 +60,7 @@ union all
 select
     od.observation_id,
     od.rubric_name,
-    od.`round`,
+    od.code,
     od.observation_score,
     case
         when od.strand_name = 'etr'
@@ -96,7 +96,7 @@ union all
 select
     soa.observation_id,
     'Coaching Tool: Coach ETR and Reflection' as rubric_name,
-    soa.`round`,
+    soa.code,
     soa.overall_score as observation_score,
     case
         when sda.score_type = 'ETR'
@@ -118,7 +118,7 @@ select
         then 'Excellent Teaching Rubric'
         when sda.score_type = 'S&O'
         then 'Self & Others: Manager Feedback'
-    end as strand_name,  /* case for if etr or so row as strand_name*/
+    end as strand_name,  
     null as strand_description,
     null as text_box,
     soa.employee_number,
@@ -129,8 +129,8 @@ inner join
     {{ ref("stg_performance_management__scores_detail_archive") }} as sda
     on soa.employee_number = sda.employee_number
     and soa.academic_year = sda.academic_year
-    and soa.`round` = sda.`round`
+    and soa.code = sda.code
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("base_people__staff_roster_history") }} as sr
     on sda.observer_employee_number = sr.employee_number
 where sda.row_score is not null

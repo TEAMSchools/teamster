@@ -1,7 +1,7 @@
 select
     employee_number,
     academic_year,
-    pm_term as `round`,
+    pm_term as code,
     etr_score,
     so_score,
     overall_score,
