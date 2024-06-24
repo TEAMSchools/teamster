@@ -289,7 +289,8 @@ with
                     'Private 2 yr',
                     'Non-profit',
                     'Private',
-                    'NonProfit'
+                    'NonProfit',
+                    'Other'
                 ]
             ) as application_account_type
         union all
