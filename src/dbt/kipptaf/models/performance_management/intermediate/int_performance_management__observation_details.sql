@@ -50,4 +50,7 @@ left join
     on o.observer_email = srh.google_email
     and o.observed_at
     between srho.work_assignment_start_date and srho.work_assignment_end_date
-where o.academic_year = {{ var("current_academic_year") }}
+where
+    o.academic_year = {{ var("current_academic_year") }}
+    and o.is_published
+    and o.archived_at is null
