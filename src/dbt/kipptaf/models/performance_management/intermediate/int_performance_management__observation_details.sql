@@ -1,5 +1,4 @@
 /* current academic year */
-
 select
     o.observation_id,
     o.rubric_name,
@@ -59,27 +58,38 @@ where
     and o.is_published
     and o.archived_at is null
 
--- union all 
+union all
 
--- /* past academic years */
+-- /* past academic years (Performance Management only) */
+select
+    observation_id,
+    form_long_name as rubric_name,
+    overall_score as observation_score,
+    case
+        when od.strand_name = 'etr'
+        then od.etr_score
+        when od.strand_name = 's&o'
+        then od.so_score
+    end as strand_score,
+    glows,
+    grows,
+    true as locked,
+    observed_at,
+    _dagster_partition_academic_year as academic_year,
+    'Teacher Performance Management' as observation_type,
+    'PM' as observation_type_abbreviation,
+    _dagster_partition_term as code,
+    'Coaching Tool: Coach ETR and Reflection' as name,
+    row_score_value as row_score,
+    measurement_name,
+    case
+        when od.strand_name = 'etr'
+        then 'Excellent Teaching Rubric'
+        when od.strand_name = 's&o'
+        then 'Self & Others: Manager Feedback'
+    end as strand_name,
+    text_box,
+    employee_number,
+    observer_employee_number,
 
--- select
---     o.observation_id,
---     o.rubric_name,
---     o.score as observation_score,
---     o.score_averaged_by_strand as strand_score,
---     o.glows,
---     o.grows,
---     o.locked,
---     o.observed_at_date_local as observed_at,
---     o.academic_year,
---     gt.name as observation_type,
---     gt.abbreviation as observation_type_abbreviation,
---     os.value_score as row_score,
---     m.name as measurement_name,
---     mgm.strand_name,
---     tb.value_clean as text_box,
---     srh.employee_number,
---     srho.employee_number as observer_employee_number,
-
---     from {{ ref('stg_performance_management__observation_details') }}
+from {{ ref("stg_performance_management__observation_details") }}
