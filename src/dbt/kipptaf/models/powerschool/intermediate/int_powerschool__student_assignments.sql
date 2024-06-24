@@ -5,6 +5,7 @@ with
             se.student_number,
             se.studentid,
             se.students_dcid,
+
             se.academic_year,
             se.yearid,
             se.region,
