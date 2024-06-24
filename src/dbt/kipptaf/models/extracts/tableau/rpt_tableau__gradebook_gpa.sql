@@ -9,7 +9,9 @@ with
             date2 as term_end_date,
 
             if(
-                current_date('America/New_York') between date1 and date2, true, false
+                current_date('{{ var("local_timezone") }}') between date1 and date2,
+                true,
+                false
             ) as is_current_term,
 
             case
@@ -95,12 +97,14 @@ with
             gt.total_credit_hours,
             gt.n_failing_y1,
 
+            concat(enr.region, enr.school_level) as region_school_level,
+
+            if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
             if(
                 enr.school_level in ('ES', 'MS'),
                 enr.advisory_name,
                 enr.advisor_lastfirst
             ) as advisory,
-            if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             if(sp.studentid is not null, 1, null) as is_counseling_services,
 
@@ -164,15 +168,16 @@ with
             m.cc_yearid as yearid,
             m.cc_course_number as course_number,
             m.cc_sectionid as sectionid,
+            m.cc_dateenrolled as date_enrolled,
             m.sections_dcid,
             m.sections_section_number as section_number,
             m.sections_external_expression as external_expression,
             m.sections_termid as termid,
             m.courses_credittype as credit_type,
             m.courses_course_name as course_name,
+            m.courses_excludefromgpa as exclude_from_gpa,
             m.teachernumber as teacher_number,
             m.teacher_lastfirst,
-            m.courses_excludefromgpa as exclude_from_gpa,
 
             f.tutoring_nj,
             f.nj_student_tier,
@@ -397,6 +402,7 @@ select
     s.advisory,
     s.advisor_lastfirst as advisor_name,
     s.head_of_school as hos,
+    s.region_school_level,
 
     s.year_in_school,
     s.year_in_network,
@@ -436,16 +442,17 @@ select
     as gpa_cumulative_y1_gpa_projected_s1_unweighted,
     s.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
 
-    ce.course_number,
-    ce.course_name,
     ce.sectionid,
     ce.sections_dcid,
     ce.section_number,
     ce.external_expression,
+    ce.date_enrolled,
     ce.credit_type,
+    ce.course_number,
+    ce.course_name,
+    ce.exclude_from_gpa,
     ce.teacher_number,
     ce.teacher_lastfirst as teacher_name,
-    ce.exclude_from_gpa,
     ce.tutoring_nj,
     ce.nj_student_tier,
 
@@ -548,6 +555,7 @@ select
     e1.advisory,
     e1.advisor_lastfirst as advisor_name,
     e1.head_of_school as hos,
+    e1.region_school_level,
 
     e1.year_in_school,
     e1.year_in_network,
@@ -587,20 +595,20 @@ select
     as gpa_cumulative_y1_gpa_projected_s1_unweighted,
     e1.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
 
-    y1h.course_number,
-    y1h.course_name,
-
     null as sectionid,
     null as sections_dcid,
     null as section_number,
     null as external_expression,
+    null as date_enrolled,
 
     y1h.credit_type,
+    y1h.course_number,
+    y1h.course_name,
+    y1h.excludefromgpa as exclude_from_gpa,
 
     null as teacher_number,
 
     y1h.teacher_name,
-    y1h.excludefromgpa as exclude_from_gpa,
 
     null as tutoring_nj,
     null as nj_student_tier,

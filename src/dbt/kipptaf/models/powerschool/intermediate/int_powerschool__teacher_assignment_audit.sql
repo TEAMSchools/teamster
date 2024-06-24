@@ -2,7 +2,7 @@ with
     assignments as (
         select
             sec._dbt_source_relation,
-            sec.sections_id as section_id,
+            sec.sections_id as sectionid,
             sec.teachernumber as teacher_number,
             sec.terms_yearid as yearid,
 
@@ -18,6 +18,7 @@ with
 
             ge.assignment_category_code,
             ge.assignment_category_name,
+            ge.assignment_category_term,
             ge.expectation,
 
             a.assignmentid,
@@ -126,24 +127,25 @@ with
 
 select
     _dbt_source_relation,
-    section_id as sectionid,
+    sectionid,
     teacher_number,
-    yearid,
-    `quarter` as teacher_quarter,
-    semester as teacher_semester_code,
-    week_number_academic_year as audit_yr_week_number,
-    week_number_quarter as audit_qt_week_number,
-    week_start_date as audit_start_date,
-    week_end_date as audit_end_date,
-    school_week_start_date_lead as audit_due_date,
-    assignment_category_code as expected_teacher_assign_category_code,
-    assignment_category_name as expected_teacher_assign_category_name,
-    expectation as audit_category_exp_audit_week_ytd,
-    assignmentid as teacher_assign_id,
-    assignment_name as teacher_assign_name,
-    scoretype as teacher_assign_score_type,
-    totalpointvalue as teacher_assign_max_score,
-    duedate as teacher_assign_due_date,
+    `quarter`,
+    semester,
+    week_number_academic_year,
+    week_number_quarter,
+    week_start_date,
+    week_end_date,
+    school_week_start_date_lead,
+    assignment_category_code,
+    assignment_category_name,
+    assignment_category_term,
+    expectation,
+    assignmentid,
+    assignment_name,
+    scoretype,
+    totalpointvalue,
+    duedate,
+
     assignment_count_section_quarter_category_running_week
     as teacher_running_total_assign_by_cat,
     avg_expected_scored_percent
@@ -178,11 +180,11 @@ select
 
     if(
         n_expected >= 1 and total_totalpointvalue_section_quarter < 200, true, false
-    ) as qt_teacher_s_total_less_200,
+    ) as qt_teacher_total_less_200,
 
     if(
         n_expected = 1 and total_totalpointvalue_section_quarter > 200, true, false
-    ) as qt_teacher_s_total_greater_200,
+    ) as qt_teacher_total_greater_200,
 
     round(
         safe_divide(
