@@ -50,7 +50,7 @@ left join
 /* join on google email and date for observer_employee_number*/
 left join
     {{ ref("base_people__staff_roster_history") }} as srho
-    on o.observer_email = srh.google_email
+    on o.observer_email = srho.google_email
     and o.observed_at
     between srho.work_assignment_start_date and srho.work_assignment_end_date
 where
