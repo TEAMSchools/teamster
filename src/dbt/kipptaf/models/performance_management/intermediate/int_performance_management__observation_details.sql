@@ -17,8 +17,8 @@ select
     m.name as measurement_name,
     mgm.strand_name,
     tb.value_clean as text_box,
-    srh.employee_number,
-    srho.employee_number as observer_employee_number,
+    sr.employee_number,
+    sr2.employee_number as observer_employee_number,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gt
@@ -43,16 +43,12 @@ left join
     and os.measurement = tb.measurement
 /* join on google email and date for employee_number*/
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
-    on o.teacher_email = srh.google_email
-    and o.observed_at
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    {{ ref("base_people__staff_roster") }} as sr
+    on o.teacher_email = sr.google_email
 /* join on google email and date for observer_employee_number*/
 left join
-    {{ ref("base_people__staff_roster_history") }} as srho
-    on o.observer_email = srho.google_email
-    and o.observed_at
-    between srho.work_assignment_start_date and srho.work_assignment_end_date
+    {{ ref("base_people__staff_roster") }} as sr2
+    on o.observer_email = sr2.google_email
 where
     o.academic_year = {{ var("current_academic_year") }}
     and o.is_published
