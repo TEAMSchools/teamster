@@ -23,6 +23,6 @@ left join
     on o.observation_type = gt.tag_id
 left join
     {{ ref("stg_reporting__terms") }} as t
-    on o.abbreviation = t.type
+    on gt.abbreviation = t.type
     and o.observed_at_date_local between t.start_date and t.end_date
-where rubric_name like '%Coaching Tool%'
+where o.academic_year = {{ var('current_academic_year') }}
