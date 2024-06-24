@@ -1,7 +1,0 @@
-assets:
-  - asset_name: accrual_reporting_period_summary
-    report_name: AccrualReportingPeriodSummary
-    symbolic_ids:
-      - Today
-    hyperfind: All Home
-    partition_start_date: "2023-05-17"
