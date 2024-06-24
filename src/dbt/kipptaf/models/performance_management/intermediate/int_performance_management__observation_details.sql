@@ -2,7 +2,6 @@
 select
     o.observation_id,
     o.rubric_name,
-    null as code,
     o.score as observation_score,
     o.score_averaged_by_strand as strand_score,
     o.list_two_column_a_str as glows,
@@ -20,7 +19,12 @@ select
     coalesce(u.internal_id_int, srh.employee_number) as employee_number,
     srh.report_to_employee_number as observer_employee_number,
 
+    t.code,
+
 from {{ ref("stg_schoolmint_grow__observations") }} as o
+left join {{ ref('stg_reporting__terms') }} as t
+on o.observation_type = t.type 
+and o.observed_at between t.start_date and t.end_date
 left join
     {{
         source(
@@ -56,11 +60,11 @@ where
 
 union all
 
-/* Teacher Performance Management Staging Table - Couchdrop - Starting 2023*/
+/* Teacher Performance Management Staging Table - Couchdrop */
 select
     od.observation_id,
     od.rubric_name,
-    od.code,
+
     od.observation_score,
     case
         when od.strand_name = 'etr'
@@ -87,6 +91,7 @@ select
     od.text_box,
     od.employee_number,
     od.observer_employee_number,
+    od.code,
 
 from {{ ref("stg_performance_management__observation_details") }} as od
 
@@ -96,7 +101,7 @@ union all
 select
     soa.observation_id,
     'Coaching Tool: Coach ETR and Reflection' as rubric_name,
-    soa.code,
+
     soa.overall_score as observation_score,
     case
         when sda.score_type = 'ETR'
@@ -123,6 +128,7 @@ select
     null as text_box,
     soa.employee_number,
     sda.observer_employee_number,
+        soa.code,
 
 from {{ ref("stg_performance_management__scores_overall_archive") }} as soa
 inner join
