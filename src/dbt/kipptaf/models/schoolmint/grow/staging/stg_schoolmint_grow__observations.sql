@@ -85,7 +85,7 @@ select
     timestamp(firstpublished) as first_published,
     timestamp(lastmodified) as last_modified,
     timestamp(lastpublished) as last_published,
-    timestamp(observedat) as observed_at,
+    date(observedat) as observed_at,
     timestamp(observeduntil) as observed_until,
     timestamp(signedat) as signed_at,
     timestamp(viewedbyteacher) as viewed_by_teacher,

@@ -1,10 +1,10 @@
 select
-    academic_year,
+    _dagster_partition_academic_year as academic_year, 
+    _dagster_partition_term as code,
     employee_number,
     etr_score,
     so_score,
     form_long_name as rubric_name,
-    form_term as code,
     form_type as observation_type_abbreviation,
     glows,
     grows,
