@@ -3,14 +3,14 @@ with
         select
             observer_employee_number,
             academic_year,
-            form_term,
+            code,
             row_score_value,
             upper(
                 replace(replace(score_measurement_shortname, '&', ''), '-', '')
             ) as score_measurement_shortname,
         from {{ ref("int_performance_management__observation_details") }}
         where
-            form_long_name = 'Coaching Tool: Coach ETR and Reflection'
+            rubric_name = 'Coaching Tool: Coach ETR and Reflection'
             and row_score_value is not null
     ),
 
@@ -18,8 +18,8 @@ with
         select
             observer_employee_number,
             academic_year,
-            form_term,
-            cast(right(form_term, 1) as int64) as term_num,
+            code,
+            cast(right(code, 1) as int64) as term_num,
             etr1a,
             etr1b,
             etr2a,
@@ -86,17 +86,17 @@ with
         select
             observer_employee_number,
             academic_year,
-            form_term,
+            code,
             avg(overall_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }}
-        where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
-        group by observer_employee_number, academic_year, form_term
+        where rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+        group by observer_employee_number, academic_year, code
     )
 
 select
     p.observer_employee_number,
     p.academic_year,
-    p.form_term,
+    p.code,
     p.term_num,
     p.etr1a,
     p.etr1b,
@@ -132,4 +132,4 @@ inner join
     manager_overall as m
     on p.observer_employee_number = m.observer_employee_number
     and p.academic_year = m.academic_year
-    and p.form_term = m.form_term
+    and p.code = m.code

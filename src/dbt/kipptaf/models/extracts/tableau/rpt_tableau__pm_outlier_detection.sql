@@ -3,7 +3,7 @@ with
         select
             od.observer_employee_number,
             od.academic_year,
-            od.form_term as reporting_term,
+            od.code as reporting_term,
             od.is_iqr_outlier_current,
             od.is_iqr_outlier_global,
             od.cluster_current,
@@ -54,7 +54,7 @@ with
             on rt.type = 'PM'
             and rt.name like '%Coach ETR%'
             and od.academic_year = rt.academic_year
-            and od.form_term = rt.code
+            and od.code = rt.code
     ),
 
     score_aggs as (
@@ -62,7 +62,7 @@ with
             obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
-            obs.form_term,
+            obs.code,
             srh.department_home_name,
             srh.job_title,
             srh.home_work_location_name,
@@ -72,8 +72,7 @@ with
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on obs.rn_submission = 1
-            and obs.form_long_name = 'Coaching Tool: Coach ETR and Reflection'
+            and obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
             and obs.employee_number = srh.employee_number
             and timestamp(obs.observed_at)
             between srh.work_assignment_start_date and srh.work_assignment_end_date
@@ -81,7 +80,7 @@ with
             obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
-            obs.form_term,
+            obs.code,
             srh.department_home_name,
             srh.job_title,
             srh.home_work_location_name,
@@ -169,4 +168,4 @@ inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number
     and sd.academic_year = sa.academic_year
-    and sd.reporting_term = sa.form_term
+    and sd.reporting_term = sa.code
