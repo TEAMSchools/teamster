@@ -10,7 +10,7 @@ select
     o.observed_at_date_local as observed_at,
     o.academic_year,
     o.locked,
-    o.observation_type,
+    ot.name as observation_type,
     ot.abbreviation as observation_type_abbreviation,
     os.value_score as row_score,
     m.name as measurement_name,
