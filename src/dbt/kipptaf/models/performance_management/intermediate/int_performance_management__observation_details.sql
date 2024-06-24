@@ -1,3 +1,5 @@
+/* current academic year */
+
 select
     o.observation_id,
     o.rubric_name,
@@ -10,6 +12,8 @@ select
     o.academic_year,
     gt.name as observation_type,
     gt.abbreviation as observation_type_abbreviation,
+    t.code,
+    t.name,
     os.value_score as row_score,
     m.name as measurement_name,
     mgm.strand_name,
@@ -54,3 +58,28 @@ where
     o.academic_year = {{ var("current_academic_year") }}
     and o.is_published
     and o.archived_at is null
+
+-- union all 
+
+-- /* past academic years */
+
+-- select
+--     o.observation_id,
+--     o.rubric_name,
+--     o.score as observation_score,
+--     o.score_averaged_by_strand as strand_score,
+--     o.glows,
+--     o.grows,
+--     o.locked,
+--     o.observed_at_date_local as observed_at,
+--     o.academic_year,
+--     gt.name as observation_type,
+--     gt.abbreviation as observation_type_abbreviation,
+--     os.value_score as row_score,
+--     m.name as measurement_name,
+--     mgm.strand_name,
+--     tb.value_clean as text_box,
+--     srh.employee_number,
+--     srho.employee_number as observer_employee_number,
+
+--     from {{ ref('stg_performance_management__observation_details') }}
