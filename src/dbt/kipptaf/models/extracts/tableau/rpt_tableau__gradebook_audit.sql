@@ -368,7 +368,7 @@ select
     ada,
     ada_above_or_at_80,
     semester,
-    quarter,
+    `quarter`,
     quarter_start_date,
     quarter_end_date,
     is_current_quarter,
@@ -390,7 +390,7 @@ select
     quarter_course_grade_points_that_matters,
     quarter_citizenship,
     quarter_comment_value,
-    quarter as teacher_quarter,
+    `quarter` as teacher_quarter,
     week_number_academic_year as audit_yr_week_number,
     week_number_quarter as audit_qt_week_number,
     week_start_date as audit_start_date,
@@ -416,8 +416,6 @@ select
     percent_graded_completion_by_cat_qt_audit_week_all_courses,
     percent_graded_completion_by_cat_qt_audit_week,
     percent_graded_completion_by_assign_id_qt_audit_week,
-    qt_teacher_no_missing_assignments,
-    qt_teacher_total_less_200 as qt_teacher_s_total_less_200,
     date_enrolled as student_course_entry_date,
     assignmentid as assign_id,
     assignment_name as assign_name,
@@ -437,7 +435,10 @@ select
     'Local' as roster_type,
 
     audit_flag_name,
-    audit_flag_value,
+
+    if(qt_teacher_no_missing_assignments, 1, 0) as qt_teacher_no_missing_assignments,
+    if(qt_teacher_total_less_200, 1, 0) as qt_teacher_s_total_less_200,
+    if(audit_flag_value, 1, 0) as audit_flag_value,
 from
     audits unpivot (
         audit_flag_value for audit_flag_name in (
