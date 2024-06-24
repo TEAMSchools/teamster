@@ -66,15 +66,15 @@ select
     form_long_name as rubric_name,
     overall_score as observation_score,
     case
-        when od.strand_name = 'etr'
-        then od.etr_score
-        when od.strand_name = 's&o'
-        then od.so_score
+        when score_measurement_type = 'etr'
+        then etr_score
+        when score_measurement_type = 's&o'
+        then so_score
     end as strand_score,
     glows,
     grows,
     true as locked,
-    observed_at,
+    date(observed_at) as observed_at,
     _dagster_partition_academic_year as academic_year,
     'Teacher Performance Management' as observation_type,
     'PM' as observation_type_abbreviation,
@@ -83,10 +83,11 @@ select
     row_score_value as row_score,
     measurement_name,
     case
-        when od.strand_name = 'etr'
+        when score_measurement_type = 'etr'
         then 'Excellent Teaching Rubric'
-        when od.strand_name = 's&o'
+        when score_measurement_type = 's&o'
         then 'Self & Others: Manager Feedback'
+        else 'Comments'
     end as strand_name,
     text_box,
     employee_number,
