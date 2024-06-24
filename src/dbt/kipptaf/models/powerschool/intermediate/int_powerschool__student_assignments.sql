@@ -3,22 +3,10 @@ with
         select
             se._dbt_source_relation,
             se.student_number,
-            se.studentid,
-            se.students_dcid,
-
             se.academic_year,
-            se.yearid,
-            se.region,
-            se.school_level,
-            se.schoolid,
             se.grade_level,
 
             ce.sections_dcid,
-            ce.cc_dateenrolled,
-            ce.cc_sectionid,
-            ce.cc_section_number,
-            ce.cc_course_number,
-            ce.teacher_lastfirst,
 
             c.semester,
             c.quarter,
@@ -43,17 +31,9 @@ with
 
             s.scorepoints,
 
-            if(ce.ap_course_subject is not null, true, false) as is_ap_course,
-
             coalesce(s.islate, 0) as islate,
             coalesce(s.isexempt, 0) as isexempt,
             coalesce(s.ismissing, 0) as ismissing,
-
-            if(
-                se.grade_level <= 4,
-                ce.cc_section_number,
-                ce.sections_external_expression
-            ) as section_or_period,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -98,21 +78,14 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
             and a.duedate between c.week_start_date and c.week_end_date
             and {{ union_dataset_join_clause(left_alias="c", right_alias="a") }}
-            and ge.assignment_category_code = a.category_code
+            and ge.assignment_category_name = a.category_name
             and a.iscountedinfinalgrade = 1
             and a.scoretype in ('POINTS', 'PERCENT')
-            and a.category_name in (
-                'Summative Mastery',
-                'Work Habits',
-                'Formative Assessments',
-                'Formative Mastery'
-            )
-            and a.duedate >= date({{ var("current_academic_year") }}, 7, 1)
         left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on se.students_dcid = s.studentsdcid
-            and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="se", right_alias="s") }}
+            and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
         where
             se.academic_year = {{ var("current_academic_year") }}
@@ -124,44 +97,36 @@ with
     audits as (
         select
             _dbt_source_relation,
-            yearid,
-            academic_year,
-            region,
-            schoolid,
-            school_level,
-            studentid,
-            students_dcid,
             student_number,
-            cc_dateenrolled as student_course_entry_date,
+            academic_year,
             grade_level,
-            teacher_lastfirst as teacher_name,
-            cc_course_number as course_number,
-            is_ap_course as ap_course,
-            section_or_period,
-            cc_sectionid as sectionid,
             sections_dcid,
-            semester as assign_semester_code,
+
             `quarter` as assign_quarter,
-            assignment_category_code as assign_category_code,
-            category_name as assign_category,
-            assignment_category_term as assign_category_quarter,
-            assignmentid as assign_id,
-            assignment_name as assign_name,
-            duedate as assign_due_date,
-            scoretype as assign_score_type,
-            isexempt as assign_is_exempt,
-            islate as assign_is_late,
-            ismissing as assign_is_missing,
-            scorepoints as assign_score_raw,
-            score_converted as assign_score_converted,
-            totalpointvalue as assign_max_score,
+            semester as assign_semester_code,
             week_number_academic_year as audit_yr_week_number,
             week_number_quarter as audit_qt_week_number,
             week_start_date as audit_start_date,
             week_end_date as audit_end_date,
             school_week_start_date_lead as audit_due_date,
 
-            safe_divide(score_converted, totalpointvalue) as assign_final_score_percent,
+            assignment_category_code as assign_category_code,
+            category_name as assign_category,
+            assignment_category_term as assign_category_quarter,
+
+            assignmentid as assign_id,
+            assignment_name as assign_name,
+            duedate as assign_due_date,
+            scoretype as assign_score_type,
+            totalpointvalue as assign_max_score,
+            scorepoints as assign_score_raw,
+            score_converted as assign_score_converted,
+            isexempt as assign_is_exempt,
+            islate as assign_is_late,
+            ismissing as assign_is_missing,
+
+            safe_divide(score_converted, totalpointvalue)
+            * 100 as assign_final_score_percent,
 
             if(
                 score_converted > totalpointvalue, true, false
@@ -176,6 +141,7 @@ with
                 true,
                 false
             ) as assign_scored,
+
             if(
                 assignmentid is not null and scorepoints is null and isexempt = 0,
                 true,
@@ -196,57 +162,35 @@ with
             if(
                 isexempt = 1 and score_converted > 0, true, false
             ) as assign_exempt_with_score,
-            if(
-                assignment_category_code = 'W' and score_converted < 5, true, false
-            ) as assign_w_score_less_5,
-            if(
-                assignment_category_code = 'F' and score_converted < 5, true, false
-            ) as assign_f_score_less_5,
-            if(
-                assignment_category_code = 'S'
-                and score_converted < (totalpointvalue / 2),
-                true,
-                false
-            ) as assign_s_score_less_50p,
+
+            if(score_converted < 5, true, false) as assign_score_less_5,
 
             if(
-                ismissing = 1
-                and assignment_category_code = 'W'
-                and score_converted != 5,
-                true,
-                false
-            ) as assign_w_missing_score_not_5,
+                score_converted < (totalpointvalue / 2), true, false
+            ) as assign_score_less_50p,
+
             if(
-                ismissing = 1
-                and assignment_category_code = 'F'
-                and score_converted != 5,
-                true,
-                false
-            ) as assign_f_missing_score_not_5,
+                ismissing = 1 and score_converted != 5, true, false
+            ) as assign_missing_score_not_5,
         from students_assignments
     )
 
 select
     *,
 
-    if(
-        assign_is_exempt = 0
-        and grade_level between 5 and 8
-        and assign_category_code = 'S'
-        and (assign_final_score_percent * 100)
-        not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100),
-        true,
-        false
-    ) as assign_s_ms_score_not_conversion_chart_options,
-
-    if(
-        assign_is_exempt = 0
-        and grade_level between 9 and 12
-        and assign_category_code = 'S'
-        and ap_course
-        and (assign_final_score_percent * 100)
-        not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
-        true,
-        false
-    ) as assign_s_hs_score_not_conversion_chart_options,
+    case
+        when assign_is_exempt = 1
+        then false
+        when
+            grade_level between 5 and 8
+            and assign_final_score_percent
+            not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100)
+        then true
+        when
+            grade_level between 9 and 12
+            and assign_final_score_percent
+            not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100)
+        then true
+        else false
+    end as assign_score_not_conversion_chart_options,
 from audits

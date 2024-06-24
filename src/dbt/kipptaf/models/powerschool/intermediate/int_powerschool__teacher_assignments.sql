@@ -1,107 +1,10 @@
 with
-    sections as (
+    assignments as (
         select
             sec._dbt_source_relation,
-            sec.sections_dcid,
             sec.sections_id as section_id,
-            sec.sections_schoolid as schoolid,
-            sec.sections_course_number as course_number,
             sec.teachernumber as teacher_number,
-            sec.teacher_lastfirst,
             sec.terms_yearid as yearid,
-            sec.terms_firstday,
-            sec.terms_lastday,
-
-            sec.terms_yearid + 1990 as academic_year,
-            initcap(regexp_extract(sec._dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            case
-                sch.high_grade when 4 then 'ES' when 8 then 'MS' when 12 then 'HS'
-            end as grade_band,
-
-            if(
-                sch.high_grade in (4, 8),
-                sec.sections_section_number,
-                sec.sections_external_expression
-            ) as section_or_period,
-        from {{ ref("base_powerschool__sections") }} as sec
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on sec.sections_schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
-        where
-            sec.sections_course_number not in (
-                'HR',
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG20',
-                'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1'
-            )
-            and sec.terms_firstday >= date({{ var("current_academic_year") }}, 7, 1)
-    ),
-
-    valid_sections as (
-        select
-            _dbt_source_relation,
-            sections_dcid,
-            section_id,
-            schoolid,
-            section_or_period,
-            course_number,
-            teacher_number,
-            teacher_lastfirst,
-            yearid,
-            academic_year,
-            terms_firstday,
-            terms_lastday,
-            region,
-            grade_band,
-        from sections
-        where region = 'Miami'
-
-        union all
-
-        select
-            _dbt_source_relation,
-            sections_dcid,
-            section_id,
-            schoolid,
-            section_or_period,
-            course_number,
-            teacher_number,
-            teacher_lastfirst,
-            yearid,
-            academic_year,
-            terms_firstday,
-            terms_lastday,
-            region,
-            grade_band,
-        from sections
-        where grade_band in ('MS', 'HS') and region != 'Miami'
-    ),
-
-    expectations as (
-        select
-            vs._dbt_source_relation,
-            vs.sections_dcid,
-            vs.section_id,
-            vs.schoolid,
-            vs.section_or_period,
-            vs.course_number,
-            vs.teacher_number,
-            vs.teacher_lastfirst,
-            vs.yearid,
-            vs.academic_year,
-            vs.terms_firstday,
-            vs.terms_lastday,
-            vs.region,
-            vs.grade_band,
 
             c.semester,
             c.quarter,
@@ -116,45 +19,6 @@ with
             ge.assignment_category_code,
             ge.assignment_category_name,
             ge.expectation,
-        from valid_sections as vs
-        inner join
-            {{ ref("int_powerschool__calendar_week") }} as c
-            on vs.schoolid = c.schoolid
-            and vs.yearid = c.yearid
-            and c.week_end_date between vs.terms_firstday and vs.terms_lastday
-            and {{ union_dataset_join_clause(left_alias="vs", right_alias="c") }}
-        inner join
-            {{ ref("stg_reporting__gradebook_expectations") }} as ge
-            on c.academic_year = ge.academic_year
-            and c.region = ge.region
-            and c.quarter = ge.quarter
-            and c.week_number_quarter = ge.week_number
-    ),
-
-    assignments as (
-        select
-            t._dbt_source_relation,
-            t.teacher_number,
-            t.teacher_lastfirst,
-            t.course_number,
-            t.section_id,
-            t.sections_dcid,
-            t.section_or_period,
-            t.yearid,
-            t.academic_year,
-            t.region,
-            t.grade_band,
-            t.schoolid,
-            t.semester,
-            t.quarter,
-            t.week_number_academic_year,
-            t.week_number_quarter,
-            t.week_start_date,
-            t.week_end_date,
-            t.school_week_start_date_lead,
-            t.assignment_category_code,
-            t.assignment_category_name,
-            t.expectation,
 
             a.assignmentid,
             a.name as assignment_name,
@@ -170,84 +34,103 @@ with
             asg.n_expected_scored,
             asg.avg_expected_scored_percent,
 
-            count(a.assignmentid) over (
-                partition by
-                    t._dbt_source_relation,
-                    t.section_id,
-                    t.quarter,
-                    t.assignment_category_code
-                order by t.week_number_quarter asc
-            ) as assignment_count_section_quarter_category_running_week,
-
             sum(a.totalpointvalue) over (
-                partition by t._dbt_source_relation, t.section_id, t.quarter
+                partition by sec._dbt_source_relation, sec.sections_id, c.quarter
             ) as total_totalpointvalue_section_quarter,
 
             sum(asg.n_missing) over (
-                partition by t._dbt_source_relation, t.section_id, t.quarter
+                partition by sec._dbt_source_relation, sec.sections_id, c.quarter
             ) as total_missing_section_quarter,
+
+            count(a.assignmentid) over (
+                partition by
+                    sec._dbt_source_relation,
+                    sec.sections_id,
+                    c.quarter,
+                    ge.assignment_category_code
+                order by c.week_number_quarter asc
+            ) as assignment_count_section_quarter_category_running_week,
 
             sum(asg.n_expected) over (
                 partition by
-                    t._dbt_source_relation,
-                    t.section_id,
-                    t.week_number_quarter,
-                    t.assignment_category_code
+                    sec._dbt_source_relation,
+                    sec.sections_id,
+                    c.week_number_quarter,
+                    ge.assignment_category_code
             ) as total_expected_section_quarter_week_category,
 
             sum(asg.n_expected_scored) over (
                 partition by
-                    t._dbt_source_relation,
-                    t.section_id,
-                    t.week_number_quarter,
-                    t.assignment_category_code
+                    sec._dbt_source_relation,
+                    sec.sections_id,
+                    c.week_number_quarter,
+                    ge.assignment_category_code
             ) as total_expected_scored_section_quarter_week_category,
 
             sum(asg.n_expected) over (
                 partition by
-                    t._dbt_source_relation,
-                    t.teacher_number,
-                    t.schoolid,
-                    t.week_number_quarter,
-                    t.assignment_category_code
+                    sec._dbt_source_relation,
+                    sec.teachernumber,
+                    sec.sections_schoolid,
+                    c.week_number_quarter,
+                    ge.assignment_category_code
             ) as total_expected_teacher_school_quarter_week_category,
 
             sum(asg.n_expected_scored) over (
                 partition by
-                    t._dbt_source_relation,
-                    t.teacher_number,
-                    t.schoolid,
-                    t.week_number_quarter,
-                    t.assignment_category_code
+                    sec._dbt_source_relation,
+                    sec.teachernumber,
+                    sec.sections_schoolid,
+                    c.week_number_quarter,
+                    ge.assignment_category_code
             ) as total_expected_scored_teacher_school_quarter_week_category,
-        from expectations as t
+        from {{ ref("base_powerschool__sections") }} as sec
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as c
+            on sec.sections_schoolid = c.schoolid
+            and sec.terms_yearid = c.yearid
+            and c.week_end_date between sec.terms_firstday and sec.terms_lastday
+            and {{ union_dataset_join_clause(left_alias="sec", right_alias="c") }}
+        inner join
+            {{ ref("stg_reporting__gradebook_expectations") }} as ge
+            on c.academic_year = ge.academic_year
+            and c.region = ge.region
+            and c.quarter = ge.quarter
+            and c.week_number_quarter = ge.week_number
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
-            on t.sections_dcid = a.sectionsdcid
-            and t.assignment_category_name = a.category_name
-            and a.duedate between t.week_start_date and t.week_end_date
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="a") }}
+            on sec.sections_dcid = a.sectionsdcid
+            and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
+            and ge.assignment_category_name = a.category_name
+            and a.duedate between c.week_start_date and c.week_end_date
         left join
             {{ ref("int_powerschool__assignment_score_rollup") }} as asg
             on a.assignmentsectionid = asg.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
+        where
+            sec.sections_course_number not in (
+                'HR',
+                'LOG100',
+                'LOG1010',
+                'LOG11',
+                'LOG12',
+                'LOG20',
+                'LOG22999XL',
+                'LOG300',
+                'LOG9',
+                'SEM22106G1',
+                'SEM22106S1'
+            )
+            and sec.terms_firstday >= date({{ var("current_academic_year") }}, 7, 1)
     )
 
 select
     _dbt_source_relation,
-    yearid,
-    academic_year,
-    region,
-    schoolid,
-    grade_band as school_level,
-    teacher_number,
-    teacher_lastfirst as teacher_name,
-    course_number,
-    section_or_period,
     section_id as sectionid,
-    sections_dcid,
-    semester as teacher_semester_code,
+    teacher_number,
+    yearid,
     `quarter` as teacher_quarter,
+    semester as teacher_semester_code,
     week_number_academic_year as audit_yr_week_number,
     week_number_quarter as audit_qt_week_number,
     week_start_date as audit_start_date,
