@@ -10,10 +10,9 @@ select
     o.academic_year,
     gt.name as observation_type,
     gt.abbreviation as observation_type_abbreviation,
--- os.value_score as row_score,
--- m.name as measurement_name,
--- mgm.strand_name,
--- mgm.strand_description,
+    os.value_score as row_score,
+    m.name as measurement_name,
+    mgm.strand_name,
 -- b.value_clean as text_box,
 -- coalesce(u.internal_id_int, srh.employee_number) as employee_number,
 -- srh.report_to_employee_number as observer_employee_number,
@@ -25,4 +24,14 @@ left join
     {{ ref("stg_reporting__terms") }} as t
     on gt.abbreviation = t.type
     and o.observed_at_date_local between t.start_date and t.end_date
-where o.academic_year = {{ var('current_academic_year') }}
+left join
+    {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
+    on o.observation_id = os.observation_id
+left join
+    {{ ref("stg_schoolmint_grow__measurements") }} as m
+    on os.measurement = m.measurement_id
+left join
+    {{ ref("stg_schoolmint_grow__rubrics__measurement_groups__measurements") }} as mgm
+    on m.measurement_id = mgm.measurement_id
+    and o.rubric_id = mgm.rubric_id
+where o.academic_year = {{ var("current_academic_year") }}
