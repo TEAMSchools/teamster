@@ -25,6 +25,4 @@ select
     textboxes as text_boxes,
     measurementoptions as measurement_options,
 
-    regexp_extract(lower(`name`), r'(^.*?)\-') as `type`,
-    regexp_extract(lower(`name`), r'(^.*?):') as short_name,
 from deduplicate
