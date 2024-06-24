@@ -3,8 +3,8 @@ select
     o.rubric_name,
     o.score as observation_score,
     o.score_averaged_by_strand as strand_score,
-    o.list_two_column_a_str as glows,
-    o.list_two_column_b_str as grows,
+    o.glows,
+    o.grows,
     o.locked,
     o.observed_at_date_local as observed_at,
     o.academic_year,
@@ -13,9 +13,9 @@ select
     os.value_score as row_score,
     m.name as measurement_name,
     mgm.strand_name,
--- b.value_clean as text_box,
--- coalesce(u.internal_id_int, srh.employee_number) as employee_number,
--- srh.report_to_employee_number as observer_employee_number,
+    tb.value_clean as text_box,
+    srh.employee_number,
+    srho.employee_number as observer_employee_number,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gt
@@ -34,4 +34,20 @@ left join
     {{ ref("stg_schoolmint_grow__rubrics__measurement_groups__measurements") }} as mgm
     on m.measurement_id = mgm.measurement_id
     and o.rubric_id = mgm.rubric_id
+left join
+    {{ ref("stg_schoolmint_grow__observations__observation_scores__text_boxes") }} as tb
+    on os.observation_id = tb.observation_id
+    and os.measurement = tb.measurement
+/* join on google email and date for employee_number*/
+left join
+    {{ ref("base_people__staff_roster_history") }} as srh
+    on o.teacher_email = srh.google_email
+    and o.observed_at
+    between srh.work_assignment_start_date and srh.work_assignment_end_date
+/* join on google email and date for observer_employee_number*/
+left join
+    {{ ref("base_people__staff_roster_history") }} as srho
+    on o.observer_email = srh.google_email
+    and o.observed_at
+    between srho.work_assignment_start_date and srho.work_assignment_end_date
 where o.academic_year = {{ var("current_academic_year") }}
