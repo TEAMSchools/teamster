@@ -18,7 +18,6 @@ select
     od.measurement_name,
     od.strand_name,
     od.text_box,
-    od.strand_score,
 
     os.overall_tier,
     os.final_score,
@@ -28,7 +27,7 @@ select
     srh.business_unit_home_name as entity,
     srh.home_work_location_name as location,
     srh.home_work_location_grade_band as grade_band,
-    srh.department_home_nameas department,
+    srh.department_home_name as department,
 
     srh.primary_grade_level_taught as grade_taught,
     srh.job_title as job_title,
@@ -45,14 +44,14 @@ from {{ ref("int_performance_management__observation_details") }} as od
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.observation_id = os.observation_id
-left join
+inner join
     {{ ref("base_people__staff_roster_history") }} as srh
-    on sr.employee_number = srh.employee_number
+    on od.employee_number = srh.employee_number
     and od.observed_at
     between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
 left join
     {{ ref("base_people__staff_roster") }} as sr
     on od.employee_number = sr.employee_number
+left join
     {{ ref("base_people__staff_roster") }} as sr2
     on od.observer_employee_number = sr2.employee_number
-    
