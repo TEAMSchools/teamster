@@ -1,5 +1,14 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("fldoe", "src_fldoe__fast"),
+                partition_by="student_id, _dagster_partition_grade_level_subject, test_reason",
+                order_by="coalesce(enrolled_grade.long_value, enrolled_grade.double_value) desc",
+            )
+        }}
+    ),
+
     fast_data as (
         -- trunk-ignore(sqlfluff/ST06)
         select
@@ -240,21 +249,10 @@ with
                 )
                 + 1999
             ) as academic_year,
-        from {{ source("fldoe", "src_fldoe__fast") }}
-    ),
-
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="fast_data",
-                partition_by="student_id, academic_year",
-                order_by="scale_score desc",
-            )
-        }}
+        from deduplicate
     ),
 
     with_calcs as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (percentile_rank),
 
@@ -269,7 +267,7 @@ with
                 partition by student_id, academic_year, assessment_subject
                 order by administration_window asc
             ) as scale_score_prev,
-        from deduplicate
+        from fast_data
     )
 
 select
