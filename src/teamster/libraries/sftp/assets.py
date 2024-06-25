@@ -227,7 +227,7 @@ def build_sftp_folder_asset(
             context.log.warning(
                 f"Found no files matching: {remote_dir}/{remote_file_regex_composed}"
             )
-            return Output(value=([{}], avro_schema), metadata={"records": 0})
+            return Output(value=([], avro_schema), metadata={"records": 0})
 
         for file in file_matches:
             local_filepath = ssh.sftp_get(
