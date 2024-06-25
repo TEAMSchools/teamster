@@ -1,10 +1,10 @@
 select
     s.employee_number,
     s.academic_year,
-    s.pm_term,
+    s.code,
     s.etr_score,
     s.so_score,
-    s.overall_score,
+    s.observation_score as overall_score,
     s.etr_tier,
     s.so_tier,
     s.overall_tier,
