@@ -64,6 +64,14 @@ select
     end as overall_tier,
     f.final_score,
     f.final_tier,
+    case
+        when code = 'PM1'
+        then date(od.academic_year, 10, 1)
+        when code = 'PM2'
+        then date(od.academic_year + 1, 1, 1)
+        when code = 'PM3'
+        then date(od.academic_year + 1, 3, 1)
+    end as eval_date,
 from {{ ref("int_performance_management__observation_details") }} as od
 join
     final_score_and_tier as f
@@ -86,4 +94,12 @@ select
     null as overall_tier,
     null as final_score,
     null as final_tier,
+    case
+        when form_term = 'PM1'
+        then date(academic_year, 10, 1)
+        when form_term = 'PM2'
+        then date(academic_year + 1, 1, 1)
+        when form_term = 'PM3'
+        then date(academic_year + 1, 3, 1)
+    end as eval_date,
 from {{ ref("stg_performance_management__observation_details") }}
