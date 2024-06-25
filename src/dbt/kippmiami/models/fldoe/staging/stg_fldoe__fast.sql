@@ -1,6 +1,7 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     fast_data as (
-        -- noqa: disable=ST06
+        -- trunk-ignore(sqlfluff/ST06)
         select
             student_id,
             local_id,
@@ -65,10 +66,10 @@ with
                 `3_geometric_reasoning_performance`, `4_geometric_reasoning_performance`
             ) as geometric_reasoning,
             coalesce(
-                -- noqa: disable=LT05
+                -- trunk-ignore(sqlfluff/LT05)
                 `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`,
+                -- trunk-ignore(sqlfluff/LT05)
                 `4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
-            -- noqa: enable=LT05
             ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
 
             coalesce(
@@ -234,16 +235,26 @@ with
             (
                 cast(
                     regexp_extract(
-                        _dagster_partition_school_year_term, r'^SY(\d+)PM\d$'
+                        _dagster_partition_school_year_term, r'^SY(\d+)/PM\d$'
                     ) as int
                 )
                 + 1999
             ) as academic_year,
-        -- noqa: disable=ST06
         from {{ source("fldoe", "src_fldoe__fast") }}
     ),
 
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="fast_data",
+                partition_by="student_id, academic_year",
+                order_by="scale_score desc",
+            )
+        }}
+    ),
+
     with_calcs as (
+        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (percentile_rank),
 
@@ -258,7 +269,7 @@ with
                 partition by student_id, academic_year, assessment_subject
                 order by administration_window asc
             ) as scale_score_prev,
-        from fast_data
+        from deduplicate
     )
 
 select

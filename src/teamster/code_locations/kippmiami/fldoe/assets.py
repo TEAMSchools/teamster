@@ -11,7 +11,7 @@ from teamster.libraries.sftp.assets import build_sftp_asset, build_sftp_folder_a
 
 fast = build_sftp_folder_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fast"],
-    remote_dir="/data-team/kippmiami/fldoe/fast-new",  # TODO: rename before merging
+    remote_dir="/data-team/kippmiami/fldoe/fast",
     remote_file_regex=(
         r"(?P<school_year_term>\d+\/PM\d)\/"
         r"\w+-\w+_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
