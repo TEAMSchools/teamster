@@ -1,133 +1,89 @@
 with
-    all_scores as (
+    final_score_and_tier as (
         select
             employee_number,
-            observation_id,
             academic_year,
-            code,
-            etr_score,
-            so_score,
-            overall_score,
-            etr_tier,
-            so_tier,
-            overall_tier,
-            eval_date,
-        from {{ ref("stg_performance_management__scores_overall_archive") }}
-
-        union all
-
-        select distinct
-            employee_number,
-            observation_id,
-            academic_year,
-            code,
-            etr_score,
-            so_score,
+            avg(observation_score) as final_score,
             case
-                when academic_year <= 2023 then locked_overall_score else overall_score
-            end as overall_score,
-            case
-                when etr_score >= 3.495
+                when avg(observation_score) >= 3.495
                 then 4
-                when etr_score >= 2.745
+                when avg(observation_score) >= 2.745
                 then 3
-                when etr_score >= 1.745
+                when avg(observation_score) >= 1.745
                 then 2
-                when etr_score < 1.75
+                when avg(observation_score) < 1.75
                 then 1
-            end as etr_tier,
-            case
-                when so_score >= 3.495
-                then 4
-                when so_score >= 2.945
-                then 3
-                when so_score >= 1.945
-                then 2
-                when so_score < 1.95
-                then 1
-            end as so_tier,
-            case
-                when overall_score >= 3.495
-                then 4
-                when overall_score >= 2.745
-                then 3
-                when overall_score >= 1.745
-                then 2
-                when overall_score < 1.75
-                then 1
-            end as overall_tier,
-            case
-                when code = 'PM1'
-                then date(academic_year, 10, 1)
-                when code = 'PM2'
-                then date(academic_year + 1, 1, 1)
-                when code = 'PM3'
-                then date(academic_year + 1, 3, 1)
-            end as eval_date,
-        from {{ ref("int_performance_management__observation_details") }}
-        where observation_type = 'PM' and academic_year >= 2023
-
-        union all
-
-        select
-            employee_number,
-            null as observation_id,
-            academic_year,
-            'PM4' as code,
-            avg(etr_score) as etr_score,
-            avg(so_score) as so_score,
-            avg(overall_score) as overall_score,
-            case
-                when avg(etr_score) >= 3.495
-                then 4
-                when avg(etr_score) >= 2.745
-                then 3
-                when avg(etr_score) >= 1.745
-                then 2
-                when avg(etr_score) < 1.75
-                then 1
-            end as etr_tier,
-            case
-                when avg(so_score) >= 3.495
-                then 4
-                when avg(so_score) >= 2.945
-                then 3
-                when avg(so_score) >= 1.945
-                then 2
-                when avg(so_score) < 1.95
-                then 1
-            end as so_tier,
-            case
-                when avg(overall_score) >= 3.495
-                then 4
-                when avg(overall_score) >= 2.745
-                then 3
-                when avg(overall_score) >= 1.745
-                then 2
-                when avg(overall_score) < 1.75
-                then 1
-            end as overall_tier,
-            date(academic_year + 1, 5, 15) as eval_date,
+            end as final_tier,
         from {{ ref("int_performance_management__observation_details") }}
         where
             observation_type = 'PM'
             and code in ('PM2', 'PM3')
-            and overall_score is not null
-            and academic_year >= 2023
+            and observation_score is not null
+            and academic_year = {{ var("current_academic_year") }}
         group by employee_number, academic_year
+
     )
+
+select
+    od.employee_number,
+    od.observation_id,
+    od.academic_year,
+    od.code,
+    od.etr_score,
+    od.so_score,
+    od.observation_score,
+    case
+        when od.etr_score >= 3.495
+        then 4
+        when od.etr_score >= 2.745
+        then 3
+        when od.etr_score >= 1.745
+        then 2
+        when od.etr_score < 1.75
+        then 1
+    end as etr_tier,
+    case
+        when od.so_score >= 3.495
+        then 4
+        when od.so_score >= 2.945
+        then 3
+        when od.so_score >= 1.945
+        then 2
+        when od.so_score < 1.95
+        then 1
+    end as so_tier,
+    case
+        when od.observation_score >= 3.495
+        then 4
+        when od.observation_score >= 2.745
+        then 3
+        when od.observation_score >= 1.745
+        then 2
+        when od.observation_score < 1.75
+        then 1
+    end as overall_tier,
+    f.final_score,
+    f.final_tier,
+from {{ ref("int_performance_management__observation_details") }} as od
+join
+    final_score_and_tier as f
+    on od.employee_number = f.employee_number
+    and od.academic_year = f.academic_year
+where observation_type = 'PM' and od.academic_year = {{ var("current_academic_year") }}
+
+union all
 
 select
     employee_number,
     observation_id,
     academic_year,
-    code as pm_term,
+    form_term as code,
     etr_score,
     so_score,
     overall_score,
-    etr_tier,
-    so_tier,
-    overall_tier,
-    eval_date,
-from all_scores
-where overall_score is not null
+    null as etr_tier,
+    null as so_tier,
+    null as overall_tier,
+    null as final_score,
+    null as final_tier,
+from {{ ref("stg_performance_management__observation_details") }}
