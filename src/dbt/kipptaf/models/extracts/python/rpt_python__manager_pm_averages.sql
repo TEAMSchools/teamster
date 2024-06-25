@@ -51,7 +51,7 @@ with
             so08,
         from
             measures_long pivot (
-                avg(row_score)
+                avg(row_score_value)
                 for score_measurement_shortname in (
                     'ETR1A',
                     'ETR1B',
