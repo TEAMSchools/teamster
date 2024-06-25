@@ -1,7 +1,9 @@
 from dagster import build_schedule_context
 
-from teamster.core.resources import DB_POWERSCHOOL, SSH_POWERSCHOOL
-from teamster.kippnewark.powerschool.schedules import last_modified_schedule
+from teamster.code_locations.kippnewark.powerschool.schedules import (
+    last_modified_schedule,
+)
+from teamster.libraries.core.resources import DB_POWERSCHOOL, SSH_POWERSCHOOL
 
 
 def test_schedule():

@@ -3,7 +3,7 @@ import pathlib
 
 from dagster import EnvVar, build_resources
 
-from teamster.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
 with build_resources(
     resources={

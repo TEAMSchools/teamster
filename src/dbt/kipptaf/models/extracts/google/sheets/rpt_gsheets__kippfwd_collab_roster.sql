@@ -108,15 +108,15 @@ select  -- noqa: disable=ST06
     case
         when
             ktc.contact_college_match_display_gpa >= 3.50
-            and app.adjusted_6_year_minority_graduation_rate < 68
+            and round(app.adjusted_6_year_minority_graduation_rate, 0) < 68
         then true
         when
             ktc.contact_college_match_display_gpa >= 3.00
-            and app.adjusted_6_year_minority_graduation_rate < 60
+            and round(app.adjusted_6_year_minority_graduation_rate, 0) < 60
         then true
         when
             ktc.contact_college_match_display_gpa >= 2.50
-            and app.adjusted_6_year_minority_graduation_rate < 55
+            and round(app.adjusted_6_year_minority_graduation_rate, 0) < 55
         then true
         when
             ktc.contact_college_match_display_gpa < 2.50

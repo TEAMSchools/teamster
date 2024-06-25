@@ -1,7 +1,9 @@
 from dagster import SensorResult, _check, build_sensor_context, instance_for_test
 
-from teamster.kipptaf.google.drive.sensors import google_forms_partition_sensor
-from teamster.kipptaf.resources import GOOGLE_DRIVE_RESOURCE
+from teamster.code_locations.kipptaf.google.drive.sensors import (
+    google_forms_partition_sensor,
+)
+from teamster.code_locations.kipptaf.resources import GOOGLE_DRIVE_RESOURCE
 
 
 def test_alchemer_survey_metadata_asset_sensor():

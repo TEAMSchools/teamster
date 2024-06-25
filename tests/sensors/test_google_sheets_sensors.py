@@ -2,8 +2,10 @@ import json
 
 from dagster import SensorResult, build_sensor_context
 
-from teamster.google.sheets.resources import GoogleSheetsResource
-from teamster.kipptaf.google.sheets.sensors import google_sheets_asset_sensor
+from teamster.code_locations.kipptaf.google.sheets.sensors import (
+    google_sheets_asset_sensor,
+)
+from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 
 
 def test_google_sheets_asset_sensor():

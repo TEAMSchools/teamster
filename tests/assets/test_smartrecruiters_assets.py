@@ -1,14 +1,16 @@
-from dagster import TextMetadataValue, _check, materialize
+from dagster import _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.resources import SMARTRECRUITERS_RESOURCE
-from teamster.kipptaf.smartrecruiters.assets import assets
+from teamster.code_locations.kipptaf.resources import SMARTRECRUITERS_RESOURCE
+from teamster.code_locations.kipptaf.smartrecruiters.assets import (
+    applicants,
+    applications,
+    ratings,
+)
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
 
-def _test_asset(assets, asset_name):
-    asset = [a for a in assets if a.key.path[-1] == asset_name][0]
-
+def _test_asset(asset):
     result = materialize(
         assets=[asset],
         resources={
@@ -20,24 +22,34 @@ def _test_asset(assets, asset_name):
     )
 
     assert result.success
+
     asset_materialization_event = result.get_asset_materialization_events()[0]
-    event_specific_data = _check.inst(
+    asset_check_evaluation = result.get_asset_check_evaluations()[0]
+
+    step_materialization_data = _check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
+
     records = _check.inst(
-        event_specific_data.materialization.metadata["records"].value, int
+        step_materialization_data.materialization.metadata["records"].value, int
     )
+
     assert records > 0
-    extras = _check.inst(
-        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
-        ttype=TextMetadataValue,
-    )
+    assert asset_check_evaluation.passed
+
+    extras = asset_check_evaluation.metadata.get("extras")
+
+    assert extras is not None
     assert extras.text == ""
 
 
 def test_asset_smartrecruiters_applicants():
-    _test_asset(assets=assets, asset_name="applicants")
+    _test_asset(applicants)
 
 
 def test_asset_smartrecruiters_applications():
-    _test_asset(assets=assets, asset_name="applications")
+    _test_asset(applications)
+
+
+def test_asset_smartrecruiters_ratings():
+    _test_asset(ratings)

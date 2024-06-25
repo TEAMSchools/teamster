@@ -1,7 +1,6 @@
-from teamster.core.utils.functions import regex_pattern_replace
-
-
 def test_regex_pattern_replace():
+    from teamster.libraries.core.utils.functions import regex_pattern_replace
+
     test_patterns = [
         r"(?P<school_year_term>\d+)\/\w+-\w+Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv",
         r"(?P<school_year_term>\d+)\/[A-Z]+-[A-Z]+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv",
@@ -38,8 +37,8 @@ def test_regex_pattern_replace():
         assert "?P<" not in result_pattern
 
 
-def test_foo():
-    from teamster.kipptaf.dbt.assets import manifest
+def test_ghseet_asset_key_rename():
+    from teamster.code_locations.kipptaf.dbt.assets import manifest
 
     asset_keys_old = set()
     asset_keys_new = set()
@@ -56,3 +55,56 @@ def test_foo():
             asset_keys_new.add(str(source["meta"]["dagster"]["parent_asset_key_path"]))
 
     assert asset_keys_new == asset_keys_old
+
+
+def test_orjson():
+    import json
+    import re
+    from datetime import date, datetime, timedelta
+    from decimal import Decimal
+
+    import orjson
+    from pendulum import Date, DateTime, Duration
+
+    class CustomJSONEncoder(json.JSONEncoder):
+        def default(self, o):
+            if isinstance(o, (timedelta, Decimal, bytes, Duration)):
+                return str(o)
+            elif isinstance(o, (DateTime, Date)):
+                return o.for_json()
+            elif isinstance(o, (datetime, date)):
+                return o.isoformat()
+            else:
+                return super().default(o)
+
+    def orjson_default(obj):
+        if isinstance(obj, (DateTime, Date)):
+            return obj.for_json()
+        else:
+            raise TypeError
+
+    obj = {
+        "timedelta": timedelta(days=1),
+        "Decimal": Decimal(1),
+        "bytes": b"foo",
+        "Duration": Duration(days=1),
+        "DateTime": DateTime(year=9999, month=12, day=31),
+        "Date": Date(year=9999, month=12, day=31),
+        "datetime": datetime(year=9999, month=12, day=31),
+        "date": date(year=9999, month=12, day=31),
+    }
+
+    stdlib_result = json.dumps(obj=obj, cls=CustomJSONEncoder)
+    orjson_result = orjson.dumps(obj, default=orjson_default).decode()
+
+    for k in obj.keys():
+        pattern = rf'"{k}":\s?"([^"]*)",?'
+
+        stdlib_match = re.search(pattern=pattern, string=stdlib_result)
+        orjson_match = re.search(pattern=pattern, string=orjson_result)
+
+        assert stdlib_match is not None
+        assert orjson_match is not None
+
+        assert stdlib_match.group(1) == orjson_match.group(1)
+        print(f"{k}: {stdlib_match.group(1)} == {orjson_match.group(1)}")
