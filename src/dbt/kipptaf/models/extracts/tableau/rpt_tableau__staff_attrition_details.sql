@@ -294,12 +294,6 @@ with
                 else 'not dupe'
             end as dupe_check,
         from ly_combined
-    ),
-
-    pm_scores as (
-        select employee_number, academic_year, overall_score, overall_tier,
-        from {{ ref("int_performance_management__overall_scores") }}
-        where pm_term = 'PM4'
     )
 
 select distinct
@@ -329,11 +323,11 @@ select distinct
     l.termination_date,
     l.original_hire_date,
     l.total_years_teaching,
-    pm.overall_tier,
-    pm.overall_score,
+    pm.final_tier as overall_tier,
+    pm.final_score as overall_score,
 from ly_deduped as l
 left join
-    pm_scores as pm
+    {{ ref("int_performance_management__overall_scores") }} as pm
     on l.employee_number = pm.employee_number
     and l.academic_year = pm.academic_year
 where l.dupe_check != 'dupe'

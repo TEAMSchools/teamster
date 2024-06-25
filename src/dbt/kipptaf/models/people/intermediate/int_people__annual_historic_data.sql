@@ -50,13 +50,13 @@ select
     e.work_assignment_end_date,
     e.assignment_status as historic_position_status,
 
-    pm.pm_term,
-    pm.etr_score,
-    pm.etr_tier,
-    pm.so_score,
-    pm.so_tier,
-    pm.overall_score,
-    pm.overall_tier,
+    null as code,
+    null as etr_score,
+    null as etr_tier,
+    null as so_score,
+    null as so_tier,
+    pm.final_score as overall_score,
+    pm.final_tier as overall_tier,
 
     coalesce(
         s.worker_rehire_date, s.worker_original_hire_date
@@ -80,4 +80,3 @@ left join
     {{ ref("int_performance_management__overall_scores") }} as pm
     on s.employee_number = pm.employee_number
     and y.academic_year = pm.academic_year
-    and pm.pm_term = 'PM4'
