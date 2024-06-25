@@ -4,14 +4,17 @@ with
             observer_employee_number,
             academic_year,
             code,
-            row_score_value,
+            row_score,
+            measurement_name,
             upper(
-                replace(replace(score_measurement_shortname, '&', ''), '-', '')
+                regexp_replace(
+                    regexp_replace(measurement_name, r'[&\-]', ''), r':.*', ''
+                )
             ) as score_measurement_shortname,
         from {{ ref("int_performance_management__observation_details") }}
         where
             rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-            and row_score_value is not null
+            and row_score is not null
     ),
 
     pivots as (
@@ -49,7 +52,7 @@ with
             so08,
         from
             measures_long pivot (
-                avg(row_score_value)
+                avg(row_score)
                 for score_measurement_shortname in (
                     'ETR1A',
                     'ETR1B',
@@ -87,7 +90,7 @@ with
             observer_employee_number,
             academic_year,
             code,
-            avg(overall_score) as overall_score,
+            avg(observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }}
         where rubric_name = 'Coaching Tool: Coach ETR and Reflection'
         group by observer_employee_number, academic_year, code

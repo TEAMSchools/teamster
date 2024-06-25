@@ -3,7 +3,7 @@ with
         select
             od.observer_employee_number,
             od.academic_year,
-            od.code as reporting_term,
+            od.form_term as reporting_term,
             od.is_iqr_outlier_current,
             od.is_iqr_outlier_global,
             od.cluster_current,
@@ -54,7 +54,7 @@ with
             on rt.type = 'PM'
             and rt.name like '%Coach ETR%'
             and od.academic_year = rt.academic_year
-            and od.code = rt.code
+            and od.form_term = rt.code
     ),
 
     score_aggs as (
@@ -68,11 +68,11 @@ with
             srh.home_work_location_name,
             srh.preferred_name_lastfirst,
             srh.report_to_preferred_name_lastfirst,
-            avg(obs.overall_score) as overall_score,
+            avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            and obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+            on obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
             and obs.employee_number = srh.employee_number
             and timestamp(obs.observed_at)
             between srh.work_assignment_start_date and srh.work_assignment_end_date
