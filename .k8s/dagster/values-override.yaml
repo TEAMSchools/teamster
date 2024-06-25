@@ -33,10 +33,10 @@ dagsterCloud:
 dagsterCloudAgent:
   resources:
     requests:
-      cpu: 500m
+      cpu: 750m
       memory: 1.5Gi
     limits:
-      cpu: 500m
+      cpu: 750m
       memory: 1.5Gi
   nodeSelector:
     cloud.google.com/gke-placement-group: servers
