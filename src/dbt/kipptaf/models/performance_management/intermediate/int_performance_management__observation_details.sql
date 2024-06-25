@@ -45,12 +45,10 @@ left join
     and os.measurement = tb.measurement
 /* join on google email and date for employee_number*/
 left join
-    {{ ref("base_people__staff_roster") }} as sr
-    on o.teacher_email = sr.google_email
+    {{ ref("base_people__staff_roster") }} as sr on o.teacher_email = sr.google_email
 /* join on google email and date for observer_employee_number*/
 left join
-    {{ ref("base_people__staff_roster") }} as sr2
-    on o.observer_email = sr2.google_email
+    {{ ref("base_people__staff_roster") }} as sr2 on o.observer_email = sr2.google_email
 where
     o.academic_year = {{ var("current_academic_year") }}
     and o.is_published
@@ -73,11 +71,11 @@ select
     grows,
     true as locked,
     date(observed_at) as observed_at,
-    academic_year as academic_year,
+    academic_year,
     'Teacher Performance Management' as observation_type,
     'PM' as observation_type_abbreviation,
     form_term as code,
-    'Coaching Tool: Coach ETR and Reflection' as name,
+    'Coaching Tool: Coach ETR and Reflection' as `name`,
     row_score_value as row_score,
     measurement_name,
     case

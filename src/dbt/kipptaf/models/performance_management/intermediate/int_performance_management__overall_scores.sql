@@ -66,19 +66,20 @@ select
     end as overall_tier,
 
     case
-        when code = 'PM1'
+        when od.code = 'PM1'
         then date(od.academic_year, 10, 1)
-        when code = 'PM2'
+        when od.code = 'PM2'
         then date(od.academic_year + 1, 1, 1)
-        when code = 'PM3'
+        when od.code = 'PM3'
         then date(od.academic_year + 1, 3, 1)
     end as eval_date,
 from {{ ref("int_performance_management__observation_details") }} as od
-join
+left join
     final_score_and_tier as f
     on od.employee_number = f.employee_number
     and od.academic_year = f.academic_year
-where observation_type = 'PM' and od.academic_year = {{ var("current_academic_year") }}
+where
+    od.observation_type = 'PM' and od.academic_year = {{ var("current_academic_year") }}
 group by
     od.employee_number,
     od.observation_id,

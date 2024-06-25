@@ -30,10 +30,10 @@ select
     srh.department_home_name as department,
 
     srh.primary_grade_level_taught as grade_taught,
-    srh.job_title as job_title,
+    srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
-    srh.worker_original_hire_date as worker_original_hire_date,
-    srh.assignment_status as assignment_status,
+    srh.worker_original_hire_date,
+    srh.assignment_status,
 
     sr.sam_account_name,
     sr.report_to_sam_account_name,
