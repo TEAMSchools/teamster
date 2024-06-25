@@ -4,8 +4,7 @@ with
             observer_employee_number,
             academic_year,
             code,
-            row_score,
-            measurement_name,
+            row_score as row_score_value,
             upper(
                 regexp_replace(
                     regexp_replace(measurement_name, r'[&\-]', ''), r':.*', ''
