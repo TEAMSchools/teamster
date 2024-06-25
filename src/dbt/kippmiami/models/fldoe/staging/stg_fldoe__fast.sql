@@ -235,7 +235,7 @@ with
             (
                 cast(
                     regexp_extract(
-                        _dagster_partition_school_year_term, r'^SY(\d+)/PM\d$'
+                        _dagster_partition_school_year_term, r'^SY(\d+)'
                     ) as int
                 )
                 + 1999
