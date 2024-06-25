@@ -20,7 +20,7 @@ select
     hd.historic_role,
     hd.historic_dept,
     hd.historic_salary,
-    hd.pm_term,
+    hd.code,
     hd.etr_score,
     hd.etr_tier,
     hd.so_score,
