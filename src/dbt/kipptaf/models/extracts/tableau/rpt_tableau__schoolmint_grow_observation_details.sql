@@ -1,73 +1,47 @@
 select
-    sr.employee_number,
-    sr.sam_account_name,
-    sr.report_to_sam_account_name,
-
-    rt.type as form_type,
-    rt.code as form_term,
-    rt.name as form_long_name,
-    rt.academic_year,
-    rt.start_date,
-    rt.lockbox_date,
-
-    sr2.preferred_name_lastfirst as observer_name,
-
+    od.employee_number,
     od.observer_employee_number,
     od.observation_id,
-    od.teacher_id,
-    od.rubric_id,
-    od.observed_at,
+    od.rubric_name,
+    od.observation_score,
+    od.strand_score,
     od.glows,
     od.grows,
-    od.score_measurement_id,
-    od.measurement_name,
-    od.text_box,
-    od.score_measurement_type,
-    od.score_measurement_shortname,
+    od.locked,
+    od.observed_at,
+    od.academic_year,
+    od.observation_type,
+    od.observation_type_abbreviation,
+    od.code,
+    od.name,
     od.row_score,
-    od.etr_score,
-    od.so_score,
-    od.academic_year as od_academic_year,
-    od.rn_submission,
+    od.measurement_name,
+    od.strand_name,
+    od.text_box,
+    od.strand_score,
 
-    os.etr_tier,
-    os.so_tier,
     os.overall_tier,
     os.final_score,
     os.final_tier,
 
-    coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
-    coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
-    coalesce(srh.home_work_location_name, sr.home_work_location_name) as location,
-    coalesce(
-        srh.home_work_location_grade_band, sr.home_work_location_grade_band
-    ) as grade_band,
-    coalesce(srh.department_home_name, sr.department_home_name) as department,
-    coalesce(
-        srh.primary_grade_level_taught, sr.primary_grade_level_taught
-    ) as grade_taught,
-    coalesce(srh.job_title, sr.job_title) as job_title,
-    coalesce(
-        srh.report_to_preferred_name_lastfirst, sr.report_to_preferred_name_lastfirst
-    ) as manager,
-    coalesce(
-        srh.worker_original_hire_date, sr.worker_original_hire_date
-    ) as worker_original_hire_date,
-    coalesce(srh.assignment_status, sr.assignment_status) as assignment_status,
-    case
-        when rt.academic_year <= 2023 and form_type = 'PM'
-        then od.locked_overall_score
-        else od.overall_score
-    end as overall_score,
+    srh.preferred_name_lastfirst as teammate,
+    srh.business_unit_home_name as entity,
+    srh.home_work_location_name as location,
+    srh.home_work_location_grade_band as grade_band,
+    srh.department_home_nameas department,
 
-from {{ ref("base_people__staff_roster") }} as sr
-cross join {{ ref("stg_reporting__terms") }} as rt
-left join
-    {{ ref("int_performance_management__observation_details") }} as od
-    on sr.employee_number = od.employee_number
-    and rt.code = od.form_term
-    and rt.academic_year = od.academic_year
-    and regexp_contains(od.form_long_name, rt.name)
+    srh.primary_grade_level_taught as grade_taught,
+    srh.job_title as job_title,
+    srh.report_to_preferred_name_lastfirst as manager,
+    srh.worker_original_hire_date as worker_original_hire_date,
+    srh.assignment_status as assignment_status,
+
+    sr.sam_account_name,
+    sr.report_to_sam_account_name,
+
+    sr.preferred_name_lastfirst as observer_name,
+
+from {{ ref("int_performance_management__observation_details") }} as od
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.observation_id = os.observation_id
@@ -77,15 +51,8 @@ left join
     and od.observed_at
     between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
 left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on od.employee_number = sr.employee_number
     {{ ref("base_people__staff_roster") }} as sr2
     on od.observer_employee_number = sr2.employee_number
-left join
-    final_tier as ft
-    on sr.employee_number = ft.employee_number
-    and od.academic_year = ft.academic_year
-    and rt.type = 'PM'
-where
-    (sr.job_title like '%Teacher%' or sr.job_title = 'Learning Specialist')
-    and sr.assignment_status not in ('Terminated', 'Deceased')
-    and rt.type in ('PM', 'O3', 'WT')
-    and (od.rn_submission = 1 or od.rn_submission is null)
+    
