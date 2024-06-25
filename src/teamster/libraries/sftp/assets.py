@@ -176,3 +176,87 @@ def build_sftp_asset(
         )
 
     return _asset
+
+
+def build_sftp_folder_asset(
+    asset_key,
+    remote_dir: str,
+    remote_file_regex: str,
+    ssh_resource_key: str,
+    avro_schema,
+    partitions_def=None,
+    auto_materialize_policy=None,
+    slugify_cols=True,
+    slugify_replacements: tuple = (),
+    tags: dict[str, str] | None = None,
+    op_tags: dict | None = None,
+    group_name: str | None = None,
+):
+    if group_name is None:
+        group_name = asset_key[1]
+
+    @asset(
+        key=asset_key,
+        metadata={"remote_dir": remote_dir, "remote_file_regex": remote_file_regex},
+        required_resource_keys={ssh_resource_key},
+        io_manager_key="io_manager_gcs_avro",
+        partitions_def=partitions_def,
+        tags=tags,
+        op_tags=op_tags,
+        group_name=group_name,
+        auto_materialize_policy=auto_materialize_policy,
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
+        compute_kind="python",
+    )
+    def _asset(context: AssetExecutionContext):
+        records = []
+        record_count = 0
+
+        ssh: SSHResource = getattr(context.resources, ssh_resource_key)
+
+        remote_file_regex_composed = compose_regex(
+            regexp=remote_file_regex, context=context
+        )
+
+        file_matches = match_sftp_files(
+            ssh=ssh, remote_dir=remote_dir, remote_file_regex=remote_file_regex_composed
+        )
+
+        # exit if no matching files
+        if not file_matches:
+            context.log.warning(
+                f"Found no files matching: {remote_dir}/{remote_file_regex_composed}"
+            )
+            return Output(value=([], avro_schema), metadata={"records": 0})
+
+        for file in file_matches:
+            local_filepath = ssh.sftp_get(
+                remote_filepath=file, local_filepath=f"./env/{file}"
+            )
+
+            # skip if file is empty
+            if os.path.getsize(local_filepath) == 0:
+                context.log.warning(f"File is empty: {local_filepath}")
+                continue
+
+            df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+
+            df.replace({nan: None}, inplace=True)
+            if slugify_cols:
+                df.rename(
+                    columns=lambda text: slugify(
+                        text=text, separator="_", replacements=slugify_replacements
+                    ),
+                    inplace=True,
+                )
+
+            records.extend(df.to_dict(orient="records"))
+            record_count += df.shape[0]
+
+        yield Output(value=(records, avro_schema), metadata={"records": record_count})
+
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=avro_schema
+        )
+
+    return _asset
