@@ -25,7 +25,8 @@ with
                     'Head of Schools in Residence',
                     'Director School Operations',
                     'Director Campus Operations',
-                    'Managing Director of School Operations'
+                    'Managing Director of School Operations',
+                    'Associate Director of School Operations'
                 ),
                 sr.job_title,
                 'CMO and Other Leaders'

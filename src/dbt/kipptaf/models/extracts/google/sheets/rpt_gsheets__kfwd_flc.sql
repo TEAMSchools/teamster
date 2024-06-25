@@ -97,6 +97,7 @@ select  -- noqa: ST06
         then 'KIPP Enrolled'
         else kt.ktc_status
     end as taf_enroll_status,
+    gpa.cumulative_y1_gpa_unweighted,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -116,4 +117,9 @@ left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cn
     on kt.contact_id = cn.contact_id
     and cn.academic_year = {{ var("current_academic_year") }}
+left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gpa
+    on co.studentid = gpa.studentid
+    and co.schoolid = gpa.schoolid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 where co.rn_undergrad = 1 and co.grade_level != 99

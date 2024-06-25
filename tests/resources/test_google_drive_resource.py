@@ -1,6 +1,6 @@
 from dagster import build_init_resource_context
 
-from teamster.kipptaf.resources import GOOGLE_DRIVE_RESOURCE
+from teamster.code_locations.kipptaf.resources import GOOGLE_DRIVE_RESOURCE
 
 
 def test_google_forms_resource():
