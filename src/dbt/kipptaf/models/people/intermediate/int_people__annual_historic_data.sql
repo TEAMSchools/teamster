@@ -50,7 +50,7 @@ select
     e.work_assignment_end_date,
     e.assignment_status as historic_position_status,
 
-    null as code,
+    null as pm_term,
     null as etr_score,
     null as etr_tier,
     null as so_score,
