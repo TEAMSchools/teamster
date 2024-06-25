@@ -1,16 +1,3 @@
-with
-    final_tier as (
-        select
-            employee_number,
-            academic_year,
-            overall_score as final_score,
-            overall_tier as final_tier,
-            pm_term,
-        from {{ ref("int_performance_management__overall_scores") }}
-        where pm_term = 'PM4'
-
-    )
-
 select
     sr.employee_number,
     sr.sam_account_name,
@@ -37,6 +24,7 @@ select
     od.text_box,
     od.score_measurement_type,
     od.score_measurement_shortname,
+    od.row_score,
     od.etr_score,
     od.so_score,
     od.academic_year as od_academic_year,
@@ -45,14 +33,8 @@ select
     os.etr_tier,
     os.so_tier,
     os.overall_tier,
-
-    case when rt.code = 'PM3' then ft.final_score end as final_score,
-    case when rt.code = 'PM3' then ft.final_tier end as final_tier,
-    case
-        when rt.academic_year <= 2023 and form_type = 'PM'
-        then od.locked_row_score
-        else od.row_score_value
-    end as row_score_value,
+    os.final_score,
+    os.final_tier,
 
     coalesce(srh.preferred_name_lastfirst, sr.preferred_name_lastfirst) as teammate,
     coalesce(srh.business_unit_home_name, sr.business_unit_home_name) as entity,
