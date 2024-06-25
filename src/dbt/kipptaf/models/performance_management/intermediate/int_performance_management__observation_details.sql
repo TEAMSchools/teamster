@@ -19,6 +19,8 @@ select
     tb.value_clean as text_box,
     sr.employee_number,
     sr2.employee_number as observer_employee_number,
+    null as etr_score,
+    null as so_score,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gt
@@ -71,10 +73,10 @@ select
     grows,
     true as locked,
     date(observed_at) as observed_at,
-    _dagster_partition_academic_year as academic_year,
+    academic_year as academic_year,
     'Teacher Performance Management' as observation_type,
     'PM' as observation_type_abbreviation,
-    _dagster_partition_term as code,
+    form_term as code,
     'Coaching Tool: Coach ETR and Reflection' as name,
     row_score_value as row_score,
     measurement_name,
@@ -88,5 +90,6 @@ select
     text_box,
     employee_number,
     observer_employee_number,
-
+    etr_score,
+    so_score,
 from {{ ref("stg_performance_management__observation_details") }}
