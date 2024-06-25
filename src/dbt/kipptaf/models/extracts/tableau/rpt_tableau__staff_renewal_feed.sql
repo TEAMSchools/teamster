@@ -1,10 +1,10 @@
 with
     pm_scores as (
-        select employee_number, avg(overall_score) as pm4_overall_score,
+        select employee_number, avg(observation_score) as pm4_overall_score,
         from {{ ref("int_performance_management__observation_details") }}
         where
             academic_year = {{ var("current_academic_year") }}
-            and overall_score is not null
+            and observation_score is not null
             and code in ('PM2', 'PM3')
         group by employee_number
     )
