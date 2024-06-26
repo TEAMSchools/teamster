@@ -70,14 +70,5 @@ select
     null as so_tier,
     null as overall_tier,
 
-    case
-        when code = 'PM1'
-        then date(academic_year, 10, 1)
-        when code = 'PM2'
-        then date(academic_year + 1, 1, 1)
-        when code = 'PM3'
-        then date(academic_year + 1, 3, 1)
-    end as eval_date,
+    eval_date,
 from {{ ref("stg_performance_management__observation_details") }}
-group by
-    employee_number, observation_id, academic_year, code, etr_score, so_score, score
