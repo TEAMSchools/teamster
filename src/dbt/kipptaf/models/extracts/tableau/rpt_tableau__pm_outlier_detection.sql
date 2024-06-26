@@ -62,7 +62,7 @@ with
             obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
-            obs.code,
+            obs.term_code,
 
             srh.department_home_name,
             srh.job_title,
@@ -82,7 +82,7 @@ with
             obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
-            obs.code,
+            obs.term_code,
             srh.department_home_name,
             srh.job_title,
             srh.home_work_location_name,
@@ -145,12 +145,12 @@ select
     sa.report_to_preferred_name_lastfirst as teacher_manager,
     sa.overall_score as teacher_overall_score,
 
-    if(sd.is_iqr_outlier_current then 'outlier', 'not outlier') as iqr_current,
-    if(sd.is_iqr_outlier_global then 'outlier', 'not outlier') as iqr_global,
-    if(sd.cluster_current = -1 then 'outlier', 'not outlier') as cluster_current,
-    if(sd.cluster_global = -1 then 'outlier', 'not outlier') as cluster_global,
-    if(sd.tree_outlier_current = -1 then 'outlier', 'not outlier') as tree_current,
-    if(sd.tree_outlier_global = -1 then 'outlier', 'not outlier') as tree_global,
+    if(sd.is_iqr_outlier_current, 'outlier', 'not outlier') as iqr_current,
+    if(sd.is_iqr_outlier_global, 'outlier', 'not outlier') as iqr_global,
+    if(sd.cluster_current = -1, 'outlier', 'not outlier') as cluster_current,
+    if(sd.cluster_global = -1, 'outlier', 'not outlier') as cluster_global,
+    if(sd.tree_outlier_current = -1, 'outlier', 'not outlier') as tree_current,
+    if(sd.tree_outlier_global = -1, 'outlier', 'not outlier') as tree_global,
 from score_dates as sd
 inner join
     {{ ref("base_people__staff_roster_history") }} as srh
@@ -161,4 +161,4 @@ inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number
     and sd.academic_year = sa.academic_year
-    and sd.reporting_term = sa.code
+    and sd.reporting_term = sa.term_code

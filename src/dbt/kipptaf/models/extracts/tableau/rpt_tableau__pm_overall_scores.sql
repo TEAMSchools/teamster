@@ -1,7 +1,7 @@
 select
     s.employee_number,
     s.academic_year,
-    s.code,
+    s.term_code,
     s.etr_score,
     s.so_score,
     s.observation_score as overall_score,

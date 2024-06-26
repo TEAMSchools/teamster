@@ -5,7 +5,7 @@ with
         where
             academic_year = {{ var("current_academic_year") }}
             and observation_score is not null
-            and code in ('PM2', 'PM3')
+            and term_code in ('PM2', 'PM3')
         group by employee_number
     )
 
