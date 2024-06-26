@@ -97,29 +97,25 @@ select
     employee_number,
     observation_id,
     academic_year,
-    form_term as code,
+    code,
     etr_score,
     so_score,
-    overall_score as observation_score,
+    score as observation_score,
+
     null as final_score,
     null as final_tier,
     null as etr_tier,
     null as so_tier,
     null as overall_tier,
+
     case
-        when form_term = 'PM1'
+        when code = 'PM1'
         then date(academic_year, 10, 1)
-        when form_term = 'PM2'
+        when code = 'PM2'
         then date(academic_year + 1, 1, 1)
-        when form_term = 'PM3'
+        when code = 'PM3'
         then date(academic_year + 1, 3, 1)
     end as eval_date,
 from {{ ref("stg_performance_management__observation_details") }}
 group by
-    employee_number,
-    observation_id,
-    academic_year,
-    form_term,
-    etr_score,
-    so_score,
-    overall_score
+    employee_number, observation_id, academic_year, code, etr_score, so_score, score
