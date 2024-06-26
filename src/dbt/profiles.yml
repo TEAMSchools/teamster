@@ -5,7 +5,7 @@ dev:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: _cbini
+      schema: _dev
       keyfile: /etc/secret-volume/dbt_user_creds_json
 
 kippnewark:
