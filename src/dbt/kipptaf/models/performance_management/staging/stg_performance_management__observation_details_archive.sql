@@ -1,13 +1,12 @@
 select
     employee_number,
     academic_year,
-    form_term as code,
+    form_term as term_code,
     form_type,
     observation_id,
     teacher_id,
     rubric_id,
     form_long_name as rubric_name,
-    observed_at,
     observer_employee_number,
     measurement_name,
     row_score_value as value_score,
@@ -25,8 +24,9 @@ select
     true as locked,
     'Teacher Performance Management' as observation_type,
     'PM' as observation_type_abbreviation,
-    'Coaching Tool: Coach ETR and Reflection' as `name`,
+    'Coaching Tool: Coach ETR and Reflection' as term_name,
 
+    timestamp(observed_at) as observed_at,
     date(observed_at) as observed_at_date_local,
 
     case
@@ -50,6 +50,36 @@ select
         when form_term = 'PM3'
         then date(academic_year + 1, 3, 1)
     end as eval_date,
+    case
+        when etr_score >= 3.495
+        then 4
+        when etr_score >= 2.745
+        then 3
+        when etr_score >= 1.745
+        then 2
+        when etr_score < 1.75
+        then 1
+    end as etr_tier,
+    case
+        when so_score >= 3.495
+        then 4
+        when so_score >= 2.945
+        then 3
+        when so_score >= 1.945
+        then 2
+        when so_score < 1.95
+        then 1
+    end as so_tier,
+    case
+        when overall_score >= 3.495
+        then 4
+        when overall_score >= 2.745
+        then 3
+        when overall_score >= 1.745
+        then 2
+        when overall_score < 1.75
+        then 1
+    end as overall_tier,
 from
     {{
         source(
