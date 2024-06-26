@@ -47,14 +47,14 @@ with
             od.so7,
             od.so8,
 
-            rt.end_date,
+            timestamp(rt.end_date) as end_date_timestamp,
         from {{ ref("stg_performance_management__outlier_detection") }} as od
         inner join
             {{ ref("stg_reporting__terms") }} as rt
-            on rt.type = 'PM'
-            and rt.name like '%Coach ETR%'
-            and od.academic_year = rt.academic_year
+            on od.academic_year = rt.academic_year
             and od.form_term = rt.code
+            and rt.type = 'PM'
+            and rt.name like '%Coach ETR%'
     ),
 
     score_aggs as (
@@ -63,18 +63,20 @@ with
             obs.observer_employee_number,
             obs.academic_year,
             obs.code,
+
             srh.department_home_name,
             srh.job_title,
             srh.home_work_location_name,
             srh.preferred_name_lastfirst,
             srh.report_to_preferred_name_lastfirst,
+
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
             on obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
             and obs.employee_number = srh.employee_number
-            and timestamp(obs.observed_at)
+            and obs.observed_at_timestamp
             between srh.work_assignment_start_date and srh.work_assignment_end_date
         group by
             obs.employee_number,
@@ -128,11 +130,13 @@ select
     sd.so6,
     sd.so7,
     sd.so8,
+
     srh.preferred_name_lastfirst as observer_name,
     srh.department_home_name as observer_department,
     srh.job_title as observer_job_title,
     srh.home_work_location_name as observer_location,
     srh.report_to_preferred_name_lastfirst as observer_manager,
+
     sa.employee_number as teacher_employee_number,
     sa.preferred_name_lastfirst as teacher_name,
     sa.department_home_name as teacher_department,
@@ -140,29 +144,18 @@ select
     sa.home_work_location_name as teacher_location,
     sa.report_to_preferred_name_lastfirst as teacher_manager,
     sa.overall_score as teacher_overall_score,
-    case
-        when sd.is_iqr_outlier_current then 'outlier' else 'not outlier'
-    end as iqr_current,
-    case
-        when sd.is_iqr_outlier_global then 'outlier' else 'not outlier'
-    end as iqr_global,
-    case
-        when sd.cluster_current = -1 then 'outlier' else 'not outlier'
-    end as cluster_current,
-    case
-        when sd.cluster_global = -1 then 'outlier' else 'not outlier'
-    end as cluster_global,
-    case
-        when sd.tree_outlier_current = -1 then 'outlier' else 'not outlier'
-    end as tree_current,
-    case
-        when sd.tree_outlier_global = -1 then 'outlier' else 'not outlier'
-    end as tree_global,
+
+    if(sd.is_iqr_outlier_current then 'outlier', 'not outlier') as iqr_current,
+    if(sd.is_iqr_outlier_global then 'outlier', 'not outlier') as iqr_global,
+    if(sd.cluster_current = -1 then 'outlier', 'not outlier') as cluster_current,
+    if(sd.cluster_global = -1 then 'outlier', 'not outlier') as cluster_global,
+    if(sd.tree_outlier_current = -1 then 'outlier', 'not outlier') as tree_current,
+    if(sd.tree_outlier_global = -1 then 'outlier', 'not outlier') as tree_global,
 from score_dates as sd
 inner join
     {{ ref("base_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
-    and timestamp(sd.end_date)
+    and sd.end_date_timestamp
     between srh.work_assignment_start_date and srh.work_assignment_end_date
 inner join
     score_aggs as sa
