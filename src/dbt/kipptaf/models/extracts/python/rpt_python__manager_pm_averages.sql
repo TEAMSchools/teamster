@@ -3,10 +3,10 @@ with
         select
             observer_employee_number,
             academic_year,
-            code,
+            term_code,
             row_score as row_score_value,
 
-            safe_cast(right(code, 1) as int) as term_num,
+            safe_cast(right(term_code, 1) as int) as term_num,
 
             upper(
                 regexp_replace(
@@ -23,7 +23,7 @@ with
         select
             observer_employee_number,
             academic_year,
-            code,
+            term_code,
             term_num,
             etr1a,
             etr1b,
@@ -91,17 +91,17 @@ with
         select
             observer_employee_number,
             academic_year,
-            code,
+            term_code,
             avg(observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }}
         where rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-        group by observer_employee_number, academic_year, code
+        group by observer_employee_number, academic_year, term_code
     )
 
 select
     p.observer_employee_number,
     p.academic_year,
-    p.code as form_term,
+    p.term_code as form_term,
     p.term_num,
     p.etr1a,
     p.etr1b,
@@ -137,4 +137,4 @@ inner join
     manager_overall as m
     on p.observer_employee_number = m.observer_employee_number
     and p.academic_year = m.academic_year
-    and p.code = m.code
+    and p.term_code = m.term_code
