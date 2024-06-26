@@ -12,8 +12,8 @@ select
     od.academic_year,
     od.observation_type,
     od.observation_type_abbreviation,
-    od.code,
-    od.name,
+    od.term_code,
+    od.term_name,
     od.row_score,
     od.measurement_name,
     od.strand_name,
@@ -41,7 +41,8 @@ select
 from {{ ref("int_performance_management__observation_details") }} as od
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
-    on od.observation_id = os.observation_id
+    on od.employee_number = os.employee_number
+    and od.academic_year = os.academic_year
 inner join
     {{ ref("base_people__staff_roster_history") }} as srh
     on od.employee_number = srh.employee_number
