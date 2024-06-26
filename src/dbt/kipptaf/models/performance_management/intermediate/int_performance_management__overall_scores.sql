@@ -52,6 +52,20 @@ left join
     and od.academic_year = f.academic_year
 where
     od.observation_type = 'PM' and od.academic_year = {{ var("current_academic_year") }}
+group by
+    od.employee_number,
+    od.observation_id,
+    od.academic_year,
+    od.code,
+    od.etr_score,
+    od.so_score,
+    od.observation_score,
+    f.final_score,
+    f.final_tier,
+    od.etr_tier,
+    od.so_tier,
+    od.overall_tier,
+    od.eval_date
 
 union all
 
@@ -72,3 +86,12 @@ select
 
     eval_date,
 from {{ ref("stg_performance_management__observation_details") }}
+group by
+    employee_number,
+    observation_id,
+    academic_year,
+    code,
+    etr_score,
+    so_score,
+    score,
+    eval_date
