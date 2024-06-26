@@ -9,6 +9,7 @@ with
             o.glows,
             o.grows,
             o.locked,
+            o.observed_at as observed_at_timestamp,
             o.observed_at_date_local as observed_at,
             o.academic_year,
 

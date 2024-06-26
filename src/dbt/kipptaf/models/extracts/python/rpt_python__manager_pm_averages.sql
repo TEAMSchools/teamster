@@ -5,6 +5,9 @@ with
             academic_year,
             code,
             row_score as row_score_value,
+
+            safe_cast(right(code, 1) as int) as term_num,
+
             upper(
                 regexp_replace(
                     regexp_replace(measurement_name, r'[&\-]', ''), r':.*', ''
@@ -21,7 +24,7 @@ with
             observer_employee_number,
             academic_year,
             code,
-            cast(right(code, 1) as int64) as term_num,
+            term_num,
             etr1a,
             etr1b,
             etr2a,
@@ -98,7 +101,7 @@ with
 select
     p.observer_employee_number,
     p.academic_year,
-    p.code,
+    p.code as form_term,
     p.term_num,
     p.etr1a,
     p.etr1b,
