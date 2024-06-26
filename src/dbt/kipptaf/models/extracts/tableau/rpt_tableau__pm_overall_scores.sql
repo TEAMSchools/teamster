@@ -29,7 +29,7 @@ select
     sr.base_remuneration_annual_rate_amount_amount_value as annual_salary,
     sr.alumni_status,
     sr.community_professional_exp,
-from {{ ref("int_performance_management__overall_scores") }} as s
+from {{ ref("int_performance_management__observations") }} as s
 left join
     {{ ref("int_people__years_experience") }} as ye
     on s.employee_number = ye.employee_number

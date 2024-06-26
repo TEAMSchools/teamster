@@ -323,6 +323,7 @@ select distinct
     l.termination_date,
     l.original_hire_date,
     l.total_years_teaching,
+
     pm.final_tier as overall_tier,
     pm.final_score as overall_score,
 from ly_deduped as l

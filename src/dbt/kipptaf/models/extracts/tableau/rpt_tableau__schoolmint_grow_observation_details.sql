@@ -18,8 +18,8 @@ select
     od.measurement_name,
     od.strand_name,
     od.text_box,
+    od.overall_tier,
 
-    os.overall_tier,
     os.final_score,
     os.final_tier,
 
