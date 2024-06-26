@@ -13,5 +13,5 @@ elif [[ ${dbt_command} == "sxs" ]]; then
     --args "select: ${flags[*]}"
 else
   # trunk-ignore(shellcheck/SC2068)
-  dbt "${dbt_command}" --project-dir src/dbt/"${project}" ${flags[@]}
+  dbt "${dbt_command}" --project-dir src/dbt/"${project}" ${flags[@]} --profile dev
 fi
