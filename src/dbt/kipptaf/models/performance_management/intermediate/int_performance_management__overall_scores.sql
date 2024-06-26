@@ -1,27 +1,32 @@
 with
+    final_score as (
+        select employee_number, academic_year, avg(observation_score) as final_score,
+        from {{ ref("int_performance_management__observation_details") }}
+        where
+            observation_type = 'PM'
+            and academic_year = {{ var("current_academic_year") }}
+            and code in ('PM2', 'PM3')
+        group by employee_number, academic_year
+
+    ),
+
     final_score_and_tier as (
         select
             employee_number,
             academic_year,
-            avg(observation_score) as final_score,
+            final_score,
+
             case
-                when avg(observation_score) >= 3.495
+                when final_score >= 3.495
                 then 4
-                when avg(observation_score) >= 2.745
+                when final_score >= 2.745
                 then 3
-                when avg(observation_score) >= 1.745
+                when final_score >= 1.745
                 then 2
-                when avg(observation_score) < 1.75
+                when final_score < 1.75
                 then 1
             end as final_tier,
-        from {{ ref("int_performance_management__observation_details") }}
-        where
-            observation_type = 'PM'
-            and code in ('PM2', 'PM3')
-            and observation_score is not null
-            and academic_year = {{ var("current_academic_year") }}
-        group by employee_number, academic_year
-
+        from final_score
     )
 
 select
@@ -32,47 +37,14 @@ select
     od.etr_score,
     od.so_score,
     od.observation_score,
+
     f.final_score,
     f.final_tier,
-    case
-        when od.etr_score >= 3.495
-        then 4
-        when od.etr_score >= 2.745
-        then 3
-        when od.etr_score >= 1.745
-        then 2
-        when od.etr_score < 1.75
-        then 1
-    end as etr_tier,
-    case
-        when od.so_score >= 3.495
-        then 4
-        when od.so_score >= 2.945
-        then 3
-        when od.so_score >= 1.945
-        then 2
-        when od.so_score < 1.95
-        then 1
-    end as so_tier,
-    case
-        when od.observation_score >= 3.495
-        then 4
-        when od.observation_score >= 2.745
-        then 3
-        when od.observation_score >= 1.745
-        then 2
-        when od.observation_score < 1.75
-        then 1
-    end as overall_tier,
 
-    case
-        when od.code = 'PM1'
-        then date(od.academic_year, 10, 1)
-        when od.code = 'PM2'
-        then date(od.academic_year + 1, 1, 1)
-        when od.code = 'PM3'
-        then date(od.academic_year + 1, 3, 1)
-    end as eval_date,
+    od.etr_tier,
+    od.so_tier,
+    od.overall_tier,
+    od.eval_date,
 from {{ ref("int_performance_management__observation_details") }} as od
 left join
     final_score_and_tier as f
@@ -80,16 +52,6 @@ left join
     and od.academic_year = f.academic_year
 where
     od.observation_type = 'PM' and od.academic_year = {{ var("current_academic_year") }}
-group by
-    od.employee_number,
-    od.observation_id,
-    od.academic_year,
-    od.code,
-    od.etr_score,
-    od.so_score,
-    od.observation_score,
-    f.final_score,
-    f.final_tier
 
 union all
 
