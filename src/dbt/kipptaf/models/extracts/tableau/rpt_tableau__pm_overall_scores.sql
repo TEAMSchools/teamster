@@ -15,7 +15,7 @@ select
 
     sr.preferred_name_lastfirst as teammate,
     sr.business_unit_home_name as entity,
-    sr.home_work_location_name as location,
+    sr.home_work_location_name as `location`,
     sr.home_work_location_grade_band as grade_band,
     sr.home_work_location_powerschool_school_id,
     sr.department_home_name as department,
@@ -39,5 +39,5 @@ inner join
     on s.employee_number = sr.employee_number
     and s.eval_date
     between date(sr.work_assignment_start_date) and date(sr.work_assignment_end_date)
-    and sr.assignment_status not in ('Terminated', 'Deceased')
     and sr.primary_indicator
+    and sr.assignment_status not in ('Terminated', 'Deceased')

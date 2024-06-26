@@ -50,13 +50,14 @@ select
     e.work_assignment_end_date,
     e.assignment_status as historic_position_status,
 
+    pm.final_score as overall_score,
+    pm.final_tier as overall_tier,
+
     null as pm_term,
     null as etr_score,
     null as etr_tier,
     null as so_score,
     null as so_tier,
-    pm.final_score as overall_score,
-    pm.final_tier as overall_tier,
 
     coalesce(
         s.worker_rehire_date, s.worker_original_hire_date

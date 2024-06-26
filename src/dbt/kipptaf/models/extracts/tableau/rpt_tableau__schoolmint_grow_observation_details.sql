@@ -25,7 +25,7 @@ select
 
     srh.preferred_name_lastfirst as teammate,
     srh.business_unit_home_name as entity,
-    srh.home_work_location_name as location,
+    srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
 
@@ -37,9 +37,7 @@ select
 
     sr.sam_account_name,
     sr.report_to_sam_account_name,
-
     sr.preferred_name_lastfirst as observer_name,
-
 from {{ ref("int_performance_management__observation_details") }} as od
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
