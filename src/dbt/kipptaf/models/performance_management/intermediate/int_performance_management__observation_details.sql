@@ -84,6 +84,7 @@ with
             glows,
             grows,
             locked,
+            observed_at as observed_at_timestamp,
             observed_at_date_local as observed_at,
             academic_year,
             observation_type,
