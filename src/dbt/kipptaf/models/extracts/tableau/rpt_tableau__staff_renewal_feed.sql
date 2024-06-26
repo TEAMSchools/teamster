@@ -32,7 +32,7 @@ select
     s.scale_ny_salary,
     s.scale_step,
 
-    p.pm4_overall_score,
+    p.final_score as pm4_overall_score,
 from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__expected_next_year_salary") }} as s
