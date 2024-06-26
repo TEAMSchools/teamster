@@ -1,11 +1,4 @@
 {
-  // "dbt.dbtIntegration": "core",
-  // "dbt.dbtPythonPathOverride": "/usr/local/bin/dbt",
-  "dbt.enableNewLineagePanel": true,
-  "dbt.enableNewQueryPanel": true,
-  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
-  "dbt.prefixGenerateModel": "stg",
-  "dbt.queryLimit": 500,
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
@@ -45,5 +38,5 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "dbt.buildModelCommandAdditionalParams": ["--profile", "dev"]
+  "dbt.enableNewLineagePanel": true
 }

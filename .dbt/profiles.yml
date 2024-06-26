@@ -15,7 +15,7 @@ kippnewark:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: kippnewark
+      schema: _dev_kippnewark
       keyfile: /etc/secret-volume/dbt_user_creds_json
 
 kippcamden:
@@ -25,7 +25,7 @@ kippcamden:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: kippcamden
+      schema: _dev_kippcamden
       keyfile: /etc/secret-volume/dbt_user_creds_json
 
 kippmiami:
@@ -35,7 +35,7 @@ kippmiami:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: kippmiami
+      schema: _dev_kippmiami
       keyfile: /etc/secret-volume/dbt_user_creds_json
 
 kipptaf:
@@ -45,7 +45,7 @@ kipptaf:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: kipptaf
+      schema: _dev_kipptaf
       keyfile: /etc/secret-volume/dbt_user_creds_json
 
 integration_tests:
@@ -55,5 +55,5 @@ integration_tests:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: integration_tests
+      schema: _dev
       keyfile: /etc/secret-volume/dbt_user_creds_json
