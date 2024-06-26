@@ -1,5 +1,5 @@
 {
-  "dbt.dbtIntegration": "core",
+  // "dbt.dbtIntegration": "core",
   // "dbt.dbtPythonPathOverride": "/usr/local/bin/dbt",
   "dbt.enableNewLineagePanel": true,
   "dbt.enableNewQueryPanel": true,
@@ -44,5 +44,6 @@
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  },
+  "dbt.buildModelCommandAdditionalParams": ["--profile", "dev"]
 }
