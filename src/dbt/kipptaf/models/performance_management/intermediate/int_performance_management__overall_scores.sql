@@ -2,10 +2,7 @@ with
     observation_rollup as (
         select employee_number, academic_year, avg(observation_score) as final_score,
         from {{ ref("int_performance_management__observations") }}
-        where
-            observation_type_abbreviation = 'PM'
-            and academic_year = {{ var("current_academic_year") }}
-            and term_code in ('PM2', 'PM3')
+        where observation_type_abbreviation = 'PM' and term_code in ('PM2', 'PM3')
         group by employee_number, academic_year
     )
 
