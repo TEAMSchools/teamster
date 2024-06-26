@@ -4,6 +4,7 @@
 [![kippnewark](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippnewark.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippnewark.yaml)
 [![kippcamden](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippcamden.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippcamden.yaml)
 [![kippmiami](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippmiami.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippmiami.yaml)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FTEAMSchools%2Fteamster.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FTEAMSchools%2Fteamster?ref=badge_shield)
 
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 [![Trunk](https://img.shields.io/badge/trunk-checked-brightgreen?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRiIgc3Ryb2tlLXdpZHRoPSIxMSIgdmlld0JveD0iMCAwIDEwMSAxMDEiPjxwYXRoIGQ9Ik01MC41IDk1LjVhNDUgNDUgMCAxIDAtNDUtNDVtNDUtMzBhMzAgMzAgMCAwIDAtMzAgMzBtNDUgMGExNSAxNSAwIDAgMC0zMCAwIi8+PC9zdmc+)](https://trunk.io)
@@ -56,3 +57,7 @@ Before you merge:
 - GitHub Actions for CI/CD
 
 ### Fivetran & Airbyte
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FTEAMSchools%2Fteamster.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FTEAMSchools%2Fteamster?ref=badge_large)
