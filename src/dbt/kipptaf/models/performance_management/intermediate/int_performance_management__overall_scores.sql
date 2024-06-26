@@ -1,5 +1,5 @@
 with
-    final_score as (
+    observation_details_rollup as (
         select employee_number, academic_year, avg(observation_score) as final_score,
         from {{ ref("int_performance_management__observation_details") }}
         where
@@ -26,7 +26,7 @@ with
                 when final_score < 1.75
                 then 1
             end as final_tier,
-        from final_score
+        from observation_details_rollup
     )
 
 select
