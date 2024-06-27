@@ -279,7 +279,7 @@ fsspec==2024.6.0; python_version >= "3.12" \
 github3-py==4.0.1 \
     --hash=sha256:30d571076753efc389edc7f9aaef338a4fcb24b54d8968d5f39b1342f45ddd36 \
     --hash=sha256:a89af7de25650612d1da2f0609622bcdeb07ee8a45a1c06b2d16a05e4234e753
-google-api-core==2.19.0 \
+google-api-core[grpc]==2.19.0 \
     --hash=sha256:8661eec4078c35428fd3f69a2c7ee29e342896b70f01d1a1cbcb334372dd6251 \
     --hash=sha256:cf1b7c2694047886d2af1128a03ae99e391108a08804f87cfd35970e49c9cd10
 google-api-python-client==2.134.0 \
@@ -294,7 +294,7 @@ google-auth-httplib2==0.2.0 \
 google-auth-oauthlib==1.2.0 \
     --hash=sha256:292d2d3783349f2b0734a0a0207b1e1e322ac193c2c09d8f7c613fb7cc501ea8 \
     --hash=sha256:297c1ce4cb13a99b5834c74a1fe03252e1e499716718b190f56bcb9c4abc4faf
-google-cloud-bigquery==3.25.0 \
+google-cloud-bigquery[pandas]==3.25.0 \
     --hash=sha256:5b2aff3205a854481117436836ae1403f11f2594e6810a98886afd57eda28509 \
     --hash=sha256:7f0c371bc74d2a7fb74dacbc00ac0f90c8c2bec2289b51dd6685a275873b1ce9
 google-cloud-core==2.4.1 \
@@ -326,7 +326,7 @@ google-crc32c==1.5.0 \
 google-resumable-media==2.7.1 \
     --hash=sha256:103ebc4ba331ab1bfdac0250f8033627a2cd7cde09e7ccff9181e31ba4315b2c \
     --hash=sha256:eae451a7b2e2cdbaaa0fd2eb00cc8a1ee5e95e16b55597359cbc3d27d7d90e33
-googleapis-common-protos==1.63.1 \
+googleapis-common-protos[grpc]==1.63.1 \
     --hash=sha256:0e1c2cdfcbc354b76e4a211a35ea35d6926a835cba1377073c4861db904a1877 \
     --hash=sha256:c6442f7a0a6b2a80369457d79e6672bb7dcbaab88e0848302497e3ec80780a6a
 greenlet==3.0.3; (platform_machine == "win32" or platform_machine == "WIN32" or platform_machine == "AMD64" or platform_machine == "amd64" or platform_machine == "x86_64" or platform_machine == "ppc64le" or platform_machine == "aarch64") and python_version < "3.13" \
@@ -419,7 +419,7 @@ markupsafe==2.1.5 \
     --hash=sha256:d283d37a890ba4c1ae73ffadf8046435c76e7bc2247bbb63c00bd1a709c6544b \
     --hash=sha256:ea3d8a3d18833cf4304cd2fc9cbb1efe188ca9b5efef2bdac7adc20594a0e46b \
     --hash=sha256:f5dfb42c4604dddc8e4305050aa6deb084540643ed5804d7455b5df8fe16f5e5
-mashumaro==3.13.1 \
+mashumaro[msgpack]==3.13.1 \
     --hash=sha256:169f0290253b3e6077bcb39c14a9dd0791a3fdedd9e286e536ae561d4ff1975b \
     --hash=sha256:ad0a162b8f4ea232dadd2891d77ff20165b855b9d84610f36ac84462d4576aa0
 mdurl==0.1.2 \
@@ -656,7 +656,7 @@ pydantic-core==2.18.4 \
 pygments==2.18.0 \
     --hash=sha256:786ff802f32e91311bff3889f6e9a86e81505fe99f2735bb6d60ae0c5004f199 \
     --hash=sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a
-pyjwt==2.8.0 \
+pyjwt[crypto]==2.8.0 \
     --hash=sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de \
     --hash=sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320
 pynacl==1.5.0 \
@@ -808,7 +808,7 @@ sqlalchemy==2.0.31 \
     --hash=sha256:b9c01990d9015df2c6f818aa8f4297d42ee71c9502026bb074e713d496e26b67 \
     --hash=sha256:cd1591329333daf94467e699e11015d9c944f44c94d2091f4ac493ced0119449 \
     --hash=sha256:fa4b1af3e619b5b0b435e333f3967612db06351217c58bfb50cee5f003db2a5a
-sqlglot==25.2.0 \
+sqlglot[rs]==25.2.0 \
     --hash=sha256:545ee36ab9f94bb227715d6bff63872509280c584046854d4d977daff169c6e2 \
     --hash=sha256:734dedf43c1a453eb0ab02dd9e245290855bb44ee3a569acb661fd378484955f
 sqlglotrs==0.2.6 \

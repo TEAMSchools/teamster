@@ -22,13 +22,20 @@ select
     o.so_score,
     o.so_tier,
 
-    coalesce(os.value_score, arc.value_score) as row_score,
+    os.value_score as row_score,
+
+    m.name as measurement_name,
+
+    mg.measurement_group_name as strand_name,
+
+    tb.value_clean as text_box,
+{# coalesce(os.value_score, arc.value_score) as row_score,
 
     coalesce(m.name, arc.measurement_name) as measurement_name,
 
     coalesce(mg.measurement_group_name, arc.measurement_group_name) as strand_name,
 
-    coalesce(tb.value_clean, arc.text_box) as text_box,
+    coalesce(tb.value_clean, arc.text_box) as text_box, #}
 from {{ ref("int_performance_management__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
@@ -42,12 +49,13 @@ left join
     and m.measurement_id = mgm.measurement_id
 left join
     {{ ref("stg_schoolmint_grow__rubrics__measurement_groups") }} as mg
-    on o.rubric_id = mgm.rubric_id
+    on mgm.rubric_id = mg.rubric_id
+    and mgm.measurement_group_id = mg.measurement_group_id
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores__text_boxes") }} as tb
     on os.observation_id = tb.observation_id
     and os.measurement = tb.measurement
-left join
+{# left join
     {{ ref("stg_performance_management__observation_details_archive") }} as arc
-    on o.observation_id = arc.observation_id
+    on o.observation_id = arc.observation_id #}
 where o.academic_year = {{ var("current_academic_year") }} and o.is_published
