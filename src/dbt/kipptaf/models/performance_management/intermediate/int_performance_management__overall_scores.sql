@@ -7,7 +7,9 @@ with
     )
 
 select
-    *,
+    employee_number,
+    academic_year,
+    final_score,
 
     case
         when final_score >= 3.495
@@ -20,3 +22,8 @@ select
         then 1
     end as final_tier,
 from observation_rollup
+
+union all
+
+select employee_number, academic_year, final_score, final_tier,
+from {{ ref("int_performance_management__observations_archive") }}
