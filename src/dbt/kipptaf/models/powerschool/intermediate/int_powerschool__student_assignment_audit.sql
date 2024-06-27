@@ -5,6 +5,7 @@ with
             ce.cc_studentid as studentid,
             ce.cc_sectionid as sectionid,
 
+            c.region,
             c.quarter,
             c.semester,
             c.week_number_quarter,
@@ -29,6 +30,8 @@ with
             coalesce(s.islate, 0) as islate,
             coalesce(s.isexempt, 0) as isexempt,
             coalesce(s.ismissing, 0) as ismissing,
+
+            if(ap.ap_course_subject is null, 0, 1) as ap_course,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -63,6 +66,10 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="s") }}
             and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+        left join
+            {{ ref("stg_powerschool__s_nj_crs_x") }} as ap
+            on ce.courses_dcid = ap.coursesdcid
+            and {{ union_dataset_join_clause(left_alias="ce", right_alias="ap") }}
         where
             ce.cc_academic_year = {{ var("current_academic_year") }}
             and not ce.is_dropped_section
