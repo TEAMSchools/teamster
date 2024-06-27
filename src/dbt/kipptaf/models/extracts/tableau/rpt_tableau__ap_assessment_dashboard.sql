@@ -48,8 +48,7 @@ select
     s.cc_dateleft as ap_date_left,
     s.sections_external_expression as ap_course_section,
     s.teacher_lastfirst as ap_teacher_name,
-
-    x.ap_course_subject,
+    s.ap_course_subject,
 
     adb.id as contact_id,
     adb.kipp_hs_class as ktc_cohort,
@@ -62,6 +61,7 @@ select
     if(e.spedlep in ('No IEP', null), 0, 1) as sped,
 
     coalesce(s.courses_course_name, 'Not an AP course') as ap_course_name,
+
     if(s.courses_course_name is null, 'Not applicable', 'AP') as expected_scope,
     if(
         s.courses_course_name is null, 'Not applicable', 'Official'
@@ -83,10 +83,6 @@ left join
     and s.rn_course_number_year = 1
     and s.courses_course_name like 'AP%'
     and not s.is_dropped_section
-left join
-    {{ ref("stg_powerschool__s_nj_crs_x") }} as x
-    on s.courses_dcid = x.coursesdcid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="x") }}
 left join
     {{ ref("stg_kippadb__contact") }} as adb
     on e.student_number = adb.school_specific_id

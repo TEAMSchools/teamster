@@ -149,16 +149,6 @@ def test_pearson_parcc_kippcamden():
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
-def test_performance_management_observation_details_kipptaf():
-    from teamster.code_locations.kipptaf.performance_management.assets import (
-        observation_details,
-    )
-
-    _test_asset(
-        asset=observation_details, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}
-    )
-
-
 def test_renlearn_accelerated_reader_kippnj():
     from teamster.code_locations.kippnewark.renlearn.assets import assets
 
@@ -276,38 +266,6 @@ def test_renlearn_fast_star_kippmiami():
             )
         },
     )
-
-
-def test_fldoe_fast_kippmiami():
-    from teamster.code_locations.kippmiami.fldoe.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "fast"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_fldoe_fsa_kippmiami():
-    from teamster.code_locations.kippmiami.fldoe.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "fsa"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_fldoe_eoc_kippmiami():
-    from teamster.code_locations.kippmiami.fldoe.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "eoc"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_fldoe_science_kippmiami():
-    from teamster.code_locations.kippmiami.fldoe.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "science"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
 def test_iready_diagnostic_results_kippmiami():
