@@ -13,18 +13,19 @@ with
 
 select
     _id as measurement_id,
-    `name`,
     district,
-    created,
-    lastmodified as last_modified,
-    archivedat as archived_at,
+    `name`,
     `description`,
     rowstyle as row_style,
     scalemax as scale_max,
     scalemin as scale_min,
+
+    /* repeated records */
     textboxes as text_boxes,
     measurementoptions as measurement_options,
 
-    regexp_extract(lower(`name`), r'(^.*?)\-') as `type`,
-    regexp_extract(lower(`name`), r'(^.*?):') as short_name,
+    timestamp(created) as created,
+    timestamp(lastmodified) as last_modified,
+    timestamp(archivedat) as archived_at,
 from deduplicate
+where _dagster_partition_key = 'f'
