@@ -6,5 +6,4 @@ kippcamden:
       method: service-account
       project: teamster-332318
       schema: kippcamden
-      threads: 1
       keyfile: /etc/secret-volume/dbt_user_creds_json

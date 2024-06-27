@@ -19,7 +19,7 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "USE_GKE_GCLOUD_AUTH_PLUGIN": "True",
     "GOOGLE_APPLICATION_CREDENTIALS": "/etc/secret-volume/gcloud_service_account_json",
-    "DBT_PROFILES_DIR": "/workspaces/teamster/src/dbt",
+    "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
     "TRUNK_TELEMETRY": "off"
   }
