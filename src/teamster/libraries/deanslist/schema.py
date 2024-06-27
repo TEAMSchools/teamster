@@ -289,6 +289,7 @@ class Roster(BaseModel):
     CollectHW: str | None = None
     CourseNumber: str | None = None
     GradeLevels: str | None = None
+    HP_RequestsEnabled: str | None = None
     LastSynced: str | None = None
     MarkerColor: str | None = None
     MasterID: str | None = None
@@ -432,6 +433,7 @@ class Student(BaseModel):
     GradeLevelKey: str | None = None
     GradeLevelShort: str | None = None
     GradeLevelSort: str | None = None
+    HallPassDailyLimit: int | None = None
     HomeLanguage: str | None = None
     HomeLanguageCode: str | None = None
     HomeLanguageID: str | None = None
@@ -462,7 +464,7 @@ class Student(BaseModel):
     TransportationNotes: str | None = None
     ZipCode: str | None = None
 
-    BirthDate: int | str
+    BirthDate: int | str | None = None
 
     Enrollment: EnrollmentObject | None = None
 
