@@ -75,6 +75,7 @@ class ObservationDetail(BaseModel):
     score_measurement_shortname: str | None = None
     score_measurement_type: str | None = None
     so_score: float | None = None
-    so_tier: int | None = None
     teacher_id: str | None = None
     text_box: str | None = None
+
+    so_tier: int | float | None = None

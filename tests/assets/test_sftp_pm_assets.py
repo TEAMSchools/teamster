@@ -53,4 +53,4 @@ def _test_asset(asset, partition_key=None):
 
 
 def test_performance_management_observation_details_kipptaf():
-    _test_asset(asset=observation_details)
+    _test_asset(asset=observation_details, partition_key="2023|PM3")
