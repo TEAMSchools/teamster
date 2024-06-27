@@ -48,7 +48,6 @@ left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores__text_boxes") }} as tb
     on os.observation_id = tb.observation_id
     and os.measurement = tb.measurement
-where o.academic_year = {{ var("current_academic_year") }} and o.is_published
 
 union all
 
