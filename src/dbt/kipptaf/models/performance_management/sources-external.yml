@@ -20,7 +20,7 @@ sources:
               - kipptaf
               - performance_management
               - outlier_detection
-      - name: src_performance_management__observation_details
+      - name: src_performance_management__observation_details_archive
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/*"
