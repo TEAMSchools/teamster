@@ -1,9 +1,22 @@
 with
+    schools as (
+        select
+            _dbt_source_relation,
+            school_number,
+
+            case
+                high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
+            end as school_level,
+        from {{ ref("stg_powerschool__schools") }}
+    ),
+
     students_assignments as (
         select
             ce._dbt_source_relation,
             ce.cc_studentid as studentid,
             ce.cc_sectionid as sectionid,
+
+            sch.school_level,
 
             c.region,
             c.quarter,
@@ -31,14 +44,16 @@ with
             coalesce(s.isexempt, 0) as isexempt,
             coalesce(s.ismissing, 0) as ismissing,
 
-            if(ap.ap_course_subject is null, 0, 1) as ap_course,
-
             if(
                 a.scoretype = 'PERCENT',
                 (a.totalpointvalue * s.scorepoints) / 100,
                 s.scorepoints
             ) as score_converted,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
+        inner join
+            schools as sch
+            on ce.cc_schoolid = sch.school_number
+            and {{ union_dataset_join_clause(left_alias="ce", right_alias="sch") }}
         inner join
             {{ ref("int_powerschool__calendar_week") }} as c
             on ce.cc_schoolid = c.schoolid
@@ -51,6 +66,7 @@ with
             and c.quarter = ge.quarter
             and c.week_number_quarter = ge.week_number
             and c.region = ge.region
+            and sch.school_level = ge.school_level
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on ce.sections_dcid = a.sectionsdcid
@@ -66,10 +82,6 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="s") }}
             and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
-        left join
-            {{ ref("stg_powerschool__s_nj_crs_x") }} as ap
-            on ce.courses_dcid = ap.coursesdcid
-            and {{ union_dataset_join_clause(left_alias="ce", right_alias="ap") }}
         where
             ce.cc_academic_year = {{ var("current_academic_year") }}
             and not ce.is_dropped_section
@@ -101,6 +113,7 @@ select
     week_end_date,
     school_week_start_date_lead,
 
+    school_level,
     assignment_category_code,
     category_name,
     assignment_category_term,
