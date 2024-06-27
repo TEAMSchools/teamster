@@ -1,6 +1,16 @@
 with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("fldoe", "src_fldoe__fast"),
+                partition_by="student_id, _dagster_partition_grade_level_subject, test_reason",
+                order_by="coalesce(enrolled_grade.long_value, enrolled_grade.double_value) desc",
+            )
+        }}
+    ),
+
     fast_data as (
-        -- noqa: disable=ST06
+        -- trunk-ignore(sqlfluff/ST06)
         select
             student_id,
             local_id,
@@ -65,10 +75,10 @@ with
                 `3_geometric_reasoning_performance`, `4_geometric_reasoning_performance`
             ) as geometric_reasoning,
             coalesce(
-                -- noqa: disable=LT05
+                -- trunk-ignore(sqlfluff/LT05)
                 `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`,
+                -- trunk-ignore(sqlfluff/LT05)
                 `4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
-            -- noqa: enable=LT05
             ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
 
             coalesce(
@@ -234,13 +244,12 @@ with
             (
                 cast(
                     regexp_extract(
-                        _dagster_partition_school_year_term, r'^SY(\d+)PM\d$'
+                        _dagster_partition_school_year_term, r'^SY(\d+)'
                     ) as int
                 )
                 + 1999
             ) as academic_year,
-        -- noqa: disable=ST06
-        from {{ source("fldoe", "src_fldoe__fast") }}
+        from deduplicate
     ),
 
     with_calcs as (

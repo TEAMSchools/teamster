@@ -45,10 +45,10 @@ locations:
           container_config:
             resources:
               requests:
-                cpu: 750m
+                cpu: 1250m
                 memory: 2.0Gi
               limits:
-                cpu: 750m
+                cpu: 1250m
                 memory: 2.0Gi
             env:
               - name: ADP_SFTP_PASSWORD

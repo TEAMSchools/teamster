@@ -155,6 +155,7 @@ with
             srh.base_remuneration_annual_rate_amount_amount_value,
             srh.additional_remuneration_rate_amount_value,
             srh.report_to_employee_number,
+            srh.report_to_preferred_name_lastfirst,
             srh.gender_identity,
             srh.race_ethnicity_reporting,
             srh.community_grew_up,
@@ -194,6 +195,7 @@ with
             base_remuneration_annual_rate_amount_amount_value,
             additional_remuneration_rate_amount_value,
             report_to_employee_number,
+            report_to_preferred_name_lastfirst,
             gender_identity,
             race_ethnicity_reporting,
             community_grew_up,
@@ -224,6 +226,7 @@ with
             srh.base_remuneration_annual_rate_amount_amount_value,
             srh.additional_remuneration_rate_amount_value,
             srh.report_to_employee_number,
+            srh.report_to_preferred_name_lastfirst,
             srh.gender_identity,
             srh.race_ethnicity_reporting,
             srh.community_grew_up,
@@ -268,6 +271,7 @@ with
             base_remuneration_annual_rate_amount_amount_value,
             additional_remuneration_rate_amount_value,
             report_to_employee_number,
+            report_to_preferred_name_lastfirst,
             gender_identity,
             race_ethnicity_reporting,
             community_grew_up,
@@ -290,12 +294,6 @@ with
                 else 'not dupe'
             end as dupe_check,
         from ly_combined
-    ),
-
-    pm_scores as (
-        select employee_number, academic_year, overall_score, overall_tier,
-        from {{ ref("int_performance_management__overall_scores") }}
-        where pm_term = 'PM4'
     )
 
 select distinct
@@ -314,6 +312,7 @@ select distinct
     l.base_remuneration_annual_rate_amount_amount_value,
     l.additional_remuneration_rate_amount_value,
     l.report_to_employee_number,
+    l.report_to_preferred_name_lastfirst,
     l.gender_identity,
     l.race_ethnicity_reporting,
     l.community_grew_up,
@@ -324,10 +323,12 @@ select distinct
     l.termination_date,
     l.original_hire_date,
     l.total_years_teaching,
-    pm.overall_tier,
+
+    pm.final_tier as overall_tier,
+    pm.final_score as overall_score,
 from ly_deduped as l
 left join
-    pm_scores as pm
+    {{ ref("int_performance_management__overall_scores") }} as pm
     on l.employee_number = pm.employee_number
     and l.academic_year = pm.academic_year
 where l.dupe_check != 'dupe'
