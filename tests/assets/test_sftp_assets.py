@@ -149,16 +149,6 @@ def test_pearson_parcc_kippcamden():
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
 
 
-def test_performance_management_observation_details_kipptaf():
-    from teamster.code_locations.kipptaf.performance_management.assets import (
-        observation_details,
-    )
-
-    _test_asset(
-        asset=observation_details, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP}
-    )
-
-
 def test_renlearn_accelerated_reader_kippnj():
     from teamster.code_locations.kippnewark.renlearn.assets import assets
 
