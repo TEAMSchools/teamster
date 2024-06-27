@@ -279,9 +279,9 @@ fsspec==2024.6.0; python_version >= "3.12" \
 github3-py==4.0.1 \
     --hash=sha256:30d571076753efc389edc7f9aaef338a4fcb24b54d8968d5f39b1342f45ddd36 \
     --hash=sha256:a89af7de25650612d1da2f0609622bcdeb07ee8a45a1c06b2d16a05e4234e753
-google-api-core[grpc]==2.19.0 \
-    --hash=sha256:8661eec4078c35428fd3f69a2c7ee29e342896b70f01d1a1cbcb334372dd6251 \
-    --hash=sha256:cf1b7c2694047886d2af1128a03ae99e391108a08804f87cfd35970e49c9cd10
+google-api-core[grpc]==2.19.1 \
+    --hash=sha256:f12a9b8309b5e21d92483bbd47ce2c445861ec7d269ef6784ecc0ea8c1fa6125 \
+    --hash=sha256:f4695f1e3650b316a795108a76a1c416e6afb036199d1c1f1f110916df479ffd
 google-api-python-client==2.134.0 \
     --hash=sha256:4a8f0bea651a212997cc83c0f271fc86f80ef93d1cee9d84de7dfaeef2a858b6 \
     --hash=sha256:ba05d60f6239990b7994f6328f17bb154c602d31860fb553016dc9f8ce886945
