@@ -74,6 +74,7 @@ with
             f.teacher_name,
             f.tutoring_nj,
             f.nj_student_tier,
+            f.is_ap_course,
 
             f.y1_course_final_percent_grade_adjusted,
             f.y1_course_final_letter_grade_adjusted,
@@ -281,7 +282,7 @@ with
 
             if(
                 grade_level > 4
-                and ada_above_or_at_80 = 1
+                and ada_above_or_at_80
                 and quarter_course_grade_points_that_matters < 2.0,
                 true,
                 false
@@ -304,6 +305,8 @@ with
 
             case
                 when isexempt = 1
+                then false
+                when is_ap_course
                 then false
                 when
                     school_level = 'MS'
@@ -366,7 +369,6 @@ select
     is_counseling_services,
     is_student_athlete,
     ada,
-    ada_above_or_at_80,
     semester,
     `quarter`,
     quarter_start_date,
@@ -436,8 +438,10 @@ select
 
     audit_flag_name,
 
+    if(ada_above_or_at_80, 1, 0) as ada_above_or_at_80,
     if(qt_teacher_no_missing_assignments, 1, 0) as qt_teacher_no_missing_assignments,
     if(qt_teacher_total_less_200, 1, 0) as qt_teacher_s_total_less_200,
+
     if(audit_flag_value, 1, 0) as audit_flag_value,
 from
     audits unpivot (

@@ -1,10 +1,12 @@
 select
     region,
+    school_level,
     academic_year,
     `quarter`,
     week_number,
     assignment_category_code,
     expectation,
+    notes,
 
     concat(assignment_category_code, right(`quarter`, 1)) as assignment_category_term,
 

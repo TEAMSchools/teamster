@@ -181,6 +181,8 @@ with
 
             f.tutoring_nj,
             f.nj_student_tier,
+
+            if(m.ap_course_subject is not null, true, false) as is_ap_course,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_reporting__student_filters") }} as f
@@ -455,6 +457,7 @@ select
     ce.teacher_lastfirst as teacher_name,
     ce.tutoring_nj,
     ce.nj_student_tier,
+    ce.is_ap_course,
 
     y1h.percent as y1_course_final_percent_grade_adjusted,
     y1h.grade as y1_course_final_letter_grade_adjusted,
@@ -496,7 +499,7 @@ select
 
     'Local' as roster_type,
 
-    if(s.ada >= 0.80, 1, 0) as ada_above_or_at_80,
+    if(s.ada >= 0.80, true, false) as ada_above_or_at_80,
 
     if(
         s.grade_level < 9, ce.section_number, ce.external_expression
@@ -612,6 +615,7 @@ select
 
     null as tutoring_nj,
     null as nj_student_tier,
+    null as is_ap_course,
 
     y1h.percent as y1_course_final_percent_grade_adjusted,
     y1h.grade as y1_course_final_letter_grade_adjusted,
