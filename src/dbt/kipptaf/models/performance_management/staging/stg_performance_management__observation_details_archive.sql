@@ -47,12 +47,14 @@ select
         when score_measurement_type = 's&o'
         then so_score
     end as score_averaged_by_strand,
+
     case
-        when form_term = 'PM1'
+        form_term
+        when 'PM1'
         then date(academic_year, 10, 1)
-        when form_term = 'PM2'
+        when 'PM2'
         then date(academic_year + 1, 1, 1)
-        when form_term = 'PM3'
+        when 'PM3'
         then date(academic_year + 1, 3, 1)
     end as eval_date,
 from
