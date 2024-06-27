@@ -22,7 +22,6 @@ select
     etr_score,
     etr_tier,
     so_score,
-    so_tier,
     final_score,
     final_tier,
 
@@ -33,6 +32,8 @@ select
 
     timestamp(observed_at) as observed_at,
     date(observed_at) as observed_at_date_local,
+
+    coalesce(so_tier.long_value, cast(so_tier.double_value as int)) as so_tier,
 
     case
         when score_measurement_type = 'etr'
