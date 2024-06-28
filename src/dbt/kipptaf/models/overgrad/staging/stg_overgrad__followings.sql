@@ -1,1 +1,1 @@
-select *, from {{ source("overgrad", "followings") }}
+select *, from {{ source("overgrad", "src_overgrad__followings") }}
