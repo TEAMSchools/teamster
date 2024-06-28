@@ -26,7 +26,7 @@ def build_dbt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        dbt_build = dbt_cli.cli(args=["build", "--debug"], context=context)
+        dbt_build = dbt_cli.cli(args=["build"], context=context)
 
         yield from dbt_build.stream()
 
