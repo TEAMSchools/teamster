@@ -925,3 +925,4 @@ class StudentListReport(BaseModel):
     test_name: str | None = None
     testing_school: str | None = None
     accountable_school: str | None = None
+    local_student_identifier: int | None = None
