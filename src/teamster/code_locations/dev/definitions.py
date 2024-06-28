@@ -7,13 +7,15 @@ warnings.filterwarnings("ignore", category=ExperimentalWarning)
 # trunk-ignore-begin(ruff/E402)
 from dagster import Definitions, load_assets_from_modules
 
-from teamster.code_locations.kipptaf import (  # adp,; airbyte,; alchemer,; amplify,; couchdrop,; datagun,; dayforce,; dbt,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
+from teamster.code_locations.kipptaf import (  # adp,; airbyte,; alchemer,; amplify,; couchdrop,; datagun,; dayforce,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
     CODE_LOCATION,
+    dbt,
     overgrad,
     resources,
 )
-from teamster.libraries.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCHDROP,; get_dbt_cli_resource,
+from teamster.libraries.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCHDROP,
     GCS_RESOURCE,
+    get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
@@ -30,7 +32,7 @@ defs = Definitions(
             # amplify,
             # datagun,
             # dayforce,
-            # dbt,
+            dbt,
             # deanslist,
             # fivetran,
             # google,
@@ -76,7 +78,7 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
-        # "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
+        "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
         # "adp_wfm": resources.ADP_WORKFORCE_MANAGER_RESOURCE,
         # "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
         # "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
