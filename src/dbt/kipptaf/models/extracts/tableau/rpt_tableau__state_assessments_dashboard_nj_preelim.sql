@@ -211,7 +211,7 @@ select
     g.region_goal,
     g.organization_goal,
 
-    'Preeliminary' as results_type,
+    'Preliminary' as results_type,
     null as test_grade,
 from students_nj as s
 inner join
