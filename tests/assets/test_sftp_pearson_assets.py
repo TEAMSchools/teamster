@@ -52,13 +52,13 @@ def _test_asset(asset, partition_key=None):
 def test_pearson_njgpa_kippcamden():
     from teamster.code_locations.kippcamden.pearson.assets import njgpa
 
-    _test_asset(asset=njgpa)
+    _test_asset(asset=njgpa, partition_key="spr|24")
 
 
 def test_pearson_njgpa_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njgpa
 
-    _test_asset(asset=njgpa)
+    _test_asset(asset=njgpa, partition_key="spr|24")
 
 
 def test_pearson_njsla_kippnewark():

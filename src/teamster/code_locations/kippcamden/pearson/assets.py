@@ -15,12 +15,15 @@ config_dir = pathlib.Path(__file__).parent / "config"
 njgpa = build_sftp_asset(
     asset_key=[CODE_LOCATION, "pearson", "njgpa"],
     remote_dir=f"/data-team/{CODE_LOCATION}/pearson/njgpa",
-    remote_file_regex=r"pc(?P<administration>[a-z]+)(?P<fiscal_year>\d+)_NJ-\d+_\w+GPA\w+\.csv",
+    remote_file_regex=(
+        r"pc(?P<administration>[a-z]+)"
+        r"(?P<fiscal_year>\d+)_NJ-\d+-\d+_\w+GPA\w+\.csv"
+    ),
     avro_schema=ASSET_SCHEMA["njgpa"],
     ssh_resource_key="ssh_couchdrop",
     partitions_def=MultiPartitionsDefinition(
         {
-            "fiscal_year": StaticPartitionsDefinition(["23"]),
+            "fiscal_year": StaticPartitionsDefinition(["23", "24"]),
             "administration": StaticPartitionsDefinition(["spr", "fbk"]),
         }
     ),
