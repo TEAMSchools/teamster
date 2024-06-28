@@ -155,7 +155,7 @@ with
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
             end as test_code,
         from {{ ref("stg_pearson__student_list_report") }}
-        where state_student_identifier is not null
+        where state_student_identifier is not null and administration = 'Spring'
     ),
 
     state_comps as (
@@ -211,7 +211,7 @@ select
     g.region_goal,
     g.organization_goal,
 
-    'Preeliminary' as results_type,
+    'Preliminary' as results_type,
     null as test_grade,
 from students_nj as s
 inner join
