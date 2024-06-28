@@ -19,7 +19,7 @@ lint:
     - osv-scanner@1.8.1
     - oxipng@9.1.1
     - prettier@3.3.2
-    - ruff@0.4.10
+    - ruff@0.5.0
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.0.7
