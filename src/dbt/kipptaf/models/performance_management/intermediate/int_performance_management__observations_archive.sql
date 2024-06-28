@@ -17,6 +17,8 @@ select distinct
     etr_tier,
     so_score,
     so_tier,
+    final_score,
+    final_tier,
     glows,
     grows,
     locked,

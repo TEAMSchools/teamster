@@ -60,34 +60,4 @@ left join
 /* join on google email and date for observer_employee_number*/
 left join
     {{ ref("base_people__staff_roster") }} as sr2 on o.observer_email = sr2.google_email
-where o.academic_year = {{ var("current_academic_year") }} and o.is_published
-
-union all
-
-/* past academic years (Performance Management only) */
-select
-    observation_id,
-    null as rubric_id,
-    rubric_name,
-    score as observation_score,
-    null as strand_score,
-    glows,
-    grows,
-    locked,
-    observed_at as observed_at_timestamp,
-    observed_at_date_local as observed_at,
-    academic_year,
-    null as is_published,
-    observation_type,
-    observation_type_abbreviation,
-    term_code,
-    term_name,
-    employee_number,
-    observer_employee_number,
-    etr_score,
-    etr_tier,
-    so_score,
-    so_tier,
-    overall_tier,
-    eval_date,
-from {{ ref("int_performance_management__observations_archive") }}
+where o.is_published and o.academic_year >= 2024  /* data prior to 2024 in snapshot */
