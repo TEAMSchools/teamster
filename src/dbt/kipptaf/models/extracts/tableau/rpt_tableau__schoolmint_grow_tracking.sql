@@ -1,15 +1,16 @@
 select
-    sr.employee_number,
-    sr.preferred_name_lastfirst,
+    srh.employee_number,
+    srh.preferred_name_lastfirst,
     t.type,
     t.code,
     t.name as rubric,
     t.academic_year,
     t.is_current,
     o.observation_id,
+    if(observation_id is not null,true,false) as is_observed,
     o.observed_at,
 
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("base_people__staff_roster_history") }} as srh
 cross join {{ ref("stg_reporting__terms") }} as t
 left join
     {{ ref("int_performance_management__observations") }} as o
@@ -18,6 +19,6 @@ left join
 where
     sr.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
     and sr.assignment_status = 'Active'
+    and (t.start_date or t.end_date) between srh.work_assignment_start_date and srh.work_assignment_end_date 
     and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
     and t.academic_year = {{ var("current_academic_year") }}
-    and t.is_current
