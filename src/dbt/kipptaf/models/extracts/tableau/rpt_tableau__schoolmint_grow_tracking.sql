@@ -17,8 +17,9 @@ left join
     on t.type = o.observation_type_abbreviation
     and o.observed_at between t.start_date and t.end_date
 where
-    sr.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
-    and sr.assignment_status = 'Active'
-    and (t.start_date or t.end_date) between srh.work_assignment_start_date and srh.work_assignment_end_date 
+    srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
+    and srh.assignment_status = 'Active'
+    and (t.start_date between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date) 
+    or t.end_date between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date))
     and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
     and t.academic_year = {{ var("current_academic_year") }}
