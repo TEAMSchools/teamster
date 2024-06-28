@@ -1,0 +1,80 @@
+version: 2
+
+sources:
+  - name: overgrad
+    schema: kipptaf_overgrad
+    tags:
+      - stage_external_sources
+    tables:
+      - name: admissions
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/admissions/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - overgrad
+              - admissions
+      - name: custom_fields
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/custom_fields/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - overgrad
+              - custom_fields
+      - name: followings
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/followings/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - overgrad
+              - followings
+      - name: schools
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/schools/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - overgrad
+              - schools
+      - name: students
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/students/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - overgrad
+              - students
+      - name: universities
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/universities/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - overgrad
+              - universities
