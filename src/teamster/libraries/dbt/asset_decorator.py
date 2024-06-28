@@ -14,12 +14,11 @@ from dagster_dbt import DagsterDbtTranslator, DbtProject
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
-    build_dbt_multi_asset_args,
 )
 from dagster_dbt.dagster_dbt_translator import validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 
-from teamster.libraries.dbt.asset_utils import build_dbt_multi_asset_deps
+from teamster.libraries.dbt.asset_utils import build_dbt_multi_asset_args
 
 
 @suppress_dagster_warnings
@@ -45,9 +44,9 @@ def dbt_external_source_assets(
     manifest = validate_manifest(manifest)
 
     (
-        _deps,
+        deps,
         outs,
-        _internal_asset_deps,
+        internal_asset_deps,
         check_specs,
     ) = build_dbt_multi_asset_args(
         manifest=manifest,
@@ -55,14 +54,6 @@ def dbt_external_source_assets(
         select=select,
         exclude=exclude or "",
         io_manager_key=io_manager_key,
-        project=project,
-    )
-
-    deps, internal_asset_deps = build_dbt_multi_asset_deps(
-        manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
-        select=select,
-        exclude=exclude or "",
         project=project,
     )
 
