@@ -31,8 +31,7 @@ student_list_report = build_sftp_asset(
     remote_dir=f"/data-team/{CODE_LOCATION}/pearson/student_list_report",
     remote_file_regex=(
         r"(?P<test_type>[a-z]+)\/StudentListReport_"
-        r"(?P<administration_fiscal_year>[A-za-z]+\d+) - "
-        r"\d+-\d+-\d+T\d+_\d+_\d+\.\d+\+\d+\.csv"
+        r"(?P<administration_fiscal_year>[A-za-z]+\d+)_\d+_\d+-\d+-\d+\.csv"
     ),
     avro_schema=ASSET_SCHEMA["student_list_report"],
     ssh_resource_key="ssh_couchdrop",
@@ -40,7 +39,7 @@ student_list_report = build_sftp_asset(
         {
             "test_type": StaticPartitionsDefinition(["njsla", "njgpa"]),
             "administration_fiscal_year": StaticPartitionsDefinition(
-                ["Spring2023", "Spring2022"]
+                ["Spring2024", "Spring2023", "Spring2022"]
             ),
         }
     ),
