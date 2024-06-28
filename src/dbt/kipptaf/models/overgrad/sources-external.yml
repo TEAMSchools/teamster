@@ -6,7 +6,7 @@ sources:
     tags:
       - stage_external_sources
     tables:
-      - name: admissions
+      - name: src_overgrad__admissions
         external:
           location: "{{ var('cloud_storage_uri_base') }}/overgrad/admissions/*"
           options:
@@ -18,7 +18,7 @@ sources:
               - kipptaf
               - overgrad
               - admissions
-      - name: custom_fields
+      - name: src_overgrad__custom_fields
         external:
           location: "{{ var('cloud_storage_uri_base') }}/overgrad/custom_fields/*"
           options:
@@ -30,7 +30,7 @@ sources:
               - kipptaf
               - overgrad
               - custom_fields
-      - name: followings
+      - name: src_overgrad__followings
         external:
           location: "{{ var('cloud_storage_uri_base') }}/overgrad/followings/*"
           options:
@@ -42,7 +42,7 @@ sources:
               - kipptaf
               - overgrad
               - followings
-      - name: schools
+      - name: src_overgrad__schools
         external:
           location: "{{ var('cloud_storage_uri_base') }}/overgrad/schools/*"
           options:
@@ -54,7 +54,7 @@ sources:
               - kipptaf
               - overgrad
               - schools
-      - name: students
+      - name: src_overgrad__students
         external:
           location: "{{ var('cloud_storage_uri_base') }}/overgrad/students/*"
           options:
@@ -66,7 +66,7 @@ sources:
               - kipptaf
               - overgrad
               - students
-      - name: universities
+      - name: src_overgrad__universities
         external:
           location: "{{ var('cloud_storage_uri_base') }}/overgrad/universities/*"
           options:

@@ -1,1 +1,1 @@
-select *, from {{ source("overgrad", "custom_fields") }}
+select *, from {{ source("overgrad", "src_overgrad__custom_fields") }}

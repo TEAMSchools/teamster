@@ -1,1 +1,1 @@
-select *, from {{ source("overgrad", "students") }}
+select *, from {{ source("overgrad", "src_overgrad__students") }}
