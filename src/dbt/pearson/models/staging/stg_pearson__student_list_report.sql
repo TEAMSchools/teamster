@@ -11,6 +11,7 @@ with
             test_name,
             testing_school,
             accountable_school,
+            local_student_identifier,
 
             upper(_dagster_partition_test_type) as test_type,
 
