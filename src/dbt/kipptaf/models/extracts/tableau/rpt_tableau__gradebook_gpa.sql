@@ -111,6 +111,7 @@ with
             if(sa.studentid is not null, 1, null) as is_student_athlete,
 
             round(ada.ada, 3) as ada,
+
         from {{ ref("base_powerschool__student_enrollments") }} as enr
         inner join
             term
