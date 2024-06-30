@@ -393,7 +393,7 @@ select
     course_number,
     section_number,
     external_expression,
-    section_or_period
+    section_or_period,
     credit_type,
     teacher_number,
     teacher_name,
