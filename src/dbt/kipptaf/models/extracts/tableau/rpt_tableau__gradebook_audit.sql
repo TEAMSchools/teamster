@@ -97,7 +97,6 @@ with
             f.category_y1_percent_grade_current,
             f.category_quarter_average_all_courses,
 
-            t.week_number_academic_year,
             t.week_number_quarter,
             t.week_start_date,
             t.week_end_date,
@@ -128,11 +127,13 @@ with
             t.percent_graded_completion_by_cat_qt_audit_week,
             t.percent_graded_completion_by_assign_id_qt_audit_week,
             t.qt_teacher_no_missing_assignments,
-            t.qt_teacher_total_less_200,
-            t.qt_teacher_total_greater_200,
-            t.assign_max_score_not_10,
-            t.max_score_greater_100,
-            t.expected_assign_count_not_met,
+            t.qt_teacher_s_total_less_200,
+            t.qt_teacher_s_total_greater_200,
+            t.w_assign_max_score_not_10,
+            t.f_assign_max_score_not_10,
+            t.w_expected_assign_count_not_met,
+            t.f_expected_assign_count_not_met,
+            t.s_expected_assign_count_not_met,
 
             s.scorepoints,
             s.score_converted,
@@ -151,7 +152,7 @@ with
 
             if(
                 current_date('{{ var("local_timezone") }}')
-                between (f.quarter_end_date - 3) and (f.quarter_end_date + 14),
+                between (f.quarter_end_date - 7) and (f.quarter_end_date + 14),
                 true,
                 false
             ) as is_quarter_end_date_range,
@@ -180,6 +181,14 @@ with
     audits as (
         select
             *,
+
+            if(
+                region = 'Miami'
+                and assignment_category_code = 'S'
+                and totalpointvalue > 100,
+                true,
+                false
+            ) as s_max_score_greater_100,
 
             case
                 when region != 'Miami'
@@ -287,7 +296,7 @@ with
             ) as qt_category_grade_missing,
 
             if(
-                not isexempt
+                isexempt = 0
                 and school_level = 'MS'
                 and assignment_category_code = 'S'
                 and (assign_final_score_percent * 100)
@@ -297,7 +306,7 @@ with
             ) as assign_s_ms_score_not_conversion_chart_options,
 
             if(
-                not isexempt
+                isexempt = 0
                 and school_level = 'HS'
                 and assignment_category_code = 'S'
                 and is_ap_course
