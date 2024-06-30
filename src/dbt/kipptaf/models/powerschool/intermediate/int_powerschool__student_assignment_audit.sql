@@ -125,9 +125,9 @@ select
     totalpointvalue,
     scorepoints,
     score_converted,
-    isexempt,
-    islate,
-    ismissing,
+    if(isexempt, 1, 0) as isexempt,
+    if(islate, 1, 0) as islate,
+    if(ismissing, 1, 0) as ismissing,
 
     safe_divide(score_converted, totalpointvalue) * 100 as assign_final_score_percent,
 
