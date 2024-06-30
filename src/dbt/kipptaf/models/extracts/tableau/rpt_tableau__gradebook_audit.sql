@@ -143,9 +143,11 @@ with
             s.assign_null_score,
             s.assign_score_above_max,
             s.assign_exempt_with_score,
-            s.assign_score_less_5,
-            s.assign_missing_score_not_5,
-            s.assign_score_less_50p,
+            s.assign_w_score_less_5,
+            s.assign_f_score_less_5,
+            s.assign_w_missing_score_not_5,
+            s.assign_f_missing_score_not_5,
+            s.assign_s_score_less_50p,
 
             if(
                 current_date('{{ var("local_timezone") }}')
@@ -284,23 +286,26 @@ with
                 region = 'Miami' and category_quarter_percent_grade is null, true, false
             ) as qt_category_grade_missing,
 
-            case
-                when isexempt = 1
-                then false
-                when is_ap_course
-                then false
-                when
-                    school_level = 'MS'
-                    and assign_final_score_percent
-                    not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100)
-                then true
-                when
-                    school_level = 'HS'
-                    and assign_final_score_percent
-                    not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100)
-                then true
-                else false
-            end as assign_score_not_conversion_chart_options,
+            if(
+                not isexempt
+                and school_level = 'MS'
+                and assignment_category_code = 'S'
+                and (assign_final_score_percent * 100)
+                not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100),
+                true,
+                false
+            ) as assign_s_ms_score_not_conversion_chart_options,
+
+            if(
+                not isexempt
+                and school_level = 'HS'
+                and assignment_category_code = 'S'
+                and is_ap_course
+                and (assign_final_score_percent * 100)
+                not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
+                true,
+                false
+            ) as assign_s_hs_score_not_conversion_chart_options,
 
             if(
                 region_school_level not in ('CamdenES', 'NewarkES')
@@ -403,26 +408,36 @@ select
 from
     audits unpivot (
         audit_flag_value for audit_flag_name in (
-            assign_exempt_with_score,
-            assign_max_score_not_10,
-            assign_missing_score_not_5,
+            w_assign_max_score_not_10,
+            f_assign_max_score_not_10,
+            s_max_score_greater_100,
+            w_expected_assign_count_not_met,
+            f_expected_assign_count_not_met,
+            s_expected_assign_count_not_met,
+            w_percent_graded_completion_by_qt_audit_week_not_100,
+            f_percent_graded_completion_by_qt_audit_week_not_100,
+            s_percent_graded_completion_by_qt_audit_week_not_100,
             assign_null_score,
             assign_score_above_max,
-            assign_score_less_5,
-            assign_score_less_50p,
-            expected_assign_count_not_met,
-            grade_inflation,
-            max_score_greater_100,
-            percent_graded_completion_by_qt_audit_week_not_100,
+            assign_exempt_with_score,
+            assign_w_score_less_5,
+            assign_f_score_less_5,
+            assign_w_missing_score_not_5,
+            assign_f_missing_score_not_5,
+            assign_s_score_less_50p,
             qt_assign_no_course_assignments,
-            qt_comment_missing,
-            qt_conduct_code_incorrect,
-            qt_conduct_code_missing,
-            qt_grade_70_comment_missing,
+            qt_kg_conduct_code_missing,
             qt_kg_conduct_code_not_hr,
+            qt_g1_g8_conduct_code_missing,
+            qt_kg_conduct_code_incorrect,
+            qt_g1_g8_conduct_code_incorrect,
+            qt_grade_70_comment_missing,
+            qt_es_comment_missing,
+            qt_comment_missing,
             qt_percent_grade_greater_100,
+            qt_teacher_s_total_greater_200,
             qt_student_is_ada_80_plus_gpa_less_2,
-            qt_teacher_total_greater_200
+            w_grade_inflation
         )
     )
 where audit_flag_value
