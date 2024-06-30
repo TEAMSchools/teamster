@@ -183,6 +183,8 @@ with
             f.tutoring_nj,
             f.nj_student_tier,
 
+            r.sam_account_name as tableau_username,
+
             if(m.ap_course_subject is not null, true, false) as is_ap_course,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
@@ -191,6 +193,9 @@ with
             and m.cc_academic_year = f.academic_year
             and m.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
+        left join
+            {{ ref("base_people__staff_roster") }} as r
+            on m.teachernumber = cast(r.employee_number as string)
         where
             m.rn_course_number_year = 1
             and not m.is_dropped_section
@@ -456,6 +461,7 @@ select
     ce.exclude_from_gpa,
     ce.teacher_number,
     ce.teacher_lastfirst as teacher_name,
+    ce.tableau_username,
     ce.tutoring_nj,
     ce.nj_student_tier,
     ce.is_ap_course,
@@ -613,6 +619,8 @@ select
     null as teacher_number,
 
     y1h.teacher_name,
+
+    null as tableau_username,
 
     null as tutoring_nj,
     null as nj_student_tier,
