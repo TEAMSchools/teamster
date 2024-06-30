@@ -152,7 +152,7 @@ with
 
             if(
                 current_date('{{ var("local_timezone") }}')
-                between (f.quarter_end_date - 7) and (f.quarter_end_date + 14),
+                between (f.quarter_end_date - 7) and (f.quarter_end_date + 30),
                 true,
                 false
             ) as is_quarter_end_date_range,
@@ -201,10 +201,8 @@ with
                     and course_name = 'HR'
                     and quarter_citizenship is null
                 then true
-                when course_name != 'HR' and quarter_citizenship is null
-                then true
                 else false
-            end as qt_conduct_code_missing,
+            end as qt_kg_conduct_code_missing,
 
             if(
                 region = 'Miami'
@@ -216,25 +214,37 @@ with
                 false
             ) as qt_kg_conduct_code_not_hr,
 
-            case
-                when region != 'Miami'
-                then false
-                when not is_quarter_end_date_range
-                then false
-                when
-                    grade_level = 0
-                    and course_name = 'HR'
-                    and quarter_citizenship is not null
-                    and quarter_citizenship not in ('E', 'G', 'S', 'M')
-                then true
-                when
-                    grade_level > 0
-                    and course_name != 'HR'
-                    and quarter_citizenship is not null
-                    and quarter_citizenship not in ('A', 'B', 'C', 'D', 'E', 'F')
-                then true
-                else false
-            end as qt_conduct_code_incorrect,
+            if(
+                region = 'Miami'
+                and is_quarter_end_date_range
+                and grade_level != 0
+                and course_name != 'HR'
+                and quarter_citizenship is null,
+                true,
+                false
+            ) as qt_g1_g8_conduct_code_missing,
+
+            if(
+                region = 'Miami'
+                and is_quarter_end_date_range
+                and grade_level = 0
+                and course_name = 'HR'
+                and quarter_citizenship is not null
+                and quarter_citizenship not in ('E', 'G', 'S', 'M'),
+                true,
+                false
+            ) as qt_kg_conduct_code_incorrect,
+
+            if(
+                region = 'Miami'
+                and is_quarter_end_date_range
+                and grade_level != 0
+                and course_name != 'HR'
+                and quarter_citizenship is not null
+                and quarter_citizenship not in ('A', 'B', 'C', 'D', 'E', 'F'),
+                true,
+                false
+            ) as qt_g1_g8_conduct_code_incorrect,
 
             if(
                 region != 'Miami'
@@ -246,21 +256,23 @@ with
                 false
             ) as qt_grade_70_comment_missing,
 
-            case
-                when
-                    region = 'Miami'
-                    and is_quarter_end_date_range
-                    and quarter_comment_value is null
-                then true
-                when
-                    region != 'Miami'
-                    and is_quarter_end_date_range
-                    and school_level = 'ES'
-                    and (course_name = 'HR' or credit_type in ('MATH', 'ENG'))
-                    and quarter_comment_value is null
-                then true
-                else false
-            end as qt_comment_missing,
+            if(
+                region != 'Miami'
+                and is_quarter_end_date_range
+                and grade_level < 5
+                and (course_name = 'HR' or credit_type in ('MATH', 'ENG'))
+                and quarter_comment_value is null,
+                true,
+                false
+            ) as qt_es_comment_missing,
+
+            if(
+                region = 'Miami'
+                and is_quarter_end_date_range
+                and quarter_comment_value is null,
+                true,
+                false
+            ) as qt_comment_missing,
 
             if(
                 quarter_course_percent_grade_that_matters > 100, true, false
@@ -296,7 +308,8 @@ with
             ) as qt_student_is_ada_80_plus_gpa_less_2,
 
             if(
-                grade_level > 4
+                assignment_category_code = 'W'
+                and grade_level > 4
                 and abs(
                     round(category_quarter_average_all_courses, 2)
                     - round(category_quarter_percent_grade, 2)
@@ -304,7 +317,7 @@ with
                 >= 30,
                 true,
                 false
-            ) as grade_inflation,
+            ) as w_grade_inflation,
 
             if(
                 region = 'Miami' and category_quarter_percent_grade is null, true, false
