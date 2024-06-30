@@ -176,6 +176,7 @@ with
             f.academic_year = {{ var("current_academic_year") }}
             and f.roster_type = 'Local'
             and f.quarter != 'Y1'
+            and f.region_school_level not in ('ESCamden', 'ESNewark')
     ),
 
     audits as (
@@ -266,11 +267,25 @@ with
             ) as qt_percent_grade_greater_100,
 
             if(
-                percent_graded_completion_by_cat_qt_audit_week != 1
-                and region_school_level not in ('ESCamden', 'ESNEwark'),
+                assignment_category_code = 'W'
+                and percent_graded_completion_by_cat_qt_audit_week != 1,
                 true,
                 false
-            ) as percent_graded_completion_by_qt_audit_week_not_100,
+            ) as w_percent_graded_completion_by_qt_audit_week_not_100,
+
+            if(
+                assignment_category_code = 'F'
+                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                true,
+                false
+            ) as f_percent_graded_completion_by_qt_audit_week_not_100,
+
+            if(
+                assignment_category_code = 'S'
+                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                true,
+                false
+            ) as s_percent_graded_completion_by_qt_audit_week_not_100,
 
             if(
                 grade_level > 4
