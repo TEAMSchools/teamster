@@ -445,7 +445,7 @@ select
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 from
-    audits as a unpivot (
+    audits unpivot (
         audit_flag_value for audit_flag_name in (
             w_assign_max_score_not_10,
             f_assign_max_score_not_10,
