@@ -1,29 +1,37 @@
 with
     term as (
         select
-            _dbt_source_relation,
-            schoolid,
-            yearid,
-            storecode,
-            date1 as term_start_date,
-            date2 as term_end_date,
+            t._dbt_source_relation,
+            t.schoolid,
+            t.yearid,
+
+            tb.storecode,
+            tb.date1 as term_start_date,
+            tb.date2 as term_end_date,
 
             if(
-                current_date('{{ var("local_timezone") }}') between date1 and date2,
+                current_date('{{ var("local_timezone") }}')
+                between tb.date1 and tb.date2,
                 true,
                 false
             ) as is_current_term,
 
             case
-                when storecode in ('Q1', 'Q2')
+                when tb.storecode in ('Q1', 'Q2')
                 then 'S1'
-                when storecode in ('Q3', 'Q4')
+                when tb.storecode in ('Q3', 'Q4')
                 then 'S2'
-                when storecode = 'Y1'
+                when tb.storecode = 'Y1'
                 then 'S#'
             end as semester,
-        from {{ ref("stg_powerschool__termbins") }}
-        where storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+        from {{ ref("stg_powerschool__terms") }} as t
+        inner join
+            {{ ref("stg_powerschool__termbins") }} as tb
+            on t.id = tb.termid
+            and t.schoolid = tb.schoolid
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
+            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+        where t.isyearrec = 1
 
         union all
 
@@ -111,7 +119,6 @@ with
             if(sa.studentid is not null, 1, null) as is_student_athlete,
 
             round(ada.ada, 3) as ada,
-
         from {{ ref("base_powerschool__student_enrollments") }} as enr
         inner join
             term
@@ -193,7 +200,7 @@ with
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
         where
             m.rn_course_number_year = 1
-            and not m.is_dropped_section
+            and m.cc_sectionid > 0
             and m.cc_course_number not in (
                 'LOG100',
                 'LOG1010',

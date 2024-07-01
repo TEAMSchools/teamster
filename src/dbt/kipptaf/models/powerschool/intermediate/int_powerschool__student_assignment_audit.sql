@@ -84,7 +84,7 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
         where
             ce.cc_academic_year = {{ var("current_academic_year") }}
-            and not ce.is_dropped_section
+            and ce.cc_sectionid > 0
             and ce.cc_course_number not in (
                 'HR',
                 'LOG100',
