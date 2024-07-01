@@ -40,9 +40,9 @@ with
 
             s.scorepoints,
 
-            coalesce(s.islate, 0) as islate,
-            coalesce(s.isexempt, 0) as isexempt,
-            coalesce(s.ismissing, 0) as ismissing,
+            if(s.islate is null, false, true) as islate,
+            if(s.isexempt is null, false, true) as isexempt,
+            if(s.ismissing is null, false, true) as ismissing,
 
             if(
                 a.scoretype = 'PERCENT',
@@ -125,43 +125,62 @@ select
     totalpointvalue,
     scorepoints,
     score_converted,
-    isexempt,
-    islate,
-    ismissing,
+    if(isexempt, 1, 0) as isexempt,
+    if(islate, 1, 0) as islate,
+    if(ismissing, 1, 0) as ismissing,
 
     safe_divide(score_converted, totalpointvalue) * 100 as assign_final_score_percent,
 
     if(score_converted > totalpointvalue, true, false) as assign_score_above_max,
 
     if(
-        assignmentid is not null and isexempt = 0, true, false
+        assignmentid is not null and not isexempt, true, false
     ) as assign_expected_to_be_scored,
 
     if(
-        assignmentid is not null and scorepoints is not null and isexempt = 0,
+        assignmentid is not null and scorepoints is not null and not isexempt,
         true,
         false
     ) as assign_scored,
 
     if(
-        assignmentid is not null and scorepoints is null and isexempt = 0, true, false
+        assignmentid is not null and scorepoints is null and not isexempt, true, false
     ) as assign_null_score,
 
     if(
         assignmentid is not null
-        and isexempt = 0
-        and ((ismissing = 0 and scorepoints is not null) or scorepoints is not null),
+        and not isexempt
+        and ((not ismissing and scorepoints is not null) or scorepoints is not null),
         true,
         false
     ) as assign_expected_with_score,
 
-    if(isexempt = 1 and score_converted > 0, true, false) as assign_exempt_with_score,
-
-    if(score_converted < 5, true, false) as assign_score_less_5,
-
-    if(score_converted < (totalpointvalue / 2), true, false) as assign_score_less_50p,
+    if(isexempt and score_converted > 0, true, false) as assign_exempt_with_score,
 
     if(
-        ismissing = 1 and score_converted != 5, true, false
-    ) as assign_missing_score_not_5,
+        assignment_category_code = 'W' and score_converted < 5, true, false
+    ) as assign_w_score_less_5,
+
+    if(
+        assignment_category_code = 'F' and score_converted < 5, true, false
+    ) as assign_f_score_less_5,
+
+    if(
+        assignment_category_code = 'W' and ismissing and score_converted != 5,
+        true,
+        false
+    ) as assign_w_missing_score_not_5,
+
+    if(
+        assignment_category_code = 'F' and ismissing and score_converted != 5,
+        true,
+        false
+    ) as assign_f_missing_score_not_5,
+
+    if(
+        assignment_category_code = 'S' and score_converted < (totalpointvalue / 2),
+        true,
+        false
+    ) as assign_s_score_less_50p,
+
 from students_assignments
