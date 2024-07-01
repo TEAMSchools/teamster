@@ -213,6 +213,8 @@ select
     g.region_goal,
     g.organization_goal,
 
+    sf.nj_student_tier,
+
     'Preliminary' as results_type,
     null as test_grade,
 from students_nj as s
@@ -244,3 +246,8 @@ left join
     on s.academic_year = g.academic_year
     and s.schoolid = g.school_id
     and a.test_code = g.state_assessment_code
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on s.academic_year = sf.academic_year
+    and a.discipline = sf.discipline
+    and s.student_number = sf.student_number
