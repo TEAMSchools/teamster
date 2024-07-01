@@ -11,6 +11,9 @@ with
             case
                 subject when 'Reading' then 'ela' when 'Math' then 'math'
             end as grad_unpivot_subject,
+            case
+                subject when 'Reading' then 'ELA' when 'Math' then 'Math'
+            end as discipline,
         from unnest(['Reading', 'Math']) as subject
     ),
 
@@ -157,6 +160,7 @@ select
     sj.illuminate_subject_area,
     sj.powerschool_credittype,
     sj.grad_unpivot_subject,
+    sj.discipline,
 
     a.is_iep_eligible as is_grad_iep_exempt,
 

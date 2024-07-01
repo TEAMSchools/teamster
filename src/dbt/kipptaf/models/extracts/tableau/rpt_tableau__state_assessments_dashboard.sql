@@ -534,6 +534,8 @@ select
     g.region_goal,
     g.organization_goal,
 
+    sf.nj_student_tier,
+
     m.teacher_name,
     m.course_number,
     m.course_name,
@@ -558,6 +560,11 @@ left join
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on s.academic_year = sf.academic_year
+    and s.discipline = sf.discipline
+    and s.student_number = sf.student_number
 union all
 select
     s.academic_year,
@@ -600,6 +607,8 @@ select
     g.region_goal,
     g.organization_goal,
 
+    sf.nj_student_tier,
+
     m.teacher_name,
     m.course_number,
     m.course_name,
@@ -624,6 +633,11 @@ left join
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on s.academic_year = sf.academic_year
+    and s.discipline = sf.discipline
+    and s.student_number = sf.student_number
 union all
 select
     academic_year,
@@ -663,6 +677,7 @@ select
     school_goal,
     region_goal,
     organization_goal,
+    nj_student_tier,
     teacher_name,
     course_number,
     course_name,
