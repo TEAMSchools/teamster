@@ -54,6 +54,9 @@ class ObservationDetail(BaseModel):
     academic_year: int | None = None
     employee_number: int | None = None
     etr_score: float | None = None
+    etr_tier: float | None = None
+    final_score: float | None = None
+    final_tier: int | None = None
     form_long_name: str | None = None
     form_term: str | None = None
     form_type: str | None = None
@@ -64,6 +67,7 @@ class ObservationDetail(BaseModel):
     observed_at: str | None = None
     observer_employee_number: int | None = None
     overall_score: float | None = None
+    overall_tier: float | None = None
     rn_submission: int | None = None
     row_score_value: float | None = None
     rubric_id: str | None = None
@@ -73,3 +77,5 @@ class ObservationDetail(BaseModel):
     so_score: float | None = None
     teacher_id: str | None = None
     text_box: str | None = None
+
+    so_tier: int | float | None = None
