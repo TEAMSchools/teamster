@@ -74,7 +74,6 @@ defs = Definitions(
     sensors=[
         *adp.sensors,
         *airbyte.sensors,
-        *alchemer.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
