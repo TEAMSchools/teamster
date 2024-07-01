@@ -31,8 +31,10 @@ locations:
             resources:
               requests:
                 cpu: 750m
+                memory: 2.0Gi
               limits:
                 cpu: 750m
+                memory: 2.0Gi
             env:
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
