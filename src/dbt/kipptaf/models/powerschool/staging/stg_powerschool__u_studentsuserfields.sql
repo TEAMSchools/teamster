@@ -12,6 +12,7 @@ with
     )
 
 select
+    _dbt_source_relation,
     studentsdcid,
     fleid,
     newark_enrollment_number,
