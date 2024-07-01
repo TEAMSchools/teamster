@@ -113,7 +113,6 @@ intacct_extract = build_bigquery_query_sftp_asset(
 )
 
 assets = [
-    blissbook_extract,
     coupa_extract,
     egencia_extract,
     idauto_extract,

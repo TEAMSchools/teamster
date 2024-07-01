@@ -28,15 +28,20 @@ def test_event_notification():
 
 
 def test_get_worker():
-    aoid = "G3ASWDTVJ0WV011W"
+    aoid = "G3ASWDTVJ0WV5S6S"
+    params = {"asOfDate": "06/30/2025"}
 
-    r = ADP_WFN.get(endpoint=f"hr/v2/workers/{aoid}")
+    record = ADP_WFN.get(endpoint=f"hr/v2/workers/{aoid}", params=params)
 
-    print(json.dumps(r.json()))
+    filepath = pathlib.Path(f"env/adp/{aoid}.json")
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    json.dump(obj=record.json(), fp=filepath.open(mode="w"))
 
 
 def test_get_workers():
-    params = {"asOfDate": "07/01/2022"}
+    params = {"asOfDate": "07/01/2024"}
 
     records = ADP_WFN.get_records(endpoint="hr/v2/workers", params=params)
 

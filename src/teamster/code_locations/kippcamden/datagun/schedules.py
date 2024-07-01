@@ -7,7 +7,7 @@ from teamster.code_locations.kippcamden.datagun.jobs import (
 
 powerschool_extract_assets_schedule = ScheduleDefinition(
     job=powerschool_extract_asset_job,
-    cron_schedule="15 2 * * *",
+    cron_schedule="0 5 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 

@@ -31,7 +31,7 @@ multi_partition_asset_job_schedule = build_schedule_from_partitioned_job(
 )
 
 schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
-    cron_schedule="0 3 * * *",
+    cron_schedule="0 5 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=schoolmint_grow_user_update_job,
 )
