@@ -64,15 +64,7 @@ with
             f.is_ap_course,
 
             f.quarter_course_percent_grade_that_matters,
-            f.quarter_course_letter_grade_that_matters,
             f.quarter_course_grade_points_that_matters,
-
-            f.y1_course_in_progress_percent_grade,
-            f.y1_course_in_progress_percent_grade_adjusted,
-            f.y1_course_in_progress_letter_grade,
-            f.y1_course_in_progress_letter_grade_adjusted,
-            f.y1_course_in_progress_grade_points,
-            f.y1_course_in_progress_grade_points_unweighted,
 
             f.quarter_citizenship,
             f.quarter_comment_value,
@@ -80,8 +72,6 @@ with
             f.category_name_code,
             f.category_quarter_code,
             f.category_quarter_percent_grade,
-            f.category_y1_percent_grade_running,
-            f.category_y1_percent_grade_current,
             f.category_quarter_average_all_courses,
 
             t.week_number_quarter,
