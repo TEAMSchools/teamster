@@ -200,7 +200,7 @@ with
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
         where
             m.rn_course_number_year = 1
-            and not m.is_dropped_section
+            and m.cc_sectionid > 0
             and m.cc_course_number not in (
                 'LOG100',
                 'LOG1010',
