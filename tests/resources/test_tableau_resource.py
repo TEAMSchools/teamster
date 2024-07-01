@@ -1,4 +1,4 @@
-from dagster import EnvVar, build_resources
+from dagster import EnvVar, build_init_resource_context, build_resources
 
 from teamster.libraries.tableau.resources import TableauServerResource
 
@@ -12,4 +12,14 @@ with build_resources(
         )
     }
 ) as resources:
-    TABLEAU_SERVER_RESOURCE: TableauServerResource = resources.tableau
+    tableau: TableauServerResource = resources.tableau
+
+
+def test_tableau_workbook_refresh():
+    tableau.setup_for_execution(context=build_init_resource_context())
+
+    workbook = tableau._server.workbooks.get_by_id(
+        "7adabf6e-fa59-4d60-bca8-de3a67005a53"
+    )
+
+    tableau._server.workbooks.refresh(workbook)
