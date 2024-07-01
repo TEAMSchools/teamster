@@ -11,7 +11,7 @@ from teamster.libraries.sftp.assets import build_sftp_asset
 asset_key_prefix = [CODE_LOCATION, "renlearn"]
 remote_dir = "."
 remote_file_regex = r"KIPP TEAM & Family\.zip"
-archive_filepath = r"(?P<subject>)\.csv"
+archive_filepath = "(?P<subject>).csv"
 ssh_resource_key = "ssh_renlearn"
 slugify_cols = False
 
