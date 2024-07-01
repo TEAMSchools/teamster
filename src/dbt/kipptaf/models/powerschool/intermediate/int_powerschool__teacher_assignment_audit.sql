@@ -9,7 +9,6 @@ with
             c.semester,
             c.quarter,
             c.week_number_quarter,
-            c.week_number_academic_year,
             c.week_start_date,
             c.week_end_date,
             c.school_week_start_date,
@@ -56,6 +55,7 @@ with
                 partition by
                     sec._dbt_source_relation,
                     sec.sections_id,
+                    c.quarter,
                     c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_section_quarter_week_category,
@@ -64,6 +64,7 @@ with
                 partition by
                     sec._dbt_source_relation,
                     sec.sections_id,
+                    c.quarter,
                     c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_scored_section_quarter_week_category,
@@ -73,6 +74,7 @@ with
                     sec._dbt_source_relation,
                     sec.teachernumber,
                     sec.sections_schoolid,
+                    c.quarter,
                     c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_teacher_school_quarter_week_category,
@@ -82,6 +84,7 @@ with
                     sec._dbt_source_relation,
                     sec.teachernumber,
                     sec.sections_schoolid,
+                    c.quarter,
                     c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_scored_teacher_school_quarter_week_category,
@@ -131,7 +134,6 @@ select
     teacher_number,
     `quarter`,
     semester,
-    week_number_academic_year,
     week_number_quarter,
     week_start_date,
     week_end_date,
@@ -165,26 +167,53 @@ select
     if(assignmentid is not null, 1, 0) as teacher_assign_count,
 
     if(
-        assignment_count_section_quarter_category_running_week < expectation,
+        assignment_category_code = 'W'
+        and assignment_count_section_quarter_category_running_week < expectation,
         true,
         false
-    ) as expected_assign_count_not_met,
+    ) as w_expected_assign_count_not_met,
 
-    if(totalpointvalue != 10, true, false) as assign_max_score_not_10,
+    if(
+        assignment_category_code = 'F'
+        and assignment_count_section_quarter_category_running_week < expectation,
+        true,
+        false
+    ) as f_expected_assign_count_not_met,
 
-    if(totalpointvalue > 100, true, false) as max_score_greater_100,
+    if(
+        assignment_category_code = 'S'
+        and assignment_count_section_quarter_category_running_week < expectation,
+        true,
+        false
+    ) as s_expected_assign_count_not_met,
+
+    if(
+        assignment_category_code = 'W' and totalpointvalue != 10, true, false
+    ) as w_assign_max_score_not_10,
+
+    if(
+        assignment_category_code = 'F' and totalpointvalue != 10, true, false
+    ) as f_assign_max_score_not_10,
 
     if(
         total_missing_section_quarter = 0, true, false
     ) as qt_teacher_no_missing_assignments,
 
     if(
-        n_expected >= 1 and total_totalpointvalue_section_quarter < 200, true, false
-    ) as qt_teacher_total_less_200,
+        assignment_category_code = 'S'
+        and n_expected >= 1
+        and total_totalpointvalue_section_quarter < 200,
+        true,
+        false
+    ) as qt_teacher_s_total_less_200,
 
     if(
-        n_expected = 1 and total_totalpointvalue_section_quarter > 200, true, false
-    ) as qt_teacher_total_greater_200,
+        assignment_category_code = 'S'
+        and n_expected = 1
+        and total_totalpointvalue_section_quarter > 200,
+        true,
+        false
+    ) as qt_teacher_s_total_greater_200,
 
     round(
         safe_divide(
