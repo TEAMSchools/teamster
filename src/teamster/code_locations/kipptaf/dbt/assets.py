@@ -26,7 +26,7 @@ dbt_assets = build_dbt_assets(
     exclude="tag:stage_external_sources source:adp_payroll+",
     op_tags={
         "dagster-k8s/config": {
-            "container_config": {"resources": {"requests": {"cpu": "750m"}}}
+            "container_config": {"resources": {"requests": {"cpu": "1000m"}}}
         }
     },
 )
