@@ -27,7 +27,7 @@ class RenLearningCore(BaseModel):
     SchoolRenaissanceID: str | None = None
     SchoolSourcedID: str | None = None
     SchoolYear: str | None = None
-    StudentEmail: float | None = None
+    StudentEmail: str | float | None = None
     StudentFirstName: str | None = None
     StudentLastName: str | None = None
     StudentMiddleName: str | None = None
