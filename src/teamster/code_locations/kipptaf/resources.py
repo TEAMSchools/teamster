@@ -52,7 +52,7 @@ ALCHEMER_RESOURCE = AlchemerResource(
     api_token=EnvVar("ALCHEMER_API_TOKEN"),
     api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
     api_version="v5",
-    timeout=15,
+    timeout=60,
 )
 
 DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
