@@ -27,5 +27,5 @@ ratings = build_smartrecruiters_report_asset(
 assets = [
     applicants,
     applications,
-    ratings,
+    # ratings,
 ]
