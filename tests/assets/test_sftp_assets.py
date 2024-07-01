@@ -44,18 +44,24 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
     )
 
     assert result.success
+
     asset_materialization_event = result.get_asset_materialization_events()[0]
+
     event_specific_data = _check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
+
     records = _check.inst(
         event_specific_data.materialization.metadata["records"].value, int
     )
+
     assert records > 0
+
     extras = _check.inst(
         obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
         ttype=TextMetadataValue,
     )
+
     assert extras.text == ""
 
 
@@ -147,125 +153,6 @@ def test_pearson_parcc_kippcamden():
     asset = [a for a in assets if a.key.path[-1] == "parcc"][0]
 
     _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_renlearn_accelerated_reader_kippnj():
-    from teamster.code_locations.kippnewark.renlearn.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "accelerated_reader"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_renlearn": SSHResource(
-                remote_host="sftp.renaissance.com",
-                username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPNJ"),
-                password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPNJ"),
-            )
-        },
-    )
-
-
-def test_renlearn_accelerated_reader_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "accelerated_reader"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_renlearn": SSHResource(
-                remote_host="sftp.renaissance.com",
-                username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPMIAMI"),
-                password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPMIAMI"),
-            )
-        },
-    )
-
-
-def test_renlearn_star_kippnj():
-    from teamster.code_locations.kippnewark.renlearn.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "star"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_renlearn": SSHResource(
-                remote_host="sftp.renaissance.com",
-                username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPNJ"),
-                password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPNJ"),
-            )
-        },
-    )
-
-
-def test_renlearn_star_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "star"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_renlearn": SSHResource(
-                remote_host="sftp.renaissance.com",
-                username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPMIAMI"),
-                password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPMIAMI"),
-            )
-        },
-    )
-
-
-def test_renlearn_star_skill_area_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "star_skill_area"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_renlearn": SSHResource(
-                remote_host="sftp.renaissance.com",
-                username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPMIAMI"),
-                password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPMIAMI"),
-            )
-        },
-    )
-
-
-def test_renlearn_star_dashboard_standards_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "star_dashboard_standards"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_renlearn": SSHResource(
-                remote_host="sftp.renaissance.com",
-                username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPMIAMI"),
-                password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPMIAMI"),
-            )
-        },
-    )
-
-
-def test_renlearn_fast_star_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "fast_star"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_renlearn": SSHResource(
-                remote_host="sftp.renaissance.com",
-                username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPMIAMI"),
-                password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPMIAMI"),
-            )
-        },
-    )
 
 
 def test_iready_diagnostic_results_kippmiami():

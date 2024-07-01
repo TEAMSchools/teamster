@@ -94,7 +94,7 @@ select
     statebenchmarkminscaledscore as `state_benchmark_min_scaled_score`,
     statebenchmarknumberofcategorylevels as `state_benchmark_number_of_category_levels`,
     statebenchmarkproficient as `state_benchmark_proficient`,
-    studentemail as `student_email`,
+    studentemail.string_value as `student_email`,
     studentfirstname as `student_first_name`,
     studentgrowthpercentilefallfall as `student_growth_percentile_fall_fall`,
     studentgrowthpercentilefallspring as `student_growth_percentile_fall_spring`,
