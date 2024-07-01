@@ -1,4 +1,15 @@
 with
+    schools as (
+        select
+            _dbt_source_relation,
+            school_number,
+
+            case
+                high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
+            end as school_level,
+        from {{ ref("stg_powerschool__schools") }}
+    ),
+
     assignments as (
         select
             sec._dbt_source_relation,
@@ -90,6 +101,10 @@ with
             ) as total_expected_scored_teacher_school_quarter_week_category,
         from {{ ref("base_powerschool__sections") }} as sec
         inner join
+            schools as sch
+            on sec.sections_schoolid = sch.school_number
+            and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
+        inner join
             {{ ref("int_powerschool__calendar_week") }} as c
             on sec.sections_schoolid = c.schoolid
             and sec.terms_yearid = c.yearid
@@ -101,6 +116,7 @@ with
             and c.region = ge.region
             and c.quarter = ge.quarter
             and c.week_number_quarter = ge.week_number
+            and sch.school_level = ge.school_level
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on sec.sections_dcid = a.sectionsdcid
