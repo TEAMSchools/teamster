@@ -120,3 +120,12 @@ extraManifests:
       selector:
         matchLabels:
           location_name: kippnewark
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: pdb-kipptaf
+    spec:
+      maxUnavailable: 0
+      selector:
+        matchLabels:
+          location_name: kipptaf
