@@ -30,11 +30,9 @@ locations:
           container_config:
             resources:
               requests:
-                cpu: 1250m
-                memory: 2.0Gi
+                cpu: 750m
               limits:
-                cpu: 1250m
-                memory: 2.0Gi
+                cpu: 750m
             env:
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
