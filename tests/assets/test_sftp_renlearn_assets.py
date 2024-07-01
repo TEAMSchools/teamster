@@ -66,56 +66,53 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
 
 
 def test_renlearn_accelerated_reader_kippnj():
-    from teamster.code_locations.kippnewark.renlearn.assets import assets
+    from teamster.code_locations.kippnewark.renlearn.assets import accelerated_reader
 
-    asset = [a for a in assets if a.key.path[-1] == "accelerated_reader"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPNJ})
+    _test_asset(
+        asset=accelerated_reader, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPNJ}
+    )
 
 
 def test_renlearn_accelerated_reader_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
+    from teamster.code_locations.kippmiami.renlearn.assets import accelerated_reader
 
-    asset = [a for a in assets if a.key.path[-1] == "accelerated_reader"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
+    _test_asset(
+        asset=accelerated_reader, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI}
+    )
 
 
 def test_renlearn_star_kippnj():
-    from teamster.code_locations.kippnewark.renlearn.assets import assets
+    from teamster.code_locations.kippnewark.renlearn.assets import star
 
-    asset = [a for a in assets if a.key.path[-1] == "star"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPNJ})
+    _test_asset(asset=star, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPNJ})
 
 
 def test_renlearn_star_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
+    from teamster.code_locations.kippmiami.renlearn.assets import star
 
-    asset = [a for a in assets if a.key.path[-1] == "star"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
+    _test_asset(asset=star, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
 
 
 def test_renlearn_star_skill_area_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
+    from teamster.code_locations.kippmiami.renlearn.assets import star_skill_area
 
-    asset = [a for a in assets if a.key.path[-1] == "star_skill_area"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
+    _test_asset(
+        asset=star_skill_area, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI}
+    )
 
 
 def test_renlearn_star_dashboard_standards_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
+    from teamster.code_locations.kippmiami.renlearn.assets import (
+        star_dashboard_standards,
+    )
 
-    asset = [a for a in assets if a.key.path[-1] == "star_dashboard_standards"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
+    _test_asset(
+        asset=star_dashboard_standards,
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI},
+    )
 
 
 def test_renlearn_fast_star_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import assets
+    from teamster.code_locations.kippmiami.renlearn.assets import fast_star
 
-    asset = [a for a in assets if a.key.path[-1] == "fast_star"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
+    _test_asset(asset=fast_star, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
