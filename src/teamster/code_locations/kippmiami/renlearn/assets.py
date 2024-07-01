@@ -103,8 +103,8 @@ fast_star = build_sftp_asset(
 
 assets = [
     accelerated_reader,
-    star,
+    fast_star,
     star_dashboard_standards,
     star_skill_area,
-    fast_star,
+    star,
 ]
