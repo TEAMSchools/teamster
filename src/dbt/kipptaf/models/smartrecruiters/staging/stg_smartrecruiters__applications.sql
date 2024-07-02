@@ -17,6 +17,7 @@ select
     application_field_job_title,
     application_field_application_review_score as application_review_score,
     application_field_phone_interview_score as phone_interview_score,
+    application_field_resume_score as resume_score,
     application_reason_for_rejection as reason_for_rejection,
     application_reason_for_withdrawal as reason_for_withdrawal,
     application_state,

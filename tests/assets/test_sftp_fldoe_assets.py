@@ -1,6 +1,6 @@
 import random
 
-from dagster import TextMetadataValue, _check, materialize
+from dagster import _check, materialize
 from dagster._core.events import StepMaterializationData
 
 from teamster.code_locations.kippmiami.fldoe.assets import eoc, fast, fsa, science
@@ -32,23 +32,24 @@ def _test_asset(asset, partition_key=None, instance=None):
     )
 
     assert result.success
-    asset_materialization_event = result.get_asset_materialization_events()[0]
 
-    event_specific_data = _check.inst(
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    asset_check_evaluation = result.get_asset_check_evaluations()[0]
+
+    step_materialization_data = _check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
 
     records = _check.inst(
-        event_specific_data.materialization.metadata["records"].value, int
+        step_materialization_data.materialization.metadata["records"].value, int
     )
 
     assert records > 0
+    assert asset_check_evaluation.passed
 
-    extras = _check.inst(
-        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
-        ttype=TextMetadataValue,
-    )
+    extras = asset_check_evaluation.metadata.get("extras")
 
+    assert extras is not None
     assert extras.text == ""
 
 
