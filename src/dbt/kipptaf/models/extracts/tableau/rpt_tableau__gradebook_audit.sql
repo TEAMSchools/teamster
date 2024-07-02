@@ -151,6 +151,7 @@ with
             and {{ union_dataset_join_clause(left_alias="t", right_alias="s") }}
         where
             f.academic_year = {{ var("current_academic_year") }}
+            and f.enroll_status = 0
             and f.roster_type = 'Local'
             and f.quarter != 'Y1'
             and f.region_school_level not in ('ESCamden', 'ESNewark')
