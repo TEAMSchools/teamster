@@ -74,6 +74,11 @@ select
 
     qbl.qbl,
 
+    g.grade_goal,
+    g.school_goal,
+    g.region_goal,
+    g.organization_goal,
+
     hr.sections_section_number as homeroom_section,
     hr.teachernumber as homeroom_teachernumber,
     hr.teacher_lastfirst as homeroom_teacher_name,
@@ -104,7 +109,14 @@ select
         '&code_prebuilt_id=370&action=showReport&create_student_group=t&fw_form_form_test=1&site_id=',
         co.schoolid,
         '&date=logged_in_date&group_by=overall&response_count_format=number&guid=21fa0ddf-1f3b-4918-80d9-f2088bcc7f48&reference_id=PR&state_id=31'
-    ) as illuminate_response_freq,
+    ) as illuminate_response_frequency,
+    concat(
+        'https://kippteamschools.illuminateed.com/live/?page=PrebuiltReport_CodeBasedJasperController&debug=&jasper_prebuilt_id=308&_referrer_assessment_id=',
+        r.assessment_id,
+        '&fw_form_form_test=1&site_id=',
+        co.schoolid,
+        '&date=logged_in_date&matrix_position=2&matrix_order=1&matrix_group_by=1&gradebook_color_coding=1&matrix_stretch=1#report'
+    ) as illuminate_matrix,
 
     if(qbl.qbl is not null, true, false) as is_qbl,
 
@@ -135,6 +147,12 @@ left join
     and r.subject_area = qbl.illuminate_subject_area
     and qbl.qbl is not null
 left join
+    {{ ref("stg_assessments__academic_goals") }} as g
+    on co.schoolid = g.school_id
+    and co.grade_level = g.grade_level
+    and co.academic_year = g.academic_year
+    and r.subject_area = g.illuminate_subject_area
+left join
     {{ ref("base_powerschool__course_enrollments") }} as cc
     on co.studentid = cc.cc_studentid
     and co.yearid = cc.cc_yearid
@@ -158,18 +176,86 @@ left join
     and w.week_start_monday = iw.last_week_start_date
     and w.week_end_sunday = iw.last_week_end_date
     and iw.rn_iready_week = 1
--- left join {{ ref('snapshot_iready__instructional_usage_data') }} as iue
--- co.student_number = iu.student_id
--- and co.academic_year = iu.academic_year_int
--- and w.week_start_monday = iu.last_week_start_date
--- left join
--- {{ ref("stg_reporting__terms") }} as t
--- on co.schoolid = t.school_id
--- and co.academic_year = t.academic_year
--- and r.administered_at between t.start_date and t.end_date
--- and t.type = 'RT'
 where
     co.rn_year = 1
     and co.grade_level between 0 and 8
     and co.enroll_status = 0
     and co.academic_year >= {{ var("current_academic_year") }} - 1
+
+union all
+
+select
+    w.week_start_monday,
+    w.week_end_sunday,
+    w.days_in_session,
+    w.term,
+
+    null as student_number,
+    null as student_name,
+    w.academic_year as academic_year,
+    r.home_work_location_powerschool_school_id as schoolid,
+    sr.home_work_location_abbreviation as school,
+    r.home_work_location_region as region,
+    null as grade_level,
+    null as enroll_status,
+    null as cohort,
+    cw.grade_band as school_level,
+    null as gender,
+    null as ethnicity,
+    o.observation_id as assessment_id,
+    o.rubric_name as title,
+    null as scope,
+    null as subject_area,
+    o.observed_at as administered_at,
+    null as date_taken,
+    null as module_type,
+    null as module_number,
+    'walkthrough' as response_type,
+    null as response_type_code,
+    o.measurement_name as response_type_description,
+    o.strand_name as response_type_root_description,
+    o.observation_score as percent_correct,
+    if(o.row_score = 1, true, false) as is_mastery,
+    null as performance_band_label_number,
+    null as performance_band_label,
+    null as is_replacement,
+    null as qbl,
+    null as grade_goal,
+    null as school_goal,
+    null as region_goal,
+    null as organization_goal,
+    null as homeroom_section,
+    null as homeroom_teachernumber,
+    null as homeroom_teacher_name,
+    null as course_section,
+    null as course_name,
+    null as course_number,
+    null as course_credittype,
+    r.powerschool_teacher_number as course_teachernumber,
+    r.preferred_name_lastfirst as course_teacher_name,
+    null as n_lessons_passed_reading,
+    null as n_lessons_passed_math,
+    null as pct_lessons_passed_reading,
+    null as pct_lessons_passed_math,
+    null as time_on_task_reading,
+    null as time_on_task_math,
+    o.row_score as is_mastery_int,
+    null as illuminate_overview_link,
+    null as illuminate_response_frequency,
+    null as illuminate_matrix,
+    null as is_qbl,
+    null as ml_status,
+    null as status_504,
+    null as self_contained_status,
+    null as iep_status,
+from {{ ref("int_performance_management__observation_details") }} as o
+left join
+    {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
+left join
+    {{ ref("stg_people__location_crosswalk") }} as cw
+    on r.home_work_location_name = cw.name
+inner join
+    {{ ref("int_reporting__week_scaffold") }} as w
+    on o.observed_at between w.week_start_monday and w.week_end_sunday
+    and r.home_work_location_powerschool_school_id = w.schoolid
+where od.observation_type_abbreviation = 'WT'
