@@ -31,13 +31,13 @@ dagsterCloud:
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
 dagsterCloudAgent:
-  resources:
-    requests:
-      cpu: 750m
-      memory: 2.0Gi
-    limits:
-      cpu: 750m
-      memory: 2.0Gi
+  # resources:
+  #   requests:
+  #     cpu: 750m
+  #     memory: 2.0Gi
+  #   limits:
+  #     cpu: 750m
+  #     memory: 2.0Gi
   nodeSelector:
     cloud.google.com/gke-placement-group: servers
     cloud.google.com/compute-class: Balanced
