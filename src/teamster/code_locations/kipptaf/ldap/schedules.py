@@ -5,7 +5,7 @@ from teamster.code_locations.kipptaf.ldap.jobs import ldap_asset_job
 
 ldap_asset_job_schedule = ScheduleDefinition(
     job=ldap_asset_job,
-    cron_schedule="45 4 * * *",
+    cron_schedule="10 5 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
