@@ -9,7 +9,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - public
               - grade_levels
@@ -18,7 +17,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - public
               - sessions
@@ -27,7 +25,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - public
               - student_session_aff
@@ -36,7 +33,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - public
               - students
@@ -45,7 +41,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - public
               - users

@@ -2,13 +2,14 @@ version: 2
 
 sources:
   - name: kippcamden_deanslist
+    tags:
+      - kippcamden
     tables:
       - name: stg_deanslist__behavior
         meta:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__behavior
       - name: stg_deanslist__comm_log
@@ -16,7 +17,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__comm_log
       - name: stg_deanslist__followups
@@ -24,7 +24,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__followups
       - name: stg_deanslist__homework
@@ -32,7 +31,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__homework
       - name: stg_deanslist__incidents
@@ -40,7 +38,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__incidents
       - name: stg_deanslist__lists
@@ -48,7 +45,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__lists
       - name: stg_deanslist__roster_assignments
@@ -56,7 +52,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__roster_assignments
       - name: stg_deanslist__rosters
@@ -64,7 +59,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__rosters
       - name: stg_deanslist__terms
@@ -72,7 +66,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__terms
       - name: stg_deanslist__users
@@ -80,7 +73,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__users
       - name: stg_deanslist__incidents__penalties
@@ -88,7 +80,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__incidents__penalties
       - name: stg_deanslist__incidents__actions
@@ -96,7 +87,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__incidents__actions
       - name: stg_deanslist__incidents__custom_fields
@@ -104,7 +94,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__incidents__custom_fields
       - name: int_deanslist__incidents__custom_fields__pivot
@@ -112,7 +101,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - int_deanslist__incidents__custom_fields__pivot
       - name: stg_deanslist__students__custom_fields
@@ -120,7 +108,6 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - stg_deanslist__students__custom_fields
       - name: int_deanslist__students__custom_fields__pivot
@@ -128,6 +115,5 @@ sources:
           dagster:
             group: deanslist
             asset_key:
-              - kippcamden
               - deanslist
               - int_deanslist__students__custom_fields__pivot

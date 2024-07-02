@@ -2,13 +2,14 @@ version: 2
 
 sources:
   - name: kippnewark_titan
+    tags:
+      - kippnewark
     tables:
       - name: stg_titan__person_data
         meta:
           dagster:
             group: titan
             asset_key:
-              - kippnewark
               - titan
               - stg_titan__person_data
       - name: stg_titan__income_form_data
@@ -16,16 +17,5 @@ sources:
           dagster:
             group: titan
             asset_key:
-              - kippnewark
               - titan
               - stg_titan__income_form_data
-  - name: kippcamden_titan
-    tables:
-      - name: stg_titan__person_data
-        meta:
-          dagster:
-            group: titan
-            asset_key:
-              - kippcamden
-              - titan
-              - stg_titan__person_data

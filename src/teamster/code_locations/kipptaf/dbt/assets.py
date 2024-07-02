@@ -23,7 +23,34 @@ dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}_dbt_assets",
-    exclude="tag:stage_external_sources source:adp_payroll+",
+    exclude="tag:stage_external_sources tag:kipp* source:adp_payroll+",
+)
+
+kippnewark_source_dbt_assets = build_dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(
+        source_asset_key_prefix="kippnewark"
+    ),
+    name=f"{CODE_LOCATION}_kippnewark_source_dbt_assets",
+    select="tag:kippnewark",
+)
+
+kippcamden_source_dbt_assets = build_dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(
+        source_asset_key_prefix="kippcamden"
+    ),
+    name=f"{CODE_LOCATION}_kippcamden_source_dbt_assets",
+    select="tag:kippcamden",
+)
+
+kippmiami_source_dbt_assets = build_dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(
+        source_asset_key_prefix="kippmiami"
+    ),
+    name=f"{CODE_LOCATION}_kippmiami_source_dbt_assets",
+    select="tag:kippmiami",
 )
 
 external_source_dbt_assets = build_dbt_external_source_assets(
@@ -55,4 +82,7 @@ assets = [
     adp_payroll_external_source_dbt_assets,
     dbt_assets,
     external_source_dbt_assets,
+    kippcamden_source_dbt_assets,
+    kippmiami_source_dbt_assets,
+    kippnewark_source_dbt_assets,
 ]

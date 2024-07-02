@@ -2,13 +2,14 @@ version: 2
 
 sources:
   - name: kippmiami_fldoe
+    tags:
+      - kippmiami
     tables:
       - name: stg_fldoe__fast
         meta:
           dagster:
             group: fldoe
             asset_key:
-              - kippmiami
               - fldoe
               - stg_fldoe__fast
       - name: stg_fldoe__fsa
@@ -16,7 +17,6 @@ sources:
           dagster:
             group: fldoe
             asset_key:
-              - kippmiami
               - fldoe
               - stg_fldoe__fsa
       - name: stg_fldoe__eoc
@@ -24,7 +24,6 @@ sources:
           dagster:
             group: fldoe
             asset_key:
-              - kippmiami
               - fldoe
               - stg_fldoe__eoc
       - name: stg_fldoe__science
@@ -32,7 +31,6 @@ sources:
           dagster:
             group: fldoe
             asset_key:
-              - kippmiami
               - fldoe
               - stg_fldoe__science
       - name: int_fldoe__fast_standard_performance_unpivot
@@ -40,6 +38,5 @@ sources:
           dagster:
             group: fldoe
             asset_key:
-              - kippmiami
               - fldoe
               - int_fldoe__fast_standard_performance_unpivot

@@ -10,7 +10,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Account
       - name: application
@@ -19,7 +18,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Application__c
       - name: application__history
@@ -28,7 +26,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Application__History
       - name: application_history
@@ -37,7 +34,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Application_History__c
       - name: application_status_history
@@ -46,7 +42,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Application_Status_History__c
       - name: attachment
@@ -55,7 +50,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - attachment
       - name: college_persistence
@@ -64,7 +58,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - College_Persistence__c
       - name: contact
@@ -73,7 +66,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Contact
       - name: contact_note
@@ -82,7 +74,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Contact_Note__c
       - name: content_document
@@ -91,7 +82,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - ContentDocument
       - name: employment
@@ -100,7 +90,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Employment__c
       - name: enrollment
@@ -109,7 +98,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Enrollment__c
       - name: enrollment__history
@@ -118,7 +106,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Enrollment__History
       - name: event
@@ -127,7 +114,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Event
       - name: gpa
@@ -136,7 +122,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - GPA__c
       - name: kipp_aid
@@ -145,7 +130,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - KIPP_Aid__c
       - name: marking_period
@@ -154,7 +138,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Marking_Period__c
       - name: record_type
@@ -163,7 +146,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - RecordType
       - name: relationship
@@ -172,7 +154,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Relationship__c
       - name: standardized_test
@@ -181,7 +162,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Standardized_Test__c
       - name: subsequent_financial_aid_award
@@ -190,7 +170,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Subsequent_Financial_Aid_Award__c
       - name: task
@@ -199,7 +178,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Task
       - name: term
@@ -208,7 +186,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Term__c
       - name: term__history
@@ -217,7 +194,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Term__History
       - name: user
@@ -226,7 +202,6 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - User
       - name: internships_programs
@@ -235,6 +210,5 @@ sources:
           dagster:
             group: kippadb
             asset_key:
-              - kipptaf
               - kippadb
               - Internships_Programs__c
