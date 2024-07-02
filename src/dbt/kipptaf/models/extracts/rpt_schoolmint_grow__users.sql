@@ -99,7 +99,7 @@ with
             and coalesce(
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
-            >= date({{ var("current_academic_year") }} - 1, 7, 1)
+            >= date({{ var("current_academic_year") - 1 }}, 7, 1)
             and sr.department_home_name != 'Data'
     ),
 

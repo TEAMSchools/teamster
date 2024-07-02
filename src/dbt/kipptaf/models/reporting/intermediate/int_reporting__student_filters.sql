@@ -236,4 +236,4 @@ left join
     and a.values_column = 'M'
 left join
     mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
-where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
+where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

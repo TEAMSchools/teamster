@@ -96,4 +96,4 @@ left join
 where
     co.rn_year = 1
     and co.grade_level != 99
-    and co.academic_year >= ({{ var("current_academic_year") }} - 1)
+    and co.academic_year >= ({{ var("current_academic_year") - 1 }})
