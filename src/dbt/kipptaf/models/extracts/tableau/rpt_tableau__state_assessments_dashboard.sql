@@ -48,7 +48,7 @@ with
             on e.student_number = m.student_number
             and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
         where
-            e.academic_year >= {{ var("current_academic_year") }} - 7
+            e.academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_year = 1
             and e.region in ('Camden', 'Newark')
             and e.grade_level > 2
@@ -87,7 +87,7 @@ with
             end as advisory,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
-            academic_year >= {{ var("current_academic_year") }} - 7
+            academic_year >= {{ var("current_academic_year") - 7 }}
             and rn_year = 1
             and region = 'Miami'
             and grade_level > 2
@@ -148,7 +148,7 @@ with
             on e.students_student_number = c.students_student_number
             and e.courses_credittype = c.courses_credittype
         where
-            e.cc_academic_year >= {{ var("current_academic_year") }} - 7
+            e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
@@ -229,7 +229,7 @@ with
             ) as subject,
 
         from {{ ref("int_pearson__all_assessments") }}
-        where safe_cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
+        where safe_cast(academic_year as int) >= {{ var("current_academic_year") - 7 }}
     ),
 
     assessments_fl_eoc as (
