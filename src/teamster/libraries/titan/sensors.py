@@ -35,9 +35,6 @@ def build_titan_sftp_sensor(
             files = ssh_titan.listdir_attr_r()
         except SSHException as e:
             context.log.error(e)
-            raise SSHException from e
-        except Exception as e:
-            context.log.error(e)
             return SensorResult(skip_reason=str(e))
 
         run_requests = []
