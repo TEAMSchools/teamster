@@ -2,7 +2,7 @@ with
     year_scaffold as (
         select {{ var("current_academic_year") }} as academic_year
         union distinct
-        select {{ var("current_academic_year") }} - 1 as academic_year
+        select {{ var("current_academic_year") - 1 }} as academic_year
     ),
 
     app_rollup as (

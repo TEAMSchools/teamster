@@ -26,4 +26,4 @@ inner join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
     and co.academic_year = sp.academic_year
     and sp.specprog_name = 'Home Instruction'
-where co.academic_year >= {{ var("current_academic_year") }} - 1 and co.rn_year = 1
+where co.academic_year >= {{ var("current_academic_year") - 1 }} and co.rn_year = 1

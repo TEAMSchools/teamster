@@ -84,7 +84,7 @@ with
             on st.teacherid = t.id
             and sec.sections_schoolid = t.schoolid
             and {{ union_dataset_join_clause(left_alias="st", right_alias="t") }}
-        where sec.terms_yearid = ({{ var("current_academic_year") }} - 1990)
+        where sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
 
         union all
 
@@ -101,17 +101,17 @@ with
             concat(
                 right(cast({{ var("current_academic_year") }} as string), 2),
                 '-',
-                right(cast(({{ var("current_academic_year") }} + 1) as string), 2)
+                right(cast(({{ var("current_academic_year") + 1 }}) as string), 2)
             ) as terms_abbreviation,
             format_date(
                 '%m/%d/%Y', date({{ var("current_academic_year") }}, 7, 1)
             ) as terms_firstday,
             format_date(
-                '%m/%d/%Y', date({{ var("current_academic_year") }} + 1, 6, 30)
+                '%m/%d/%Y', date({{ var("current_academic_year") + 1 }}, 6, 30)
             ) as terms_lastday,
 
             concat(
-                {{ var("current_academic_year") }} - 1990,
+                {{ var("current_academic_year") - 1990 }},
                 dsos.school_id,
                 right(concat(0, grade_level), 2)
             ) as section_id,

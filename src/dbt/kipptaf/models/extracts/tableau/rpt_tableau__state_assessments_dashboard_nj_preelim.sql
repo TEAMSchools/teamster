@@ -1,4 +1,5 @@
-{% set academic_year = "2023" %}  -- CHANGE YEAR HERE ONLY
+{#- CHANGE YEAR HERE ONLY -#}
+{%- set academic_year = "2023" -%}
 
 with
     ms_grad as (
