@@ -47,4 +47,4 @@ where
     and co.grade_level between 8 and 12
     and co.enroll_status = 2
     and co.region != 'Miami'
-    and co.cohort >= {{ var("current_academic_year") }} - 2
+    and co.cohort >= {{ var("current_academic_year") - 2 }}
