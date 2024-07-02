@@ -38,4 +38,4 @@ inner join
     {{ ref("int_powerschool__teachers") }} as t
     on sec.teacher = t.id
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="t") }}
-where tr.yearid = ({{ var("current_academic_year") }} - 1990)
+where tr.yearid = ({{ var("current_academic_year") - 1990 }})
