@@ -20,12 +20,12 @@ with
                 select
                     student_id,
                     academic_year_int,
-                    lower(subject) as subject,
                     last_week_start_date,
                     last_week_end_date,
                     last_week_lessons_passed,
                     last_week_percent_lessons_passed,
                     last_week_time_on_task_min,
+                    lower(subject) as subject,
                 from {{ ref("snapshot_iready__instructional_usage_data") }}
             ) pivot (
                 max(last_week_lessons_passed) as n_lessons_passed,
@@ -357,7 +357,7 @@ select
 
     null as student_number,
     null as student_name,
-    w.academic_year as academic_year,
+    w.academic_year,
     r.home_work_location_powerschool_school_id as schoolid,
     r.home_work_location_abbreviation as school,
     r.home_work_location_region as region,
