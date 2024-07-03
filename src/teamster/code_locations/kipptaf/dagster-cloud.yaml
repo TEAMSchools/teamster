@@ -46,10 +46,10 @@ locations:
             resources:
               requests:
                 cpu: 1250m
-                # memory: 2.0Gi
+                memory: 1.5Gi
               limits:
                 cpu: 1250m
-                # memory: 2.0Gi
+                memory: 1.5Gi
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
@@ -393,11 +393,11 @@ locations:
                     key: credential
         run_k8s_config:
           container_config:
-            # resources:
-            #   requests:
-            #     cpu: 1250m
-            #   limits:
-            #     cpu: 1250m
+            resources:
+              requests:
+                cpu: 750m
+              limits:
+                cpu: 750m
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
