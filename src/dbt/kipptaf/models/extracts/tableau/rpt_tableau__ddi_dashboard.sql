@@ -1,46 +1,47 @@
 with
+    iready_usage as (
+        select
+            student_id,
+            academic_year_int,
+            last_week_start_date,
+            last_week_end_date,
+            last_week_lessons_passed,
+            last_week_percent_lessons_passed,
+            last_week_time_on_task_min,
+
+            lower(`subject`) as `subject`,
+        from {{ ref("snapshot_iready__instructional_usage_data") }}
+    ),
+
     iready_weekly as (
         select
             student_id as student_number,
             academic_year_int as academic_year,
             last_week_start_date,
             last_week_end_date,
+
             coalesce(n_lessons_passed_reading, 0) as n_lessons_passed_reading,
             coalesce(n_lessons_passed_math, 0) as n_lessons_passed_math,
             coalesce(pct_lessons_passed_reading, 0) as pct_lessons_passed_reading,
             coalesce(pct_lessons_passed_math, 0) as pct_lessons_passed_math,
             coalesce(time_on_task_reading, 0) as time_on_task_reading,
             coalesce(time_on_task_math, 0) as time_on_task_math,
+
             row_number() over (
                 partition by student_id, last_week_start_date
                 order by last_week_start_date asc
             ) as rn_iready_week,
         from
-            (
-                select
-                    student_id,
-                    academic_year_int,
-                    last_week_start_date,
-                    last_week_end_date,
-                    last_week_lessons_passed,
-                    last_week_percent_lessons_passed,
-                    last_week_time_on_task_min,
-                    lower(subject) as subject,
-                from {{ ref("snapshot_iready__instructional_usage_data") }}
-            ) pivot (
+            iready_usage pivot (
                 max(last_week_lessons_passed) as n_lessons_passed,
                 max(last_week_percent_lessons_passed) as pct_lessons_passed,
-                max(last_week_time_on_task_min) as time_on_task for subject
+                max(last_week_time_on_task_min) as time_on_task for `subject`
                 in ('reading', 'math')
             )
     )
--- ES/MS assessments
-select
-    w.week_start_monday,
-    w.week_end_sunday,
-    w.days_in_session,
-    w.term,
 
+/* ES/MS assessments */
+select
     co.student_number,
     co.lastfirst as student_name,
     co.academic_year,
@@ -54,7 +55,11 @@ select
     co.gender,
     co.ethnicity,
 
-    cast(r.assessment_id as string) as assessment_id,
+    w.week_start_monday,
+    w.week_end_sunday,
+    w.days_in_session,
+    w.term,
+
     r.title,
     r.scope,
     r.subject_area,
@@ -79,16 +84,16 @@ select
     g.region_goal,
     g.organization_goal,
 
-    hr.sections_section_number as homeroom_section,
-    hr.teachernumber as homeroom_teachernumber,
-    hr.teacher_lastfirst as homeroom_teacher_name,
-
     cc.sections_section_number as course_section,
     cc.courses_course_name as course_name,
     cc.courses_course_number as course_number,
     cc.courses_credittype as course_credittype,
     cc.teachernumber as course_teachernumber,
     cc.teacher_lastfirst as course_teacher_name,
+
+    hr.sections_section_number as homeroom_section,
+    hr.teachernumber as homeroom_teachernumber,
+    hr.teacher_lastfirst as homeroom_teacher_name,
 
     iw.n_lessons_passed_reading,
     iw.n_lessons_passed_math,
@@ -101,35 +106,57 @@ select
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
-    if(r.is_mastery, 1, 0) as is_mastery_int,
-    concat(
-        'https://kippteamschools.illuminateed.com/live/?assessment_id=',
-        r.assessment_id,
-        '&page=Assessments_Overview_Controller'
-    ) as illuminate_overview_link,
-    concat(
-        'https://kippteamschools.illuminateed.com/live/?page=PrebuiltReport_AssessmentResponseDistributionController&assessment_id=',
-        r.assessment_id,
-        '&code_prebuilt_id=370&action=showReport&create_student_group=t&fw_form_form_test=1&site_id=',
-        co.schoolid,
-        '&date=logged_in_date&group_by=overall&response_count_format=number&guid=21fa0ddf-1f3b-4918-80d9-f2088bcc7f48&reference_id=PR&state_id=31'
-    ) as illuminate_response_frequency,
-    concat(
-        'https://kippteamschools.illuminateed.com/live/?page=PrebuiltReport_CodeBasedJasperController&debug=&jasper_prebuilt_id=308&_referrer_assessment_id=',
-        r.assessment_id,
-        '&fw_form_form_test=1&site_id=',
-        co.schoolid,
-        '&date=logged_in_date&matrix_position=2&matrix_order=1&matrix_group_by=1&gradebook_color_coding=1&matrix_stretch=1#report'
-    ) as illuminate_matrix,
-
-    if(qbl.qbl is not null, true, false) as is_qbl,
-
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
     if(
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
+    safe_cast(r.assessment_id as string) as assessment_id,
+    if(r.is_mastery, 1, 0) as is_mastery_int,
+
+    if(qbl.qbl is not null, true, false) as is_qbl,
+
+    concat(
+        'https://kippteamschools.illuminateed.com/live/',
+        '?assessment_id=' || r.assessment_id,
+        '&page=Assessments_Overview_Controller'
+    ) as illuminate_overview_link,
+
+    concat(
+        'https://kippteamschools.illuminateed.com/live/',
+        '?page=PrebuiltReport_AssessmentResponseDistributionController',
+        '&assessment_id=' || r.assessment_id,
+        '&site_id=' || co.schoolid,
+        '&code_prebuilt_id=370',
+        '&action=showReport',
+        '&create_student_group=t',
+        '&fw_form_form_test=1',
+        '&date=logged_in_date',
+        '&group_by=overall',
+        '&response_count_format=number',
+        '&guid=21fa0ddf-1f3b-4918-80d9-f2088bcc7f48',
+        '&reference_id=PR',
+        '&state_id=31'
+    ) as illuminate_response_frequency,
+
+    concat(
+        'https://kippteamschools.illuminateed.com/live/',
+        '?page=PrebuiltReport_CodeBasedJasperController',
+        '&_referrer_assessment_id=' || r.assessment_id,
+        '&site_id=' || co.schoolid,
+        '&debug=',
+        '&jasper_prebuilt_id=308',
+        '&fw_form_form_test=1',
+        '&date=logged_in_date',
+        '&matrix_position=2',
+        '&matrix_order=1',
+        '&matrix_group_by=1',
+        '&gradebook_color_coding=1',
+        '&matrix_stretch=1',
+        '#report'
+    ) as illuminate_matrix,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_reporting__week_scaffold") }} as w
@@ -190,19 +217,14 @@ left join
     on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.rn_year = 1
-    and co.grade_level between 0 and 8
     and co.enroll_status = 0
-    and co.academic_year >= {{ var("current_academic_year") }} - 1
+    and co.grade_level between 0 and 8
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
 
--- HS assessments
+/* HS assessments */
 select
-    w.week_start_monday,
-    w.week_end_sunday,
-    w.days_in_session,
-    w.term,
-
     co.student_number,
     co.lastfirst as student_name,
     co.academic_year,
@@ -216,7 +238,11 @@ select
     co.gender,
     co.ethnicity,
 
-    cast(r.assessment_id as string) as assessment_id,
+    w.week_start_monday,
+    w.week_end_sunday,
+    w.days_in_session,
+    w.term,
+
     r.title,
     r.scope,
     r.subject_area,
@@ -241,16 +267,16 @@ select
     g.region_goal,
     g.organization_goal,
 
-    hr.sections_section_number as homeroom_section,
-    hr.teachernumber as homeroom_teachernumber,
-    hr.teacher_lastfirst as homeroom_teacher_name,
-
     cc.sections_section_number as course_section,
     cc.courses_course_name as course_name,
     cc.courses_course_number as course_number,
     cc.courses_credittype as course_credittype,
     cc.teachernumber as course_teachernumber,
     cc.teacher_lastfirst as course_teacher_name,
+
+    hr.sections_section_number as homeroom_section,
+    hr.teachernumber as homeroom_teachernumber,
+    hr.teacher_lastfirst as homeroom_teacher_name,
 
     null as n_lessons_passed_reading,
     null as n_lessons_passed_math,
@@ -263,35 +289,56 @@ select
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
-    if(r.is_mastery, 1, 0) as is_mastery_int,
-    concat(
-        'https://kippteamschools.illuminateed.com/live/?assessment_id=',
-        r.assessment_id,
-        '&page=Assessments_Overview_Controller'
-    ) as illuminate_overview_link,
-    concat(
-        'https://kippteamschools.illuminateed.com/live/?page=PrebuiltReport_AssessmentResponseDistributionController&assessment_id=',
-        r.assessment_id,
-        '&code_prebuilt_id=370&action=showReport&create_student_group=t&fw_form_form_test=1&site_id=',
-        co.schoolid,
-        '&date=logged_in_date&group_by=overall&response_count_format=number&guid=21fa0ddf-1f3b-4918-80d9-f2088bcc7f48&reference_id=PR&state_id=31'
-    ) as illuminate_response_frequency,
-    concat(
-        'https://kippteamschools.illuminateed.com/live/?page=PrebuiltReport_CodeBasedJasperController&debug=&jasper_prebuilt_id=308&_referrer_assessment_id=',
-        r.assessment_id,
-        '&fw_form_form_test=1&site_id=',
-        co.schoolid,
-        '&date=logged_in_date&matrix_position=2&matrix_order=1&matrix_group_by=1&gradebook_color_coding=1&matrix_stretch=1#report'
-    ) as illuminate_matrix,
-
-    if(qbl.qbl is not null, true, false) as is_qbl,
-
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
     if(
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
+    safe_cast(r.assessment_id as string) as assessment_id,
+    if(r.is_mastery, 1, 0) as is_mastery_int,
+
+    if(qbl.qbl is not null, true, false) as is_qbl,
+
+    concat(
+        'https://kippteamschools.illuminateed.com/live/',
+        '?assessment_id=' || r.assessment_id,
+        '&page=Assessments_Overview_Controller'
+    ) as illuminate_overview_link,
+
+    concat(
+        'https://kippteamschools.illuminateed.com/live/',
+        '?page=PrebuiltReport_AssessmentResponseDistributionController',
+        '&assessment_id=' || r.assessment_id,
+        '&site_id=' || co.schoolid,
+        '&code_prebuilt_id=370',
+        '&action=showReport',
+        '&create_student_group=t',
+        '&fw_form_form_test=1',
+        '&date=logged_in_date',
+        '&group_by=overall',
+        '&response_count_format=number',
+        '&guid=21fa0ddf-1f3b-4918-80d9-f2088bcc7f48',
+        '&reference_id=PR',
+        '&state_id=31'
+    ) as illuminate_response_frequency,
+
+    concat(
+        'https://kippteamschools.illuminateed.com/live/',
+        '?page=PrebuiltReport_CodeBasedJasperController',
+        '&_referrer_assessment_id=' || r.assessment_id,
+        '&site_id=' || co.schoolid,
+        '&debug=',
+        '&jasper_prebuilt_id=308',
+        '&fw_form_form_test=1',
+        '&date=logged_in_date',
+        '&matrix_position=2',
+        '&matrix_order=1',
+        '&matrix_group_by=1',
+        '&gradebook_color_coding=1',
+        '&matrix_stretch=1#report'
+    ) as illuminate_matrix,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_reporting__week_scaffold") }} as w
@@ -343,44 +390,55 @@ left join
     on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.rn_year = 1
-    and co.grade_level between 9 and 12
     and co.enroll_status = 0
-    and co.academic_year >= {{ var("current_academic_year") }} - 1
+    and co.grade_level between 9 and 12
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
 
 select
+    null as student_number,
+    null as student_name,
+
+    w.academic_year,
+
+    r.home_work_location_powerschool_school_id as schoolid,
+    r.home_work_location_abbreviation as school,
+    r.home_work_location_region as region,
+
+    null as grade_level,
+    null as enroll_status,
+    null as cohort,
+
+    cw.grade_band as school_level,
+
+    null as gender,
+    null as ethnicity,
+
     w.week_start_monday,
     w.week_end_sunday,
     w.days_in_session,
     w.term,
 
-    null as student_number,
-    null as student_name,
-    w.academic_year,
-    r.home_work_location_powerschool_school_id as schoolid,
-    r.home_work_location_abbreviation as school,
-    r.home_work_location_region as region,
-    null as grade_level,
-    null as enroll_status,
-    null as cohort,
-    cw.grade_band as school_level,
-    null as gender,
-    null as ethnicity,
-    o.observation_id as assessment_id,
     o.rubric_name as title,
+
     null as scope,
     null as subject_area,
+
     o.observed_at as administered_at,
+
     null as date_taken,
     null as module_type,
     null as module_number,
     'walkthrough' as response_type,
     null as response_type_code,
+
     o.measurement_name as response_type_description,
     o.strand_name as response_type_root_description,
     o.observation_score as percent_correct,
+
     if(o.row_score = 1, true, false) as is_mastery,
+
     null as performance_band_label_number,
     null as performance_band_label,
     null as is_replacement,
@@ -389,15 +447,17 @@ select
     null as school_goal,
     null as region_goal,
     null as organization_goal,
-    null as homeroom_section,
-    null as homeroom_teachernumber,
-    null as homeroom_teacher_name,
     null as course_section,
     null as course_name,
     null as course_number,
     null as course_credittype,
+
     r.powerschool_teacher_number as course_teachernumber,
     r.preferred_name_lastfirst as course_teacher_name,
+
+    null as homeroom_section,
+    null as homeroom_teachernumber,
+    null as homeroom_teacher_name,
     null as n_lessons_passed_reading,
     null as n_lessons_passed_math,
     null as pct_lessons_passed_reading,
@@ -405,26 +465,31 @@ select
     null as time_on_task_reading,
     null as time_on_task_math,
     null as nj_student_tier,
+
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
-    o.row_score as is_mastery_int,
-    null as illuminate_overview_link,
-    null as illuminate_response_frequency,
-    null as illuminate_matrix,
-    null as is_qbl,
+
     null as ml_status,
     null as status_504,
     null as self_contained_status,
     null as iep_status,
+
+    o.observation_id as assessment_id,
+    o.row_score as is_mastery_int,
+
+    null as is_qbl,
+    null as illuminate_overview_link,
+    null as illuminate_response_frequency,
+    null as illuminate_matrix,
 from {{ ref("int_performance_management__observation_details") }} as o
-left join
+inner join
     {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
+inner join
+    {{ ref("int_reporting__week_scaffold") }} as w
+    on r.home_work_location_powerschool_school_id = w.schoolid
+    and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
     {{ ref("stg_people__location_crosswalk") }} as cw
     on r.home_work_location_name = cw.name
-inner join
-    {{ ref("int_reporting__week_scaffold") }} as w
-    on o.observed_at between w.week_start_monday and w.week_end_sunday
-    and r.home_work_location_powerschool_school_id = w.schoolid
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on r.home_work_location_powerschool_school_id
