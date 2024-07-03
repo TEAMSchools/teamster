@@ -27,7 +27,7 @@ nonpartition_assets = [
     build_powerschool_table_asset(
         asset_key=[CODE_LOCATION, "powerschool", a["asset_name"]],
         local_timezone=LOCAL_TIMEZONE,
-        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10), **a["op_tags"]},
         **a,
     )
     for a in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
