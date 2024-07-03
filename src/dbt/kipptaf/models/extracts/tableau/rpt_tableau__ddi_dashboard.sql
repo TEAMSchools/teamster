@@ -57,8 +57,8 @@ select
 
     w.week_start_monday,
     w.week_end_sunday,
-    w.days_in_session,
-    w.term,
+    w.date_count as days_in_session,
+    w.quarter as term,
 
     r.title,
     r.scope,
@@ -159,7 +159,7 @@ select
     ) as illuminate_matrix,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
-    {{ ref("int_reporting__week_scaffold") }} as w
+    {{ ref("int_powerschool__calendar_week") }} as w
     on co.academic_year = w.academic_year
     and co.schoolid = w.schoolid
     and w.week_end_sunday between co.entrydate and co.exitdate
@@ -240,8 +240,8 @@ select
 
     w.week_start_monday,
     w.week_end_sunday,
-    w.days_in_session,
-    w.term,
+    w.date_count as days_in_session,
+    w.quarter as term,
 
     r.title,
     r.scope,
@@ -341,7 +341,7 @@ select
     ) as illuminate_matrix,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
-    {{ ref("int_reporting__week_scaffold") }} as w
+    {{ ref("int_powerschool__calendar_week") }} as w
     on co.academic_year = w.academic_year
     and co.schoolid = w.schoolid
     and w.week_end_sunday between co.entrydate and co.exitdate
@@ -417,8 +417,8 @@ select
 
     w.week_start_monday,
     w.week_end_sunday,
-    w.days_in_session,
-    w.term,
+    w.date_count as days_in_session,
+    w.quarter as term,
 
     o.rubric_name as title,
 
@@ -484,7 +484,7 @@ from {{ ref("int_performance_management__observation_details") }} as o
 inner join
     {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
 inner join
-    {{ ref("int_reporting__week_scaffold") }} as w
+    {{ ref("int_powerschool__calendar_week") }} as w
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
