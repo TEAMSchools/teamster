@@ -1,5 +1,5 @@
 select
-    *,
+    g.*,
     initcap(
         (substr(regexp_extract(s._dbt_source_relation, r'(kipp\w+)_'), 5))
     ) as region,
