@@ -18,6 +18,7 @@ with
             percentile,
             overall_placement,
             overall_scale_score,
+            overall_relative_placement,
             percent_progress_to_annual_typical_growth_percent,
             percent_progress_to_annual_stretch_growth_percent,
             rn_subj_round,
@@ -70,6 +71,7 @@ select
     overall_placement,
     overall_scale_score,
     overall_placement_display,
+    overall_relative_placement,
     percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
@@ -92,6 +94,7 @@ select
     ir.overall_placement,
     ir.overall_scale_score,
     ir.overall_placement_display,
+    ir.overall_relative_placement,
     ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
 
