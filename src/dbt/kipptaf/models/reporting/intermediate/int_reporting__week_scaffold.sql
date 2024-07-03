@@ -23,7 +23,7 @@ with
         where schoolid not in (999999, 12345, 0)
     )
 
-select distinct
+select
     c.academic_year,
     c.schoolid,
     c.week_start_monday,
