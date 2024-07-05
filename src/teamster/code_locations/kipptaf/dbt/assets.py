@@ -45,7 +45,7 @@ external_source_dbt_assets = build_dbt_external_source_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "750m"}, "limits": {"cpu": "750m"}}
+                "resources": {"requests": {"cpu": "1000m"}, "limits": {"cpu": "1000m"}}
             }
         }
     },
