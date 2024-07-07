@@ -20,6 +20,7 @@ with
         select 'Miami' as region, 'Corrective' as category_type, behavior_category,
         from unnest(['Written Reminders', 'Big Reminders']) as behavior_category
     ),
+
     roster as (
         select
             co.student_number,
@@ -47,16 +48,12 @@ with
                 then regexp_extract(b.behavior_category, r'^(.*?) \(')
                 else b.behavior
             end as behavior,
-            if
-            (co.lep_status, 'ML', 'Not ML') as ml_status,
-            if
-            (co.is_504, 'Has 504', 'No 504') as status_504,
-            if
-            (
+            if(co.lep_status, 'ML', 'Not ML') as ml_status,
+            if(co.is_504, 'Has 504', 'No 504') as status_504,
+            if(
                 co.is_self_contained, 'Self-contained', 'Not self-contained'
             ) as self_contained_status,
-            if
-            (co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
@@ -76,6 +73,7 @@ with
             and co.rn_year = 1
             and co.grade_level != 99
     )
+
 select
     r.student_number,
     r.student_name,
