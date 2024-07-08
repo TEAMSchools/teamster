@@ -4,9 +4,6 @@
 agate==1.9.1 \
     --hash=sha256:1cf329510b3dde07c4ad1740b7587c9c679abc3dcd92bb1107eabc10c2e03c50 \
     --hash=sha256:bc60880c2ee59636a2a80cd8603d63f995be64526abf3cbba12f00767bcd5b3d
-alchemer==0.7.0 \
-    --hash=sha256:0edc9141dfc33a08940aa468c79c079af97784564672ea219c27029e65b4e12d \
-    --hash=sha256:4ac2ee154ac680d014b07de69a7a94af78b319edbd6b6a60316eb0d9ad7412b5
 alembic==1.13.2 \
     --hash=sha256:1ff0ae32975f4fd96028c39ed9bb3c867fe3af956bd7bb37343b54c9fe7445ef \
     --hash=sha256:6b8733129a6224a9a711e17c99b08462dbf7cc9670ba8f2e2ae9af860ceb1953
@@ -510,7 +507,7 @@ parsedatetime==2.6 \
 pathspec==0.12.1 \
     --hash=sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08 \
     --hash=sha256:a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712
-pendulum==3.0.0 \
+pendulum==3.0.0; python_version >= "3.12" \
     --hash=sha256:04a1094a5aa1daa34a6b57c865b25f691848c61583fb22722a4df5699f6bf74c \
     --hash=sha256:0a15b90129765b705eb2039062a6daf4d22c4e28d1a54fa260892e8c3ae6e157 \
     --hash=sha256:17fe4b2c844bbf5f0ece69cfd959fa02957c61317b2161763950d88fed8e13b9 \
@@ -846,7 +843,7 @@ text-unidecode==1.3 \
 threadpoolctl==3.5.0 \
     --hash=sha256:082433502dd922bf738de0d8bcc4fdcbf0979ff44c42bd40f5af8a282f6fa107 \
     --hash=sha256:56c1e26c150397e58c4926da8eeee87533b1e32bef131bd4bf6a2f45f3185467
-time-machine==2.14.2; implementation_name != "pypy" \
+time-machine==2.14.2; implementation_name != "pypy" and python_version >= "3.12" \
     --hash=sha256:10c7cf6134e32e1074d37319f8b7662cc200ee9dd813a48b7520dd4aa49131a9 \
     --hash=sha256:146aee86d237aa3a0ad1287718f1228107d21f3cd775c40f121a4670b3dee02c \
     --hash=sha256:1ea4319010914c8d69bd16d9839a5c2f1df104b5a4704882bc44599d81611582 \

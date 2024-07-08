@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.2"
-content_hash = "sha256:d178f8821e540ebb3f1e40a25996a11c6ceeceac6c2798dd229503af1e2a0ab1"
+content_hash = "sha256:0b04065e0c80ef5450a077bc85dc361fd34738aeee509ac2c6c88e25bf327d13"
 
 [[package]]
 name = "agate"
@@ -24,21 +24,6 @@ dependencies = [
 files = [
     {file = "agate-1.9.1-py2.py3-none-any.whl", hash = "sha256:1cf329510b3dde07c4ad1740b7587c9c679abc3dcd92bb1107eabc10c2e03c50"},
     {file = "agate-1.9.1.tar.gz", hash = "sha256:bc60880c2ee59636a2a80cd8603d63f995be64526abf3cbba12f00767bcd5b3d"},
-]
-
-[[package]]
-name = "alchemer"
-version = "0.7.0"
-requires_python = ">=3.8"
-summary = ""
-groups = ["default"]
-dependencies = [
-    "pendulum>=2.1.2",
-    "requests>=2.28.2",
-]
-files = [
-    {file = "alchemer-0.7.0-py3-none-any.whl", hash = "sha256:4ac2ee154ac680d014b07de69a7a94af78b319edbd6b6a60316eb0d9ad7412b5"},
-    {file = "alchemer-0.7.0.tar.gz", hash = "sha256:0edc9141dfc33a08940aa468c79c079af97784564672ea219c27029e65b4e12d"},
 ]
 
 [[package]]
@@ -2063,6 +2048,7 @@ version = "3.0.0"
 requires_python = ">=3.8"
 summary = "Python datetimes made easy"
 groups = ["default", "dev"]
+marker = "python_version >= \"3.12\""
 dependencies = [
     "python-dateutil>=2.6",
     "time-machine>=2.6.0; implementation_name != \"pypy\"",
@@ -3011,7 +2997,7 @@ version = "2.14.2"
 requires_python = ">=3.8"
 summary = "Travel through time in your tests."
 groups = ["default", "dev"]
-marker = "implementation_name != \"pypy\""
+marker = "implementation_name != \"pypy\" and python_version >= \"3.12\""
 dependencies = [
     "python-dateutil",
 ]
