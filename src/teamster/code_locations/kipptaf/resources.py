@@ -160,13 +160,6 @@ SSH_RESOURCE_IDAUTO = SSHResource(
     password=EnvVar("KTAF_SFTP_PASSWORD"),
 )
 
-SSH_RESOURCE_BLISSBOOK = SSHResource(
-    remote_host=EnvVar("BLISSBOOK_SFTP_HOST"),
-    remote_port=EnvVar("BLISSBOOK_SFTP_PORT"),
-    username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
-    password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
-)
-
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
     remote_port=EnvVar("LITTLESIS_SFTP_PORT"),
