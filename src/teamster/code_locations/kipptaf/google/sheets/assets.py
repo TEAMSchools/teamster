@@ -13,6 +13,7 @@ specs = [
     for source in manifest["sources"].values()
     if source.get("external")
     and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
+    and "retired" not in source["tags"]
 ]
 
 google_sheets_assets = external_assets_from_specs(
