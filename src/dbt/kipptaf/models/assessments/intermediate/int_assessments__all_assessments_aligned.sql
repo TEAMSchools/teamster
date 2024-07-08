@@ -15,6 +15,16 @@ with
             e.gender,
             e.lunch_status,
 
+            a.scope,
+            a.admin_season,
+            a.month_round,
+            a.discipline,
+            a.subject_area,
+            a.test_code,
+            a.illuminate_subject,
+            a.iready_subject,
+            a.ps_credit_type,
+
             if(
                 e.region = 'Miami', e.fleid, e.state_studentnumber
             ) as state_studentnumber,
@@ -37,39 +47,25 @@ with
                 else 'No IEP'
             end as iep_status,
 
+            case
+                when e.school_level in ('ES', 'MS')
+                then e.advisory_name
+                when e.school_level = 'HS'
+                then e.advisor_lastfirst
+            end as advisory,
+
         from {{ ref("base_powerschool__student_enrollments") }} as e
+        left join
+            {{ ref("stg_assessments__assessment_expectations") }} as a
+            on e.academic_year = a.academic_year
+            and e.region = a.region
+            and e.grade_level = a.grade
+            and a.assessment_type = 'State Assessment'
         where
             e.academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_year = 1
             and e.grade_level > 2
             and e.schoolid != 999999
-    ),
-
-    students_fl as (
-        select
-            _dbt_source_relation,
-            academic_year,
-            region,
-            schoolid,
-            school_abbreviation as school,
-            student_number,
-            fleid,
-            lastfirst as student_name,
-            grade_level,
-            cohort,
-            enroll_status,
-            is_out_of_district,
-            gender,
-            is_504,
-            lep_status,
-            lunch_status,
-
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where
-            academic_year >= {{ var("current_academic_year") - 7 }}
-            and rn_year = 1
-            and region = 'Miami'
-            and grade_level > 2
     ),
 
     assessments_nj as (
@@ -82,7 +78,31 @@ with
             testperformancelevel as performance_band_level,
             is_proficient,
 
+            cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
             coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+
+            if(englishlearnerel = 'Y', true, false) as lep_status,
+            end as lep_status,
+
+            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+            if(`period` = 'FallBlock', 'Fall', `period`) as season,
+            if(
+                subject = 'English Language Arts/Literacy',
+                'English Language Arts',
+                subject
+            ) as subject,
+
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as test_code,
 
             case
                 when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
@@ -115,43 +135,13 @@ with
                 else 'No IEP'
             end as iep_status,
 
-            case
-                englishlearnerel when 'Y' then true when 'N' then false
-            end as lep_status,
-
-            case
-                when assessmentgrade in ('Grade 10', 'Grade 11')
-                then right(assessmentgrade, 2)
-                when assessmentgrade is null
-                then null
-                else right(assessmentgrade, 1)
-            end as test_grade,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as test_code,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
-            if(
-                subject = 'English Language Arts/Literacy',
-                'English Language Arts',
-                subject
-            ) as subject,
-
         from {{ ref("int_pearson__all_assessments") }}
-        where safe_cast(academic_year as int) >= {{ var("current_academic_year") - 7 }}
+        where academic_year >= {{ var("current_academic_year") - 7 }}
     ),
 
-    assessments_fl_eoc as (
+    assessments_fl as (
         select
+            _dbt_source_relation,
             academic_year,
             is_proficient,
             student_id as state_id,
@@ -389,27 +379,6 @@ with
             and a.state_id = s.fleid
         where a.score is not null
     ),
-
-    state_comps as (
-        select academic_year, test_name, test_code, region, city, state,
-        from
-            {{ ref("stg_assessments__state_test_comparison") }}
-            pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
-    ),
-
-    goals as (
-        select
-            academic_year,
-            school_id,
-            state_assessment_code,
-            grade_level,
-            grade_goal,
-            school_goal,
-            region_goal,
-            organization_goal,
-        from {{ ref("stg_assessments__academic_goals") }}
-        where state_assessment_code is not null
-    )
 
 select
     s.academic_year,
