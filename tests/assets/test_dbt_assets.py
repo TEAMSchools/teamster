@@ -86,3 +86,15 @@ def test_external_source_dbt_assets():
     )
 
     assert result.success
+
+
+def test_dbt_assets_kipptaf():
+    from teamster.code_locations.kipptaf.dbt.assets import dbt_assets
+
+    result = materialize(
+        assets=[dbt_assets],
+        resources={"dbt_cli": get_dbt_cli_resource(code_location="kipptaf", test=True)},
+        selection=["kipptaf/pearson/int_pearson__all_assessments"],
+    )
+
+    assert result.success

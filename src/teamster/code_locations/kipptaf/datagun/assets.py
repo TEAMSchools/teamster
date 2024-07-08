@@ -13,18 +13,7 @@ from teamster.libraries.datagun.assets import (
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
-# BQ extract job
-blissbook_extract = build_bigquery_extract_sftp_asset(
-    code_location=CODE_LOCATION,
-    timezone=LOCAL_TIMEZONE,
-    dataset_config={
-        "dataset_id": "kipptaf_extracts",
-        "table_id": "rpt_blissbook__employee_list",
-    },
-    file_config={"stem": "members", "suffix": "csv"},
-    destination_config={"name": "blissbook"},
-)
-
+# BQ extract jobs
 clever_extract_assets = [
     build_bigquery_extract_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
@@ -113,7 +102,6 @@ intacct_extract = build_bigquery_query_sftp_asset(
 )
 
 assets = [
-    blissbook_extract,
     coupa_extract,
     egencia_extract,
     idauto_extract,

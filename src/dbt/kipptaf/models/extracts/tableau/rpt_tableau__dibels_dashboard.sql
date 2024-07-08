@@ -445,7 +445,7 @@ with
                     partition by academic_year, region order by code asc
                 )
                 - 1,
-                date({{ var("current_academic_year") }} + 1, 06, 30)
+                date({{ var("current_academic_year") + 1 }}, 06, 30)
             ) as end_date,
         from {{ ref("stg_reporting__terms") }}
         where type = 'LIT' and academic_year = {{ var("current_academic_year") }}

@@ -24,6 +24,16 @@ dbt_assets = build_dbt_assets(
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}_dbt_assets",
     exclude="tag:stage_external_sources source:adp_payroll+",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "1250m"},
+                    "limits": {"cpu": "1250m"},
+                }
+            }
+        }
+    },
 )
 
 external_source_dbt_assets = build_dbt_external_source_assets(
@@ -32,6 +42,13 @@ external_source_dbt_assets = build_dbt_external_source_assets(
     name=f"{CODE_LOCATION}_external_source_dbt_assets",
     select="tag:stage_external_sources",
     exclude="source:adp_payroll",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "1000m"}, "limits": {"cpu": "1000m"}}
+            }
+        }
+    },
 )
 
 adp_payroll_dbt_assets = build_dbt_assets(
@@ -40,6 +57,13 @@ adp_payroll_dbt_assets = build_dbt_assets(
     name=f"{CODE_LOCATION}_adp_payroll_dbt_assets",
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     select="stg_adp_payroll__general_ledger_file+",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "1000m"}, "limits": {"cpu": "1000m"}}
+            }
+        }
+    },
 )
 
 adp_payroll_external_source_dbt_assets = build_dbt_external_source_assets(

@@ -42,26 +42,10 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-alchemer-api
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Alchemer API
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-amplify-service-account
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Amplify Service Account
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-blissbook-sftp
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Blissbook SFTP
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
