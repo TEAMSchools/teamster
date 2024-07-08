@@ -56,12 +56,28 @@ littlesis_extract = build_bigquery_extract_sftp_asset(
 )
 
 # BQ query
-deanslist_extract_assets = [
+deanslist_annual_extract_assets = [
     build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
     )
-    for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]
+    for a in config_from_files([f"{config_dir}/deanslist-annual.yaml"])["assets"]
 ]
+
+deanslist_continuous_extract = build_bigquery_query_sftp_asset(
+    code_location=CODE_LOCATION,
+    timezone=LOCAL_TIMEZONE,
+    query_config={
+        "type": "schema",
+        "value": {
+            "table": {
+                "name": "rpt_deanslist__student_misc",
+                "schema": "kipptaf_extracts",
+            }
+        },
+    },
+    file_config={"stem": "deanslist_student_misc", "suffix": "json"},
+    destination_config={"name": "deanslist"},
+)
 
 idauto_extract = build_bigquery_query_sftp_asset(
     code_location=CODE_LOCATION,
@@ -103,11 +119,12 @@ intacct_extract = build_bigquery_query_sftp_asset(
 
 assets = [
     coupa_extract,
+    deanslist_continuous_extract,
     egencia_extract,
     idauto_extract,
-    littlesis_extract,
     intacct_extract,
+    littlesis_extract,
     *clever_extract_assets,
-    *deanslist_extract_assets,
+    *deanslist_annual_extract_assets,
     *illuminate_extract_assets,
 ]
