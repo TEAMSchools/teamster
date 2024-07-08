@@ -27,8 +27,8 @@ select
     m.name as measurement_name,
 
     mg.measurement_group_name as strand_name,
-
-    tb.value_clean as text_box,
+/* os.value_text is dropdown selections, text box values are comments*/
+    coalesce(os.value_text,tb.value_clean) as text_box,
 from {{ ref("int_performance_management__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
