@@ -1,0 +1,12 @@
+assets:
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__student_misc
+          schema: kipptaf_extracts
+    file_config:
+      stem: deanslist_student_misc
+      suffix: json
+    destination_config:
+      name: deanslist
