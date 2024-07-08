@@ -1,4 +1,4 @@
-from alchemer import AlchemerSession
+from alchemer import AlchemerSession  # type: ignore
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
 
