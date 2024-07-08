@@ -37,19 +37,24 @@ with
             co.ethnicity,
             co.lunch_status,
             co.is_retained_year,
+
             w.week_start_monday,
             w.week_end_sunday,
             w.date_count as days_in_session,
             w.quarter as term,
+
             bc.category_type,
+
             b.dl_said,
             b.point_value,
+
             concat(b.staff_last_name, ', ', b.staff_first_name) as entry_staff,
             case
                 when co.region = 'Miami'
                 then regexp_extract(b.behavior_category, r'^(.*?) \(')
                 else b.behavior
             end as behavior,
+            
             if(co.lep_status, 'ML', 'Not ML') as ml_status,
             if(co.is_504, 'Has 504', 'No 504') as status_504,
             if(
