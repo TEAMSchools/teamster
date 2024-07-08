@@ -35,6 +35,8 @@ with
             co.school_level,
             co.gender,
             co.ethnicity,
+            co.lunch_status,
+            co.is_retained_year,
             w.week_start_monday,
             w.week_end_sunday,
             w.date_count as days_in_session,
