@@ -182,6 +182,8 @@ sources:
               - assessments
               - college_readiness_expected_tests
       - name: src_assessments__assessment_expectations
+        tags:
+          - retired
         external:
           options:
             format: GOOGLE_SHEETS
