@@ -7,7 +7,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_college_admission_tests
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -18,7 +18,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_designations
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -29,7 +29,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_iready_lessons
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -40,7 +40,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_missing_assignments
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -51,7 +51,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_mod_assessment
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -62,7 +62,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_reading_levels
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -73,7 +73,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_sight_words
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -84,7 +84,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_state_test_scores
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -95,7 +95,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_transcript_gpas
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -106,7 +106,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_iready_diagnostics
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -117,7 +117,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_transcript_grades
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -128,7 +128,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_mod_standards_domains
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -139,7 +139,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_promo_status
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
   # increased resources
@@ -151,7 +151,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_finalgrades
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
     op_tags:
@@ -168,7 +168,7 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_mod_standards
-      suffix: json
+      suffix: json.gz
     destination_config:
       name: deanslist
     op_tags:
