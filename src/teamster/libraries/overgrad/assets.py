@@ -41,7 +41,7 @@ def build_overgrad_asset(
                 university_id = d["university"]["id"]
 
                 if university_id is not None:
-                    university_ids.add(university_id)
+                    university_ids.add(str(university_id))
 
             context.instance.add_dynamic_partitions(
                 partitions_def_name=universities_partitions_def_name,

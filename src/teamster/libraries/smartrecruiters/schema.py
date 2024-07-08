@@ -5,6 +5,7 @@ class Application(BaseModel):
     application_field_application_review_score: float | None = None
     application_field_job_title: str | None = None
     application_field_phone_interview_score: float | None = None
+    application_field_resume_score: float | None = None
     application_id: str | None = None
     application_reason_for_rejection: str | None = None
     application_reason_for_withdrawal: str | None = None

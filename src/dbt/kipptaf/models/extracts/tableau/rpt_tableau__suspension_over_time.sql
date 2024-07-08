@@ -113,7 +113,7 @@ from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     unnest(
         generate_date_array(
-            date({{ var("current_academic_year") }} - 1, 8, 1),
+            date({{ var("current_academic_year") - 1 }}, 8, 1),
             current_date('{{ var("local_timezone") }}')
         )
     ) as date_day
@@ -130,5 +130,5 @@ left join
     and date_day = sd.end_date
 where
     co.rn_year = 1
-    and co.academic_year >= {{ var("current_academic_year") }} - 1
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.grade_level != 99

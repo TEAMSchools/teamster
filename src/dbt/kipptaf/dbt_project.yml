@@ -26,8 +26,8 @@ clean-targets: # directories to be removed by `dbt clean`
 vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf
-  current_academic_year: 2023
-  current_fiscal_year: 2024
+  current_academic_year: 2024
+  current_fiscal_year: 2025
   alchemer_survey_identifier_short_names:
     - respondent_employee_number
     - respondent_df_employee_number
