@@ -25,21 +25,6 @@ def test_couchdrop():
     )
 
 
-def test_blissbook():
-    _test_listdir_attr_r(
-        ssh=SSHResource(
-            remote_host=_check.not_none(
-                value=EnvVar("BLISSBOOK_SFTP_HOST").get_value()
-            ),
-            remote_port=_check.not_none(
-                value=EnvVar("BLISSBOOK_SFTP_PORT").get_value()
-            ),
-            username=EnvVar("BLISSBOOK_SFTP_USERNAME").get_value(),
-            password=EnvVar("BLISSBOOK_SFTP_PASSWORD").get_value(),
-        )
-    )
-
-
 def test_coupa():
     _test_listdir_attr_r(
         ssh=SSHResource(
