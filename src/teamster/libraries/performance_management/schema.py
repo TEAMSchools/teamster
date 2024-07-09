@@ -68,6 +68,7 @@ class ObservationDetail(BaseModel):
     observer_employee_number: int | None = None
     overall_score: float | None = None
     overall_tier: float | None = None
+    pm_term: str | None = None
     rn_submission: int | None = None
     row_score_value: float | None = None
     rubric_id: str | None = None

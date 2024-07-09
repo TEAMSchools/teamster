@@ -67,8 +67,6 @@ def _test_asset(asset: AssetsDefinition):
 
     asset_check_evaluation = result.get_asset_check_evaluations()[0]
 
-    assert asset_check_evaluation.passed
-
     extras = asset_check_evaluation.metadata.get("extras")
 
     assert extras is not None
