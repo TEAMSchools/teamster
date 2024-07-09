@@ -7,11 +7,14 @@ from teamster.code_locations.kippmiami.fldoe.schema import (
     FSA_SCHEMA,
     SCIENCE_SCHEMA,
 )
-from teamster.libraries.sftp.assets import build_sftp_asset, build_sftp_folder_asset
+from teamster.libraries.sftp.assets import (
+    build_sftp_file_asset,
+    build_sftp_folder_asset,
+)
 
 fast = build_sftp_folder_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fast"],
-    remote_dir="/data-team/kippmiami/fldoe/fast",
+    remote_dir_regex=r"/data-team/kippmiami/fldoe/fast",
     remote_file_regex=(
         r"(?P<school_year_term>\d+\/PM\d)\/"
         r"\w+-\w+_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
@@ -43,9 +46,9 @@ fast = build_sftp_folder_asset(
     ),
 )
 
-eoc = build_sftp_asset(
+eoc = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "eoc"],
-    remote_dir="/data-team/kippmiami/fldoe/eoc",
+    remote_dir_regex=r"/data-team/kippmiami/fldoe/eoc",
     remote_file_regex=(
         r"(?P<school_year_term>\d+)\/"
         r"\w+-\w+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv"
@@ -62,9 +65,9 @@ eoc = build_sftp_asset(
     ),
 )
 
-science = build_sftp_asset(
+science = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "science"],
-    remote_dir="/data-team/kippmiami/fldoe/science",
+    remote_dir_regex=r"/data-team/kippmiami/fldoe/science",
     remote_file_regex=(
         r"(?P<school_year_term>\d+)\/"
         r"\w+-\w+_Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv"
@@ -79,9 +82,9 @@ science = build_sftp_asset(
     ),
 )
 
-fsa = build_sftp_asset(
+fsa = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fsa"],
-    remote_dir="/data-team/kippmiami/fldoe/fsa/student_scores",
+    remote_dir_regex=r"/data-team/kippmiami/fldoe/fsa/student_scores",
     remote_file_regex=(
         r"FSA_(?P<school_year_term>\d+)SPR_\d+_SRS-E_"
         r"(?P<grade_level_subject>\w+)_SCHL\.csv"

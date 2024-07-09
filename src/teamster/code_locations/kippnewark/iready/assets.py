@@ -8,10 +8,10 @@ from dagster import (
 
 from teamster.code_locations.kippnewark import CODE_LOCATION
 from teamster.code_locations.kippnewark.iready.schema import ASSET_SCHEMA
-from teamster.libraries.sftp.assets import build_sftp_asset
+from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 assets = [
-    build_sftp_asset(
+    build_sftp_file_asset(
         asset_key=[CODE_LOCATION, "iready", a["asset_name"]],
         ssh_resource_key="ssh_iready",
         avro_schema=ASSET_SCHEMA[a["asset_name"]],
