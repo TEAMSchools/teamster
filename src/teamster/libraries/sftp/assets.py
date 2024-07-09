@@ -35,9 +35,9 @@ def compose_regex(regexp: str, partition_key: str | MultiPartitionKey | None) ->
 
 def build_sftp_file_asset(
     asset_key,
-    remote_dir_regex,
-    remote_file_regex,
-    ssh_resource_key,
+    remote_dir_regex: str,
+    remote_file_regex: str,
+    ssh_resource_key: str,
     avro_schema,
     partitions_def=None,
     auto_materialize_policy=None,
@@ -147,10 +147,10 @@ def build_sftp_file_asset(
 
 def build_sftp_archive_asset(
     asset_key,
-    remote_dir_regex,
-    remote_file_regex,
-    archive_file_regex,
-    ssh_resource_key,
+    remote_dir_regex: str,
+    remote_file_regex: str,
+    archive_file_regex: str,
+    ssh_resource_key: str,
     avro_schema,
     partitions_def=None,
     auto_materialize_policy=None,
