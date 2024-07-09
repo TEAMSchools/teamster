@@ -19,3 +19,9 @@ def test_iready_sftp_sensor_kippmiami():
     from teamster.code_locations.kippmiami.iready.sensors import sftp_sensor
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=SSH_IREADY)
+
+
+def test_iready_sftp_sensor_kippnewark():
+    from teamster.code_locations.kippnewark.iready.sensors import sftp_sensor
+
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_iready=SSH_IREADY)
