@@ -75,23 +75,7 @@ deanslist_continuous_extract = build_bigquery_query_sftp_asset(
             }
         },
     },
-    file_config={"stem": "deanslist_student_misc", "suffix": "json"},
-    destination_config={"name": "deanslist"},
-)
-
-deanslist_continuous_extract_gzip = build_bigquery_query_sftp_asset(
-    code_location=CODE_LOCATION,
-    timezone=LOCAL_TIMEZONE,
-    query_config={
-        "type": "schema",
-        "value": {
-            "table": {
-                "name": "rpt_deanslist__student_misc",
-                "schema": "kipptaf_extracts",
-            }
-        },
-    },
-    file_config={"stem": "test_deanslist_student_misc", "suffix": "json.gz"},
+    file_config={"stem": "deanslist_student_misc", "suffix": "json.gz"},
     destination_config={"name": "deanslist"},
 )
 
