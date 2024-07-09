@@ -64,4 +64,3 @@ left join
 where
     o.is_published and o.academic_year >= 2024 and t.region = sr.business_unit_home_name
     /* data prior to 2024 in snapshot */
-    
