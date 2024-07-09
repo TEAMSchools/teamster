@@ -242,6 +242,6 @@ observation_details = build_sftp_asset(
 )
 
 assets = [
-    outlier_detection,
     observation_details,
+    outlier_detection,
 ]
