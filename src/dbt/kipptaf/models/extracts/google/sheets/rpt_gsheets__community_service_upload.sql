@@ -5,11 +5,12 @@ with
             co.academic_year,
             co.grade_level,
             co.school_abbreviation as school_name,
+
             b.behavior_date,
             b.behavior,
             b.notes,
-            concat(b.staff_last_name, ', ', b.staff_first_name) as staff_name,
-            cast(left(b.behavior, length(b.behavior) - 5) as int) as cs_hours
+
+            cast(left(b.behavior, length(b.behavior) - 5) as int) as cs_hours,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         left join
             {{ ref("stg_deanslist__behavior") }} as b
@@ -31,7 +32,7 @@ select
     _9 as `HOURS-9TH`,
     _10 as `HOURS-10TH`,
     _11 as `HOURS-11TH`,
-    _12 as `HOURS-12TH`
+    _12 as `HOURS-12TH`,
 from
     (
         select
@@ -39,7 +40,7 @@ from
             hs.school_name,
             hs.student_number,
             hs.grade_level,
-            hs.cs_hours
+            hs.cs_hours,
         from cs_roster as hs
     )
     pivot (sum(cs_hours) for grade_level in (9, 10, 11, 12))
