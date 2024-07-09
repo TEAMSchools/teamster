@@ -19,3 +19,9 @@ def test_titan_sftp_sensor_kippcamden():
     from teamster.code_locations.kippcamden.titan.sensors import sftp_sensor
 
     _test_sensor(sftp_sensor=sftp_sensor, ssh_titan=SSH_TITAN)
+
+
+def test_titan_sftp_sensor_kippnewark():
+    from teamster.code_locations.kippnewark.titan.sensors import sftp_sensor
+
+    _test_sensor(sftp_sensor=sftp_sensor, ssh_titan=SSH_TITAN)
