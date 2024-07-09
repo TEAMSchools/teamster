@@ -148,9 +148,7 @@ def build_bigquery_query_sftp_asset(
     destination_name = destination_config["name"]
     destination_path = destination_config.get("path", "")
 
-    asset_name = (
-        re.sub(pattern="[^A-Za-z0-9_]", repl="", string=file_stem) + f"_{file_suffix}"
-    )
+    asset_name = re.sub(pattern=r"\W", repl="", string=f"{file_stem}_{file_suffix}")
 
     @asset(
         key=[code_location, "extracts", destination_name, asset_name],
