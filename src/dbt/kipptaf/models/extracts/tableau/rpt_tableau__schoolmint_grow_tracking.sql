@@ -23,3 +23,4 @@ where
     or t.end_date between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date))
     and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
     and t.academic_year = {{ var("current_academic_year") }}
+    and t.region = srh.business_unit_home_name
