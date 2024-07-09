@@ -17,8 +17,14 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_couchdrop_sftp_sensor(
-    code_location, local_timezone, assets: list[AssetsDefinition]
+    code_location,
+    local_timezone,
+    assets: list[AssetsDefinition],
+    exclude_dirs: list | None = None,
 ):
+    if exclude_dirs is None:
+        exclude_dirs = []
+
     @sensor(
         name=f"{code_location}_couchdrop_sftp_sensor",
         minimum_interval_seconds=(60 * 10),
@@ -31,7 +37,9 @@ def build_couchdrop_sftp_sensor(
         tick_cursor = float(context.cursor or "0.0")
 
         try:
-            files = ssh_couchdrop.listdir_attr_r(f"/data-team/{code_location}")
+            files = ssh_couchdrop.listdir_attr_r(
+                remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
+            )
         except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))

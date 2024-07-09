@@ -137,6 +137,10 @@ models:
       +schema: njdoe
       staging:
         +materialized: table
+    overgrad:
+      +schema: overgrad
+      staging:
+        +materialized: table
     pearson:
       +schema: pearson
     people:

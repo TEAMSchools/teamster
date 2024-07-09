@@ -8,6 +8,11 @@ couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     code_location=CODE_LOCATION,
     local_timezone=LOCAL_TIMEZONE,
     assets=[observation_details],
+    exclude_dirs=[
+        f"/data-team/{CODE_LOCATION}/surveys",
+        f"/data-team/{CODE_LOCATION}/dayforce",
+        f"/data-team/{CODE_LOCATION}/performance-management",
+    ],
 )
 
 sensors = [
