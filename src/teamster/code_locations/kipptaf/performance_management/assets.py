@@ -131,9 +131,7 @@ def get_isolation_forest(df: pandas.DataFrame):
     group_name="performance_management",
     partitions_def=MultiPartitionsDefinition(
         {
-            "academic_year": StaticPartitionsDefinition(
-                ["2018", "2019", "2020", "2021", "2022", "2023"]
-            ),
+            "academic_year": StaticPartitionsDefinition(["2023"]),
             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
         }
     ),
@@ -235,7 +233,9 @@ observation_details = build_sftp_asset(
     ssh_resource_key="ssh_couchdrop",
     partitions_def=MultiPartitionsDefinition(
         {
-            "academic_year": StaticPartitionsDefinition(["2023"]),
+            "academic_year": StaticPartitionsDefinition(
+                ["2018", "2019", "2020", "2021", "2022", "2023"]
+            ),
             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
         }
     ),
