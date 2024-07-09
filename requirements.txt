@@ -297,9 +297,9 @@ google-cloud-bigquery[pandas]==3.25.0 \
 google-cloud-core==2.4.1 \
     --hash=sha256:9b7749272a812bde58fff28868d0c5e2f585b82f37e09a1f6ed2d4d10f134073 \
     --hash=sha256:a9e6a4422b9ac5c29f79a0ede9485473338e2ce78d91f2370c01e730eab22e61
-google-cloud-dataproc==5.10.0 \
-    --hash=sha256:174080c38235caa8d712ffe7566a5c8ac8871f4dfbd69c8b39e986a592ee6877 \
-    --hash=sha256:1e322fe83ba372f9d43d881dafdcfded50daaa9a197ba45e380d6f23ba504960
+google-cloud-dataproc==5.10.1 \
+    --hash=sha256:28b763c9b019ca7d7c3e917ade04647c00494e77d4e682ca221d53e8d36f70af \
+    --hash=sha256:f3f0f0f3933328e80273774540368432550e296c255928657069a31a2de01c39
 google-cloud-storage==2.17.0 \
     --hash=sha256:49378abff54ef656b52dca5ef0f2eba9aa83dc2b2c72c78714b03a1a95fe9388 \
     --hash=sha256:5b393bc766b7a3bc6f5407b9e665b2450d36282614b7945e570b3480a456d1e1
