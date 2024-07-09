@@ -6,7 +6,7 @@ sftp_sensor = build_iready_sftp_sensor(
     code_location=CODE_LOCATION,
     asset_defs=assets,
     timezone=LOCAL_TIMEZONE,
-    remote_dir="/exports/nj-kipp_nj",
+    remote_dir="/exports/nj-kipp_nj/Current_Year",
     minimum_interval_seconds=(60 * 10),
 )
 
