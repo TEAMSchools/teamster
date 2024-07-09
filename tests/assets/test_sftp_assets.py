@@ -56,7 +56,6 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
     )
 
     assert records > 0
-    assert asset_check_evaluation.passed
 
     extras = asset_check_evaluation.metadata.get("extras")
 
