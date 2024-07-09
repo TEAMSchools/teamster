@@ -7,8 +7,8 @@ select
     t.academic_year,
     t.is_current,
     o.observation_id,
-    if(observation_id is not null,true,false) as is_observed,
     o.observed_at,
+    if(o.observation_id is not null, true, false) as is_observed,
 
 from {{ ref("base_people__staff_roster_history") }} as srh
 cross join {{ ref("stg_reporting__terms") }} as t
@@ -18,9 +18,15 @@ left join
     and o.observed_at between t.start_date and t.end_date
 where
     srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
-    and srh.assignment_status = 'Active'
-    and (t.start_date between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date) 
-    or t.end_date between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date))
-    and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
+    and srh.assignment_status = "Active"
+    and (
+        t.start_date between date(srh.work_assignment_start_date) and date(
+            srh.work_assignment_end_date
+        )
+        or t.end_date between date(srh.work_assignment_start_date) and date(
+            srh.work_assignment_end_date
+        )
+    )
+    and t.type in ("PMS", "PMC", "TR", "O3", "WT")
     and t.academic_year = {{ var("current_academic_year") }}
     and t.region = srh.business_unit_home_name
