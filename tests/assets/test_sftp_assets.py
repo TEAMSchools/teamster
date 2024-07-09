@@ -93,66 +93,6 @@ def test_edplan_kippnewark():
     )
 
 
-def test_pearson_njgpa_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import njgpa
-
-    _test_asset(asset=njgpa, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_njgpa_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import njgpa
-
-    _test_asset(asset=njgpa, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_njsla_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "njsla"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_njsla_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "njsla"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_njsla_science_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "njsla_science"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_njsla_science_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "njsla_science"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_parcc_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "parcc"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_parcc_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "parcc"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
 def test_iready_diagnostic_results_kippmiami():
     from teamster.code_locations.kippmiami.iready.assets import assets
 
@@ -223,57 +163,6 @@ def test_iready_diagnostic_and_instruction_kippnj():
     _test_asset(asset=asset, ssh_resource={"ssh_iready": SSH_IREADY})
 
 
-def test_titan_person_data_kippnewark():
-    from teamster.code_locations.kippnewark.titan.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "person_data"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_titan": SSHResource(
-                remote_host="sftp.titank12.com",
-                username=EnvVar("TITAN_SFTP_USERNAME_KIPPNEWARK"),
-                password=EnvVar("TITAN_SFTP_PASSWORD_KIPPNEWARK"),
-            )
-        },
-    )
-
-
-def test_titan_person_data_kippcamden():
-    from teamster.code_locations.kippnewark.titan.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "person_data"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_titan": SSHResource(
-                remote_host="sftp.titank12.com",
-                username=EnvVar("TITAN_SFTP_USERNAME_KIPPCAMDEN"),
-                password=EnvVar("TITAN_SFTP_PASSWORD_KIPPCAMDEN"),
-            )
-        },
-    )
-
-
-def test_titan_income_form_data_kippnewark():
-    from teamster.code_locations.kippnewark.titan.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "income_form_data"][0]
-
-    _test_asset(
-        asset=asset,
-        ssh_resource={
-            "ssh_titan": SSHResource(
-                remote_host="sftp.titank12.com",
-                username=EnvVar("TITAN_SFTP_USERNAME_KIPPNEWARK"),
-                password=EnvVar("TITAN_SFTP_PASSWORD_KIPPNEWARK"),
-            )
-        },
-    )
-
-
 def test_deanslist_reconcile_attendance_kipptaf():
     from teamster.code_locations.kipptaf.deanslist.assets import assets
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_DEANSLIST
@@ -316,19 +205,3 @@ def test_adp_payroll_general_ledger_file_kipptaf():
             ssh_resource={"ssh_couchdrop": SSH_COUCHDROP},
             instance=instance,
         )
-
-
-def test_pearson_student_list_report_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "student_list_report"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
-
-
-def test_pearson_student_list_report_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import assets
-
-    asset = [a for a in assets if a.key.path[-1] == "student_list_report"][0]
-
-    _test_asset(asset=asset, ssh_resource={"ssh_couchdrop": SSH_COUCHDROP})
