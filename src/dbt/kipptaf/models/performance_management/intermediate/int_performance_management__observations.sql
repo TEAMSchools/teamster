@@ -61,7 +61,6 @@ left join
 /* join on google email and date for observer_employee_number*/
 left join
     {{ ref("base_people__staff_roster") }} as sr2 on o.observer_email = sr2.google_email
+/* data prior to 2024 in snapshot */
 where
     o.is_published and o.academic_year >= 2024 and t.region = sr.business_unit_home_name
-    /* data prior to 2024 in snapshot */
-    
