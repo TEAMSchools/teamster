@@ -4,10 +4,10 @@ from dagster import config_from_files
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.schema import ASSET_SCHEMA
-from teamster.libraries.sftp.assets import build_sftp_asset
+from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 assets = [
-    build_sftp_asset(
+    build_sftp_file_asset(
         asset_key=[CODE_LOCATION, "adp", "workforce_now", a["asset_name"]],
         ssh_resource_key="ssh_adp_workforce_now",
         avro_schema=ASSET_SCHEMA[a["asset_name"]],

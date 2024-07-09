@@ -24,7 +24,7 @@ from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.libraries.sftp.assets import build_sftp_asset
+from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 FIT_TRANSFORM_COLUMNS = [
     "etr1a",
@@ -225,9 +225,9 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     )
 
 
-observation_details = build_sftp_asset(
+observation_details = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
-    remote_dir="/data-team/kipptaf/performance-management/observation-details",
+    remote_dir_regex=r"/data-team/kipptaf/performance-management/observation-details",
     remote_file_regex=r"(?P<academic_year>\d+)\/(?P<term>PM\d)\/[\w-]+\.csv",
     avro_schema=OBSERVATION_DETAILS_SCHEMA,
     ssh_resource_key="ssh_couchdrop",

@@ -34,7 +34,7 @@ def compose_regex(regexp: str, partition_key: str | MultiPartitionKey | None) ->
 
 
 def build_sftp_file_asset(
-    asset_key,
+    asset_key: list[str],
     remote_dir_regex: str,
     remote_file_regex: str,
     ssh_resource_key: str,
@@ -89,7 +89,10 @@ def build_sftp_file_asset(
         # exit if no matches
         if not file_matches:
             context.log.warning(
-                f"Found no files matching: {remote_dir_regex_composed}/{remote_file_regex_composed}"
+                msg=(
+                    "Found no files matching: "
+                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
+                )
             )
             records = [{}]
 
@@ -102,7 +105,8 @@ def build_sftp_file_asset(
         if len(file_matches) > 1:
             context.log.warning(
                 msg=(
-                    f"Found multiple files matching: {remote_file_regex_composed}\n"
+                    "Found multiple files matching: "
+                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}\n"
                     f"{file_matches}"
                 )
             )
@@ -146,7 +150,7 @@ def build_sftp_file_asset(
 
 
 def build_sftp_archive_asset(
-    asset_key,
+    asset_key: list[str],
     remote_dir_regex: str,
     remote_file_regex: str,
     archive_file_regex: str,
@@ -203,7 +207,10 @@ def build_sftp_archive_asset(
         # exit if no matches
         if not file_matches:
             context.log.warning(
-                f"Found no files matching: {remote_dir_regex_composed}/{remote_file_regex_composed}"
+                msg=(
+                    "Found no files matching: "
+                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
+                )
             )
             records = [{}]
 
@@ -216,7 +223,8 @@ def build_sftp_archive_asset(
         if len(file_matches) > 1:
             context.log.warning(
                 msg=(
-                    f"Found multiple files matching: {remote_file_regex_composed}\n"
+                    "Found multiple files matching: "
+                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}\n"
                     f"{file_matches}"
                 )
             )
@@ -280,7 +288,7 @@ def build_sftp_archive_asset(
 
 
 def build_sftp_folder_asset(
-    asset_key,
+    asset_key: list[str],
     remote_dir_regex: str,
     remote_file_regex: str,
     ssh_resource_key: str,
@@ -338,7 +346,10 @@ def build_sftp_folder_asset(
         # exit if no matching files
         if not file_matches:
             context.log.warning(
-                f"Found no files matching: {remote_dir_regex_composed}/{remote_file_regex_composed}"
+                msg=(
+                    "Found no files matching: "
+                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
+                )
             )
             return Output(value=([], avro_schema), metadata={"records": 0})
 
@@ -367,7 +378,6 @@ def build_sftp_folder_asset(
             record_count += df.shape[0]
 
         yield Output(value=(records, avro_schema), metadata={"records": record_count})
-
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=records, schema=avro_schema
         )
