@@ -56,7 +56,6 @@ class ObservationDetail(BaseModel):
     etr_score: float | None = None
     etr_tier: float | None = None
     final_score: float | None = None
-    final_tier: int | None = None
     form_long_name: str | None = None
     form_term: str | None = None
     form_type: str | None = None
@@ -65,7 +64,6 @@ class ObservationDetail(BaseModel):
     measurement_name: str | None = None
     observation_id: str | None = None
     observed_at: str | None = None
-    observer_employee_number: int | None = None
     overall_score: float | None = None
     overall_tier: float | None = None
     pm_term: str | None = None
@@ -79,4 +77,6 @@ class ObservationDetail(BaseModel):
     teacher_id: str | None = None
     text_box: str | None = None
 
+    final_tier: int | float | None = None
+    observer_employee_number: int | float | None = None
     so_tier: int | float | None = None
