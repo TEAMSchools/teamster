@@ -62,4 +62,6 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as sr2 on o.observer_email = sr2.google_email
 where
-    o.is_published and o.academic_year >= 2024 and t.region = sr.business_unit_home_name  /* data prior to 2024 in snapshot */
+    o.is_published and o.academic_year >= 2024 and t.region = sr.business_unit_home_name
+    /* data prior to 2024 in snapshot */
+    
