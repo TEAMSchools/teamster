@@ -17,6 +17,8 @@ def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
 
         pattern = pattern.replace(group, group_value)
 
+    pattern = pattern.replace("\\", "")
+
     return pattern
 
 
