@@ -227,8 +227,11 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
 
 observation_details = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
-    remote_dir_regex=r"/data-team/kipptaf/performance-management/observation-details",
-    remote_file_regex=r"(?P<academic_year>\d+)\/(?P<term>PM\d)\/[\w-]+\.csv",
+    remote_dir_regex=(
+        r"/data-team/kipptaf/performance-management/observation-details/"
+        r"(?P<academic_year>\d+)/(?P<term>PM\d)"
+    ),
+    remote_file_regex=r"[\w-]+\.csv",
     avro_schema=OBSERVATION_DETAILS_SCHEMA,
     ssh_resource_key="ssh_couchdrop",
     partitions_def=MultiPartitionsDefinition(
