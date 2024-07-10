@@ -47,9 +47,13 @@ def build_sftp_file_asset(
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
     group_name: str | None = None,
+    exclude_dirs: list[str] | None = None,
 ):
     if group_name is None:
         group_name = asset_key[1]
+
+    if exclude_dirs is None:
+        exclude_dirs = []
 
     @asset(
         key=asset_key,
@@ -84,7 +88,9 @@ def build_sftp_file_asset(
         )
 
         file_matches = ssh.match_sftp_files(
-            remote_dir=remote_dir_regex_composed, remote_file=remote_file_regex_composed
+            remote_dir=remote_dir_regex_composed,
+            remote_file=remote_file_regex_composed,
+            exclude_dirs=exclude_dirs,
         )
 
         # exit if no matches
@@ -163,9 +169,13 @@ def build_sftp_archive_asset(
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
     group_name: str | None = None,
+    exclude_dirs: list[str] | None = None,
 ):
     if group_name is None:
         group_name = asset_key[1]
+
+    if exclude_dirs is None:
+        exclude_dirs = []
 
     @asset(
         key=asset_key,
@@ -201,7 +211,9 @@ def build_sftp_archive_asset(
         )
 
         file_matches = ssh.match_sftp_files(
-            remote_dir=remote_dir_regex_composed, remote_file=remote_file_regex_composed
+            remote_dir=remote_dir_regex_composed,
+            remote_file=remote_file_regex_composed,
+            exclude_dirs=exclude_dirs,
         )
 
         # exit if no matches
@@ -305,9 +317,13 @@ def build_sftp_folder_asset(
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
     group_name: str | None = None,
+    exclude_dirs: list[str] | None = None,
 ):
     if group_name is None:
         group_name = asset_key[1]
+
+    if exclude_dirs is None:
+        exclude_dirs = []
 
     @asset(
         key=asset_key,
@@ -345,7 +361,9 @@ def build_sftp_folder_asset(
         )
 
         file_matches = ssh.match_sftp_files(
-            remote_dir=remote_dir_regex_composed, remote_file=remote_file_regex_composed
+            remote_dir=remote_dir_regex_composed,
+            remote_file=remote_file_regex_composed,
+            exclude_dirs=exclude_dirs,
         )
 
         # exit if no matching files

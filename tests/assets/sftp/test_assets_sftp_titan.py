@@ -55,20 +55,16 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
 def test_titan_person_data_kippnewark():
     from teamster.code_locations.kippnewark.titan.assets import person_data
 
-    _test_asset(
-        asset=person_data,
-        partition_key="2024",
-        ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK},
-    )
+    _test_asset(asset=person_data, ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK})
 
 
 def test_titan_person_data_kippcamden():
-    from teamster.code_locations.kippnewark.titan.assets import person_data
+    from teamster.code_locations.kippcamden.titan.assets import person_data
 
     _test_asset(
         asset=person_data,
-        partition_key="2024",
         ssh_resource={"ssh_titan": SSH_TITAN_KIPPCAMDEN},
+        partition_key="2023",
     )
 
 
@@ -76,7 +72,5 @@ def test_titan_income_form_data_kippnewark():
     from teamster.code_locations.kippnewark.titan.assets import income_form_data
 
     _test_asset(
-        asset=income_form_data,
-        partition_key="2024",
-        ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK},
+        asset=income_form_data, ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK}
     )

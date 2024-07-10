@@ -32,4 +32,5 @@ def build_titan_sftp_asset(
         ssh_resource_key="ssh_titan",
         avro_schema=schema,
         partitions_def=StaticPartitionsDefinition(partition_keys),
+        exclude_dirs=["Script", "Scipt"],
     )

@@ -45,7 +45,7 @@ def test_pearson_njgpa_kippcamden():
 def test_pearson_njgpa_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njgpa
 
-    _test_asset(asset=njgpa)
+    _test_asset(asset=njgpa, partition_key="spr|23")
 
 
 def test_pearson_njsla_kippnewark():

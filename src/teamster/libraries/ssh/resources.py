@@ -130,8 +130,13 @@ class SSHResource(DagsterSSHResource):
 
         return files
 
-    def match_sftp_files(self, remote_dir: str, remote_file: str):
-        files = self.listdir_attr_r(remote_dir)
+    def match_sftp_files(
+        self, remote_dir: str, remote_file: str, exclude_dirs: list[str] | None = None
+    ):
+        if exclude_dirs is None:
+            exclude_dirs = []
+
+        files = self.listdir_attr_r(remote_dir=remote_dir, exclude_dirs=exclude_dirs)
 
         if remote_dir == ".":
             pattern = remote_file
