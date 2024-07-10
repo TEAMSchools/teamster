@@ -5,19 +5,23 @@ from teamster.code_locations.kipptaf.deanslist.schema import (
 )
 from teamster.libraries.sftp.assets import build_sftp_file_asset
 
+remote_dir_regex = r"reconcile_report_files"
+ssh_resource_key = "ssh_deanslist"
+key_prefix = [CODE_LOCATION, "deanslist"]
+
 reconcile_attendance = build_sftp_file_asset(
-    asset_key=[CODE_LOCATION, "deanslist", "reconcile_attendance"],
-    remote_dir_regex=r"reconcile_report_files",
+    asset_key=[*key_prefix, "reconcile_attendance"],
+    remote_dir_regex=remote_dir_regex,
     remote_file_regex=r"ktaf_reconcile_att\.csv",
-    ssh_resource_key="ssh_deanslist",
+    ssh_resource_key=ssh_resource_key,
     avro_schema=RECONCILE_ATTENDANCE_SCHEMA,
 )
 
 reconcile_suspensions = build_sftp_file_asset(
-    asset_key=[CODE_LOCATION, "deanslist", "reconcile_suspensions"],
-    remote_dir_regex=r"reconcile_report_files",
+    asset_key=[*key_prefix, "reconcile_suspensions"],
+    remote_dir_regex=remote_dir_regex,
     remote_file_regex=r"ktaf_reconcile_susp\.csv",
-    ssh_resource_key="ssh_deanslist",
+    ssh_resource_key=ssh_resource_key,
     avro_schema=RECONCILE_SUSPENSIONS_SCHEMA,
 )
 
