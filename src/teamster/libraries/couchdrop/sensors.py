@@ -50,7 +50,10 @@ def build_couchdrop_sftp_sensor(
 
             context.log.info(asset_identifier)
             pattern = re.compile(
-                pattern=f"{metadata_by_key["remote_dir"]}/{metadata_by_key["remote_file_regex"]}"
+                pattern=(
+                    f"{metadata_by_key["remote_dir_regex"]}/"
+                    f"{metadata_by_key["remote_file_regex"]}"
+                )
             )
 
             file_matches = [
