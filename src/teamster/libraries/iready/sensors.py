@@ -19,7 +19,7 @@ def build_iready_sftp_sensor(
     code_location,
     asset_defs: list[AssetsDefinition],
     timezone,
-    remote_dir,
+    remote_dir_regex,
     minimum_interval_seconds=None,
 ):
     @sensor(
@@ -35,7 +35,7 @@ def build_iready_sftp_sensor(
         run_requests = []
 
         try:
-            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir)
+            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
         except Exception as e:
             context.log.exception(e)
             return SensorResult(skip_reason=str(e))
