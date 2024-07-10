@@ -14,9 +14,8 @@ from teamster.libraries.sftp.assets import (
 
 fast = build_sftp_folder_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fast"],
-    remote_dir_regex=r"/data-team/kippmiami/fldoe/fast",
+    remote_dir_regex=r"/data-team/kippmiami/fldoe/fast/(?P<school_year_term>\d+/PM\d)",
     remote_file_regex=(
-        r"(?P<school_year_term>\d+\/PM\d)\/"
         r"\w+-\w+_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
     ),
     ssh_resource_key="ssh_couchdrop",
@@ -48,9 +47,8 @@ fast = build_sftp_folder_asset(
 
 eoc = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "eoc"],
-    remote_dir_regex=r"/data-team/kippmiami/fldoe/eoc",
+    remote_dir_regex=(r"/data-team/kippmiami/fldoe/eoc/(?P<school_year_term>\d+)"),
     remote_file_regex=(
-        r"(?P<school_year_term>\d+)\/"
         r"\w+-\w+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv"
     ),
     ssh_resource_key="ssh_couchdrop",
@@ -67,9 +65,8 @@ eoc = build_sftp_file_asset(
 
 science = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "science"],
-    remote_dir_regex=r"/data-team/kippmiami/fldoe/science",
+    remote_dir_regex=r"/data-team/kippmiami/fldoe/science/(?P<school_year_term>\d+)",
     remote_file_regex=(
-        r"(?P<school_year_term>\d+)\/"
         r"\w+-\w+_Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv"
     ),
     ssh_resource_key="ssh_couchdrop",

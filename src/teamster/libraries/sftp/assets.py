@@ -89,19 +89,13 @@ def build_sftp_file_asset(
 
         # exit if no matches
         if not file_matches:
-            context.log.warning(
+            context.log.error(
                 msg=(
                     "Found no files matching: "
                     f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
                 )
             )
-            records = [{}]
-
-            yield Output(value=(records, avro_schema), metadata={"records": 0})
-            yield check_avro_schema_valid(
-                asset_key=context.asset_key, records=records, schema=avro_schema
-            )
-            return
+            raise FileNotFoundError
 
         if len(file_matches) > 1:
             context.log.warning(
@@ -120,7 +114,7 @@ def build_sftp_file_asset(
 
         # exit if file is empty
         if os.path.getsize(local_filepath) == 0:
-            context.log.warning(f"File is empty: {local_filepath}")
+            context.log.warning(msg=f"File is empty: {local_filepath}")
             records = [{}]
 
             yield Output(value=(records, avro_schema), metadata={"records": 0})
@@ -142,7 +136,12 @@ def build_sftp_file_asset(
 
         records = df.to_dict(orient="records")
 
-        yield Output(value=(records, avro_schema), metadata={"records": df.shape[0]})
+        rows, _ = df.shape
+
+        if rows == 0:
+            context.log.warning(msg="File contains 0 rows")
+
+        yield Output(value=(records, avro_schema), metadata={"records": rows})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=records, schema=avro_schema
         )
@@ -238,7 +237,7 @@ def build_sftp_archive_asset(
 
         # exit if file is empty
         if os.path.getsize(local_filepath) == 0:
-            context.log.warning(f"File is empty: {local_filepath}")
+            context.log.warning(msg=f"File is empty: {local_filepath}")
             records = [{}]
 
             yield Output(value=(records, avro_schema), metadata={"records": 0})
@@ -258,7 +257,7 @@ def build_sftp_archive_asset(
 
         # exit if extracted file is empty
         if os.path.getsize(local_filepath) == 0:
-            context.log.warning(f"File is empty: {local_filepath}")
+            context.log.warning(msg=f"File is empty: {local_filepath}")
             records = [{}]
 
             yield Output(value=(records, avro_schema), metadata={"records": 0})
@@ -280,7 +279,12 @@ def build_sftp_archive_asset(
 
             records = df.to_dict(orient="records")
 
-        yield Output(value=(records, avro_schema), metadata={"records": df.shape[0]})
+        rows, _ = df.shape
+
+        if rows == 0:
+            context.log.warning(msg="File contains 0 rows")
+
+        yield Output(value=(records, avro_schema), metadata={"records": rows})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=records, schema=avro_schema
         )
@@ -361,7 +365,7 @@ def build_sftp_folder_asset(
 
             # skip if file is empty
             if os.path.getsize(local_filepath) == 0:
-                context.log.warning(f"File is empty: {local_filepath}")
+                context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
             df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
@@ -375,8 +379,13 @@ def build_sftp_folder_asset(
                     inplace=True,
                 )
 
+            rows, _ = df.shape
+
+            if rows == 0:
+                context.log.warning(msg="File contains 0 rows")
+
             records.extend(df.to_dict(orient="records"))
-            record_count += df.shape[0]
+            record_count += rows
 
         yield Output(value=(records, avro_schema), metadata={"records": record_count})
         yield check_avro_schema_valid(
