@@ -88,7 +88,6 @@ select  -- noqa: disable=ST06
     fa.unmet_need,
     fa.pell_grant,
     fa.tag,
-    fa.state_grant,
     fa.parent_plus_loan,
     fa.stafford_loan_subsidized,
     fa.stafford_loan_unsubsidized,
@@ -127,6 +126,7 @@ select  -- noqa: disable=ST06
         then null
         else false
     end as is_undermatch,
+    fa.state_grant,
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
     matriculated_application as app
