@@ -1,6 +1,7 @@
 import os
 import re
 import zipfile
+from typing import Sequence
 
 from dagster import AssetExecutionContext, MultiPartitionKey, Output, asset
 from numpy import nan
@@ -34,7 +35,7 @@ def compose_regex(regexp: str, partition_key: str | MultiPartitionKey | None) ->
 
 
 def build_sftp_file_asset(
-    asset_key: list[str],
+    asset_key: Sequence[str],
     remote_dir_regex: str,
     remote_file_regex: str,
     ssh_resource_key: str,
