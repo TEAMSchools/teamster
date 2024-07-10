@@ -10,8 +10,8 @@ remote_dir_regex = r"\."
 ssh_resource_key = "ssh_adp_workforce_now"
 key_prefix = [CODE_LOCATION, "adp", "workforce_now"]
 
-pension_and_benefits_enrollment = build_sftp_file_asset(
-    asset_key=[*key_prefix, "pension_and_benefits_enrollment"],
+pension_and_benefits_enrollments = build_sftp_file_asset(
+    asset_key=[*key_prefix, "pension_and_benefits_enrollments"],
     remote_dir_regex=remote_dir_regex,
     remote_file_regex=r"pension_and_benefits_enrollments\.csv",
     ssh_resource_key=ssh_resource_key,
@@ -37,5 +37,5 @@ additional_earnings_report = build_sftp_file_asset(
 assets = [
     additional_earnings_report,
     comprehensive_benefits_report,
-    pension_and_benefits_enrollment,
+    pension_and_benefits_enrollments,
 ]
