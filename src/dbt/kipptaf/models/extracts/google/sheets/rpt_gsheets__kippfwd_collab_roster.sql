@@ -21,6 +21,7 @@ with
             unmet_need,
             pell_grant,
             tap as tag,
+            state_grant,
             parent_plus_loan,
             stafford_loan_subsidized,
             stafford_loan_unsubsidized,
@@ -125,6 +126,7 @@ select  -- noqa: disable=ST06
         then null
         else false
     end as is_undermatch,
+    fa.state_grant,
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
     matriculated_application as app
