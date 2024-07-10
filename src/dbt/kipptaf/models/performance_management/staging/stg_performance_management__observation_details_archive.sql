@@ -7,7 +7,6 @@ select
     teacher_id,
     rubric_id,
     form_long_name as rubric_name,
-    observer_employee_number,
     measurement_name,
     row_score_value as value_score,
     score_measurement_type,
@@ -23,7 +22,6 @@ select
     etr_tier,
     so_score,
     final_score,
-    final_tier,
 
     true as locked,
     'Teacher Performance Management' as observation_type,
@@ -34,6 +32,11 @@ select
     date(observed_at) as observed_at_date_local,
 
     coalesce(so_tier.long_value, cast(so_tier.double_value as int)) as so_tier,
+    coalesce(final_tier.long_value, cast(final_tier.double_value as int)) as final_tier,
+    coalesce(
+        observer_employee_number.long_value,
+        cast(observer_employee_number.double_value as int)
+    ) as observer_employee_number,
 
     case
         when score_measurement_type = 'etr'
