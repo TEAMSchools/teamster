@@ -3,7 +3,10 @@ from teamster.code_locations.kippmiami.fldoe.assets import assets
 from teamster.libraries.couchdrop.sensors import build_couchdrop_sftp_sensor
 
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
-    code_location=CODE_LOCATION, local_timezone=LOCAL_TIMEZONE, assets=assets
+    code_location=CODE_LOCATION,
+    local_timezone=LOCAL_TIMEZONE,
+    assets=assets,
+    exclude_dirs=[f"/data-team/{CODE_LOCATION}/fldoe/fsa"],
 )
 
 sensors = [
