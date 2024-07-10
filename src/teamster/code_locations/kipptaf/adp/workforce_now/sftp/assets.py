@@ -19,7 +19,7 @@ pension_and_benefits_enrollment = build_sftp_file_asset(
 )
 
 comprehensive_benefits_report = build_sftp_file_asset(
-    asset_key=[*key_prefix, "pension_and_benefits_enrollment"],
+    asset_key=[*key_prefix, "comprehensive_benefits_report"],
     remote_dir_regex=remote_dir_regex,
     remote_file_regex=r"comprehensive_benefits_report\.csv",
     ssh_resource_key=ssh_resource_key,
@@ -27,7 +27,7 @@ comprehensive_benefits_report = build_sftp_file_asset(
 )
 
 additional_earnings_report = build_sftp_file_asset(
-    asset_key=[*key_prefix, "pension_and_benefits_enrollment"],
+    asset_key=[*key_prefix, "additional_earnings_report"],
     remote_dir_regex=remote_dir_regex,
     remote_file_regex=r"additional_earnings_report\.csv",
     ssh_resource_key=ssh_resource_key,
