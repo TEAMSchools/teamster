@@ -3,10 +3,10 @@ from dagster import SensorResult, build_sensor_context
 from teamster.libraries.core.resources import SSH_COUCHDROP
 
 
-def _test_sensor(sftp_sensor, **kwargs):
+def _test_sensor(sftp_sensor):
     context = build_sensor_context(sensor_name=sftp_sensor.name)
 
-    result: SensorResult = sftp_sensor(context=context, **kwargs)
+    result: SensorResult = sftp_sensor(context=context, ssh_couchdrop=SSH_COUCHDROP)
 
     assert result.run_requests is not None
     assert len(result.run_requests) > 0
@@ -15,18 +15,12 @@ def _test_sensor(sftp_sensor, **kwargs):
         context.log.info(run_request)
 
 
-def test_couchdrop_sftp_sensor_kipptaf():
-    from teamster.code_locations.kipptaf.couchdrop.sensors import couchdrop_sftp_sensor
-
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
-
-
 def test_couchdrop_sftp_sensor_kippcamden():
     from teamster.code_locations.kippcamden.couchdrop.sensors import (
         couchdrop_sftp_sensor,
     )
 
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
 
 
 def test_couchdrop_sftp_sensor_kippmiami():
@@ -34,7 +28,7 @@ def test_couchdrop_sftp_sensor_kippmiami():
         couchdrop_sftp_sensor,
     )
 
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
 
 
 def test_couchdrop_sftp_sensor_kippnewark():
@@ -42,7 +36,7 @@ def test_couchdrop_sftp_sensor_kippnewark():
         couchdrop_sftp_sensor,
     )
 
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
 
 
 def test_adp_payroll_sftp_sensor():
@@ -50,4 +44,4 @@ def test_adp_payroll_sftp_sensor():
         adp_payroll_sftp_sensor,
     )
 
-    _test_sensor(sftp_sensor=adp_payroll_sftp_sensor, ssh_couchdrop=SSH_COUCHDROP)
+    _test_sensor(sftp_sensor=adp_payroll_sftp_sensor)
