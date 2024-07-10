@@ -3,7 +3,14 @@ import re
 import zipfile
 from typing import Sequence
 
-from dagster import AssetExecutionContext, MultiPartitionKey, Output, asset
+from dagster import (
+    AssetExecutionContext,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    Output,
+    _check,
+    asset,
+)
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -79,9 +86,38 @@ def build_sftp_file_asset(
         else:
             partition_key = None
 
-        remote_dir_regex_composed = compose_regex(
-            regexp=remote_dir_regex, partition_key=partition_key
-        )
+        if group_name == "iready":
+            current_partition_key = _check.inst(
+                obj=partition_key, ttype=MultiPartitionKey
+            )
+
+            multi_partitions_def = _check.inst(
+                obj=context.assets_def.partitions_def, ttype=MultiPartitionsDefinition
+            )
+
+            academic_year_key, subject_key = (
+                current_partition_key.keys_by_dimension.values()
+            )
+
+            academic_year_last_partition_key = (
+                multi_partitions_def.get_partitions_def_for_dimension("academic_year")
+            ).get_last_partition_key()
+
+            if academic_year_key == academic_year_last_partition_key:
+                remote_dir_regex_composed = compose_regex(
+                    regexp=remote_dir_regex,
+                    partition_key=MultiPartitionKey(
+                        {"academic_year": "Current_Year", "subject": subject_key}
+                    ),
+                )
+            else:
+                remote_dir_regex_composed = compose_regex(
+                    regexp=remote_dir_regex, partition_key=partition_key
+                )
+        else:
+            remote_dir_regex_composed = compose_regex(
+                regexp=remote_dir_regex, partition_key=partition_key
+            )
 
         remote_file_regex_composed = compose_regex(
             regexp=remote_file_regex, partition_key=partition_key

@@ -42,13 +42,13 @@ def _test_asset(asset, partition_key=None, instance=None):
 def test_iready_diagnostic_results_kippmiami():
     from teamster.code_locations.kippmiami.iready.assets import diagnostic_results
 
-    _test_asset(asset=diagnostic_results)
+    _test_asset(asset=diagnostic_results, partition_key="2024|ela")
 
 
 def test_iready_diagnostic_results_kippnj():
     from teamster.code_locations.kippnewark.iready.assets import diagnostic_results
 
-    _test_asset(asset=diagnostic_results)
+    _test_asset(asset=diagnostic_results, partition_key="2024|ela")
 
 
 def test_iready_personalized_instruction_by_lesson_kippmiami():
@@ -56,7 +56,7 @@ def test_iready_personalized_instruction_by_lesson_kippmiami():
         personalized_instruction_by_lesson,
     )
 
-    _test_asset(asset=personalized_instruction_by_lesson)
+    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2024|ela")
 
 
 def test_iready_personalized_instruction_by_lesson_kippnj():
@@ -64,13 +64,13 @@ def test_iready_personalized_instruction_by_lesson_kippnj():
         personalized_instruction_by_lesson,
     )
 
-    _test_asset(asset=personalized_instruction_by_lesson)
+    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2024|ela")
 
 
 def test_iready_instructional_usage_data_kippmiami():
     from teamster.code_locations.kippmiami.iready.assets import instructional_usage_data
 
-    _test_asset(asset=instructional_usage_data)
+    _test_asset(asset=instructional_usage_data, partition_key="2024|ela")
 
 
 def test_iready_instructional_usage_data_kippnj():
@@ -78,7 +78,7 @@ def test_iready_instructional_usage_data_kippnj():
         instructional_usage_data,
     )
 
-    _test_asset(asset=instructional_usage_data)
+    _test_asset(asset=instructional_usage_data, partition_key="2024|ela")
 
 
 def test_iready_diagnostic_and_instruction_kippmiami():
@@ -86,7 +86,7 @@ def test_iready_diagnostic_and_instruction_kippmiami():
         diagnostic_and_instruction,
     )
 
-    _test_asset(asset=diagnostic_and_instruction)
+    _test_asset(asset=diagnostic_and_instruction, partition_key="2024|ela")
 
 
 def test_iready_diagnostic_and_instruction_kippnj():
@@ -94,4 +94,4 @@ def test_iready_diagnostic_and_instruction_kippnj():
         diagnostic_and_instruction,
     )
 
-    _test_asset(asset=diagnostic_and_instruction)
+    _test_asset(asset=diagnostic_and_instruction, partition_key="2024|ela")

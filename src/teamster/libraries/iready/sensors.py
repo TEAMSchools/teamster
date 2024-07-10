@@ -16,10 +16,11 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_iready_sftp_sensor(
-    code_location,
+    code_location: str,
     asset_defs: list[AssetsDefinition],
     timezone,
-    remote_dir_regex,
+    remote_dir_regex: str,
+    current_fiscal_year: int,
     minimum_interval_seconds=None,
 ):
     @sensor(
@@ -41,34 +42,54 @@ def build_iready_sftp_sensor(
             return SensorResult(skip_reason=str(e))
 
         for asset in asset_defs:
-            asset_metadata = asset.metadata_by_key[asset.key]
+            metadata_by_key = asset.metadata_by_key[asset.key]
             asset_identifier = asset.key.to_python_identifier()
 
             context.log.info(asset_identifier)
             last_run = cursor.get(asset_identifier, 0)
 
-            for f, _ in files:
-                match = re.match(
-                    pattern=asset_metadata["remote_file_regex"], string=f.filename
+            pattern = re.compile(
+                pattern=(
+                    f"{metadata_by_key["remote_dir_regex"]}/"
+                    f"{metadata_by_key["remote_file_regex"]}"
+                )
+            )
+
+            file_matches = [
+                (f, path)
+                for f, path in files
+                if pattern.match(string=path)
+                and _check.not_none(value=f.st_mtime) > last_run
+                and _check.not_none(value=f.st_size) > 0
+            ]
+
+            for f, path in file_matches:
+                match = _check.not_none(value=pattern.match(string=path))
+
+                group_dict = match.groupdict()
+
+                if group_dict["academic_year"] == "Current_Year":
+                    partition_key = MultiPartitionKey(
+                        {
+                            "academic_year": str(current_fiscal_year - 1),
+                            "subject": group_dict["subject"],
+                        }
+                    )
+                else:
+                    partition_key = MultiPartitionKey(group_dict)
+
+                context.log.info(f"{f.filename}: {partition_key}")
+                run_requests.append(
+                    RunRequest(
+                        run_key=(
+                            f"{asset_identifier}__{partition_key}__{now.timestamp()}"
+                        ),
+                        asset_selection=[asset.key],
+                        partition_key=partition_key,
+                    )
                 )
 
-                if (
-                    match is not None
-                    and f.st_mtime > last_run
-                    and _check.not_none(value=f.st_size) > 0
-                ):
-                    context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    run_requests.append(
-                        RunRequest(
-                            run_key=f"{asset_identifier}_{f.st_mtime}",
-                            asset_selection=[asset.key],
-                            partition_key=MultiPartitionKey(
-                                {**match.groupdict(), "academic_year": "Current_Year"}
-                            ),
-                        )
-                    )
-
-                    cursor[asset_identifier] = now.timestamp()
+                cursor[asset_identifier] = now.timestamp()
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
