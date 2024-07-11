@@ -125,11 +125,19 @@ def build_sftp_file_asset(
             regexp=remote_file_regex, partition_key=partition_key
         )
 
-        file_matches = ssh.match_sftp_files(
-            remote_dir=remote_dir_regex_composed,
-            remote_file=remote_file_regex_composed,
-            exclude_dirs=exclude_dirs,
+        files = ssh.listdir_attr_r(
+            remote_dir=remote_dir_regex_composed, exclude_dirs=exclude_dirs
         )
+
+        file_matches = [
+            path
+            for _, path in files
+            if re.search(
+                pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
+                string=path,
+            )
+            is not None
+        ]
 
         # exit if no matches
         if not file_matches:
@@ -248,11 +256,19 @@ def build_sftp_archive_asset(
             regexp=remote_file_regex, partition_key=partition_key
         )
 
-        file_matches = ssh.match_sftp_files(
-            remote_dir=remote_dir_regex_composed,
-            remote_file=remote_file_regex_composed,
-            exclude_dirs=exclude_dirs,
+        files = ssh.listdir_attr_r(
+            remote_dir=remote_dir_regex_composed, exclude_dirs=exclude_dirs
         )
+
+        file_matches = [
+            path
+            for _, path in files
+            if re.search(
+                pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
+                string=path,
+            )
+            is not None
+        ]
 
         # exit if no matches
         if not file_matches:
@@ -298,7 +314,7 @@ def build_sftp_archive_asset(
 
         archive_file_regex_composed = compose_regex(
             regexp=archive_file_regex, partition_key=partition_key
-        )
+        ).replace("\\", "")
 
         with zipfile.ZipFile(file=local_filepath) as zf:
             zf.extract(member=archive_file_regex_composed, path="./env")
@@ -398,11 +414,19 @@ def build_sftp_folder_asset(
             regexp=remote_file_regex, partition_key=partition_key
         )
 
-        file_matches = ssh.match_sftp_files(
-            remote_dir=remote_dir_regex_composed,
-            remote_file=remote_file_regex_composed,
-            exclude_dirs=exclude_dirs,
+        files = ssh.listdir_attr_r(
+            remote_dir=remote_dir_regex_composed, exclude_dirs=exclude_dirs
         )
+
+        file_matches = [
+            path
+            for _, path in files
+            if re.search(
+                pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
+                string=path,
+            )
+            is not None
+        ]
 
         # exit if no matching files
         if not file_matches:
