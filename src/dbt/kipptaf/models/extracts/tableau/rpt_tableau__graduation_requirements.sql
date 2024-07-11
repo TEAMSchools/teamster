@@ -25,6 +25,7 @@ with
 
             adb.contact_id as kippadb_contact_id,
             adb.ktc_cohort,
+            adb.contact_df_has_fafsa as has_fafsa,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -348,6 +349,7 @@ select distinct
     r.enroll_status,
     r.cohort,
     r.ktc_cohort,
+    r.has_fafsa,
     r.grade_level,
     r.iep_status,
     r.is_504,
