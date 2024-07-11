@@ -138,7 +138,7 @@ class SSHResource(DagsterSSHResource):
 
         files = self.listdir_attr_r(remote_dir=remote_dir, exclude_dirs=exclude_dirs)
 
-        if remote_dir == ".":
+        if re.search(pattern=r"\.", string=remote_dir):
             pattern = remote_file
         else:
             pattern = f"{remote_dir}/{remote_file}"

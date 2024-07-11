@@ -1,3 +1,6 @@
+import re
+
+
 def test_regex_pattern_replace():
     from teamster.libraries.core.utils.functions import regex_pattern_replace
 
@@ -75,7 +78,6 @@ def test_ghseet_asset_key_rename():
 
 def test_orjson():
     import json
-    import re
     from datetime import date, datetime, timedelta
     from decimal import Decimal
 
@@ -124,3 +126,22 @@ def test_orjson():
 
         assert stdlib_match.group(1) == orjson_match.group(1)
         print(f"{k}: {stdlib_match.group(1)} == {orjson_match.group(1)}")
+
+
+def test_foo():
+    from teamster.libraries.sftp.assets import compose_regex
+
+    remote_dir = compose_regex(regexp=r"\.")
+    remote_file = compose_regex(regexp=r"additional_earnings_report\.csv")
+    path = "additional_earnings_report.csv"
+
+    if re.search(pattern=r"\.", string=remote_dir):
+        pattern = remote_file
+    else:
+        pattern = f"{remote_dir}/{remote_file}"
+
+    assert pattern == remote_file
+
+    match_obj = re.match(pattern=pattern, string=path)
+
+    assert match_obj is not None
