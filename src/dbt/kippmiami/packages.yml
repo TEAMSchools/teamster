@@ -6,7 +6,3 @@ packages:
   # https://github.com/dbt-labs/dbt-external-tables
   - package: dbt-labs/dbt_external_tables
     version: 0.9.0
-  # https://docs.dagster.io/integrations/dbt/reference#emit-column-level-lineage-as-materialization-metadata
-  - git: https://github.com/dagster-io/dagster.git
-    subdirectory: python_modules/libraries/dagster-dbt/dbt_packages/dagster
-    revision: 1.7.12
