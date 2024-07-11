@@ -181,5 +181,3 @@ models:
       +schema: zendesk
       staging:
         +materialized: table
-
-snapshots:
