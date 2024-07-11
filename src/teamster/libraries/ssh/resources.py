@@ -86,7 +86,9 @@ class SSHResource(DagsterSSHResource):
             remote_port=remote_port, remote_host=remote_host, local_port=local_port
         )
 
-    def listdir_attr_r(self, remote_dir: str = ".", exclude_dirs: list | None = None):
+    def listdir_attr_r(
+        self, remote_dir: str = ".", exclude_dirs: list[str] | None = None
+    ):
         if exclude_dirs is None:
             exclude_dirs = []
 
@@ -104,7 +106,7 @@ class SSHResource(DagsterSSHResource):
         self,
         sftp_client: SFTPClient,
         remote_dir: str,
-        exclude_dirs: list,
+        exclude_dirs: list[str],
         files: list | None = None,
     ) -> list[tuple[SFTPAttributes, str]]:
         if files is None:

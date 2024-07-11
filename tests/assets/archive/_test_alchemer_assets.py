@@ -9,6 +9,8 @@ from teamster.code_locations.kipptaf.alchemer.assets import (
     survey_question,
     survey_response,
 )
+
+# trunk-ignore(pyright/reportAttributeAccessIssue)
 from teamster.code_locations.kipptaf.resources import ALCHEMER_RESOURCE
 from teamster.libraries.core.resources import get_io_manager_gcs_avro
 

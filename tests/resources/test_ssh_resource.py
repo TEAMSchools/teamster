@@ -21,7 +21,7 @@ def test_couchdrop():
             username=EnvVar("COUCHDROP_SFTP_USERNAME").get_value(),
             password=EnvVar("COUCHDROP_SFTP_PASSWORD").get_value(),
         ),
-        remote_dir="data-team",
+        remote_dir=r"data-team",
     )
 
 
@@ -32,5 +32,5 @@ def test_coupa():
             username=EnvVar("COUPA_SFTP_USERNAME").get_value(),
             password=EnvVar("COUPA_SFTP_PASSWORD").get_value(),
         ),
-        remote_dir="/Incoming/Users",
+        remote_dir=r"/Incoming/Users",
     )

@@ -19,7 +19,6 @@ on:
       - src/teamster/libraries/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
-      - src/teamster/libraries/dayforce/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/fivetran/**
@@ -44,7 +43,6 @@ on:
       - src/teamster/libraries/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
-      - src/teamster/libraries/dayforce/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/fivetran/**
