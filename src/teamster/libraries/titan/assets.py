@@ -27,7 +27,7 @@ def build_titan_sftp_asset(
 
     return build_sftp_file_asset(
         asset_key=key,
-        remote_dir_regex=r".",
+        remote_dir_regex=r"\.",
         remote_file_regex=remote_file_regex,
         ssh_resource_key="ssh_titan",
         avro_schema=schema,
