@@ -1,7 +1,6 @@
 import pathlib
 
 from dagster import AssetKey, AssetSpec, config_from_files, external_assets_from_specs
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 
@@ -12,7 +11,6 @@ specs = [
         key=AssetKey([CODE_LOCATION, a["group_name"], table]),
         metadata={"connection_id": a["connection_id"]},
         group_name=a["group_name"],
-        tags={COMPUTE_KIND_TAG: "airbyte"},
     )
     for a in config_from_files([f"{config_dir}/config/assets.yaml"])["assets"]
     for table in a["destination_tables"]

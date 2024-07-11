@@ -15,7 +15,6 @@ from dagster import (
     config_from_files,
     external_assets_from_specs,
 )
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from slugify import slugify
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
@@ -104,7 +103,6 @@ specs = [
         deps=a["deps"],
         metadata=a["metadata"],
         group_name="tableau",
-        tags={COMPUTE_KIND_TAG: "tableau"},
     )
     for a in config["external_assets"]
 ]

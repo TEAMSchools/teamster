@@ -2,7 +2,6 @@ import pathlib
 
 import yaml
 from dagster import AssetKey, AssetsDefinition, AssetSpec, external_assets_from_specs
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 
@@ -35,7 +34,6 @@ for config_file in config_path.glob("*.yaml"):
                     key=AssetKey([*asset_key_prefix, table]),
                     group_name=config.get("group_name", connector_name),
                     metadata={"connector_id": connector_id},
-                    tags={COMPUTE_KIND_TAG: "fivetran"},
                 )
             )
 
