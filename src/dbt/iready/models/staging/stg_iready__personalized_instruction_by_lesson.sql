@@ -12,7 +12,7 @@ select
 
     cast(left(academic_year, 4) as int) as academic_year_int,
 
-    coalesce(safe_cast(score.double_value as int), score.long_value,) as score,
+    coalesce(safe_cast(score.double_value as int), score.long_value) as score,
     coalesce(
         safe_cast(total_time_on_lesson_min.double_value as int),
         total_time_on_lesson_min.long_value
