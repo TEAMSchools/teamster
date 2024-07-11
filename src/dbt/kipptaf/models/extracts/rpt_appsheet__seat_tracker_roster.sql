@@ -24,7 +24,15 @@ select
     coalesce(lc.region, sr.business_unit_home_name) as location_entity,
     coalesce(lc.abbreviation, sr.home_work_location_name) as location_shortname,
     coalesce(cc.name, sr.home_work_location_name) as campus,
-
+    case
+        when
+            sr.business_unit_home_name
+            in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
+        then 'New Jersey'
+        when sr.business_unit_home_name = 'KIPP Miami'
+        then 'Miami'
+        else 'CMO'
+    end as region_state,
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_people__location_crosswalk") }} as lc
