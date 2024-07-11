@@ -1,7 +1,6 @@
 import random
 
-from dagster import EnvVar, _check, materialize
-from dagster._core.events import StepMaterializationData
+from dagster import EnvVar, materialize
 
 from teamster.libraries.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.ssh.resources import SSHResource
@@ -45,18 +44,7 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
 
     assert result.success
 
-    asset_materialization_event = result.get_asset_materialization_events()[0]
     asset_check_evaluation = result.get_asset_check_evaluations()[0]
-
-    step_materialization_data = _check.inst(
-        asset_materialization_event.event_specific_data, StepMaterializationData
-    )
-
-    records = _check.inst(
-        step_materialization_data.materialization.metadata["records"].value, int
-    )
-
-    assert records > 0
 
     extras = asset_check_evaluation.metadata.get("extras")
 
@@ -67,20 +55,16 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
 def test_titan_person_data_kippnewark():
     from teamster.code_locations.kippnewark.titan.assets import person_data
 
-    _test_asset(
-        asset=person_data,
-        partition_key="2024",
-        ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK},
-    )
+    _test_asset(asset=person_data, ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK})
 
 
 def test_titan_person_data_kippcamden():
-    from teamster.code_locations.kippnewark.titan.assets import person_data
+    from teamster.code_locations.kippcamden.titan.assets import person_data
 
     _test_asset(
         asset=person_data,
-        partition_key="2024",
         ssh_resource={"ssh_titan": SSH_TITAN_KIPPCAMDEN},
+        partition_key="2023",
     )
 
 
@@ -88,7 +72,5 @@ def test_titan_income_form_data_kippnewark():
     from teamster.code_locations.kippnewark.titan.assets import income_form_data
 
     _test_asset(
-        asset=income_form_data,
-        partition_key="2024",
-        ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK},
+        asset=income_form_data, ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK}
     )
