@@ -34,7 +34,7 @@ def adp_payroll_sftp_sensor(
 
     try:
         files = ssh_couchdrop.listdir_attr_r(
-            f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
+            remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
         )
     except Exception as e:
         context.log.exception(e)
@@ -57,7 +57,10 @@ def adp_payroll_sftp_sensor(
 
         context.log.info(asset_identifier)
         pattern = re.compile(
-            pattern=f"{metadata_by_key["remote_dir"]}/{metadata_by_key["remote_file_regex"]}"
+            pattern=(
+                f"{metadata_by_key["remote_dir_regex"]}/"
+                f"{metadata_by_key["remote_file_regex"]}"
+            )
         )
 
         file_matches = [

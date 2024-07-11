@@ -3,23 +3,28 @@ with
         select
             observer_employee_number,
             academic_year,
-            form_term,
-            row_score_value,
+            term_code,
+            row_score as row_score_value,
+
+            safe_cast(right(term_code, 1) as int) as term_num,
+
             upper(
-                replace(replace(score_measurement_shortname, '&', ''), '-', '')
+                regexp_replace(
+                    regexp_replace(measurement_name, r'[&\-]', ''), r':.*', ''
+                )
             ) as score_measurement_shortname,
         from {{ ref("int_performance_management__observation_details") }}
         where
-            form_long_name = 'Coaching Tool: Coach ETR and Reflection'
-            and row_score_value is not null
+            rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+            and row_score is not null
     ),
 
     pivots as (
         select
             observer_employee_number,
             academic_year,
-            form_term,
-            cast(right(form_term, 1) as int64) as term_num,
+            term_code,
+            term_num,
             etr1a,
             etr1b,
             etr2a,
@@ -86,17 +91,17 @@ with
         select
             observer_employee_number,
             academic_year,
-            form_term,
-            avg(overall_score) as overall_score,
+            term_code,
+            avg(observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }}
-        where form_long_name = 'Coaching Tool: Coach ETR and Reflection'
-        group by observer_employee_number, academic_year, form_term
+        where rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+        group by observer_employee_number, academic_year, term_code
     )
 
 select
     p.observer_employee_number,
     p.academic_year,
-    p.form_term,
+    p.term_code as form_term,
     p.term_num,
     p.etr1a,
     p.etr1b,
@@ -132,4 +137,4 @@ inner join
     manager_overall as m
     on p.observer_employee_number = m.observer_employee_number
     and p.academic_year = m.academic_year
-    and p.form_term = m.form_term
+    and p.term_code = m.term_code

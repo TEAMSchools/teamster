@@ -1,42 +1,20 @@
-import pathlib
-
-import pendulum
-from dagster import StaticPartitionsDefinition, config_from_files
-
 from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
     CURRENT_FISCAL_YEAR,
     LOCAL_TIMEZONE,
 )
-from teamster.code_locations.kippcamden.titan.schema import ASSET_SCHEMA
-from teamster.libraries.core.utils.classes import FiscalYear
-from teamster.libraries.sftp.assets import build_sftp_asset
+from teamster.code_locations.kippcamden.titan.schema import PERSON_DATA_SCHEMA
+from teamster.libraries.titan.assets import build_titan_sftp_asset
 
-assets = []
+person_data = build_titan_sftp_asset(
+    key=[CODE_LOCATION, "titan", "person_data"],
+    remote_file_regex=r"[Pp]erson\s?[Dd]ata(?P<fiscal_year>\d{4})\.csv",
+    schema=PERSON_DATA_SCHEMA,
+    partition_start_date="2020-07-01",
+    timezone=LOCAL_TIMEZONE,
+    current_fiscal_year=CURRENT_FISCAL_YEAR,
+)
 
-for asset in config_from_files(
-    [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
-)["assets"]:
-    start_fy = FiscalYear(
-        datetime=pendulum.from_format(
-            string=asset["partition_start_date"], fmt="YYYY-MM-DD", tz=LOCAL_TIMEZONE
-        ),
-        start_month=7,
-    )
-
-    partition_keys = [
-        str(y - 1)
-        for y in range(start_fy.fiscal_year, (CURRENT_FISCAL_YEAR.fiscal_year + 1))
-    ]
-
-    asset_name = asset["asset_name"]
-
-    assets.append(
-        build_sftp_asset(
-            asset_key=[CODE_LOCATION, "titan", asset_name],
-            ssh_resource_key="ssh_titan",
-            avro_schema=ASSET_SCHEMA[asset_name],
-            partitions_def=StaticPartitionsDefinition(partition_keys),
-            **asset,
-        )
-    )
+assets = [
+    person_data,
+]

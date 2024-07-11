@@ -1,4 +1,5 @@
-{% set academic_year = "2023" %}  -- CHANGE YEAR HERE ONLY
+{#- CHANGE YEAR HERE ONLY -#}
+{%- set academic_year = "2023" -%}
 
 with
     ms_grad as (
@@ -25,6 +26,7 @@ with
             e.state_studentnumber,
             e.lastfirst as student_name,
             e.grade_level,
+            e.cohort,
             e.enroll_status,
             e.is_out_of_district,
             e.gender,
@@ -155,7 +157,7 @@ with
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
             end as test_code,
         from {{ ref("stg_pearson__student_list_report") }}
-        where state_student_identifier is not null
+        where state_student_identifier is not null and administration = 'Spring'
     ),
 
     state_comps as (
@@ -174,6 +176,7 @@ select
     s.state_studentnumber,
     s.student_name,
     s.grade_level,
+    s.cohort,
     s.enroll_status,
     s.gender,
     s.race_ethnicity,
@@ -211,7 +214,9 @@ select
     g.region_goal,
     g.organization_goal,
 
-    'Preeliminary' as results_type,
+    sf.nj_student_tier,
+
+    'Preliminary' as results_type,
     null as test_grade,
 from students_nj as s
 inner join
@@ -242,3 +247,8 @@ left join
     on s.academic_year = g.academic_year
     and s.schoolid = g.school_id
     and a.test_code = g.state_assessment_code
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on s.academic_year = sf.academic_year
+    and a.discipline = sf.discipline
+    and s.student_number = sf.student_number

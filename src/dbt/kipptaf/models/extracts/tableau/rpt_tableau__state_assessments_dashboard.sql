@@ -28,6 +28,7 @@ with
             e.state_studentnumber,
             e.lastfirst as student_name,
             e.grade_level,
+            e.cohort,
             e.enroll_status,
             e.is_out_of_district,
             e.gender,
@@ -47,7 +48,7 @@ with
             on e.student_number = m.student_number
             and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
         where
-            e.academic_year >= {{ var("current_academic_year") }} - 7
+            e.academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_year = 1
             and e.region in ('Camden', 'Newark')
             and e.grade_level > 2
@@ -65,6 +66,7 @@ with
             fleid,
             lastfirst as student_name,
             grade_level,
+            cohort,
             enroll_status,
             is_out_of_district,
             gender,
@@ -85,7 +87,7 @@ with
             end as advisory,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
-            academic_year >= {{ var("current_academic_year") }} - 7
+            academic_year >= {{ var("current_academic_year") - 7 }}
             and rn_year = 1
             and region = 'Miami'
             and grade_level > 2
@@ -146,7 +148,7 @@ with
             on e.students_student_number = c.students_student_number
             and e.courses_credittype = c.courses_credittype
         where
-            e.cc_academic_year >= {{ var("current_academic_year") }} - 7
+            e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
@@ -227,7 +229,7 @@ with
             ) as subject,
 
         from {{ ref("int_pearson__all_assessments") }}
-        where safe_cast(academic_year as int) >= {{ var("current_academic_year") }} - 7
+        where safe_cast(academic_year as int) >= {{ var("current_academic_year") - 7 }}
     ),
 
     assessments_fl_eoc as (
@@ -398,6 +400,7 @@ with
             s.state_studentnumber,
             s.student_name,
             s.grade_level,
+            s.cohort,
             s.enroll_status,
             s.gender,
             s.lunch_status,
@@ -439,6 +442,7 @@ with
             s.fleid as state_studentnumber,
             s.student_name,
             s.grade_level,
+            s.cohort,
             s.enroll_status,
             s.gender,
             s.race_ethnicity,
@@ -499,6 +503,7 @@ select
     s.state_id,
     s.student_name,
     s.grade_level,
+    s.cohort,
     s.enroll_status,
     s.gender,
     s.race_ethnicity,
@@ -529,6 +534,8 @@ select
     g.region_goal,
     g.organization_goal,
 
+    sf.nj_student_tier,
+
     m.teacher_name,
     m.course_number,
     m.course_name,
@@ -553,6 +560,11 @@ left join
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on s.academic_year = sf.academic_year
+    and s.discipline = sf.discipline
+    and s.student_number = sf.student_number
 union all
 select
     s.academic_year,
@@ -564,6 +576,7 @@ select
     s.state_id,
     s.student_name,
     s.grade_level,
+    s.cohort,
     s.enroll_status,
     s.gender,
     s.race_ethnicity,
@@ -594,6 +607,8 @@ select
     g.region_goal,
     g.organization_goal,
 
+    sf.nj_student_tier,
+
     m.teacher_name,
     m.course_number,
     m.course_name,
@@ -618,6 +633,11 @@ left join
     and s.student_number = m.students_student_number
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+left join
+    {{ ref("int_reporting__student_filters") }} as sf
+    on s.academic_year = sf.academic_year
+    and s.discipline = sf.discipline
+    and s.student_number = sf.student_number
 union all
 select
     academic_year,
@@ -629,6 +649,7 @@ select
     state_id,
     student_name,
     grade_level,
+    cohort,
     enroll_status,
     gender,
     race_ethnicity,
@@ -656,6 +677,7 @@ select
     school_goal,
     region_goal,
     organization_goal,
+    nj_student_tier,
     teacher_name,
     course_number,
     course_name,

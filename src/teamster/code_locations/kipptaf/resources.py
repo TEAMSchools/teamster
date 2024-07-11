@@ -6,7 +6,6 @@ from teamster.libraries.adp.workforce_manager.resources import (
     AdpWorkforceManagerResource,
 )
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.libraries.alchemer.resources import AlchemerResource
 from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
@@ -46,13 +45,6 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
     api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=2, request_timeout=6
-)
-
-ALCHEMER_RESOURCE = AlchemerResource(
-    api_token=EnvVar("ALCHEMER_API_TOKEN"),
-    api_token_secret=EnvVar("ALCHEMER_API_TOKEN_SECRET"),
-    api_version="v5",
-    timeout=15,
 )
 
 DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
@@ -166,13 +158,6 @@ SSH_RESOURCE_IDAUTO = SSHResource(
     remote_host=EnvVar("KTAF_SFTP_HOST_IP"),
     username=EnvVar("KTAF_SFTP_USERNAME"),
     password=EnvVar("KTAF_SFTP_PASSWORD"),
-)
-
-SSH_RESOURCE_BLISSBOOK = SSHResource(
-    remote_host=EnvVar("BLISSBOOK_SFTP_HOST"),
-    remote_port=EnvVar("BLISSBOOK_SFTP_PORT"),
-    username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
-    password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_LITTLESIS = SSHResource(

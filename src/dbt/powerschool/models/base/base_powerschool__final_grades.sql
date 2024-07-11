@@ -43,7 +43,7 @@ with
             {{ ref("stg_powerschool__termbins") }} as tb
             on enr.cc_schoolid = tb.schoolid
             and enr.cc_abs_termid = tb.termid
-            and left(tb.storecode, 1) in ('Q', 'E')
+            and tb.storecode_type in ('Q', 'E')
         where
             enr.cc_academic_year = {{ var("current_academic_year") }}
             and not enr.is_dropped_section

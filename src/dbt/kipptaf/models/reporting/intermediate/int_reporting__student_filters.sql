@@ -11,6 +11,9 @@ with
             case
                 subject when 'Reading' then 'ela' when 'Math' then 'math'
             end as grad_unpivot_subject,
+            case
+                subject when 'Reading' then 'ELA' when 'Math' then 'Math'
+            end as discipline,
         from unnest(['Reading', 'Math']) as subject
     ),
 
@@ -157,6 +160,7 @@ select
     sj.illuminate_subject_area,
     sj.powerschool_credittype,
     sj.grad_unpivot_subject,
+    sj.discipline,
 
     a.is_iep_eligible as is_grad_iep_exempt,
 
@@ -232,4 +236,4 @@ left join
     and a.values_column = 'M'
 left join
     mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
-where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
+where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
