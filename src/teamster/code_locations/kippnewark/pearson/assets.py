@@ -1,26 +1,28 @@
-import pathlib
-
-from dagster import (
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    config_from_files,
-)
+from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
 from teamster.code_locations.kippnewark import CODE_LOCATION
-from teamster.code_locations.kippnewark.pearson.schema import ASSET_SCHEMA
-from teamster.libraries.sftp.assets import build_sftp_asset
+from teamster.code_locations.kippnewark.pearson.schema import (
+    NJGPA_SCHEMA,
+    NJSLA_SCHEMA,
+    NJSLA_SCIENCE_SCHEMA,
+    PARCC_SCHEMA,
+    STUDENT_LIST_REPORT_SCHEMA,
+)
+from teamster.libraries.sftp.assets import build_sftp_file_asset
 
-config_dir = pathlib.Path(__file__).parent / "config"
+ssh_resource_key = "ssh_couchdrop"
+remote_dir_regex_prefix = f"/data-team/{CODE_LOCATION}/pearson"
+key_prefix = [CODE_LOCATION, "pearson"]
 
-njgpa = build_sftp_asset(
-    asset_key=[CODE_LOCATION, "pearson", "njgpa"],
-    remote_dir=f"/data-team/{CODE_LOCATION}/pearson/njgpa",
+njgpa = build_sftp_file_asset(
+    asset_key=[*key_prefix, "njgpa"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njgpa",
     remote_file_regex=(
         r"pc(?P<administration>[a-z]+)"
-        r"(?P<fiscal_year>\d+)_NJ-\d+-\d+_\w+GPA\w+\.csv"
+        r"(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+GPA\w+\.csv"
     ),
-    avro_schema=ASSET_SCHEMA["njgpa"],
-    ssh_resource_key="ssh_couchdrop",
+    avro_schema=NJGPA_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
     partitions_def=MultiPartitionsDefinition(
         {
             "fiscal_year": StaticPartitionsDefinition(["22", "23", "24"]),
@@ -29,15 +31,17 @@ njgpa = build_sftp_asset(
     ),
 )
 
-student_list_report = build_sftp_asset(
-    asset_key=[CODE_LOCATION, "pearson", "student_list_report"],
-    remote_dir=f"/data-team/{CODE_LOCATION}/pearson/student_list_report",
-    remote_file_regex=(
-        r"(?P<test_type>[a-z]+)\/StudentListReport_"
-        r"(?P<administration_fiscal_year>[A-za-z]+\d+)_\d+_\d+-\d+-\d+\.csv"
+student_list_report = build_sftp_file_asset(
+    asset_key=[*key_prefix, "student_list_report"],
+    remote_dir_regex=(
+        rf"{remote_dir_regex_prefix}/student_list_report/(?P<test_type>[a-z]+)"
     ),
-    avro_schema=ASSET_SCHEMA["student_list_report"],
-    ssh_resource_key="ssh_couchdrop",
+    remote_file_regex=(
+        r"StudentListReport_(?P<administration_fiscal_year>[A-za-z]+\d+)"
+        r"(_\d+_|\s-\s)\d+-\d+-\d+(T\w+\.\d+\+\d+)?\.csv"
+    ),
+    avro_schema=STUDENT_LIST_REPORT_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
     partitions_def=MultiPartitionsDefinition(
         {
             "test_type": StaticPartitionsDefinition(["njsla", "njgpa"]),
@@ -48,19 +52,37 @@ student_list_report = build_sftp_asset(
     ),
 )
 
-static_partition_assets = [
-    build_sftp_asset(
-        asset_key=[CODE_LOCATION, "pearson", a["asset_name"]],
-        avro_schema=ASSET_SCHEMA[a["asset_name"]],
-        ssh_resource_key="ssh_couchdrop",
-        partitions_def=StaticPartitionsDefinition(a["partition_keys"]),
-        **a,
-    )
-    for a in config_from_files([f"{config_dir}/assets.yaml"])["assets"]
-]
+njsla = build_sftp_file_asset(
+    asset_key=[*key_prefix, "njsla"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla",
+    remote_file_regex=r"pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
+    avro_schema=NJSLA_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
+    partitions_def=StaticPartitionsDefinition(["19", "22", "23"]),
+)
+
+njsla_science = build_sftp_file_asset(
+    asset_key=[*key_prefix, "njsla_science"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla_science",
+    remote_file_regex=r"njs(?P<fiscal_year>\d+)_NJ-\d+_\w+\.csv",
+    avro_schema=NJSLA_SCIENCE_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
+    partitions_def=StaticPartitionsDefinition(["22", "23"]),
+)
+
+parcc = build_sftp_file_asset(
+    asset_key=[*key_prefix, "parcc"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/parcc",
+    remote_file_regex=r"PC_pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
+    avro_schema=PARCC_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
+    partitions_def=StaticPartitionsDefinition(["16", "17", "18"]),
+)
 
 assets = [
     njgpa,
+    njsla_science,
+    njsla,
+    parcc,
     student_list_report,
-    *static_partition_assets,
 ]

@@ -1,32 +1,54 @@
-import pathlib
+from teamster.code_locations.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEAR
+from teamster.code_locations.kippnewark.iready.schema import (
+    DIAGNOSTIC_AND_INSTRUCTION_SCHEMA,
+    DIAGNOSTIC_RESULTS_SCHEMA,
+    INSTRUCTIONAL_USAGE_DATA_SCHEMA,
+    PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
+)
+from teamster.libraries.iready.assets import build_iready_sftp_asset
 
-from dagster import (
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    config_from_files,
+region_subfolder = "nj-kipp_nj"
+key_prefix = [CODE_LOCATION, "iready"]
+
+diagnostic_results = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "diagnostic_results"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=r"diagnostic_results_(?P<subject>\w+)\.csv",
+    avro_schema=DIAGNOSTIC_RESULTS_SCHEMA,
+    start_fiscal_year=2021,
+    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
-from teamster.code_locations.kippnewark import CODE_LOCATION
-from teamster.code_locations.kippnewark.iready.schema import ASSET_SCHEMA
-from teamster.libraries.sftp.assets import build_sftp_asset
+personalized_instruction_by_lesson = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "personalized_instruction_by_lesson"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=r"personalized_instruction_by_lesson_(?P<subject>\w+)\.csv",
+    avro_schema=PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
+    start_fiscal_year=2023,
+    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+)
+
+instructional_usage_data = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "instructional_usage_data"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=r"instructional_usage_data_(?P<subject>\w+)\.csv",
+    avro_schema=INSTRUCTIONAL_USAGE_DATA_SCHEMA,
+    start_fiscal_year=2023,
+    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+)
+
+diagnostic_and_instruction = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "diagnostic_and_instruction"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=r"diagnostic_and_instruction_(?P<subject>\w+)_ytd_window\.csv",
+    avro_schema=DIAGNOSTIC_AND_INSTRUCTION_SCHEMA,
+    start_fiscal_year=2022,
+    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+)
 
 assets = [
-    build_sftp_asset(
-        asset_key=[CODE_LOCATION, "iready", a["asset_name"]],
-        ssh_resource_key="ssh_iready",
-        avro_schema=ASSET_SCHEMA[a["asset_name"]],
-        partitions_def=MultiPartitionsDefinition(
-            {
-                "subject": StaticPartitionsDefinition(["ela", "math"]),
-                "academic_year": StaticPartitionsDefinition(
-                    a["partition_keys"]["academic_year"]
-                ),
-            }
-        ),
-        slugify_replacements=[["%", "percent"]],
-        **a,
-    )
-    for a in config_from_files(
-        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
-    )["assets"]
+    diagnostic_and_instruction,
+    diagnostic_results,
+    instructional_usage_data,
+    personalized_instruction_by_lesson,
 ]

@@ -8,7 +8,7 @@ from teamster.libraries.core.utils.classes import FiscalYear
 
 
 def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
-    for group in re.findall(r"\(\?P<\w+>[\w\[\]\{\}\+\-\\\/\.]*\)", pattern):
+    for group in re.findall(r"\(\?P<\w+>[\w\+\-\.\[\]\{\}\/\\]*\)", pattern):
         match = _check.not_none(
             value=re.search(pattern=r"(?<=<)(\w+)(?=>)", string=group)
         )
@@ -17,7 +17,7 @@ def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
 
         pattern = pattern.replace(group, group_value)
 
-    return pattern
+    return pattern  # .replace("\\\\", "\\")
 
 
 def parse_partition_key(partition_key, dimension=None):
