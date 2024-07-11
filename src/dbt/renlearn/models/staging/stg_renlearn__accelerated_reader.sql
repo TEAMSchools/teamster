@@ -50,7 +50,7 @@ select
     schoolyear as `school_year`,
     schoolyearenddate as `school_year_end_date`,
     schoolyearstartdate as `school_year_start_date`,
-    studentemail as `student_email`,
+    studentemail.string_value as `student_email`,
     studentfirstname as `student_first_name`,
     studentlastname as `student_last_name`,
     studentmiddlename as `student_middle_name`,

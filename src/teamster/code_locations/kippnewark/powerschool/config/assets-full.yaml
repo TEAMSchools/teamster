@@ -1,5 +1,5 @@
+# has partition col but not using it
 assets:
-  # not using partitions
   - asset_name: cc
     partition_column: transaction_date
   - asset_name: courses
@@ -40,6 +40,14 @@ assets:
     partition_column: whenmodified
   - asset_name: person
     partition_column: whenmodified
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m
   - asset_name: personaddress
     partition_column: whenmodified
   - asset_name: personaddressassoc
@@ -48,6 +56,14 @@ assets:
     partition_column: whenmodified
   - asset_name: personphonenumberassoc
     partition_column: whenmodified
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m
   - asset_name: phonenumber
     partition_column: whenmodified
   - asset_name: roledef
@@ -68,6 +84,14 @@ assets:
     partition_column: whenmodified
   - asset_name: studentcontactdetail
     partition_column: whenmodified
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m
   - asset_name: studentcorefields
     partition_column: whenmodified
   - asset_name: studentrace

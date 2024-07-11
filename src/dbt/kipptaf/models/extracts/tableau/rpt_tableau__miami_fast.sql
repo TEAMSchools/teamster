@@ -301,5 +301,5 @@ where
     co.region = 'Miami'
     and co.is_enrolled_y1
     and co.rn_year = 1
-    and co.academic_year >= {{ var("current_academic_year") }} - 1
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.grade_level >= 3

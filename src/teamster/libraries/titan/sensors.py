@@ -20,7 +20,11 @@ def build_titan_sftp_sensor(
     asset_defs: list[AssetsDefinition],
     timezone,
     minimum_interval_seconds=None,
+    exclude_dirs: list | None = None,
 ):
+    if exclude_dirs is None:
+        exclude_dirs = []
+
     @sensor(
         name=f"{code_location}_titan_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -32,11 +36,8 @@ def build_titan_sftp_sensor(
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
-            files = ssh_titan.listdir_attr_r()
+            files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
         except SSHException as e:
-            context.log.error(e)
-            raise SSHException from e
-        except Exception as e:
             context.log.error(e)
             return SensorResult(skip_reason=str(e))
 

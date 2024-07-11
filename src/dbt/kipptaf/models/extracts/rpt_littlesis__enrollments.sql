@@ -15,7 +15,7 @@ select
         sec.sections_section_number || ' - ',
         {{ var("current_academic_year") }},
         '-',
-        ({{ var("current_academic_year") }} + 1)
+        ({{ var("current_academic_year") + 1 }})
     ) as class_name,
 
     scw.google_email as teacher_gsuite_email,

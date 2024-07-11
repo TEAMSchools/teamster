@@ -9,4 +9,4 @@ packages:
   # https://docs.dagster.io/integrations/dbt/reference#emit-column-level-lineage-as-materialization-metadata
   - git: https://github.com/dagster-io/dagster.git
     subdirectory: python_modules/libraries/dagster-dbt/dbt_packages/dagster
-    revision: 1.7.8
+    revision: 1.7.12

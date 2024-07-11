@@ -2,13 +2,38 @@ with
     union_relations as (
         {{
             dbt_utils.union_relations(
+                source_column_name="_dbt_source_relation_2",
                 relations=[
                     ref("stg_pearson__parcc"),
                     ref("stg_pearson__njsla"),
                     ref("stg_pearson__njsla_science"),
                     ref("stg_pearson__njgpa"),
                 ],
-                source_column_name="_dbt_source_relation_2",
+                include=[
+                    "_dbt_source_relation",
+                    "academic_year",
+                    "americanindianoralaskanative",
+                    "asian",
+                    "assessment_name",
+                    "assessmentgrade",
+                    "assessmentyear",
+                    "blackorafricanamerican",
+                    "englishlearnerel",
+                    "hispanicorlatinoethnicity",
+                    "is_proficient",
+                    "nativehawaiianorotherpacificislander",
+                    "period",
+                    "statestudentidentifier",
+                    "studentwithdisabilities",
+                    "subject_area",
+                    "subject",
+                    "testcode",
+                    "testperformancelevel_text",
+                    "testperformancelevel",
+                    "testscalescore",
+                    "twoormoreraces",
+                    "white",
+                ],
             )
         }}
     ),
@@ -25,14 +50,15 @@ with
 
             case
                 when
-                    subject
+                    `subject`
                     in ('English Language Arts', 'English Language Arts/Literacy')
                 then 'ELA'
-                when subject in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
+                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
                 then 'Math'
-                when subject = 'Science'
+                when `subject` = 'Science'
                 then 'Science'
             end as subject_area,
+
             case
                 testperformancelevel
                 when 5
@@ -46,8 +72,9 @@ with
                 when 1
                 then 'Did Not Yet Meet Expectations'
             end as testperformancelevel_text,
+
             case
-                when subject = 'Science' and testperformancelevel >= 3
+                when `subject` = 'Science' and testperformancelevel >= 3
                 then true
                 when testcode in ('MATGP', 'ELAGP') and testperformancelevel = 2
                 then true
@@ -60,9 +87,27 @@ with
     )
 
 select
-    *,
-    row_number() over (
-        partition by statestudentidentifier, assessment_name, testcode
-        order by testscalescore desc
-    ) as rn_highest_student_test,
+    _dbt_source_relation,
+    assessment_name,
+    statestudentidentifier,
+    assessmentyear,
+    academic_year,
+    `period`,
+    testcode,
+    `subject`,
+    subject_area,
+    assessmentgrade,
+    testscalescore,
+    testperformancelevel,
+    testperformancelevel_text,
+    is_proficient,
+    studentwithdisabilities,
+    englishlearnerel,
+    twoormoreraces,
+    americanindianoralaskanative,
+    asian,
+    blackorafricanamerican,
+    hispanicorlatinoethnicity,
+    nativehawaiianorotherpacificislander,
+    white,
 from with_translations

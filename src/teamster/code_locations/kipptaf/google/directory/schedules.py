@@ -15,7 +15,7 @@ google_directory_nonpartitioned_asset_schedule = ScheduleDefinition(
 
 google_directory_role_assignments_sync_schedule = ScheduleDefinition(
     job=google_directory_role_assignments_sync_job,
-    cron_schedule="30 2 * * *",
+    cron_schedule="30 5 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 

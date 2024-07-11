@@ -1,9 +1,4 @@
 {
-  "dbt.enableNewLineagePanel": true,
-  "dbt.enableNewQueryPanel": true,
-  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
-  "dbt.prefixGenerateModel": "stg",
-  "dbt.queryLimit": 500,
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
@@ -39,5 +34,12 @@
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "dbt.enableNewLineagePanel": true,
+  "[python]": {
+    "editor.defaultFormatter": "trunk.io"
   }
 }
