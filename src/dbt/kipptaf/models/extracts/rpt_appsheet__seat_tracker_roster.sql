@@ -12,22 +12,25 @@ select
     sr.worker_original_hire_date,
     sr.business_unit_home_name,
 
+    /* future feeds from other data sources*/
+    null as itr_response,
+    null as certification_renewal_status,
+    null as last_performance_management_score,
+    null as smart_recruiter_id,
+
     coalesce(
-        sr.primary_grade_level_taught, sr.department_home_name
+        safe_cast(sr.primary_grade_level_taught as string), sr.department_home_name
     ) as grade_department,
     coalesce(lc.region, sr.business_unit_home_name) as location_entity,
     coalesce(lc.abbreviation, sr.home_work_location_name) as location_shortname,
-
     coalesce(cc.name, sr.home_work_location_name) as campus,
-
-/* ITR Response */
-/* Final PM Score */
 
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_people__location_crosswalk") }} as lc
-    on sr.home_work_location_name = lc.clean_name
+    on sr.home_work_location_name = lc.name
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
-/*join to nonrenewal table*/
+
+    
