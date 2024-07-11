@@ -28,7 +28,7 @@ def build_dbt_assets(
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
-        yield from dbt_build.stream()
+        yield from dbt_build.stream().fetch_column_metadata()
 
     return _assets
 
