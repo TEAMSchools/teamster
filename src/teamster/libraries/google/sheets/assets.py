@@ -1,6 +1,7 @@
 import re
 
 from dagster import AssetSpec, _check
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
 
 def build_google_sheets_asset_spec(asset_key, uri, range_name):
@@ -15,4 +16,5 @@ def build_google_sheets_asset_spec(asset_key, uri, range_name):
         key=asset_key,
         metadata={"sheet_id": match.group(1), "range_name": range_name},
         group_name="google_sheets",
+        tags={COMPUTE_KIND_TAG: "googlesheets"},
     )
