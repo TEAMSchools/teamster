@@ -23,7 +23,9 @@ from teamster.libraries.core.utils.functions import regex_pattern_replace
 from teamster.libraries.ssh.resources import SSHResource
 
 
-def compose_regex(regexp: str, partition_key: str | MultiPartitionKey | None) -> str:
+def compose_regex(
+    regexp: str, partition_key: str | MultiPartitionKey | None = None
+) -> str:
     if isinstance(partition_key, MultiPartitionKey):
         return regex_pattern_replace(
             pattern=regexp, replacements=partition_key.keys_by_dimension
