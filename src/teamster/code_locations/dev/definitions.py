@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", category=ExperimentalWarning)
 # trunk-ignore-begin(ruff/E402)
 from dagster import Definitions, load_assets_from_modules
 
-from teamster.code_locations.kipptaf import (  # adp,; airbyte,; amplify,; couchdrop,; datagun,; dayforce,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
+from teamster.code_locations.kipptaf import (  # adp,; airbyte,; amplify,; couchdrop,; datagun,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
     CODE_LOCATION,
     dbt,
     overgrad,
@@ -30,7 +30,6 @@ defs = Definitions(
             # airbyte,
             # amplify,
             # datagun,
-            # dayforce,
             dbt,
             # deanslist,
             # fivetran,

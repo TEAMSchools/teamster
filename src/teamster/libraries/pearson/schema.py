@@ -793,6 +793,7 @@ class NJGPA(BaseModel):
     hispanicorlatinoethnicity: str | None = None
     home_language: str | None = None
     homeless: str | None = None
+    homelessprimarynighttimeresidence: float | None = None
     humanreaderorhumansigner: str | None = None
     humansignerfortestdirections: str | None = None
     iepexemptfrompassing: str | None = None
@@ -802,10 +803,15 @@ class NJGPA(BaseModel):
     mathematicsscienceaccommodatedresponse: float | None = None
     middlename: str | None = None
     migrantstatus: str | None = None
+    mlaccommodation: str | None = None
+    mlexemptfromtakingela: str | None = None
     monitortestresponse: str | None = None
+    multilinguallearneraccommodatedresponses: str | None = None
+    multilinguallearnerml: str | None = None
     multipletestregistration: str | None = None
     nativehawaiianorotherpacificislander: str | None = None
     njelstatus: str | None = None
+    njmlstatus: str | None = None
     njnotattemptflag: str | None = None
     nottestedcode: str | None = None
     nottestedreason: float | None = None
