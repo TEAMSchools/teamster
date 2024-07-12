@@ -44,9 +44,21 @@ with
 
             safe_cast(statestudentidentifier as string) as statestudentidentifier,
 
+            safe_cast(
+                regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int
+            ) as test_grade,
+
             upper(
                 regexp_extract(_dbt_source_relation, r'__(\w+)`$')
             ) as assessment_name,
+
+            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+
+            if(englishlearnerel = 'Y', true, false) as lep_status,
+
+            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+
+            if(`period` = 'FallBlock', 'Fall', `period`) as season,
 
             case
                 when
@@ -58,6 +70,17 @@ with
                 when `subject` = 'Science'
                 then 'Science'
             end as subject_area,
+
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as test_code,
 
             case
                 testperformancelevel
@@ -83,6 +106,29 @@ with
                 when testperformancelevel < 4
                 then false
             end as is_proficient,
+
+            case
+                when studentwithdisabilities in ('IEP', 'B')
+                then 'Has IEP'
+                else 'No IEP'
+            end as iep_status,
+
+            case
+                when twoormoreraces = 'Y'
+                then 'T'
+                when hispanicorlatinoethnicity = 'Y'
+                then 'H'
+                when americanindianoralaskanative = 'Y'
+                then 'I'
+                when asian = 'Y'
+                then 'A'
+                when blackorafricanamerican = 'Y'
+                then 'B'
+                when nativehawaiianorotherpacificislander = 'Y'
+                then 'P'
+                when white = 'Y'
+                then 'W'
+            end as race_ethnicity,
         from union_relations
     )
 
@@ -110,4 +156,13 @@ select
     hispanicorlatinoethnicity,
     nativehawaiianorotherpacificislander,
     white,
+
+    case
+        when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
+        then 'Graduation Ready'
+        when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 1
+        then 'Not Yet Graduation Ready'
+        else testperformancelevel_text
+    end as performance_band,
+
 from with_translations
