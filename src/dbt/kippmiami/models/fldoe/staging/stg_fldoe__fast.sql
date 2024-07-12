@@ -42,6 +42,8 @@ with
             `4_data_analysis_and_probability_performance`
             as data_analysis_and_probability,
 
+            'FAST' as assessment_name,
+
             coalesce(
                 fast_grade_3_ela_reading_achievement_level,
                 grade_3_fast_ela_reading_achievement_level,
@@ -262,6 +264,38 @@ with
             safe_cast(
                 regexp_extract(achievement_level, r'\d+') as int
             ) as achievement_level_int,
+
+            if(
+                assessment_subject = 'ELAReading',
+                concat('ELA0', assessment_grade),
+                concat('MAT0', assessment_grade)
+            ) as test_code,
+
+            case
+                administration_window
+                when 'PM1'
+                then 'Fall'
+                when 'PM2'
+                then 'Winter'
+                when 'PM3'
+                then 'Spring'
+            end as season,
+
+            case
+                assessment_subject
+                when 'ELAReading'
+                then 'ELA'
+                when 'Mathematics'
+                then 'Math'
+            end as discipline,
+
+            case
+                assessment_subject
+                when 'ELAReading'
+                then 'English Language Arts'
+                when 'Mathematics'
+                then 'Mathematics'
+            end as `subject`,
 
             lag(scale_score, 1) over (
                 partition by student_id, academic_year, assessment_subject
