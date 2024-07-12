@@ -1,3 +1,5 @@
+from typing import Generator
+
 from dagster import (
     RunRequest,
     ScheduleDefinition,
@@ -14,11 +16,12 @@ from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
 
 
 @schedule(
+    name=f"{CODE_LOCATION}_schoolmint_grow_static_partition_asset_job_schedule",
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=static_partition_asset_job,
 )
-def schoolmint_grow_static_partition_asset_job_schedule():
+def schoolmint_grow_static_partition_asset_job_schedule() -> Generator:
     for archived in ["t", "f"]:
         yield RunRequest(
             run_key=f"{CODE_LOCATION}_schoolmint_grow_static_partition_{archived}",

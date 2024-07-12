@@ -1,5 +1,6 @@
 from dagster import MAX_RUNTIME_SECONDS_TAG, RunConfig, define_asset_job, job
 
+from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.schoolmint.grow.assets import (
     multi_partition_assets,
     static_partition_assets,
@@ -33,14 +34,14 @@ def schoolmint_grow_user_update_job():
 
 
 static_partition_asset_job = define_asset_job(
-    name="schoolmint_grow_static_partition_asset_job",
+    name=f"{CODE_LOCATION}_schoolmint_grow_static_partition_asset_job",
     selection=static_partition_assets,
     partitions_def=static_partition_assets[0].partitions_def,
     tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
 )
 
 multi_partition_asset_job = define_asset_job(
-    name="schoolmint_grow_multi_partition_asset_job",
+    name=f"{CODE_LOCATION}_schoolmint_grow_multi_partition_asset_job",
     selection=multi_partition_assets,
     partitions_def=multi_partition_assets[0].partitions_def,
 )
