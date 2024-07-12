@@ -10,7 +10,7 @@ with
     ),
 
     staging as (
-        -- trunk-ignore(sqlfluff/AM04)
+        -- trunk-ignore(sqlfluff/AM04,sqlfluff/ST06)
         select
             * except (
                 allowwebaccess,
@@ -67,10 +67,10 @@ with
                 summerschoolid,
                 teachergroupid,
                 tuitionpayer,
-                whomodifiedid
+                whomodifiedid,
                 wm_createtime,
-                wm_tier,
-            )
+                wm_tier
+            ),
 
             /* column transformations */
             allowwebaccess.int_value as allowwebaccess,

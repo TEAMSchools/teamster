@@ -18,6 +18,7 @@ select
 
     gen.name as specprog_name,
 
+    if(gen.name = 'Out of District', true, false) as is_out_of_district,
     if(
         gen.name in unnest({{ self_contained_specprog_names }}), true, false
     ) as is_self_contained,

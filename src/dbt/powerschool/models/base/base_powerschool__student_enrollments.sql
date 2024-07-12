@@ -432,8 +432,6 @@ select
     scw.pickup_3_phone_work,
     scw.pickup_3_relationship,
 
-    sp.is_self_contained,
-
     case
         when enr.grade_level = 99
         then enr.cohort_graduated
@@ -442,7 +440,9 @@ select
         else enr.cohort_primary
     end as cohort,
 
-    if(ood.dcid is not null, true, false) as is_out_of_district,
+    coalesce(sp.is_self_contained, false) as is_self_contained,
+
+    coalesce(ood.is_out_of_district, false) as is_out_of_district,
 
     if(ood.dcid is not null, ood.programid, enr.schoolid) as reporting_schoolid,
 
@@ -476,9 +476,9 @@ left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on enr.studentid = sp.studentid
     and enr.exitdate between sp.enter_date and sp.exit_date
-    and sp.specprog_name in unnest({{ self_contained_specprog_names }})
+    and sp.is_self_contained
 left join
     {{ ref("int_powerschool__spenrollments") }} as ood
     on enr.studentid = ood.studentid
     and enr.exitdate between ood.enter_date and ood.exit_date
-    and ood.specprog_name = 'Out of District'
+    and ood.is_out_of_district
