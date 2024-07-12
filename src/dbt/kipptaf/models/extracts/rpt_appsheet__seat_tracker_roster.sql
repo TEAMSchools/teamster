@@ -62,7 +62,7 @@ select
                 contains_substr(sr.job_title, 'Assistant School Leader')
                 or (
                     contains_substr(sr.job_title, 'Director')
-                    and department_home_name = 'Operations'
+                    and sr.department_home_name = 'Operations'
                 )
             )
         then 3
