@@ -26,6 +26,13 @@ personalized_instruction_by_lesson = build_iready_sftp_asset(
     avro_schema=PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
     start_fiscal_year=2023,
     current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "750m"}, "limits": {"cpu": "750m"}}
+            }
+        }
+    },
 )
 
 instructional_usage_data = build_iready_sftp_asset(

@@ -10,6 +10,7 @@ def build_iready_sftp_asset(
     avro_schema,
     start_fiscal_year: int,
     current_fiscal_year: int,
+    op_tags=None,
 ):
     partition_keys = [
         str(y - 1) for y in range(start_fiscal_year, current_fiscal_year + 1)
@@ -23,6 +24,7 @@ def build_iready_sftp_asset(
         group_name="iready",
         avro_schema=avro_schema,
         slugify_replacements=[["%", "percent"]],
+        op_tags=op_tags,
         partitions_def=MultiPartitionsDefinition(
             {
                 "subject": StaticPartitionsDefinition(["ela", "math"]),
