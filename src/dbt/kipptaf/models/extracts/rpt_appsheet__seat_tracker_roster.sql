@@ -33,6 +33,41 @@ select
         then 'Miami'
         else 'CMO'
     end as region_state,
+    case
+        when
+            sr.department_home_name
+            in ('Data', 'Human Resources', 'Leadership Development')
+        then 6
+        when contains_substr(sr.job_title, 'Chief')
+        then 6
+        when
+            sr.job_title in (
+                'Managing Director Operations',
+                'Managing Director of Operations',
+                'Managing Director School Operations',
+                'Head of Schools',
+                'Head of Schools in Residence'
+            )
+        then 5
+        when
+            sr.job_title in (
+                'School Leader',
+                'School Leader in Residence',
+                'Director School Operations',
+                'Director Campus Operations'
+            )
+        then 4
+        when
+            (
+                contains_substr(sr.job_title, 'Assistant School Leader')
+                or (
+                    contains_substr(sr.job_title, 'Director')
+                    and sr.department_home_name = 'Operations'
+                )
+            )
+        then 3
+        else 1
+    end as permission_level,
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_people__location_crosswalk") }} as lc
