@@ -113,7 +113,7 @@ intacct_extract = build_bigquery_query_sftp_asset(
     destination_config={"name": "couchdrop", "path": "/data-team/accounting/intacct"},
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     auto_materialize_policy=AutoMaterializePolicy.eager(
-        max_materializations_per_minute=4
+        max_materializations_per_minute=10
     ),
 )
 
