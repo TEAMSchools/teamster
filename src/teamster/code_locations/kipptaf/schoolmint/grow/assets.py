@@ -25,16 +25,12 @@ MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
     }
 )
 
+key_prefix = [CODE_LOCATION, "schoolmint", "grow"]
 config_dir = pathlib.Path(__file__).parent / "config"
 
 schoolmint_grow_assets_static_partitions = [
     build_schoolmint_grow_asset(
-        asset_key=[
-            CODE_LOCATION,
-            "schoolmint",
-            "grow",
-            e["asset_name"].replace("-", "_").replace("/", "_"),
-        ],
+        asset_key=[*key_prefix, e["asset_name"].replace("-", "_").replace("/", "_")],
         endpoint=e["asset_name"],
         partitions_def=STATIC_PARTITONS_DEF,
         schema=ASSET_SCHEMA[e["asset_name"]],
@@ -45,17 +41,17 @@ schoolmint_grow_assets_static_partitions = [
 ]
 
 assignments = build_schoolmint_grow_asset(
-    asset_key=[CODE_LOCATION, "schoolmint", "grow", "observations"],
+    asset_key=[*key_prefix, "observations"],
     endpoint="observations",
     partitions_def=MULTI_PARTITIONS_DEF,
-    schema=ASSET_SCHEMA[ASSIGNMENT_SCHEMA],
+    schema=ASSIGNMENT_SCHEMA,
 )
 
 observations = build_schoolmint_grow_asset(
-    asset_key=[CODE_LOCATION, "schoolmint", "grow", "observations"],
+    asset_key=[*key_prefix, "observations"],
     endpoint="observations",
     partitions_def=MULTI_PARTITIONS_DEF,
-    schema=ASSET_SCHEMA[OBSERVATION_SCHEMA],
+    schema=OBSERVATION_SCHEMA,
 )
 
 schoolmint_grow_assets_multi_partitions = [
