@@ -41,8 +41,8 @@ schoolmint_grow_assets_static_partitions = [
 ]
 
 assignments = build_schoolmint_grow_asset(
-    asset_key=[*key_prefix, "observations"],
-    endpoint="observations",
+    asset_key=[*key_prefix, "assignments"],
+    endpoint="assignments",
     partitions_def=MULTI_PARTITIONS_DEF,
     schema=ASSIGNMENT_SCHEMA,
 )
